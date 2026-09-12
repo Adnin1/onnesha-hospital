@@ -21,6 +21,10 @@ import { Invoice, InvoiceItem } from "@/types";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 
+function generateBillingId(prefix: string) {
+  return `${prefix}-${Date.now()}`;
+}
+
 export default function BillingManagementPage() {
   const [invoices, setInvoices] = useState<Invoice[]>(MOCK_INVOICES);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(MOCK_INVOICES[0]);
@@ -30,7 +34,7 @@ export default function BillingManagementPage() {
   const [selectedPatientId, setSelectedPatientId] = useState(MOCK_PATIENTS[0].id);
   const [items, setItems] = useState<InvoiceItem[]>([
     {
-      id: "item-init-1",
+      id: "it-1",
       item_type: "consultation",
       description: "OPD Consultation - Prof. Dr. M. A. Rahman",
       unit_price: 800,
@@ -41,7 +45,7 @@ export default function BillingManagementPage() {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountReason, setDiscountReason] = useState("");
   const [paidAmount, setPaidAmount] = useState(800);
-  const [paymentMethod, setPaymentMethod] = useState<any>("cash");
+  const [paymentMethod, setPaymentMethod] = useState<Invoice["payment_method"]>("cash");
 
   // Calculations
   const subtotal = items.reduce((acc, it) => acc + it.total_price, 0);
@@ -49,9 +53,9 @@ export default function BillingManagementPage() {
   const dueAmount = Math.max(0, netTotal - paidAmount);
 
   // Add Item to Bill
-  const addItem = (type: any, desc: string, price: number) => {
+  const addItem = (type: InvoiceItem["item_type"], desc: string, price: number) => {
     const newItem: InvoiceItem = {
-      id: `it-${Date.now()}`,
+      id: generateBillingId("it"),
       item_type: type,
       description: desc,
       unit_price: price,
@@ -76,7 +80,7 @@ export default function BillingManagementPage() {
     const nextInvNo = `INV-2026-${String(invoices.length + 893).padStart(4, "0")}`;
 
     const newInv: Invoice = {
-      id: `inv-${Date.now()}`,
+      id: generateBillingId("inv"),
       organization_id: "a0000000-0000-0000-0000-000000000001",
       patient_id: patient.id,
       patient_name: patient.full_name,
@@ -391,7 +395,7 @@ export default function BillingManagementPage() {
                       <button
                         key={m}
                         type="button"
-                        onClick={() => setPaymentMethod(m)}
+                        onClick={() => setPaymentMethod(m as Invoice["payment_method"])}
                         className={`text-[11px] px-2.5 py-1 rounded-md uppercase font-semibold border transition ${
                           paymentMethod === m
                             ? "bg-slate-900 text-white border-slate-900"

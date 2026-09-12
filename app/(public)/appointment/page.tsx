@@ -18,6 +18,12 @@ import { MOCK_DOCTORS, MOCK_ORGANIZATION } from "@/lib/mock-data";
 import { formatCurrencyBDT } from "@/lib/utils";
 import { HospitalPrintHeader } from "@/components/print/HospitalPrintHeader";
 
+function generateAppointmentToken(doctorCode: string): string {
+  const prefix = doctorCode.replace("DOC-", "T");
+  const randomNum = Math.floor(Math.random() * 80) + 10;
+  return `${prefix}-${randomNum}`;
+}
+
 export default function AppointmentBookingPage() {
   const [step, setStep] = useState(1);
   const [selectedDoctorId, setSelectedDoctorId] = useState(MOCK_DOCTORS[0].id);
@@ -47,10 +53,7 @@ export default function AppointmentBookingPage() {
         alert("Please provide patient name and contact phone number.");
         return;
       }
-      // Generate realistic Token
-      const prefix = selectedDoctor.doctor_code.replace("DOC-", "T");
-      const randomNum = Math.floor(Math.random() * 80) + 10;
-      const token = `${prefix}-${randomNum}`;
+      const token = generateAppointmentToken(selectedDoctor.doctor_code);
       setGeneratedToken(token);
       setSmsSent(true);
       setStep(4);

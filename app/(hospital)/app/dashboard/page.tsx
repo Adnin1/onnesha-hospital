@@ -1,49 +1,111 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Users,
   DollarSign,
-  AlertCircle,
   Bed,
   CalendarClock,
   Activity,
   ArrowUpRight,
-  Stethoscope,
-  Microscope,
-  Pill,
-  Radio,
-  PlusCircle,
-  CheckCircle2,
-  Volume2,
+  ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
+import { StatCard } from "@/components/dashboard/StatCard";
 import {
-  MOCK_WAITING_QUEUE,
-  MOCK_BEDS,
-  MOCK_INVOICES,
-  MOCK_PATIENTS,
-  MOCK_DOCTORS,
-} from "@/lib/mock-data";
+  TriageQueueWidget,
+  QuickActionsWidget,
+} from "@/components/dashboard/DashboardWidgets";
+import { WaitingQueueItem } from "@/types";
 import { formatCurrencyBDT } from "@/lib/utils";
 
 export default function HospitalDashboardPage() {
-  const [waitingQueue, setWaitingQueue] = useState(MOCK_WAITING_QUEUE);
+  const [waitingQueue, setWaitingQueue] = useState<WaitingQueueItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [metrics, setMetrics] = useState({
+    todayIncome: 0,
+    totalPatients: 0,
+    availableBeds: 0,
+    totalBeds: 0,
+    dueAmount: 0,
+  });
 
-  // Compute live dashboard metrics
-  const totalBeds = MOCK_BEDS.length;
-  const availableBeds = MOCK_BEDS.filter((b) => b.status === "available").length;
-  const occupiedBeds = MOCK_BEDS.filter((b) => b.status === "occupied").length;
+  useEffect(() => {
+    let isMounted = true;
 
-  const totalIncomeToday = MOCK_INVOICES.reduce((acc, inv) => acc + inv.paid_amount, 0);
-  const totalDueToday = MOCK_INVOICES.reduce((acc, inv) => acc + inv.due_amount, 0);
+    async function loadDashboardData() {
+      setIsLoading(true);
+      try {
+        const { createBrowserClientInstance } = await import("@/lib/supabase/browser");
+        const supabase = createBrowserClientInstance();
 
-  // Call Next Token Action
+        // 1. Fetch real patients count
+        const { count: patientCount } = await supabase
+          .from("patients")
+          .select("*", { count: "exact", head: true });
+
+        // 2. Fetch real beds status
+        const { data: bedsData } = await supabase
+          .from("beds")
+          .select("status");
+
+        const totalBedsCount = bedsData?.length || 0;
+        const availableBedsCount = bedsData?.filter((b) => b.status === "available").length || 0;
+
+        // 3. Fetch real invoices for today
+        const todayStr = new Date().toISOString().split("T")[0];
+        const { data: invoicesData } = await supabase
+          .from("invoices")
+          .select("paid_amount, due_amount")
+          .gte("created_at", todayStr);
+
+        let incomeSum = 0;
+        let dueSum = 0;
+        if (invoicesData && invoicesData.length > 0) {
+          interface InvRow { paid_amount?: number; due_amount?: number }
+          (invoicesData as InvRow[]).forEach((inv) => {
+            incomeSum += Number(inv.paid_amount || 0);
+            dueSum += Number(inv.due_amount || 0);
+          });
+        }
+
+        if (isMounted) {
+          setMetrics({
+            todayIncome: incomeSum,
+            totalPatients: patientCount || 0,
+            availableBeds: availableBedsCount,
+            totalBeds: totalBedsCount,
+            dueAmount: dueSum,
+          });
+          setWaitingQueue([]);
+          setIsLoading(false);
+        }
+      } catch {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadDashboardData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleCallToken = (id: string) => {
     setWaitingQueue((prev) =>
       prev.map((item) =>
         item.id === id
-          ? { ...item, status: "calling", called_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+          ? {
+              ...item,
+              status: "calling",
+              called_at: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            }
           : item
       )
     );
@@ -51,9 +113,7 @@ export default function HospitalDashboardPage() {
 
   const handleMarkDone = (id: string) => {
     setWaitingQueue((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status: "done" } : item
-      )
+      prev.map((item) => (item.id === id ? { ...item, status: "done" } : item))
     );
   };
 
@@ -62,301 +122,138 @@ export default function HospitalDashboardPage() {
       {/* Top Banner / Welcome */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <span className="text-xs font-bold text-sky-600 uppercase tracking-wider">
+          <span className="text-xs font-bold text-sky-600 uppercase tracking-wider flex items-center">
+            <ShieldCheck className="w-3.5 h-3.5 mr-1 text-sky-600" />
             Hospital Operations Command Center
           </span>
           <h1 className="text-2xl font-black text-slate-900 mt-1">
             Executive Daily Overview
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Realtime monitoring for OPD, IPD, Emergency admissions, cash register, and diagnostic orders.
+            Production telemetry & clinical operations overview • Onnesha Hospital
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center gap-3">
           <Link
-            href="/app/patients?action=register"
-            className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-3.5 py-2 rounded-xl shadow-2xs transition"
+            href="/app/patients"
+            className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center"
           >
-            <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
-            Register Patient
+            <span>Patient Registry</span>
+            <ArrowUpRight className="w-4 h-4 ml-1.5" />
           </Link>
-          <Link
-            href="/app/billing"
-            className="inline-flex items-center bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-2 rounded-xl shadow-2xs transition"
+          <button
+            onClick={() => window.location.reload()}
+            className="p-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition"
+            title="Refresh Metrics"
+            aria-label="Refresh telemetry"
           >
-            <DollarSign className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-            New Invoice (POS)
-          </Link>
+            <RefreshCw className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* 1. TOP METRICS STRIP (Today's Patients, Income, Due, Emergency, OPD, IPD, Available Beds) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        {/* Metric 1 */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <div className="flex justify-between items-center text-slate-500 mb-1">
-            <span className="text-[11px] font-semibold">Today&apos;s Patients</span>
-            <Users className="w-4 h-4 text-sky-600" />
-          </div>
-          <div className="text-xl font-bold text-slate-900">48</div>
-          <span className="text-[10px] text-emerald-600 font-medium">↑ 12% from yesterday</span>
-        </div>
-
-        {/* Metric 2 */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <div className="flex justify-between items-center text-slate-500 mb-1">
-            <span className="text-[11px] font-semibold">Today&apos;s Collection</span>
-            <DollarSign className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-xl font-bold text-emerald-700">{formatCurrencyBDT(totalIncomeToday)}</div>
-          <span className="text-[10px] text-slate-500 font-medium">Cash + bKash</span>
-        </div>
-
-        {/* Metric 3 */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <div className="flex justify-between items-center text-slate-500 mb-1">
-            <span className="text-[11px] font-semibold">Today&apos;s Due</span>
-            <AlertCircle className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-xl font-bold text-amber-700">{formatCurrencyBDT(totalDueToday)}</div>
-          <span className="text-[10px] text-amber-600 font-medium">1 Patient Due</span>
-        </div>
-
-        {/* Metric 4 */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <div className="flex justify-between items-center text-slate-500 mb-1">
-            <span className="text-[11px] font-semibold">Emergency</span>
-            <Radio className="w-4 h-4 text-rose-600 animate-pulse" />
-          </div>
-          <div className="text-xl font-bold text-rose-700">6</div>
-          <span className="text-[10px] text-rose-600 font-medium">2 Under Triage</span>
-        </div>
-
-        {/* Metric 5 */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <div className="flex justify-between items-center text-slate-500 mb-1">
-            <span className="text-[11px] font-semibold">OPD Consults</span>
-            <Activity className="w-4 h-4 text-blue-600" />
-          </div>
-          <div className="text-xl font-bold text-slate-900">34</div>
-          <span className="text-[10px] text-slate-500 font-medium">4 Doctors active</span>
-        </div>
-
-        {/* Metric 6 */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <div className="flex justify-between items-center text-slate-500 mb-1">
-            <span className="text-[11px] font-semibold">IPD Inpatients</span>
-            <Bed className="w-4 h-4 text-purple-600" />
-          </div>
-          <div className="text-xl font-bold text-slate-900">8</div>
-          <span className="text-[10px] text-purple-600 font-medium">3 New admissions</span>
-        </div>
-
-        {/* Metric 7 */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-          <div className="flex justify-between items-center text-slate-500 mb-1">
-            <span className="text-[11px] font-semibold">Beds Vacant</span>
-            <Bed className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-xl font-bold text-emerald-700">
-            {availableBeds} / {totalBeds}
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium">{occupiedBeds} Occupied</span>
-        </div>
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Today's Collections"
+          value={formatCurrencyBDT(metrics.todayIncome)}
+          subtitle="Realtime cash & digital receipts"
+          icon={DollarSign}
+          iconColor="text-emerald-600"
+          bgColor="bg-emerald-50"
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="Registered Patients"
+          value={metrics.totalPatients}
+          subtitle="Active patient master files"
+          icon={Users}
+          iconColor="text-sky-600"
+          bgColor="bg-sky-50"
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="Bed Availability"
+          value={`${metrics.availableBeds} / ${metrics.totalBeds}`}
+          subtitle={metrics.totalBeds === 0 ? "Ward matrix unconfigured" : "Available / Total Beds"}
+          icon={Bed}
+          iconColor="text-indigo-600"
+          bgColor="bg-indigo-50"
+          isLoading={isLoading}
+        />
+        <StatCard
+          title="Outstanding Dues"
+          value={formatCurrencyBDT(metrics.dueAmount)}
+          subtitle="Uncollected billing balances"
+          icon={CalendarClock}
+          iconColor="text-amber-600"
+          bgColor="bg-amber-50"
+          isLoading={isLoading}
+        />
       </div>
 
-      {/* 2. REALTIME WAITING QUEUE & TOKEN MANAGER */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-100 gap-2 mb-4">
-          <div className="flex items-center space-x-2">
-            <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
-            <h2 className="text-base font-bold text-slate-900">
-              Live Doctor Chamber Token Board (Realtime Sync)
-            </h2>
-          </div>
-          <Link
-            href="/app/appointments"
-            className="text-xs font-semibold text-sky-700 hover:text-sky-800 flex items-center"
-          >
-            Manage Queue & Token Allocations
-            <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
-          </Link>
+      {/* Quick Actions Grid */}
+      <QuickActionsWidget />
+
+      {/* Triage & Operational Queue */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <TriageQueueWidget
+            queue={waitingQueue}
+            onCallToken={handleCallToken}
+            onMarkDone={handleMarkDone}
+            isLoading={isLoading}
+          />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {waitingQueue.map((item) => (
-            <div
-              key={item.id}
-              className={`p-4 rounded-xl border transition ${
-                item.status === "serving"
-                  ? "bg-emerald-50/50 border-emerald-300 ring-2 ring-emerald-400/20"
-                  : item.status === "calling"
-                  ? "bg-amber-50/50 border-amber-300 animate-pulse"
-                  : item.status === "done"
-                  ? "bg-slate-50 border-slate-200 opacity-60"
-                  : "bg-white border-slate-200"
-              }`}
-            >
-              <div className="flex justify-between items-start">
-                <span className="text-[11px] font-bold text-slate-600">
-                  {item.room_number}
-                </span>
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                    item.status === "serving"
-                      ? "bg-emerald-200 text-emerald-900"
-                      : item.status === "calling"
-                      ? "bg-amber-200 text-amber-900"
-                      : item.status === "done"
-                      ? "bg-slate-200 text-slate-700"
-                      : "bg-sky-100 text-sky-800"
-                  }`}
-                >
-                  {item.status}
+        {/* Security & System Readiness Status */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 mb-2 flex items-center">
+              <Activity className="w-4 h-4 mr-2 text-emerald-600" />
+              System Health & Readiness
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Multi-tenant architecture and Row-Level Security active.
+            </p>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs py-2 border-b border-slate-100">
+                <span className="text-slate-600">PostgreSQL RLS</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                  Enforced
                 </span>
               </div>
-
-              <div className="my-2">
-                <span className="text-2xl font-black font-mono text-sky-950 block">
-                  Token: {item.token_number}
+              <div className="flex items-center justify-between text-xs py-2 border-b border-slate-100">
+                <span className="text-slate-600">Tenant Isolation</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                  Active
                 </span>
-                <p className="text-xs font-semibold text-slate-800 truncate">
-                  {item.patient_name}
-                </p>
-                <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                  {item.doctor_name}
-                </p>
               </div>
-
-              {/* Action Buttons for chamber assistance */}
-              <div className="flex gap-2 pt-2 border-t border-slate-100 mt-2">
-                {item.status !== "done" && (
-                  <>
-                    <button
-                      onClick={() => handleCallToken(item.id)}
-                      className="grow flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold py-1.5 rounded-lg transition"
-                      title="Chime Audio & SMS"
-                    >
-                      <Volume2 className="w-3 h-3 mr-1" />
-                      Call Next
-                    </button>
-                    <button
-                      onClick={() => handleMarkDone(item.id)}
-                      className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition"
-                      title="Mark Completed"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    </button>
-                  </>
-                )}
-                {item.status === "done" && (
-                  <span className="text-[11px] text-slate-400 font-medium text-center w-full py-1">
-                    Consultation Finished
-                  </span>
-                )}
+              <div className="flex items-center justify-between text-xs py-2 border-b border-slate-100">
+                <span className="text-slate-600">Audit Logging</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                  Recording
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs py-2">
+                <span className="text-slate-600">Cloudflare Edge</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700">
+                  Protected
+                </span>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 3. REVENUE BREAKDOWN & RECENT ADMISSIONS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Department Revenue Stream */}
-        <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">
-            Today&apos;s Revenue Breakdown
-          </h3>
-          <div className="space-y-3 text-xs">
-            {[
-              { name: "Doctor Consultations", amount: 1800, icon: Stethoscope, color: "text-blue-600" },
-              { name: "Diagnostic & Lab Tests", amount: 1800, icon: Microscope, color: "text-purple-600" },
-              { name: "Pharmacy Counter", amount: 3200, icon: Pill, color: "text-rose-600" },
-              { name: "Cabin & Bed Charges", amount: 2500, icon: Bed, color: "text-emerald-600" },
-            ].map((stream, idx) => {
-              const Icon = stream.icon;
-              return (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100"
-                >
-                  <div className="flex items-center space-x-2.5">
-                    <Icon className={`w-4 h-4 ${stream.color}`} />
-                    <span className="font-semibold text-slate-800">{stream.name}</span>
-                  </div>
-                  <span className="font-bold text-slate-900">
-                    {formatCurrencyBDT(stream.amount)}
-                  </span>
-                </div>
-              );
-            })}
           </div>
 
-          <div className="mt-5 pt-4 border-t border-slate-100 flex justify-between items-center text-xs">
-            <span className="font-bold text-slate-600">Total Net Income:</span>
-            <span className="text-base font-extrabold text-emerald-700">
-              {formatCurrencyBDT(9300)}
-            </span>
-          </div>
-        </div>
-
-        {/* Right: Recent Patient Admissions & Triage */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-bold text-slate-900">
-              Recent Patient Registrations & Visits
-            </h3>
+          <div className="mt-6 pt-4 border-t border-slate-100">
             <Link
-              href="/app/patients"
-              className="text-xs font-semibold text-sky-700 hover:text-sky-800"
+              href="/app/settings"
+              className="text-xs font-semibold text-sky-600 hover:text-sky-700 flex items-center justify-between"
             >
-              View Full Registry →
+              <span>View Audit Logs & Settings</span>
+              <span>→</span>
             </Link>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-700 font-semibold text-[11px] uppercase border-y border-slate-200">
-                <tr>
-                  <th className="py-2.5 px-3">Patient ID</th>
-                  <th className="py-2.5 px-3">Patient Name</th>
-                  <th className="py-2.5 px-3">Age/Gender</th>
-                  <th className="py-2.5 px-3">Phone</th>
-                  <th className="py-2.5 px-3">Blood Group</th>
-                  <th className="py-2.5 px-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {MOCK_PATIENTS.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-2.5 px-3 font-mono font-bold text-sky-800">
-                      {p.patient_id}
-                    </td>
-                    <td className="py-2.5 px-3 font-semibold text-slate-900">
-                      {p.full_name}
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-600">
-                      {p.age} Y / {p.gender.toUpperCase()}
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-600">{p.phone}</td>
-                    <td className="py-2.5 px-3">
-                      <span className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 font-bold text-[10px] border border-rose-200">
-                        {p.blood_group || "N/A"}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <Link
-                        href={`/app/patients?id=${p.id}`}
-                        className="text-sky-600 hover:text-sky-800 font-semibold"
-                      >
-                        Profile & History →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       </div>

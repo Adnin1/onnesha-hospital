@@ -5,9 +5,11 @@ import Link from "next/link";
 import { Search, Clock, CheckCircle2, User, RefreshCw, AlertCircle } from "lucide-react";
 import { MOCK_WAITING_QUEUE } from "@/lib/mock-data";
 
+import { WaitingQueueItem } from "@/types";
+
 export default function CheckTokenPage() {
   const [searchToken, setSearchToken] = useState("");
-  const [searchResult, setSearchResult] = useState<any>(null);
+  const [searchResult, setSearchResult] = useState<WaitingQueueItem | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {

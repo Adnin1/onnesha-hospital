@@ -34,7 +34,7 @@ export default function PatientsManagementPage() {
   const [newRelation, setNewRelation] = useState("Father");
   const [newGender, setNewGender] = useState<"male" | "female" | "other">("male");
   const [newAge, setNewAge] = useState("30");
-  const [newBloodGroup, setNewBloodGroup] = useState<any>("O+");
+  const [newBloodGroup, setNewBloodGroup] = useState<Patient["blood_group"]>("O+");
   const [newPhone, setNewPhone] = useState("");
   const [newNid, setNewNid] = useState("");
   const [newAddress, setNewAddress] = useState("");
@@ -238,7 +238,7 @@ export default function PatientsManagementPage() {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
+                      onClick={() => setActiveTab(tab.id as "history" | "bills" | "lab" | "rx")}
                       className={`flex items-center py-3 px-4 border-b-2 font-semibold text-xs transition ${
                         isActive
                           ? "border-sky-600 text-sky-700 font-bold"
@@ -474,7 +474,7 @@ export default function PatientsManagementPage() {
                   </label>
                   <select
                     value={newGender}
-                    onChange={(e) => setNewGender(e.target.value as any)}
+                    onChange={(e) => setNewGender(e.target.value as "male" | "female" | "other")}
                     className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
                   >
                     <option value="male">Male</option>
@@ -489,7 +489,7 @@ export default function PatientsManagementPage() {
                   </label>
                   <select
                     value={newBloodGroup}
-                    onChange={(e) => setNewBloodGroup(e.target.value as any)}
+                    onChange={(e) => setNewBloodGroup(e.target.value as Patient["blood_group"])}
                     className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
                   >
                     <option value="A+">A+</option>

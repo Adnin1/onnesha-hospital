@@ -46,8 +46,18 @@ export async function getCurrentUserSession(): Promise<{
     const roles: RoleType[] = [];
     let organizationId = profile?.active_organization_id || null;
 
+    interface UserRoleRecord {
+      role_id: string;
+      organization_id?: string;
+      roles: { name: string } | null;
+    }
+
+    interface RolePermissionRecord {
+      permission_key: string;
+    }
+
     if (userRoleRecords && userRoleRecords.length > 0) {
-      userRoleRecords.forEach((ur: any) => {
+      (userRoleRecords as unknown as UserRoleRecord[]).forEach((ur) => {
         if (ur.roles?.name) {
           roles.push(ur.roles.name.toLowerCase() as RoleType);
         }
@@ -58,15 +68,13 @@ export async function getCurrentUserSession(): Promise<{
     }
 
     // Retrieve permissions
+    const roleIds = (userRoleRecords as unknown as UserRoleRecord[])?.map((r) => r.role_id) || [];
     const { data: permRecords } = await supabase
       .from("role_permissions")
       .select("permission_key")
-      .in(
-        "role_id",
-        userRoleRecords?.map((r: any) => r.role_id) || []
-      );
+      .in("role_id", roleIds);
 
-    const permissions = permRecords?.map((p: any) => p.permission_key) || [];
+    const permissions = (permRecords as unknown as RolePermissionRecord[])?.map((p) => p.permission_key) || [];
 
     return {
       userId: user.id,

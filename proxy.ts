@@ -17,12 +17,16 @@ export async function proxy(request: NextRequest) {
   const sessionResponse = await updateSession(request);
 
   // 3. Route Protection Rule: Hospital portal (/app/*) requires authentication
-  if (path.startsWith("/app")) {
-    const supabaseToken = request.cookies.get("sb-access-token")?.value || 
-                          request.cookies.get("supabase-auth-token")?.value;
-    
-    // In production SSR, let middleware pass to Server Component session guard, 
-    // or redirect if explicit cookie token is completely missing
+  const isProtectedRoute = path.startsWith("/app");
+  if (isProtectedRoute) {
+    const supabaseToken =
+      request.cookies.get("sb-access-token")?.value ||
+      request.cookies.get("supabase-auth-token")?.value ||
+      request.cookies.get("sb-iuhtzahuszdkdarhxobx-auth-token")?.value;
+
+    if (!supabaseToken) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
   }
 
   return sessionResponse;

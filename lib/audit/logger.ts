@@ -3,8 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export interface AuditEntry {
   organizationId: string;
   userId?: string;
-  action: "CREATE" | "UPDATE" | "DELETE" | "VOID" | "REFUND" | "VERIFY" | "LOGIN" | "LOGOUT";
-  module: "BILLING" | "PATIENT" | "PHARMACY" | "LAB" | "IPD" | "IAM" | "HR" | "APPOINTMENT";
+  action: "CREATE" | "UPDATE" | "DELETE" | "VOID" | "REFUND" | "VERIFY" | "LOGIN" | "LOGOUT" | "VIEW" | "DOWNLOAD" | "PRINT";
+  module: "BILLING" | "PATIENT" | "PHARMACY" | "LAB" | "IPD" | "IAM" | "HR" | "APPOINTMENT" | "DOCUMENT";
   entityType: string;
   entityId: string;
   oldValues?: Record<string, unknown>;

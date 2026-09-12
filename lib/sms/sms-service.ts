@@ -60,11 +60,12 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
       success: res.ok,
       providerResponseId: data?.msg_id || data?.message_id || "OK",
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Failed to dispatch SMS";
     console.error("SMS Gateway Delivery Error:", err);
     return {
       success: false,
-      error: err.message || "Failed to dispatch SMS",
+      error: errorMsg,
     };
   }
 }

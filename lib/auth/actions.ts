@@ -32,8 +32,9 @@ export async function loginAction(
     if (error) {
       return { success: false, error: error.message };
     }
-  } catch (err: any) {
-    return { success: false, error: err.message || "Authentication service unavailable." };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Authentication service unavailable.";
+    return { success: false, error: message };
   }
 
   redirect("/app/dashboard");
@@ -72,7 +73,8 @@ export async function requestPasswordResetAction(
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Failed to send reset link." };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to send reset link.";
+    return { success: false, error: message };
   }
 }

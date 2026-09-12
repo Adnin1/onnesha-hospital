@@ -1,112 +1,67 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
-  Users,
-  CalendarClock,
-  Stethoscope,
-  Activity,
-  Bed,
-  Receipt,
-  Microscope,
-  Pill,
-  Scissors,
-  FileText,
-  UserCheck,
-  BarChart3,
-  Settings,
+  ChevronRight,
   LogOut,
   ShieldCheck,
-  ChevronRight,
   Menu,
   X,
-  Radio,
 } from "lucide-react";
+import { HOSPITAL_NAV_SECTIONS } from "@/config/navigation";
 import { RoleType } from "@/types";
-import { DEFAULT_ROLE_PERMISSIONS, PERMISSIONS } from "@/lib/permissions";
-import { MOCK_ORGANIZATION } from "@/lib/mock-data";
+import { DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 
 export function HospitalSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [activeRole, setActiveRole] = useState<RoleType>("super_admin");
-  const [userName, setUserName] = useState("Director / Super Admin");
+  const [userName, setUserName] = useState("Hospital Staff");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedRole = (localStorage.getItem("onnesha_user_role") as RoleType) || "super_admin";
-      const savedName = localStorage.getItem("onnesha_user_name") || "Director / Super Admin";
-      setActiveRole(savedRole);
-      setUserName(savedName);
+    let isMounted = true;
+    async function initSession() {
+      try {
+        const { createBrowserClientInstance } = await import("@/lib/supabase/browser");
+        const supabase = createBrowserClientInstance();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (isMounted && user) {
+          setUserName(user.email || "Hospital Staff");
+        }
+      } catch {
+        // Run with default role context
+      }
     }
+
+    void initSession();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleRoleChange = (newRole: RoleType) => {
     setActiveRole(newRole);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("onnesha_user_role", newRole);
-      document.cookie = `onnesha_role=${newRole}; path=/; max-age=86400`;
-    }
   };
 
-  const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("onnesha_user_role");
-      document.cookie = "onnesha_role=; path=/; max-age=0";
+  const handleLogout = async () => {
+    try {
+      const { createBrowserClientInstance } = await import("@/lib/supabase/browser");
+      const supabase = createBrowserClientInstance();
+      await supabase.auth.signOut();
+    } catch {
+      // Ignored
     }
     router.push("/login");
   };
 
   const allowedPermissions = DEFAULT_ROLE_PERMISSIONS[activeRole] || [];
-
-  const navSections = [
-    {
-      title: "Main",
-      items: [
-        { href: "/app/dashboard", label: "Executive Dashboard", icon: LayoutDashboard, perm: PERMISSIONS.DASHBOARD_VIEW },
-      ],
-    },
-    {
-      title: "Front Desk & Clinical",
-      items: [
-        { href: "/app/patients", label: "Patient Registry", icon: Users, perm: PERMISSIONS.PATIENTS_VIEW },
-        { href: "/app/appointments", label: "Appointments & Tokens", icon: CalendarClock, perm: PERMISSIONS.APPOINTMENTS_VIEW },
-        { href: "/app/doctors", label: "Doctors & Roster", icon: Stethoscope, perm: PERMISSIONS.DOCTORS_VIEW },
-        { href: "/app/opd", label: "OPD Consultation", icon: Activity, perm: PERMISSIONS.OPD_VIEW },
-        { href: "/app/ipd", label: "IPD Admissions", icon: Bed, perm: PERMISSIONS.IPD_VIEW },
-        { href: "/app/emergency", label: "24/7 Emergency Triage", icon: Radio, perm: PERMISSIONS.EMERGENCY_VIEW },
-      ],
-    },
-    {
-      title: "Diagnostics & Pharmacy",
-      items: [
-        { href: "/app/lab", label: "Pathology & Tests", icon: Microscope, perm: PERMISSIONS.LAB_VIEW },
-        { href: "/app/pharmacy", label: "Pharmacy & Stock POS", icon: Pill, perm: PERMISSIONS.PHARMACY_VIEW },
-      ],
-    },
-    {
-      title: "Ward, OT & Rx",
-      items: [
-        { href: "/app/beds", label: "Bed & Cabin Matrix", icon: Bed, perm: PERMISSIONS.BEDS_VIEW },
-        { href: "/app/ot", label: "Operation Theater (OT)", icon: Scissors, perm: PERMISSIONS.OT_VIEW },
-        { href: "/app/prescriptions", label: "Digital Prescriptions", icon: FileText, perm: PERMISSIONS.PRESCRIPTIONS_VIEW },
-      ],
-    },
-    {
-      title: "Finance, HR & Admin",
-      items: [
-        { href: "/app/billing", label: "Billing & Cashier", icon: Receipt, perm: PERMISSIONS.BILLING_VIEW },
-        { href: "/app/hr", label: "HR & Biometrics", icon: UserCheck, perm: PERMISSIONS.HR_VIEW },
-        { href: "/app/reports", label: "Financial Reports", icon: BarChart3, perm: PERMISSIONS.REPORTS_VIEW },
-        { href: "/app/settings", label: "Settings & Audit Logs", icon: Settings, perm: PERMISSIONS.SETTINGS_VIEW },
-      ],
-    },
-  ];
 
   return (
     <>
@@ -139,7 +94,7 @@ export function HospitalSidebar() {
                   ONNESHA HMS
                 </span>
                 <span className="text-[10px] text-sky-400 font-medium block">
-                  {MOCK_ORGANIZATION.name.split(" ")[0]} Hospital
+                  Enterprise Portal
                 </span>
               </div>
             )}
@@ -147,6 +102,7 @@ export function HospitalSidebar() {
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="hidden lg:block text-slate-400 hover:text-white p-1 rounded"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <ChevronRight className={`w-4 h-4 transition-transform ${collapsed ? "" : "rotate-180"}`} />
           </button>
@@ -178,7 +134,7 @@ export function HospitalSidebar() {
 
         {/* Navigation Links */}
         <div className="grow overflow-y-auto px-3 py-2 space-y-4">
-          {navSections.map((section, idx) => {
+          {HOSPITAL_NAV_SECTIONS.map((section, idx) => {
             const visibleItems = section.items.filter((item) =>
               activeRole === "super_admin" || allowedPermissions.includes(item.perm)
             );

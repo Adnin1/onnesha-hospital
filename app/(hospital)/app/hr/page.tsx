@@ -194,7 +194,7 @@ export default function HRManagementPage() {
 
           {/* Architecture Visual Diagram */}
           <div className="p-6 bg-slate-900 text-white rounded-2xl font-mono text-xs overflow-x-auto">
-            <div className="text-sky-400 font-bold mb-2">// Architecture Data Flow:</div>
+            <div className="text-sky-400 font-bold mb-2">{"// Architecture Data Flow:"}</div>
             <pre className="text-slate-300">
 {`[Physical Biometric Machine] (ZKTeco / Realtime / Virdi)
               │
