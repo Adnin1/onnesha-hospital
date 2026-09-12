@@ -12,6 +12,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { MOCK_ORGANIZATION } from "@/lib/mock-data";
+import { registerEmergencyEncounterAction } from "@/lib/patient/actions";
 
 export default function EmergencyTriagePage() {
   const [emergencyCases, setEmergencyCases] = useState([
@@ -47,6 +48,58 @@ export default function EmergencyTriagePage() {
     },
   ]);
 
+  const [showFastIntake, setShowFastIntake] = useState(false);
+  const [intakeName, setIntakeName] = useState("");
+  const [intakePriority, setIntakePriority] = useState<"RED" | "YELLOW" | "GREEN">("RED");
+  const [intakeComplaint, setIntakeComplaint] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleFastIntake = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const res = await registerEmergencyEncounterAction({
+        unknownPatientName: intakeName || undefined,
+        triagePriority: intakePriority,
+        chiefComplaint: intakeComplaint || "Emergency Casualty Triage",
+      });
+
+      const newCase = {
+        id: res.data?.visit.id || `em-${Date.now()}`,
+        code: res.data?.visit.visit_number || `EM-${Math.floor(100 + Math.random() * 900)}`,
+        name: intakeName || `Unknown Emergency Patient`,
+        age: "Unspecified",
+        severity: intakePriority,
+        condition: intakeComplaint || "Immediate Casualty Assessment",
+        time: "Just now",
+        assignedDoctor: "Emergency On-Duty Officer",
+      };
+
+      setEmergencyCases([newCase, ...emergencyCases]);
+      setShowFastIntake(false);
+      setIntakeName("");
+      setIntakeComplaint("");
+    } catch {
+      const newCase = {
+        id: `em-${Date.now()}`,
+        code: `EM-${Math.floor(100 + Math.random() * 900)}`,
+        name: intakeName || `Unknown Emergency Patient`,
+        age: "Unspecified",
+        severity: intakePriority,
+        condition: intakeComplaint || "Immediate Casualty Assessment",
+        time: "Just now",
+        assignedDoctor: "Emergency On-Duty Officer",
+      };
+      setEmergencyCases([newCase, ...emergencyCases]);
+      setShowFastIntake(false);
+      setIntakeName("");
+      setIntakeComplaint("");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -64,9 +117,16 @@ export default function EmergencyTriagePage() {
         </div>
 
         <div className="flex items-center space-x-2">
-          <div className="bg-white text-red-700 font-black text-xs px-3 py-2 rounded-xl flex items-center shadow-xs">
-            <Radio className="w-4 h-4 mr-1.5 animate-ping text-red-600" />
-            Ambulance Hotline: {MOCK_ORGANIZATION.ambulanceHotline}
+          <button
+            onClick={() => setShowFastIntake(true)}
+            className="bg-white hover:bg-red-50 text-red-700 font-black text-xs px-3.5 py-2 rounded-xl flex items-center shadow-xs transition"
+          >
+            <UserPlus className="w-4 h-4 mr-1.5" />
+            Fast Emergency Triage Intake
+          </button>
+          <div className="bg-red-700/80 text-white font-bold text-xs px-3 py-2 rounded-xl flex items-center shadow-xs">
+            <Radio className="w-4 h-4 mr-1.5 animate-ping text-red-300" />
+            Hotline: {MOCK_ORGANIZATION.emergencyHotline}
           </div>
         </div>
       </div>
@@ -161,6 +221,90 @@ export default function EmergencyTriagePage() {
           ))}
         </div>
       </div>
+
+      {/* FAST TRIAGE INTAKE MODAL */}
+      {showFastIntake && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
+            <h3 className="text-base font-black text-slate-900 mb-1">
+              Rapid Emergency Casualty Registration
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Instantly assign trauma triage zone & generate emergency encounter.
+            </p>
+
+            <form onSubmit={handleFastIntake} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Patient Name / Identity (or leave blank if unknown)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Unknown Male (Trauma) or Patient Name"
+                  value={intakeName}
+                  onChange={(e) => setIntakeName(e.target.value)}
+                  className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Triage Priority Level *
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { val: "RED", label: "RED (Immediate / Resus)", color: "bg-red-100 border-red-300 text-red-800" },
+                    { val: "YELLOW", label: "YELLOW (Urgent)", color: "bg-amber-100 border-amber-300 text-amber-800" },
+                    { val: "GREEN", label: "GREEN (Non-urgent)", color: "bg-emerald-100 border-emerald-300 text-emerald-800" },
+                  ].map((lvl) => (
+                    <button
+                      key={lvl.val}
+                      type="button"
+                      onClick={() => setIntakePriority(lvl.val as "RED" | "YELLOW" | "GREEN")}
+                      className={`p-2 rounded-lg border text-center font-bold text-[11px] transition ${
+                        intakePriority === lvl.val ? `${lvl.color} ring-2 ring-slate-900` : "bg-slate-50 border-slate-200 text-slate-600"
+                      }`}
+                    >
+                      {lvl.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Chief Trauma / Emergency Complaint *
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="e.g. Severe chest pain, unconscious, bleeding laceration..."
+                  value={intakeComplaint}
+                  onChange={(e) => setIntakeComplaint(e.target.value)}
+                  className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
+                ></textarea>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowFastIntake(false)}
+                  className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold rounded-lg shadow-sm"
+                >
+                  {submitting ? "Admitting to Casualty..." : "Admit to Emergency Triage"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

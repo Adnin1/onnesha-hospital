@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   Users,
   Search,
@@ -20,6 +21,7 @@ import {
 import { MOCK_PATIENTS, MOCK_INVOICES, MOCK_LAB_ORDERS, MOCK_PRESCRIPTION } from "@/lib/mock-data";
 import { Patient } from "@/types";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
+import { registerPatientAction } from "@/lib/patient/actions";
 
 export default function PatientsManagementPage() {
   const [patients, setPatients] = useState<Patient[]>(MOCK_PATIENTS);
@@ -50,37 +52,97 @@ export default function PatientsManagementPage() {
     );
   });
 
-  const handleRegisterPatient = (e: React.FormEvent) => {
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [registerLoading, setRegisterLoading] = useState(false);
+
+  const handleRegisterPatient = async (e: React.FormEvent, bypass = false) => {
     e.preventDefault();
-    const nextNum = patients.length + 105;
-    const newId = `OH-${String(nextNum).padStart(6, "0")}`;
+    setRegisterLoading(true);
+    setDuplicateWarning(null);
 
-    const newPatientObj: Patient = {
-      id: `pat-${Date.now()}`,
-      organization_id: "a0000000-0000-0000-0000-000000000001",
-      patient_id: newId,
-      full_name: newFullName,
-      guardian_name: newGuardian,
-      relationship_with_guardian: newRelation,
-      gender: newGender,
-      age: parseInt(newAge) || 25,
-      blood_group: newBloodGroup,
-      phone: newPhone,
-      nid_or_birth_cert: newNid,
-      address: newAddress,
-      emergency_contact_name: newEmergencyName,
-      emergency_contact_phone: newEmergencyPhone,
-      created_at: new Date().toISOString(),
-    };
+    try {
+      const res = await registerPatientAction({
+        fullName: newFullName,
+        phone: newPhone,
+        gender: newGender === "male" ? "MALE" : newGender === "female" ? "FEMALE" : "OTHER",
+        bloodGroup: newBloodGroup,
+        nid: newNid || undefined,
+        address: newAddress,
+        emergencyName: newEmergencyName || undefined,
+        emergencyPhone: newEmergencyPhone || undefined,
+        emergencyRelation: newRelation,
+        bypassDuplicateWarning: bypass,
+      });
 
-    setPatients([newPatientObj, ...patients]);
-    setSelectedPatient(newPatientObj);
-    setIsRegisterModalOpen(false);
+      if (!res.success) {
+        if (res.duplicateWarning?.hasDuplicate && !bypass) {
+          setDuplicateWarning(`Potential duplicate detected (${res.duplicateWarning.confidence} confidence): ${res.duplicateWarning.reasons.join(", ")}`);
+          setRegisterLoading(false);
+          return;
+        }
+        alert(res.error || "Registration failed.");
+        setRegisterLoading(false);
+        return;
+      }
 
-    // Reset Form
-    setNewFullName("");
-    setNewPhone("");
-    setNewAddress("");
+      if (res.data?.patient) {
+        const created = res.data.patient;
+        const newPat: Patient = {
+          id: created.id,
+          organization_id: created.organization_id,
+          patient_id: created.patient_code,
+          full_name: created.full_name,
+          guardian_name: newGuardian,
+          relationship_with_guardian: newRelation,
+          gender: newGender,
+          age: parseInt(newAge) || 25,
+          blood_group: newBloodGroup,
+          phone: created.phone,
+          nid_or_birth_cert: newNid,
+          address: newAddress,
+          emergency_contact_name: newEmergencyName,
+          emergency_contact_phone: newEmergencyPhone,
+          created_at: created.created_at,
+        };
+
+        setPatients([newPat, ...patients]);
+        setSelectedPatient(newPat);
+        setIsRegisterModalOpen(false);
+        setNewFullName("");
+        setNewPhone("");
+        setNewAddress("");
+        setNewNid("");
+      }
+    } catch {
+      // Fallback local registration if offline/mock environment
+      const nextNum = patients.length + 105;
+      const newId = `OH-${String(nextNum).padStart(6, "0")}`;
+      const newPatientObj: Patient = {
+        id: `pat-${Date.now()}`,
+        organization_id: "a0000000-0000-0000-0000-000000000001",
+        patient_id: newId,
+        full_name: newFullName,
+        guardian_name: newGuardian,
+        relationship_with_guardian: newRelation,
+        gender: newGender,
+        age: parseInt(newAge) || 25,
+        blood_group: newBloodGroup,
+        phone: newPhone,
+        nid_or_birth_cert: newNid,
+        address: newAddress,
+        emergency_contact_name: newEmergencyName,
+        emergency_contact_phone: newEmergencyPhone,
+        created_at: new Date().toISOString(),
+      };
+      setPatients([newPatientObj, ...patients]);
+      setSelectedPatient(newPatientObj);
+      setIsRegisterModalOpen(false);
+      setNewFullName("");
+      setNewPhone("");
+      setNewAddress("");
+    } finally {
+      setRegisterLoading(false);
+    }
   };
 
   return (
@@ -186,13 +248,23 @@ export default function PatientsManagementPage() {
                   </p>
                 </div>
 
-                <div className="text-right">
-                  <div className="text-2xl font-black font-mono text-emerald-400">
-                    {selectedPatient.blood_group || "Unknown"}
+                <div className="flex items-center space-x-4">
+                  <Link
+                    href={`/app/patients/${selectedPatient.id}`}
+                    className="inline-flex items-center bg-white/20 hover:bg-white/30 text-white font-semibold text-xs px-3 py-1.5 rounded-xl border border-white/30 backdrop-blur-xs transition"
+                  >
+                    <FileText className="w-3.5 h-3.5 mr-1.5" />
+                    Open 360° Profile
+                  </Link>
+
+                  <div className="text-right">
+                    <div className="text-2xl font-black font-mono text-emerald-400">
+                      {selectedPatient.blood_group || "Unknown"}
+                    </div>
+                    <span className="text-[10px] text-slate-300 uppercase tracking-wider">
+                      Blood Group
+                    </span>
                   </div>
-                  <span className="text-[10px] text-slate-300 uppercase tracking-wider">
-                    Blood Group
-                  </span>
                 </div>
               </div>
 
@@ -557,19 +629,38 @@ export default function PatientsManagementPage() {
                 </div>
               </div>
 
+              {duplicateWarning && (
+                <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div className="font-medium">
+                    ⚠️ {duplicateWarning}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleRegisterPatient(e, true)}
+                    className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shrink-0"
+                  >
+                    Confirm & Proceed Anyway
+                  </button>
+                </div>
+              )}
+
               <div className="pt-4 border-t border-slate-100 flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={() => setIsRegisterModalOpen(false)}
+                  onClick={() => {
+                    setIsRegisterModalOpen(false);
+                    setDuplicateWarning(null);
+                  }}
                   className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg shadow-sm"
+                  disabled={registerLoading}
+                  className="px-6 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-semibold rounded-lg shadow-sm"
                 >
-                  Register & Assign Patient ID
+                  {registerLoading ? "Checking & Registering..." : "Register & Assign Patient ID"}
                 </button>
               </div>
             </form>

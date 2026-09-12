@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/client";
 
 export interface AuditEntry {
   organizationId: string;
@@ -18,6 +19,22 @@ export interface AuditEntry {
  */
 export async function recordAuditLog(entry: AuditEntry): Promise<void> {
   try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const supabase = createClient();
+      await supabase.from("audit_logs").insert({
+        organization_id: entry.organizationId,
+        user_id: entry.userId || null,
+        action: entry.action,
+        module: entry.module,
+        entity_type: entry.entityType,
+        entity_id: entry.entityId,
+        old_values: entry.oldValues || null,
+        new_values: entry.newValues || null,
+        ip_address: entry.ipAddress || null,
+        user_agent: entry.userAgent || null,
+      });
+      return;
+    }
     const admin = createAdminClient();
     await admin.from("audit_logs").insert({
       organization_id: entry.organizationId,
