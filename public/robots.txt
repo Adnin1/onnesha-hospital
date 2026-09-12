@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /services
+Allow: /departments
+Allow: /doctors
+Allow: /appointment
+Allow: /diagnostic
+Allow: /check-token
+Allow: /contact
+
+# Protect internal hospital operating system from search engine indexing
+Disallow: /app/
+Disallow: /login
+Disallow: /auth/
+
+Sitemap: https://onneshahospital.com/sitemap.xml

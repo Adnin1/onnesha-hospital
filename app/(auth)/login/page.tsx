@@ -24,22 +24,32 @@ export default function LoginPage() {
   const [password, setPassword] = useState("••••••••");
   const [selectedRole, setSelectedRole] = useState<RoleType>("super_admin");
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
 
-    // Save active role and session token in localStorage for client-side demo and SSR cookies
-    if (typeof window !== "undefined") {
-      localStorage.setItem("onnesha_user_role", selectedRole);
-      localStorage.setItem("onnesha_user_name", getRoleDisplayName(selectedRole));
-      document.cookie = `onnesha_role=${selectedRole}; path=/; max-age=86400`;
-    }
+    try {
+      const { createBrowserClientInstance } = await import("@/lib/supabase/browser");
+      const supabase = createBrowserClientInstance();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    setTimeout(() => {
-      setIsLoading(false);
+      if (error) {
+        setErrorMessage(error.message);
+        setIsLoading(false);
+        return;
+      }
+
       router.push("/app/dashboard");
-    }, 600);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Login failed. Please check your credentials.");
+      setIsLoading(false);
+    }
   };
 
   const setDemoRole = (role: RoleType, demoEmail: string) => {
