@@ -31,7 +31,10 @@
 | `pharmacy.purchase` | Ingest supplier purchase orders | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ (Mgr) | ❌ | ❌ |
 | `pharmacy.adjust` | Write-off damaged or expired stock| ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ (Mgr) | ❌ | ❌ |
 | `ipd.admit` | Admit patient and allocate bed | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| `ipd.transfer` | Execute inter-bed/ward transfer | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | `ipd.discharge` | Prepare and sign discharge note | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `emergency.view` | View emergency triage queues | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| `emergency.triage` | Assign casualty triage code (Red/Yel/Grn)| ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | `hr.view` | View employee roster and punches | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `hr.payroll` | Run monthly salary calculations | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `settings.manage` | Modify hospital profile & config | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |

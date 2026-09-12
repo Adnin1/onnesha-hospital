@@ -24,8 +24,11 @@ export const PERMISSIONS = {
   OPD_CONSULT: "opd.consult",
   IPD_VIEW: "ipd.view",
   IPD_ADMIT: "ipd.admit",
+  IPD_TRANSFER: "ipd.transfer",
   IPD_DISCHARGE: "ipd.discharge",
   EMERGENCY_VIEW: "emergency.view",
+  EMERGENCY_CREATE: "emergency.create",
+  EMERGENCY_TRIAGE: "emergency.triage",
 
   // Invoicing & Billing
   BILLING_VIEW: "billing.view",

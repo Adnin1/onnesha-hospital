@@ -30,7 +30,7 @@ In OHMS, application-level `WHERE organization_id = ?` filtering is treated as a
 
 | Policy Category | Target Tables | Enforcement Rule | Description |
 | :--- | :--- | :--- | :--- |
-| **Tenant Data Isolation** | `patients`, `patient_visits`, `appointments`, `invoices`, `payments`, `beds`, `cabins`, `employees` | `organization_id = get_current_org_id()` | Guarantees that Hospital A cannot see or query Hospital B data under any circumstance. |
+| **Tenant Data Isolation** | `patients`, `patient_visits`, `patient_allergies`, `clinical_alerts`, `patient_diagnoses`, `clinical_notes`, `patient_transfers`, `patient_consents`, `patient_merge_requests`, `appointments`, `invoices`, `payments`, `beds`, `cabins`, `employees` | `organization_id = get_current_org_id()` | Guarantees that Hospital A cannot see or query Hospital B data under any circumstance. |
 | **Audit Immutability** | `audit_logs` | `REVOKE UPDATE, DELETE` + `organization_id = get_current_org_id()` | Audit logs can only be inserted or read by permitted staff; cannot be wiped. |
 | **Clinical Privacy** | `prescriptions`, `patient_history`, `diagnostic_results` | `visit_id IN (SELECT id FROM patient_visits WHERE organization_id = get_current_org_id())` | Ensures clinical diagnostic and prescription notes remain strictly within the hospital boundary. |
 | **Inventory Partitioning** | `medicines`, `medicine_batches`, `stock_transactions` | `organization_id = get_current_org_id()` | Pharmacy stock balances and supplier costs are completely isolated per hospital. |

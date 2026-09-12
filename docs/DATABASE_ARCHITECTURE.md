@@ -113,3 +113,4 @@ erDiagram
 | `017_rls_policies.sql` | RLS enablement & tenant boundary policies |
 | `018_indexes.sql` | Multi-tenant composite and Trigram fuzzy search indexes |
 | `019_seed_reference_data.sql` | Tenant Zero (Onnesha Hospital), permissions, system roles, BD departments |
+| `020_phase3_clinical_foundation.sql` | Phase 3 clinical tables (`patient_allergies`, `clinical_alerts`, `patient_diagnoses`, `clinical_notes`, `patient_transfers`, `patient_consents`, `patient_merge_requests`) and atomic sequences |

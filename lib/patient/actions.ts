@@ -955,3 +955,127 @@ export async function dischargePatientAction(params: {
     return { success: false, error: msg };
   }
 }
+
+/**
+ * 11. Patient Intra-Hospital Bed Transfer Action
+ */
+export async function transferPatientAction(params: {
+  visitId: string;
+  patientId: string;
+  fromWardId?: string;
+  toWardId?: string;
+  fromBedId?: string;
+  toBedId: string;
+  reason: string;
+}): Promise<ActionResult<{ transferId: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "Unauthorized session." };
+  }
+
+  try {
+    await requirePermission("ipd.transfer");
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
+  if (!params.reason || params.reason.trim().length < 2) {
+    return { success: false, error: "Reason for bed transfer is required." };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Verify Destination Bed Availability (no two active patients can occupy one bed)
+    const { data: targetBed, error: tbErr } = await supabase
+      .from("beds")
+      .select("id, status, bed_number")
+      .eq("id", params.toBedId)
+      .single();
+
+    if (tbErr || !targetBed) {
+      return { success: false, error: "Destination bed not found." };
+    }
+
+    if (targetBed.status === "OCCUPIED") {
+      return { success: false, error: `Destination bed ${targetBed.bed_number} is already occupied.` };
+    }
+
+    // Insert immutable transfer record
+    const { data: transferRecord, error: trErr } = await supabase
+      .from("patient_transfers")
+      .insert({
+        organization_id: session.organizationId,
+        visit_id: params.visitId,
+        patient_id: params.patientId,
+        from_ward_id: params.fromWardId || null,
+        to_ward_id: params.toWardId || null,
+        from_bed_id: params.fromBedId || null,
+        to_bed_id: params.toBedId,
+        reason: params.reason.trim(),
+        transfer_time: new Date().toISOString(),
+        authorized_by: session.userId,
+      })
+      .select("id")
+      .single();
+
+    if (trErr || !transferRecord) {
+      return { success: false, error: trErr?.message || "Failed to log patient transfer." };
+    }
+
+    // Release old bed assignment if present
+    if (params.fromBedId) {
+      await supabase
+        .from("bed_assignments")
+        .update({ status: "TRANSFERRED", discharged_at: new Date().toISOString() })
+        .eq("visit_id", params.visitId)
+        .eq("bed_id", params.fromBedId)
+        .eq("status", "ACTIVE");
+
+      await supabase
+        .from("beds")
+        .update({ status: "CLEANING_REQUIRED" })
+        .eq("id", params.fromBedId);
+    }
+
+    // Create new active bed assignment
+    await supabase.from("bed_assignments").insert({
+      organization_id: session.organizationId,
+      visit_id: params.visitId,
+      patient_id: params.patientId,
+      bed_id: params.toBedId,
+      assigned_at: new Date().toISOString(),
+      status: "ACTIVE",
+    });
+
+    // Mark new bed as occupied
+    await supabase
+      .from("beds")
+      .update({ status: "OCCUPIED" })
+      .eq("id", params.toBedId);
+
+    // Audit Log
+    await recordAuditLog({
+      userId: session.userId,
+      organizationId: session.organizationId,
+      action: "UPDATE",
+      module: "IPD",
+      entityType: "patient_transfer",
+      entityId: transferRecord.id,
+      newValues: {
+        from_bed_id: params.fromBedId,
+        to_bed_id: params.toBedId,
+        reason: params.reason,
+      },
+    });
+
+    return {
+      success: true,
+      data: { transferId: transferRecord.id },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Patient transfer failed.";
+    return { success: false, error: msg };
+  }
+}

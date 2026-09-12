@@ -14,9 +14,8 @@ The existing prototype UI in `app/(hospital)/*` contains 16 working pages with r
 
 | Phase | Target Module | Existing Mock Source | Target Database Entities | Migration Task |
 | :--- | :--- | :--- | :--- | :--- |
-| **Phase 2** | **Authentication & Tenancy** | Hardcoded role buttons in `/login` | `profiles`, `user_roles`, `organizations` | Connect Supabase Auth, verify RLS session context |
-| **Phase 3** | **Patient Master & Reception** | `MOCK_PATIENTS` in `/app/patients` | `patients`, `patient_contacts`, `patient_visits` | Replace React state array with Supabase Server Actions; hook up search |
-| **Phase 3** | **Appointments & Token Board** | `MOCK_APPOINTMENTS` in `/app/appointments` | `appointments`, `token_counters`, `waiting_queue` | Wire slot booking, concurrency token generation, Realtime queue listener |
+| **Phase 2** | **Authentication & Tenancy** | Hardcoded role buttons in `/login` | `profiles`, `user_roles`, `organizations` | Connect Supabase Auth, verify RLS session context [COMPLETED] |
+| **Phase 3** | **Patient Master, OPD, IPD, Emergency & EMR** | `MOCK_PATIENTS` in `/app/patients`, `/app/opd`, `/app/emergency`, `/app/ipd` | `patients`, `patient_visits`, `vital_signs`, `patient_diagnoses`, `clinical_notes`, `patient_transfers`, `discharge_summaries` | Full server actions, duplicate detection, BD phone canonicalization, IPD bed transfers, discharge summaries, 360 timeline [COMPLETED] |
 | **Phase 4** | **Doctors & OPD Clinic** | `MOCK_DOCTORS` in `/app/doctors` & `/app/opd` | `doctors`, `doctor_schedules`, `prescriptions` | Load active doctor roster, hook up consultation desk and E-Rx saving |
 | **Phase 5** | **Diagnostics & Lab** | `MOCK_LAB_ORDERS` in `/app/lab` | `diagnostic_orders`, `diagnostic_results`, `diagnostic_report_verifications` | Wire sample accessioning barcode, technician entry worklist, pathologist sign |
 | **Phase 6** | **Pharmacy & FIFO Stock** | `MOCK_MEDICINES` in `/app/pharmacy` | `medicines`, `medicine_batches`, `stock_transactions` | Implement FIFO batch deduction at checkout, PO receiving GRN form |

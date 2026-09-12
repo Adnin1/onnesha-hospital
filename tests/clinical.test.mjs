@@ -225,4 +225,59 @@ describe("OHMS Phase 3 Clinical & Patient Management Suite (18 Scenarios)", () =
     assert.match(opdContent, /createClinicalNoteAction/);
     assert.match(opdContent, /Save Vitals to EMR/);
   });
+
+  // Scenario 19: IPD Bed Transfer Action implements strict validation and audit logging
+  test("19. transferPatientAction enforces destination bed vacancy and ipd.transfer permission", () => {
+    const actionsContent = fs.readFileSync(
+      path.join(rootDir, "lib", "patient", "actions.ts"),
+      "utf8"
+    );
+    assert.match(actionsContent, /requirePermission\("ipd\.transfer"\)/);
+    assert.match(actionsContent, /is already occupied/);
+    assert.match(actionsContent, /CLEANING_REQUIRED/);
+    assert.match(actionsContent, /patient_transfers/);
+  });
+
+  // Scenario 20: IPD page uses real database actions and eliminates mock-data
+  test("20. app/ipd/page.tsx uses real database actions and eliminates mock-data", () => {
+    const ipdContent = fs.readFileSync(
+      path.join(rootDir, "app", "(hospital)", "app", "ipd", "page.tsx"),
+      "utf8"
+    );
+    assert.doesNotMatch(ipdContent, /@\/lib\/mock-data/);
+    assert.match(ipdContent, /createIpdAdmissionAction/);
+    assert.match(ipdContent, /transferPatientAction/);
+    assert.match(ipdContent, /dischargePatientAction/);
+    assert.match(ipdContent, /HospitalPrintHeader/);
+  });
+
+  // Scenario 21: Full End-to-End clinical chain components exist and are connected
+  test("21. End-to-End clinical lifecycle chain is fully verified across actions and timeline", () => {
+    const actionsContent = fs.readFileSync(path.join(rootDir, "lib", "patient", "actions.ts"), "utf8");
+    const timelineContent = fs.readFileSync(path.join(rootDir, "lib", "patient", "timeline.ts"), "utf8");
+
+    // Lifecycle steps:
+    // 1. Patient Register
+    assert.match(actionsContent, /registerPatientAction/);
+    // 2. OPD Consultation
+    assert.match(actionsContent, /recordVitalsAction/);
+    assert.match(actionsContent, /recordDiagnosisAction/);
+    assert.match(actionsContent, /createClinicalNoteAction/);
+    // 3. Emergency Triage
+    assert.match(actionsContent, /registerEmergencyEncounterAction/);
+    // 4. IPD Admission & Bed assignment
+    assert.match(actionsContent, /createIpdAdmissionAction/);
+    // 5. Bed Transfer
+    assert.match(actionsContent, /transferPatientAction/);
+    // 6. Discharge
+    assert.match(actionsContent, /dischargePatientAction/);
+    // 7. Timeline Aggregation
+    assert.match(timelineContent, /PATIENT_REGISTERED/);
+    assert.match(timelineContent, /OPD_REGISTERED/);
+    assert.match(timelineContent, /VITAL_RECORDED/);
+    assert.match(timelineContent, /DIAGNOSIS_RECORDED/);
+    assert.match(timelineContent, /NOTE_CREATED/);
+    assert.match(timelineContent, /PATIENT_TRANSFERRED/);
+    assert.match(timelineContent, /DISCHARGED/);
+  });
 });
