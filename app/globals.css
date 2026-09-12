@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --primary: #0284c7;
+  --primary-hover: #0369a1;
+  --primary-dark: #075985;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --border: #e2e8f0;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbars for data tables and logs */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Print Specific Rules for Medical Invoices, Prescriptions and Lab Reports */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+  }
+
+  .no-print,
+  nav,
+  aside,
+  header,
+  footer,
+  button,
+  .print-hide {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-pad {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  @page {
+    margin: 12mm 15mm;
+  }
+}

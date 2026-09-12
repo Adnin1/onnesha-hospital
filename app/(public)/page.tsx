@@ -1,0 +1,352 @@
+import React from "react";
+import Link from "next/link";
+import {
+  Calendar,
+  Clock,
+  Phone,
+  ShieldAlert,
+  Activity,
+  Award,
+  Users,
+  CheckCircle2,
+  Stethoscope,
+  HeartPulse,
+  Baby,
+  Bone,
+  Microscope,
+  ArrowRight,
+} from "lucide-react";
+import { MOCK_DOCTORS, MOCK_ORGANIZATION, MOCK_WAITING_QUEUE } from "@/lib/mock-data";
+import { formatCurrencyBDT } from "@/lib/utils";
+
+export default function HomePage() {
+  return (
+    <div>
+      {/* 1. HERO SECTION */}
+      <section className="relative bg-gradient-to-br from-sky-900 via-sky-800 to-slate-900 text-white overflow-hidden py-16 lg:py-24">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Content */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="inline-flex items-center space-x-2 bg-sky-500/20 border border-sky-400/30 px-3.5 py-1.5 rounded-full text-xs font-medium text-sky-200 backdrop-blur-xs">
+                <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                <span>24/7 Critical Care & Advanced Diagnostics in Dhaka</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
+                Complete Healthcare Excellence for Every Family
+              </h1>
+
+              <p className="text-sm sm:text-base text-sky-100 max-w-2xl leading-relaxed">
+                Welcome to <strong>Onnesha Hospital</strong> ({MOCK_ORGANIZATION.banglaName}). We provide compassionate, patient-first care backed by Bangladesh&apos;s leading medical specialists, modern ICUs, advanced laparoscopic surgery, and accurate digital diagnostics.
+              </p>
+
+              <div className="flex flex-wrap gap-4 pt-2">
+                <Link
+                  href="/appointment"
+                  className="inline-flex items-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-lg transition"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Book Doctor Appointment
+                </Link>
+                <Link
+                  href="/check-token"
+                  className="inline-flex items-center bg-white/10 hover:bg-white/20 text-white font-medium text-sm px-5 py-3.5 rounded-xl border border-white/20 backdrop-blur-xs transition"
+                >
+                  <Clock className="w-4 h-4 mr-2 text-sky-300" />
+                  Check Live Token Status
+                </Link>
+              </div>
+
+              {/* Quick stats strip */}
+              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-sky-700/60 max-w-lg">
+                <div>
+                  <div className="text-2xl font-bold text-white">20+</div>
+                  <div className="text-xs text-sky-200">Senior Specialists</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-white">100+</div>
+                  <div className="text-xs text-sky-200">Beds & Cabins</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-emerald-400">24/7</div>
+                  <div className="text-xs text-sky-200">Emergency & Lab</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Card: Live Token Queue Highlight */}
+            <div className="lg:col-span-5">
+              <div className="bg-white rounded-2xl shadow-2xl p-6 text-slate-900 border border-slate-100">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <h3 className="font-bold text-base text-slate-800">
+                      Live Doctor Token Queue
+                    </h3>
+                  </div>
+                  <span className="text-xs bg-sky-100 text-sky-800 font-semibold px-2 py-0.5 rounded">
+                    Realtime
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-500 mb-4">
+                  Currently serving tokens inside outpatient chambers.
+                </p>
+
+                <div className="space-y-3">
+                  {MOCK_WAITING_QUEUE.slice(0, 4).map((q) => (
+                    <div
+                      key={q.id}
+                      className="p-3 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100"
+                    >
+                      <div>
+                        <div className="text-xs font-semibold text-slate-900">
+                          {q.doctor_name}
+                        </div>
+                        <div className="text-[11px] text-slate-500 flex items-center mt-0.5">
+                          <span className="font-medium text-sky-700 mr-2">
+                            {q.room_number}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-block px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-md">
+                          Token: {q.token_number}
+                        </span>
+                        <span className="block text-[10px] text-slate-400 capitalize mt-0.5">
+                          {q.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 pt-4 border-t border-slate-100">
+                  <Link
+                    href="/check-token"
+                    className="flex items-center justify-center text-xs font-semibold text-sky-700 hover:text-sky-800 w-full py-2 bg-sky-50 rounded-lg hover:bg-sky-100 transition"
+                  >
+                    View All Doctor Chambers & Queues
+                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. 24/7 EMERGENCY TRIAGE BANNER */}
+      <section className="bg-red-600 text-white py-4 px-4 shadow-sm">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
+          <div className="flex items-center space-x-3 text-center md:text-left">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <ShieldAlert className="w-6 h-6 text-white animate-bounce" />
+            </div>
+            <div>
+              <h2 className="font-bold text-sm sm:text-base tracking-wide">
+                24-Hour Emergency, Trauma & Cardiac Resuscitation Care
+              </h2>
+              <p className="text-xs text-red-100">
+                Specialist emergency medical officers, ICU support, and cardiac life support available right now.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <a
+              href={`tel:${MOCK_ORGANIZATION.emergencyHotline}`}
+              className="inline-flex items-center bg-white text-red-700 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition"
+            >
+              <Phone className="w-3.5 h-3.5 mr-1.5 text-red-600" />
+              Call {MOCK_ORGANIZATION.emergencyHotline}
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. KEY CLINICAL SPECIALTIES */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="text-xs font-bold text-sky-600 tracking-wider uppercase">
+              Clinical Excellence
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-2">
+              Our Core Medical Departments
+            </h2>
+            <p className="text-sm text-slate-600 mt-2">
+              Equipped with modern medical infrastructure and compassionate healthcare professionals.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { icon: Stethoscope, title: "Medicine", desc: "Diabetes & General", color: "text-blue-600 bg-blue-50" },
+              { icon: HeartPulse, title: "Cardiology", desc: "Heart & ECG", color: "text-rose-600 bg-rose-50" },
+              { icon: Users, title: "Gynecology", desc: "Maternity & Obs", color: "text-pink-600 bg-pink-50" },
+              { icon: Baby, title: "Pediatrics", desc: "Child Healthcare", color: "text-amber-600 bg-amber-50" },
+              { icon: Bone, title: "Orthopedic", desc: "Joint & Trauma", color: "text-emerald-600 bg-emerald-50" },
+              { icon: Microscope, title: "Diagnostic", desc: "Pathology & USG", color: "text-purple-600 bg-purple-50" },
+            ].map((spec, i) => {
+              const Icon = spec.icon;
+              return (
+                <div
+                  key={i}
+                  className="p-5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md hover:border-sky-200 transition text-center group cursor-pointer"
+                >
+                  <div className={`w-12 h-12 rounded-xl mx-auto flex items-center justify-center mb-3 ${spec.color}`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-800 group-hover:text-sky-600 transition">
+                    {spec.title}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-1">{spec.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. FEATURED DOCTORS & SPECIALISTS */}
+      <section className="py-16 bg-slate-50 border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
+            <div>
+              <span className="text-xs font-bold text-sky-600 tracking-wider uppercase">
+                Experienced Consultants
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">
+                Meet Our Senior Doctors
+              </h2>
+            </div>
+            <Link
+              href="/doctors"
+              className="inline-flex items-center text-xs font-semibold text-sky-700 hover:text-sky-800 bg-white border border-slate-200 px-4 py-2 rounded-lg hover:border-sky-300 transition shadow-2xs"
+            >
+              View All Doctors & Visiting Hours
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {MOCK_DOCTORS.map((doc) => (
+              <div
+                key={doc.id}
+                className="bg-white rounded-2xl border border-slate-100 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between"
+              >
+                <div className="p-5">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-14 h-14 rounded-full bg-sky-100 border-2 border-sky-200 flex items-center justify-center font-bold text-sky-800 text-lg shrink-0">
+                      {doc.full_name.split(" ").slice(1, 3).map(n => n[0]).join("")}
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded">
+                        {doc.department_name}
+                      </span>
+                      <h3 className="font-bold text-slate-900 text-sm mt-1 leading-snug">
+                        {doc.full_name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <p className="text-xs font-medium text-slate-700 mb-1">
+                    {doc.designation}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mb-3 line-clamp-2">
+                    {doc.degrees}
+                  </p>
+
+                  <div className="text-[11px] space-y-1 py-2 border-t border-slate-100 text-slate-600">
+                    <div className="flex justify-between">
+                      <span>BMDC Reg:</span>
+                      <span className="font-medium text-slate-800">{doc.bmdc_reg_number}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Chamber:</span>
+                      <span className="font-medium text-slate-800">{doc.room_number}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Consultation Fee:</span>
+                      <span className="font-bold text-emerald-700">{formatCurrencyBDT(doc.opd_fee)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 border-t border-slate-100">
+                  <Link
+                    href={`/appointment?doctor=${doc.id}`}
+                    className="w-full text-center block py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition"
+                  >
+                    Book Serial / Token
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. WHY ONNESHA HOSPITAL */}
+      <section className="py-16 bg-white border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <span className="text-xs font-bold text-sky-600 tracking-wider uppercase">
+                Patient-Centered Care
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-2">
+                Why Patients Trust Onnesha Hospital
+              </h2>
+              <p className="text-sm text-slate-600 mt-3 leading-relaxed">
+                We combine experienced clinical governance, hygienic inpatient facilities, and 100% transparent billing without hidden costs.
+              </p>
+
+              <div className="space-y-4 mt-6">
+                {[
+                  { title: "Zero Paperwork Waiting", desc: "Automated digital tokens, SMS updates to patient phones, and realtime display screens." },
+                  { title: "Advanced Diagnostic Lab", desc: "Fully automated biochemistry and hematology analyzers with same-day verified reports." },
+                  { title: "Transparent Billing & Receipts", desc: "Computer-generated thermal slips, detailed breakdown for every test and medicine, no surprises." },
+                  { title: "Clean & Spacious Inpatient Cabins", desc: "Air-conditioned VIP cabins, Deluxe rooms, and sterile post-operative wards with 24/7 dedicated nursing." },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-start space-x-3">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800">{item.title}</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-sky-900 text-white rounded-3xl p-8 shadow-xl relative overflow-hidden">
+              <div className="space-y-4 relative z-10">
+                <span className="text-xs uppercase tracking-wider font-semibold text-sky-300">
+                  Online Services
+                </span>
+                <h3 className="text-2xl font-bold">
+                  Need a Doctor Appointment Today?
+                </h3>
+                <p className="text-xs text-sky-100 leading-relaxed">
+                  Book your serial online in 60 seconds. You will receive an instant Token number and SMS reminder on your phone.
+                </p>
+                <div className="pt-2">
+                  <Link
+                    href="/appointment"
+                    className="inline-flex items-center bg-white text-sky-900 hover:bg-sky-50 font-bold text-xs px-5 py-3 rounded-xl shadow-md transition"
+                  >
+                    <Calendar className="w-4 h-4 mr-2 text-sky-700" />
+                    Start Appointment Booking
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

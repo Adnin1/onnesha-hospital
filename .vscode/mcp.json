@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "cloudflare-docs": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@cloudflare/mcp-server-cloudflare"
+      ]
+    },
+    "cloudflare-bindings": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@cloudflare/mcp-server-cloudflare-bindings"
+      ]
+    }
+  }
+}
