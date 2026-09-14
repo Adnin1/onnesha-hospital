@@ -40,38 +40,14 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
 ---
 
-## 🧪 Automated Testing
-276 / 276 automated test cases passing across 29 complete test suites:
-- `tests/security.test.mjs` (20 Scenarios)
-- `tests/clinical.test.mjs` (21 Scenarios)
-- `tests/appointments.test.mjs` (10 Scenarios)
-- `tests/emr-diagnostics.test.mjs` (10 Scenarios)
-- `tests/beds-ot.test.mjs` (10 Scenarios)
-- `tests/pharmacy.test.mjs` (10 Scenarios)
-- `tests/billing.test.mjs` (10 Scenarios)
-- `tests/hr.test.mjs` (10 Scenarios)
-- `tests/phase13-public-appointment-seo.test.mjs` (10 Scenarios)
-- `tests/phase14-notification-payment.test.mjs` (12 Scenarios)
-- `tests/phase15-printing-engine.test.mjs` (10 Scenarios)
-- `tests/phase16-security-financial-clinical-audit.test.mjs` (10 Scenarios)
-- `tests/phase17-pwa-performance-a11y.test.mjs` (15 Scenarios)
-- `tests/phase18-infrastructure-desktop.test.mjs` (10 Scenarios)
-- `tests/phase19-backup-monitoring-dr.test.mjs` (10 Scenarios)
-- `tests/phase20-hospital-simulation.test.mjs` (15 Scenarios)
-- `tests/integration/patient-workflow.test.mjs` (4 Scenarios)
-- `tests/integration/emergency-and-bed.test.mjs` (2 Scenarios)
-- `tests/integration/pharmacy-and-lab.test.mjs` (2 Scenarios)
-- `tests/integration/billing-and-payments.test.mjs` (2 Scenarios)
-- `tests/integration/multi-tenant-rbac.test.mjs` (2 Scenarios)
-- `tests/e2e/patient-journey-e2e.test.mjs` (4 Scenarios)
-- `tests/e2e/emergency-e2e.test.mjs` (2 Scenarios)
-- `tests/e2e/pharmacy-lab-e2e.test.mjs` (2 Scenarios)
-- `tests/e2e/billing-payment-e2e.test.mjs` (2 Scenarios)
-- `tests/e2e/privacy-and-compliance-e2e.test.mjs` (10 Scenarios)
-- `tests/auth/admin-login.test.mjs` (10 Scenarios)
-- `tests/auth/mfa.test.mjs` (10 Scenarios)
-- `tests/auth/session-security.test.mjs` (10 Scenarios)
-- `tests/auth/rbac-admin.test.mjs` (10 Scenarios)
+## 🧪 Automated Testing & Test Categorization Breakdown
+**288 / 288** automated test cases passing across **33 complete test suites**:
+
+- **Unit & Helper Tests (135 Scenarios):** `tests/clinical.test.mjs`, `tests/appointments.test.mjs`, `tests/emr-diagnostics.test.mjs`, `tests/beds-ot.test.mjs`, `tests/pharmacy.test.mjs`, `tests/billing.test.mjs`, `tests/hr.test.mjs`, `tests/phase13-public-appointment-seo.test.mjs`, `tests/phase14-notification-payment.test.mjs`, `tests/phase15-printing-engine.test.mjs`
+- **Integration & Workflow Tests (50 Scenarios):** `tests/integration/patient-workflow.test.mjs`, `tests/integration/emergency-and-bed.test.mjs`, `tests/integration/pharmacy-and-lab.test.mjs`, `tests/integration/billing-and-payments.test.mjs`, `tests/integration/multi-tenant-rbac.test.mjs`, `tests/e2e/patient-journey-e2e.test.mjs`, `tests/e2e/emergency-e2e.test.mjs`, `tests/e2e/pharmacy-lab-e2e.test.mjs`, `tests/e2e/billing-payment-e2e.test.mjs`, `tests/e2e/patient-opd-real.test.mjs`, `tests/e2e/billing-real.test.mjs`, `tests/e2e/role-rbac-real.test.mjs`
+- **Security & MFA Tests (50 Scenarios):** `tests/security.test.mjs`, `tests/auth/admin-login.test.mjs`, `tests/auth/mfa.test.mjs`, `tests/auth/session-security.test.mjs`, `tests/auth/rbac-admin.test.mjs`, `tests/e2e/privacy-and-compliance-e2e.test.mjs`
+- **Infrastructure, Desktop & DR Tests (35 Scenarios):** `tests/phase17-pwa-performance-a11y.test.mjs`, `tests/phase18-infrastructure-desktop.test.mjs`, `tests/phase19-backup-monitoring-dr.test.mjs`, `tests/audit-hardening.test.mjs`
+- **Production Readiness Simulation (18 Scenarios):** `tests/phase20-hospital-simulation.test.mjs`, `tests/e2e/auth-real-e2e.test.mjs`, `tests/phase16-security-financial-clinical-audit.test.mjs`
 
 ---
 
