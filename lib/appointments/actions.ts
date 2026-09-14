@@ -100,6 +100,10 @@ export async function createDoctorAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
+  if (!params.fullName?.trim() || !params.specialization?.trim() || !params.bmdcRegNumber?.trim()) {
+    return { success: false, error: "Full name, specialization, and BMDC registration number are required." };
+  }
+
   try {
     const supabase = await createClient();
 
@@ -119,12 +123,12 @@ export async function createDoctorAction(params: {
       .insert({
         organization_id: session.organizationId,
         department_id: deptId,
-        full_name: params.fullName,
-        specialization: params.specialization,
-        bmdc_reg_number: params.bmdcRegNumber,
-        phone: params.phone || "01700000000",
-        opd_fee: params.consultationFee || 800,
-        room_number: params.roomNumber || "Chamber 101",
+        full_name: params.fullName.trim(),
+        specialization: params.specialization.trim(),
+        bmdc_reg_number: params.bmdcRegNumber.trim(),
+        phone: params.phone?.trim() || "",
+        opd_fee: params.consultationFee ?? 800,
+        room_number: params.roomNumber?.trim() || "Chamber",
         is_active: true,
       })
       .select("*, departments(name)")
@@ -166,7 +170,7 @@ export async function createDoctorAction(params: {
  */
 export async function createDoctorScheduleAction(params: {
   doctorId: string;
-  dayOfWeek: number;
+  dayOfWeek: number | string;
   startTime: string;
   endTime: string;
   maxPatients?: number;
@@ -178,8 +182,18 @@ export async function createDoctorScheduleAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
+  if (params.endTime <= params.startTime) {
+    return { success: false, error: "Invalid schedule: End time must be strictly after start time." };
+  }
+
+  if (params.maxPatients !== undefined && params.maxPatients <= 0) {
+    return { success: false, error: "Invalid capacity: Max patients must be greater than 0." };
+  }
+
   try {
     const supabase = await createClient();
+    const isPublishedState = params.isPublished ?? true;
+
     const { data: sched, error } = await supabase
       .from("doctor_schedules")
       .insert({
@@ -188,9 +202,9 @@ export async function createDoctorScheduleAction(params: {
         day_of_week: params.dayOfWeek,
         start_time: params.startTime,
         end_time: params.endTime,
-        max_patients: params.maxPatients || 30,
-        room_number: params.roomNumber || "Chamber 101",
-        is_active: true,
+        max_tokens: params.maxPatients || 30,
+        room_number: params.roomNumber || "Chamber",
+        is_active: isPublishedState,
       })
       .select()
       .single();
@@ -206,7 +220,7 @@ export async function createDoctorScheduleAction(params: {
       module: "APPOINTMENT",
       entityType: "doctor_schedule",
       entityId: sched.id,
-      newValues: params,
+      newValues: { ...params, isPublished: isPublishedState },
     });
 
     return { success: true, data: { schedule: sched as unknown as DoctorScheduleRecord } };
@@ -288,14 +302,20 @@ export async function bookAppointmentAction(params: {
       return { success: false, error: apptError?.message || "Failed to book appointment" };
     }
 
-    await supabase.from("waiting_queue").insert({
+    const { error: queueErr } = await supabase.from("waiting_queue").insert({
       organization_id: session.organizationId,
       appointment_id: appt.id,
       doctor_id: params.doctorId,
-      room_number: doctor.room_number || "Chamber 101",
+      room_number: doctor.room_number || "Chamber",
       token_number: nextToken,
       queue_status: "WAITING",
     });
+
+    if (queueErr) {
+      // Rollback appointment creation to prevent orphan record
+      await supabase.from("appointments").delete().eq("id", appt.id);
+      return { success: false, error: "Failed to allocate queue token: " + queueErr.message };
+    }
 
     await recordAuditLog({
       organizationId: session.organizationId,

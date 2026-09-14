@@ -250,7 +250,7 @@ export default function AppointmentBookingPage() {
                 <input
                   type="date"
                   value={appointmentDate}
-                  min="2026-09-12"
+                  min={new Date().toISOString().split("T")[0]}
                   onChange={(e) => setAppointmentDate(e.target.value)}
                   className="w-full p-2.5 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
                 />
