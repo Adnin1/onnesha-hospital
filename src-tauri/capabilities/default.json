@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.tauri.app/config/capability/1.0.0",
+  "identifier": "default",
+  "description": "Default security capabilities for Onnesha Hospital Desktop Client",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-maximize"
+  ]
+}
