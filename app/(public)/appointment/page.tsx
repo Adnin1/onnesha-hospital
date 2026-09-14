@@ -36,12 +36,13 @@ export default function AppointmentBookingPage() {
   const [loadingSchedules, setLoadingSchedules] = useState(false);
 
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
+  const [selectedScheduleId, setSelectedScheduleId] = useState<string>("");
   const [appointmentDate, setAppointmentDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     return d.toISOString().split("T")[0];
   });
-  const [timeSlot, setTimeSlot] = useState("Daily Regular Chamber (05:00 PM - 08:00 PM)");
+  const [timeSlot, setTimeSlot] = useState("");
 
   // Patient Info Form
   const [fullName, setFullName] = useState("");
@@ -85,10 +86,12 @@ export default function AppointmentBookingPage() {
       if (isMounted) {
         if (res.success && res.schedules.length > 0) {
           setSchedules(res.schedules);
+          setSelectedScheduleId(res.schedules[0].id);
           setTimeSlot(res.schedules[0].slot_label);
         } else {
           setSchedules([]);
-          setTimeSlot("Daily Regular Chamber (05:00 PM - 08:00 PM)");
+          setSelectedScheduleId("");
+          setTimeSlot("");
         }
         setLoadingSchedules(false);
       }
@@ -103,8 +106,8 @@ export default function AppointmentBookingPage() {
 
   const handleBookAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !phone.trim()) {
-      alert("Please provide patient name and contact phone number.");
+    if (!fullName.trim() || !phone.trim() || !selectedScheduleId) {
+      alert("Please select a published schedule slot, patient name, and contact phone number.");
       return;
     }
 
@@ -113,6 +116,7 @@ export default function AppointmentBookingPage() {
 
     const res = await bookOnlineAppointmentAction({
       doctorId: selectedDoctor?.id || selectedDoctorId,
+      scheduleId: selectedScheduleId,
       appointmentDate,
       patientName: fullName.trim(),
       patientPhone: phone.trim(),
@@ -288,12 +292,16 @@ export default function AppointmentBookingPage() {
                   Available Visiting Hours / Chamber Slot
                 </label>
                 <div className="space-y-2">
-                  {schedules.length > 0 ? (
+                  {loadingSchedules ? (
+                    <div className="p-3 text-xs text-slate-500 flex items-center">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> Loading schedules...
+                    </div>
+                  ) : schedules.length > 0 ? (
                     schedules.map((sched) => (
                       <label
                         key={sched.id}
                         className={`flex items-center p-2.5 rounded-lg border text-xs cursor-pointer transition ${
-                          timeSlot === sched.slot_label
+                          selectedScheduleId === sched.id
                             ? "border-sky-600 bg-sky-50/50 font-semibold text-sky-900"
                             : "border-slate-200 hover:bg-slate-50 text-slate-700"
                         }`}
@@ -301,8 +309,11 @@ export default function AppointmentBookingPage() {
                         <input
                           type="radio"
                           name="slot"
-                          checked={timeSlot === sched.slot_label}
-                          onChange={() => setTimeSlot(sched.slot_label)}
+                          checked={selectedScheduleId === sched.id}
+                          onChange={() => {
+                            setSelectedScheduleId(sched.id);
+                            setTimeSlot(sched.slot_label);
+                          }}
                           className="mr-2 text-sky-600 focus:ring-sky-500"
                         />
                         <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
@@ -310,10 +321,10 @@ export default function AppointmentBookingPage() {
                       </label>
                     ))
                   ) : (
-                    <label className="flex items-center p-2.5 rounded-lg border text-xs bg-sky-50/50 border-sky-600 font-semibold text-sky-900">
-                      <Clock className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
-                      Regular Published Chamber Hours (05:00 PM - 08:00 PM)
-                    </label>
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-center space-x-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>No active published schedule available for this doctor on the selected date. Please select another doctor.</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -328,8 +339,9 @@ export default function AppointmentBookingPage() {
                 Back
               </button>
               <button
+                disabled={!selectedScheduleId || loadingSchedules}
                 onClick={() => setStep(3)}
-                className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-6 py-2.5 rounded-lg shadow-sm transition"
+                className="inline-flex items-center bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-semibold text-xs px-6 py-2.5 rounded-lg shadow-sm transition"
               >
                 Continue to Patient Info
                 <ArrowRight className="w-3.5 h-3.5 ml-2" />

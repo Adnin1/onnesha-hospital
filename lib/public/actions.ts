@@ -70,6 +70,7 @@ export async function getPublicDoctorsAction(): Promise<{
       `)
       .eq("organization_id", HOSPITAL_METADATA.id)
       .eq("is_active", true)
+      .or("is_public.eq.true,is_public.is.null")
       .order("full_name", { ascending: true });
 
     if (error) {
@@ -136,10 +137,12 @@ export async function getPublicDoctorSchedulesAction(doctorId: string): Promise<
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("doctor_schedules")
-      .select("id, day_of_week, start_time, end_time, max_tokens, room_number")
+      .select("id, day_of_week, start_time, end_time, max_tokens, room_number, doctors!inner(is_active, is_public)")
       .eq("organization_id", HOSPITAL_METADATA.id)
       .eq("doctor_id", doctorId)
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .eq("doctors.is_active", true)
+      .or("is_public.eq.true,is_public.is.null", { foreignTable: "doctors" });
 
     if (error) {
       return { success: false, schedules: [], error: error.message };
@@ -215,10 +218,11 @@ export async function getPublicDepartmentsAction(): Promise<{
 
 /**
  * 3. Book Public Online Appointment
- * Uses atomic backend RPC book_online_appointment to ensure concurrency safety.
+ * Uses atomic backend RPC book_online_appointment with mandatory scheduleId & concurrency lock.
  */
 export async function bookOnlineAppointmentAction(params: {
   doctorId: string;
+  scheduleId: string;
   appointmentDate: string;
   patientName: string;
   patientPhone: string;
@@ -226,10 +230,10 @@ export async function bookOnlineAppointmentAction(params: {
   patientAge?: number;
   notes?: string;
 }): Promise<PublicBookingResult> {
-  const { doctorId, appointmentDate, patientName, patientPhone, patientGender, patientAge, notes } = params;
+  const { doctorId, scheduleId, appointmentDate, patientName, patientPhone, patientGender, patientAge, notes } = params;
 
-  if (!doctorId || !appointmentDate || !patientName || !patientPhone) {
-    return { success: false, error: "Doctor, appointment date, patient name, and valid phone are required." };
+  if (!doctorId || !scheduleId || !appointmentDate || !patientName || !patientPhone) {
+    return { success: false, error: "Doctor, published schedule slot, appointment date, patient name, and valid phone are required." };
   }
 
   const normalizedPhone = normalizeBDPhone(patientPhone);
@@ -240,10 +244,11 @@ export async function bookOnlineAppointmentAction(params: {
   try {
     const supabase = await createClient();
 
-    // Call concurrency-safe PostgreSQL RPC
+    // Call concurrency-safe PostgreSQL RPC with authoritative p_schedule_id
     const { data: rpcRes, error: rpcErr } = await supabase.rpc("book_online_appointment", {
       p_org_id: HOSPITAL_METADATA.id,
       p_doctor_id: doctorId,
+      p_schedule_id: scheduleId,
       p_appointment_date: appointmentDate,
       p_patient_name: patientName.trim(),
       p_patient_phone: normalizedPhone,

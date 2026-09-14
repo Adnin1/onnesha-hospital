@@ -47,18 +47,23 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
     let mfaFactorsCount = 0;
 
     try {
-      const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-      if (aalData) {
+      const { data: aalData, error: aalErr } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aalData && !aalErr) {
         aalLevel = aalData.currentLevel as "aal1" | "aal2";
         nextAalLevel = aalData.nextLevel as "aal1" | "aal2";
+      } else {
+        aalLevel = null;
       }
 
-      const { data: factorData } = await supabase.auth.mfa.listFactors();
-      if (factorData && factorData.all) {
+      const { data: factorData, error: factorErr } = await supabase.auth.mfa.listFactors();
+      if (factorData && factorData.all && !factorErr) {
         mfaFactorsCount = factorData.all.filter((f) => f.status === "verified").length;
+      } else {
+        mfaFactorsCount = 0;
       }
     } catch {
-      // Fallback if MFA API is unavailable
+      aalLevel = null;
+      mfaFactorsCount = 0;
     }
 
     // Retrieve profile from database

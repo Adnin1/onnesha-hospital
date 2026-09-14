@@ -90,6 +90,8 @@ export async function createDoctorAction(params: {
   fullName: string;
   specialization: string;
   bmdcRegNumber: string;
+  degrees?: string;
+  designation?: string;
   phone?: string;
   consultationFee?: number;
   departmentId?: string;
@@ -100,8 +102,18 @@ export async function createDoctorAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
-  if (!params.fullName?.trim() || !params.specialization?.trim() || !params.bmdcRegNumber?.trim()) {
-    return { success: false, error: "Full name, specialization, and BMDC registration number are required." };
+  if (
+    !params.fullName?.trim() ||
+    !params.specialization?.trim() ||
+    !params.bmdcRegNumber?.trim() ||
+    !params.roomNumber?.trim() ||
+    params.consultationFee === undefined ||
+    params.consultationFee < 0
+  ) {
+    return {
+      success: false,
+      error: "Full name, specialization, BMDC reg number, room number, and valid consultation fee are required.",
+    };
   }
 
   try {
@@ -126,9 +138,11 @@ export async function createDoctorAction(params: {
         full_name: params.fullName.trim(),
         specialization: params.specialization.trim(),
         bmdc_reg_number: params.bmdcRegNumber.trim(),
-        phone: params.phone?.trim() || "",
-        opd_fee: params.consultationFee ?? 800,
-        room_number: params.roomNumber?.trim() || "Chamber",
+        degrees: params.degrees?.trim() || "MBBS",
+        designation: params.designation?.trim() || "Medical Officer",
+        phone: params.phone?.trim() || null,
+        opd_fee: params.consultationFee,
+        room_number: params.roomNumber.trim(),
         is_active: true,
       })
       .select("*, departments(name)")
