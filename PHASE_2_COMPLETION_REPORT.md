@@ -204,13 +204,6 @@ Phase 2 (Production Foundation) is fully implemented and audited. Real Supabase 
 
 ---
 
-## 30. Exact Next Phase
-**PHASE 3: CORE CLINICAL OPERATIONS & PATIENT WORKFLOWS**
-- Unique Patient Identification (HN / MRN generation)
-- NID & Phone Duplicate Detection Hooks
-- Patient Master Record & 360° Profile
-- Visit Timeline Architecture
-- OPD Consultation Workflow & Token Queue
-- IPD Admission, Transfer & Bed Allocation
-- 24/7 Emergency Triage Foundation
-- Electronic Medical Records (EMR) & Digital Prescription Engine
+## 30. Next Phase Status
+**PHASE 3: CORE CLINICAL OPERATIONS & PATIENT WORKFLOWS — COMPLETED**
+Phase 3 has been fully implemented and verified in the repository. See [`PHASE_3_COMPLETION_REPORT.md`](./PHASE_3_COMPLETION_REPORT.md) for the complete implementation details, migrations (`020_phase3_clinical_foundation.sql`), clinical RLS policies, Server Actions, and 101 passing tests.
