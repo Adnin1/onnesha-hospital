@@ -313,7 +313,14 @@ export async function dispensePharmacySaleAction(params: {
 
     const newStock = batch.current_stock - params.quantity;
     const totalAmount = Number((batch.mrp * params.quantity).toFixed(2));
-    const saleNumber = `PH-SL-${Date.now().toString().slice(-6)}`;
+
+    const { data: saleNumData, error: saleNumErr } = await supabase.rpc("generate_pharmacy_sale_number", {
+      p_org_id: session.organizationId,
+    });
+    if (saleNumErr || !saleNumData) {
+      return { success: false, error: saleNumErr?.message || "Failed to generate sequence-backed pharmacy sale number." };
+    }
+    const saleNumber = saleNumData as string;
 
     // 2. Deduct Batch Stock
     await supabase

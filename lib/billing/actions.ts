@@ -163,7 +163,13 @@ export async function createInvoiceAction(params: {
       status = "PARTIAL";
     }
 
-    const invoiceNumber = `OH-INV-${Date.now().toString().slice(-6)}`;
+    const { data: invNumData, error: invNumErr } = await supabase.rpc("generate_invoice_number", {
+      p_org_id: session.organizationId,
+    });
+    if (invNumErr || !invNumData) {
+      return { success: false, error: invNumErr?.message || "Failed to generate sequence-backed invoice number." };
+    }
+    const invoiceNumber = invNumData as string;
 
     // 1. Insert Invoice Header
     const { data: inv, error: invErr } = await supabase
@@ -209,7 +215,13 @@ export async function createInvoiceAction(params: {
     // 3. Insert Initial Payment if collected
     const savedPayments: PaymentRecord[] = [];
     if (paid > 0) {
-      const receiptNumber = `OH-RCT-${Date.now().toString().slice(-6)}`;
+      const { data: rctNumData, error: rctNumErr } = await supabase.rpc("generate_receipt_number", {
+        p_org_id: session.organizationId,
+      });
+      if (rctNumErr || !rctNumData) {
+        return { success: false, error: rctNumErr?.message || "Failed to generate receipt number." };
+      }
+      const receiptNumber = rctNumData as string;
       const { data: pmt } = await supabase
         .from("payments")
         .insert({
@@ -302,12 +314,26 @@ export async function collectPaymentAction(params: {
       return { success: false, error: "Cannot collect payment on a voided invoice." };
     }
 
+    if (params.amount > Number(inv.due_amount)) {
+      return {
+        success: false,
+        error: `Payment amount (${params.amount}) exceeds outstanding invoice due (${inv.due_amount}). Overpayment is not permitted.`,
+      };
+    }
+
     const newPaid = Number(inv.paid_amount) + params.amount;
     const newDue = Math.max(0, Number(inv.grand_total) - newPaid);
     const newStatus: InvoiceRecord["status"] = newDue === 0 ? "PAID" : "PARTIAL";
 
     // 1. Insert Payment
-    const receiptNumber = `OH-RCT-${Date.now().toString().slice(-6)}`;
+    const { data: rctNumData, error: rctNumErr } = await supabase.rpc("generate_receipt_number", {
+      p_org_id: session.organizationId,
+    });
+    if (rctNumErr || !rctNumData) {
+      return { success: false, error: rctNumErr?.message || "Failed to generate receipt number." };
+    }
+    const receiptNumber = rctNumData as string;
+
     const { data: pmt, error: pmtErr } = await supabase
       .from("payments").insert({
         organization_id: session.organizationId,

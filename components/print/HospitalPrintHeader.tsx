@@ -1,5 +1,5 @@
 import React from "react";
-import { MOCK_ORGANIZATION } from "@/lib/mock-data";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 
 interface HospitalPrintHeaderProps {
   documentTitle: string;
@@ -23,16 +23,16 @@ export function HospitalPrintHeader({
           </div>
           <div>
             <h1 className="text-xl font-bold uppercase tracking-wide text-sky-950">
-              {MOCK_ORGANIZATION.name}
+              {HOSPITAL_METADATA.name}
             </h1>
             <p className="text-xs text-sky-800 font-medium">
-              {MOCK_ORGANIZATION.banglaName}
+              {HOSPITAL_METADATA.banglaName}
             </p>
             <p className="text-xs text-slate-600 mt-0.5">
-              {MOCK_ORGANIZATION.address} | Hotline: {MOCK_ORGANIZATION.phone} | Emergency: {MOCK_ORGANIZATION.emergencyHotline}
+              {HOSPITAL_METADATA.address} | Hotline: {HOSPITAL_METADATA.phone} | Emergency: {HOSPITAL_METADATA.emergencyHotline}
             </p>
             <p className="text-[10px] text-slate-500">
-              Govt. Reg No: {MOCK_ORGANIZATION.regNo}
+              Govt. Reg No: {HOSPITAL_METADATA.regNo}
             </p>
           </div>
         </div>
@@ -65,7 +65,7 @@ export function HospitalPrintFooter() {
     <div className="mt-8 pt-4 border-t border-slate-300 text-[11px] text-slate-500 flex justify-between items-center">
       <div>
         <p>This is a computer-generated official medical document.</p>
-        <p>For report verification or emergency, call: {MOCK_ORGANIZATION.emergencyHotline}</p>
+        <p>For report verification or emergency, call: {HOSPITAL_METADATA.emergencyHotline}</p>
       </div>
       <div className="text-right">
         <div className="w-32 border-b border-slate-400 mb-1"></div>

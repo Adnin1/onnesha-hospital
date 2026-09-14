@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Radio,
   AlertOctagon,
@@ -10,94 +10,123 @@ import {
   Activity,
   UserPlus,
   CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
-import { registerEmergencyEncounterAction } from "@/lib/patient/actions";
+import { registerEmergencyEncounterAction, getEmergencyCasesAction } from "@/lib/patient/actions";
+
+interface EmergencyCaseItem {
+  id: string;
+  code: string;
+  name: string;
+  age: string;
+  severity: "RED" | "YELLOW" | "GREEN";
+  condition: string;
+  time: string;
+  assignedDoctor: string;
+}
 
 export default function EmergencyTriagePage() {
-  const [emergencyCases, setEmergencyCases] = useState([
-    {
-      id: "em-1",
-      code: "EM-901",
-      name: "Unknown Male (RTA / Trauma)",
-      age: "Approx 30 Y",
-      severity: "RED",
-      condition: "Road accident severe head laceration, low BP (80/50)",
-      time: "10 mins ago",
-      assignedDoctor: "Dr. On-Duty Trauma Surgeon",
-    },
-    {
-      id: "em-2",
-      code: "EM-902",
-      name: "Mrs. Shahanara Begum",
-      age: "62 Y",
-      severity: "RED",
-      condition: "Severe retrosternal chest pain with profuse sweating (Suspected Acute MI)",
-      time: "25 mins ago",
-      assignedDoctor: "Dr. Tanvir Ahmed (Cardiology)",
-    },
-    {
-      id: "em-3",
-      code: "EM-903",
-      name: "Md. Tanvir Hossain",
-      age: "24 Y",
-      severity: "YELLOW",
-      condition: "Acute severe right iliac fossa pain (Suspected Appendicitis)",
-      time: "40 mins ago",
-      assignedDoctor: "Emergency Medical Officer",
-    },
-  ]);
-
+  const [emergencyCases, setEmergencyCases] = useState<EmergencyCaseItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showFastIntake, setShowFastIntake] = useState(false);
   const [intakeName, setIntakeName] = useState("");
   const [intakePriority, setIntakePriority] = useState<"RED" | "YELLOW" | "GREEN">("RED");
   const [intakeComplaint, setIntakeComplaint] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const fetchEmergencyRecords = useCallback(async () => {
+    try {
+      const res = await getEmergencyCasesAction();
+      if (res.success && res.data) {
+        interface RawEmergencyVisit {
+          id: string;
+          visit_number: string;
+          chief_complaint?: string;
+          triage_priority?: string;
+          admitted_at?: string;
+          created_at: string;
+          doctor_id?: string;
+          patients?: {
+            full_name?: string;
+            age_years?: number;
+          };
+        }
+        const mapped: EmergencyCaseItem[] = (res.data as unknown as RawEmergencyVisit[]).map((v) => ({
+          id: v.id,
+          code: v.visit_number,
+          name: v.patients?.full_name || "Unknown Patient",
+          age: v.patients?.age_years ? `${v.patients.age_years} Y` : "Unspecified",
+          severity: (v.triage_priority as "RED" | "YELLOW" | "GREEN") || "RED",
+          condition: v.chief_complaint || "Casualty Admission",
+          time: new Date(v.admitted_at || v.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          assignedDoctor: v.doctor_id ? "Specialist Assigned" : "Emergency On-Duty Officer",
+        }));
+        return { success: true, cases: mapped };
+      } else {
+        return { success: false, error: res.error || "Failed to load live emergency cases." };
+      }
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : "Error connecting to emergency records." };
+    }
+  }, []);
+
+  const loadLiveCases = useCallback(async () => {
+    setLoading(true);
+    setErrorMessage(null);
+    const result = await fetchEmergencyRecords();
+    if (result.success && result.cases) {
+      setEmergencyCases(result.cases);
+    } else if (result.error) {
+      setErrorMessage(result.error);
+    }
+    setLoading(false);
+  }, [fetchEmergencyRecords]);
+
+  useEffect(() => {
+    let isMounted = true;
+    void (async () => {
+      const result = await fetchEmergencyRecords();
+      if (isMounted) {
+        if (result.success && result.cases) {
+          setEmergencyCases(result.cases);
+        } else if (result.error) {
+          setErrorMessage(result.error);
+        }
+        setLoading(false);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchEmergencyRecords]);
 
   const handleFastIntake = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setErrorMessage(null);
 
-    try {
-      const res = await registerEmergencyEncounterAction({
-        unknownPatientName: intakeName || undefined,
-        triagePriority: intakePriority,
-        chiefComplaint: intakeComplaint || "Emergency Casualty Triage",
-      });
+    const res = await registerEmergencyEncounterAction({
+      unknownPatientName: intakeName || undefined,
+      triagePriority: intakePriority,
+      chiefComplaint: intakeComplaint || "Emergency Casualty Triage",
+    });
 
-      const newCase = {
-        id: res.data?.visit.id || `em-${Date.now()}`,
-        code: res.data?.visit.visit_number || `EM-${Math.floor(100 + Math.random() * 900)}`,
-        name: intakeName || `Unknown Emergency Patient`,
-        age: "Unspecified",
-        severity: intakePriority,
-        condition: intakeComplaint || "Immediate Casualty Assessment",
-        time: "Just now",
-        assignedDoctor: "Emergency On-Duty Officer",
-      };
-
-      setEmergencyCases([newCase, ...emergencyCases]);
+    if (res.success && res.data) {
       setShowFastIntake(false);
       setIntakeName("");
       setIntakeComplaint("");
-    } catch {
-      const newCase = {
-        id: `em-${Date.now()}`,
-        code: `EM-${Math.floor(100 + Math.random() * 900)}`,
-        name: intakeName || `Unknown Emergency Patient`,
-        age: "Unspecified",
-        severity: intakePriority,
-        condition: intakeComplaint || "Immediate Casualty Assessment",
-        time: "Just now",
-        assignedDoctor: "Emergency On-Duty Officer",
-      };
-      setEmergencyCases([newCase, ...emergencyCases]);
-      setShowFastIntake(false);
-      setIntakeName("");
-      setIntakeComplaint("");
-    } finally {
-      setSubmitting(false);
+      await loadLiveCases();
+    } else {
+      alert(res.error || "Emergency registration failed. Please verify database sequence.");
     }
+    setSubmitting(false);
   };
+
+  const redCount = emergencyCases.filter((c) => c.severity === "RED").length;
+  const yellowCount = emergencyCases.filter((c) => c.severity === "YELLOW").length;
+  const greenCount = emergencyCases.filter((c) => c.severity === "GREEN").length;
+
 
   return (
     <div className="space-y-6">
@@ -137,7 +166,7 @@ export default function EmergencyTriagePage() {
             <AlertOctagon className="w-4 h-4 mr-1 text-red-600" />
             RED ZONE (Resuscitation / Immediate)
           </span>
-          <div className="text-2xl font-black text-red-700 mt-1">2 Active Patients</div>
+          <div className="text-2xl font-black text-red-700 mt-1">{redCount} Active Patients</div>
           <span className="text-[10px] text-red-600 font-medium">Immediate doctor intervention required</span>
         </div>
 
@@ -146,7 +175,7 @@ export default function EmergencyTriagePage() {
             <Clock className="w-4 h-4 mr-1 text-amber-600" />
             YELLOW ZONE (Urgent / 30 Mins)
           </span>
-          <div className="text-2xl font-black text-amber-700 mt-1">1 Patient</div>
+          <div className="text-2xl font-black text-amber-700 mt-1">{yellowCount} Patients</div>
           <span className="text-[10px] text-amber-600 font-medium">Under observation & investigations</span>
         </div>
 
@@ -155,19 +184,44 @@ export default function EmergencyTriagePage() {
             <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
             GREEN ZONE (Minor / Non-urgent)
           </span>
-          <div className="text-2xl font-black text-emerald-700 mt-1">0 Patients</div>
+          <div className="text-2xl font-black text-emerald-700 mt-1">{greenCount} Patients</div>
           <span className="text-[10px] text-emerald-600 font-medium">Triage queue clear</span>
         </div>
       </div>
 
       {/* Emergency Active Cases Table */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
-        <h3 className="text-sm font-bold text-slate-900 mb-4">
-          Active Emergency Triage Cases in Casualty
-        </h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-sm font-bold text-slate-900">
+            Active Emergency Triage Cases in Casualty
+          </h3>
+          <button
+            onClick={loadLiveCases}
+            disabled={loading}
+            className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 font-medium transition"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+        </div>
 
-        <div className="space-y-3">
-          {emergencyCases.map((c) => (
+        {errorMessage && (
+          <div className="p-3 mb-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+            {errorMessage}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="p-8 text-center text-xs text-slate-400 font-medium">
+            Loading real-time emergency records from database...
+          </div>
+        ) : emergencyCases.length === 0 ? (
+          <div className="p-8 text-center text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl">
+            No active emergency triage patients in casualty at this moment.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {emergencyCases.map((c) => (
             <div
               key={c.id}
               className={`p-4 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${
@@ -219,6 +273,7 @@ export default function EmergencyTriagePage() {
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {/* FAST TRIAGE INTAKE MODAL */}

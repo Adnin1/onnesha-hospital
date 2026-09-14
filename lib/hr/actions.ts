@@ -105,7 +105,13 @@ export async function createEmployeeAction(params: {
 
   try {
     const supabase = await createClient();
-    const employeeCode = `EMP-${Date.now().toString().slice(-4)}`;
+    const { data: codeData, error: codeErr } = await supabase.rpc("generate_employee_code", {
+      p_org_id: session.organizationId,
+    });
+    if (codeErr || !codeData) {
+      return { success: false, error: codeErr?.message || "Failed to generate employee code from database sequence." };
+    }
+    const employeeCode = codeData as string;
 
     const { data: emp, error } = await supabase
       .from("employees").insert({

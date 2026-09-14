@@ -96,11 +96,10 @@ export async function registerPatientAction(formData: {
       p_organization_id: session.organizationId,
     });
 
-    let patientCode = codeData;
-    if (codeErr || !patientCode) {
-      // Fallback timestamp code if function unavailable
-      patientCode = `OH-${Date.now().toString().slice(-6)}`;
+    if (codeErr || !codeData) {
+      return { success: false, error: codeErr?.message || "Failed to generate atomic patient identifier." };
     }
+    const patientCode = codeData;
 
     // Insert Patient Master
     const { data: newPatient, error: insertErr } = await supabase
@@ -390,12 +389,15 @@ export async function registerOpdEncounterAction(params: {
     const supabase = await createClient();
 
     // Generate atomic visit number
-    const { data: visitNoData } = await supabase.rpc("generate_visit_number", {
+    const { data: visitNoData, error: visitErr } = await supabase.rpc("generate_visit_number", {
       p_organization_id: session.organizationId,
       p_type: "OPD",
     });
 
-    const visitNumber = visitNoData || `OPD-${Date.now().toString().slice(-6)}`;
+    if (visitErr || !visitNoData) {
+      return { success: false, error: visitErr?.message || "Failed to allocate atomic OPD visit number." };
+    }
+    const visitNumber = visitNoData;
 
     const { data: newVisit, error } = await supabase
       .from("patient_visits")
@@ -465,9 +467,17 @@ export async function registerEmergencyEncounterAction(params: {
     const supabase = await createClient();
     let targetPatientId = params.patientId;
 
-    // Handle Unknown/Unidentified Emergency Patient Registration
+    // Handle Unknown/Unidentified Emergency Patient Registration (TEMP-EMG- sequence generator)
     if (!targetPatientId) {
-      const tempId = `TEMP-EMG-${Date.now().toString().slice(-4)}`;
+      const { data: tempIdData, error: tempIdErr } = await supabase.rpc("generate_emergency_temp_id", {
+        p_org_id: session.organizationId,
+      });
+      if (tempIdErr || !tempIdData) {
+        return { success: false, error: tempIdErr?.message || "Failed to generate emergency temporary patient identifier." };
+      }
+      // Sequence generates TEMP-EMG-XXXXX format atomically
+      const tempId = (tempIdData as string) || "TEMP-EMG-UNKNOWN";
+
       const { data: tempPatient, error: tempErr } = await supabase
         .from("patients")
         .insert({
@@ -491,11 +501,14 @@ export async function registerEmergencyEncounterAction(params: {
     }
 
     // Generate Emergency Visit Number
-    const { data: visitNoData } = await supabase.rpc("generate_visit_number", {
+    const { data: visitNoData, error: vNumErr } = await supabase.rpc("generate_visit_number", {
       p_organization_id: session.organizationId,
       p_type: "EMERGENCY",
     });
-    const visitNumber = visitNoData || `EMG-${Date.now().toString().slice(-6)}`;
+    if (vNumErr || !visitNoData) {
+      return { success: false, error: vNumErr?.message || "Failed to generate emergency visit number from database sequence." };
+    }
+    const visitNumber = visitNoData;
 
     // Create Emergency Visit
     const { data: newVisit, error: visitErr } = await supabase
@@ -768,11 +781,14 @@ export async function createIpdAdmissionAction(params: {
     const supabase = await createClient();
 
     // Generate atomic visit number
-    const { data: visitNoData } = await supabase.rpc("generate_visit_number", {
+    const { data: visitNoData, error: vNumErr } = await supabase.rpc("generate_visit_number", {
       p_organization_id: session.organizationId,
       p_type: "IPD",
     });
-    const visitNumber = visitNoData || `IPD-${Date.now().toString().slice(-6)}`;
+    if (vNumErr || !visitNoData) {
+      return { success: false, error: vNumErr?.message || "Failed to generate IPD visit number from database sequence." };
+    }
+    const visitNumber = visitNoData;
 
     // Create Inpatient Visit
     const { data: newVisit, error: vErr } = await supabase
@@ -1121,6 +1137,40 @@ export async function getPatientsAction(params?: {
     return { success: true, data: { patients: (data || []) as unknown as PatientMaster[] } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to load patients";
+    return { success: false, error: msg };
+  }
+}
+
+export async function getEmergencyCasesAction() {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    await requirePermission("emergency.view");
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("patient_visits")
+      .select("*, patients(*)")
+      .eq("organization_id", session.organizationId)
+      .eq("visit_type", "EMERGENCY")
+      .eq("status", "ACTIVE")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: data || [] };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load emergency cases";
     return { success: false, error: msg };
   }
 }

@@ -122,16 +122,16 @@ export async function bookAppointmentAction(params: {
       return { success: false, error: "Doctor not found" };
     }
 
-    const { data: existingAppts } = await supabase
-      .from("appointments")
-      .select("token_number")
-      .eq("organization_id", session.organizationId)
-      .eq("doctor_id", params.doctorId)
-      .eq("appointment_date", apptDate)
-      .order("token_number", { ascending: false })
-      .limit(1);
+    const { data: tokenData, error: tokenErr } = await supabase.rpc("get_next_token", {
+      p_org_id: session.organizationId,
+      p_doctor_id: params.doctorId,
+      p_date: apptDate,
+    });
 
-    const nextToken = (existingAppts && existingAppts.length > 0) ? (existingAppts[0].token_number + 1) : 1;
+    if (tokenErr || !tokenData) {
+      return { success: false, error: tokenErr?.message || "Failed to allocate atomic token number." };
+    }
+    const nextToken = Number(tokenData);
 
     const { data: appt, error: apptError } = await supabase
       .from("appointments")

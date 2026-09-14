@@ -71,6 +71,25 @@ export default function HospitalDashboardPage() {
           });
         }
 
+        // 4. Fetch live waiting queue
+        const { getLiveWaitingQueueAction } = await import("@/lib/appointments/actions");
+        const queueRes = await getLiveWaitingQueueAction();
+        let mappedQueue: WaitingQueueItem[] = [];
+        if (queueRes.success && queueRes.data?.queue) {
+          mappedQueue = queueRes.data.queue.map((q) => ({
+            id: q.id,
+            organization_id: q.organization_id,
+            doctor_id: q.doctor_id || "",
+            doctor_name: q.doctor_name || "Specialist",
+            room_number: q.room_number || "Chamber",
+            appointment_id: q.appointment_id || "",
+            patient_name: q.patient_name || "Patient",
+            token_number: String(q.token_number),
+            status: q.queue_status === "WAITING" ? "waiting" : q.queue_status === "CALLED" ? "calling" : q.queue_status === "IN_ROOM" ? "serving" : "done",
+            called_at: q.called_at ? new Date(q.called_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : undefined,
+          }));
+        }
+
         if (isMounted) {
           setMetrics({
             todayIncome: incomeSum,
@@ -79,7 +98,7 @@ export default function HospitalDashboardPage() {
             totalBeds: totalBedsCount,
             dueAmount: dueSum,
           });
-          setWaitingQueue([]);
+          setWaitingQueue(mappedQueue);
           setIsLoading(false);
         }
       } catch {
@@ -95,7 +114,9 @@ export default function HospitalDashboardPage() {
     };
   }, []);
 
-  const handleCallToken = (id: string) => {
+  const handleCallToken = async (id: string) => {
+    const { updateQueueStatusAction } = await import("@/lib/appointments/actions");
+    await updateQueueStatusAction({ queueId: id, status: "CALLED" });
     setWaitingQueue((prev) =>
       prev.map((item) =>
         item.id === id
@@ -112,7 +133,9 @@ export default function HospitalDashboardPage() {
     );
   };
 
-  const handleMarkDone = (id: string) => {
+  const handleMarkDone = async (id: string) => {
+    const { updateQueueStatusAction } = await import("@/lib/appointments/actions");
+    await updateQueueStatusAction({ queueId: id, status: "COMPLETED" });
     setWaitingQueue((prev) =>
       prev.map((item) => (item.id === id ? { ...item, status: "done" } : item))
     );

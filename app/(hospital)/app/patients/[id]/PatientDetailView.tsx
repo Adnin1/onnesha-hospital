@@ -22,7 +22,7 @@ import {
   Tag,
   Share2,
 } from "lucide-react";
-import { getPatient360Action } from "@/lib/patient/actions";
+import { getPatient360Action, getPatientsAction } from "@/lib/patient/actions";
 import {
   PatientMaster,
   PatientAllergy,
@@ -55,64 +55,32 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
   useEffect(() => {
     async function loadData() {
       if (patientId === "preview") {
-        setPatient({
-          id: "preview-id",
-          organization_id: "preview-org",
-          patient_code: "OH-000101",
-          full_name: "Md. Rafiqul Islam",
-          phone: "01712345678",
-          normalized_phone: "01712345678",
-          gender: "MALE",
-          dob: "1985-06-15",
-          blood_group: "B+",
-          marital_status: "MARRIED",
-          nid: "19851234567890",
-          address: "House 45, Road 7, Dhanmondi, Dhaka",
-          emergency_contact_name: "Nasima Begum",
-          emergency_contact_phone: "01812345678",
-          emergency_contact_relation: "Spouse",
-          is_temporary: false,
-          is_deceased: false,
-          is_deleted: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        setAllergies([
-          {
-            id: "al-1",
-            organization_id: "preview-org",
-            patient_id: "preview-id",
-            allergen: "Penicillin",
-            reaction: "Anaphylaxis / Skin Urticaria",
-            severity: "SEVERE",
-            status: "ACTIVE",
-            recorded_at: new Date().toISOString(),
-          },
-        ]);
-        setAlerts([
-          {
-            id: "alt-1",
-            organization_id: "preview-org",
-            patient_id: "preview-id",
-            alert_type: "FALL_RISK",
-            severity: "MEDIUM",
-            message: "Patient prone to dizziness upon standing",
-            is_active: true,
-            created_at: new Date().toISOString(),
-          },
-        ]);
-        setTimeline([
-          {
-            id: "tl-1",
-            date: new Date().toISOString(),
-            type: "PATIENT_REGISTERED",
-            title: "Patient Registered (OH-000101)",
-            description: "Permanent EMR created in Onnesha Hospital Management System.",
-            performer: "Reception Desk",
-            metadata: { code: "OH-000101" },
-          },
-        ]);
-        setLoading(false);
+        setLoading(true);
+        try {
+          const listRes = await getPatientsAction();
+          if (listRes.success && listRes.data?.patients && listRes.data.patients.length > 0) {
+            const realPatient = listRes.data.patients[0];
+            const p360 = await getPatient360Action(realPatient.id);
+            if (p360.success && p360.data) {
+              setPatient(p360.data.patient);
+              setAllergies(p360.data.allergies);
+              setAlerts(p360.data.alerts);
+              setVisits(p360.data.visits);
+              setTimeline(p360.data.timeline);
+              setVitals(p360.data.vitals);
+              setDiagnoses(p360.data.diagnoses);
+              setNotes(p360.data.notes);
+            } else {
+              setError("Failed to load Patient 360 record.");
+            }
+          } else {
+            setError("No registered patient found in this hospital organization. Please register a patient from the directory first.");
+          }
+        } catch {
+          setError("Failed to load patient record from clinical database.");
+        } finally {
+          setLoading(false);
+        }
         return;
       }
 

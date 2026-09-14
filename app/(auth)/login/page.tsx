@@ -15,8 +15,8 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { MOCK_ORGANIZATION } from "@/lib/mock-data";
 import { RoleType } from "@/types";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -91,7 +91,7 @@ export default function LoginPage() {
             </div>
           </Link>
           <h1 className="mt-3 text-2xl font-extrabold text-white tracking-tight">
-            {MOCK_ORGANIZATION.name}
+            {HOSPITAL_METADATA.name}
           </h1>
           <p className="text-xs text-sky-400 font-medium">
             Unified Hospital Management System (HMS) Portal

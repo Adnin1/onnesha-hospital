@@ -34,10 +34,11 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
   const senderId = process.env.SMS_SENDER_ID || "ONNESHA";
 
   if (!apiEndpoint || !apiKey) {
-    // Development / Simulation mode
+    // Gateway not configured in environment
+    console.warn("[SMS Gateway BD] Service unconfigured: SMS_API_ENDPOINT or SMS_API_KEY is not set.");
     return {
-      success: true,
-      providerResponseId: `SIM-${Date.now()}`,
+      success: false,
+      error: "SMS Gateway not configured: SMS_API_ENDPOINT and SMS_API_KEY environment variables required.",
     };
   }
 
