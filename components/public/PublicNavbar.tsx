@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Phone, Calendar, Clock, Menu, X, ShieldAlert, LogIn } from "lucide-react";
-import { MOCK_ORGANIZATION } from "@/lib/mock-data";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 
 export function PublicNavbar() {
   const pathname = usePathname();
@@ -28,11 +28,11 @@ export function PublicNavbar() {
           <div className="flex items-center space-x-4">
             <span className="flex items-center text-sky-200">
               <Phone className="w-3.5 h-3.5 mr-1 text-emerald-400" />
-              Emergency: <strong className="ml-1 text-white">{MOCK_ORGANIZATION.emergencyHotline}</strong>
+              Emergency: <strong className="ml-1 text-white">{HOSPITAL_METADATA.emergencyHotline}</strong>
             </span>
             <span className="hidden sm:flex items-center text-sky-200">
               <ShieldAlert className="w-3.5 h-3.5 mr-1 text-red-400" />
-              Ambulance: <strong className="ml-1 text-white">{MOCK_ORGANIZATION.ambulanceHotline}</strong>
+              Ambulance: <strong className="ml-1 text-white">{HOSPITAL_METADATA.ambulanceHotline}</strong>
             </span>
           </div>
           <div className="flex items-center space-x-4">
@@ -64,7 +64,7 @@ export function PublicNavbar() {
                 ONNESHA HOSPITAL
               </span>
               <span className="text-[11px] font-medium text-sky-700 tracking-wider block">
-                {MOCK_ORGANIZATION.banglaName}
+                {HOSPITAL_METADATA.banglaName}
               </span>
             </div>
           </Link>

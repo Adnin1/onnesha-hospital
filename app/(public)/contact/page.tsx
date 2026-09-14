@@ -1,15 +1,39 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
-import { Phone, Mail, MapPin, Clock, Send, ShieldAlert, CheckCircle2 } from "lucide-react";
-import { MOCK_ORGANIZATION } from "@/lib/mock-data";
+import { Phone, Mail, MapPin, Clock, Send, ShieldAlert, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { HOSPITAL_METADATA } from "@/config/hospital";
+import { submitContactInquiryAction } from "@/lib/public/actions";
 
 export default function ContactPage() {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setErrorMessage(null);
+
+    const res = await submitContactInquiryAction({
+      name,
+      phone,
+      email,
+      subject,
+      message,
+    });
+
+    setLoading(false);
+    if (res.success) {
+      setSubmitted(true);
+    } else {
+      setErrorMessage(res.error || "Failed to submit enquiry. Please try again or call our hotline.");
+    }
   };
 
   return (
@@ -23,7 +47,7 @@ export default function ContactPage() {
             Contact & Emergency Lines
           </h1>
           <p className="text-xs text-slate-600 mt-2">
-            Our hospital reception and emergency desks are open 24 hours a day, 7 days a week.
+            Our hospital reception and 24/7 trauma emergency desks are open round the clock.
           </p>
         </div>
 
@@ -41,7 +65,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800">Physical Address</h3>
-                  <p className="text-slate-600 mt-0.5">{MOCK_ORGANIZATION.address}</p>
+                  <p className="text-slate-600 mt-0.5">{HOSPITAL_METADATA.address}</p>
                 </div>
               </div>
 
@@ -51,7 +75,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800">Reception & Information</h3>
-                  <p className="text-slate-600 mt-0.5">{MOCK_ORGANIZATION.phone}</p>
+                  <p className="text-slate-600 mt-0.5">{HOSPITAL_METADATA.phone}</p>
                 </div>
               </div>
 
@@ -60,104 +84,164 @@ export default function ContactPage() {
                   <ShieldAlert className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-red-700">24/7 Emergency & Trauma</h3>
-                  <p className="font-semibold text-slate-900 mt-0.5">
-                    {MOCK_ORGANIZATION.emergencyHotline}
-                  </p>
+                  <h3 className="font-bold text-slate-800">Emergency & Ambulance Hotline</h3>
+                  <p className="text-red-700 font-bold mt-0.5">{HOSPITAL_METADATA.emergencyHotline}</p>
+                  <p className="text-slate-500 text-[11px]">Ambulance: {HOSPITAL_METADATA.ambulanceHotline}</p>
                 </div>
               </div>
 
               <div className="flex items-start space-x-3 text-xs">
                 <div className="p-2.5 bg-purple-50 text-purple-700 rounded-xl shrink-0">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Official Inquiries</h3>
+                  <p className="text-slate-600 mt-0.5">{HOSPITAL_METADATA.email}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 text-xs">
+                <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl shrink-0">
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800">Visiting & Service Hours</h3>
-                  <p className="text-slate-600 mt-0.5">
-                    Emergency, ICU & Pharmacy: <strong>24/7</strong><br />
-                    OPD Specialist Chambers: <strong>04:00 PM - 10:00 PM</strong><br />
-                    Diagnostic Tests: <strong>07:00 AM - 10:00 PM</strong>
-                  </p>
+                  <h3 className="font-bold text-slate-800">Service Hours</h3>
+                  <p className="text-slate-600 mt-0.5">Emergency, ICU, Pharmacy, Diagnostics: 24/7</p>
+                  <p className="text-slate-500 text-[11px]">Specialist OPD: 09:00 AM – 10:00 PM Daily</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Inquiries Form */}
+          {/* Right Column: Contact Inquiry Form */}
           <div className="lg:col-span-7">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+            <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-xs">
               <h2 className="text-base font-bold text-slate-900 mb-2">
-                Send an Inquiry or Message
+                Send Us an Online Inquiry
               </h2>
               <p className="text-xs text-slate-500 mb-6">
-                Have questions regarding hospital cabin booking, corporate health packages, or diagnostic facilities?
+                Have questions about doctors, lab reports, or health packages? Leave a message.
               </p>
 
               {submitted ? (
-                <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-xl text-center space-y-2">
+                <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-3">
                   <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
-                  <h4 className="text-sm font-bold text-emerald-950">
-                    Message Received Successfully!
-                  </h4>
-                  <p className="text-xs text-emerald-800">
-                    Our duty officer will contact you within 30 minutes.
+                  <h3 className="font-bold text-base text-emerald-950">
+                    Message Received Successfully
+                  </h3>
+                  <p className="text-xs text-emerald-800 max-w-md mx-auto">
+                    Thank you. Our patient relations desk has recorded your message and will get back to you shortly.
                   </p>
+                  <button
+                    onClick={() => {
+                      setSubmitted(false);
+                      setName("");
+                      setPhone("");
+                      setEmail("");
+                      setSubject("");
+                      setMessage("");
+                    }}
+                    className="mt-2 text-xs font-semibold text-emerald-700 hover:underline"
+                  >
+                    Send another inquiry →
+                  </button>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+                  {errorMessage && (
+                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center space-x-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Your Name *
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Your Full Name *
                       </label>
                       <input
                         type="text"
                         required
-                        placeholder="e.g. Mahin Khan"
-                        className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                        placeholder="e.g. Tariqul Islam"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Phone Number *
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Contact Phone Number (BD) *
                       </label>
                       <input
                         type="tel"
                         required
-                        placeholder="01XXXXXXXXX"
-                        className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                        placeholder="017XXXXXXXX"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Email Address (Optional)
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="user@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">
+                        Subject *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Doctor Availability / Lab Report Inquiry"
+                        value={subject}
+                        onChange={(e) => setSubject(e.target.value)}
+                        className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Subject
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Cabin Availability / Diagnostic Package"
-                      className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Your Message
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Your Message / Inquiry *
                     </label>
                     <textarea
                       rows={4}
-                      placeholder="Write your details here..."
-                      className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                      required
+                      placeholder="Write your detailed medical inquiry or feedback..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
                     ></textarea>
                   </div>
 
                   <button
                     type="submit"
-                    className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-6 py-2.5 rounded-lg shadow-2xs transition"
+                    disabled={loading}
+                    className="inline-flex items-center justify-center bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl shadow-xs transition"
                   >
-                    <Send className="w-3.5 h-3.5 mr-2" />
-                    Submit Message
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        <span>Sending Message...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Submit Inquiry</span>
+                        <Send className="w-3.5 h-3.5 ml-2" />
+                      </>
+                    )}
                   </button>
                 </form>
               )}

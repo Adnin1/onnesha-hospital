@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Calendar,
@@ -15,11 +17,53 @@ import {
   Bone,
   Microscope,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
-import { MOCK_DOCTORS, MOCK_ORGANIZATION, MOCK_WAITING_QUEUE } from "@/lib/mock-data";
+import { HOSPITAL_METADATA } from "@/config/hospital";
+import {
+  getPublicDoctorsAction,
+  getLiveWaitingQueueAction,
+  PublicDoctor,
+} from "@/lib/public/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
 
+interface QueueItem {
+  id: string;
+  doctor_name: string;
+  room_number: string;
+  patient_name: string;
+  token_number: string;
+  status: "waiting" | "calling" | "serving" | "done" | "skipped";
+}
+
 export default function HomePage() {
+  const [doctors, setDoctors] = useState<PublicDoctor[]>([]);
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLandingData() {
+      const [docRes, queueRes] = await Promise.all([
+        getPublicDoctorsAction(),
+        getLiveWaitingQueueAction(),
+      ]);
+
+      if (isMounted) {
+        if (docRes.success) {
+          setDoctors(docRes.doctors);
+        }
+        if (queueRes.success) {
+          setQueue(queueRes.queue);
+        }
+        setLoadingDoctors(false);
+      }
+    }
+    void loadLandingData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   return (
     <div>
       {/* 1. HERO SECTION */}
@@ -39,7 +83,7 @@ export default function HomePage() {
               </h1>
 
               <p className="text-sm sm:text-base text-sky-100 max-w-2xl leading-relaxed">
-                Welcome to <strong>Onnesha Hospital</strong> ({MOCK_ORGANIZATION.banglaName}). We provide compassionate, patient-first care backed by Bangladesh&apos;s leading medical specialists, modern ICUs, advanced laparoscopic surgery, and accurate digital diagnostics.
+                Welcome to <strong>Onnesha Hospital</strong> ({HOSPITAL_METADATA.banglaName}). We provide compassionate, patient-first care backed by Bangladesh&apos;s leading medical specialists, modern ICUs, advanced laparoscopic surgery, and accurate digital diagnostics.
               </p>
 
               <div className="flex flex-wrap gap-4 pt-2">
@@ -96,31 +140,37 @@ export default function HomePage() {
                 </p>
 
                 <div className="space-y-3">
-                  {MOCK_WAITING_QUEUE.slice(0, 4).map((q) => (
-                    <div
-                      key={q.id}
-                      className="p-3 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100"
-                    >
-                      <div>
-                        <div className="text-xs font-semibold text-slate-900">
-                          {q.doctor_name}
+                  {queue.length > 0 ? (
+                    queue.slice(0, 4).map((q) => (
+                      <div
+                        key={q.id}
+                        className="p-3 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100"
+                      >
+                        <div>
+                          <div className="text-xs font-semibold text-slate-900">
+                            {q.doctor_name}
+                          </div>
+                          <div className="text-[11px] text-slate-500 flex items-center mt-0.5">
+                            <span className="font-medium text-sky-700 mr-2">
+                              {q.room_number}
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-[11px] text-slate-500 flex items-center mt-0.5">
-                          <span className="font-medium text-sky-700 mr-2">
-                            {q.room_number}
+                        <div className="text-right">
+                          <span className="inline-block px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-md">
+                            Token: {q.token_number}
+                          </span>
+                          <span className="block text-[10px] text-slate-400 capitalize mt-0.5">
+                            {q.status}
                           </span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="inline-block px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-md">
-                          Token: {q.token_number}
-                        </span>
-                        <span className="block text-[10px] text-slate-400 capitalize mt-0.5">
-                          {q.status}
-                        </span>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-100">
+                      Doctor chambers active for today. Online bookings open.
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 <div className="mt-5 pt-4 border-t border-slate-100">
@@ -156,11 +206,11 @@ export default function HomePage() {
           </div>
           <div className="flex items-center space-x-3">
             <a
-              href={`tel:${MOCK_ORGANIZATION.emergencyHotline}`}
+              href={`tel:${HOSPITAL_METADATA.emergencyHotline}`}
               className="inline-flex items-center bg-white text-red-700 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition"
             >
               <Phone className="w-3.5 h-3.5 mr-1.5 text-red-600" />
-              Call {MOCK_ORGANIZATION.emergencyHotline}
+              Call {HOSPITAL_METADATA.emergencyHotline}
             </a>
           </div>
         </div>
@@ -231,33 +281,41 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {MOCK_DOCTORS.map((doc) => (
-              <div
-                key={doc.id}
-                className="bg-white rounded-2xl border border-slate-100 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between"
-              >
-                <div className="p-5">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-14 h-14 rounded-full bg-sky-100 border-2 border-sky-200 flex items-center justify-center font-bold text-sky-800 text-lg shrink-0">
-                      {doc.full_name.split(" ").slice(1, 3).map(n => n[0]).join("")}
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded">
-                        {doc.department_name}
-                      </span>
-                      <h3 className="font-bold text-slate-900 text-sm mt-1 leading-snug">
-                        {doc.full_name}
-                      </h3>
-                    </div>
-                  </div>
+          {loadingDoctors && (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+              <Loader2 className="w-8 h-8 text-sky-600 animate-spin mb-2" />
+              <p className="text-xs">Loading specialist doctors...</p>
+            </div>
+          )}
 
-                  <p className="text-xs font-medium text-slate-700 mb-1">
-                    {doc.designation}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mb-3 line-clamp-2">
-                    {doc.degrees}
-                  </p>
+          {!loadingDoctors && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {doctors.slice(0, 4).map((doc) => (
+                <div
+                  key={doc.id}
+                  className="bg-white rounded-2xl border border-slate-100 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between"
+                >
+                  <div className="p-5">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-14 h-14 rounded-full bg-sky-100 border-2 border-sky-200 flex items-center justify-center font-bold text-sky-800 text-lg shrink-0">
+                        {doc.full_name.split(" ").slice(1, 3).map(n => n[0]).join("")}
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded">
+                          {doc.department_name}
+                        </span>
+                        <h3 className="font-bold text-slate-900 text-sm mt-1 leading-snug">
+                          {doc.full_name}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <p className="text-xs font-medium text-slate-700 mb-1">
+                      {doc.designation}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mb-3 line-clamp-2">
+                      {doc.degrees}
+                    </p>
 
                   <div className="text-[11px] space-y-1 py-2 border-t border-slate-100 text-slate-600">
                     <div className="flex justify-between">
@@ -286,6 +344,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+        )}
         </div>
       </section>
 

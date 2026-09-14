@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Phone, Mail, MapPin, ShieldCheck, Heart } from "lucide-react";
-import { MOCK_ORGANIZATION } from "@/lib/mock-data";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 
 export function PublicFooter() {
   return (
@@ -23,7 +23,7 @@ export function PublicFooter() {
             </p>
             <div className="flex items-center text-xs text-sky-400 font-medium">
               <ShieldCheck className="w-4 h-4 mr-1.5" />
-              {MOCK_ORGANIZATION.regNo}
+              {HOSPITAL_METADATA.regNo}
             </div>
           </div>
 
@@ -84,19 +84,19 @@ export function PublicFooter() {
             <ul className="space-y-3 text-xs">
               <li className="flex items-start">
                 <MapPin className="w-4 h-4 mr-2 text-sky-400 shrink-0 mt-0.5" />
-                <span>{MOCK_ORGANIZATION.address}</span>
+                <span>{HOSPITAL_METADATA.address}</span>
               </li>
               <li className="flex items-center">
                 <Phone className="w-4 h-4 mr-2 text-emerald-400 shrink-0" />
-                <span>Hotline: {MOCK_ORGANIZATION.phone}</span>
+                <span>Hotline: {HOSPITAL_METADATA.phone}</span>
               </li>
               <li className="flex items-center">
                 <Phone className="w-4 h-4 mr-2 text-red-400 shrink-0" />
-                <span>Ambulance: {MOCK_ORGANIZATION.ambulanceHotline}</span>
+                <span>Ambulance: {HOSPITAL_METADATA.ambulanceHotline}</span>
               </li>
               <li className="flex items-center">
                 <Mail className="w-4 h-4 mr-2 text-sky-400 shrink-0" />
-                <span>{MOCK_ORGANIZATION.email}</span>
+                <span>{HOSPITAL_METADATA.email}</span>
               </li>
             </ul>
           </div>

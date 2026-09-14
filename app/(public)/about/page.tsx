@@ -1,6 +1,5 @@
 import React from "react";
 import { Award, ShieldCheck, Heart, Users, Activity, CheckCircle2 } from "lucide-react";
-import { MOCK_ORGANIZATION } from "@/lib/mock-data";
 
 export default function AboutPage() {
   return (

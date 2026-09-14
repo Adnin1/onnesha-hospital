@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -12,8 +12,20 @@ import {
   Clock,
   ShieldCheck,
 } from "lucide-react";
-import { MOCK_LAB_TESTS } from "@/lib/mock-data";
 import { formatCurrencyBDT } from "@/lib/utils";
+
+const PUBLIC_INVESTIGATIONS = [
+  { name: "Complete Blood Count (CBC) with ESR", category: "Hematology", fee: 400, turnaround: "2 Hours" },
+  { name: "Fasting Blood Sugar (FBS) & HbA1c", category: "Biochemistry", fee: 900, turnaround: "3 Hours" },
+  { name: "Lipid Profile (Cholesterol, Triglycerides, HDL/LDL)", category: "Biochemistry", fee: 1200, turnaround: "4 Hours" },
+  { name: "Serum Creatinine & Blood Urea Nitrogen", category: "Renal Panel", fee: 600, turnaround: "2 Hours" },
+  { name: "Liver Function Test (SGPT, SGOT, Bilirubin, Alk Phos)", category: "Hepatic Panel", fee: 1100, turnaround: "4 Hours" },
+  { name: "Digital Chest X-Ray (P/A View High-Res)", category: "Digital Radiology", fee: 650, turnaround: "1 Hour" },
+  { name: "Ultrasonography (Whole Abdomen 4D Doppler)", category: "Ultrasonography", fee: 1500, turnaround: "Same Day" },
+  { name: "12-Lead Electrocardiogram (ECG with Interpretation)", category: "Cardiology", fee: 450, turnaround: "30 Mins" },
+  { name: "2D Color Doppler Echocardiography", category: "Cardiology", fee: 2500, turnaround: "Same Day" },
+  { name: "Thyroid Stimulating Hormone (TSH / FT3 / FT4)", category: "Immunology", fee: 1600, turnaround: "Same Day" },
+];
 
 export default function ServicesPage() {
   return (
@@ -36,7 +48,7 @@ export default function ServicesPage() {
         <div className="mb-14">
           <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
             <Activity className="w-5 h-5 mr-2 text-sky-600" />
-            Specialized Hospital Departments
+            Specialized Hospital Departments & Inpatient Units
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -58,35 +70,28 @@ export default function ServicesPage() {
               },
               {
                 title: "Modern Modular Operation Theater (OT)",
-                desc: "Laminar airflow, HEPA filtration, modern anesthesia workstations, and high-definition laparoscopy towers.",
-                points: ["Laparoscopic Gallbladder & Appendix", "General & Orthopedic Trauma Surgery", "Sterile Post-Operative Recovery Ward"],
+                desc: "Laminar air-flow system with HEPA filtration, state-of-the-art anesthesia workstations, and high-definition laparoscopy towers.",
+                points: ["Laparoscopic Cholecystectomy", "General & Orthopedic Trauma Surgery", "Sterile Infection-Controlled Zones"],
               },
               {
-                title: "Inpatient Wards & Luxury Cabins",
-                desc: "Hygienic general wards for male/female patients, VIP AC cabins, and private Deluxe suites with attendant facilities.",
-                points: ["Air-Conditioned VIP Cabins", "Nutritious Inpatient Diet", "Continuous Nursing Care"],
+                title: "Cardiology & Non-Invasive Cardiac Lab",
+                desc: "Comprehensive diagnostic assessment for hypertension, ischemic heart disease, heart failure, and rhythm disorders.",
+                points: ["12-Lead Digital ECG", "2D Color Doppler Echo", "24/7 Acute Coronary Syndromes Care"],
               },
               {
-                title: "24-Hour Hospital Pharmacy",
-                desc: "Complete stock of life-saving medicines, IV fluids, oncology drugs, and surgical consumables with computerized receipts.",
-                points: ["100% Genuine Stored Medicines", "Proper Cold Chain Maintenance", "Direct Inpatient Ward Dispensing"],
+                title: "Inpatient Wards, Cabins & Suite Rooms",
+                desc: "Hygienic general wards, AC/Non-AC semi-private cabins, and deluxe suites with dedicated nursing call systems.",
+                points: ["Central Medical Gas Pipeline", "Nutritious Inpatient Diet Plans", "Round-the-clock Resident Doctors"],
               },
             ].map((srv, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs hover:shadow-md transition flex flex-col justify-between"
-              >
+              <div key={idx} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
                 <div>
-                  <h3 className="font-bold text-base text-slate-900 mb-2">
-                    {srv.title}
-                  </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                    {srv.desc}
-                  </p>
-                  <ul className="space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-700">
-                    {srv.points.map((pt, i) => (
-                      <li key={i} className="flex items-center">
-                        <CheckCircle className="w-3.5 h-3.5 mr-2 text-emerald-500 shrink-0" />
+                  <h3 className="font-bold text-base text-slate-900 mb-2">{srv.title}</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-4">{srv.desc}</p>
+                  <ul className="space-y-1.5 text-xs text-slate-700">
+                    {srv.points.map((pt, pidx) => (
+                      <li key={pidx} className="flex items-center">
+                        <CheckCircle className="w-3.5 h-3.5 text-sky-600 mr-2 shrink-0" />
                         <span>{pt}</span>
                       </li>
                     ))}
@@ -97,77 +102,56 @@ export default function ServicesPage() {
           </div>
         </div>
 
-        {/* 2. Diagnostic & Lab Test Catalog */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-100 gap-4">
+        {/* 2. Diagnostic Investigation & Test Catalog */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-xs mb-12">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <span className="text-xs font-bold text-sky-600 uppercase tracking-wider">
-                Laboratory Catalog & Transparent Tariffs
-              </span>
-              <h2 className="text-xl font-bold text-slate-900 mt-1">
-                Popular Pathology & Diagnostic Tests
+              <h2 className="text-xl font-bold text-slate-900 flex items-center">
+                <Microscope className="w-5 h-5 mr-2 text-sky-600" />
+                Laboratory & Diagnostic Investigation Rates
               </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Official DGHS-standard pathology and digital imaging tariff schedule.
+              </p>
             </div>
-            <div className="text-xs text-slate-500 flex items-center bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-              <Clock className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
-              Sample Collection: 07:00 AM - 10:00 PM Daily
-            </div>
+            <Link
+              href="/appointment"
+              className="inline-flex items-center bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-xs transition"
+            >
+              <Calendar className="w-3.5 h-3.5 mr-1.5" />
+              Book Consultation First
+            </Link>
           </div>
 
-          <div className="overflow-x-auto mt-6">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-700 font-semibold uppercase tracking-wider text-[11px] border-y border-slate-200">
-                <tr>
-                  <th className="py-3 px-4">Test Name</th>
-                  <th className="py-3 px-4">Department</th>
-                  <th className="py-3 px-4">Sample Type</th>
-                  <th className="py-3 px-4">Delivery Time</th>
-                  <th className="py-3 px-4 text-right">Hospital Tariff</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-4 font-bold">Investigation / Test Name</th>
+                  <th className="py-3 px-4 font-bold">Category</th>
+                  <th className="py-3 px-4 font-bold">Turnaround Time</th>
+                  <th className="py-3 px-4 font-bold text-right">Standard Fee</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {MOCK_LAB_TESTS.map((test) => (
-                  <tr key={test.id} className="hover:bg-slate-50/70 transition">
-                    <td className="py-3.5 px-4 font-semibold text-slate-900">
-                      {test.name}
-                      <span className="block text-[10px] text-slate-400 font-mono">
-                        Code: {test.code}
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {PUBLIC_INVESTIGATIONS.map((t, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/70 transition">
+                    <td className="py-3 px-4 font-semibold text-slate-900">{t.name}</td>
+                    <td className="py-3 px-4 text-slate-500">{t.category}</td>
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center text-sky-800 bg-sky-50 px-2 py-0.5 rounded font-medium text-[11px]">
+                        <Clock className="w-3 h-3 mr-1 text-sky-600" />
+                        {t.turnaround}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600">{test.category_name}</td>
-                    <td className="py-3.5 px-4">
-                      <span className="capitalize px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-medium text-[10px]">
-                        {test.sample_type}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-600">
-                      Within {test.delivery_hours} Hours
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-emerald-700 text-sm">
-                      {formatCurrencyBDT(test.price)}
+                    <td className="py-3 px-4 font-mono font-bold text-right text-emerald-700 text-sm">
+                      {formatCurrencyBDT(t.fee)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* CTA */}
-        <div className="mt-12 bg-sky-800 text-white rounded-2xl p-8 flex flex-col sm:flex-row justify-between items-center gap-6 shadow-md">
-          <div>
-            <h3 className="text-xl font-bold">Have a Doctor Prescription for Diagnostic Tests?</h3>
-            <p className="text-xs text-sky-100 mt-1">
-              Visit our reception counter directly for fast-track sample collection and same-day reports.
-            </p>
-          </div>
-          <Link
-            href="/appointment"
-            className="inline-flex items-center bg-white text-sky-900 hover:bg-sky-50 font-bold text-xs px-5 py-3 rounded-xl transition shadow-xs shrink-0"
-          >
-            <Calendar className="w-4 h-4 mr-2 text-sky-700" />
-            Book OPD Consultation
-          </Link>
         </div>
       </div>
     </div>

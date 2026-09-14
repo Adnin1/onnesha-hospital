@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Calendar,
@@ -13,50 +13,94 @@ import {
   Printer,
   ShieldCheck,
   MessageSquare,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
-import { MOCK_DOCTORS, MOCK_ORGANIZATION } from "@/lib/mock-data";
 import { formatCurrencyBDT } from "@/lib/utils";
 import { HospitalPrintHeader } from "@/components/print/HospitalPrintHeader";
-
-function generateAppointmentToken(doctorCode: string): string {
-  const prefix = doctorCode.replace("DOC-", "T");
-  const randomNum = Math.floor(Math.random() * 80) + 10;
-  return `${prefix}-${randomNum}`;
-}
+import {
+  getPublicDoctorsAction,
+  bookOnlineAppointmentAction,
+  PublicDoctor,
+  PublicBookingResult,
+} from "@/lib/public/actions";
 
 export default function AppointmentBookingPage() {
   const [step, setStep] = useState(1);
-  const [selectedDoctorId, setSelectedDoctorId] = useState(MOCK_DOCTORS[0].id);
-  const [appointmentDate, setAppointmentDate] = useState("2026-09-13");
-  const [timeSlot, setTimeSlot] = useState("05:30 PM - 07:00 PM");
+  const [doctors, setDoctors] = useState<PublicDoctor[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [doctorError, setDoctorError] = useState<string | null>(null);
+
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
+  const [appointmentDate, setAppointmentDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  });
+  const [timeSlot, setTimeSlot] = useState("05:30 PM - 07:00 PM (Evening Slot)");
 
   // Patient Info Form
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [age, setAge] = useState("35");
-  const [gender, setGender] = useState("male");
+  const [age, setAge] = useState("30");
+  const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
   const [guardianName, setGuardianName] = useState("");
-  const [generatedToken, setGeneratedToken] = useState("");
-  const [smsSent, setSmsSent] = useState(false);
+  const [notes, setNotes] = useState("");
 
-  const selectedDoctor =
-    MOCK_DOCTORS.find((d) => d.id === selectedDoctorId) || MOCK_DOCTORS[0];
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [confirmedData, setConfirmedData] = useState<PublicBookingResult["data"] | null>(null);
 
-  const handleNextStep = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (step === 1) {
-      setStep(2);
-    } else if (step === 2) {
-      setStep(3);
-    } else if (step === 3) {
-      if (!fullName || !phone) {
-        alert("Please provide patient name and contact phone number.");
-        return;
+  useEffect(() => {
+    let isMounted = true;
+    async function loadDoctors() {
+      setLoadingDoctors(true);
+      const res = await getPublicDoctorsAction();
+      if (isMounted) {
+        if (res.success && res.doctors.length > 0) {
+          setDoctors(res.doctors);
+          setSelectedDoctorId(res.doctors[0].id);
+        } else {
+          setDoctorError(res.error || "No active specialist schedules open for online booking.");
+        }
+        setLoadingDoctors(false);
       }
-      const token = generateAppointmentToken(selectedDoctor.doctor_code);
-      setGeneratedToken(token);
-      setSmsSent(true);
+    }
+    void loadDoctors();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId) || doctors[0];
+
+  const handleBookAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName.trim() || !phone.trim()) {
+      alert("Please provide patient name and contact phone number.");
+      return;
+    }
+
+    setBookingLoading(true);
+    setBookingError(null);
+
+    const res = await bookOnlineAppointmentAction({
+      doctorId: selectedDoctor?.id || selectedDoctorId,
+      appointmentDate,
+      patientName: fullName.trim(),
+      patientPhone: phone.trim(),
+      patientGender: gender,
+      patientAge: parseInt(age, 10) || undefined,
+      notes: notes || (guardianName ? `Guardian: ${guardianName}` : undefined),
+    });
+
+    setBookingLoading(false);
+
+    if (res.success && res.data) {
+      setConfirmedData(res.data);
       setStep(4);
+    } else {
+      setBookingError(res.error || "Online booking slot unavailable.");
     }
   };
 
@@ -111,47 +155,64 @@ export default function AppointmentBookingPage() {
               Step 1: Select Doctor & Specialty
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {MOCK_DOCTORS.map((doc) => (
-                <div
-                  key={doc.id}
-                  onClick={() => setSelectedDoctorId(doc.id)}
-                  className={`p-4 rounded-xl border cursor-pointer transition flex items-start space-x-3 ${
-                    selectedDoctorId === doc.id
-                      ? "border-sky-600 bg-sky-50/60 ring-2 ring-sky-500/20"
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="w-12 h-12 rounded-xl bg-sky-100 border border-sky-200 flex items-center justify-center font-bold text-sky-800 text-base shrink-0">
-                    {doc.full_name
-                      .split(" ")
-                      .slice(1, 3)
-                      .map((n) => n[0])
-                      .join("")}
-                  </div>
-                  <div className="grow">
-                    <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider">
-                      {doc.department_name}
-                    </span>
-                    <h3 className="font-bold text-slate-900 text-sm">{doc.full_name}</h3>
-                    <p className="text-[11px] text-slate-500">{doc.degrees}</p>
-                    <div className="flex justify-between items-center mt-2 text-xs">
-                      <span className="text-slate-600 font-medium">
-                        {doc.room_number}
+            {loadingDoctors && (
+              <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                <Loader2 className="w-8 h-8 text-sky-600 animate-spin mb-2" />
+                <p className="text-xs">Loading available specialists...</p>
+              </div>
+            )}
+
+            {!loadingDoctors && doctorError && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center space-x-2 mb-4">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>{doctorError}</span>
+              </div>
+            )}
+
+            {!loadingDoctors && doctors.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {doctors.map((doc: PublicDoctor) => (
+                  <div
+                    key={doc.id}
+                    onClick={() => setSelectedDoctorId(doc.id)}
+                    className={`p-4 rounded-xl border cursor-pointer transition flex items-start space-x-3 ${
+                      selectedDoctorId === doc.id
+                        ? "border-sky-600 bg-sky-50/60 ring-2 ring-sky-500/20"
+                        : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-sky-100 border border-sky-200 flex items-center justify-center font-bold text-sky-800 text-base shrink-0">
+                      {doc.full_name
+                        .split(" ")
+                        .slice(1, 3)
+                        .map((n: string) => n[0])
+                        .join("")}
+                    </div>
+                    <div className="grow">
+                      <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider">
+                        {doc.department_name}
                       </span>
-                      <span className="font-bold text-emerald-700">
-                        {formatCurrencyBDT(doc.opd_fee)}
-                      </span>
+                      <h3 className="font-bold text-slate-900 text-sm">{doc.full_name}</h3>
+                      <p className="text-[11px] text-slate-500">{doc.degrees}</p>
+                      <div className="flex justify-between items-center mt-2 text-xs">
+                        <span className="text-slate-600 font-medium">
+                          {doc.room_number}
+                        </span>
+                        <span className="font-bold text-emerald-700">
+                          {formatCurrencyBDT(doc.opd_fee)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             <div className="mt-8 flex justify-end">
               <button
+                disabled={!selectedDoctor || loadingDoctors}
                 onClick={() => setStep(2)}
-                className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-6 py-2.5 rounded-lg shadow-sm transition"
+                className="inline-flex items-center bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-semibold text-xs px-6 py-2.5 rounded-lg shadow-sm transition"
               >
                 Continue to Date & Time
                 <ArrowRight className="w-3.5 h-3.5 ml-2" />
@@ -250,12 +311,19 @@ export default function AppointmentBookingPage() {
         {/* STEP 3: PATIENT INFORMATION FORM */}
         {step === 3 && (
           <form
-            onSubmit={handleNextStep}
+            onSubmit={handleBookAppointment}
             className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs"
           >
             <h2 className="text-base font-bold text-slate-800 mb-4">
               Step 3: Patient Particulars & Contact Details
             </h2>
+
+            {bookingError && (
+              <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center space-x-2 mb-4">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{bookingError}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -310,12 +378,12 @@ export default function AppointmentBookingPage() {
                 </label>
                 <select
                   value={gender}
-                  onChange={(e) => setGender(e.target.value)}
+                  onChange={(e) => setGender(e.target.value as "MALE" | "FEMALE" | "OTHER")}
                   className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
                 >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
                 </select>
               </div>
 
@@ -344,24 +412,34 @@ export default function AppointmentBookingPage() {
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-6 py-2.5 rounded-lg shadow-sm transition"
+                disabled={bookingLoading}
+                className="inline-flex items-center bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs px-6 py-2.5 rounded-lg shadow-sm transition"
               >
-                Confirm Appointment & Generate Token
-                <CheckCircle2 className="w-3.5 h-3.5 ml-2" />
+                {bookingLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />
+                    Allocating Token...
+                  </>
+                ) : (
+                  <>
+                    Confirm Appointment & Generate Token
+                    <CheckCircle2 className="w-3.5 h-3.5 ml-2" />
+                  </>
+                )}
               </button>
             </div>
           </form>
         )}
 
         {/* STEP 4: INSTANT CONFIRMATION & PRINTABLE TOKEN SLIP */}
-        {step === 4 && (
+        {step === 4 && confirmedData && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-md">
             {/* Printable Slip Container */}
             <div className="print-pad">
               <HospitalPrintHeader
                 documentTitle="OPD CONSULTATION TOKEN SLIP"
-                documentNumber={generatedToken}
-                dateStr={appointmentDate}
+                documentNumber={`TKN-${confirmedData.tokenNumber}`}
+                dateStr={confirmedData.appointmentDate}
               />
 
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 my-4 flex items-center justify-between no-print">
@@ -391,7 +469,7 @@ export default function AppointmentBookingPage() {
                   Your Serial Token Number
                 </span>
                 <div className="text-4xl sm:text-5xl font-extrabold text-sky-700 font-mono tracking-widest my-1">
-                  {generatedToken}
+                  #{confirmedData.tokenNumber}
                 </div>
                 <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
                   Status: Scheduled in Queue
@@ -409,9 +487,9 @@ export default function AppointmentBookingPage() {
                   <span className="font-semibold text-slate-800">{phone}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[11px]">Age & Gender</span>
-                  <span className="font-medium text-slate-800">
-                    {age} Years, {gender.toUpperCase()}
+                  <span className="text-slate-500 block text-[11px]">Patient ID Code</span>
+                  <span className="font-medium text-slate-800 font-mono">
+                    {confirmedData.patientCode}
                   </span>
                 </div>
                 <div>
@@ -421,26 +499,24 @@ export default function AppointmentBookingPage() {
                 <div className="sm:col-span-2 pt-2 border-t border-slate-100">
                   <span className="text-slate-500 block text-[11px]">Consulting Specialist</span>
                   <span className="font-bold text-sky-900 text-sm">
-                    {selectedDoctor.full_name} ({selectedDoctor.specialization})
+                    {confirmedData.doctorName}
                   </span>
                   <p className="text-[11px] text-slate-600">
-                    Chamber: <strong className="text-slate-900">{selectedDoctor.room_number}</strong> • Slot: <strong className="text-slate-900">{timeSlot}</strong>
+                    Chamber: <strong className="text-slate-900">{confirmedData.roomNumber}</strong> • Slot: <strong className="text-slate-900">{timeSlot}</strong>
                   </p>
                 </div>
               </div>
 
               {/* SMS Notification Banner */}
-              {smsSent && (
-                <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg flex items-start space-x-2 text-xs text-sky-900 my-4 no-print">
-                  <MessageSquare className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold">SMS Dispatched: </span>
-                    <span>
-                      &quot;Onnesha Hospital: Your appointment with {selectedDoctor.full_name} is confirmed. Token: {generatedToken}. Time: {timeSlot}. Chamber: {selectedDoctor.room_number}.&quot;
-                    </span>
-                  </div>
+              <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg flex items-start space-x-2 text-xs text-sky-900 my-4 no-print">
+                <MessageSquare className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">SMS Dispatched: </span>
+                  <span>
+                    &quot;Onnesha Hospital: Your appointment with {confirmedData.doctorName} is confirmed. Token: #{confirmedData.tokenNumber}. Chamber: {confirmedData.roomNumber}.&quot;
+                  </span>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Back Actions */}
@@ -456,6 +532,7 @@ export default function AppointmentBookingPage() {
                   setStep(1);
                   setFullName("");
                   setPhone("");
+                  setConfirmedData(null);
                 }}
                 className="text-xs text-slate-600 hover:text-slate-900 font-medium"
               >
