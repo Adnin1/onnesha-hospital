@@ -105,11 +105,13 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
     assert.ok(content.includes("v_schedule_day != v_day_name"), "Weekday validation required");
   });
 
-  test("14. Staff RPC checks caller org membership in database profiles table", () => {
+  test("14. Staff RPC checks caller org membership and RBAC permissions in user_roles & role_permissions tables", () => {
     const migPath = path.join(ROOT, "supabase/migrations/028_phase22_authoritative_slot_concurrency_rbac.sql");
     const content = fs.readFileSync(migPath, "utf8");
-    assert.ok(content.includes("FROM profiles"), "DB profile query required");
-    assert.ok(content.includes("v_user_role"), "User role variable required");
+    assert.ok(content.includes("FROM user_roles ur"), "user_roles DB table join required");
+    assert.ok(content.includes("JOIN roles r ON ur.role_id = r.id"), "roles DB table join required");
+    assert.ok(content.includes("JOIN role_permissions rp ON ur.role_id = rp.role_id"), "role_permissions DB table join required");
+    assert.ok(content.includes("rp.permission_key IN ('appointments.create'"), "permission_key check required");
   });
 
   test("15. Static export configuration and canonical site URL preserved", () => {

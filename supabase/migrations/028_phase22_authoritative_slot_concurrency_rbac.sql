@@ -1,9 +1,10 @@
 -- =====================================================================================
 -- 028_phase22_authoritative_slot_concurrency_rbac.sql
 -- Onnesha Hospital Management System (OHMS) - Phase 22 Final Production Hardening
+-- Corrected to match canonical schema (profiles, roles, permissions, role_permissions, user_roles)
 -- 1. Authoritative Schedule Slot Validation (Mandatory p_schedule_id)
 -- 2. Concurrency-Safe Capacity Lock via Transaction Advisory Locks
--- 3. DB-Level RBAC Authorization for Staff Appointment Booking RPC
+-- 3. DB-Level RBAC Authorization via user_roles & role_permissions
 -- 4. Public Organization Boundary Validation
 -- 5. Strict Security Definer search_path Isolation & EXECUTE Grant Hardening
 -- =====================================================================================
@@ -245,7 +246,7 @@ END;
 $$;
 
 
--- 2. Redefine book_staff_appointment_atomic RPC (DB-Level RBAC + Advisory Lock + Search Path)
+-- 2. Redefine book_staff_appointment_atomic RPC (Canonical DB Schema RBAC via user_roles & role_permissions)
 CREATE OR REPLACE FUNCTION book_staff_appointment_atomic(
     p_org_id UUID,
     p_patient_id UUID,
@@ -262,7 +263,6 @@ SET search_path = public
 AS $$
 DECLARE
     v_calling_user_id UUID;
-    v_user_role VARCHAR;
     v_has_perm BOOLEAN;
     v_doctor_active BOOLEAN;
     v_room_number VARCHAR;
@@ -280,20 +280,29 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', '401 Unauthorized: Calling user authentication required.');
     END IF;
 
-    -- Verify caller profile belongs to p_org_id and check RBAC authorization inside DB
-    SELECT role INTO v_user_role
-    FROM profiles
-    WHERE id = v_calling_user_id AND organization_id = p_org_id;
-
-    IF v_user_role IS NULL THEN
-        RETURN jsonb_build_object('success', false, 'error', '403 Forbidden: Calling user does not belong to active organization.');
+    -- Verify caller profile is active
+    IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = v_calling_user_id AND is_active = TRUE) THEN
+        RETURN jsonb_build_object('success', false, 'error', '403 Forbidden: User profile inactive or non-existent.');
     END IF;
 
-    IF v_user_role NOT IN ('super_admin', 'admin', 'doctor', 'receptionist', 'nurse', 'staff') THEN
+    -- Verify caller has active hospital role in p_org_id or appointments.create permission (joining user_roles, roles & role_permissions)
+    SELECT EXISTS (
+        SELECT 1 
+        FROM user_roles ur
+        JOIN roles r ON ur.role_id = r.id
+        WHERE ur.user_id = v_calling_user_id 
+          AND ur.organization_id = p_org_id
+          AND LOWER(r.name) IN ('super_admin', 'admin', 'doctor', 'receptionist', 'nurse', 'staff')
+    ) INTO v_has_perm;
+
+    IF v_has_perm IS NOT TRUE THEN
         SELECT EXISTS (
-            SELECT 1 FROM user_permissions up
-            JOIN permissions p ON up.permission_id = p.id
-            WHERE up.user_id = v_calling_user_id AND p.name = 'appointments.create'
+            SELECT 1
+            FROM user_roles ur
+            JOIN role_permissions rp ON ur.role_id = rp.role_id
+            WHERE ur.user_id = v_calling_user_id
+              AND ur.organization_id = p_org_id
+              AND rp.permission_key IN ('appointments.create', 'appointments.manage', '*')
         ) INTO v_has_perm;
 
         IF v_has_perm IS NOT TRUE THEN
