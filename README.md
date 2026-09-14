@@ -1,7 +1,7 @@
 # Onnesha Hospital Management System (OHMS)
 Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
-[![Tests](https://img.shields.io/badge/tests-101%2F101%20passing-brightgreen)](#automated-testing)
+[![Tests](https://img.shields.io/badge/tests-134%2F134%20passing-brightgreen)](#automated-testing)
 [![TypeScript](https://img.shields.io/badge/typescript-strict%200%20errors-blue)](#quality-gates)
 [![ESLint](https://img.shields.io/badge/eslint-0%20errors-brightgreen)](#quality-gates)
 [![Next.js](https://img.shields.io/badge/next.js-16.3.5%20turbopack-black)](https://nextjs.org)
@@ -16,14 +16,15 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ## 📋 Phase Implementation Reports
 - 📄 [Phase 2 Completion Report](./PHASE_2_COMPLETION_REPORT.md) (Auth, RBAC, PostgreSQL RLS, Application Shell)
 - 📄 [Phase 3 Completion Report](./PHASE_3_COMPLETION_REPORT.md) (Patient Management, OPD, IPD, Emergency, Clinical 360 EMR)
+- 📄 [Phase 14 Notification & Payment Report](./docs/PHASE_14_ENTERPRISE_NOTIFICATIONS_AND_PAYMENTS.md) (SMS, WhatsApp, Email, bKash, Nagad, SSLCommerz, Outbox, Reconciliation)
 - 📄 [Master System Completion Report](./docs/MASTER_SYSTEM_COMPLETION_REPORT.md) (Zero-Mock Enterprise Operations Audit)
 
 ---
 
-## 🏥 Clinical Foundation (Phase 3 Scope)
+## 🏥 Enterprise Modules Overview (Phases 1–14)
 - **Deterministic Identifiers:** PostgreSQL sequences generating `P-YYYYMM-XXXXX` and visit identifiers (`OPD-`, `IPD-`, `EMG-`).
-- **Bangladesh Mobile Phone Canonicalization:** Strict conversion of `+880`, `880`, spaces, and dashes into `01[3-9]\d{8}` format.
-- **Multi-Signal Duplicate Detection:** Server-side engine combining exact NID matches, Dice's Bigram coefficient name similarity, and shared phone number analysis.
+- **Enterprise Notifications (Phase 14):** Transactional Outbox pattern, bilingual Bangla/English templates, SSL Wireless/Greenweb SMS, Meta WhatsApp Business Cloud API, Resend/SendGrid email.
+- **Online Payment Engine (Phase 14):** Multi-gateway tokenized checkout (bKash, Nagad, SSLCommerz), server-side invoice due enforcement, constant-time HMAC-SHA256 signature verification, finance reconciliation ledger.
 - **Patient 360° EMR:** Chronological medical history timeline (`/app/patients/[id]`) with printable hospital headers.
 - **Outpatient Department (OPD):** Consultation console with physiological sanity-bounded vitals and clinical notes (`/app/opd`).
 - **Inpatient Department (IPD):** Admission workflow, bed transfers, and mandatory discharge diagnoses (`/app/ipd`).
@@ -32,7 +33,7 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ---
 
 ## 🧪 Automated Testing
-101 / 101 automated test cases passing across 8 complete test suites:
+134 / 134 automated test cases passing across 10 complete test suites:
 - `tests/security.test.mjs` (20 Scenarios)
 - `tests/clinical.test.mjs` (21 Scenarios)
 - `tests/appointments.test.mjs` (10 Scenarios)
@@ -41,6 +42,8 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 - `tests/pharmacy.test.mjs` (10 Scenarios)
 - `tests/billing.test.mjs` (10 Scenarios)
 - `tests/hr.test.mjs` (10 Scenarios)
+- `tests/phase13-public-appointment-seo.test.mjs` (10 Scenarios)
+- `tests/phase14-notification-payment.test.mjs` (12 Scenarios)
 
 ---
 
@@ -48,7 +51,8 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ```bash
 npm run typecheck    # 0 errors
 npx eslint . --quiet # 0 errors
-npm test             # 101/101 pass
-npm run build        # 29/29 routes statically exported for Cloudflare Pages
+npm test             # 134/134 pass
+npm run build        # 32/32 routes statically exported for Cloudflare Pages
 ```
+
 

@@ -66,6 +66,20 @@ export const PERMISSIONS = {
   HR_ATTENDANCE: "hr.attendance",
   HR_PAYROLL: "hr.payroll",
 
+  // Notifications
+  NOTIFICATIONS_VIEW: "notifications.view",
+  NOTIFICATIONS_MANAGE: "notifications.manage",
+  NOTIFICATIONS_RESEND: "notifications.resend",
+
+  // Payment Gateway & Online Transactions
+  PAYMENT_GATEWAY_VIEW: "payment_gateway.view",
+  PAYMENT_GATEWAY_MANAGE: "payment_gateway.manage",
+  PAYMENTS_ONLINE_CREATE: "payments.online.create",
+  PAYMENTS_ONLINE_VERIFY: "payments.online.verify",
+  PAYMENTS_RECONCILE: "payments.reconcile",
+  REFUNDS_PROCESS: "refunds.process",
+  INTEGRATIONS_MANAGE: "integrations.manage",
+
   // Reports & Settings
   REPORTS_VIEW: "reports.view",
   SETTINGS_VIEW: "settings.view",
@@ -110,6 +124,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleType, string[]> = {
     PERMISSIONS.BILLING_VOID,
     PERMISSIONS.BILLING_REFUND,
     PERMISSIONS.BILLING_REPORT,
+    PERMISSIONS.PAYMENT_GATEWAY_VIEW,
+    PERMISSIONS.PAYMENTS_ONLINE_CREATE,
+    PERMISSIONS.PAYMENTS_ONLINE_VERIFY,
+    PERMISSIONS.PAYMENTS_RECONCILE,
+    PERMISSIONS.REFUNDS_PROCESS,
     PERMISSIONS.REPORTS_VIEW,
     PERMISSIONS.HR_VIEW,
     PERMISSIONS.HR_PAYROLL,
