@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import SwRegister from "@/components/app/SwRegister";
+import NetworkStatus from "@/components/app/NetworkStatus";
+import InstallPrompt from "@/components/app/InstallPrompt";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://onneshahospital.com"),
@@ -48,7 +51,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900">
-        {children}
+        <a href="#main-content" className="skip-to-content">মূল বিষয়বস্তুতে যান</a>
+        <NetworkStatus />
+        <div id="main-content" className="flex-1 flex flex-col">
+          {children}
+        </div>
+        <SwRegister />
+        <InstallPrompt />
       </body>
     </html>
   );

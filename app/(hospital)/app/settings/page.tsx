@@ -35,8 +35,8 @@ export default function SettingsAndAuditPage() {
   const [savedToast, setSavedToast] = useState("");
 
   // SMS Settings
-  const [smsEndpoint, setSmsEndpoint] = useState("https://api.sms-gateway-bd.com/v2/send");
-  const [smsApiKey, setSmsApiKey] = useState("ak_live_bd_99812491204812");
+  const [smsEndpoint, setSmsEndpoint] = useState("");
+  const [smsApiKey, setSmsApiKey] = useState("");
   const [smsSenderId, setSmsSenderId] = useState("ONNESHAHOSP");
 
   // Real Database Audit Logs State

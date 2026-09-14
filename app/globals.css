@@ -71,3 +71,104 @@ body {
     margin: 12mm 15mm;
   }
 }
+
+/* ================================================== */
+/* Phase 17: Accessibility + Mobile + Performance     */
+/* ================================================== */
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 10000;
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  transition: top 0.2s;
+}
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* Focus-visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Minimum touch target for hospital mobile use */
+@media (pointer: coarse) {
+  button,
+  a,
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Responsive table wrapper */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Status messages for screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Live region for status announcements */
+[aria-live] {
+  position: relative;
+}
+
+/* Mobile-first action bar */
+@media (max-width: 640px) {
+  .mobile-full-width {
+    width: 100%;
+  }
+
+  .mobile-stack {
+    flex-direction: column;
+  }
+
+  .mobile-hide {
+    display: none;
+  }
+}
+
+/* Prevent service worker/PWA from affecting print */
+@media print {
+  .pwa-only,
+  .install-prompt,
+  .network-status,
+  .skip-to-content {
+    display: none !important;
+  }
+}
