@@ -430,7 +430,7 @@ export async function voidInvoiceAction(params: {
     await recordAuditLog({
       organizationId: session.organizationId,
       userId: session.userId,
-      action: "UPDATE",
+      action: "VOID",
       module: "BILLING",
       entityType: "invoice",
       entityId: params.invoiceId,

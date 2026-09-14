@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Settings,
   ShieldCheck,
@@ -12,9 +12,13 @@ import {
   Lock,
   Smartphone,
   AlertCircle,
+  RefreshCw,
+  Search,
+  Eye,
 } from "lucide-react";
 import { PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 import { RoleType } from "@/types";
+import { getAuditLogsAction, AuditLogRecord } from "@/lib/audit/logger";
 
 const DEFAULT_HOSPITAL_PROFILE = {
   name: "Onnesha Hospital & Diagnostic Complex",
@@ -35,45 +39,62 @@ export default function SettingsAndAuditPage() {
   const [smsApiKey, setSmsApiKey] = useState("ak_live_bd_99812491204812");
   const [smsSenderId, setSmsSenderId] = useState("ONNESHAHOSP");
 
-  // Audit Logs
-  const [auditLogs, setAuditLogs] = useState([
-    {
-      id: "aud-1",
-      timestamp: "12 Sep 2026 • 05:42 PM",
-      actor: "Jewel Hossain (Cashier)",
-      action: "INSERT",
-      table: "invoices",
-      record: "INV-2026-0891",
-      details: "Created Money Receipt ৳1300 for patient Md. Rafiqul Islam (OH-000101)",
-    },
-    {
-      id: "aud-2",
-      timestamp: "12 Sep 2026 • 05:30 PM",
-      actor: "Admin (Authorized)",
-      action: "DISCOUNT",
-      table: "invoices",
-      record: "INV-2026-0891",
-      details: "Approved ৳100 special concession waiver on consultation",
-    },
-    {
-      id: "aud-3",
-      timestamp: "12 Sep 2026 • 05:15 PM",
-      actor: "Apon Mia (Front Desk)",
-      action: "INSERT",
-      table: "appointments",
-      record: "Token A-012",
-      details: "Assigned OPD Token A-012 for Prof. Dr. M. A. Rahman",
-    },
-    {
-      id: "aud-4",
-      timestamp: "12 Sep 2026 • 04:55 PM",
-      actor: "Super Admin",
-      action: "VOID",
-      table: "invoices",
-      record: "INV-2026-0888",
-      details: "Voided invoice due to patient cancellation. Reason: Patient requested reschedule.",
-    },
-  ]);
+  // Real Database Audit Logs State
+  const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+  const [moduleFilter, setModuleFilter] = useState("ALL");
+  const [actionFilter, setActionFilter] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLogForDiff, setSelectedLogForDiff] = useState<AuditLogRecord | null>(null);
+
+  const reloadLogs = async () => {
+    setLoadingAudit(true);
+    try {
+      const res = await getAuditLogsAction({
+        module: moduleFilter !== "ALL" ? moduleFilter : undefined,
+        action: actionFilter !== "ALL" ? actionFilter : undefined,
+        search: searchQuery.trim() || undefined,
+        limit: 100,
+      });
+      if (res.success && res.data) {
+        setAuditLogs(res.data.logs);
+      }
+    } catch (err) {
+      console.error("Failed to load audit logs", err);
+    } finally {
+      setLoadingAudit(false);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLogs() {
+      if (activeTab !== "audit") return;
+      setLoadingAudit(true);
+      try {
+        const res = await getAuditLogsAction({
+          module: moduleFilter !== "ALL" ? moduleFilter : undefined,
+          action: actionFilter !== "ALL" ? actionFilter : undefined,
+          search: searchQuery.trim() || undefined,
+          limit: 100,
+        });
+        if (isMounted && res.success && res.data) {
+          setAuditLogs(res.data.logs);
+        }
+      } catch (err) {
+        console.error("Failed to load audit logs", err);
+      } finally {
+        if (isMounted) {
+          setLoadingAudit(false);
+        }
+      }
+    }
+
+    void loadLogs();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, moduleFilter, actionFilter]);
 
   const togglePermission = (permCode: string) => {
     const currentList = rolePerms[selectedRoleForEdit] || [];
@@ -234,47 +255,181 @@ export default function SettingsAndAuditPage() {
 
       {/* TAB 2: AUDIT LOGS TRACKER */}
       {activeTab === "audit" && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs">
-          <div className="pb-4 border-b border-slate-100 mb-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center">
-              <History className="w-4 h-4 mr-2 text-sky-600" />
-              Hospital System Audit Trail & Financial Modifications
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Strict immutable logging: who created/edited patients, authorized discounts, voided bills, or changed clinical records.
-            </p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 flex items-center">
+                <History className="w-4 h-4 mr-2 text-sky-600" />
+                Live PostgreSQL Audit Vault (Immutable Forensic Logs)
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Tracks user modifications, financial voiding/discounts, clinical updates, and print audits with zero mock data.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={reloadLogs}
+                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition"
+                title="Refresh audit logs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingAudit ? "animate-spin text-sky-600" : ""}`} />
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-3">
-            {auditLogs.map((log) => (
-              <div
-                key={log.id}
-                className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs"
+          {/* Search and Filters Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+            <div className="relative col-span-2">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && void reloadLogs()}
+                placeholder="Search Entity ID, Patient ID, or Invoice #..."
+                className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+              />
+            </div>
+
+            <div>
+              <select
+                value={moduleFilter}
+                onChange={(e) => setModuleFilter(e.target.value)}
+                className="w-full p-1.5 bg-white border border-slate-200 rounded-lg font-medium text-slate-700"
               >
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-slate-500 text-[11px]">{log.timestamp}</span>
-                    <span
-                      className={`font-bold px-1.5 py-0.5 rounded text-[10px] uppercase font-mono ${
-                        log.action === "VOID"
-                          ? "bg-rose-100 text-rose-800"
-                          : log.action === "DISCOUNT"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-sky-100 text-sky-800"
-                      }`}
-                    >
-                      {log.action}
-                    </span>
-                    <strong className="text-slate-900">{log.actor}</strong>
-                  </div>
-                  <p className="text-slate-700 mt-1 font-medium">{log.details}</p>
-                </div>
-                <span className="font-mono text-[11px] text-slate-400">
-                  table: {log.table} • {log.record}
-                </span>
-              </div>
-            ))}
+                <option value="ALL">All Modules</option>
+                <option value="BILLING">Billing & Invoices</option>
+                <option value="CLINICAL">Clinical & Rx</option>
+                <option value="PATIENT">Patient Records</option>
+                <option value="PHARMACY">Pharmacy & Stock</option>
+                <option value="LAB">Lab Diagnostics</option>
+                <option value="IAM">IAM & Roles</option>
+                <option value="DOCUMENT">Printing & Documents</option>
+              </select>
+            </div>
+
+            <div>
+              <select
+                value={actionFilter}
+                onChange={(e) => setActionFilter(e.target.value)}
+                className="w-full p-1.5 bg-white border border-slate-200 rounded-lg font-medium text-slate-700"
+              >
+                <option value="ALL">All Actions</option>
+                <option value="CREATE">CREATE</option>
+                <option value="UPDATE">UPDATE</option>
+                <option value="DELETE">DELETE</option>
+                <option value="VOID">VOID</option>
+                <option value="DISCOUNT">DISCOUNT</option>
+                <option value="REFUND">REFUND</option>
+                <option value="PRINT">PRINT</option>
+              </select>
+            </div>
           </div>
+
+          {/* Logs List */}
+          <div className="space-y-2.5">
+            {loadingAudit ? (
+              <div className="text-center py-10 text-slate-400 text-xs flex items-center justify-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-sky-600" />
+                Querying PostgreSQL audit vault...
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="text-center py-10 text-slate-400 text-xs border border-dashed border-slate-200 rounded-xl bg-slate-50">
+                No audit events found matching the criteria. Live audit logs will appear as actions occur.
+              </div>
+            ) : (
+              auditLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="p-3 bg-slate-50 hover:bg-slate-100/70 transition rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-slate-400 text-[11px]">
+                        {new Date(log.created_at).toLocaleString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                        })}
+                      </span>
+                      <span
+                        className={`font-bold px-1.5 py-0.5 rounded text-[10px] uppercase font-mono ${
+                          log.action === "VOID" || log.action === "DELETE"
+                            ? "bg-rose-100 text-rose-800"
+                            : log.action === "DISCOUNT" || log.action === "REFUND"
+                            ? "bg-amber-100 text-amber-800"
+                            : log.action === "CREATE"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-sky-100 text-sky-800"
+                        }`}
+                      >
+                        {log.action}
+                      </span>
+                      <span className="font-semibold text-slate-900 bg-slate-200/60 px-1.5 py-0.5 rounded text-[10px]">
+                        {log.module}
+                      </span>
+                      <strong className="text-slate-800 font-mono text-[11px]">{log.entity_type}</strong>
+                    </div>
+                    <div className="text-slate-600 font-mono text-[11px]">
+                      Entity Reference: <span className="font-bold text-slate-800">{log.entity_id}</span>
+                      {log.ip_address && <span className="text-slate-400 ml-2">IP: {log.ip_address}</span>}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2 shrink-0">
+                    {(log.old_values || log.new_values) && (
+                      <button
+                        onClick={() => setSelectedLogForDiff(log)}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 py-1 rounded-lg transition"
+                      >
+                        <Eye className="w-3 h-3" />
+                        Inspect Diff
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Audit Diff Inspector Modal */}
+          {selectedLogForDiff && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+              <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[80vh] flex flex-col">
+                <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+                  <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-sky-600" />
+                    Audit Forensic Diff: {selectedLogForDiff.entity_type} ({selectedLogForDiff.entity_id})
+                  </h4>
+                  <button
+                    onClick={() => setSelectedLogForDiff(null)}
+                    className="text-slate-400 hover:text-slate-600 text-xs font-bold px-2 py-1 bg-slate-100 rounded-lg"
+                  >
+                    Close
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 overflow-y-auto text-xs font-mono">
+                  <div className="bg-rose-50/50 border border-rose-200 p-3 rounded-xl">
+                    <span className="text-[10px] font-bold text-rose-700 block mb-1 uppercase">Old State (Before)</span>
+                    <pre className="text-[11px] text-slate-700 whitespace-pre-wrap">
+                      {selectedLogForDiff.old_values ? JSON.stringify(selectedLogForDiff.old_values, null, 2) : "None (New Record)"}
+                    </pre>
+                  </div>
+                  <div className="bg-emerald-50/50 border border-emerald-200 p-3 rounded-xl">
+                    <span className="text-[10px] font-bold text-emerald-700 block mb-1 uppercase">New State (After)</span>
+                    <pre className="text-[11px] text-slate-700 whitespace-pre-wrap">
+                      {selectedLogForDiff.new_values ? JSON.stringify(selectedLogForDiff.new_values, null, 2) : "None (Deleted)"}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
