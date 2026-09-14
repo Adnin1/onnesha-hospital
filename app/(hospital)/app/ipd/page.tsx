@@ -84,137 +84,137 @@ export default function IPDAdmissionsPage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Load Inpatients & Beds from real database
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const supabase = createClient();
-
-      // 1. Fetch active IPD visits
-      const { data: visitsData, error: vErr } = await supabase
-        .from("patient_visits")
-        .select(`
-          id,
-          visit_number,
-          patient_id,
-          chief_complaint,
-          admitted_at,
-          status,
-          patients (
-            id,
-            patient_code,
-            full_name,
-            phone,
-            gender
-          ),
-          bed_assignments (
-            id,
-            bed_id,
-            status,
-            beds (
-              id,
-              bed_number,
-              wards (
-                name
-              )
-            )
-          )
-        `)
-        .eq("visit_type", "IPD")
-        .eq("status", "ACTIVE")
-        .order("admitted_at", { ascending: false });
-
-      if (!vErr && visitsData) {
-        interface VisitItem {
-          id: string;
-          visit_number: string;
-          patient_id: string;
-          chief_complaint: string | null;
-          admitted_at: string;
-          status: string;
-          patients: {
-            id: string;
-            patient_code: string;
-            full_name: string;
-            phone: string;
-            gender: string;
-          } | null;
-          bed_assignments: Array<{
-            id: string;
-            bed_id: string;
-            status: string;
-            beds: {
-              id: string;
-              bed_number: string;
-              wards: { name: string } | null;
-            } | null;
-          }> | null;
-        }
-
-        const mapped: InpatientRecord[] = (visitsData as unknown as VisitItem[]).map((v) => {
-          const activeBedAssign = v.bed_assignments?.find((ba) => ba.status === "ACTIVE");
-          return {
-            id: v.id,
-            visit_number: v.visit_number || "IPD-V",
-            patient_id: v.patient_id,
-            patient_name: v.patients?.full_name || "Unknown Patient",
-            patient_code: v.patients?.patient_code || "P-PENDING",
-            phone: v.patients?.phone || "",
-            gender: v.patients?.gender || "OTHER",
-            bed_id: activeBedAssign?.beds?.id,
-            bed_number: activeBedAssign?.beds?.bed_number || "UNASSIGNED",
-            ward_name: activeBedAssign?.beds?.wards?.name || "General IPD",
-            admitted_at: v.admitted_at,
-            doctor_name: "Attending Consultant",
-            provisional_diagnosis: v.chief_complaint || "Acute Condition Requiring Inpatient Care",
-            status: "ADMITTED",
-          };
-        });
-
-        setInpatients(mapped);
-        if (mapped.length > 0 && !selectedAdmission) {
-          setSelectedAdmission(mapped[0]);
-        }
-      }
-
-      // 2. Fetch available beds
-      const { data: bedsData } = await supabase
-        .from("beds")
-        .select(`
-          id,
-          bed_number,
-          status,
-          wards (
-            name
-          )
-        `)
-        .order("bed_number");
-
-      if (bedsData) {
-        interface BedItem {
-          id: string;
-          bed_number: string;
-          status: string;
-          wards: { name: string } | null;
-        }
-        const mappedBeds: AvailableBed[] = (bedsData as unknown as BedItem[]).map((b) => ({
-          id: b.id,
-          bed_number: b.bed_number,
-          ward_name: b.wards?.name || "General Ward",
-          status: b.status,
-        }));
-        setAvailableBeds(mappedBeds);
-      }
-    } catch {
-      // Handled gracefully
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [refreshIndex, setRefreshIndex] = useState(0);
 
   useEffect(() => {
+    async function loadData() {
+      try {
+        const supabase = createClient();
+
+        // 1. Fetch active IPD visits
+        const { data: visitsData, error: vErr } = await supabase
+          .from("patient_visits")
+          .select(`
+            id,
+            visit_number,
+            patient_id,
+            chief_complaint,
+            admitted_at,
+            status,
+            patients (
+              id,
+              patient_code,
+              full_name,
+              phone,
+              gender
+            ),
+            bed_assignments (
+              id,
+              bed_id,
+              status,
+              beds (
+                id,
+                bed_number,
+                wards (
+                  name
+                )
+              )
+            )
+          `)
+          .eq("visit_type", "IPD")
+          .eq("status", "ACTIVE")
+          .order("admitted_at", { ascending: false });
+
+        if (!vErr && visitsData) {
+          interface VisitItem {
+            id: string;
+            visit_number: string;
+            patient_id: string;
+            chief_complaint: string | null;
+            admitted_at: string;
+            status: string;
+            patients: {
+              id: string;
+              patient_code: string;
+              full_name: string;
+              phone: string;
+              gender: string;
+            } | null;
+            bed_assignments: Array<{
+              id: string;
+              bed_id: string;
+              status: string;
+              beds: {
+                id: string;
+                bed_number: string;
+                wards: { name: string } | null;
+              } | null;
+            }> | null;
+          }
+
+          const mapped: InpatientRecord[] = (visitsData as unknown as VisitItem[]).map((v) => {
+            const activeBedAssign = v.bed_assignments?.find((ba) => ba.status === "ACTIVE");
+            return {
+              id: v.id,
+              visit_number: v.visit_number || "IPD-V",
+              patient_id: v.patient_id,
+              patient_name: v.patients?.full_name || "Unknown Patient",
+              patient_code: v.patients?.patient_code || "P-PENDING",
+              phone: v.patients?.phone || "",
+              gender: v.patients?.gender || "OTHER",
+              bed_id: activeBedAssign?.beds?.id,
+              bed_number: activeBedAssign?.beds?.bed_number || "UNASSIGNED",
+              ward_name: activeBedAssign?.beds?.wards?.name || "General IPD",
+              admitted_at: v.admitted_at,
+              doctor_name: "Attending Consultant",
+              provisional_diagnosis: v.chief_complaint || "Acute Condition Requiring Inpatient Care",
+              status: "ADMITTED",
+            };
+          });
+
+          setInpatients(mapped);
+          if (mapped.length > 0 && !selectedAdmission) {
+            setSelectedAdmission(mapped[0]);
+          }
+        }
+
+        // 2. Fetch available beds
+        const { data: bedsData } = await supabase
+          .from("beds")
+          .select(`
+            id,
+            bed_number,
+            status,
+            wards (
+              name
+            )
+          `)
+          .order("bed_number");
+
+        if (bedsData) {
+          interface BedItem {
+            id: string;
+            bed_number: string;
+            status: string;
+            wards: { name: string } | null;
+          }
+          const mappedBeds: AvailableBed[] = (bedsData as unknown as BedItem[]).map((b) => ({
+            id: b.id,
+            bed_number: b.bed_number,
+            ward_name: b.wards?.name || "General Ward",
+            status: b.status,
+          }));
+          setAvailableBeds(mappedBeds);
+        }
+      } catch {
+        // Handled gracefully
+      } finally {
+        setLoading(false);
+      }
+    }
+
     loadData();
-  }, []);
+  }, [refreshIndex]);
 
   const handlePrintDischarge = () => {
     window.print();
@@ -253,7 +253,7 @@ export default function IPDAdmissionsPage() {
         setActionSuccess("Patient successfully admitted to IPD.");
         setShowAdmissionModal(false);
         setAdmissionForm({ patientCodeOrId: "", provisionalDiagnosis: "", bedId: "" });
-        await loadData();
+        setRefreshIndex((prev) => prev + 1);
       }
     } catch (err: unknown) {
       setActionError(err instanceof Error ? err.message : "Error admitting patient.");
@@ -284,7 +284,7 @@ export default function IPDAdmissionsPage() {
         setActionSuccess("Patient transferred successfully.");
         setShowTransferModal(false);
         setTransferForm({ toBedId: "", reason: "" });
-        await loadData();
+        setRefreshIndex((prev) => prev + 1);
       }
     } catch (err: unknown) {
       setActionError(err instanceof Error ? err.message : "Error executing transfer.");
@@ -320,7 +320,7 @@ export default function IPDAdmissionsPage() {
           hospitalCourse: "",
           dischargeAdvice: "",
         });
-        await loadData();
+        setRefreshIndex((prev) => prev + 1);
       }
     } catch (err: unknown) {
       setActionError(err instanceof Error ? err.message : "Error discharging patient.");
@@ -391,7 +391,7 @@ export default function IPDAdmissionsPage() {
               <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                 <Bed className="w-8 h-8 mx-auto text-slate-300 mb-2" />
                 <p className="text-xs font-semibold text-slate-700">No active inpatient admissions</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Click "New IPD Admission" above to admit a patient.</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Click &quot;New IPD Admission&quot; above to admit a patient.</p>
               </div>
             ) : (
               <div className="space-y-2">
