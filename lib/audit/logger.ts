@@ -36,28 +36,12 @@ export interface AuditLogRecord {
 }
 
 /**
- * Records an immutable audit log entry in the PostgreSQL audit_logs vault.
+ * Persist an immutable audit entry. Audit persistence is fail-closed so a
+ * sensitive mutation cannot report success when its forensic record failed.
  */
 export async function recordAuditLog(entry: AuditEntry): Promise<void> {
   try {
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      const supabase = createClient();
-      await supabase.from("audit_logs").insert({
-        organization_id: entry.organizationId,
-        user_id: entry.userId || null,
-        action: entry.action,
-        module: entry.module,
-        entity_type: entry.entityType,
-        entity_id: entry.entityId,
-        old_values: entry.oldValues || null,
-        new_values: entry.newValues || null,
-        ip_address: entry.ipAddress || null,
-        user_agent: entry.userAgent || null,
-      });
-      return;
-    }
-    const admin = createAdminClient();
-    await admin.from("audit_logs").insert({
+    const payload = {
       organization_id: entry.organizationId,
       user_id: entry.userId || null,
       action: entry.action,
@@ -68,15 +52,26 @@ export async function recordAuditLog(entry: AuditEntry): Promise<void> {
       new_values: entry.newValues || null,
       ip_address: entry.ipAddress || null,
       user_agent: entry.userAgent || null,
-    });
-  } catch (err) {
-    // Log silently to avoid breaking primary transaction while ensuring server trace
-    console.error("[AUDIT VAULT LOG FAILURE]", err);
+    };
+
+    const client = process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? createAdminClient()
+      : createClient();
+
+    const { error } = await client.from("audit_logs").insert(payload);
+
+    if (error) {
+      throw new Error(`Audit log persistence failed: ${error.message}`);
+    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown audit log persistence error";
+    console.error("[AUDIT LOG FAILURE]", message);
+    throw new Error(message);
   }
 }
 
 /**
- * Server Action: Fetches audit trail logs with strict multi-tenant RLS and pagination.
+ * Fetch audit trail logs with strict multi-tenant RLS and pagination.
  * Requires SETTINGS_AUDIT or SETTINGS_VIEW permission.
  */
 export async function getAuditLogsAction(params?: {
