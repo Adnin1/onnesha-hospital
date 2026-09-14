@@ -84,6 +84,139 @@ export async function getDoctorSchedulesAction(
 }
 
 /**
+ * 2b. Create New Doctor
+ */
+export async function createDoctorAction(params: {
+  fullName: string;
+  specialization: string;
+  bmdcRegNumber: string;
+  phone?: string;
+  consultationFee?: number;
+  departmentId?: string;
+  roomNumber?: string;
+}): Promise<ActionResult<{ doctor: DoctorRecord }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    let deptId = params.departmentId;
+    if (!deptId) {
+      const { data: dept } = await supabase
+        .from("departments")
+        .select("id")
+        .eq("organization_id", session.organizationId)
+        .limit(1)
+        .single();
+      deptId = dept?.id;
+    }
+
+    const { data: newDoc, error } = await supabase
+      .from("doctors")
+      .insert({
+        organization_id: session.organizationId,
+        department_id: deptId,
+        full_name: params.fullName,
+        specialization: params.specialization,
+        bmdc_reg_number: params.bmdcRegNumber,
+        phone: params.phone || "01700000000",
+        opd_fee: params.consultationFee || 800,
+        room_number: params.roomNumber || "Chamber 101",
+        is_active: true,
+      })
+      .select("*, departments(name)")
+      .single();
+
+    if (error || !newDoc) {
+      return { success: false, error: error?.message || "Failed to add doctor" };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "CREATE",
+      module: "APPOINTMENT",
+      entityType: "doctor",
+      entityId: newDoc.id,
+      newValues: params,
+    });
+
+    interface DoctorDbRow extends Omit<DoctorRecord, "department_name"> {
+      departments?: { name: string } | null;
+    }
+
+    const docRow = newDoc as unknown as DoctorDbRow;
+    const doctor: DoctorRecord = {
+      ...docRow,
+      department_name: docRow.departments?.name || "General Medicine",
+    };
+
+    return { success: true, data: { doctor } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Error creating doctor";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 2c. Create / Publish Doctor Schedule
+ */
+export async function createDoctorScheduleAction(params: {
+  doctorId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  maxPatients?: number;
+  roomNumber?: string;
+  isPublished?: boolean;
+}): Promise<ActionResult<{ schedule: DoctorScheduleRecord }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: sched, error } = await supabase
+      .from("doctor_schedules")
+      .insert({
+        organization_id: session.organizationId,
+        doctor_id: params.doctorId,
+        day_of_week: params.dayOfWeek,
+        start_time: params.startTime,
+        end_time: params.endTime,
+        max_patients: params.maxPatients || 30,
+        room_number: params.roomNumber || "Chamber 101",
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (error || !sched) {
+      return { success: false, error: error?.message || "Failed to create doctor schedule" };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "CREATE",
+      module: "APPOINTMENT",
+      entityType: "doctor_schedule",
+      entityId: sched.id,
+      newValues: params,
+    });
+
+    return { success: true, data: { schedule: sched as unknown as DoctorScheduleRecord } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Error creating schedule";
+    return { success: false, error: msg };
+  }
+}
+
+/**
  * 3. Book Appointment / Issue Token Action
  */
 export async function bookAppointmentAction(params: {
