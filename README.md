@@ -13,13 +13,15 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
 ---
 
-## 📋 Final Production Hardening & Truth Documentation
+## 📋 Final Production Hardening & Operational Acceptance Documentation
+- 📄 [Final Operational Acceptance Matrix](./docs/FINAL_OPERATIONAL_ACCEPTANCE_MATRIX.md)
+- 📄 [Real Browser E2E Specification & Results](./docs/FINAL_REAL_BROWSER_E2E.md)
+- 📄 [HMS Daily Operational Staff Runbook](./docs/HMS_DAILY_OPERATION_RUNBOOK.md)
+- 📄 [Final Database Workflow Verification](./docs/FINAL_DATABASE_WORKFLOW_VERIFICATION.md)
+- 📄 [Final Regression Test Matrix](./docs/FINAL_REGRESSION_TEST_MATRIX.md)
+- 📄 [Production Runtime Verification](./docs/PRODUCTION_RUNTIME_FINAL_VERIFICATION.md)
 - 📄 [Final Truth Audit & System Classification](./docs/FINAL_TRUTH_AUDIT.md)
-- 📄 [Production Runtime Architecture](./docs/PRODUCTION_RUNTIME_ARCHITECTURE.md)
 - 📄 [Final Database & RLS Security Audit](./docs/FINAL_RLS_SECURITY_AUDIT.md)
-- 📄 [Final Real E2E & Test Verification Report](./docs/FINAL_REAL_E2E_VERIFICATION.md)
-- 📄 [Final Production Security Audit](./docs/FINAL_PRODUCTION_SECURITY_AUDIT.md)
-- 📄 [Final Backup & Disaster Recovery Report](./docs/FINAL_BACKUP_DR_VERIFICATION.md)
 - 📄 [Final Launch Acceptance Report](./docs/FINAL_LAUNCH_ACCEPTANCE.md)
 
 ---
