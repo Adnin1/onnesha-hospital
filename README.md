@@ -1,7 +1,7 @@
 # Onnesha Hospital Management System (OHMS)
 Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
-[![Tests](https://img.shields.io/badge/tests-216%2F216%20passing-brightgreen)](#automated-testing)
+[![Tests](https://img.shields.io/badge/tests-226%2F226%20passing-brightgreen)](#automated-testing)
 [![TypeScript](https://img.shields.io/badge/typescript-strict%200%20errors-blue)](#quality-gates)
 [![ESLint](https://img.shields.io/badge/eslint-0%20errors-brightgreen)](#quality-gates)
 [![Next.js](https://img.shields.io/badge/next.js-16.3.5%20turbopack-black)](https://nextjs.org)
@@ -44,7 +44,7 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ---
 
 ## 🧪 Automated Testing
-216 / 216 automated test cases passing across 20 complete test suites:
+226 / 226 automated test cases passing across 24 complete test suites:
 - `tests/security.test.mjs` (20 Scenarios)
 - `tests/clinical.test.mjs` (21 Scenarios)
 - `tests/appointments.test.mjs` (10 Scenarios)
@@ -66,6 +66,10 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 - `tests/integration/pharmacy-and-lab.test.mjs` (2 Scenarios)
 - `tests/integration/billing-and-payments.test.mjs` (2 Scenarios)
 - `tests/integration/multi-tenant-rbac.test.mjs` (2 Scenarios)
+- `tests/e2e/patient-journey-e2e.test.mjs` (4 Scenarios)
+- `tests/e2e/emergency-e2e.test.mjs` (2 Scenarios)
+- `tests/e2e/pharmacy-lab-e2e.test.mjs` (2 Scenarios)
+- `tests/e2e/billing-payment-e2e.test.mjs` (2 Scenarios)
 
 ---
 
@@ -73,6 +77,6 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ```bash
 npm run typecheck    # 0 errors
 npx eslint . --quiet # 0 errors
-npm test             # 216/216 pass
+npm test             # 226/226 pass
 npm run build        # 33/33 routes statically exported for Cloudflare Pages
 ```
