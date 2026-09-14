@@ -16,6 +16,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/appointment",
     "/check-token",
     "/contact",
+    "/privacy",
+    "/terms",
+    "/consent",
+    "/downloads/desktop",
   ];
 
   return publicRoutes.map((route) => ({

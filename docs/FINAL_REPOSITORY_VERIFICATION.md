@@ -9,7 +9,7 @@ This document provides an itemized capability verification matrix for the Onnesh
 
 | Capability | Status | Verification Evidence |
 |------------|--------|----------------------|
-| **Public Website Pages** | `AUTOMATED-TESTED` & `DEPLOYED` | 33 static HTML routes built, verified via `tests/phase13-public-appointment-seo.test.mjs` |
+| **Public Website Pages** | `AUTOMATED-TESTED` & `DEPLOYED` | 36 static HTML routes built, verified via `tests/phase13-public-appointment-seo.test.mjs` & `tests/e2e/privacy-and-compliance-e2e.test.mjs` |
 | **Patient Registration & Search** | `AUTOMATED-TESTED` & `IMPLEMENTED` | Verified via `tests/integration/patient-workflow.test.mjs` & `tests/clinical.test.mjs` |
 | **Outpatient Department (OPD)** | `AUTOMATED-TESTED` & `IMPLEMENTED` | Vitals validation & consultation console verified in `tests/clinical.test.mjs` |
 | **Inpatient Department (IPD)** | `AUTOMATED-TESTED` & `IMPLEMENTED` | Admission & bed transfer verified in `tests/integration/emergency-and-bed.test.mjs` |

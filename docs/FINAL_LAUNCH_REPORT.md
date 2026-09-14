@@ -12,8 +12,8 @@
 | Category | Status | Count / Details |
 |----------|--------|-----------------|
 | **Software Modules (OPD, IPD, Emergency, Billing, Pharmacy, Lab, HR, Audit)** | `IMPLEMENTED` | 100% Code complete |
-| **Automated Tests** | `AUTOMATED-TESTED` | **209 / 209 Tests Passing** (20 test suites) |
-| **Web Pre-Rendering** | `DEPLOYED` | 33 static pages pre-rendered on Cloudflare Pages |
+| **Automated Tests** | `AUTOMATED-TESTED` | **236 / 236 Tests Passing** (25 test suites) |
+| **Web Pre-Rendering** | `DEPLOYED` | 36 static pages pre-rendered on Cloudflare Pages |
 | **Custom Domain (onneshahospital.com)** | `OWNER-ACTION-REQUIRED` | Requires DNS CNAME pointing to Cloudflare Pages |
 | **Live SMS / WhatsApp / Email API Keys** | `EXTERNAL-CREDENTIAL-REQUIRED` | Requires provider keys in `.env.local` |
 | **Live Payment Merchant Credentials** | `EXTERNAL-CREDENTIAL-REQUIRED` | Requires bKash, Nagad, SSLCommerz live keys |
