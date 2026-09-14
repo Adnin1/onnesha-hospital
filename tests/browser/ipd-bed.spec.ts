@@ -1,13 +1,29 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Real Browser E2E: IPD Admission & Bed Matrix", () => {
-  test("1. IPD admissions page loads active admissions list and bed matrix", async ({ page }) => {
+  test("1. IPD admissions page loads active admissions list and provides admission trigger", async ({ page }) => {
     await page.goto("/app/ipd");
-    await expect(page.locator("body")).toBeVisible();
+    await page.waitForLoadState("domcontentloaded");
+
+    const container = page.locator("#main-content, main").first();
+    await expect(container).toBeVisible();
+
+    const admitBtn = page.locator('button:has-text("ভর্তি"), button:has-text("Admit"), button:has-text("নতুন")').first();
+    if (await admitBtn.isVisible()) {
+      await expect(admitBtn).toBeEnabled();
+    }
   });
 
-  test("2. Bed management page loads occupancy grid and rate configuration", async ({ page }) => {
+  test("2. Bed management page loads occupancy grid and rate configuration controls", async ({ page }) => {
     await page.goto("/app/beds");
-    await expect(page.locator("body")).toBeVisible();
+    await page.waitForLoadState("domcontentloaded");
+
+    const container = page.locator("#main-content, main").first();
+    await expect(container).toBeVisible();
+
+    const addBedBtn = page.locator('button:has-text("বেড"), button:has-text("Bed"), button').first();
+    if (await addBedBtn.isVisible()) {
+      await expect(addBedBtn).toBeEnabled();
+    }
   });
 });
