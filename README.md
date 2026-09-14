@@ -14,6 +14,8 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ---
 
 ## 📋 Final Production Hardening & Operational Acceptance Documentation
+- 📄 [Final Current State Audit](./docs/FINAL_CURRENT_STATE_AUDIT.md)
+- 📄 [Final Real-World Operational Certification Matrix](./docs/FINAL_REAL_WORLD_OPERATIONAL_CERTIFICATION.md)
 - 📄 [Final Operational Acceptance Matrix](./docs/FINAL_OPERATIONAL_ACCEPTANCE_MATRIX.md)
 - 📄 [Real Browser E2E Specification & Results](./docs/FINAL_REAL_BROWSER_E2E.md)
 - 📄 [HMS Daily Operational Staff Runbook](./docs/HMS_DAILY_OPERATION_RUNBOOK.md)
