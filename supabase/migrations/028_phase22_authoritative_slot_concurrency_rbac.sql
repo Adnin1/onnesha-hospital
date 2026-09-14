@@ -1,15 +1,17 @@
 -- =====================================================================================
 -- 028_phase22_authoritative_slot_concurrency_rbac.sql
--- Onnesha Hospital Management System (OHMS) - Phase 22 Final Production Hardening
--- Corrected to match canonical schema (profiles, roles, permissions, role_permissions, user_roles)
--- 1. Authoritative Schedule Slot Validation (Mandatory p_schedule_id)
--- 2. Concurrency-Safe Capacity Lock via Transaction Advisory Locks
+-- Onnesha Hospital Management System (OHMS) - Phase 22 Production Hardening
+-- 1. Mandatory Authoritative Schedule Slot Validation (p_schedule_id UUID - No Default NULL)
+-- 2. Concurrency-Safe Capacity Lock via Transaction Advisory Locks (pg_advisory_xact_lock)
 -- 3. DB-Level RBAC Authorization via user_roles & role_permissions
 -- 4. Public Organization Boundary Validation
 -- 5. Strict Security Definer search_path Isolation & EXECUTE Grant Hardening
 -- =====================================================================================
 
--- 1. Redefine book_online_appointment RPC (Authoritative Slot + Advisory Lock + Org Boundary)
+-- Drop obsolete signatures with default NULL schedule_id
+DROP FUNCTION IF EXISTS book_online_appointment(UUID, UUID, DATE, VARCHAR, VARCHAR, VARCHAR, UUID, INT, TEXT);
+
+-- 1. Redefine book_online_appointment RPC with MANDATORY p_schedule_id UUID
 CREATE OR REPLACE FUNCTION book_online_appointment(
     p_org_id UUID,
     p_doctor_id UUID,
@@ -17,7 +19,7 @@ CREATE OR REPLACE FUNCTION book_online_appointment(
     p_patient_name VARCHAR,
     p_patient_phone VARCHAR,
     p_patient_gender VARCHAR,
-    p_schedule_id UUID DEFAULT NULL,
+    p_schedule_id UUID,
     p_patient_age INT DEFAULT NULL,
     p_notes TEXT DEFAULT NULL
 )
