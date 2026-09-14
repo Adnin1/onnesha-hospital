@@ -106,8 +106,12 @@ export async function detectDuplicatePatients(
       .eq("organization_id", input.organizationId)
       .eq("is_deleted", false);
 
-    if (normPhone) {
+    if (normPhone && normEmergPhone) {
+      phoneQuery = phoneQuery.or(`phone.eq.${normPhone},phone.eq.${input.phone},emergency_contact_phone.eq.${normEmergPhone}`);
+    } else if (normPhone) {
       phoneQuery = phoneQuery.or(`phone.eq.${normPhone},phone.eq.${input.phone}`);
+    } else if (normEmergPhone) {
+      phoneQuery = phoneQuery.eq("emergency_contact_phone", normEmergPhone);
     }
 
     const { data: phoneMatches } = await phoneQuery;

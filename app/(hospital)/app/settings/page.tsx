@@ -13,9 +13,16 @@ import {
   Smartphone,
   AlertCircle,
 } from "lucide-react";
-import { MOCK_ORGANIZATION } from "@/lib/mock-data";
 import { PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 import { RoleType } from "@/types";
+
+const DEFAULT_HOSPITAL_PROFILE = {
+  name: "Onnesha Hospital & Diagnostic Complex",
+  banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক কমপ্লেক্স",
+  emergencyHotline: "+880 1700-000000",
+  ambulanceHotline: "+880 1800-000000",
+  address: "House 12, Road 5, Dhanmondi, Dhaka-1205, Bangladesh",
+};
 
 export default function SettingsAndAuditPage() {
   const [activeTab, setActiveTab] = useState<"hospital" | "rbac" | "sms" | "audit">("rbac");
@@ -353,7 +360,7 @@ export default function SettingsAndAuditPage() {
             </label>
             <input
               type="text"
-              defaultValue={MOCK_ORGANIZATION.name}
+              defaultValue={DEFAULT_HOSPITAL_PROFILE.name}
               className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-bold"
             />
           </div>
@@ -364,7 +371,7 @@ export default function SettingsAndAuditPage() {
             </label>
             <input
               type="text"
-              defaultValue={MOCK_ORGANIZATION.banglaName}
+              defaultValue={DEFAULT_HOSPITAL_PROFILE.banglaName}
               className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
             />
           </div>
@@ -376,7 +383,7 @@ export default function SettingsAndAuditPage() {
               </label>
               <input
                 type="text"
-                defaultValue={MOCK_ORGANIZATION.emergencyHotline}
+                defaultValue={DEFAULT_HOSPITAL_PROFILE.emergencyHotline}
                 className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
               />
             </div>
@@ -386,7 +393,7 @@ export default function SettingsAndAuditPage() {
               </label>
               <input
                 type="text"
-                defaultValue={MOCK_ORGANIZATION.ambulanceHotline}
+                defaultValue={DEFAULT_HOSPITAL_PROFILE.ambulanceHotline}
                 className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
               />
             </div>
@@ -398,7 +405,7 @@ export default function SettingsAndAuditPage() {
             </label>
             <textarea
               rows={2}
-              defaultValue={MOCK_ORGANIZATION.address}
+              defaultValue={DEFAULT_HOSPITAL_PROFILE.address}
               className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
             ></textarea>
           </div>

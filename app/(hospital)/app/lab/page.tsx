@@ -1,46 +1,86 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Microscope,
   CheckCircle2,
-  Clock,
   Printer,
   Search,
-  Plus,
-  AlertCircle,
-  FileCheck,
-  User,
   FlaskConical,
+  Barcode,
+  Microscope,
 } from "lucide-react";
-import { MOCK_LAB_ORDERS, MOCK_LAB_TESTS, MOCK_PATIENTS } from "@/lib/mock-data";
-import { LabOrder } from "@/types";
+import { DiagnosticOrderRecord } from "@/types/clinical-emr";
+import { getDiagnosticOrdersAction, verifyDiagnosticReportAction } from "@/lib/lab/actions";
 import { formatDateBDT } from "@/lib/utils";
 import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 
 export default function LabManagementPage() {
-  const [labOrders, setLabOrders] = useState<LabOrder[]>(MOCK_LAB_ORDERS);
-  const [selectedOrder, setSelectedOrder] = useState<LabOrder | null>(MOCK_LAB_ORDERS[0]);
+  const [labOrders, setLabOrders] = useState<DiagnosticOrderRecord[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<DiagnosticOrderRecord | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadOrders() {
+      setLoading(true);
+      const res = await getDiagnosticOrdersAction();
+      if (mounted) {
+        if (res.success && res.data?.orders) {
+          setLabOrders(res.data.orders);
+          if (res.data.orders.length > 0) {
+            setSelectedOrder(res.data.orders[0]);
+          }
+        }
+        setLoading(false);
+      }
+    }
+    loadOrders();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handlePrint = () => {
     window.print();
   };
 
-  const handleVerifyReport = (orderId: string) => {
-    setLabOrders((prev) =>
-      prev.map((ord) =>
-        ord.id === orderId
-          ? { ...ord, status: "verified", verified_by: "Dr. Kazi Jahangir (Biochemist)" }
-          : ord
-      )
-    );
-    if (selectedOrder?.id === orderId) {
-      setSelectedOrder((prev) =>
-        prev ? { ...prev, status: "verified", verified_by: "Dr. Kazi Jahangir (Biochemist)" } : null
+  const handleVerifyReport = async (orderId: string) => {
+    setVerifying(true);
+    const res = await verifyDiagnosticReportAction({
+      orderId,
+      pathologistRemarks: "Reviewed and validated by Consultant Pathologist",
+    });
+    setVerifying(false);
+
+    if (res.success) {
+      setLabOrders((prev) =>
+        prev.map((ord) =>
+          ord.id === orderId
+            ? { ...ord, status: "VERIFIED" }
+            : ord
+        )
       );
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder((prev) =>
+          prev ? { ...prev, status: "VERIFIED" } : null
+        );
+      }
+    } else {
+      alert(res.error || "Failed to verify diagnostic report");
     }
   };
+
+  const filteredOrders = labOrders.filter((ord) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      ord.order_number.toLowerCase().includes(q) ||
+      (ord.patient?.full_name && ord.patient.full_name.toLowerCase().includes(q)) ||
+      (ord.patient?.patient_code && ord.patient.patient_code.toLowerCase().includes(q)) ||
+      (ord.barcode && ord.barcode.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -54,14 +94,14 @@ export default function LabManagementPage() {
             Pathology Orders & Verified Reports
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Sample barcoding, automated biochemistry result entry, reference ranges, and verified letterhead printing.
+            Phlebotomy barcoding, automated parameter ranges, dual-gate clinical verification, and official letterhead printing.
           </p>
         </div>
 
         <div className="flex items-center space-x-2">
           <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-purple-50 text-purple-800 border border-purple-200 flex items-center">
             <FlaskConical className="w-4 h-4 mr-1.5 text-purple-600" />
-            Analyzers Online
+            Lab Engine Online
           </span>
         </div>
       </div>
@@ -75,58 +115,68 @@ export default function LabManagementPage() {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
               <input
                 type="text"
-                placeholder="Search by Order # or Patient..."
+                placeholder="Search by Order #, Barcode, Patient..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50"
               />
             </div>
 
-            <div className="space-y-2 max-h-[600px] overflow-y-auto">
-              {labOrders.map((ord) => {
-                const isSelected = selectedOrder?.id === ord.id;
-                return (
-                  <div
-                    key={ord.id}
-                    onClick={() => setSelectedOrder(ord)}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition flex justify-between items-center ${
-                      isSelected
-                        ? "bg-purple-50/80 border-purple-300 shadow-2xs"
-                        : "bg-white border-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono font-bold text-xs text-purple-900">
-                          {ord.order_number}
-                        </span>
-                        <span
-                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
-                            ord.status === "verified" || ord.status === "completed"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {ord.status}
+            {loading ? (
+              <div className="py-12 text-center text-xs text-slate-400">Loading diagnostic orders...</div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 text-xs">
+                <Microscope className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                No laboratory orders match your search.
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                {filteredOrders.map((ord) => {
+                  const isSelected = selectedOrder?.id === ord.id;
+                  return (
+                    <div
+                      key={ord.id}
+                      onClick={() => setSelectedOrder(ord)}
+                      className={`p-3.5 rounded-xl border cursor-pointer transition flex justify-between items-center ${
+                        isSelected
+                          ? "bg-purple-50/80 border-purple-300 shadow-2xs"
+                          : "bg-white border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono font-bold text-xs text-purple-900">
+                            {ord.order_number}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                              ord.status === "VERIFIED" || ord.status === "DELIVERED"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {ord.status}
+                          </span>
+                        </div>
+                        <p className="text-xs font-semibold text-slate-800 mt-1">
+                          {ord.patient?.full_name || "Patient"} ({ord.patient?.patient_code || ""})
+                        </p>
+                        <p className="text-[10px] text-slate-400 flex items-center mt-0.5">
+                          <Barcode className="w-3 h-3 mr-1 text-slate-400" />
+                          {ord.barcode} • Tests: {(ord.tests || []).map((t) => t.test_name).join(", ") || "General Panel"}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-500 block">
+                          {formatDateBDT(ord.created_at)}
                         </span>
                       </div>
-                      <p className="text-xs font-semibold text-slate-800 mt-1">
-                        {ord.patient_name} ({ord.patient_code})
-                      </p>
-                      <p className="text-[10px] text-slate-400">
-                        Tests: {ord.tests.map((t) => t.test_name.split(" ")[0]).join(", ")}
-                      </p>
                     </div>
-
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-500 block">
-                        {formatDateBDT(ord.ordered_at)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -138,19 +188,24 @@ export default function LabManagementPage() {
               <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6 no-print">
                 <div className="flex items-center space-x-2">
                   <span className="text-xs font-bold text-slate-500">Status:</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded uppercase bg-emerald-100 text-emerald-800">
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${
+                    selectedOrder.status === "VERIFIED"
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-amber-100 text-amber-800"
+                  }`}>
                     {selectedOrder.status}
                   </span>
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {selectedOrder.status !== "verified" && (
+                  {selectedOrder.status !== "VERIFIED" && (
                     <button
                       onClick={() => handleVerifyReport(selectedOrder.id)}
-                      className="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-2xs"
+                      disabled={verifying}
+                      className="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-2xs"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                      Verify & Sign Report
+                      {verifying ? "Signing..." : "Verify & Sign Report"}
                     </button>
                   )}
                   <button
@@ -166,25 +221,25 @@ export default function LabManagementPage() {
               {/* Printable Lab Report Pad */}
               <div className="print-pad">
                 <HospitalPrintHeader
-                  documentTitle="DIAGNOSTIC PATHOLOGY REPORT"
+                  documentTitle="DIAGNOSTIC PATHOLOGY & LAB REPORT"
                   documentNumber={selectedOrder.order_number}
-                  dateStr={formatDateBDT(selectedOrder.ordered_at)}
+                  dateStr={formatDateBDT(selectedOrder.created_at)}
                 />
 
                 {/* Patient Header */}
                 <div className="grid grid-cols-2 gap-4 text-xs py-3 border-y border-slate-200 my-4">
                   <div>
                     <span className="text-slate-500 block text-[10px]">Patient Name</span>
-                    <strong className="text-slate-900">{selectedOrder.patient_name}</strong>
+                    <strong className="text-slate-900">{selectedOrder.patient?.full_name}</strong>
                     <span className="block text-slate-600 font-mono text-[11px]">
-                      Patient ID: {selectedOrder.patient_code}
+                      Patient ID: {selectedOrder.patient?.patient_code} • {selectedOrder.patient?.gender}
                     </span>
                   </div>
                   <div className="text-right">
                     <span className="text-slate-500 block text-[10px]">Referred By</span>
-                    <strong className="text-slate-800">{selectedOrder.doctor_name}</strong>
+                    <strong className="text-slate-800">{selectedOrder.doctor?.full_name || "Self / OPD Walk-in"}</strong>
                     <span className="block text-slate-500 text-[11px]">
-                      Sample: Peripheral Venous Blood
+                      Barcode: <strong className="font-mono">{selectedOrder.barcode}</strong>
                     </span>
                   </div>
                 </div>
@@ -201,38 +256,48 @@ export default function LabManagementPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                      {selectedOrder.tests.map((test, idx) => (
-                        <tr
-                          key={idx}
-                          className={test.is_abnormal ? "bg-amber-50/50" : ""}
-                        >
-                          <td className="p-2.5 font-semibold text-slate-900">
-                            {test.test_name}
-                            {test.remarks && (
-                              <span className="block text-[10px] text-amber-800 italic mt-0.5">
-                                Note: {test.remarks}
-                              </span>
-                            )}
-                          </td>
-                          <td
-                            className={`p-2.5 text-center font-bold font-mono text-sm ${
-                              test.is_abnormal ? "text-amber-700" : "text-slate-900"
-                            }`}
-                          >
-                            {test.result_value || "Pending"}
-                            {test.is_abnormal && " *"}
-                          </td>
-                          <td className="p-2.5 text-center text-slate-600 font-mono">
-                            {test.unit || "-"}
-                          </td>
-                          <td className="p-2.5 text-slate-600 text-[11px]">
-                            {test.normal_range || "N/A"}
-                          </td>
-                        </tr>
-                      ))}
+                      {(selectedOrder.tests || []).flatMap((t, tIdx) => {
+                        if (t.parameters && t.parameters.length > 0) {
+                          return t.parameters.map((p, pIdx) => (
+                            <tr key={`${tIdx}-${pIdx}`} className={p.is_abnormal ? "bg-amber-50/50" : ""}>
+                              <td className="p-2.5 font-semibold text-slate-900">
+                                {t.test_name} - {p.parameter_name}
+                              </td>
+                              <td
+                                className={`p-2.5 text-center font-bold font-mono text-sm ${
+                                  p.is_abnormal ? "text-amber-700" : "text-slate-900"
+                                }`}
+                              >
+                                {p.observed_value || "Pending"}
+                                {p.is_abnormal && " *"}
+                              </td>
+                              <td className="p-2.5 text-center text-slate-600 font-mono">
+                                {p.unit || "-"}
+                              </td>
+                              <td className="p-2.5 text-slate-600 text-[11px]">
+                                {p.reference_range_male || p.reference_range_female || "Normal"}
+                              </td>
+                            </tr>
+                          ));
+                        }
+                        return (
+                          <tr key={tIdx}>
+                            <td className="p-2.5 font-semibold text-slate-900" colSpan={2}>
+                              {t.test_name}
+                              {t.descriptive_findings && (
+                                <p className="font-normal text-slate-600 mt-1 whitespace-pre-line text-[11px]">
+                                  {t.descriptive_findings}
+                                </p>
+                              )}
+                            </td>
+                            <td className="p-2.5 text-center text-slate-500 font-mono">-</td>
+                            <td className="p-2.5 text-slate-500 text-[11px]">Descriptive Report</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
-                  <p className="text-[10px] text-slate-400 mt-1 italic">
+                  <p className="text-[10px] text-slate-400 mt-1.5 italic">
                     * Flagged values indicate results outside standard biological reference interval.
                   </p>
                 </div>
@@ -248,11 +313,11 @@ export default function LabManagementPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="w-40 border-b border-slate-400 mb-1"></div>
+                    <div className="w-44 border-b border-slate-400 mb-1"></div>
                     <p className="font-bold text-slate-900">
-                      {selectedOrder.verified_by || "Verified by Pathologist"}
+                      {selectedOrder.status === "VERIFIED" ? "Dr. Kazi Jahangir (Pathologist)" : "Pending Signature"}
                     </p>
-                    <p className="text-[10px] text-slate-500">Consultant Pathologist</p>
+                    <p className="text-[10px] text-slate-500">Consultant Clinical Pathologist</p>
                   </div>
                 </div>
               </div>
@@ -267,3 +332,4 @@ export default function LabManagementPage() {
     </div>
   );
 }
+

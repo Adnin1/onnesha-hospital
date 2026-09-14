@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -17,43 +17,139 @@ import {
   X,
   Printer,
   ChevronRight,
+  Loader2,
+  RefreshCw,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
-import { MOCK_PATIENTS, MOCK_INVOICES, MOCK_LAB_ORDERS, MOCK_PRESCRIPTION } from "@/lib/mock-data";
-import { Patient } from "@/types";
+import { PatientMaster, TimelineEvent } from "@/types/clinical";
+import { InvoiceRecord } from "@/types/billing";
+import { PrescriptionRecord, DiagnosticOrderRecord } from "@/types/clinical-emr";
+import {
+  getPatientsAction,
+  registerPatientAction,
+  getPatient360Action,
+} from "@/lib/patient/actions";
+import { getInvoicesAction } from "@/lib/billing/actions";
+import { getPrescriptionsAction } from "@/lib/prescriptions/actions";
+import { getDiagnosticOrdersAction } from "@/lib/lab/actions";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
-import { registerPatientAction } from "@/lib/patient/actions";
 
 export default function PatientsManagementPage() {
-  const [patients, setPatients] = useState<Patient[]>(MOCK_PATIENTS);
+  const [loading, setLoading] = useState(true);
+  const [patients, setPatients] = useState<PatientMaster[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(MOCK_PATIENTS[0]);
+  const [selectedPatient, setSelectedPatient] = useState<PatientMaster | null>(null);
   const [activeTab, setActiveTab] = useState<"history" | "bills" | "lab" | "rx">("history");
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
+  // Patient 360 sub-records
+  const [subLoading, setSubLoading] = useState(false);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
+  const [prescriptions, setPrescriptions] = useState<PrescriptionRecord[]>([]);
+  const [labOrders, setLabOrders] = useState<DiagnosticOrderRecord[]>([]);
 
   // New Patient Form State
   const [newFullName, setNewFullName] = useState("");
   const [newGuardian, setNewGuardian] = useState("");
   const [newRelation, setNewRelation] = useState("Father");
-  const [newGender, setNewGender] = useState<"male" | "female" | "other">("male");
-  const [newAge, setNewAge] = useState("30");
-  const [newBloodGroup, setNewBloodGroup] = useState<Patient["blood_group"]>("O+");
+  const [newGender, setNewGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
+  const [newBloodGroup, setNewBloodGroup] = useState("O+");
   const [newPhone, setNewPhone] = useState("");
   const [newNid, setNewNid] = useState("");
   const [newAddress, setNewAddress] = useState("");
   const [newEmergencyName, setNewEmergencyName] = useState("");
   const [newEmergencyPhone, setNewEmergencyPhone] = useState("");
-
-  const filteredPatients = patients.filter((p) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      p.full_name.toLowerCase().includes(q) ||
-      p.patient_id.toLowerCase().includes(q) ||
-      p.phone.includes(q)
-    );
-  });
-
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [registerLoading, setRegisterLoading] = useState(false);
+
+  const loadPatients = async () => {
+    setLoading(true);
+    try {
+      const res = await getPatientsAction();
+      if (res.success && res.data) {
+        setPatients(res.data.patients);
+        if (res.data.patients.length > 0 && !selectedPatient) {
+          selectPatient(res.data.patients[0]);
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectPatient = async (patient: PatientMaster) => {
+    setSelectedPatient(patient);
+    setSubLoading(true);
+    try {
+      const [p360, invRes, rxRes, labRes] = await Promise.all([
+        getPatient360Action(patient.id),
+        getInvoicesAction({ patientId: patient.id }),
+        getPrescriptionsAction({ patientId: patient.id }),
+        getDiagnosticOrdersAction({ patientId: patient.id }),
+      ]);
+
+      if (p360.success && p360.data) {
+        setTimeline(p360.data.timeline || []);
+      }
+      if (invRes.success && invRes.data) {
+        setInvoices(invRes.data.invoices || []);
+      }
+      if (rxRes.success && rxRes.data) {
+        setPrescriptions(rxRes.data.prescriptions || []);
+      }
+      if (labRes.success && labRes.data) {
+        setLabOrders(labRes.data.orders || []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSubLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    async function init() {
+      try {
+        const res = await getPatientsAction();
+        if (isMounted && res.success && res.data) {
+          setPatients(res.data.patients);
+          if (res.data.patients.length > 0 && !selectedPatient) {
+            const firstPat = res.data.patients[0];
+            setSelectedPatient(firstPat);
+            setSubLoading(true);
+            const [p360, invRes, rxRes, labRes] = await Promise.all([
+              getPatient360Action(firstPat.id),
+              getInvoicesAction({ patientId: firstPat.id }),
+              getPrescriptionsAction({ patientId: firstPat.id }),
+              getDiagnosticOrdersAction({ patientId: firstPat.id }),
+            ]);
+            if (isMounted) {
+              if (p360.success && p360.data) setTimeline(p360.data.timeline || []);
+              if (invRes.success && invRes.data) setInvoices(invRes.data.invoices || []);
+              if (rxRes.success && rxRes.data) setPrescriptions(rxRes.data.prescriptions || []);
+              if (labRes.success && labRes.data) setLabOrders(labRes.data.orders || []);
+            }
+          }
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          setSubLoading(false);
+        }
+      }
+    }
+    init();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedPatient]);
 
   const handleRegisterPatient = async (e: React.FormEvent, bypass = false) => {
     e.preventDefault();
@@ -64,7 +160,7 @@ export default function PatientsManagementPage() {
       const res = await registerPatientAction({
         fullName: newFullName,
         phone: newPhone,
-        gender: newGender === "male" ? "MALE" : newGender === "female" ? "FEMALE" : "OTHER",
+        gender: newGender,
         bloodGroup: newBloodGroup,
         nid: newNid || undefined,
         address: newAddress,
@@ -76,7 +172,9 @@ export default function PatientsManagementPage() {
 
       if (!res.success) {
         if (res.duplicateWarning?.hasDuplicate && !bypass) {
-          setDuplicateWarning(`Potential duplicate detected (${res.duplicateWarning.confidence} confidence): ${res.duplicateWarning.reasons.join(", ")}`);
+          setDuplicateWarning(
+            `Potential duplicate detected (${res.duplicateWarning.confidence} confidence): ${res.duplicateWarning.reasons.join(", ")}`
+          );
           setRegisterLoading(false);
           return;
         }
@@ -87,26 +185,8 @@ export default function PatientsManagementPage() {
 
       if (res.data?.patient) {
         const created = res.data.patient;
-        const newPat: Patient = {
-          id: created.id,
-          organization_id: created.organization_id,
-          patient_id: created.patient_code,
-          full_name: created.full_name,
-          guardian_name: newGuardian,
-          relationship_with_guardian: newRelation,
-          gender: newGender,
-          age: parseInt(newAge) || 25,
-          blood_group: newBloodGroup,
-          phone: created.phone,
-          nid_or_birth_cert: newNid,
-          address: newAddress,
-          emergency_contact_name: newEmergencyName,
-          emergency_contact_phone: newEmergencyPhone,
-          created_at: created.created_at,
-        };
-
-        setPatients([newPat, ...patients]);
-        setSelectedPatient(newPat);
+        setPatients([created, ...patients]);
+        selectPatient(created);
         setIsRegisterModalOpen(false);
         setNewFullName("");
         setNewPhone("");
@@ -114,357 +194,310 @@ export default function PatientsManagementPage() {
         setNewNid("");
       }
     } catch {
-      // Fallback local registration if offline/mock environment
-      const nextNum = patients.length + 105;
-      const newId = `OH-${String(nextNum).padStart(6, "0")}`;
-      const newPatientObj: Patient = {
-        id: `pat-${Date.now()}`,
-        organization_id: "a0000000-0000-0000-0000-000000000001",
-        patient_id: newId,
-        full_name: newFullName,
-        guardian_name: newGuardian,
-        relationship_with_guardian: newRelation,
-        gender: newGender,
-        age: parseInt(newAge) || 25,
-        blood_group: newBloodGroup,
-        phone: newPhone,
-        nid_or_birth_cert: newNid,
-        address: newAddress,
-        emergency_contact_name: newEmergencyName,
-        emergency_contact_phone: newEmergencyPhone,
-        created_at: new Date().toISOString(),
-      };
-      setPatients([newPatientObj, ...patients]);
-      setSelectedPatient(newPatientObj);
-      setIsRegisterModalOpen(false);
-      setNewFullName("");
-      setNewPhone("");
-      setNewAddress("");
+      alert("Error saving patient registration");
     } finally {
       setRegisterLoading(false);
     }
   };
 
+  const filteredPatients = patients.filter((p) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      p.full_name.toLowerCase().includes(q) ||
+      p.patient_code.toLowerCase().includes(q) ||
+      p.phone.includes(q)
+    );
+  });
+
   return (
     <div className="space-y-6">
-      {/* Top Header */}
+      {/* Header */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <span className="text-xs font-bold text-sky-600 uppercase tracking-wider">
-            Patient Health Records & Registry
+            Patient Identity, Registration & Medical Archive
           </span>
           <h1 className="text-2xl font-black text-slate-900 mt-1">
-            Patient Management & 360° History
+            Patient 360° Management
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Auto-formatted OH-IDs, lifelong visit trails, prescriptions, lab results, and financial invoices.
+            Centralized EMR with lifelong patient IDs, multi-signal duplicate prevention, and linked clinical encounters.
           </p>
         </div>
 
-        <button
-          onClick={() => setIsRegisterModalOpen(true)}
-          className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-2xs transition"
-        >
-          <PlusCircle className="w-4 h-4 mr-2" />
-          Register New Patient (OH-ID)
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={loadPatients}
+            className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition"
+            title="Refresh patient list"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+          <button
+            onClick={() => setIsRegisterModalOpen(true)}
+            className="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition flex items-center shadow-xs"
+          >
+            <PlusCircle className="w-4 h-4 mr-1.5" />
+            Register New Patient
+          </button>
+        </div>
       </div>
 
-      {/* Main Dual-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Search & Patient List (5 cols) */}
+      {/* Main Grid: Left Directory (4 cols), Right 360 (8 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT COLUMN: PATIENT LIST */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
-            {/* Search Box */}
-            <div className="relative mb-3">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="text"
-                placeholder="Search by OH-ID, Name, or Phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
-              />
-            </div>
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by patient ID, name, or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium focus:outline-hidden focus:ring-2 focus:ring-sky-500/20"
+            />
+          </div>
 
-            {/* Patients List */}
-            <div className="divide-y divide-slate-100 max-h-[620px] overflow-y-auto pr-1">
-              {filteredPatients.map((p) => {
+          <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden shadow-xs">
+            {loading ? (
+              <div className="p-8 text-center text-slate-500 text-xs flex justify-center items-center">
+                <Loader2 className="w-4 h-4 animate-spin mr-2 text-sky-600" />
+                Loading patient directory...
+              </div>
+            ) : filteredPatients.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs">
+                No patients found matching your search.
+              </div>
+            ) : (
+              filteredPatients.map((p) => {
                 const isSelected = selectedPatient?.id === p.id;
                 return (
                   <div
                     key={p.id}
-                    onClick={() => setSelectedPatient(p)}
-                    className={`p-3.5 rounded-xl cursor-pointer transition flex items-center justify-between ${
-                      isSelected
-                        ? "bg-sky-50/80 border border-sky-300 shadow-2xs"
-                        : "hover:bg-slate-50"
+                    onClick={() => selectPatient(p)}
+                    className={`p-4 cursor-pointer transition flex justify-between items-center ${
+                      isSelected ? "bg-sky-50/80 font-medium" : "hover:bg-slate-50"
                     }`}
                   >
                     <div>
                       <div className="flex items-center space-x-2">
-                        <span className="font-mono font-bold text-xs text-sky-800 bg-sky-100/70 px-1.5 py-0.5 rounded">
-                          {p.patient_id}
+                        <span className="font-mono font-bold text-xs text-sky-900">
+                          {p.patient_code}
                         </span>
-                        <h4 className="font-bold text-xs text-slate-900">{p.full_name}</h4>
+                        <span className="text-xs font-bold text-slate-900">{p.full_name}</span>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-1 flex items-center">
-                        <Phone className="w-3 h-3 mr-1 text-slate-400" />
-                        {p.phone} • {p.age} Y / {p.gender.toUpperCase()}
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Ph: {p.phone} • {p.gender} • Blood: {p.blood_group || "N/A"}
                       </p>
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
-                        {p.blood_group || "N/A"}
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-slate-400 ml-auto mt-1" />
-                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
                   </div>
                 );
-              })}
-            </div>
+              })
+            )}
           </div>
         </div>
 
-        {/* Right Column: 360° Comprehensive Profile & Tabs (7 cols) */}
-        <div className="lg:col-span-7">
+        {/* RIGHT COLUMN: 360 DOSSIER */}
+        <div className="lg:col-span-7 space-y-4">
           {selectedPatient ? (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              {/* Profile Header Banner */}
-              <div className="p-6 bg-gradient-to-r from-sky-900 to-slate-800 text-white flex justify-between items-start">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6">
+              {/* Header profile summary */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-100 gap-3">
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="font-mono font-bold text-xs bg-sky-600/60 px-2 py-0.5 rounded border border-sky-400/40">
-                      {selectedPatient.patient_id}
+                    <span className="font-mono font-bold text-xs text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+                      {selectedPatient.patient_code}
                     </span>
-                    <span className="text-xs bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded">
-                      Active Patient
-                    </span>
+                    <h2 className="text-lg font-black text-slate-900">{selectedPatient.full_name}</h2>
                   </div>
-                  <h2 className="text-xl font-black mt-1">{selectedPatient.full_name}</h2>
-                  <p className="text-xs text-sky-200 mt-0.5">
-                    Guardian: {selectedPatient.guardian_name || "N/A"} ({selectedPatient.relationship_with_guardian || "Guardian"})
+                  <p className="text-xs text-slate-500 mt-1">
+                    Phone: {selectedPatient.phone} • Address: {selectedPatient.address || "Dhaka, Bangladesh"}
                   </p>
                 </div>
 
-                <div className="flex items-center space-x-4">
-                  <Link
-                    href={`/app/patients/${selectedPatient.id}`}
-                    className="inline-flex items-center bg-white/20 hover:bg-white/30 text-white font-semibold text-xs px-3 py-1.5 rounded-xl border border-white/30 backdrop-blur-xs transition"
-                  >
-                    <FileText className="w-3.5 h-3.5 mr-1.5" />
-                    Open 360° Profile
-                  </Link>
-
-                  <div className="text-right">
-                    <div className="text-2xl font-black font-mono text-emerald-400">
-                      {selectedPatient.blood_group || "Unknown"}
-                    </div>
-                    <span className="text-[10px] text-slate-300 uppercase tracking-wider">
-                      Blood Group
-                    </span>
-                  </div>
-                </div>
+                <Link
+                  href={`/app/patients/${selectedPatient.id}`}
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center shadow-xs"
+                >
+                  <FileText className="w-3.5 h-3.5 mr-1" />
+                  Full Patient 360 File
+                </Link>
               </div>
 
-              {/* Profile Quick Grid */}
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                <div>
-                  <span className="text-slate-500 block text-[10px] uppercase">Age / Gender</span>
-                  <span className="font-bold text-slate-800">
-                    {selectedPatient.age} Y / {selectedPatient.gender.toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[10px] uppercase">Primary Phone</span>
-                  <span className="font-bold text-slate-800">{selectedPatient.phone}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[10px] uppercase">Emergency Contact</span>
-                  <span className="font-bold text-slate-800">
-                    {selectedPatient.emergency_contact_phone || "Not Specified"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[10px] uppercase">NID / Reg No</span>
-                  <span className="font-mono font-medium text-slate-800 truncate block">
-                    {selectedPatient.nid_or_birth_cert || "N/A"}
-                  </span>
-                </div>
-                <div className="sm:col-span-4 text-[11px] text-slate-600">
-                  <strong className="text-slate-700">Permanent Address:</strong> {selectedPatient.address}
-                </div>
+              {/* TABS */}
+              <div className="flex border-b border-slate-200 text-xs font-bold space-x-4">
+                <button
+                  onClick={() => setActiveTab("history")}
+                  className={`pb-2 transition ${
+                    activeTab === "history"
+                      ? "border-b-2 border-sky-600 text-sky-600"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Encounters & History ({timeline.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("bills")}
+                  className={`pb-2 transition ${
+                    activeTab === "bills"
+                      ? "border-b-2 border-sky-600 text-sky-600"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Invoices ({invoices.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("lab")}
+                  className={`pb-2 transition ${
+                    activeTab === "lab"
+                      ? "border-b-2 border-sky-600 text-sky-600"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Diagnostics ({labOrders.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("rx")}
+                  className={`pb-2 transition ${
+                    activeTab === "rx"
+                      ? "border-b-2 border-sky-600 text-sky-600"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Prescriptions ({prescriptions.length})
+                </button>
               </div>
 
-              {/* 360° Tabs Navigation */}
-              <div className="flex border-b border-slate-200 bg-white px-6">
-                {[
-                  { id: "history", label: "Visits & OPD/IPD", icon: Activity },
-                  { id: "bills", label: "Invoices & Dues", icon: Receipt },
-                  { id: "lab", label: "Lab Reports", icon: Microscope },
-                  { id: "rx", label: "Prescriptions", icon: FileText },
-                ].map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as "history" | "bills" | "lab" | "rx")}
-                      className={`flex items-center py-3 px-4 border-b-2 font-semibold text-xs transition ${
-                        isActive
-                          ? "border-sky-600 text-sky-700 font-bold"
-                          : "border-transparent text-slate-500 hover:text-slate-800"
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5 mr-1.5" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Tab Contents */}
-              <div className="p-6">
-                {/* TAB 1: VISITS & OPD/IPD */}
-                {activeTab === "history" && (
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-bold text-sky-900">
-                          OPD Consultation Visit
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-mono">
-                          12 Sep 2026 • 05:30 PM
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-700">
-                        <strong>Doctor:</strong> Prof. Dr. M. A. Rahman (General Medicine)
-                      </p>
-                      <p className="text-xs text-slate-700 mt-0.5">
-                        <strong>Chief Complaint:</strong> Generalized fatigue & high blood sugar.
-                      </p>
-                      <div className="mt-2 flex items-center space-x-2">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                          Visit Completed
-                        </span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                          Token: A-012
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* TAB 2: INVOICES & BILLS */}
-                {activeTab === "bills" && (
-                  <div className="space-y-3">
-                    {MOCK_INVOICES.map((inv) => (
-                      <div
-                        key={inv.id}
-                        className="p-4 rounded-xl border border-slate-200 bg-white flex justify-between items-center"
-                      >
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-mono font-bold text-xs text-slate-900">
-                              {inv.invoice_number}
-                            </span>
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-                                inv.payment_status === "paid"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-amber-100 text-amber-800"
-                              }`}
-                            >
-                              {inv.payment_status}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-1">
-                            Paid via: {inv.payment_method?.toUpperCase()} • Cashier: {inv.created_by_name}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-bold text-slate-900 block">
-                            {formatCurrencyBDT(inv.total_amount)}
-                          </span>
-                          {inv.due_amount > 0 && (
-                            <span className="text-[10px] font-semibold text-rose-600 block">
-                              Due: {formatCurrencyBDT(inv.due_amount)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* TAB 3: LAB REPORTS */}
-                {activeTab === "lab" && (
-                  <div className="space-y-3">
-                    {MOCK_LAB_ORDERS.map((order) => (
-                      <div
-                        key={order.id}
-                        className="p-4 rounded-xl border border-slate-200 bg-white"
-                      >
-                        <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-2">
-                          <span className="font-mono font-bold text-xs text-sky-900">
-                            Order #{order.order_number}
-                          </span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 uppercase">
-                            {order.status}
-                          </span>
-                        </div>
-                        <div className="space-y-1 text-xs">
-                          {order.tests.map((t, idx) => (
-                            <div key={idx} className="flex justify-between text-slate-700 py-1">
-                              <span>{t.test_name}</span>
-                              <span className="font-semibold text-slate-900">
-                                {t.result_value || "In Process"}
+              {/* TAB CONTENT */}
+              {subLoading ? (
+                <div className="p-8 text-center text-slate-500 text-xs flex justify-center items-center">
+                  <Loader2 className="w-4 h-4 animate-spin mr-2 text-sky-600" />
+                  Loading patient records...
+                </div>
+              ) : (
+                <div>
+                  {activeTab === "history" && (
+                    <div className="space-y-3">
+                      {timeline.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-4">No recorded encounters yet.</p>
+                      ) : (
+                        timeline.map((ev, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3 rounded-xl border border-slate-100 bg-slate-50 text-xs space-y-1"
+                          >
+                            <div className="flex justify-between font-bold text-slate-900">
+                              <span>{ev.title}</span>
+                              <span className="font-mono text-[10px] text-slate-500">
+                                {new Date(ev.date).toLocaleDateString()}
                               </span>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* TAB 4: PRESCRIPTION */}
-                {activeTab === "rx" && (
-                  <div className="p-4 rounded-xl border border-slate-200 bg-white">
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-3">
-                      <div>
-                        <span className="font-mono font-bold text-xs text-sky-900">
-                          {MOCK_PRESCRIPTION.prescription_number}
-                        </span>
-                        <p className="text-[11px] text-slate-600">
-                          By: {MOCK_PRESCRIPTION.doctor_name}
-                        </p>
-                      </div>
-                      <span className="text-[11px] text-slate-500 font-mono">
-                        {MOCK_PRESCRIPTION.date}
-                      </span>
-                    </div>
-
-                    <div className="text-xs space-y-2">
-                      <p>
-                        <strong>Diagnosis:</strong> {MOCK_PRESCRIPTION.diagnosis.join(", ")}
-                      </p>
-                      <div className="mt-2 space-y-1.5 border-t border-slate-100 pt-2">
-                        {MOCK_PRESCRIPTION.medicines.map((m, idx) => (
-                          <div key={idx} className="p-2 bg-slate-50 rounded-lg flex justify-between items-center">
-                            <div>
-                              <p className="font-semibold text-slate-900">{m.name}</p>
-                              <p className="text-[10px] text-slate-500">{m.instruction} • {m.duration}</p>
-                            </div>
-                            <span className="font-mono font-bold text-sky-800">{m.dosage}</span>
+                            <p className="text-slate-600 text-[11px]">{ev.description}</p>
                           </div>
-                        ))}
-                      </div>
+                        ))
+                      )}
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+
+                  {activeTab === "bills" && (
+                    <div className="space-y-3">
+                      {invoices.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-4">No invoices on file.</p>
+                      ) : (
+                        invoices.map((inv) => (
+                          <div
+                            key={inv.id}
+                            className="p-3 rounded-xl border border-slate-200 flex justify-between items-center text-xs"
+                          >
+                            <div>
+                              <span className="font-mono font-bold text-slate-900">{inv.invoice_number}</span>
+                              <span
+                                className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                  inv.status === "PAID"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-rose-100 text-rose-800"
+                                }`}
+                              >
+                                {inv.status}
+                              </span>
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                {formatDateBDT(inv.created_at)}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-mono font-bold text-slate-900 block">
+                                {formatCurrencyBDT(inv.grand_total)}
+                              </span>
+                              {inv.due_amount > 0 && (
+                                <span className="font-mono text-rose-600 text-[10px] font-bold block">
+                                  Due: {formatCurrencyBDT(inv.due_amount)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === "lab" && (
+                    <div className="space-y-3">
+                      {labOrders.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-4">No diagnostic test orders on file.</p>
+                      ) : (
+                        labOrders.map((ord) => (
+                          <div key={ord.id} className="p-3 rounded-xl border border-slate-200 text-xs space-y-1">
+                            <div className="flex justify-between font-bold">
+                              <span className="font-mono text-sky-800">{ord.order_number}</span>
+                              <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 uppercase">
+                                {ord.status}
+                              </span>
+                            </div>
+                            <p className="text-slate-600 font-medium">
+                              Sample Barcode: <span className="font-mono">{ord.sample_barcode || "Pending"}</span>
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === "rx" && (
+                    <div className="space-y-3">
+                      {prescriptions.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-4">No digital prescriptions issued yet.</p>
+                      ) : (
+                        prescriptions.map((rx) => (
+                          <div key={rx.id} className="p-3 rounded-xl border border-slate-200 text-xs space-y-2">
+                            <div className="flex justify-between font-bold text-slate-900">
+                              <span>Diagnosis: {rx.diagnosis}</span>
+                              <span className="font-mono text-[10px] text-slate-500">
+                                {formatDateBDT(rx.created_at)}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600">
+                              Doctor: {rx.doctor?.full_name || "Specialist"} ({rx.doctor?.specialization || "OPD"})
+                            </p>
+                            {rx.items && rx.items.length > 0 && (
+                              <div className="space-y-1 pt-1 border-t border-slate-100">
+                                {rx.items.map((it, idx) => (
+                                  <div key={idx} className="flex justify-between text-[11px] text-slate-700">
+                                    <span>
+                                      {it.medicine_name} ({it.dosage_pattern})
+                                    </span>
+                                    <span className="font-medium text-slate-500">{it.duration}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400 text-xs">
@@ -477,7 +510,7 @@ export default function PatientsManagementPage() {
       {/* REGISTRATION MODAL */}
       {isRegisterModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto text-xs">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
               <div>
                 <h3 className="text-lg font-black text-slate-900">
@@ -495,7 +528,26 @@ export default function PatientsManagementPage() {
               </button>
             </div>
 
-            <form onSubmit={handleRegisterPatient} className="space-y-4 text-xs">
+            {duplicateWarning && (
+              <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl mb-4 text-amber-900 space-y-2">
+                <div className="flex items-center space-x-2 font-bold">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <span>Duplicate Patient Advisory</span>
+                </div>
+                <p className="text-[11px]">{duplicateWarning}</p>
+                <div className="pt-2 flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={(e) => handleRegisterPatient(e, true)}
+                    className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs"
+                  >
+                    Bypass & Register Anyway (e.g. Family Phone Sharing)
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleRegisterPatient} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
@@ -507,7 +559,7 @@ export default function PatientsManagementPage() {
                     placeholder="e.g. Md. Shahidul Alam"
                     value={newFullName}
                     onChange={(e) => setNewFullName(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
                   />
                 </div>
 
@@ -521,146 +573,81 @@ export default function PatientsManagementPage() {
                     placeholder="017XXXXXXXX"
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Age (Years) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    max="120"
-                    value={newAge}
-                    onChange={(e) => setNewAge(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Gender *
-                  </label>
+                  <label className="block font-semibold text-slate-700 mb-1">Gender *</label>
                   <select
                     value={newGender}
-                    onChange={(e) => setNewGender(e.target.value as "male" | "female" | "other")}
-                    className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                    onChange={(e) => setNewGender(e.target.value as "MALE" | "FEMALE" | "OTHER")}
+                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
                   >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Blood Group
-                  </label>
+                  <label className="block font-semibold text-slate-700 mb-1">Blood Group</label>
                   <select
                     value={newBloodGroup}
-                    onChange={(e) => setNewBloodGroup(e.target.value as Patient["blood_group"])}
-                    className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                    onChange={(e) => setNewBloodGroup(e.target.value)}
+                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
                   >
                     <option value="A+">A+</option>
                     <option value="A-">A-</option>
                     <option value="B+">B+</option>
                     <option value="B-">B-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
                     <option value="O+">O+</option>
                     <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    NID / Birth Certificate No
-                  </label>
+                  <label className="block font-semibold text-slate-700 mb-1">NID / Birth Cert</label>
                   <input
                     type="text"
-                    placeholder="National ID"
+                    placeholder="Optional"
                     value={newNid}
                     onChange={(e) => setNewNid(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
                   />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Father / Husband / Guardian Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Guardian Name"
-                    value={newGuardian}
-                    onChange={(e) => setNewGuardian(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Emergency Contact Phone
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="Emergency Phone"
-                    value={newEmergencyPhone}
-                    onChange={(e) => setNewEmergencyPhone(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Full Address *
-                  </label>
-                  <textarea
-                    rows={2}
-                    required
-                    placeholder="Village / House / Road / District"
-                    value={newAddress}
-                    onChange={(e) => setNewAddress(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
-                  ></textarea>
                 </div>
               </div>
 
-              {duplicateWarning && (
-                <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                  <div className="font-medium">
-                    ⚠️ {duplicateWarning}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => handleRegisterPatient(e, true)}
-                    className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shrink-0"
-                  >
-                    Confirm & Proceed Anyway
-                  </button>
-                </div>
-              )}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Address</label>
+                <input
+                  type="text"
+                  placeholder="Street / Village, Thana, District"
+                  value={newAddress}
+                  onChange={(e) => setNewAddress(e.target.value)}
+                  className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
+                />
+              </div>
 
-              <div className="pt-4 border-t border-slate-100 flex justify-end space-x-3">
+              <div className="flex justify-end space-x-2 pt-4 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsRegisterModalOpen(false);
-                    setDuplicateWarning(null);
-                  }}
-                  className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium"
+                  onClick={() => setIsRegisterModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={registerLoading}
-                  className="px-6 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-semibold rounded-lg shadow-sm"
+                  className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl disabled:opacity-50 flex items-center"
                 >
-                  {registerLoading ? "Checking & Registering..." : "Register & Assign Patient ID"}
+                  {registerLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+                  Confirm Registration
                 </button>
               </div>
             </form>

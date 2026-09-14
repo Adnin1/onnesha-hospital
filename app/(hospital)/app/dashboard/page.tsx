@@ -51,7 +51,8 @@ export default function HospitalDashboardPage() {
           .select("status");
 
         const totalBedsCount = bedsData?.length || 0;
-        const availableBedsCount = bedsData?.filter((b) => b.status === "available").length || 0;
+        const availableBedsCount =
+          bedsData?.filter((b) => b.status === "available" || b.status === "VACANT").length || 0;
 
         // 3. Fetch real invoices for today
         const todayStr = new Date().toISOString().split("T")[0];

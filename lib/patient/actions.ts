@@ -1079,3 +1079,49 @@ export async function transferPatientAction(params: {
     return { success: false, error: msg };
   }
 }
+
+/**
+ * 13. Get Patients List
+ */
+export async function getPatientsAction(params?: {
+  query?: string;
+  limit?: number;
+}): Promise<ActionResult<{ patients: PatientMaster[] }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("patients.view");
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
+  try {
+    const supabase = await createClient();
+    let q = supabase
+      .from("patients")
+      .select("*")
+      .eq("organization_id", session.organizationId)
+      .order("created_at", { ascending: false })
+      .limit(params?.limit || 50);
+
+    if (params?.query?.trim()) {
+      const term = `%${params.query.trim()}%`;
+      q = q.or(`full_name.ilike.${term},patient_code.ilike.${term},phone.ilike.${term}`);
+    }
+
+    const { data, error } = await q;
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: { patients: (data || []) as unknown as PatientMaster[] } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load patients";
+    return { success: false, error: msg };
+  }
+}
+

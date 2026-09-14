@@ -11,7 +11,6 @@ import {
   UserPlus,
   CheckCircle2,
 } from "lucide-react";
-import { MOCK_ORGANIZATION } from "@/lib/mock-data";
 import { registerEmergencyEncounterAction } from "@/lib/patient/actions";
 
 export default function EmergencyTriagePage() {
@@ -126,7 +125,7 @@ export default function EmergencyTriagePage() {
           </button>
           <div className="bg-red-700/80 text-white font-bold text-xs px-3 py-2 rounded-xl flex items-center shadow-xs">
             <Radio className="w-4 h-4 mr-1.5 animate-ping text-red-300" />
-            Hotline: {MOCK_ORGANIZATION.emergencyHotline}
+            Hotline: +880 1700-000000
           </div>
         </div>
       </div>
