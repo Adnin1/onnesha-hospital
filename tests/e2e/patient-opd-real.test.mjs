@@ -20,25 +20,17 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-describe("OHMS Real E2E Test Suite 2: Patient Registration & OPD Workflow", async () => {
+describe("OHMS Database & API Integration Suite: Patient Registration & OPD Schema", async () => {
   const adminClient = createClient(supabaseUrl, serviceKey);
 
   test("1. Patient database table query executes against live Supabase PostgreSQL schema", async () => {
     const { data, error } = await adminClient.from("patients").select("id, full_name, phone").limit(5);
-    if (error && error.code === "PGRST303") {
-      assert.ok(true, "Supabase API returned clock skew notice (PGRST303)");
-      return;
-    }
     assert.equal(error, null, "Database query must execute cleanly");
     assert.ok(Array.isArray(data), "Patients array must be returned");
   });
 
   test("2. Organizations query returns active hospital tenant", async () => {
     const { data, error } = await adminClient.from("organizations").select("id, name, code").limit(1);
-    if (error && error.code === "PGRST303") {
-      assert.ok(true, "Supabase API returned clock skew notice (PGRST303)");
-      return;
-    }
     assert.equal(error, null);
     assert.ok(data && data.length > 0, "At least 1 organization must exist in production DB");
     assert.equal(data[0].code, "OH");
@@ -46,10 +38,6 @@ describe("OHMS Real E2E Test Suite 2: Patient Registration & OPD Workflow", asyn
 
   test("3. OPD tokens / appointments table maintains sequence integrity", async () => {
     const { data, error } = await adminClient.from("appointments").select("id, token_number, appointment_date, status").limit(5);
-    if (error && error.code === "PGRST303") {
-      assert.ok(true, "Supabase API returned clock skew notice (PGRST303)");
-      return;
-    }
     assert.equal(error, null);
     assert.ok(Array.isArray(data));
   });

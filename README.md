@@ -14,17 +14,17 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ---
 
 ## 📋 Final Production Hardening & Operational Acceptance Documentation
+- 📄 [Final UI Functional Inventory](./docs/FINAL_UI_FUNCTIONAL_INVENTORY.md)
+- 📄 [Final Production User Acceptance (UAT) Checklist](./docs/FINAL_PRODUCTION_USER_ACCEPTANCE.md)
+- 📄 [Final Functional Regression Matrix](./docs/FINAL_FUNCTIONAL_REGRESSION_MATRIX.md)
+- 📄 [Final E2E Evidence Matrix](./docs/FINAL_E2E_EVIDENCE_MATRIX.md)
 - 📄 [Final Current State Audit](./docs/FINAL_CURRENT_STATE_AUDIT.md)
 - 📄 [Final Real-World Operational Certification Matrix](./docs/FINAL_REAL_WORLD_OPERATIONAL_CERTIFICATION.md)
 - 📄 [Final Operational Acceptance Matrix](./docs/FINAL_OPERATIONAL_ACCEPTANCE_MATRIX.md)
 - 📄 [Real Browser E2E Specification & Results](./docs/FINAL_REAL_BROWSER_E2E.md)
 - 📄 [HMS Daily Operational Staff Runbook](./docs/HMS_DAILY_OPERATION_RUNBOOK.md)
 - 📄 [Final Database Workflow Verification](./docs/FINAL_DATABASE_WORKFLOW_VERIFICATION.md)
-- 📄 [Final Regression Test Matrix](./docs/FINAL_REGRESSION_TEST_MATRIX.md)
-- 📄 [Production Runtime Verification](./docs/PRODUCTION_RUNTIME_FINAL_VERIFICATION.md)
-- 📄 [Final Truth Audit & System Classification](./docs/FINAL_TRUTH_AUDIT.md)
-- 📄 [Final Database & RLS Security Audit](./docs/FINAL_RLS_SECURITY_AUDIT.md)
-- 📄 [Final Launch Acceptance Report](./docs/FINAL_LAUNCH_ACCEPTANCE.md)
+- 📄 [Production Runtime Architecture Verification](./docs/FINAL_RUNTIME_ARCHITECTURE_VERIFICATION.md)
 
 ---
 
