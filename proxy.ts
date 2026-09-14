@@ -4,7 +4,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  // 1. Static assets and metadata skip
+  // 1. Skip static assets, health API, images, and public files
   if (
     path.startsWith("/_next") ||
     path.startsWith("/api/health") ||
@@ -13,23 +13,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Update Supabase Session
-  const sessionResponse = await updateSession(request);
+  // 2. Refresh Supabase session & fetch authenticated user via @supabase/ssr
+  const { response, user } = await updateSession(request);
 
-  // 3. Route Protection Rule: Hospital portal (/app/*) requires authentication
+  // 3. Define protected route prefix (/app/*)
   const isProtectedRoute = path.startsWith("/app");
-  if (isProtectedRoute) {
-    const supabaseToken =
-      request.cookies.get("sb-access-token")?.value ||
-      request.cookies.get("supabase-auth-token")?.value ||
-      request.cookies.get("sb-iuhtzahuszdkdarhxobx-auth-token")?.value;
 
-    if (!supabaseToken) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
+  // 4. Protected route enforcement: Require server-authenticated user (NO hardcoded cookie name checks)
+  if (isProtectedRoute && !user) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  return sessionResponse;
+  // 5. If already authenticated and accessing /login, redirect to /app/dashboard
+  if (path === "/login" && user) {
+    return NextResponse.redirect(new URL("/app/dashboard", request.url));
+  }
+
+  return response;
 }
 
 export const config = {

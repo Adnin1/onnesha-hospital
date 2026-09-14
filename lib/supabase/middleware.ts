@@ -12,7 +12,7 @@ export async function updateSession(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    return response;
+    return { response, user: null };
   }
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
@@ -41,8 +41,10 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Refresh auth token
-  await supabase.auth.getUser();
+  // Refresh auth token & get authenticated user securely
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return response;
+  return { response, user };
 }

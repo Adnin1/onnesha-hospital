@@ -1,19 +1,27 @@
-import { createClient } from "@/lib/supabase/client";
-import { UserProfile, RoleType } from "@/types/database";
+import { createBrowserClient } from "../supabase/client";
+import { UserProfile, RoleType } from "../../types/database";
 
-/**
- * Server-side helper to retrieve the authenticated user session and database profile.
- */
-export async function getCurrentUserSession(): Promise<{
+export interface UserSessionState {
   userId: string | null;
   email: string | null;
   profile: UserProfile | null;
   organizationId: string | null;
   roles: RoleType[];
   permissions: string[];
-}> {
+  aalLevel: "aal1" | "aal2" | null;
+  nextAalLevel: "aal1" | "aal2" | null;
+  mfaFactorsCount: number;
+}
+
+/**
+ * Universal helper to retrieve the authenticated user session, database profile,
+ * organization roles, permissions, and MFA assurance level (AAL1 vs AAL2).
+ * Universal across Client Components, Server Components, and Server Actions.
+ */
+export async function getCurrentUserSession(): Promise<UserSessionState> {
   try {
-    const supabase = await createClient();
+    const supabase = createBrowserClient();
+
     const {
       data: { user },
       error: authError,
@@ -27,7 +35,30 @@ export async function getCurrentUserSession(): Promise<{
         organizationId: null,
         roles: [],
         permissions: [],
+        aalLevel: null,
+        nextAalLevel: null,
+        mfaFactorsCount: 0,
       };
+    }
+
+    // Retrieve MFA Assurance Level
+    let aalLevel: "aal1" | "aal2" | null = "aal1";
+    let nextAalLevel: "aal1" | "aal2" | null = "aal1";
+    let mfaFactorsCount = 0;
+
+    try {
+      const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aalData) {
+        aalLevel = aalData.currentLevel as "aal1" | "aal2";
+        nextAalLevel = aalData.nextLevel as "aal1" | "aal2";
+      }
+
+      const { data: factorData } = await supabase.auth.mfa.listFactors();
+      if (factorData && factorData.all) {
+        mfaFactorsCount = factorData.all.filter((f) => f.status === "verified").length;
+      }
+    } catch {
+      // Fallback if MFA API is unavailable
     }
 
     // Retrieve profile from database
@@ -69,12 +100,20 @@ export async function getCurrentUserSession(): Promise<{
 
     // Retrieve permissions
     const roleIds = (userRoleRecords as unknown as UserRoleRecord[])?.map((r) => r.role_id) || [];
-    const { data: permRecords } = await supabase
-      .from("role_permissions")
-      .select("permission_key")
-      .in("role_id", roleIds);
+    const permissions: string[] = [];
 
-    const permissions = (permRecords as unknown as RolePermissionRecord[])?.map((p) => p.permission_key) || [];
+    if (roleIds.length > 0) {
+      const { data: permRecords } = await supabase
+        .from("role_permissions")
+        .select("permission_key")
+        .in("role_id", roleIds);
+
+      if (permRecords) {
+        (permRecords as unknown as RolePermissionRecord[]).forEach((p) => {
+          permissions.push(p.permission_key);
+        });
+      }
+    }
 
     return {
       userId: user.id,
@@ -83,6 +122,9 @@ export async function getCurrentUserSession(): Promise<{
       organizationId,
       roles,
       permissions,
+      aalLevel,
+      nextAalLevel,
+      mfaFactorsCount,
     };
   } catch {
     return {
@@ -92,12 +134,15 @@ export async function getCurrentUserSession(): Promise<{
       organizationId: null,
       roles: [],
       permissions: [],
+      aalLevel: null,
+      nextAalLevel: null,
+      mfaFactorsCount: 0,
     };
   }
 }
 
 /**
- * Server-side check for specific permission.
+ * Check for specific permission.
  */
 export async function hasPermission(permissionKey: string): Promise<boolean> {
   const session = await getCurrentUserSession();
@@ -108,11 +153,21 @@ export async function hasPermission(permissionKey: string): Promise<boolean> {
 }
 
 /**
- * Server-side assertion that throws or returns false if unauthorized.
+ * Assertion that throws or returns false if unauthorized.
  */
 export async function requirePermission(permissionKey: string): Promise<void> {
   const permitted = await hasPermission(permissionKey);
   if (!permitted) {
     throw new Error(`403 Forbidden: Missing required permission [${permissionKey}]`);
+  }
+}
+
+/**
+ * Assertion requiring AAL2 assurance for high-risk operations.
+ */
+export async function requireAAL2(): Promise<void> {
+  const session = await getCurrentUserSession();
+  if (session.mfaFactorsCount > 0 && session.aalLevel !== "aal2") {
+    throw new Error("401 Unauthorized: AAL2 Multi-Factor Authentication required for high-risk action.");
   }
 }
