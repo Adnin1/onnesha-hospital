@@ -53,6 +53,7 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
   const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "visits" | "vitals" | "diagnoses" | "notes">("overview");
 
   useEffect(() => {
+    let isMounted = true;
     async function loadData() {
       if (patientId === "preview") {
         setLoading(true);
@@ -61,25 +62,27 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
           if (listRes.success && listRes.data?.patients && listRes.data.patients.length > 0) {
             const realPatient = listRes.data.patients[0];
             const p360 = await getPatient360Action(realPatient.id);
-            if (p360.success && p360.data) {
-              setPatient(p360.data.patient);
-              setAllergies(p360.data.allergies);
-              setAlerts(p360.data.alerts);
-              setVisits(p360.data.visits);
-              setTimeline(p360.data.timeline);
-              setVitals(p360.data.vitals);
-              setDiagnoses(p360.data.diagnoses);
-              setNotes(p360.data.notes);
-            } else {
-              setError("Failed to load Patient 360 record.");
+            if (isMounted) {
+              if (p360.success && p360.data) {
+                setPatient(p360.data.patient);
+                setAllergies(p360.data.allergies);
+                setAlerts(p360.data.alerts);
+                setVisits(p360.data.visits);
+                setTimeline(p360.data.timeline);
+                setVitals(p360.data.vitals);
+                setDiagnoses(p360.data.diagnoses);
+                setNotes(p360.data.notes);
+              } else {
+                setError("Failed to load Patient 360 record.");
+              }
             }
-          } else {
+          } else if (isMounted) {
             setError("No registered patient found in this hospital organization. Please register a patient from the directory first.");
           }
         } catch {
-          setError("Failed to load patient record from clinical database.");
+          if (isMounted) setError("Failed to load patient record from clinical database.");
         } finally {
-          setLoading(false);
+          if (isMounted) setLoading(false);
         }
         return;
       }
@@ -87,26 +90,31 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
       setLoading(true);
       try {
         const res = await getPatient360Action(patientId);
-        if (res.success && res.data) {
-          setPatient(res.data.patient);
-          setAllergies(res.data.allergies);
-          setAlerts(res.data.alerts);
-          setVisits(res.data.visits);
-          setTimeline(res.data.timeline);
-          setVitals(res.data.vitals);
-          setDiagnoses(res.data.diagnoses);
-          setNotes(res.data.notes);
-        } else {
-          setError(res.error || "Failed to load patient record.");
+        if (isMounted) {
+          if (res.success && res.data) {
+            setPatient(res.data.patient);
+            setAllergies(res.data.allergies);
+            setAlerts(res.data.alerts);
+            setVisits(res.data.visits);
+            setTimeline(res.data.timeline);
+            setVitals(res.data.vitals);
+            setDiagnoses(res.data.diagnoses);
+            setNotes(res.data.notes);
+          } else {
+            setError(res.error || "Failed to load patient record.");
+          }
         }
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Error connecting to clinical database.");
+        if (isMounted) setError(err instanceof Error ? err.message : "Error connecting to clinical database.");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
 
-    loadData();
+    void loadData();
+    return () => {
+      isMounted = false;
+    };
   }, [patientId]);
 
   const handlePrint = () => {
