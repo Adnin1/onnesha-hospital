@@ -1,4 +1,4 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -65,12 +65,12 @@ test("OHMS Master Production Audit & Phase 1-12 Hardening Suite", async (t) => {
     assert.doesNotMatch(pharmacyActions, /PH-SL-\$\{Date\.now/);
   });
 
-  await t.test("6. Appointment booking uses atomic get_next_token RPC", () => {
+  await t.test("6. Appointment booking uses atomic RPC book_staff_appointment_atomic", () => {
     const apptActions = fs.readFileSync(
       path.join(rootDir, "lib", "appointments", "actions.ts"),
       "utf8"
     );
-    assert.match(apptActions, /get_next_token/);
+    assert.match(apptActions, /book_staff_appointment_atomic/);
   });
 
   await t.test("7. Emergency page connects to live database actions with zero fake fallbacks", () => {

@@ -20,8 +20,10 @@ import { formatCurrencyBDT } from "@/lib/utils";
 import { HospitalPrintHeader } from "@/components/print/HospitalPrintHeader";
 import {
   getPublicDoctorsAction,
+  getPublicDoctorSchedulesAction,
   bookOnlineAppointmentAction,
   PublicDoctor,
+  PublicDoctorSchedule,
   PublicBookingResult,
 } from "@/lib/public/actions";
 
@@ -30,6 +32,8 @@ export default function AppointmentBookingPage() {
   const [doctors, setDoctors] = useState<PublicDoctor[]>([]);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [doctorError, setDoctorError] = useState<string | null>(null);
+  const [schedules, setSchedules] = useState<PublicDoctorSchedule[]>([]);
+  const [loadingSchedules, setLoadingSchedules] = useState(false);
 
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
   const [appointmentDate, setAppointmentDate] = useState(() => {
@@ -37,7 +41,7 @@ export default function AppointmentBookingPage() {
     d.setDate(d.getDate() + 1);
     return d.toISOString().split("T")[0];
   });
-  const [timeSlot, setTimeSlot] = useState("05:30 PM - 07:00 PM (Evening Slot)");
+  const [timeSlot, setTimeSlot] = useState("Daily Regular Chamber (05:00 PM - 08:00 PM)");
 
   // Patient Info Form
   const [fullName, setFullName] = useState("");
@@ -71,6 +75,29 @@ export default function AppointmentBookingPage() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!selectedDoctorId) return;
+    let isMounted = true;
+    async function loadSchedules() {
+      setLoadingSchedules(true);
+      const res = await getPublicDoctorSchedulesAction(selectedDoctorId);
+      if (isMounted) {
+        if (res.success && res.schedules.length > 0) {
+          setSchedules(res.schedules);
+          setTimeSlot(res.schedules[0].slot_label);
+        } else {
+          setSchedules([]);
+          setTimeSlot("Daily Regular Chamber (05:00 PM - 08:00 PM)");
+        }
+        setLoadingSchedules(false);
+      }
+    }
+    void loadSchedules();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedDoctorId]);
 
   const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId) || doctors[0];
 
@@ -261,30 +288,33 @@ export default function AppointmentBookingPage() {
                   Available Visiting Hours / Chamber Slot
                 </label>
                 <div className="space-y-2">
-                  {[
-                    "05:00 PM - 06:30 PM (Evening Slot A)",
-                    "06:30 PM - 08:00 PM (Evening Slot B)",
-                    "08:00 PM - 09:30 PM (Night Slot C)",
-                  ].map((slot) => (
-                    <label
-                      key={slot}
-                      className={`flex items-center p-2.5 rounded-lg border text-xs cursor-pointer transition ${
-                        timeSlot === slot
-                          ? "border-sky-600 bg-sky-50/50 font-semibold text-sky-900"
-                          : "border-slate-200 hover:bg-slate-50 text-slate-700"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="slot"
-                        checked={timeSlot === slot}
-                        onChange={() => setTimeSlot(slot)}
-                        className="mr-2 text-sky-600 focus:ring-sky-500"
-                      />
-                      <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
-                      {slot}
+                  {schedules.length > 0 ? (
+                    schedules.map((sched) => (
+                      <label
+                        key={sched.id}
+                        className={`flex items-center p-2.5 rounded-lg border text-xs cursor-pointer transition ${
+                          timeSlot === sched.slot_label
+                            ? "border-sky-600 bg-sky-50/50 font-semibold text-sky-900"
+                            : "border-slate-200 hover:bg-slate-50 text-slate-700"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="slot"
+                          checked={timeSlot === sched.slot_label}
+                          onChange={() => setTimeSlot(sched.slot_label)}
+                          className="mr-2 text-sky-600 focus:ring-sky-500"
+                        />
+                        <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                        {sched.slot_label}
+                      </label>
+                    ))
+                  ) : (
+                    <label className="flex items-center p-2.5 rounded-lg border text-xs bg-sky-50/50 border-sky-600 font-semibold text-sky-900">
+                      <Clock className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
+                      Regular Published Chamber Hours (05:00 PM - 08:00 PM)
                     </label>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>

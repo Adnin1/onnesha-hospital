@@ -114,6 +114,63 @@ export async function getPublicDoctorsAction(): Promise<{
   }
 }
 
+export interface PublicDoctorSchedule {
+  id: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  max_tokens: number;
+  room_number: string;
+  slot_label: string;
+}
+
+/**
+ * 1b. Fetch public published schedules for a specific doctor
+ */
+export async function getPublicDoctorSchedulesAction(doctorId: string): Promise<{
+  success: boolean;
+  schedules: PublicDoctorSchedule[];
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("doctor_schedules")
+      .select("id, day_of_week, start_time, end_time, max_tokens, room_number")
+      .eq("organization_id", HOSPITAL_METADATA.id)
+      .eq("doctor_id", doctorId)
+      .eq("is_active", true);
+
+    if (error) {
+      return { success: false, schedules: [], error: error.message };
+    }
+
+    interface SchedRow {
+      id: string;
+      day_of_week: string;
+      start_time: string;
+      end_time: string;
+      max_tokens: number;
+      room_number: string;
+    }
+
+    const schedules: PublicDoctorSchedule[] = ((data || []) as unknown as SchedRow[]).map((s) => ({
+      id: s.id,
+      day_of_week: s.day_of_week,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      max_tokens: s.max_tokens,
+      room_number: s.room_number || "Chamber",
+      slot_label: `${s.day_of_week}: ${s.start_time} - ${s.end_time} (Room: ${s.room_number || "Chamber"})`,
+    }));
+
+    return { success: true, schedules };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load doctor schedules";
+    return { success: false, schedules: [], error: msg };
+  }
+}
+
 /**
  * 2. Fetch public hospital departments
  */

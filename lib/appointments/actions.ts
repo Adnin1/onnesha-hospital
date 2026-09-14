@@ -194,12 +194,27 @@ export async function createDoctorScheduleAction(params: {
     const supabase = await createClient();
     const isPublishedState = params.isPublished ?? true;
 
+    const DAYS_MAP: Record<number, string> = {
+      0: "SUNDAY",
+      1: "MONDAY",
+      2: "TUESDAY",
+      3: "WEDNESDAY",
+      4: "THURSDAY",
+      5: "FRIDAY",
+      6: "SATURDAY",
+    };
+
+    const canonicalDay =
+      typeof params.dayOfWeek === "number"
+        ? DAYS_MAP[params.dayOfWeek] || "SATURDAY"
+        : String(params.dayOfWeek).toUpperCase().trim();
+
     const { data: sched, error } = await supabase
       .from("doctor_schedules")
       .insert({
         organization_id: session.organizationId,
         doctor_id: params.doctorId,
-        day_of_week: params.dayOfWeek,
+        day_of_week: canonicalDay,
         start_time: params.startTime,
         end_time: params.endTime,
         max_tokens: params.maxPatients || 30,
@@ -259,62 +274,34 @@ export async function bookAppointmentAction(params: {
   try {
     const supabase = await createClient();
 
-    const { data: doctor, error: docError } = await supabase
-      .from("doctors")
-      .select("id, full_name, room_number, opd_fee")
-      .eq("id", params.doctorId)
-      .single();
-
-    if (docError || !doctor) {
-      return { success: false, error: "Doctor not found" };
-    }
-
-    const { data: tokenData, error: tokenErr } = await supabase.rpc("get_next_token", {
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("book_staff_appointment_atomic", {
       p_org_id: session.organizationId,
+      p_patient_id: params.patientId,
       p_doctor_id: params.doctorId,
-      p_date: apptDate,
+      p_schedule_id: params.scheduleId || null,
+      p_appointment_date: apptDate,
+      p_source: source,
+      p_notes: params.notes || null,
     });
 
-    if (tokenErr || !tokenData) {
-      return { success: false, error: tokenErr?.message || "Failed to allocate atomic token number." };
+    if (rpcErr || !rpcRes) {
+      return { success: false, error: rpcErr?.message || "Failed to execute atomic appointment booking." };
     }
-    const nextToken = Number(tokenData);
 
+    const resObj = typeof rpcRes === "string" ? JSON.parse(rpcRes) : rpcRes;
+    if (!resObj.success) {
+      return { success: false, error: resObj.error || "Appointment booking failed." };
+    }
+
+    // Fetch newly created appointment record
     const { data: appt, error: apptError } = await supabase
       .from("appointments")
-      .insert({
-        organization_id: session.organizationId,
-        patient_id: params.patientId,
-        doctor_id: params.doctorId,
-        schedule_id: params.scheduleId || null,
-        appointment_date: apptDate,
-        token_number: nextToken,
-        source,
-        status: "WAITING",
-        payment_status: "PENDING",
-        booked_by: session.userId,
-        patient_notes: params.notes || null,
-      })
       .select("*, patients(id, patient_code, full_name, phone, gender, blood_group)")
+      .eq("id", resObj.appointment_id)
       .single();
 
     if (apptError || !appt) {
-      return { success: false, error: apptError?.message || "Failed to book appointment" };
-    }
-
-    const { error: queueErr } = await supabase.from("waiting_queue").insert({
-      organization_id: session.organizationId,
-      appointment_id: appt.id,
-      doctor_id: params.doctorId,
-      room_number: doctor.room_number || "Chamber",
-      token_number: nextToken,
-      queue_status: "WAITING",
-    });
-
-    if (queueErr) {
-      // Rollback appointment creation to prevent orphan record
-      await supabase.from("appointments").delete().eq("id", appt.id);
-      return { success: false, error: "Failed to allocate queue token: " + queueErr.message };
+      return { success: false, error: "Failed to load confirmed appointment record." };
     }
 
     await recordAuditLog({
@@ -325,7 +312,7 @@ export async function bookAppointmentAction(params: {
       entityType: "appointment",
       entityId: appt.id,
       newValues: {
-        tokenNumber: nextToken,
+        tokenNumber: resObj.token_number,
         doctorId: params.doctorId,
         patientId: params.patientId,
         appointmentDate: apptDate,
@@ -348,11 +335,11 @@ export async function bookAppointmentAction(params: {
       ...row,
       patient: row.patients || undefined,
       doctor: {
-        id: doctor.id,
-        full_name: doctor.full_name,
+        id: params.doctorId,
+        full_name: "Specialist Consultant",
         specialization: "",
-        room_number: doctor.room_number,
-        opd_fee: Number(doctor.opd_fee) || 800,
+        room_number: resObj.room_number || "Chamber",
+        opd_fee: 800,
       },
     };
 
@@ -360,7 +347,7 @@ export async function bookAppointmentAction(params: {
       success: true,
       data: {
         appointment: formattedAppt,
-        tokenNumber: nextToken,
+        tokenNumber: resObj.token_number,
       },
     };
   } catch (err: unknown) {

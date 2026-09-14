@@ -164,22 +164,23 @@ export async function requirePermission(permissionKey: string): Promise<void> {
 
 /**
  * Assertion requiring AAL2 assurance for high-risk operations.
- * Fails closed: if user has enrolled MFA factors and current level is not AAL2, or if session/auth fails.
+ * Strictly FAIL CLOSED:
+ * - Requires authenticated user
+ * - Requires verified MFA factor count > 0
+ * - Requires current AAL level === "aal2"
+ * If any condition is missing or unverified, denies access immediately.
  */
 export async function requireAAL2(): Promise<void> {
   const session = await getCurrentUserSession();
   if (!session.userId) {
-    throw new Error("401 Unauthorized: Valid user session required.");
+    throw new Error("401 Unauthorized: Valid authenticated user session required.");
   }
 
-  // If user has verified MFA factors, current level MUST be AAL2
-  if (session.mfaFactorsCount > 0 && session.aalLevel !== "aal2") {
-    throw new Error("401 Unauthorized: AAL2 Multi-Factor Authentication required for high-risk action.");
+  if (session.mfaFactorsCount <= 0) {
+    throw new Error("403 Forbidden: MFA factor registration required for high-risk action.");
   }
 
-  // Admin users performing high-risk actions must have active verified MFA
-  const isAdmin = session.roles.includes("admin") || session.roles.includes("super_admin");
-  if (isAdmin && session.mfaFactorsCount > 0 && session.aalLevel !== "aal2") {
-    throw new Error("403 Forbidden: Admin high-risk action requires verified AAL2 TOTP MFA.");
+  if (session.aalLevel !== "aal2") {
+    throw new Error("401 Unauthorized: Verified AAL2 Multi-Factor Authentication session required for high-risk action.");
   }
 }

@@ -34,11 +34,10 @@ describe("OHMS Phase 4 Doctor Chambers & Appointments Suite (10 Scenarios)", () 
     assert.match(actionsContent, /requirePermission\("appointments\.create"\)/);
   });
 
-  // Scenario 4: bookAppointmentAction automatically inserts into waiting_queue
-  test("4. bookAppointmentAction synchronizes new appointment into waiting_queue with doctor's room number", () => {
+  // Scenario 4: bookAppointmentAction automatically inserts into waiting_queue via atomic RPC
+  test("4. bookAppointmentAction synchronizes new appointment into waiting_queue via atomic RPC", () => {
     const actionsContent = fs.readFileSync(path.join(rootDir, "lib", "appointments", "actions.ts"), "utf8");
-    assert.match(actionsContent, /\.from\("waiting_queue"\)\.insert/);
-    assert.match(actionsContent, /queue_status:\s*"WAITING"/);
+    assert.match(actionsContent, /book_staff_appointment_atomic/);
   });
 
   // Scenario 5: bookAppointmentAction logs appointment creation into immutable audit vault
