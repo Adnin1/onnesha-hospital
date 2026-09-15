@@ -368,7 +368,7 @@ export async function getLiveWaitingQueueAction(): Promise<{
       `)
       .eq("organization_id", HOSPITAL_METADATA.id)
       .eq("appointment_date", today)
-      .in("status", ["SCHEDULED", "CONFIRMED", "IN_CONSULTATION", "COMPLETED"])
+      .in("status", ["WAITING", "SCHEDULED", "CONFIRMED", "IN_CONSULTATION", "IN_CHAMBER", "COMPLETED"])
       .order("token_number", { ascending: true })
       .limit(30);
 
@@ -389,12 +389,14 @@ export async function getLiveWaitingQueueAction(): Promise<{
     const rows = (data || []) as unknown as AptRow[];
     const queue = rows.map((r) => {
       let qStatus: "waiting" | "calling" | "serving" | "done" | "skipped" = "waiting";
-      if (r.status === "IN_CONSULTATION") {
+      if (r.status === "IN_CONSULTATION" || r.status === "IN_CHAMBER") {
         qStatus = "serving";
       } else if (r.status === "CONFIRMED") {
         qStatus = "calling";
       } else if (r.status === "COMPLETED") {
         qStatus = "done";
+      } else if (r.status === "WAITING" || r.status === "SCHEDULED") {
+        qStatus = "waiting";
       }
 
       // Mask patient name for public screen privacy: e.g. "Md. Tariqul" -> "Md. T***"
