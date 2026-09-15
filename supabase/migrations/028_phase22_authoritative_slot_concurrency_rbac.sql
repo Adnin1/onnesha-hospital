@@ -113,9 +113,10 @@ BEGIN
     -- Count existing non-cancelled bookings for exact schedule and date
     SELECT COUNT(*) INTO v_booked_count
     FROM appointments
-    WHERE doctor_id = p_doctor_id
+    WHERE organization_id = p_org_id
+      AND doctor_id = p_doctor_id
       AND appointment_date = p_appointment_date
-      AND (schedule_id = p_schedule_id OR schedule_id IS NULL)
+      AND schedule_id = p_schedule_id
       AND status NOT IN ('CANCELLED', 'NO_SHOW');
 
     IF v_capacity IS NOT NULL AND v_capacity > 0 AND v_booked_count >= v_capacity THEN
