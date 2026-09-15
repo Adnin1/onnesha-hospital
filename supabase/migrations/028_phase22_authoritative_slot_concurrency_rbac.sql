@@ -10,6 +10,7 @@
 
 -- Drop obsolete signatures with default NULL schedule_id
 DROP FUNCTION IF EXISTS book_online_appointment(UUID, UUID, DATE, VARCHAR, VARCHAR, VARCHAR, UUID, INT, TEXT);
+DROP FUNCTION IF EXISTS book_staff_appointment_atomic(UUID, UUID, UUID, UUID, DATE, VARCHAR, TEXT);
 
 -- 1. Redefine book_online_appointment RPC with MANDATORY p_schedule_id UUID
 CREATE OR REPLACE FUNCTION book_online_appointment(
@@ -253,7 +254,7 @@ CREATE OR REPLACE FUNCTION book_staff_appointment_atomic(
     p_org_id UUID,
     p_patient_id UUID,
     p_doctor_id UUID,
-    p_schedule_id UUID DEFAULT NULL,
+    p_schedule_id UUID,
     p_appointment_date DATE DEFAULT CURRENT_DATE,
     p_source VARCHAR DEFAULT 'WALKIN',
     p_notes TEXT DEFAULT NULL
@@ -275,7 +276,9 @@ DECLARE
     v_is_leave BOOLEAN;
     v_capacity INT;
     v_booked_count INT;
-    v_resolved_schedule_id UUID;
+    v_schedule_doctor_id UUID;
+    v_schedule_org_id UUID;
+    v_schedule_active BOOLEAN;
 BEGIN
     -- Verify calling user authentication
     v_calling_user_id := auth.uid();
@@ -313,6 +316,11 @@ BEGIN
         END IF;
     END IF;
 
+    -- Validate mandatory schedule_id parameter
+    IF p_schedule_id IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Mandatory schedule selection: p_schedule_id must be provided for normal OPD appointments.');
+    END IF;
+
     -- Verify patient exists in organization
     SELECT patient_code INTO v_patient_code
     FROM patients
@@ -336,25 +344,19 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Cannot book appointments for past dates.');
     END IF;
 
-    -- Resolve schedule if not explicitly provided
-    v_resolved_schedule_id := p_schedule_id;
-    IF v_resolved_schedule_id IS NULL THEN
-        SELECT id, max_tokens INTO v_resolved_schedule_id, v_capacity
-        FROM doctor_schedules
-        WHERE doctor_id = p_doctor_id
-          AND organization_id = p_org_id
-          AND is_active = TRUE
-          AND (UPPER(TRIM(day_of_week)) = UPPER(TRIM(TO_CHAR(p_appointment_date, 'DAY'))) OR TRIM(day_of_week) = TRIM(TO_CHAR(p_appointment_date, 'D')))
-        LIMIT 1;
-    ELSE
-        SELECT max_tokens INTO v_capacity
-        FROM doctor_schedules
-        WHERE id = v_resolved_schedule_id AND doctor_id = p_doctor_id AND is_active = TRUE;
+    -- Verify selected schedule exists, belongs to doctor and org, and is active
+    SELECT doctor_id, organization_id, max_tokens, is_active
+    INTO v_schedule_doctor_id, v_schedule_org_id, v_capacity, v_schedule_active
+    FROM doctor_schedules
+    WHERE id = p_schedule_id;
+
+    IF v_schedule_doctor_id IS NULL OR v_schedule_doctor_id != p_doctor_id OR v_schedule_org_id != p_org_id OR v_schedule_active IS NOT TRUE THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Invalid, inactive, or mismatched doctor schedule slot selected.');
     END IF;
 
-    -- Acquire transaction advisory lock using exact org + doctor + resolved_schedule + date formula for concurrency safety
+    -- Acquire transaction advisory lock using exact org + doctor + schedule + date formula for concurrency safety
     PERFORM pg_advisory_xact_lock(
-        hashtext(p_org_id::text || ':' || p_doctor_id::text || ':' || COALESCE(v_resolved_schedule_id::text, 'default') || ':' || p_appointment_date::text)
+        hashtext(p_org_id::text || ':' || p_doctor_id::text || ':' || p_schedule_id::text || ':' || p_appointment_date::text)
     );
 
     -- Check if doctor is on leave
@@ -374,7 +376,7 @@ BEGIN
         FROM appointments
         WHERE doctor_id = p_doctor_id
           AND appointment_date = p_appointment_date
-          AND (schedule_id = v_resolved_schedule_id OR v_resolved_schedule_id IS NULL)
+          AND schedule_id = p_schedule_id
           AND status NOT IN ('CANCELLED', 'NO_SHOW');
 
         IF v_booked_count >= v_capacity THEN
@@ -414,7 +416,7 @@ BEGIN
         p_patient_id,
         p_doctor_id,
         v_department_id,
-        v_resolved_schedule_id,
+        p_schedule_id,
         p_appointment_date,
         v_token,
         COALESCE(p_source, 'WALKIN'),
@@ -482,4 +484,5 @@ GRANT EXECUTE ON FUNCTION book_staff_appointment_atomic TO authenticated, servic
 GRANT EXECUTE ON FUNCTION book_online_appointment TO anon, authenticated, service_role;
 
 -- Ensure all active doctors have explicit is_public = TRUE
+ALTER TABLE doctors ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT TRUE;
 UPDATE doctors SET is_public = TRUE WHERE is_public IS NULL AND is_active = TRUE;

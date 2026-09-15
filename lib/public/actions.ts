@@ -70,7 +70,7 @@ export async function getPublicDoctorsAction(): Promise<{
       `)
       .eq("organization_id", HOSPITAL_METADATA.id)
       .eq("is_active", true)
-      .or("is_public.eq.true,is_public.is.null")
+      .eq("is_public", true)
       .order("full_name", { ascending: true });
 
     if (error) {
@@ -142,7 +142,7 @@ export async function getPublicDoctorSchedulesAction(doctorId: string): Promise<
       .eq("doctor_id", doctorId)
       .eq("is_active", true)
       .eq("doctors.is_active", true)
-      .or("is_public.eq.true,is_public.is.null", { foreignTable: "doctors" });
+      .eq("doctors.is_public", true);
 
     if (error) {
       return { success: false, schedules: [], error: error.message };
