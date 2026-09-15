@@ -9,8 +9,7 @@ test.describe("Real Browser E2E: Operation Theatre (OT)", () => {
     await expect(container).toBeVisible();
 
     const bookingBtn = page.locator('button:has-text("সার্জারি"), button:has-text("OT"), button:has-text("বুকিং"), button').first();
-    if (await bookingBtn.isVisible()) {
-      await expect(bookingBtn).toBeEnabled();
-    }
+    await expect(bookingBtn).toBeVisible();
+    await expect(bookingBtn).toBeEnabled();
   });
 });

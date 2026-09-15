@@ -19,9 +19,8 @@ test.describe("Real Browser E2E: Authentication & Navigation", () => {
     await expect(passInput).toHaveValue("WrongPassword123!");
 
     const submitBtn = page.locator('button[type="submit"]').first();
-    if (await submitBtn.isVisible()) {
-      await expect(submitBtn).toBeEnabled();
-    }
+    await expect(submitBtn).toBeVisible();
+    await expect(submitBtn).toBeEnabled();
   });
 
   test("2. Unauthenticated user accessing /app/dashboard redirects or shows login prompt", async ({ page }) => {

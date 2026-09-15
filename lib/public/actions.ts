@@ -100,12 +100,12 @@ export async function getPublicDoctorsAction(): Promise<{
       specialization: d.specialization,
       bmdc_reg_number: d.bmdc_reg_number,
       room_number: d.room_number,
-      opd_fee: Number(d.opd_fee) || 800,
-      followup_fee: Number(d.followup_fee) || 400,
+      opd_fee: Number(d.opd_fee) || 0,
+      followup_fee: Number(d.followup_fee) || 0,
       avatar_url: d.avatar_url,
       bio: d.bio,
-      department_name: d.departments?.name || "General Medicine",
-      department_slug: d.departments?.name ? d.departments.name.toLowerCase().replace(/\s+/g, "-") : "general",
+      department_name: d.departments?.name || "",
+      department_slug: d.departments?.name ? d.departments.name.toLowerCase().replace(/\s+/g, "-") : "",
     }));
 
     return { success: true, doctors };
@@ -163,8 +163,8 @@ export async function getPublicDoctorSchedulesAction(doctorId: string): Promise<
       start_time: s.start_time,
       end_time: s.end_time,
       max_tokens: s.max_tokens,
-      room_number: s.room_number || "Chamber",
-      slot_label: `${s.day_of_week}: ${s.start_time} - ${s.end_time} (Room: ${s.room_number || "Chamber"})`,
+      room_number: s.room_number || "",
+      slot_label: `${s.day_of_week}: ${s.start_time} - ${s.end_time}${s.room_number ? ` (Room: ${s.room_number})` : ""}`,
     }));
 
     return { success: true, schedules };
@@ -280,9 +280,9 @@ export async function bookOnlineAppointmentAction(params: {
         tokenNumber: resObj.token_number,
         patientCode: resObj.patient_code,
         appointmentDate: resObj.appointment_date,
-        doctorName: docData?.full_name || "Specialist Consultant",
-        roomNumber: resObj.room_number || docData?.room_number || "Chamber",
-        opdFee: Number(docData?.opd_fee) || 800,
+        doctorName: docData?.full_name || "",
+        roomNumber: resObj.room_number || docData?.room_number || "",
+        opdFee: Number(docData?.opd_fee) || 0,
       },
     };
   } catch (err: unknown) {

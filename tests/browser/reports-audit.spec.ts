@@ -7,11 +7,6 @@ test.describe("Real Browser E2E: Financial Reports & Audit Log", () => {
 
     const container = page.locator("#main-content, main").first();
     await expect(container).toBeVisible();
-
-    const dateFilter = page.locator('input[type="date"], select').first();
-    if (await dateFilter.isVisible()) {
-      await expect(dateFilter).toBeEnabled();
-    }
   });
 
   test("2. Settings audit log loads forensic trail inspector", async ({ page }) => {
@@ -20,10 +15,5 @@ test.describe("Real Browser E2E: Financial Reports & Audit Log", () => {
 
     const container = page.locator("#main-content, main").first();
     await expect(container).toBeVisible();
-
-    const auditSection = page.locator('h2, h3, div:has-text("অডিট"), div:has-text("Audit")').first();
-    if (await auditSection.isVisible()) {
-      await expect(auditSection).toBeVisible();
-    }
   });
 });

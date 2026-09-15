@@ -21,7 +21,9 @@ if (fs.existsSync(envPath)) {
 }
 
 describe("OHMS Database & API Integration Suite: Patient Registration & OPD Schema", async () => {
-  const adminClient = createClient(supabaseUrl, serviceKey);
+  const adminClient = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 
   test("1. Patient database table query executes against live Supabase PostgreSQL schema", async () => {
     const { data, error } = await adminClient.from("patients").select("id, full_name, phone").limit(5);

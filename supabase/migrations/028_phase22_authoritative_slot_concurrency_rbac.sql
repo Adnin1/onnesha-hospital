@@ -243,7 +243,7 @@ BEGIN
         'room_number', COALESCE(v_room_number, 'Chamber')
     );
 EXCEPTION WHEN OTHERS THEN
-    RETURN jsonb_build_object('success', false, 'error', SQLERRM);
+    RETURN jsonb_build_object('success', false, 'error', 'Booking request could not be processed. Please try again.');
 END;
 $$;
 
@@ -275,6 +275,7 @@ DECLARE
     v_is_leave BOOLEAN;
     v_capacity INT;
     v_booked_count INT;
+    v_resolved_schedule_id UUID;
 BEGIN
     -- Verify calling user authentication
     v_calling_user_id := auth.uid();
@@ -335,9 +336,25 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Cannot book appointments for past dates.');
     END IF;
 
-    -- Acquire transaction advisory lock for concurrency safety
+    -- Resolve schedule if not explicitly provided
+    v_resolved_schedule_id := p_schedule_id;
+    IF v_resolved_schedule_id IS NULL THEN
+        SELECT id, max_tokens INTO v_resolved_schedule_id, v_capacity
+        FROM doctor_schedules
+        WHERE doctor_id = p_doctor_id
+          AND organization_id = p_org_id
+          AND is_active = TRUE
+          AND (UPPER(TRIM(day_of_week)) = UPPER(TRIM(TO_CHAR(p_appointment_date, 'DAY'))) OR TRIM(day_of_week) = TRIM(TO_CHAR(p_appointment_date, 'D')))
+        LIMIT 1;
+    ELSE
+        SELECT max_tokens INTO v_capacity
+        FROM doctor_schedules
+        WHERE id = v_resolved_schedule_id AND doctor_id = p_doctor_id AND is_active = TRUE;
+    END IF;
+
+    -- Acquire transaction advisory lock using exact org + doctor + resolved_schedule + date formula for concurrency safety
     PERFORM pg_advisory_xact_lock(
-        hashtext(p_org_id::text || ':' || p_doctor_id::text || ':' || COALESCE(p_schedule_id::text, 'none') || ':' || p_appointment_date::text)
+        hashtext(p_org_id::text || ':' || p_doctor_id::text || ':' || COALESCE(v_resolved_schedule_id::text, 'default') || ':' || p_appointment_date::text)
     );
 
     -- Check if doctor is on leave
@@ -351,23 +368,17 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Doctor is on scheduled leave on the selected date.');
     END IF;
 
-    -- Check schedule capacity if schedule_id supplied
-    IF p_schedule_id IS NOT NULL THEN
-        SELECT max_tokens INTO v_capacity
-        FROM doctor_schedules
-        WHERE id = p_schedule_id AND doctor_id = p_doctor_id AND is_active = TRUE;
+    -- Check schedule capacity if capacity limit exists
+    IF v_capacity IS NOT NULL AND v_capacity > 0 THEN
+        SELECT COUNT(*) INTO v_booked_count
+        FROM appointments
+        WHERE doctor_id = p_doctor_id
+          AND appointment_date = p_appointment_date
+          AND (schedule_id = v_resolved_schedule_id OR v_resolved_schedule_id IS NULL)
+          AND status NOT IN ('CANCELLED', 'NO_SHOW');
 
-        IF v_capacity IS NOT NULL THEN
-            SELECT COUNT(*) INTO v_booked_count
-            FROM appointments
-            WHERE doctor_id = p_doctor_id
-              AND appointment_date = p_appointment_date
-              AND (schedule_id = p_schedule_id OR schedule_id IS NULL)
-              AND status NOT IN ('CANCELLED', 'NO_SHOW');
-
-            IF v_booked_count >= v_capacity THEN
-                RETURN jsonb_build_object('success', false, 'error', 'Doctor schedule capacity reached for selected date.');
-            END IF;
+        IF v_booked_count >= v_capacity THEN
+            RETURN jsonb_build_object('success', false, 'error', 'Doctor schedule capacity reached for selected date.');
         END IF;
     END IF;
 
@@ -403,7 +414,7 @@ BEGIN
         p_patient_id,
         p_doctor_id,
         v_department_id,
-        p_schedule_id,
+        v_resolved_schedule_id,
         p_appointment_date,
         v_token,
         COALESCE(p_source, 'WALKIN'),
@@ -469,3 +480,6 @@ REVOKE EXECUTE ON FUNCTION book_staff_appointment_atomic FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION book_staff_appointment_atomic TO authenticated, service_role;
 
 GRANT EXECUTE ON FUNCTION book_online_appointment TO anon, authenticated, service_role;
+
+-- Ensure all active doctors have explicit is_public = TRUE
+UPDATE doctors SET is_public = TRUE WHERE is_public IS NULL AND is_active = TRUE;

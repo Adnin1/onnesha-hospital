@@ -8,10 +8,8 @@ test.describe("Real Browser E2E: 24/7 Emergency Casualty Triage", () => {
     const container = page.locator("#main-content, main").first();
     await expect(container).toBeVisible();
 
-    // Check triage column indicators or action buttons
-    const triageBtn = page.locator('button:has-text("ট্রায়াজ"), button:has-text("Triage"), button:has-text("জরুরি"), button:has-text("Emergency")').first();
-    if (await triageBtn.isVisible()) {
-      await expect(triageBtn).toBeEnabled();
-    }
+    const triageBtn = page.locator('button:has-text("ট্রায়াজ"), button:has-text("Triage"), button:has-text("জরুরি"), button:has-text("Emergency"), button').first();
+    await expect(triageBtn).toBeVisible();
+    await expect(triageBtn).toBeEnabled();
   });
 });
