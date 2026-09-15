@@ -88,7 +88,14 @@ describe("OHMS Phase 24 Canonical Public Organization Enforcement (10 Scenarios)
     assert.ok(content.includes("GRANT EXECUTE ON FUNCTION public.book_online_appointment TO anon, authenticated, service_role;"), "Grant to anon/authenticated/service_role required");
   });
 
-  test("10. Live DB canonical org enforcement (requires Supabase credentials)", async () => {
+  test("10. Migration 030 enforces database-level partial unique index on is_canonical_public", () => {
+    const migPath = path.join(ROOT, "supabase/migrations/030_phase24_canonical_public_org_enforcement.sql");
+    const content = fs.readFileSync(migPath, "utf8");
+    assert.ok(content.includes("CREATE UNIQUE INDEX IF NOT EXISTS uq_organizations_canonical_public"), "Partial unique index definition required");
+    assert.ok(content.includes("WHERE is_canonical_public IS TRUE"), "Index must be partial on is_canonical_public IS TRUE");
+  });
+
+  test("11. Live DB canonical org enforcement (requires Supabase credentials)", async () => {
     const envPath = path.join(ROOT, ".env.local");
     if (!fs.existsSync(envPath)) {
       // BLOCKED: requires live DB — not a test failure, explicit blocker

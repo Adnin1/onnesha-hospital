@@ -1,4 +1,4 @@
-﻿-- =====================================================================================
+-- =====================================================================================
 -- 030_phase24_canonical_public_org_enforcement.sql
 -- Onnesha Hospital Management System (OHMS) - Phase 24
 --
@@ -35,12 +35,17 @@ UPDATE public.organizations
 SET is_canonical_public = TRUE
 WHERE id = 'a0000000-0000-0000-0000-000000000001'::UUID;
 
--- Ensure exactly one canonical public org constraint (advisory; not UNIQUE to allow future arch)
--- No other orgs should be marked canonical public
+-- Ensure exactly one canonical public org:
+-- 1. Reset any stray organizations to FALSE
 UPDATE public.organizations
 SET is_canonical_public = FALSE
 WHERE id != 'a0000000-0000-0000-0000-000000000001'::UUID
   AND is_canonical_public IS TRUE;
+
+-- 2. Database-level partial unique index: guarantees at most ONE organization can ever have is_canonical_public = TRUE
+CREATE UNIQUE INDEX IF NOT EXISTS uq_organizations_canonical_public
+ON public.organizations (is_canonical_public)
+WHERE is_canonical_public IS TRUE;
 
 -- =====================================================================================
 -- PART 2: Replace book_online_appointment with canonical-org-enforced version
