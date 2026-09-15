@@ -100,7 +100,7 @@ export default function SecuritySettingsPage() {
       });
 
       if (error || !data) {
-        setErrorMessage("TOTP এনরোলমেন্ট শুরু করতে ব্যর্থ হয়েছে: " + (error?.message || "অজানা ত্রুটি"));
+        setErrorMessage("TOTP এনরোলমেন্ট শুরু করতে ব্যর্থ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
         setIsEnrolling(false);
         return;
       }
@@ -129,7 +129,7 @@ export default function SecuritySettingsPage() {
       });
 
       if (challengeError || !challengeData) {
-        setErrorMessage("MFA চ্যালেঞ্জ তৈরিতে ব্যর্থতা: " + (challengeError?.message || "অজানা ত্রুটি"));
+        setErrorMessage("MFA চ্যালেঞ্জ তৈরিতে ব্যর্থতা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।");
         setIsVerifying(false);
         return;
       }
@@ -173,7 +173,7 @@ export default function SecuritySettingsPage() {
       });
 
       if (error) {
-        setErrorMessage("ফ্যাক্টর আনএনরোল করতে ব্যর্থ: " + error.message);
+        setErrorMessage("ফ্যাক্টর আনএনরোল করতে ব্যর্থ হয়েছে। অনুগ্রহ করে পরে আবার চেষ্টা করুন।");
         return;
       }
 

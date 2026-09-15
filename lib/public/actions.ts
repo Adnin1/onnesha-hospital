@@ -258,7 +258,7 @@ export async function bookOnlineAppointmentAction(params: {
     });
 
     if (rpcErr || !rpcRes) {
-      return { success: false, error: rpcErr?.message || "Failed to process appointment request." };
+      return { success: false, error: "Online appointment service is temporarily unavailable. Please try again or contact hospital reception." };
     }
 
     const resObj = typeof rpcRes === "string" ? JSON.parse(rpcRes) : rpcRes;

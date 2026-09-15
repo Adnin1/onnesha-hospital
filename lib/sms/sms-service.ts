@@ -25,9 +25,13 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
     ? `88${cleanedPhone}`
     : cleanedPhone;
 
-  // Log in console during development
-  console.log(`[SMS Gateway BD] [${smsType.toUpperCase()}] To: ${formattedNumber}`);
-  console.log(`Message: "${message}"`);
+  // Guard debug logging to development only; mask phone number for PHI/PII compliance
+  if (process.env.NODE_ENV === "development") {
+    const maskedPhone = formattedNumber.length > 6
+      ? `${formattedNumber.slice(0, 4)}****${formattedNumber.slice(-3)}`
+      : "****";
+    console.log(`[SMS Gateway BD] [${smsType.toUpperCase()}] To: ${maskedPhone}`);
+  }
 
   const apiEndpoint = process.env.SMS_API_ENDPOINT;
   const apiKey = process.env.SMS_API_KEY;

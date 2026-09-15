@@ -123,8 +123,11 @@ export class PaymentService {
         }
       }
 
-      // 4. Generate unique intent sequence
-      const intentNumber = `PI-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      // 4. Generate unique collision-resistant intent sequence
+      const intentSuffix = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID().slice(0, 8).toUpperCase()
+        : Math.random().toString(36).substring(2, 10).toUpperCase();
+      const intentNumber = `PI-${Date.now()}-${intentSuffix}`;
 
       // 5. Insert payment intent in PENDING status
       const { data: insertedIntent, error: insertError } = await supabase
