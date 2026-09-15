@@ -50,7 +50,7 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
   test("6. getPublicDoctorSchedulesAction joins doctors and enforces is_public & is_active", () => {
     const actionsPath = path.join(ROOT, "lib/public/actions.ts");
     const content = fs.readFileSync(actionsPath, "utf8");
-    assert.ok(content.includes('doctors!inner(is_active, is_public)'), "Doctor join required in getPublicDoctorSchedulesAction");
+    assert.ok(content.includes('doctors.is_public'), "Doctor public join filter required in getPublicDoctorSchedulesAction");
   });
 
   test("7. createDoctorAction requires mandatory roomNumber and consultationFee", () => {
@@ -85,7 +85,6 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
     const migPath = path.join(ROOT, "supabase/migrations/028_phase22_authoritative_slot_concurrency_rbac.sql");
     const content = fs.readFileSync(migPath, "utf8");
     
-    // Verify pg_advisory_xact_lock in book_online_appointment and book_staff_appointment_atomic
     const lockFormula = "hashtext(p_org_id::text || ':' || p_doctor_id::text || ':' || p_schedule_id::text || ':' || p_appointment_date::text)";
     const matches = content.split(lockFormula).length - 1;
     
@@ -122,8 +121,7 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
   test("16. Concurrency Advisory Lock DB Verification: Parallel execution across 10 concurrent requests with capacity limit", async () => {
     const envPath = path.join(ROOT, ".env.local");
     if (!fs.existsSync(envPath)) {
-      assert.ok(true, "Skipping real DB concurrency check when .env.local is missing");
-      return;
+      assert.fail("FAIL: Real DB Concurrency Test requires .env.local file with live Supabase credentials");
     }
 
     const envContent = fs.readFileSync(envPath, "utf8");
@@ -135,54 +133,61 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
     }
 
     if (!supabaseUrl || !serviceKey) {
-      assert.ok(true, "Skipping real DB concurrency check when Supabase credentials missing");
-      return;
+      assert.fail("FAIL: Real DB Concurrency Test requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);
     const orgId = "a0000000-0000-0000-0000-000000000001";
 
-    const { data: doctors } = await supabase.from("doctors").select("id, full_name").eq("organization_id", orgId).eq("is_active", true).limit(1);
-    if (!doctors || doctors.length === 0) {
-      assert.ok(true, "Skipping DB concurrency test: No active doctors found");
-      return;
+    const { data: doctors, error: dErr } = await supabase.from("doctors").select("id, full_name").eq("organization_id", orgId).eq("is_active", true).limit(1);
+    if (dErr || !doctors || doctors.length === 0) {
+      assert.fail("FAIL: Real DB Concurrency Test requires active doctor in test organization: " + (dErr?.message || "none found"));
     }
 
     const doctor = doctors[0];
     const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + 14);
+    targetDate.setDate(targetDate.getDate() + 25);
     const appointmentDate = targetDate.toISOString().split("T")[0];
     const dayName = targetDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
 
-    let { data: schedules } = await supabase.from("doctor_schedules").select("id, day_of_week").eq("doctor_id", doctor.id).eq("is_active", true);
+    let { data: schedules, error: sErr } = await supabase.from("doctor_schedules").select("id, day_of_week").eq("doctor_id", doctor.id).eq("is_active", true);
+    if (sErr) {
+      assert.fail("FAIL: Real DB Concurrency Test failed querying doctor_schedules: " + sErr.message);
+    }
+
     let schedule = schedules && schedules.find(s => s.day_of_week.toUpperCase() === dayName);
 
     if (!schedule) {
-      const { data: newSched } = await supabase.from("doctor_schedules").insert({
+      const { data: newSched, error: insErr } = await supabase.from("doctor_schedules").insert({
         organization_id: orgId,
         doctor_id: doctor.id,
         day_of_week: dayName,
         start_time: "09:00:00",
-        end_time: "12:00:00",
+        end_time: "13:00:00",
         max_tokens: 2,
         is_active: true
       }).select().single();
+      if (insErr) {
+        assert.fail("FAIL: Real DB Concurrency Test failed creating schedule fixture: " + insErr.message);
+      }
       schedule = newSched;
     } else {
       await supabase.from("doctor_schedules").update({ max_tokens: 2 }).eq("id", schedule.id);
     }
 
     if (!schedule) {
-      assert.ok(true, "Skipping DB concurrency test: Failed to obtain doctor schedule");
-      return;
+      assert.fail("FAIL: Real DB Concurrency Test failed: schedule fixture could not be created or retrieved");
     }
 
     // Clean up pre-existing test appointments for date
     await supabase.from("appointments").delete().eq("doctor_id", doctor.id).eq("appointment_date", appointmentDate);
 
-    // Run 10 parallel RPC requests
+    // Track patient test numbers for deterministic cleanup
+    const testPhones = [];
     const promises = [];
     for (let i = 1; i <= 10; i++) {
+      const phone = `018880000${i.toString().padStart(2, "0")}`;
+      testPhones.push(phone);
       promises.push(
         supabase.rpc("book_online_appointment", {
           p_org_id: orgId,
@@ -190,7 +195,7 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
           p_schedule_id: schedule.id,
           p_appointment_date: appointmentDate,
           p_patient_name: `Concurrent Patient ${i}`,
-          p_patient_phone: `017000000${i.toString().padStart(2, "0")}`,
+          p_patient_phone: phone,
           p_patient_gender: "MALE",
           p_patient_age: 28,
           p_notes: `Parallel concurrency lock validation ${i}`
@@ -205,6 +210,9 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
     const appointmentIds = [];
 
     for (const res of results) {
+      if (res.error) {
+        assert.fail("FAIL: RPC execution error during concurrency test: " + res.error.message);
+      }
       const data = typeof res.data === "string" ? JSON.parse(res.data) : res.data;
       if (data && data.success) {
         successCount++;
@@ -215,15 +223,36 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
       }
     }
 
-    // Clean up created test records
+    // Query DB to verify persisted state before cleanup
+    const { data: dbAppts } = await supabase.from("appointments").select("id, organization_id, doctor_id, schedule_id").in("id", appointmentIds);
+    const { data: dbQueue } = await supabase.from("waiting_queue").select("id").in("appointment_id", appointmentIds);
+    const { data: dbAudit } = await supabase.from("audit_logs").select("id").eq("module", "PUBLIC_BOOKING").in("entity_id", appointmentIds);
+
+    // Deterministic Cleanup of all created test entities
     if (appointmentIds.length > 0) {
       await supabase.from("waiting_queue").delete().in("appointment_id", appointmentIds);
       await supabase.from("appointments").delete().in("id", appointmentIds);
       await supabase.from("audit_logs").delete().in("entity_id", appointmentIds);
+      await supabase.from("patients").delete().in("normalized_phone", testPhones);
     }
 
+    // Verify cleanup completed
+    const { count: postCleanupAppts } = await supabase.from("appointments").select("*", { count: "exact" }).in("id", appointmentIds);
+    assert.equal(postCleanupAppts, 0, "All test-generated appointments must be deleted during cleanup");
+
+    // Assert exact concurrency and database counts
     assert.equal(successCount, 2, "Exactly 2 parallel booking requests must succeed for max_tokens = 2");
     assert.equal(failCount, 8, "Exactly 8 parallel booking requests must fail when capacity is reached");
     assert.equal(tokens.size, 2, "Exactly 2 unique token numbers (1 and 2) must be allocated");
+    assert.equal(dbAppts?.length, 2, "Exactly 2 appointment rows must exist in database");
+    assert.equal(dbQueue?.length, 2, "Exactly 2 waiting queue rows must exist in database");
+    assert.equal(dbAudit?.length, 2, "Exactly 2 audit log rows must exist in database");
+
+    // Verify DB foreign key properties
+    for (const apptRow of dbAppts || []) {
+      assert.equal(apptRow.organization_id, orgId, "Appointment must belong to test organization");
+      assert.equal(apptRow.doctor_id, doctor.id, "Appointment must belong to selected doctor");
+      assert.equal(apptRow.schedule_id, schedule.id, "Appointment must belong to selected schedule");
+    }
   });
 });

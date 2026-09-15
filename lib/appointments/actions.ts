@@ -232,7 +232,7 @@ export async function createDoctorScheduleAction(params: {
         start_time: params.startTime,
         end_time: params.endTime,
         max_tokens: params.maxPatients || 30,
-        room_number: params.roomNumber || "Chamber",
+        room_number: params.roomNumber?.trim() || "",
         is_active: isPublishedState,
       })
       .select()
@@ -344,16 +344,22 @@ export async function bookAppointmentAction(params: {
       } | null;
     }
 
+    const { data: docData } = await supabase
+      .from("doctors")
+      .select("id, full_name, specialization, room_number, opd_fee")
+      .eq("id", params.doctorId)
+      .maybeSingle();
+
     const row = appt as unknown as ApptWithPatientRow;
     const formattedAppt: AppointmentRecord = {
       ...row,
       patient: row.patients || undefined,
       doctor: {
         id: params.doctorId,
-        full_name: "Specialist Consultant",
-        specialization: "",
-        room_number: resObj.room_number || "Chamber",
-        opd_fee: 800,
+        full_name: docData?.full_name || "",
+        specialization: docData?.specialization || "",
+        room_number: resObj.room_number || docData?.room_number || "",
+        opd_fee: Number(docData?.opd_fee) || 0,
       },
     };
 
@@ -433,7 +439,7 @@ export async function getLiveWaitingQueueAction(
       organization_id: q.organization_id,
       appointment_id: q.appointment_id,
       doctor_id: q.doctor_id,
-      room_number: q.room_number || q.doctors?.room_number || "Chamber",
+      room_number: q.room_number || q.doctors?.room_number || "",
       token_number: q.token_number,
       queue_status: q.queue_status,
       status: q.queue_status,

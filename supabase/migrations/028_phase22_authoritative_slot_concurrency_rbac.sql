@@ -74,7 +74,7 @@ BEGIN
     );
 
     -- Verify doctor exists, active, and public
-    SELECT is_active, COALESCE(is_public, true), room_number 
+    SELECT is_active, is_public, room_number 
     INTO v_doctor_active, v_doctor_public, v_room_number
     FROM doctors
     WHERE id = p_doctor_id AND organization_id = p_org_id;
@@ -213,7 +213,7 @@ BEGIN
         p_org_id,
         v_appointment_id,
         p_doctor_id,
-        COALESCE(v_room_number, 'Chamber'),
+        COALESCE(v_room_number, ''),
         v_token,
         'WAITING'
     );
@@ -241,7 +241,7 @@ BEGIN
         'token_number', v_token,
         'patient_code', v_patient_code,
         'appointment_date', p_appointment_date,
-        'room_number', COALESCE(v_room_number, 'Chamber')
+        'room_number', COALESCE(v_room_number, '')
     );
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'error', 'Booking request could not be processed. Please try again.');
@@ -439,7 +439,7 @@ BEGIN
         p_org_id,
         v_appointment_id,
         p_doctor_id,
-        COALESCE(v_room_number, 'Chamber'),
+        COALESCE(v_room_number, ''),
         v_token,
         'WAITING'
     );
@@ -469,10 +469,10 @@ BEGIN
         'token_number', v_token,
         'patient_code', v_patient_code,
         'appointment_date', p_appointment_date,
-        'room_number', COALESCE(v_room_number, 'Chamber')
+        'room_number', COALESCE(v_room_number, '')
     );
 EXCEPTION WHEN OTHERS THEN
-    RETURN jsonb_build_object('success', false, 'error', SQLERRM);
+    RETURN jsonb_build_object('success', false, 'error', 'Staff appointment booking could not be processed. Please try again.');
 END;
 $$;
 

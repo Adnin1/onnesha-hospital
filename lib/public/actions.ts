@@ -387,36 +387,40 @@ export async function getLiveWaitingQueueAction(): Promise<{
     }
 
     const rows = (data || []) as unknown as AptRow[];
-    const queue = rows.map((r) => {
-      let qStatus: "waiting" | "calling" | "serving" | "done" | "skipped" = "waiting";
-      if (r.status === "IN_CONSULTATION" || r.status === "IN_CHAMBER") {
-        qStatus = "serving";
-      } else if (r.status === "CONFIRMED") {
-        qStatus = "calling";
-      } else if (r.status === "COMPLETED") {
-        qStatus = "done";
-      } else if (r.status === "WAITING" || r.status === "SCHEDULED") {
-        qStatus = "waiting";
-      }
+    const queue = rows
+      .map((r) => {
+        const tkn = r.token_number || r.serial_number;
+        if (!tkn) return null;
 
-      // Mask patient name for public screen privacy: e.g. "Md. Tariqul" -> "Md. T***"
-      const nameParts = (r.patient_name || "Patient").trim().split(" ");
-      const maskedName =
-        nameParts.length > 1
-          ? `${nameParts[0]} ${nameParts[1][0]}***`
-          : `${nameParts[0].slice(0, 2)}***`;
+        let qStatus: "waiting" | "calling" | "serving" | "done" | "skipped" = "waiting";
+        if (r.status === "IN_CONSULTATION" || r.status === "IN_CHAMBER") {
+          qStatus = "serving";
+        } else if (r.status === "CONFIRMED") {
+          qStatus = "calling";
+        } else if (r.status === "COMPLETED") {
+          qStatus = "done";
+        } else if (r.status === "WAITING" || r.status === "SCHEDULED") {
+          qStatus = "waiting";
+        }
 
-      const tkn = r.token_number || r.serial_number || 1;
-      return {
-        id: r.id,
-        doctor_name: r.doctors?.full_name || "Consultant",
-        room_number: r.doctors?.room_number || "Chamber",
-        patient_name: maskedName,
-        token_number: `#${tkn}`,
-        status: qStatus,
-        called_at: r.created_at ? new Date(r.created_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : undefined,
-      };
-    });
+        // Mask patient name for public screen privacy: e.g. "Md. Tariqul" -> "Md. T***"
+        const nameParts = (r.patient_name || "Patient").trim().split(" ");
+        const maskedName =
+          nameParts.length > 1
+            ? `${nameParts[0]} ${nameParts[1][0]}***`
+            : `${nameParts[0].slice(0, 2)}***`;
+
+        return {
+          id: r.id,
+          doctor_name: r.doctors?.full_name || "",
+          room_number: r.doctors?.room_number || "",
+          patient_name: maskedName,
+          token_number: `#${tkn}`,
+          status: qStatus,
+          called_at: r.created_at ? new Date(r.created_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : undefined,
+        };
+      })
+      .filter((q): q is NonNullable<typeof q> => q !== null);
 
     return { success: true, queue };
   } catch (err: unknown) {

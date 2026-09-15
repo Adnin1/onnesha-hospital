@@ -32,8 +32,8 @@ export default function DoctorsAdminPage() {
   const [docName, setDocName] = useState("");
   const [docSpec, setDocSpec] = useState("");
   const [docBmdc, setDocBmdc] = useState("");
-  const [docFee, setDocFee] = useState("800");
-  const [docRoom, setDocRoom] = useState("Chamber 101");
+  const [docFee, setDocFee] = useState("");
+  const [docRoom, setDocRoom] = useState("");
   const [savingDoc, setSavingDoc] = useState(false);
 
   // Add Schedule Form State
@@ -55,7 +55,7 @@ export default function DoctorsAdminPage() {
 
   const handleCreateDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!docName.trim() || !docSpec.trim() || !docBmdc.trim()) return;
+    if (!docName.trim() || !docSpec.trim() || !docBmdc.trim() || !docFee || !docRoom.trim()) return;
 
     setSavingDoc(true);
     try {
@@ -63,14 +63,16 @@ export default function DoctorsAdminPage() {
         fullName: docName.trim(),
         specialization: docSpec.trim(),
         bmdcRegNumber: docBmdc.trim(),
-        consultationFee: parseFloat(docFee) || 800,
-        roomNumber: docRoom.trim() || "Chamber 101",
+        consultationFee: parseFloat(docFee),
+        roomNumber: docRoom.trim(),
       });
 
       if (res.success) {
         setDocName("");
         setDocSpec("");
         setDocBmdc("");
+        setDocFee("");
+        setDocRoom("");
         setShowAddDoctorModal(false);
         await refreshDoctors();
       } else {
@@ -95,7 +97,7 @@ export default function DoctorsAdminPage() {
         startTime: schedStart,
         endTime: schedEnd,
         maxPatients: parseInt(schedMax) || 30,
-        roomNumber: selectedDoctor.room_number || "Chamber 101",
+        roomNumber: selectedDoctor.room_number,
         isPublished: true,
       });
 
@@ -230,7 +232,7 @@ export default function DoctorsAdminPage() {
                   <p><strong>BMDC Reg:</strong> {doc.bmdc_reg_number}</p>
                   <p className="flex items-center text-slate-800 font-medium">
                     <MapPin className="w-3.5 h-3.5 mr-1 text-sky-600" />
-                    Chamber: {doc.room_number || "Chamber 101"}
+                    Chamber: {doc.room_number || "Unassigned"}
                   </p>
                 </div>
               </div>
