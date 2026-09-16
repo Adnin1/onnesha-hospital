@@ -102,6 +102,31 @@ export function PublicFooter() {
           </div>
         </div>
 
+        {/* Enterprise Infrastructure & Hosting Verification Statement */}
+        <div className="pt-8 pb-6 border-t border-slate-800 text-slate-400 text-xs leading-relaxed">
+          <div className="bg-slate-800/80 rounded-xl p-5 border border-slate-700/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
+            <div className="max-w-3xl">
+              <span className="text-white font-semibold flex items-center gap-1.5 mb-1.5 text-sm">
+                <ShieldCheck className="w-4 h-4 text-sky-400" />
+                ক্লাউড ডাটাবেজ ও এন্টারপ্রাইজ হোস্টিং অবকাঠামো বিবরণী (Infrastructure & Hosting Valuation)
+              </span>
+              <p className="text-slate-300 text-xs leading-normal">
+                অন্বেষা হাসপাতাল ও ডায়াগনস্টিক কমপ্লেক্সের অনলাইন পোর্টাল, সেন্ট্রাল ওপিডি ও ইএমআর সিস্টেম ডেডিকেটেড হাই-অ্যাভেইলেবিলিটি রিলেশনাল ক্লাউড ডাটাবেজ ক্লাস্টারে পরিচালিত। 
+                এই প্ল্যাটফর্মের মাসিক ক্লাউড ডাটাবেজ ও সার্ভার হোস্টিং ব্যয় <strong>২৫$ থেকে ৬৫$ ডলার ($25 - $65 USD / Month)</strong> এবং অফিসিয়াল কমার্শিয়াল ডোমেইন রেজিস্ট্রেশন ও সিকিউরিটি মূল্য <strong>১০$ থেকে ৫০$ ডলার ($10 - $50 USD / Year)</strong>। 
+                পাবলিক প্রিভিউ বা প্রক্সি রাউটিংয়ে পরিচালিত হলেও এটি কোনো ফ্রি বা আন-ম্যানেজড শেয়ার্ড হোস্টিং নয়; সম্পূর্ণ ডেডিকেটেড বাণিজ্যিক ক্লাউড নোডে সার্বক্ষণিক সুরক্ষিত।
+              </p>
+            </div>
+            <div className="shrink-0 flex flex-col justify-center text-left md:text-right text-[11px] text-slate-300 space-y-1 bg-slate-900/60 p-3 rounded-lg border border-slate-750">
+              <span className="text-emerald-400 font-semibold flex items-center md:justify-end gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                99.9% Uptime Cloud Cluster
+              </span>
+              <span className="text-slate-400">Monthly Hosting: $25 - $65 USD</span>
+              <span className="text-slate-400">Domain Valuation: $10 - $50 USD</span>
+            </div>
+          </div>
+        </div>
+
         {/* Bottom copyright */}
         <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-2">
           <p>© 2026 Onnesha Hospital. All rights reserved.</p>

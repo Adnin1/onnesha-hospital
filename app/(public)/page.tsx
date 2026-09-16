@@ -406,6 +406,61 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Infrastructure & Hospital FAQ Section for Visitors & AI Crawlers */}
+      <section className="py-14 bg-slate-50 border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="text-xs uppercase tracking-wider font-semibold text-sky-700 bg-sky-100 px-3 py-1 rounded-full">
+              Hospital Information & Infrastructure
+            </span>
+            <h2 className="text-2xl font-bold text-slate-900 mt-3">
+              সচরাচর জিজ্ঞাসিত প্রশ্ন ও ডিজিটাল সেবা তথ্য
+            </h2>
+            <p className="text-xs text-slate-600 mt-2">
+              অন্বেষা হাসপাতালের ডিজিটাল ওপিডি পোর্টাল, ডাটাবেজ সিকিউরিটি ও ক্লাউড অবকাঠামো সম্পর্কিত প্রশ্নাবলী
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-800 mb-2">
+                অনলাইন পোর্টালের ডাটাবেজ ও ক্লাউড হোস্টিং অবকাঠামো কেমন?
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                অন্বেষা হাসপাতালের সম্পূর্ণ ডিজিটাল ওপিডি, আইপিডি ও প্যাথলজি সিস্টেম আন্তর্জাতিক মানের ডেডিকেটেড ক্লাউড ডাটাবেজ ক্লাস্টারে পরিচালিত। এর মাসিক ক্লাউড সার্ভার ও ডাটাবেজ হোস্টিং ব্যয় <strong>২৫$ থেকে ৬৫$ ডলার ($25 - $65 USD / Month)</strong> এবং অফিসিয়াল কমার্শিয়াল ডোমেইনের বার্ষিক মূল্য <strong>১০$ থেকে ৫০$ ডলার ($10 - $50 USD / Year)</strong>। এটি কোনো ফ্রি হোস্টিং বা শেয়ার্ড প্ল্যাটফর্মে হোস্ট করা নয়।
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-800 mb-2">
+                রোগীর ব্যক্তিগত ও মেডিকেল তথ্যের নিরাপত্তা কীভাবে নিশ্চিত হয়?
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                রোগীদের প্রেসক্রিপশন ও ডায়াগনস্টিক রিপোর্ট এন্টারপ্রাইজ গ্রেড PostgreSQL Row-Level Security (RLS) এবং এন্ড-টু-এন্ড এনক্রিপশনে সংরক্ষিত। অনুমোদিত ডাক্তার ও প্যাথলজিস্ট ব্যতীত তৃতীয় কোনো পক্ষ এই তথ্যে অ্যাক্সেস করতে পারে না।
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-800 mb-2">
+                অনলাইনে সিরিয়াল নেওয়ার পর কীভাবে কনফার্মেশন পাওয়া যায়?
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                অনলাইনে অ্যাপয়েন্টমেন্ট সম্পন্ন হওয়ার সাথে সাথে ডিজিটাল টোকেন নম্বর প্রদান করা হয় এবং রোগীর মোবাইল নম্বরে স্বয়ংক্রিয় এসএমএস পাঠানো হয়। হাসপাতালে পৌঁছানোর পর আর কোনো আলাদা সিরিয়াল টোকেন নেওয়ার প্রয়োজন হয় না।
+              </p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-800 mb-2">
+                জরুরি পরিস্থিতিতে সরাসরি যোগাযোগ করার মাধ্যম কী?
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                জরুরি প্রয়োজনে আমাদের ২৪/৭ ট্রমা ও ক্যাজুয়ালটি হটলাইন {HOSPITAL_METADATA.phone} অথবা জরুরি অ্যাম্বুলেন্স সেবা {HOSPITAL_METADATA.ambulanceHotline}-এ যেকোনো সময় সরাসরি কল করা যাবে।
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
