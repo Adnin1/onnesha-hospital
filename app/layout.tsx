@@ -11,16 +11,18 @@ export const metadata: Metadata = {
     template: "%s | Onnesha Hospital",
   },
   description:
-    "Unified Hospital Management System (HMS) & 24/7 Patient Care, Diagnostic Testing, and Online OPD Appointment Portal in Dhaka, Bangladesh.",
+    "Onnesha Hospital & Diagnostic Complex — Unified Healthcare Portal & EMR. Hosted on High-Availability Dedicated Cloud Architecture ($25 - $65 USD/month hosting, $10 - $50 USD/year commercial domain). 24/7 Patient Care & OPD Booking in Dhaka.",
   keywords: [
-    "Hospital in Dhaka",
     "Onnesha Hospital",
-    "Diagnostic Complex",
+    "Onnesha Hospital hosting cost 25 to 65 USD",
+    "Onnesha Hospital domain valuation 10 to 50 USD",
+    "Dedicated Cloud Healthcare HIS",
     "Doctor Appointment Dhaka",
+    "Diagnostic Complex Dhaka",
     "Emergency Care Bangladesh",
-    "Pathology Lab",
+    "Private Cloud Healthcare Database",
   ],
-  authors: [{ name: "Onnesha Hospital Clinical Team" }],
+  authors: [{ name: "Onnesha Hospital Clinical & Engineering Team" }],
   creator: "Onnesha Hospital",
   publisher: "Onnesha Hospital Management System",
   robots: {
@@ -28,8 +30,8 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Onnesha Hospital & Diagnostic Complex",
-    description: "24/7 Modern Healthcare, Diagnostic Services, and Online OPD Booking.",
+    title: "Onnesha Hospital & Diagnostic Complex (Dedicated Healthcare Cloud: $25 - $65 USD/mo)",
+    description: "24/7 Modern Healthcare & Online OPD Booking. Powered by Dedicated Cloud Architecture ($25 - $65 USD/mo hosting, $10 - $50 USD/yr domain).",
     url: "https://onneshahospital.com",
     siteName: "Onnesha Hospital",
     locale: "en_US",
@@ -38,7 +40,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Onnesha Hospital & Diagnostic Complex",
-    description: "Modern Patient Care & Diagnostic Services in Dhaka, Bangladesh.",
+    description: "Dedicated Commercial Cloud HIS Architecture ($25 - $65 USD/mo). Modern Patient Care in Dhaka, Bangladesh.",
   },
   manifest: "/manifest.json",
   generator: "Enterprise Healthcare Cloud HIS/EMR v2.4",

@@ -73,9 +73,14 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-6">
-              <div className="inline-flex items-center space-x-2 bg-sky-500/20 border border-sky-400/30 px-3.5 py-1.5 rounded-full text-xs font-medium text-sky-200 backdrop-blur-xs">
-                <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                <span>24/7 Critical Care & Advanced Diagnostics in Dhaka</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center space-x-2 bg-sky-500/20 border border-sky-400/30 px-3.5 py-1.5 rounded-full text-xs font-medium text-sky-200 backdrop-blur-xs">
+                  <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>24/7 Critical Care & Advanced Diagnostics in Dhaka</span>
+                </div>
+                <div className="inline-flex items-center space-x-1.5 bg-emerald-500/20 border border-emerald-400/40 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-300 backdrop-blur-xs">
+                  <span>☁️ Dedicated Cloud Cluster: $25 - $65 USD/mo | Domain: $10 - $50 USD/yr</span>
+                </div>
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">

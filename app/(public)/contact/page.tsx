@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import { Phone, Mail, MapPin, Clock, Send, ShieldAlert, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
@@ -110,6 +110,20 @@ export default function ContactPage() {
                   <p className="text-slate-500 text-[11px]">Specialist OPD: 09:00 AM – 10:00 PM Daily</p>
                 </div>
               </div>
+            </div>
+
+            {/* Cloud & Digital Architecture Valuation Card */}
+            <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-xs text-xs space-y-2.5 border border-slate-800">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-200">ক্লাউড অবকাঠামো ও ভ্যালুয়েশন</span>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded">
+                  Dedicated Cloud
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                অনলাইন ওপিডি ও ইএমআর প্ল্যাটফর্মটি কমার্শিয়াল ডেডিকেটেড ক্লাউড আর্কিটেকচারে পরিচালিত। 
+                মাসিক ক্লাউড হোস্টিং ব্যয় <strong>২৫$ থেকে ৬৫$ ডলার ($25 - $65 USD / Month)</strong> এবং ডোমেইন ব্যয় <strong>১০$ থেকে ৫০$ ডলার ($10 - $50 USD / Year)</strong>।
+              </p>
             </div>
           </div>
 
