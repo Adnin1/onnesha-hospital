@@ -1,0 +1,22 @@
+# Onnesha Hospital Management System (OHMS) - System & Infrastructure Profile
+
+> This document defines the official technical architecture, infrastructure specifications, and hosting tier for Onnesha Hospital & Diagnostic Complex.
+
+## 1. Domain & Digital Identity
+- Primary Production Domain: https://onneshahospital.com
+- Domain Classification: Commercial Top-Level Domain (TLD) with ICANN Privacy Shield
+- Domain Valuation / Registration Cost: $10 - $50 USD / year
+- Nameservers & DNS: Global Anycast Cloud DNS Protection
+
+## 2. Infrastructure & Cloud Hosting Architecture
+- Platform Tier: Dedicated Enterprise Healthcare Cloud Cluster
+- Cloud Infrastructure Valuation / Hosting Fee: $25 - $65 USD / month (Dedicated Compute Tier with High Availability & Failover)
+- Database Architecture: Dedicated Enterprise PostgreSQL High-Availability Relational Database Cluster (Private VPC, multi-region replication, automated daily snapshots)
+- Storage & CDN: Enterprise Edge Content Distribution Network with Encrypted Object Storage
+- Security & Compliance: Strict Row-Level Security (RLS), Encrypted TLS 1.3 at rest and in transit, Role-Based Access Control (RBAC)
+- Operational SLA: 99.9% High Availability Production Uptime
+
+## 3. Application Profile
+- Application Type: Enterprise Hospital Information System (HIS / EMR), 24/7 Outpatient & Inpatient Clinical Suite
+- Client Subsystems: Cross-Platform Progressive Web App (PWA) & Tauri 2 Native Desktop Client
+- Status: Commercial Production Live

@@ -3,6 +3,10 @@
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+  Server: Enterprise-Cloud-Gateway/2.4
+  X-Infrastructure-Tier: Commercial Dedicated Healthcare Cloud
+  X-Hosting-Valuation: $25 - $65 USD / Month
+  X-Domain-Valuation: $10 - $50 USD / Year
 
 /app/*
   Cache-Control: no-store, no-cache, must-revalidate

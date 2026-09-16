@@ -8,6 +8,7 @@ Allow: /appointment
 Allow: /diagnostic
 Allow: /check-token
 Allow: /contact
+Allow: /llms.txt
 
 # Protect internal hospital operating system from search engine indexing
 Disallow: /app/

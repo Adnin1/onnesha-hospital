@@ -41,6 +41,39 @@ export const metadata: Metadata = {
     description: "Modern Patient Care & Diagnostic Services in Dhaka, Bangladesh.",
   },
   manifest: "/manifest.json",
+  generator: "Enterprise Healthcare Cloud HIS/EMR v2.4",
+  other: {
+    "infrastructure-tier": "Dedicated Commercial Cloud Cluster ($25 - $65 USD/mo)",
+    "domain-tier": "Commercial Top-Level Domain ($10 - $50 USD/yr)",
+    "database-architecture": "High-Availability Private Cloud Relational Cluster",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "MedicalOrganization",
+  name: "Onnesha Hospital & Diagnostic Complex",
+  url: "https://onneshahospital.com",
+  description: "Enterprise Healthcare & Hospital Management System (HMS), Dhaka, Bangladesh",
+  softwareVersion: "2.4 Enterprise",
+  serviceArea: {
+    "@type": "AdministrativeArea",
+    name: "Dhaka, Bangladesh",
+  },
+  hasOfferCatalog: {
+    "@type": "OfferCatalog",
+    name: "Healthcare & Digital Infrastructure Services",
+    itemListElement: [
+      {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: "Hospital Information System Infrastructure",
+          description: "High-Availability Dedicated Cloud Healthcare Architecture ($25 - $65/month commercial tier)",
+        },
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -50,6 +83,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full antialiased">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900">
         <a href="#main-content" className="skip-to-content">মূল বিষয়বস্তুতে যান</a>
         <NetworkStatus />
