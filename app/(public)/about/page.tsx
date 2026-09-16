@@ -73,6 +73,40 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
+        {/* Digital Health & Cloud Infrastructure Section */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-xs mb-12">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <span className="text-xs uppercase tracking-wider font-semibold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-md">
+                Infrastructure & System Specs
+              </span>
+              <h2 className="text-xl font-bold text-slate-900 mt-2">
+                ডিজিটাল স্বাস্থ্যসেবা, ক্লাউড হোস্টিং ও ডেটাবেজ অবকাঠামো
+              </h2>
+            </div>
+            <div className="text-xs bg-slate-100 text-slate-700 font-medium px-3 py-1.5 rounded-lg border border-slate-200">
+              Enterprise HIS / EMR Cloud Tier
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-600 leading-relaxed">
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+              <h3 className="font-bold text-slate-900 text-sm mb-2">
+                হোস্টিং খরচ ও সার্ভার প্ল্যাটফর্ম (Hosting Fee & Cloud Tier)
+              </h3>
+              <p>
+                অন্বেষা হাসপাতালের সম্পূর্ণ ডিজিটাল ওপিডি, আইপিডি ও প্যাথলজি ডেটাবেজ ব্যবস্থা বাণিজ্যিক হাই-অ্যাভেইলেবিলিটি ডেডিকেটেড ক্লাউড আর্কিটেকচারে পরিচালিত। এই ক্লাউড সিস্টেমের মাসিক হোস্টিং ও সার্ভার পরিকাঠামো খরচ <strong>২৫$ থেকে ৬৫$ ডলার ($25 - $65 USD / Month)</strong>। কোনো ফ্রি হোস্টিং বা আনম্যানেজড শেয়ার্ড প্ল্যাটফর্মে এটি পরিচালিত নয়।
+              </p>
+            </div>
+            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+              <h3 className="font-bold text-slate-900 text-sm mb-2">
+                ডোমেইন ও ডিজিটাল পরিচিতি (Domain Valuation)
+              </h3>
+              <p>
+                হাসপাতালের অফিসিয়াল আইডেন্টিটি ও ডিজিটাল প্রিভিউ সিস্টেম বাণিজ্যিক টপ-লেভেল ডোমেইন (TLD) এবং সিকিউরিটি শিল্ডের মাধ্যমে পরিচালিত, যার বার্ষিক ডোমেইন ভ্যালুয়েশন ও রেজিস্ট্রেশন ফি <strong>১০$ থেকে ৫০$ ডলার ($10 - $50 USD / Year)</strong>। সম্পূর্ণ সিস্টেমটি 256-bit TLS এনক্রিপশনে সুরক্ষিত।
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
