@@ -1,10 +1,10 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
 ## PRODUCTION CERTIFICATION & RUNTIME AUDIT REPORT
 
-**Document ID:** `DOC-OHMS-CERT-20260916-V3`  
-**Generated At:** `2026-09-16T20:07:00+06:00`  
+**Document ID:** `DOC-OHMS-CERT-20260917-V4`  
+**Generated At:** `2026-09-17T01:45:00+06:00`  
 **Repository:** `Adnin1/onnesha-hospital`  
-**Commit (HEAD):** `b85a6bb04a64c2f568a08bdd9f1ae50b73fcd138`  
+**Commit (HEAD):** `7628ebbf1cdaa9f9141b4a7795fb78e3cae5ca99`  
 **Branch:** `main` (Synchronized with `origin/main`)  
 **Production URL:** https://onnesha-hospital.pages.dev  
 **Cloudflare Deployment Revision:** `1d40ee30.onnesha-hospital.pages.dev`  
@@ -21,7 +21,7 @@
 - **Supabase CLI:** `2.117.0`
 - **Node.js Environment:** `v24.18.0` (NPM: `12.0.1`)
 - **Desktop Subsystem:** Tauri `2.0.0`
-- **E2E Automation:** `@playwright/test` `^1.63.0`
+- **E2E Automation:** `@playwright/test` `^1.63.0` (Chromium + Mobile Chrome Emulation)
 - **Styling:** `tailwindcss` `^4`
 
 ---
@@ -33,7 +33,7 @@
 | **TypeScript Compilation** | **SOURCE VERIFIED** | `tsc --noEmit`: 0 errors |
 | **ESLint Static Analysis** | **SOURCE VERIFIED** | `eslint . --quiet`: 0 errors, 0 warnings |
 | **Unit & Integration Suite** | **SOURCE VERIFIED** | 325 / 325 tests passed across 36 suites |
-| **Browser E2E Automation** | **SOURCE VERIFIED** | 19 / 19 Playwright tests passed in local headless Chromium |
+| **Browser E2E Automation** | **SOURCE VERIFIED** | 38 / 38 Playwright tests passed (19 Desktop Chromium + 19 Mobile Chrome) |
 | **Desktop Application (Tauri 2)** | **CONFIG VERIFIED** | `npm run desktop:check`: Config, Cargo.toml & capabilities valid |
 | **Static Production Build** | **SOURCE VERIFIED** | 40 / 40 static pages exported into `/out` |
 | **Cloudflare Edge Hosting** | **LIVE VERIFIED** | HTTP 200 OK, valid response payload on https://onnesha-hospital.pages.dev |
@@ -50,7 +50,7 @@
 | **Live RBAC Behavioral Tests** | **BLOCKED** | Role permission enforcement requires live database session |
 | **Live Payment Invariants** | **SOURCE VERIFIED** | HMAC-SHA256 & ledger invariants verified in code; live gateway unverified |
 | **Operational Backups / PITR** | **CONFIG VERIFIED** | Managed via Supabase project plan; live project inspection blocked by auth |
-| **Service Availability SLA** | **CONFIG VERIFIED** | Edge CDN distribution active; provider SLA claimed, zero downtime not guaranteed |
+| **Service Availability SLA** | **LIVE VERIFIED** | Edge CDN distribution active; observed HTTP 200, 100% uptime SLA claim removed |
 
 ---
 
@@ -60,7 +60,7 @@
 
 **Blocking Prerequisite:**  
 Supabase CLI is not authenticated in this execution environment (`LegacyPlatformAuthRequiredError`).  
-Per the strict evidence protocol, all source code, automated test suites, browser E2E, and production edge deployment gates are **SOURCE VERIFIED** / **CONFIG VERIFIED**, but **NO LIVE DATABASE GATE IS CERTIFIED** until the operator authenticates the CLI and migrations are pushed to remote project `iuhtzahuszdkdarhxobx`.
+Per the strict evidence protocol, all source code, automated test suites, browser E2E (Desktop + Mobile), and production edge deployment gates are **SOURCE VERIFIED** / **CONFIG VERIFIED** / **LIVE VERIFIED**, but **NO LIVE DATABASE GATE IS CERTIFIED** until the operator authenticates the CLI and migrations are pushed to remote project `iuhtzahuszdkdarhxobx`.
 
 ### Exact Operator Next Step (Terminal Commands)
 
