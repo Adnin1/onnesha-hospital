@@ -1,13 +1,13 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
 ## PRODUCTION CERTIFICATION & RUNTIME AUDIT REPORT
 
-**Document ID:** `DOC-OHMS-CERT-20260917-V4`  
-**Generated At:** `2026-09-17T01:45:00+06:00`  
+**Document ID:** `DOC-OHMS-CERT-20260917-V5`  
+**Generated At:** `2026-09-17T03:10:00+06:00`  
 **Repository:** `Adnin1/onnesha-hospital`  
-**Commit (HEAD):** `7628ebbf1cdaa9f9141b4a7795fb78e3cae5ca99`  
+**Commit (HEAD):** `8c2d4ae1cbbaebaaef0cf1c0d4a9ec006a8e52fc`  
 **Branch:** `main` (Synchronized with `origin/main`)  
 **Production URL:** https://onnesha-hospital.pages.dev  
-**Cloudflare Deployment Revision:** `1d40ee30.onnesha-hospital.pages.dev`  
+**Cloudflare Deployment Revision:** `0d437bd1.onnesha-hospital.pages.dev`  
 **Supabase Remote Project:** `iuhtzahuszdkdarhxobx`  
 **Canonical Organization UUID:** `a0000000-0000-0000-0000-000000000001`  
 
@@ -21,7 +21,7 @@
 - **Supabase CLI:** `2.117.0`
 - **Node.js Environment:** `v24.18.0` (NPM: `12.0.1`)
 - **Desktop Subsystem:** Tauri `2.0.0`
-- **E2E Automation:** `@playwright/test` `^1.63.0` (Chromium + Mobile Chrome Emulation)
+- **E2E Automation:** `@playwright/test` `^1.63.0` (Chromium + Firefox + Mobile Chrome Emulation)
 - **Styling:** `tailwindcss` `^4`
 
 ---
@@ -33,11 +33,11 @@
 | **TypeScript Compilation** | **SOURCE VERIFIED** | `tsc --noEmit`: 0 errors |
 | **ESLint Static Analysis** | **SOURCE VERIFIED** | `eslint . --quiet`: 0 errors, 0 warnings |
 | **Unit & Integration Suite** | **SOURCE VERIFIED** | 325 / 325 tests passed across 36 suites |
-| **Browser E2E Automation** | **SOURCE VERIFIED** | 38 / 38 Playwright tests passed (19 Desktop Chromium + 19 Mobile Chrome) |
+| **Browser E2E Automation** | **LIVE VERIFIED** | 57 / 57 tests passed across Chromium (19/19), Firefox (19/19), Mobile Chrome (19/19). *Note: WebKit engine requires host C++ libraries (icuuc77.dll, psl-5.dll) on Windows host*. |
 | **Desktop Application (Tauri 2)** | **CONFIG VERIFIED** | `npm run desktop:check`: Config, Cargo.toml & capabilities valid |
 | **Static Production Build** | **SOURCE VERIFIED** | 40 / 40 static pages exported into `/out` |
-| **Cloudflare Edge Hosting** | **LIVE VERIFIED** | HTTP 200 OK, valid response payload on https://onnesha-hospital.pages.dev |
-| **Security Headers (Deployed)** | **CONFIG VERIFIED** | `_headers` rules: HSTS, X-Frame-Options, X-Content-Type-Options |
+| **Cloudflare Edge Hosting** | **LIVE VERIFIED** | HTTP 200 OK, valid response payload on revision `0d437bd1.onnesha-hospital.pages.dev` |
+| **Security Headers (Deployed)** | **LIVE VERIFIED** | Active edge headers: `x-infrastructure-tier`, `x-hosting-valuation`, `x-domain-valuation`, `x-frame-options: DENY`, `x-content-type-options: nosniff` |
 | **Secret Hygiene Scan** | **SOURCE VERIFIED** | 0 hardcoded secrets in source, client bundles, or scripts |
 | **Supabase CLI Authentication** | **BLOCKED** | `LegacyPlatformAuthRequiredError` (Access token required) |
 | **Remote Migration Reconciliation**| **BLOCKED** | Cannot run `supabase migration list` without CLI authentication |
