@@ -21,7 +21,9 @@ if (fs.existsSync(envPath)) {
 }
 
 describe("OHMS Real E2E Test Suite 3: Billing & Financial Integrity", async () => {
-  const adminClient = createClient(supabaseUrl, serviceKey);
+  const adminClient = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 
   test("1. Invoices table schema enforces subtotal, paid_amount, due_amount columns", async () => {
     const { data, error } = await adminClient.from("invoices").select("id, invoice_number, subtotal, paid_amount, due_amount").limit(5);
