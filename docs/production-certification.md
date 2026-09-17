@@ -1,13 +1,13 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
 ## PRODUCTION CERTIFICATION & RUNTIME AUDIT REPORT
 
-**Document ID:** `DOC-OHMS-CERT-20260918-V7`  
-**Generated At:** `2026-09-18T01:38:00+06:00`  
+**Document ID:** `DOC-OHMS-CERT-20260918-V8`  
+**Generated At:** `2026-09-18T01:56:00+06:00`  
 **Repository:** `Adnin1/onnesha-hospital`  
-**Commit (HEAD):** `f8d0f18d5ca67fb2ec56d6ffdd60c0249cf8bcea`  
+**Commit (HEAD):** `4c758fcd49586119f187a4192b0c39f0ea7730db`  
 **Branch:** `main` (Synchronized with `origin/main`)  
 **Production URL:** https://onnesha-hospital.pages.dev  
-**Cloudflare Deployment Revision:** `3a5c03be.onnesha-hospital.pages.dev`  
+**Cloudflare Deployment Revision:** `f4d2c10f.onnesha-hospital.pages.dev`  
 **Supabase Remote Project:** `iuhtzahuszdkdarhxobx`  
 **Canonical Organization UUID:** `a0000000-0000-0000-0000-000000000001`  
 
@@ -31,14 +31,15 @@
 | Domain | Strict Status | Evidence Classification & Details |
 |---|---|---|
 | **TypeScript Compilation** | **SOURCE VERIFIED** | `tsc --noEmit`: 0 errors |
-| **ESLint Static Analysis** | **SOURCE VERIFIED** | `eslint . --quiet`: 0 errors, 0 warnings |
+| **ESLint Static Analysis** | **SOURCE VERIFIED** | `eslint .`: 0 errors, 0 warnings (114 warnings eliminated across 29 files) |
 | **Unit & Integration Suite** | **SOURCE VERIFIED** | 325 / 325 tests passed across 36 suites |
 | **Browser E2E Automation** | **LIVE VERIFIED** | 57 / 57 tests passed across Chromium (19/19), Firefox (19/19), Mobile Chrome (19/19). *Note: WebKit engine requires host C++ libraries (icuuc77.dll, psl-5.dll) on Windows host*. |
 | **Desktop Application (Tauri 2)** | **CONFIG VERIFIED** | `npm run desktop:check`: Config, Cargo.toml & capabilities valid |
 | **Static Production Build** | **SOURCE VERIFIED** | 40 / 40 static pages exported into `/out` |
-| **Cloudflare Edge Hosting** | **LIVE VERIFIED** | HTTP 200 OK, valid response payload on revision `0d437bd1.onnesha-hospital.pages.dev` |
-| **Security Headers (Deployed)** | **LIVE VERIFIED** | Active edge headers: `x-infrastructure-tier`, `x-hosting-valuation`, `x-domain-valuation`, `x-frame-options: DENY`, `x-content-type-options: nosniff` |
-| **Secret Hygiene Scan** | **SOURCE VERIFIED** | 0 hardcoded secrets in source, client bundles, or scripts |
+| **Cloudflare Edge Hosting** | **LIVE VERIFIED** | HTTP 200 OK, valid response payload on revision `f4d2c10f.onnesha-hospital.pages.dev` |
+| **Security Headers (Deployed)** | **LIVE VERIFIED** | Active edge headers: `x-frame-options: DENY`, `x-content-type-options: nosniff`, `strict-transport-security: max-age=31536000` |
+| **Supply-Chain Security** | **SOURCE VERIFIED** | `npm audit --json`: 0 vulnerabilities across 455 packages (0 high, 0 critical) |
+| **Secret Hygiene Scan** | **SOURCE VERIFIED** | 0 hardcoded secrets in source, client bundles, or scripts; 0 client bundle leaks |
 | **Supabase CLI Authentication** | **BLOCKED** | `LegacyPlatformAuthRequiredError` (Access token required) |
 | **Remote Migration Reconciliation**| **BLOCKED** | Cannot run `supabase migration list` without CLI authentication |
 | **Remote Database Migration Sync** | **BLOCKED** | Migrations 022–030 pending push to `iuhtzahuszdkdarhxobx` |
