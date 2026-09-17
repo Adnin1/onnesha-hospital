@@ -10,6 +10,8 @@
 -- Ensure profiles has organization_id and active_organization_id
 ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE;
 ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS active_organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS public.appointments ADD COLUMN IF NOT EXISTS booked_by UUID;
+ALTER TABLE IF EXISTS public.invoices ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 UPDATE public.profiles SET organization_id = 'a0000000-0000-0000-0000-000000000001' WHERE organization_id IS NULL;
 UPDATE public.profiles SET active_organization_id = 'a0000000-0000-0000-0000-000000000001' WHERE active_organization_id IS NULL;
 
@@ -136,6 +138,7 @@ DECLARE
     v_new_due NUMERIC;
     v_new_status VARCHAR;
     v_payment_id UUID;
+    v_cashier_uuid UUID;
 BEGIN
     IF auth.uid() IS NULL THEN
         RETURN jsonb_build_object('success', false, 'error', '401 Unauthorized: Authentication required.');
@@ -175,13 +178,18 @@ BEGIN
     v_new_status := CASE WHEN v_new_due = 0 THEN 'PAID' ELSE 'PARTIAL' END;
     v_receipt_no := public.generate_receipt_number(p_org_id);
 
+    v_cashier_uuid := COALESCE(
+        p_cashier_id,
+        CASE WHEN v_invoice.created_by ~ '^[0-9a-fA-F-]{36}$' THEN v_invoice.created_by::uuid ELSE NULL END
+    );
+
     INSERT INTO public.payments (
         organization_id, invoice_id, receipt_number, payment_method,
         amount, gateway_transaction_id, cashier_id, notes
     ) VALUES (
         p_org_id, v_invoice.id, v_receipt_no, p_gateway_method,
         p_paid_amount, p_provider_trx_id,
-        COALESCE(p_cashier_id, v_invoice.created_by),
+        v_cashier_uuid,
         'Online Gateway Settlement: ' || p_gateway_method || ' (Trx: ' || p_provider_trx_id || ')'
     ) RETURNING id INTO v_payment_id;
 

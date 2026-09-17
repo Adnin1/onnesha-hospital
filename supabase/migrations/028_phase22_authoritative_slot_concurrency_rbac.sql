@@ -13,6 +13,8 @@ DROP FUNCTION IF EXISTS book_online_appointment(UUID, UUID, DATE, VARCHAR, VARCH
 DROP FUNCTION IF EXISTS book_online_appointment(UUID, UUID, DATE, VARCHAR, VARCHAR, VARCHAR, UUID, INT, TEXT);
 DROP FUNCTION IF EXISTS book_staff_appointment_atomic(UUID, UUID, UUID, UUID, DATE, VARCHAR, TEXT);
 
+ALTER TABLE IF EXISTS appointments ADD COLUMN IF NOT EXISTS booked_by UUID;
+
 -- 1. Redefine book_online_appointment RPC with MANDATORY p_schedule_id UUID
 CREATE OR REPLACE FUNCTION book_online_appointment(
     p_org_id UUID,

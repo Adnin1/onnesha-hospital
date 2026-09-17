@@ -109,6 +109,9 @@ ALTER TABLE IF EXISTS waiting_queue
     ADD COLUMN IF NOT EXISTS room_number VARCHAR(50),
     ADD COLUMN IF NOT EXISTS queue_status VARCHAR(30) DEFAULT 'WAITING';
 
+ALTER TABLE IF EXISTS doctor_schedules
+    ADD COLUMN IF NOT EXISTS room_number VARCHAR(50);
+
 -- 6. Atomic Concurrency-Safe Public Online Appointment Booking RPC
 -- Matches or creates patient record, locks token atomically, and commits booking.
 DROP FUNCTION IF EXISTS book_online_appointment(UUID, UUID, DATE, VARCHAR, VARCHAR, VARCHAR, INT, TEXT);
