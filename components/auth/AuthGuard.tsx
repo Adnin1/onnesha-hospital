@@ -32,12 +32,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           return;
         }
 
-        // Retrieve user profile to check role
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("active_organization_id")
-          .eq("id", user.id)
-          .single();
+        // Retrieve user roles
 
         const { data: userRoleRecords } = await supabase
           .from("user_roles")

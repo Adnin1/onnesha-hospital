@@ -4,10 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Radio,
   AlertOctagon,
-  Phone,
   Clock,
-  HeartPulse,
-  Activity,
   UserPlus,
   CheckCircle2,
   RefreshCw,

@@ -5,15 +5,10 @@ import {
   Bed,
   FileCheck,
   Printer,
-  Calendar,
-  Stethoscope,
   Plus,
   AlertCircle,
   ArrowRightLeft,
   CheckCircle2,
-  Building,
-  User,
-  Clock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatDateBDT } from "@/lib/utils";
@@ -173,8 +168,8 @@ export default function IPDAdmissionsPage() {
           });
 
           setInpatients(mapped);
-          if (mapped.length > 0 && !selectedAdmission) {
-            setSelectedAdmission(mapped[0]);
+          if (mapped.length > 0) {
+            setSelectedAdmission((prev) => prev || mapped[0]);
           }
         }
 

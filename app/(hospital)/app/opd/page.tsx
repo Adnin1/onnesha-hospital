@@ -4,17 +4,9 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Activity,
-  User,
-  Heart,
-  FileText,
   CheckCircle2,
-  AlertCircle,
-  Thermometer,
-  Scale,
-  Gauge,
   Loader2,
   RefreshCw,
-  Clock,
 } from "lucide-react";
 import { WaitingQueueRecord } from "@/types/appointments";
 import { getLiveWaitingQueueAction, updateQueueStatusAction } from "@/lib/appointments/actions";

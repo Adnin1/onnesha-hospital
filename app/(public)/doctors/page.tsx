@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Calendar, Phone, MapPin, Loader2, AlertCircle } from "lucide-react";
+import { Search, Calendar, MapPin, Loader2, AlertCircle } from "lucide-react";
 import {
   getPublicDoctorsAction,
   getPublicDepartmentsAction,

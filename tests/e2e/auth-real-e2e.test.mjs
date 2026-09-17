@@ -7,7 +7,6 @@ import path from "path";
 const envPath = path.resolve(process.cwd(), ".env.local");
 let supabaseUrl = "";
 let anonKey = "";
-let serviceKey = "";
 
 if (fs.existsSync(envPath)) {
   const content = fs.readFileSync(envPath, "utf8");
@@ -17,9 +16,6 @@ if (fs.existsSync(envPath)) {
     }
     if (line.startsWith("NEXT_PUBLIC_SUPABASE_ANON_KEY=")) {
       anonKey = line.split("=")[1].trim().replace(/^["']|["']$/g, "");
-    }
-    if (line.startsWith("SUPABASE_SERVICE_ROLE_KEY=")) {
-      serviceKey = line.split("=")[1].trim().replace(/^["']|["']$/g, "");
     }
   }
 }

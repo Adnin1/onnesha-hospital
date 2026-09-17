@@ -18,7 +18,7 @@ try {
       }
     });
   }
-} catch (e) {
+} catch {
   console.log('Notice: .env.local read pass.');
 }
 

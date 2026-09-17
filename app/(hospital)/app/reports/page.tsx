@@ -2,17 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  BarChart3,
-  Calendar,
-  Download,
   Printer,
-  DollarSign,
-  TrendingUp,
-  Stethoscope,
-  Microscope,
-  Bed,
-  CheckCircle2,
-  Loader2,
   RefreshCw,
 } from "lucide-react";
 import { InvoiceRecord } from "@/types/billing";
@@ -26,7 +16,6 @@ export default function ReportsManagementPage() {
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
-  const [reportPeriod, setReportPeriod] = useState("all");
 
   const loadData = async () => {
     setLoading(true);

@@ -4,12 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Bell,
-  Search,
   ExternalLink,
   Clock,
-  Radio,
-  CheckCircle2,
-  Calendar,
 } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 

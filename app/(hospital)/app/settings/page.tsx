@@ -2,16 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Settings,
   ShieldCheck,
-  MessageSquare,
   History,
   Building,
   Save,
   CheckCircle2,
-  Lock,
   Smartphone,
-  AlertCircle,
   RefreshCw,
   Search,
   Eye,
@@ -94,7 +90,7 @@ export default function SettingsAndAuditPage() {
     return () => {
       isMounted = false;
     };
-  }, [activeTab, moduleFilter, actionFilter]);
+  }, [activeTab, moduleFilter, actionFilter, searchQuery]);
 
   const togglePermission = (permCode: string) => {
     const currentList = rolePerms[selectedRoleForEdit] || [];
@@ -212,7 +208,7 @@ export default function SettingsAndAuditPage() {
 
           {/* Permissions Checkbox Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {allAvailablePermissions.map(([key, permCode]) => {
+            {allAvailablePermissions.map(([, permCode]) => {
               const isChecked = rolePerms[selectedRoleForEdit]?.includes(permCode);
 
               return (

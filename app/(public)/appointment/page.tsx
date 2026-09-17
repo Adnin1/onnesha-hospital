@@ -3,15 +3,11 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  Calendar,
   Clock,
   CheckCircle2,
-  Phone,
-  User,
   ArrowRight,
   ArrowLeft,
   Printer,
-  ShieldCheck,
   MessageSquare,
   AlertCircle,
   Loader2,
@@ -50,7 +46,7 @@ export default function AppointmentBookingPage() {
   const [age, setAge] = useState("30");
   const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
   const [guardianName, setGuardianName] = useState("");
-  const [notes, setNotes] = useState("");
+  const notes = "";
 
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);

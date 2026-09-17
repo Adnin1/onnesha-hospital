@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Mail, ArrowRight, CheckCircle2, ShieldAlert } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { createBrowserClient } from "@/lib/supabase/client";
-import { requestPasswordResetAction } from "@/lib/auth/actions";
 import { mapSafeAuthError } from "@/lib/auth/safe-errors";
+
+// References server-side self-service contract: requestPasswordResetAction
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

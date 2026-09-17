@@ -1,16 +1,11 @@
-﻿import React from "react";
+import React from "react";
 import Link from "next/link";
 import {
   Activity,
   Microscope,
-  HeartPulse,
-  Syringe,
-  Baby,
-  Bone,
   CheckCircle,
   Calendar,
   Clock,
-  ShieldCheck,
 } from "lucide-react";
 import { formatCurrencyBDT } from "@/lib/utils";
 

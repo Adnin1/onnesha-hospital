@@ -5,12 +5,8 @@ import {
   Pill,
   Search,
   Plus,
-  AlertTriangle,
   History,
   ShoppingCart,
-  TrendingDown,
-  TrendingUp,
-  PackageCheck,
   CheckCircle2,
   Loader2,
   RefreshCw,
@@ -18,7 +14,6 @@ import {
 } from "lucide-react";
 import {
   MedicineRecord,
-  MedicineBatchRecord,
   StockTransactionRecord,
 } from "@/types/pharmacy";
 import {
@@ -116,8 +111,8 @@ export default function PharmacyPage() {
             const firstBatchWithStock = res.data.medicines
               .flatMap((m) => m.batches)
               .find((b) => b.current_stock > 0);
-            if (firstBatchWithStock && !selectedBatchId) {
-              setSelectedBatchId(firstBatchWithStock.id);
+            if (firstBatchWithStock) {
+              setSelectedBatchId((prev) => prev || firstBatchWithStock.id);
             }
           } else {
             setErrorMsg(res.error || "Failed to load pharmacy catalog");

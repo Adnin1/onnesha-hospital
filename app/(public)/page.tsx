@@ -8,7 +8,6 @@ import {
   Phone,
   ShieldAlert,
   Activity,
-  Award,
   Users,
   CheckCircle2,
   Stethoscope,

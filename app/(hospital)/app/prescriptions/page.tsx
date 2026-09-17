@@ -7,7 +7,6 @@ import {
   Trash2,
   X,
   FileText,
-  Calendar,
 } from "lucide-react";
 import { PrescriptionRecord } from "@/types/clinical-emr";
 import { DoctorRecord } from "@/types/appointments";

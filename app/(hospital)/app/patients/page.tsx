@@ -3,23 +3,13 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  Users,
   Search,
   PlusCircle,
-  Phone,
-  Calendar,
   FileText,
-  Activity,
-  Receipt,
-  Microscope,
-  Bed,
-  CheckCircle2,
   X,
-  Printer,
   ChevronRight,
   Loader2,
   RefreshCw,
-  Clock,
   AlertTriangle,
 } from "lucide-react";
 import { PatientMaster, TimelineEvent } from "@/types/clinical";
@@ -52,15 +42,14 @@ export default function PatientsManagementPage() {
 
   // New Patient Form State
   const [newFullName, setNewFullName] = useState("");
-  const [newGuardian, setNewGuardian] = useState("");
-  const [newRelation, setNewRelation] = useState("Father");
+  const newRelation = "Father";
   const [newGender, setNewGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
   const [newBloodGroup, setNewBloodGroup] = useState("O+");
   const [newPhone, setNewPhone] = useState("");
   const [newNid, setNewNid] = useState("");
   const [newAddress, setNewAddress] = useState("");
-  const [newEmergencyName, setNewEmergencyName] = useState("");
-  const [newEmergencyPhone, setNewEmergencyPhone] = useState("");
+  const newEmergencyName = "";
+  const newEmergencyPhone = "";
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [registerLoading, setRegisterLoading] = useState(false);
 

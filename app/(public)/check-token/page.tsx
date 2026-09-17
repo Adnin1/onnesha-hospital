@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Clock, CheckCircle2, User, RefreshCw, AlertCircle, Loader2 } from "lucide-react";
+import { RefreshCw, AlertCircle, Loader2 } from "lucide-react";
 import { getLiveWaitingQueueAction } from "@/lib/public/actions";
 
 interface QueueItem {
@@ -18,7 +18,6 @@ interface QueueItem {
 export default function CheckTokenPage() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [searchToken, setSearchToken] = useState("");
   const [searchResult, setSearchResult] = useState<QueueItem | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -26,13 +25,11 @@ export default function CheckTokenPage() {
   useEffect(() => {
     let isMounted = true;
     const loadQueue = async () => {
-      setRefreshing(true);
       const res = await getLiveWaitingQueueAction();
       if (isMounted) {
         if (res.success) {
           setQueue(res.queue);
         }
-        setRefreshing(false);
         setLoading(false);
       }
     };

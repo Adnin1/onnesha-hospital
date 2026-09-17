@@ -2,19 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Receipt,
   Plus,
   Trash2,
   Printer,
   Ban,
-  DollarSign,
   Search,
-  CheckCircle2,
-  AlertCircle,
-  Stethoscope,
-  Microscope,
-  Pill,
-  Bed,
   Loader2,
   RefreshCw,
   Wallet,

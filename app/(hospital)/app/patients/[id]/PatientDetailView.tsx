@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   User,
   Phone,
-  Calendar,
   AlertTriangle,
   ShieldAlert,
   Activity,
@@ -15,12 +14,7 @@ import {
   Printer,
   HeartPulse,
   Stethoscope,
-  Building,
-  CheckCircle2,
   AlertCircle,
-  PlusCircle,
-  Tag,
-  Share2,
 } from "lucide-react";
 import { getPatient360Action, getPatientsAction } from "@/lib/patient/actions";
 import {
@@ -35,7 +29,7 @@ import {
 } from "@/types/clinical";
 import { formatBDPhoneDisplay } from "@/lib/patient/phone";
 import { formatDateBDT } from "@/lib/utils";
-import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
+import { HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 
 export default function PatientDetailView({ patientId }: { patientId: string }) {
   const [loading, setLoading] = useState(true);

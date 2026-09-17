@@ -8,7 +8,6 @@ import {
   LabOrder,
   Medicine,
   Bed,
-  OperationTheaterBooking,
   Prescription,
   Employee,
 } from "@/types";

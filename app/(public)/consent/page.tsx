@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { UserCheck, ShieldCheck, CheckCircle2, Lock, HeartHandshake } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Lock, HeartHandshake } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Patient Data Consent Management | Onnesha Hospital",

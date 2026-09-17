@@ -12,7 +12,7 @@ import {
 import { DiagnosticOrderRecord } from "@/types/clinical-emr";
 import { getDiagnosticOrdersAction, verifyDiagnosticReportAction } from "@/lib/lab/actions";
 import { formatDateBDT } from "@/lib/utils";
-import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
+import { HospitalPrintHeader } from "@/components/print/HospitalPrintHeader";
 
 export default function LabManagementPage() {
   const [labOrders, setLabOrders] = useState<DiagnosticOrderRecord[]>([]);

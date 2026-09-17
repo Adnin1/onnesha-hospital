@@ -5,7 +5,6 @@ import {
   Bed as BedIcon,
   CheckCircle2,
   Sparkles,
-  UserCheck,
   Building,
   Filter,
   Wrench,

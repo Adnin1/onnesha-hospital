@@ -5,16 +5,11 @@ import {
   UserCheck,
   Fingerprint,
   DollarSign,
-  Calendar,
   CheckCircle2,
-  AlertCircle,
-  Clock,
   Server,
-  Download,
   Plus,
   Loader2,
   RefreshCw,
-  Building,
 } from "lucide-react";
 import {
   EmployeeRecord,

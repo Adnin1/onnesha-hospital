@@ -2,15 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Scissors,
-  Calendar,
   Clock,
-  UserCheck,
   CheckCircle2,
   Plus,
   Loader2,
   RefreshCw,
-  AlertCircle,
   Activity,
 } from "lucide-react";
 import { OTBookingRecord, OTRoomRecord } from "@/types/beds-ot";

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { ShieldCheck, KeyRound, QrCode, Trash2, CheckCircle2, AlertTriangle, Plus, RefreshCw, Copy, Check } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase/client";
 
