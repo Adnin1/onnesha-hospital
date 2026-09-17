@@ -268,10 +268,11 @@ export class PaymentService {
       const { data: rpcResult, error: rpcError } = await supabase.rpc(
         "verify_and_record_online_payment",
         {
+          p_org_id: intent.organization_id,
           p_intent_id: intent.id,
           p_provider_trx_id: verifyResult.providerTransactionId,
-          p_provider_payment_id: verifyResult.providerPaymentId,
-          p_amount: verifyResult.amount,
+          p_paid_amount: verifyResult.amount,
+          p_gateway_method: intent.provider,
         }
       );
 

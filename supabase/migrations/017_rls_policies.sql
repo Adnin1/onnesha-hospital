@@ -117,24 +117,3 @@ CREATE POLICY rls_expenses ON expenses FOR ALL USING (organization_id = get_curr
 
 DROP POLICY IF EXISTS rls_audit ON audit_logs;
 CREATE POLICY rls_audit ON audit_logs FOR ALL USING (organization_id = get_current_org_id());
-
-DROP POLICY IF EXISTS rls_organizations_public ON organizations;
-DROP POLICY IF EXISTS rls_organizations_staff ON organizations;
-DROP POLICY IF EXISTS rls_organizations_tenant ON organizations;
-CREATE POLICY rls_organizations_tenant ON organizations FOR ALL USING (id = get_current_org_id() OR (is_active = TRUE AND is_canonical_public = TRUE));
-
-DROP POLICY IF EXISTS rls_departments_public ON departments;
-DROP POLICY IF EXISTS rls_departments_staff ON departments;
-DROP POLICY IF EXISTS rls_departments_tenant ON departments;
-CREATE POLICY rls_departments_tenant ON departments FOR ALL USING (organization_id = get_current_org_id() OR (is_active = TRUE AND (is_public = TRUE OR is_public IS NULL)));
-
-DROP POLICY IF EXISTS rls_doctors_public ON doctors;
-DROP POLICY IF EXISTS rls_doctors_staff ON doctors;
-DROP POLICY IF EXISTS rls_doctors_tenant ON doctors;
-CREATE POLICY rls_doctors_tenant ON doctors FOR ALL USING (organization_id = get_current_org_id() OR (is_active = TRUE AND (is_public = TRUE OR is_public IS NULL)));
-
-DROP POLICY IF EXISTS rls_doctor_schedules_public ON doctor_schedules;
-DROP POLICY IF EXISTS rls_doctor_schedules_staff ON doctor_schedules;
-DROP POLICY IF EXISTS rls_doctor_schedules_tenant ON doctor_schedules;
-CREATE POLICY rls_doctor_schedules_tenant ON doctor_schedules FOR ALL USING (organization_id = get_current_org_id() OR (is_active = TRUE AND EXISTS (SELECT 1 FROM doctors d WHERE d.id = doctor_schedules.doctor_id AND d.is_active = TRUE AND (d.is_public = TRUE OR d.is_public IS NULL))));
-

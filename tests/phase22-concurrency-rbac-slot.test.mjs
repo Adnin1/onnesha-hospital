@@ -175,88 +175,91 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
         assert.fail("FAIL: Real DB Concurrency Test failed creating schedule fixture: " + insErr.message);
       }
       schedule = newSched;
-    } else {
+    }
+
+    const originalMaxTokens = schedule.max_tokens ?? 30;
+    try {
       await supabase.from("doctor_schedules").update({ max_tokens: 2 }).eq("id", schedule.id);
-    }
 
-    if (!schedule) {
-      assert.fail("FAIL: Real DB Concurrency Test failed: schedule fixture could not be created or retrieved");
-    }
+      // Clean up pre-existing test appointments for date
+      await supabase.from("appointments").delete().eq("doctor_id", doctor.id).eq("appointment_date", appointmentDate);
 
-    // Clean up pre-existing test appointments for date
-    await supabase.from("appointments").delete().eq("doctor_id", doctor.id).eq("appointment_date", appointmentDate);
-
-    // Track patient test numbers for deterministic cleanup
-    const testPhones = [];
-    const promises = [];
-    for (let i = 1; i <= 10; i++) {
-      const phone = `018880000${i.toString().padStart(2, "0")}`;
-      testPhones.push(phone);
-      promises.push(
-        supabase.rpc("book_online_appointment", {
-          p_org_id: orgId,
-          p_doctor_id: doctor.id,
-          p_schedule_id: schedule.id,
-          p_appointment_date: appointmentDate,
-          p_patient_name: `Concurrent Patient ${i}`,
-          p_patient_phone: phone,
-          p_patient_gender: "MALE",
-          p_patient_age: 28,
-          p_notes: `Parallel concurrency lock validation ${i}`
-        })
-      );
-    }
-
-    const results = await Promise.all(promises);
-    let successCount = 0;
-    let failCount = 0;
-    const tokens = new Set();
-    const appointmentIds = [];
-
-    for (const res of results) {
-      if (res.error) {
-        assert.fail("FAIL: RPC execution error during concurrency test: " + res.error.message);
+      // Track patient test numbers for deterministic cleanup
+      const testPhones = [];
+      const promises = [];
+      for (let i = 1; i <= 10; i++) {
+        const phone = `018880000${i.toString().padStart(2, "0")}`;
+        testPhones.push(phone);
+        promises.push(
+          supabase.rpc("book_online_appointment", {
+            p_org_id: orgId,
+            p_doctor_id: doctor.id,
+            p_schedule_id: schedule.id,
+            p_appointment_date: appointmentDate,
+            p_patient_name: `Concurrent Patient ${i}`,
+            p_patient_phone: phone,
+            p_patient_gender: "MALE",
+            p_patient_age: 28,
+            p_notes: `Parallel concurrency lock validation ${i}`
+          })
+        );
       }
-      const data = typeof res.data === "string" ? JSON.parse(res.data) : res.data;
-      if (data && data.success) {
-        successCount++;
-        tokens.add(data.token_number);
-        appointmentIds.push(data.appointment_id);
-      } else {
-        failCount++;
+
+      const results = await Promise.all(promises);
+      let successCount = 0;
+      let failCount = 0;
+      const tokens = new Set();
+      const appointmentIds = [];
+
+      for (const res of results) {
+        if (res.error) {
+          assert.fail("FAIL: RPC execution error during concurrency test: " + res.error.message);
+        }
+        const data = typeof res.data === "string" ? JSON.parse(res.data) : res.data;
+        if (data && data.success) {
+          successCount++;
+          tokens.add(data.token_number);
+          appointmentIds.push(data.appointment_id);
+        } else {
+          failCount++;
+        }
       }
-    }
 
-    // Query DB to verify persisted state before cleanup
-    const { data: dbAppts } = await supabase.from("appointments").select("id, organization_id, doctor_id, schedule_id").in("id", appointmentIds);
-    const { data: dbQueue } = await supabase.from("waiting_queue").select("id").in("appointment_id", appointmentIds);
-    const { data: dbAudit } = await supabase.from("audit_logs").select("id").eq("module", "PUBLIC_BOOKING").in("entity_id", appointmentIds);
+      // Query DB to verify persisted state before cleanup
+      const { data: dbAppts } = await supabase.from("appointments").select("id, organization_id, doctor_id, schedule_id").in("id", appointmentIds);
+      const { data: dbQueue } = await supabase.from("waiting_queue").select("id").in("appointment_id", appointmentIds);
+      const { data: dbAudit } = await supabase.from("audit_logs").select("id").eq("module", "PUBLIC_BOOKING").in("entity_id", appointmentIds);
 
-    // Deterministic Cleanup of all created test entities
-    if (appointmentIds.length > 0) {
-      await supabase.from("waiting_queue").delete().in("appointment_id", appointmentIds);
-      await supabase.from("appointments").delete().in("id", appointmentIds);
-      await supabase.from("audit_logs").delete().in("entity_id", appointmentIds);
-      await supabase.from("patients").delete().in("normalized_phone", testPhones);
-    }
+      // Deterministic Cleanup of all created test entities
+      if (appointmentIds.length > 0) {
+        await supabase.from("waiting_queue").delete().in("appointment_id", appointmentIds);
+        await supabase.from("appointments").delete().in("id", appointmentIds);
+        await supabase.from("audit_logs").delete().in("entity_id", appointmentIds);
+        await supabase.from("patients").delete().in("normalized_phone", testPhones);
+      }
 
-    // Verify cleanup completed
-    const { count: postCleanupAppts } = await supabase.from("appointments").select("*", { count: "exact" }).in("id", appointmentIds);
-    assert.equal(postCleanupAppts, 0, "All test-generated appointments must be deleted during cleanup");
+      // Verify cleanup completed
+      const { count: postCleanupAppts } = await supabase.from("appointments").select("*", { count: "exact" }).in("id", appointmentIds);
+      assert.equal(postCleanupAppts, 0, "All test-generated appointments must be deleted during cleanup");
 
-    // Assert exact concurrency and database counts
-    assert.equal(successCount, 2, "Exactly 2 parallel booking requests must succeed for max_tokens = 2");
-    assert.equal(failCount, 8, "Exactly 8 parallel booking requests must fail when capacity is reached");
-    assert.equal(tokens.size, 2, "Exactly 2 unique token numbers (1 and 2) must be allocated");
-    assert.equal(dbAppts?.length, 2, "Exactly 2 appointment rows must exist in database");
-    assert.equal(dbQueue?.length, 2, "Exactly 2 waiting queue rows must exist in database");
-    assert.equal(dbAudit?.length, 2, "Exactly 2 audit log rows must exist in database");
+      // Assert exact concurrency and database counts
+      assert.equal(successCount, 2, "Exactly 2 parallel booking requests must succeed for max_tokens = 2");
+      assert.equal(failCount, 8, "Exactly 8 parallel booking requests must fail when capacity is reached");
+      assert.equal(tokens.size, 2, "Exactly 2 unique token numbers (1 and 2) must be allocated");
+      assert.equal(dbAppts?.length, 2, "Exactly 2 appointment rows must exist in database");
+      assert.equal(dbQueue?.length, 2, "Exactly 2 waiting queue rows must exist in database");
+      assert.equal(dbAudit?.length, 2, "Exactly 2 audit log rows must exist in database");
 
-    // Verify DB foreign key properties
-    for (const apptRow of dbAppts || []) {
-      assert.equal(apptRow.organization_id, orgId, "Appointment must belong to test organization");
-      assert.equal(apptRow.doctor_id, doctor.id, "Appointment must belong to selected doctor");
-      assert.equal(apptRow.schedule_id, schedule.id, "Appointment must belong to selected schedule");
+      // Verify DB foreign key properties
+      for (const apptRow of dbAppts || []) {
+        assert.equal(apptRow.organization_id, orgId, "Appointment must belong to test organization");
+        assert.equal(apptRow.doctor_id, doctor.id, "Appointment must belong to selected doctor");
+        assert.equal(apptRow.schedule_id, schedule.id, "Appointment must belong to selected schedule");
+      }
+    } finally {
+      // Always restore original doctor schedule max_tokens
+      await supabase.from("doctor_schedules").update({ max_tokens: originalMaxTokens }).eq("id", schedule.id);
     }
   });
 });
+
