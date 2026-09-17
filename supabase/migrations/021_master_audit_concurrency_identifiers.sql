@@ -91,6 +91,9 @@ ON bed_assignments(cabin_id)
 WHERE status = 'ACTIVE' AND cabin_id IS NOT NULL;
 
 -- 7. Financial overpayment integrity (paid cannot exceed grand total)
+ALTER TABLE IF EXISTS invoices ADD COLUMN IF NOT EXISTS grand_total NUMERIC(12, 2);
+UPDATE invoices SET grand_total = COALESCE(total_amount, 0) WHERE grand_total IS NULL;
+
 DO $$
 BEGIN
     IF NOT EXISTS (

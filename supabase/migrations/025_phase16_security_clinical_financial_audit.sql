@@ -1,4 +1,4 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- OHMS PHASE 16 MIGRATION: ADVANCED SECURITY HARDENING & AUDIT VAULT ENHANCEMENTS
 -- ============================================================================
 
@@ -47,7 +47,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS 
+AS $$
 BEGIN
   RETURN QUERY
   SELECT 
@@ -71,7 +71,7 @@ BEGIN
   LIMIT p_limit
   OFFSET p_offset;
 END;
-;
+$$;
 
 -- 4. Enforce Read-Only Access via Settings.Audit Permission
 -- Audit records can NEVER be modified or deleted by ANY user

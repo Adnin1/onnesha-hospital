@@ -3,6 +3,13 @@
 -- Production B-Tree, Composite, and Trigram search indexes.
 -- =====================================================================================
 
+-- Ensure pre-existing schema columns match expected index contracts
+ALTER TABLE IF EXISTS patients ADD COLUMN IF NOT EXISTS patient_code VARCHAR(50);
+UPDATE patients SET patient_code = patient_id WHERE patient_code IS NULL;
+
+ALTER TABLE IF EXISTS invoices ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'ISSUED';
+UPDATE invoices SET status = payment_status WHERE status IS NULL AND payment_status IS NOT NULL;
+
 -- Organization Composite Indexes (Every tenant query is fast)
 CREATE INDEX IF NOT EXISTS idx_patients_org_code ON patients(organization_id, patient_code);
 CREATE INDEX IF NOT EXISTS idx_patients_org_phone ON patients(organization_id, phone);

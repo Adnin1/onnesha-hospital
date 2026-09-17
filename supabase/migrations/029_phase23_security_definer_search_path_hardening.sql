@@ -1,4 +1,4 @@
-﻿-- =====================================================================================
+-- =====================================================================================
 -- 029_phase23_security_definer_search_path_hardening.sql
 -- Onnesha Hospital Management System (OHMS) - Phase 23 Security Hardening
 -- Upgrade all SECURITY DEFINER functions to SET search_path = '' (empty)
@@ -7,8 +7,11 @@
 -- =====================================================================================
 
 -- =====================================================================================
--- PART 1: Harden core identity helper functions (initial schema — no SET search_path)
--- =====================================================================================
+-- Ensure profiles has organization_id and active_organization_id
+ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE IF EXISTS public.profiles ADD COLUMN IF NOT EXISTS active_organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE;
+UPDATE public.profiles SET organization_id = 'a0000000-0000-0000-0000-000000000001' WHERE organization_id IS NULL;
+UPDATE public.profiles SET active_organization_id = 'a0000000-0000-0000-0000-000000000001' WHERE active_organization_id IS NULL;
 
 CREATE OR REPLACE FUNCTION public.current_org_id()
 RETURNS UUID
@@ -524,3 +527,80 @@ GRANT EXECUTE ON FUNCTION public.book_staff_appointment_atomic TO authenticated,
 ALTER TABLE public.doctors ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT TRUE;
 UPDATE public.doctors SET is_public = TRUE WHERE is_public IS NULL AND is_active = TRUE;
 UPDATE public.doctors SET is_public = FALSE WHERE is_public IS NULL AND is_active = FALSE;
+
+-- =====================================================================================
+-- PART 7: Sequence and helper function search_path hardening
+-- =====================================================================================
+
+CREATE OR REPLACE FUNCTION public.set_patient_code()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $function$
+BEGIN
+  IF NEW.patient_id IS NULL OR NEW.patient_id = '' THEN
+    NEW.patient_id := 'OH-' || LPAD(nextval('public.patient_seq'::regclass)::TEXT, 6, '0');
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.generate_patient_code(p_organization_id uuid)
+RETURNS character varying
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $function$
+DECLARE
+    v_seq_num BIGINT;
+    v_prefix VARCHAR(10) := 'OH';
+BEGIN
+    v_seq_num := nextval('public.patient_code_seq'::regclass);
+    RETURN v_prefix || '-' || LPAD(v_seq_num::TEXT, 6, '0');
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.generate_visit_number(p_organization_id uuid, p_type character varying)
+RETURNS character varying
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $function$
+DECLARE
+    v_seq_num BIGINT;
+    v_prefix VARCHAR(10);
+BEGIN
+    v_seq_num := nextval('public.visit_number_seq'::regclass);
+    IF p_type = 'EMERGENCY' THEN
+        v_prefix := 'EMG';
+    ELSIF p_type = 'IPD' THEN
+        v_prefix := 'IPD';
+    ELSE
+        v_prefix := 'OPD';
+    END IF;
+    RETURN v_prefix || '-' || TO_CHAR(NOW(), 'YYMM') || '-' || LPAD(v_seq_num::TEXT, 5, '0');
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.get_next_token(p_org_id uuid, p_doctor_id uuid, p_date date)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $function$
+DECLARE
+    v_token INT;
+BEGIN
+    INSERT INTO public.token_counters (organization_id, doctor_id, counter_date, last_token)
+    VALUES (p_org_id, p_doctor_id, p_date, 1)
+    ON CONFLICT (organization_id, doctor_id, counter_date)
+    DO UPDATE SET 
+        last_token = public.token_counters.last_token + 1,
+        updated_at = NOW()
+    RETURNING last_token INTO v_token;
+
+    RETURN v_token;
+END;
+$function$;
+

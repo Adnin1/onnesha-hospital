@@ -1,4 +1,4 @@
-﻿-- =====================================================================================
+-- =====================================================================================
 -- 022_phase13_public_online_booking.sql
 -- Onnesha Hospital Management System (OHMS) - Phase 13 Foundation Migration
 -- Public Department/Doctor Views, Secure Online Appointment Booking RPC, and Public Enquiries
@@ -6,9 +6,17 @@
 
 -- 1. Doctor public profile enhancements
 ALTER TABLE doctors
+    ADD COLUMN IF NOT EXISTS followup_fee NUMERIC(10, 2) DEFAULT 400.00,
+    ADD COLUMN IF NOT EXISTS report_fee NUMERIC(10, 2) DEFAULT 0.00,
+    ADD COLUMN IF NOT EXISTS avatar_url TEXT,
+    ADD COLUMN IF NOT EXISTS bio TEXT,
     ADD COLUMN IF NOT EXISTS public_bio TEXT,
     ADD COLUMN IF NOT EXISTS is_public BOOLEAN NOT NULL DEFAULT TRUE,
     ADD COLUMN IF NOT EXISTS experience_years INT DEFAULT 10;
+
+INSERT INTO doctor_departments (doctor_id, department_id, is_primary)
+SELECT id, department_id, TRUE FROM doctors WHERE department_id IS NOT NULL
+ON CONFLICT (doctor_id, department_id) DO NOTHING;
 
 -- 2. Department public metadata enhancements
 ALTER TABLE departments
@@ -33,6 +41,7 @@ CREATE TABLE IF NOT EXISTS public_contact_inquiries (
 );
 
 ALTER TABLE public_contact_inquiries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rls_public_contact_inquiries ON public_contact_inquiries;
 CREATE POLICY rls_public_contact_inquiries ON public_contact_inquiries 
     FOR ALL USING (organization_id = get_current_org_id());
 
@@ -78,8 +87,31 @@ SELECT
 FROM departments
 WHERE is_active = TRUE AND (is_public = TRUE OR is_public IS NULL);
 
+-- Ensure appointments, patients, and waiting_queue have expected columns
+ALTER TABLE IF EXISTS appointments 
+    ADD COLUMN IF NOT EXISTS department_id UUID REFERENCES departments(id),
+    ADD COLUMN IF NOT EXISTS schedule_id UUID REFERENCES doctor_schedules(id) ON DELETE SET NULL,
+    ADD COLUMN IF NOT EXISTS payment_status VARCHAR(30) DEFAULT 'PENDING',
+    ADD COLUMN IF NOT EXISTS patient_notes TEXT;
+
+ALTER TABLE IF EXISTS appointments ALTER COLUMN time_slot DROP NOT NULL;
+ALTER TABLE IF EXISTS appointments ALTER COLUMN time_slot SET DEFAULT '09:00 AM - 01:00 PM';
+
+ALTER TABLE IF EXISTS patients ADD COLUMN IF NOT EXISTS age_years INT;
+ALTER TABLE IF EXISTS patients ALTER COLUMN patient_id DROP NOT NULL;
+ALTER TABLE IF EXISTS patients ALTER COLUMN patient_id SET DEFAULT '';
+ALTER TABLE IF EXISTS patients ALTER COLUMN address DROP NOT NULL;
+ALTER TABLE IF EXISTS patients ALTER COLUMN address SET DEFAULT '';
+ALTER TABLE IF EXISTS patients ALTER COLUMN age DROP NOT NULL;
+ALTER TABLE IF EXISTS patients ALTER COLUMN age SET DEFAULT 0;
+
+ALTER TABLE IF EXISTS waiting_queue
+    ADD COLUMN IF NOT EXISTS room_number VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS queue_status VARCHAR(30) DEFAULT 'WAITING';
+
 -- 6. Atomic Concurrency-Safe Public Online Appointment Booking RPC
 -- Matches or creates patient record, locks token atomically, and commits booking.
+DROP FUNCTION IF EXISTS book_online_appointment(UUID, UUID, DATE, VARCHAR, VARCHAR, VARCHAR, INT, TEXT);
 CREATE OR REPLACE FUNCTION book_online_appointment(
     p_org_id UUID,
     p_doctor_id UUID,
@@ -93,7 +125,7 @@ CREATE OR REPLACE FUNCTION book_online_appointment(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS 
+AS $$
 DECLARE
     v_patient_id UUID;
     v_patient_code VARCHAR;
@@ -228,4 +260,4 @@ BEGIN
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
-;
+$$;

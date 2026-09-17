@@ -7,6 +7,9 @@
 
 -- 1. Patient Master Enhancements
 ALTER TABLE patients 
+  ADD COLUMN IF NOT EXISTS dob DATE,
+  ADD COLUMN IF NOT EXISTS email VARCHAR(150),
+  ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS normalized_phone VARCHAR(20),
   ADD COLUMN IF NOT EXISTS alternate_phone VARCHAR(20),
   ADD COLUMN IF NOT EXISTS is_temporary BOOLEAN NOT NULL DEFAULT FALSE,
@@ -21,6 +24,7 @@ ALTER TABLE patients
 -- Create atomic sequence generator for patient codes if not exists
 CREATE SEQUENCE IF NOT EXISTS patient_code_seq START WITH 10001;
 
+DROP FUNCTION IF EXISTS generate_patient_code(UUID);
 CREATE OR REPLACE FUNCTION generate_patient_code(p_organization_id UUID)
 RETURNS VARCHAR AS $$
 DECLARE
@@ -86,6 +90,7 @@ ALTER TABLE patient_visits
 
 CREATE SEQUENCE IF NOT EXISTS visit_number_seq START WITH 50001;
 
+DROP FUNCTION IF EXISTS generate_visit_number(UUID, VARCHAR);
 CREATE OR REPLACE FUNCTION generate_visit_number(p_organization_id UUID, p_type VARCHAR)
 RETURNS VARCHAR AS $$
 DECLARE
@@ -173,12 +178,25 @@ ALTER TABLE patient_transfers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE patient_consents ENABLE ROW LEVEL SECURITY;
 
 -- 11. Core RLS Policies for Phase 3 Tables
+DROP POLICY IF EXISTS rls_patient_merge_requests ON patient_merge_requests;
 CREATE POLICY rls_patient_merge_requests ON patient_merge_requests FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_patient_allergies ON patient_allergies;
 CREATE POLICY rls_patient_allergies ON patient_allergies FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_clinical_alerts ON clinical_alerts;
 CREATE POLICY rls_clinical_alerts ON clinical_alerts FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_patient_diagnoses ON patient_diagnoses;
 CREATE POLICY rls_patient_diagnoses ON patient_diagnoses FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_clinical_notes ON clinical_notes;
 CREATE POLICY rls_clinical_notes ON clinical_notes FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_patient_transfers ON patient_transfers;
 CREATE POLICY rls_patient_transfers ON patient_transfers FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_patient_consents ON patient_consents;
 CREATE POLICY rls_patient_consents ON patient_consents FOR ALL USING (organization_id = get_current_org_id());
 
 -- 12. Targeted Performance Indexes

@@ -148,7 +148,7 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
     const targetDate = new Date();
     targetDate.setDate(targetDate.getDate() + 25);
     const appointmentDate = targetDate.toISOString().split("T")[0];
-    const dayName = targetDate.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+    const dayName = new Date(appointmentDate + "T12:00:00Z").toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }).toUpperCase();
 
     let { data: schedules, error: sErr } = await supabase.from("doctor_schedules").select("id, day_of_week").eq("doctor_id", doctor.id).eq("is_active", true);
     if (sErr) {

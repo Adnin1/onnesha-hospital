@@ -69,19 +69,51 @@ ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sms_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
+-- Ensure pre-existing beds table has organization_id column
+ALTER TABLE IF EXISTS beds ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE;
+
 -- 3. Core Isolation Policies (Direct organization_id check)
+DROP POLICY IF EXISTS rls_patients ON patients;
 CREATE POLICY rls_patients ON patients FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_visits ON patient_visits;
 CREATE POLICY rls_visits ON patient_visits FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_appointments ON appointments;
 CREATE POLICY rls_appointments ON appointments FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_invoices ON invoices;
 CREATE POLICY rls_invoices ON invoices FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_payments ON payments;
 CREATE POLICY rls_payments ON payments FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_diagnostic_orders ON diagnostic_orders;
 CREATE POLICY rls_diagnostic_orders ON diagnostic_orders FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_pharmacy_sales ON pharmacy_sales;
 CREATE POLICY rls_pharmacy_sales ON pharmacy_sales FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_stock_transactions ON stock_transactions;
 CREATE POLICY rls_stock_transactions ON stock_transactions FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_beds ON beds;
 CREATE POLICY rls_beds ON beds FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_cabins ON cabins;
 CREATE POLICY rls_cabins ON cabins FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_bed_assignments ON bed_assignments;
 CREATE POLICY rls_bed_assignments ON bed_assignments FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_employees ON employees;
 CREATE POLICY rls_employees ON employees FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_attendance ON attendance_records;
 CREATE POLICY rls_attendance ON attendance_records FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_expenses ON expenses;
 CREATE POLICY rls_expenses ON expenses FOR ALL USING (organization_id = get_current_org_id());
+
+DROP POLICY IF EXISTS rls_audit ON audit_logs;
 CREATE POLICY rls_audit ON audit_logs FOR ALL USING (organization_id = get_current_org_id());

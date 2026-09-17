@@ -5,6 +5,12 @@
 -- No fake clinical or financial transactions are seeded.
 -- =====================================================================================
 
+-- Ensure pre-existing organizations table has slug and status columns
+ALTER TABLE IF EXISTS organizations ADD COLUMN IF NOT EXISTS slug VARCHAR(100);
+ALTER TABLE IF EXISTS organizations ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE';
+UPDATE organizations SET slug = LOWER(REPLACE(code, ' ', '-')) WHERE slug IS NULL;
+UPDATE organizations SET status = CASE WHEN is_active THEN 'ACTIVE' ELSE 'SUSPENDED' END WHERE status IS NULL;
+
 -- 1. Initialize Tenant Zero: Onnesha Hospital
 INSERT INTO organizations (id, name, code, slug, phone, email, address, status)
 VALUES (
@@ -72,6 +78,8 @@ INSERT INTO roles (id, organization_id, name, description, is_system) VALUES
 ON CONFLICT (organization_id, name) DO NOTHING;
 
 -- 4. Populate Standard Bangladesh Hospital Departments
+ALTER TABLE IF EXISTS departments ADD COLUMN IF NOT EXISTS description TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_departments_org_code ON departments(organization_id, code);
 INSERT INTO departments (organization_id, name, code, description) VALUES
 ('a0000000-0000-0000-0000-000000000001', 'General Medicine', 'MED', 'Internal and general medicine care'),
 ('a0000000-0000-0000-0000-000000000001', 'Cardiology & Heart Care', 'CARD', 'Cardiac OPD, ECG and Echo'),
