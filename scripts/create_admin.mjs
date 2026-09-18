@@ -71,7 +71,7 @@ async function run() {
     id: user.id,
     email: targetEmail,
     full_name: "Hospital Director",
-    phone: "01700000000",
+    phone: "01712345678",
     is_active: true
   });
 

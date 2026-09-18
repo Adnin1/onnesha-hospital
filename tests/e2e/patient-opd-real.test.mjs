@@ -26,7 +26,14 @@ describe("OHMS Database & API Integration Suite: Patient Registration & OPD Sche
   });
 
   test("1. Patient database table query executes against live Supabase PostgreSQL schema", async () => {
-    const { data, error } = await adminClient.from("patients").select("id, full_name, phone").limit(5);
+    let { data, error } = await adminClient.from("patients").select("id, full_name, phone").limit(5);
+    if (error?.code === "PGRST303") {
+      // Clock skew tolerance retry
+      await new Promise((r) => setTimeout(r, 600));
+      const retry = await adminClient.from("patients").select("id, full_name, phone").limit(5);
+      data = retry.data;
+      error = retry.error;
+    }
     assert.equal(error, null, "Database query must execute cleanly");
     assert.ok(Array.isArray(data), "Patients array must be returned");
   });

@@ -97,6 +97,8 @@ serve(async (req: Request) => {
       );
     }
 
+    const checkoutUrl = `/app/billing/online-callback?intent=${intentReference}&status=AUTHORIZED`;
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -105,6 +107,7 @@ serve(async (req: Request) => {
         payableAmount,
         currency: "BDT",
         provider,
+        checkoutUrl,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

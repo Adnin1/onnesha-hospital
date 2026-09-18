@@ -65,7 +65,7 @@ export class SslCommerzAdapter implements PaymentGatewayAdapter {
         cancel_url: `${params.callbackUrl}?status=cancel&tran_id=${params.intentNumber}`,
         ipn_url: `${params.callbackUrl}/ipn`,
         cus_name: params.customerName || "Patient",
-        cus_email: "billing@hospital.local",
+        cus_email: "billing@onneshahospital.com",
         cus_add1: "Hospital Reception",
         cus_city: "Dhaka",
         cus_country: "Bangladesh",

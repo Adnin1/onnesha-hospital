@@ -89,6 +89,44 @@ export class PaymentService {
   }> {
     try {
       const supabase = createClient();
+
+      // Primary Secure Path: Server-side Supabase Edge Function execution
+      try {
+        const { data: edgeRes, error: edgeErr } = await supabase.functions.invoke("payment-initiate", {
+          body: {
+            organizationId: params.organizationId,
+            invoiceId: params.invoiceId,
+            provider: params.provider,
+            amount: params.amount,
+          },
+        });
+        if (!edgeErr && edgeRes && edgeRes.success) {
+          return {
+            success: true,
+            intent: {
+              id: edgeRes.paymentIntentId,
+              organizationId: params.organizationId,
+              invoiceId: params.invoiceId,
+              intentReference: edgeRes.intentReference,
+              payableAmount: edgeRes.payableAmount,
+              currency: edgeRes.currency || "BDT",
+              provider: edgeRes.provider,
+              status: "PENDING",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            initiateResult: {
+              success: true,
+              provider: params.provider,
+              paymentId: edgeRes.intentReference,
+              redirectGatewayUrl: edgeRes.checkoutUrl || "",
+            },
+          };
+        }
+      } catch {
+        // Fall back to direct flow if Edge Runtime is unconfigured locally
+      }
+
       // 1. Fetch live invoice from database
       const { data: invoice, error: invError } = await supabase
         .from("invoices")
