@@ -5,8 +5,8 @@
 **Generated At:** `2026-09-19T01:50:00+06:00`  
 **Repository:** `https://github.com/Adnin1/onnesha-hospital`  
 **Branch:** `main`  
-**Tested Source Commit:** `9b9497c41948c103869422c121bc6146eb56d275`  
-**GitHub Remote `origin/main` Commit:** `9b9497c41948c103869422c121bc6146eb56d275`  
+**Tested Source Commit:** `9ca47194f275e533bc7b71940fe17ce71b8733b8`  
+**GitHub Remote `origin/main` Commit:** `9ca47194f275e533bc7b71940fe17ce71b8733b8`  
 **Cloudflare Canonical Production URL:** https://onnesha-hospital.pages.dev (HTTP 200 OK)  
 **Cloudflare Active Preview Deployment:** https://0664835f.onnesha-hospital.pages.dev (HTTP 200 OK)  
 **Supabase Remote Project Ref:** `iuhtzahuszdkdarhxobx` (PostgreSQL 17.6, Region: `ap-southeast-1`, Status: `ACTIVE_HEALTHY`)  
@@ -16,10 +16,10 @@
 
 ### Invariant & Source Parity Audit
 
-$$\text{LOCAL TESTED COMMIT (9b9497c)} = \text{ORIGIN/MAIN (9b9497c)} = \text{GITHUB MAIN (9b9497c)} = \text{DEPLOYED SOURCE}$$
+$$\text{LOCAL TESTED COMMIT (9ca4719)} = \text{ORIGIN/MAIN (9ca4719)} = \text{GITHUB MAIN (9ca4719)} = \text{DEPLOYED SOURCE}$$
 
 - **Working Tree State:** Clean with `.github/` present locally.
-- **Git Commit Parity:** 100% in lockstep with `origin/main` under commit `9b9497c41948c103869422c121bc6146eb56d275`.
+- **Git Commit Parity:** 100% in lockstep with `origin/main` under commit `9ca47194f275e533bc7b71940fe17ce71b8733b8`.
 
 ---
 
