@@ -45,16 +45,27 @@ serve(async (req: Request) => {
       );
     }
 
-    // 2. Role-based Access Control: Caller must have an active membership in the organization
-    const { data: userRole, error: roleError } = await supabaseClient
-      .from("user_roles")
-      .select("role, organization_id, is_active")
-      .eq("user_id", user.id)
-      .eq("organization_id", organizationId)
-      .eq("is_active", true)
+    // 2. Role-based Access Control: Caller profile must be active, and caller must belong to the organization
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("id, is_active")
+      .eq("id", user.id)
       .maybeSingle();
 
-    if (roleError || !userRole) {
+    if (profile && profile.is_active === false) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Forbidden: User account is inactive" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: userRoleRecords, error: roleError } = await supabaseClient
+      .from("user_roles")
+      .select("role_id, organization_id, roles(name)")
+      .eq("user_id", user.id)
+      .eq("organization_id", organizationId);
+
+    if (roleError || !userRoleRecords || userRoleRecords.length === 0) {
       return new Response(
         JSON.stringify({ success: false, error: "Forbidden: User does not have an active role in this organization" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }

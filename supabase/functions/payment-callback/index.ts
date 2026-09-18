@@ -17,6 +17,24 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // 1. Authenticate caller JWT (reject arbitrary unauthenticated callback calls)
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized: Missing authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized: Valid user JWT required for payment verification" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const body = await req.json();
     const { provider, intentReference, providerTransactionId, paidAmount } = body;
 
@@ -38,6 +56,20 @@ serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ success: false, error: "Payment intent not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 2. Organization RBAC: Caller must belong to the organization
+    const { data: userRoleRecords, error: roleError } = await supabaseClient
+      .from("user_roles")
+      .select("role_id")
+      .eq("user_id", user.id)
+      .eq("organization_id", intent.organization_id);
+
+    if (roleError || !userRoleRecords || userRoleRecords.length === 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Forbidden: Caller does not have access to this organization's payments" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
