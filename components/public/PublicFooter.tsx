@@ -128,7 +128,7 @@ export function PublicFooter() {
         </div>
 
         {/* Bottom copyright */}
-        <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-2">
+        <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-300 gap-2">
           <p>© 2026 Onnesha Hospital. All rights reserved.</p>
           <p className="flex items-center">
             Built with <Heart className="w-3.5 h-3.5 text-rose-500 mx-1 inline" /> for compassionate healthcare

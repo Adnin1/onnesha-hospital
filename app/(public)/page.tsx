@@ -130,9 +130,9 @@ export default function HomePage() {
                 <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
                   <div className="flex items-center space-x-2">
                     <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <h3 className="font-bold text-base text-slate-800">
+                    <h2 className="font-bold text-base text-slate-800">
                       Live Doctor Token Queue
-                    </h3>
+                    </h2>
                   </div>
                   <span className="text-xs bg-sky-100 text-sky-800 font-semibold px-2 py-0.5 rounded">
                     Realtime
@@ -203,7 +203,7 @@ export default function HomePage() {
               <h2 className="font-bold text-sm sm:text-base tracking-wide">
                 24-Hour Emergency, Trauma & Cardiac Resuscitation Care
               </h2>
-              <p className="text-xs text-red-100">
+              <p className="text-xs text-white/95">
                 Specialist emergency medical officers, ICU support, and cardiac life support available right now.
               </p>
             </div>
@@ -377,7 +377,7 @@ export default function HomePage() {
                   <div key={idx} className="flex items-start space-x-3">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-bold text-slate-800">{item.title}</h4>
+                      <h3 className="text-sm font-bold text-slate-800">{item.title}</h3>
                       <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
                     </div>
                   </div>
