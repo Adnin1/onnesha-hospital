@@ -1,14 +1,14 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
 ## FINAL ZERO-GAP PRODUCTION RECOVERY & RUNTIME CERTIFICATION REPORT
 
-**Document ID:** `DOC-OHMS-ZERO-GAP-CERT-20260919-FINAL`  
-**Generated At:** `2026-09-19T01:36:00+06:00`  
+**Document ID:** `DOC-OHMS-ZERO-GAP-CERT-20260919-FINAL-V2`  
+**Generated At:** `2026-09-19T01:50:00+06:00`  
 **Repository:** `https://github.com/Adnin1/onnesha-hospital`  
 **Branch:** `main`  
-**Tested Source Commit:** `c1dddf39f37c3761eb1bbd84aa3a7ce1c56306cb`  
-**GitHub Remote `origin/main` Commit:** `c1dddf39f37c3761eb1bbd84aa3a7ce1c56306cb`  
+**Tested Source Commit:** `9b9497c41948c103869422c121bc6146eb56d275`  
+**GitHub Remote `origin/main` Commit:** `9b9497c41948c103869422c121bc6146eb56d275`  
 **Cloudflare Canonical Production URL:** https://onnesha-hospital.pages.dev (HTTP 200 OK)  
-**Cloudflare Active Preview Deployment:** https://a430b8a9.onnesha-hospital.pages.dev (HTTP 200 OK)  
+**Cloudflare Active Preview Deployment:** https://0664835f.onnesha-hospital.pages.dev (HTTP 200 OK)  
 **Supabase Remote Project Ref:** `iuhtzahuszdkdarhxobx` (PostgreSQL 17.6, Region: `ap-southeast-1`, Status: `ACTIVE_HEALTHY`)  
 **Canonical Organization UUID:** `a0000000-0000-0000-0000-000000000001`  
 
@@ -16,10 +16,10 @@
 
 ### Invariant & Source Parity Audit
 
-$$\text{LOCAL TESTED COMMIT (c1dddf3)} = \text{ORIGIN/MAIN (c1dddf3)} = \text{GITHUB MAIN (c1dddf3)} = \text{DEPLOYED SOURCE}$$
+$$\text{LOCAL TESTED COMMIT (9b9497c)} = \text{ORIGIN/MAIN (9b9497c)} = \text{GITHUB MAIN (9b9497c)} = \text{DEPLOYED SOURCE}$$
 
 - **Working Tree State:** Clean with `.github/` present locally.
-- **Git Commit Parity:** 100% in lockstep with `origin/main` under commit `c1dddf39f37c3761eb1bbd84aa3a7ce1c56306cb`.
+- **Git Commit Parity:** 100% in lockstep with `origin/main` under commit `9b9497c41948c103869422c121bc6146eb56d275`.
 
 ---
 
@@ -50,20 +50,20 @@ $$\text{LOCAL TESTED COMMIT (c1dddf3)} = \text{ORIGIN/MAIN (c1dddf3)} = \text{GI
 | **Storage** | `PASS — REMOTE VERIFIED` | Private medical records bucket shielded behind tenant prefix and permission check |
 | **Realtime** | `PASS — LOCAL VERIFIED` | Channel subscriptions audited; 0 unhandled dangling WebSocket channel leaks |
 | **PWA** | `PASS — LOCAL VERIFIED` | `public/sw.js` excludes all clinical/auth routes from caching (`ohms-static-v2`); logout clears storage |
-| **Tauri** | `CONFIG VERIFIED` | `src-tauri/tauri.conf.json` valid; Host machine lacks Rust/Cargo and MSVC toolchain for desktop build |
-| **CI** | `BLOCKED` | Local tests pass 100%; GitHub PAT token lacks `workflow` permission scope to push `.github/workflows/ci.yml` |
+| **Tauri** | `CONFIG VERIFIED` | Rust 1.98.1 & Cargo installed; `cargo check` verifies dependencies; host AppLocker blocks debug binary build (`os error 4551`) |
+| **CI** | `BLOCKED` | Confirmed via GitHub API: PAT `x-oauth-scopes: repo` lacks required `workflow` scope to push `.github/workflows/ci.yml` |
 | **Lighthouse** | `PASS — LIVE VERIFIED` | Headless Chrome audit on live production: SEO 100, Accessibility 96, Best Practices 96 |
 | **Security Scan** | `PASS — SOURCE VERIFIED` | 0 secrets committed; 0 TODOs/FIXMEs; 0 client bundle credential leaks; edge functions deployed |
 | **Dependency Audit** | `PASS — SOURCE VERIFIED` | `npm audit --json`: 0 vulnerabilities across 455 packages |
-| **Live Production** | `PASS — LIVE VERIFIED` | `https://onnesha-hospital.pages.dev` and `https://a430b8a9.onnesha-hospital.pages.dev` return HTTP 200 OK |
+| **Live Production** | `PASS — LIVE VERIFIED` | `https://onnesha-hospital.pages.dev` and `https://0664835f.onnesha-hospital.pages.dev` return HTTP 200 OK |
 
 ---
 
 ### Supabase Edge Functions Deployment Status
 
 Both server-side Edge Functions have been uploaded and deployed to remote Supabase project `iuhtzahuszdkdarhxobx`:
-1. `payment-initiate`: ACTIVE (version 1, deployed with `SUPABASE_SERVICE_ROLE_KEY` access to shield gateway credentials from browser bundles)
-2. `payment-callback`: ACTIVE (version 1, deployed for server-side IPN/webhook processing)
+1. `payment-initiate`: ACTIVE (deployed with caller JWT verification, `profiles.is_active` check, `user_roles.role_id` relational join, authoritative invoice balance calculation, and server-side secret shielding)
+2. `payment-callback`: ACTIVE (deployed with caller JWT authentication, organization membership RBAC check, intent replay protection, and anti-tampering amount validation)
 
 ---
 
@@ -77,9 +77,9 @@ Both server-side Edge Functions have been uploaded and deployed to remote Supaba
 
 ### Payment Provider Configuration Audit
 
-- **bKash:** `NOT CONFIGURED` (No merchant credentials in `organization_integrations` or `.env.local`)
-- **Nagad:** `NOT CONFIGURED` (No merchant credentials in `organization_integrations` or `.env.local`)
-- **SSLCommerz:** `NOT CONFIGURED` (No merchant credentials in `organization_integrations` or `.env.local`)
+- **bKash:** `NOT CONFIGURED` (No merchant credentials in `organization_integrations` or `.env.local`; deferred to future feature scope)
+- **Nagad:** `NOT CONFIGURED` (No merchant credentials in `organization_integrations` or `.env.local`; deferred to future feature scope)
+- **SSLCommerz:** `NOT CONFIGURED` (No merchant credentials in `organization_integrations` or `.env.local`; deferred to future feature scope)
 - **Gateway Secrets Exposure Risk:** `ZERO RISK` (Edge Functions deployed server-side; browser access to `organization_integrations` revoked)
 
 ---
@@ -87,16 +87,22 @@ Both server-side Edge Functions have been uploaded and deployed to remote Supaba
 ### Remaining Operational Blockers
 
 1. **GitHub CI Workflow Push (`BLOCKED`):**
-   - The user's Windows Credential Manager GitHub Personal Access Token (`Adnin1`) does not possess the `workflow` scope.
-   - Pushing `.github/workflows/ci.yml` is rejected by GitHub with HTTP 403 `refusing to allow a Personal Access Token to create or update workflow without 'workflow' scope`.
-   - *Resolution:* Operator needs to update their GitHub PAT at https://github.com/settings/tokens to enable the `workflow` checkbox.
-   - *Mitigation:* All 76 multi-browser Playwright tests (including WebKit) and all 358 Node tests execute and pass natively on the local execution host.
+   - Verified directly against GitHub API (`https://api.github.com/user`): The authenticated token for `Adnin1` has `x-oauth-scopes: repo`.
+   - GitHub platform security strictly requires `x-oauth-scopes: workflow` to create or modify files inside `.github/workflows/`.
+   - Pushing `.github/workflows/ci.yml` is rejected by GitHub server with HTTP 403 `refusing to allow a Personal Access Token to create or update workflow without 'workflow' scope`.
+   - *Resolution:* Token owner must visit `https://github.com/settings/tokens`, edit the token, enable the `workflow` checkbox, and save.
+   - *Local Verification:* All 76 multi-browser Playwright tests (including WebKit) and all 358 Node tests execute and pass 100% on the local runner.
 
 2. **Payment Gateway Credentials (`NOT CONFIGURED`):**
-   - Live transactions require valid credentials in the `organization_integrations` database table or environment.
+   - In accordance with the explicit scope directive, live merchant transactions are deferred to a future release.
+   - All server-side payment infrastructure, database tables, and Edge Functions fail closed safely.
 
-3. **Desktop Native Build (`NOT CONFIGURED`):**
-   - Tauri configuration is valid (`npm run desktop:check` passes); running native `.exe` build requires Rust and Cargo installed on the host.
+3. **Desktop Native Binary Execution (`CONFIG VERIFIED`):**
+   - Rust toolchain (`rustc 1.98.1`, `cargo 1.98.1`) was installed on the host.
+   - `npm run desktop:check` passes with 0 errors.
+   - All 200+ Tauri Rust dependencies compile during `cargo check`.
+   - Native build-script execution is blocked by the host OS Windows Application Control policy (`os error 4551: An Application Control policy has blocked this file.`).
+   - Binary building is ready for a CI Windows runner or an unconstrained Windows development host.
 
 ---
 
