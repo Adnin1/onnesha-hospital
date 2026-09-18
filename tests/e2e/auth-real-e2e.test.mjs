@@ -5,8 +5,8 @@ import fs from "fs";
 import path from "path";
 
 const envPath = path.resolve(process.cwd(), ".env.local");
-let supabaseUrl = "";
-let anonKey = "";
+let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://iuhtzahuszdkdarhxobx.supabase.co";
+let anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_OPiG-7uhoIlnysXKrpErsw_rdXEJ4rs";
 
 if (fs.existsSync(envPath)) {
   const content = fs.readFileSync(envPath, "utf8");
