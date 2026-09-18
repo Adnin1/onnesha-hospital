@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 import { normalizeBDPhone, isValidNormalizedBDPhone } from "./phone";
 import { detectDuplicatePatients } from "./duplicate-detection";
 import { getPatientTimeline } from "./timeline";
@@ -478,14 +479,16 @@ export async function registerEmergencyEncounterAction(params: {
       // Sequence generates TEMP-EMG-XXXXX format atomically
       const tempId = (tempIdData as string) || "TEMP-EMG-UNKNOWN";
 
+      const defaultEmergencyPhone = (process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || HOSPITAL_METADATA.emergencyHotline).replace(/\D/g, "");
+
       const { data: tempPatient, error: tempErr } = await supabase
         .from("patients")
         .insert({
           organization_id: session.organizationId,
           patient_code: tempId,
           full_name: params.unknownPatientName || `Unknown Emergency Patient (${tempId})`,
-          phone: "01700112233",
-          normalized_phone: "01700112233",
+          phone: defaultEmergencyPhone,
+          normalized_phone: defaultEmergencyPhone,
           gender: "OTHER",
           is_temporary: true,
           temp_identifier: tempId,

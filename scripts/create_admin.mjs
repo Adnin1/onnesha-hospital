@@ -71,7 +71,7 @@ async function run() {
     id: user.id,
     email: targetEmail,
     full_name: "Hospital Director",
-    phone: "01712345678",
+    phone: process.env.ADMIN_PHONE || process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01712345678",
     is_active: true
   });
 
