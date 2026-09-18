@@ -29,11 +29,13 @@ export function HospitalPrintHeader({
               {HOSPITAL_METADATA.banglaName}
             </p>
             <p className="text-xs text-slate-600 mt-0.5">
-              {HOSPITAL_METADATA.address} | Hotline: {HOSPITAL_METADATA.phone} | Emergency: {HOSPITAL_METADATA.emergencyHotline}
+              {[HOSPITAL_METADATA.address, HOSPITAL_METADATA.phone ? `Hotline: ${HOSPITAL_METADATA.phone}` : null, `Emergency: ${HOSPITAL_METADATA.emergencyHotline}`].filter(Boolean).join(" | ")}
             </p>
-            <p className="text-[10px] text-slate-500">
-              Govt. Reg No: {HOSPITAL_METADATA.regNo}
-            </p>
+            {HOSPITAL_METADATA.regNo && (
+              <p className="text-[10px] text-slate-500">
+                Govt. Reg No: {HOSPITAL_METADATA.regNo}
+              </p>
+            )}
           </div>
         </div>
 

@@ -30,7 +30,7 @@ serve(async (req: Request) => {
     // 1. Find payment intent
     const { data: intent, error: intentError } = await supabaseClient
       .from("payment_intents")
-      .select("id, organization_id, status, payable_amount")
+      .select("id, organization_id, provider, status, payable_amount")
       .eq("intent_reference", intentReference)
       .single();
 
@@ -48,13 +48,49 @@ serve(async (req: Request) => {
       );
     }
 
-    // 2. Call atomic DB settlement RPC
+    if (intent.status !== "PENDING" && intent.status !== "AUTHORIZED") {
+      return new Response(
+        JSON.stringify({ success: false, error: `Invalid payment intent state for settlement: ${intent.status}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 2. Fail closed if provider integration credentials are not configured on server
+    const { data: integ } = await supabaseClient
+      .from("organization_integrations")
+      .select("encrypted_credentials, environment, is_enabled")
+      .eq("organization_id", intent.organization_id)
+      .eq("integration_type", "PAYMENT_GATEWAY")
+      .eq("provider_name", intent.provider)
+      .eq("is_enabled", true)
+      .maybeSingle();
+
+    if (!integ || !integ.is_enabled || !integ.encrypted_credentials || Object.keys(integ.encrypted_credentials as object).length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          status: "NOT_CONFIGURED",
+          error: `Payment provider ${intent.provider} credentials are not configured on server.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 3. Amount verification to prevent client tampering
+    if (Number(paidAmount) !== Number(intent.payable_amount)) {
+      return new Response(
+        JSON.stringify({ success: false, error: `Paid amount (${paidAmount}) does not match intent amount (${intent.payable_amount})` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 4. Call atomic DB settlement RPC
     const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc("verify_and_record_online_payment", {
       p_org_id: intent.organization_id,
       p_intent_id: intent.id,
       p_provider_trx_id: providerTransactionId,
-      p_paid_amount: paidAmount,
-      p_gateway_method: provider,
+      p_paid_amount: Number(paidAmount),
+      p_gateway_method: intent.provider,
     });
 
     if (rpcErr) {

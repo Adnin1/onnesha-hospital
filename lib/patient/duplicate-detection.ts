@@ -106,10 +106,11 @@ export async function detectDuplicatePatients(
       .eq("organization_id", input.organizationId)
       .eq("is_deleted", false);
 
+    const safeInputPhone = input.phone ? input.phone.replace(/[,().%"']/g, "").trim() : "";
     if (normPhone && normEmergPhone) {
-      phoneQuery = phoneQuery.or(`phone.eq.${normPhone},phone.eq.${input.phone},emergency_contact_phone.eq.${normEmergPhone}`);
+      phoneQuery = phoneQuery.or(`phone.eq.${normPhone},phone.eq.${safeInputPhone},emergency_contact_phone.eq.${normEmergPhone}`);
     } else if (normPhone) {
-      phoneQuery = phoneQuery.or(`phone.eq.${normPhone},phone.eq.${input.phone}`);
+      phoneQuery = phoneQuery.or(`phone.eq.${normPhone},phone.eq.${safeInputPhone}`);
     } else if (normEmergPhone) {
       phoneQuery = phoneQuery.eq("emergency_contact_phone", normEmergPhone);
     }

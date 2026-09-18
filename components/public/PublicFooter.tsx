@@ -21,10 +21,12 @@ export function PublicFooter() {
             <p className="text-xs leading-relaxed text-slate-400 mb-4">
               Dedicated to delivering compassionate, patient-first healthcare and state-of-the-art diagnostic testing with Bangladesh’s leading consultants and surgeons.
             </p>
-            <div className="flex items-center text-xs text-sky-400 font-medium">
-              <ShieldCheck className="w-4 h-4 mr-1.5" />
-              {HOSPITAL_METADATA.regNo}
-            </div>
+            {HOSPITAL_METADATA.regNo ? (
+              <div className="flex items-center text-xs text-sky-400 font-medium">
+                <ShieldCheck className="w-4 h-4 mr-1.5" />
+                {HOSPITAL_METADATA.regNo}
+              </div>
+            ) : null}
           </div>
 
           {/* Col 2: Quick Links */}
@@ -82,22 +84,30 @@ export function PublicFooter() {
               24/7 Contact Lines
             </h3>
             <ul className="space-y-3 text-xs">
-              <li className="flex items-start">
-                <MapPin className="w-4 h-4 mr-2 text-sky-400 shrink-0 mt-0.5" />
-                <span>{HOSPITAL_METADATA.address}</span>
-              </li>
-              <li className="flex items-center">
-                <Phone className="w-4 h-4 mr-2 text-emerald-400 shrink-0" />
-                <span>Hotline: {HOSPITAL_METADATA.phone}</span>
-              </li>
-              <li className="flex items-center">
-                <Phone className="w-4 h-4 mr-2 text-red-400 shrink-0" />
-                <span>Ambulance: {HOSPITAL_METADATA.ambulanceHotline}</span>
-              </li>
-              <li className="flex items-center">
-                <Mail className="w-4 h-4 mr-2 text-sky-400 shrink-0" />
-                <span>{HOSPITAL_METADATA.email}</span>
-              </li>
+              {HOSPITAL_METADATA.address && (
+                <li className="flex items-start">
+                  <MapPin className="w-4 h-4 mr-2 text-sky-400 shrink-0 mt-0.5" />
+                  <span>{HOSPITAL_METADATA.address}</span>
+                </li>
+              )}
+              {HOSPITAL_METADATA.phone && (
+                <li className="flex items-center">
+                  <Phone className="w-4 h-4 mr-2 text-emerald-400 shrink-0" />
+                  <span>Hotline: {HOSPITAL_METADATA.phone}</span>
+                </li>
+              )}
+              {HOSPITAL_METADATA.ambulanceHotline && (
+                <li className="flex items-center">
+                  <Phone className="w-4 h-4 mr-2 text-red-400 shrink-0" />
+                  <span>Ambulance: {HOSPITAL_METADATA.ambulanceHotline}</span>
+                </li>
+              )}
+              {HOSPITAL_METADATA.email && (
+                <li className="flex items-center">
+                  <Mail className="w-4 h-4 mr-2 text-sky-400 shrink-0" />
+                  <span>{HOSPITAL_METADATA.email}</span>
+                </li>
+              )}
             </ul>
           </div>
         </div>

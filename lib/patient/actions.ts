@@ -212,12 +212,13 @@ export async function searchPatientsAction(params: {
       .eq("is_deleted", false);
 
     if (params.query) {
-      const q = params.query.trim();
-      const normPhone = normalizeBDPhone(q);
-
-      query = query.or(
-        `patient_code.ilike.%${q}%,full_name.ilike.%${q}%,phone.ilike.%${q}%,normalized_phone.ilike.%${normPhone}%`
-      );
+      const sanitized = params.query.replace(/[,().%"']/g, "").trim();
+      if (sanitized) {
+        const normPhone = normalizeBDPhone(sanitized);
+        query = query.or(
+          `patient_code.ilike.%${sanitized}%,full_name.ilike.%${sanitized}%,phone.ilike.%${sanitized}%,normalized_phone.ilike.%${normPhone}%`
+        );
+      }
     }
 
     if (params.gender) {
@@ -1128,8 +1129,11 @@ export async function getPatientsAction(params?: {
       .limit(params?.limit || 50);
 
     if (params?.query?.trim()) {
-      const term = `%${params.query.trim()}%`;
-      q = q.or(`full_name.ilike.${term},patient_code.ilike.${term},phone.ilike.${term}`);
+      const sanitized = params.query.replace(/[,().%"']/g, "").trim();
+      if (sanitized) {
+        const term = `%${sanitized}%`;
+        q = q.or(`full_name.ilike.${term},patient_code.ilike.${term},phone.ilike.${term}`);
+      }
     }
 
     const { data, error } = await q;

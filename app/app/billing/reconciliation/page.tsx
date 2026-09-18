@@ -117,9 +117,9 @@ export default function PaymentReconciliationPage() {
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                        item.status === "PAID" || item.status === "SUCCEEDED"
+                        item.status === "PAID"
                           ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                          : item.status === "PENDING" || item.status === "AUTHORIZED" || item.status === "PROCESSING"
+                          : item.status === "PENDING" || item.status === "AUTHORIZED"
                           ? "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300"
                           : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
                       }`}

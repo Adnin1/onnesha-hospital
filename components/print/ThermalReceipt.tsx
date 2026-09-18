@@ -47,8 +47,8 @@ export function ThermalReceipt({
       {/* Hospital Header */}
       <div className="text-center border-b border-dashed pb-2 mb-2">
         <h1 className="font-bold text-xs uppercase">{HOSPITAL_METADATA.name}</h1>
-        <p className="text-[10px]">{HOSPITAL_METADATA.address}</p>
-        <p className="text-[10px]">Hotline: {HOSPITAL_METADATA.phone}</p>
+        {HOSPITAL_METADATA.address && <p className="text-[10px]">{HOSPITAL_METADATA.address}</p>}
+        {HOSPITAL_METADATA.phone && <p className="text-[10px]">Hotline: {HOSPITAL_METADATA.phone}</p>}
         <div className="mt-1 font-bold text-[10px] uppercase tracking-wider border border-zinc-900 inline-block px-1.5 py-0.5">
           POS Money Receipt
         </div>

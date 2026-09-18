@@ -17,7 +17,26 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { organizationId, invoiceId, provider, amount } = await req.json();
+    // 1. Caller Authentication via JWT
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing Authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized: Invalid or expired authentication token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const body = await req.json();
+    const { organizationId, invoiceId, provider, amount } = body;
 
     if (!organizationId || !invoiceId || !provider) {
       return new Response(
@@ -26,10 +45,26 @@ serve(async (req: Request) => {
       );
     }
 
-    // 1. Fetch live invoice
+    // 2. Role-based Access Control: Caller must have an active membership in the organization
+    const { data: userRole, error: roleError } = await supabaseClient
+      .from("user_roles")
+      .select("role, organization_id, is_active")
+      .eq("user_id", user.id)
+      .eq("organization_id", organizationId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (roleError || !userRole) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Forbidden: User does not have an active role in this organization" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 3. Authoritatively load invoice from database (never trust client-supplied amounts or org boundaries)
     const { data: invoice, error: invError } = await supabaseClient
       .from("invoices")
-      .select("id, invoice_number, patient_id, grand_total, paid_amount, due_amount, status")
+      .select("id, invoice_number, patient_id, grand_total, paid_amount, due_amount, status, organization_id")
       .eq("id", invoiceId)
       .eq("organization_id", organizationId)
       .single();
@@ -49,28 +84,35 @@ serve(async (req: Request) => {
       );
     }
 
-    const payableAmount = amount && amount > 0 && amount <= dueAmount ? amount : dueAmount;
+    const payableAmount = amount && Number(amount) > 0 && Number(amount) <= dueAmount
+      ? Number(amount)
+      : dueAmount;
 
-    // 2. Verify provider integration exists and is active without returning secrets to caller
+    // 4. Verify provider integration exists, has credentials, and is active
     const { data: integ } = await supabaseClient
       .from("organization_integrations")
-      .select("environment, is_enabled")
+      .select("encrypted_credentials, environment, is_enabled")
       .eq("organization_id", organizationId)
       .eq("integration_type", "PAYMENT_GATEWAY")
       .eq("provider_name", provider)
       .eq("is_enabled", true)
       .maybeSingle();
 
-    if (!integ || !integ.is_enabled) {
+    if (!integ || !integ.is_enabled || !integ.encrypted_credentials || Object.keys(integ.encrypted_credentials as object).length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: `Payment provider ${provider} is not configured or disabled.` }),
+        JSON.stringify({
+          success: false,
+          status: "NOT_CONFIGURED",
+          error: `Payment provider ${provider} is not configured on server. Please configure credentials in Settings.`,
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 3. Create server-managed payment intent
-    const intentReference = `PI-${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-    const idempotencyKey = `pi_${organizationId}_${invoice.id}_${Date.now()}`;
+    // 5. Create server-managed payment intent
+    const intentSuffix = crypto.randomUUID().slice(0, 8).toUpperCase();
+    const intentReference = `PI-${Date.now()}-${intentSuffix}`;
+    const idempotencyKey = `pi_${organizationId}_${invoice.id}_${provider}_${Date.now()}`;
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
     const { data: intent, error: intentError } = await supabaseClient

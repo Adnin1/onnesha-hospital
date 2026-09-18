@@ -100,7 +100,10 @@ export async function getAuditLogsAction(params?: {
       query = query.eq("action", params.action);
     }
     if (params?.search) {
-      query = query.or(`entity_id.ilike.%${params.search}%,entity_type.ilike.%${params.search}%`);
+      const sanitized = params.search.replace(/[,().%"']/g, "").trim();
+      if (sanitized) {
+        query = query.or(`entity_id.ilike.%${sanitized}%,entity_type.ilike.%${sanitized}%`);
+      }
     }
 
     const { data, count, error } = await query;

@@ -18,12 +18,7 @@ export type PaymentIntentStatus =
   | "PAID"
   | "FAILED"
   | "EXPIRED"
-  | "REFUNDED"
-  // Backward compatibility aliases
-  | "PROCESSING"
-  | "SUCCEEDED"
-  | "CANCELLED"
-  | "PARTIALLY_REFUNDED";
+  | "REFUNDED";
 
 export interface PaymentIntent {
   id: string;
@@ -44,12 +39,6 @@ export interface PaymentIntent {
   failureReason?: string | null;
   createdAt: string;
   updatedAt: string;
-
-  // Backward-compatibility field aliases:
-  intentNumber?: string;
-  amount?: number;
-  providerPaymentId?: string | null;
-  redirectUrl?: string | null;
   clientIp?: string | null;
   webhookReceivedAt?: string | null;
   metadata?: Record<string, unknown> | null;

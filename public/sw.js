@@ -1,15 +1,15 @@
 /// <reference lib="webworker" />
 
-const CACHE_VERSION = 'ohms-static-v1';
+const CACHE_VERSION = 'ohms-static-v2';
 const STATIC_ASSETS = [
   '/',
-  '/app/dashboard',
   '/manifest.json',
   '/favicon.ico',
 ];
 
-// Paths that must NEVER be cached (clinical, financial, private)
+// Paths that must NEVER be cached (clinical, financial, private, and all authenticated app routes)
 const NEVER_CACHE_PATTERNS = [
+  /\/app(\/|$)/,
   /\/api\//,
   /supabase\.co/,
   /\.supabase\./,

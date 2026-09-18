@@ -26,8 +26,14 @@ if (!supabaseUrl || !serviceKey) {
 const supabase = createClient(supabaseUrl, serviceKey);
 
 async function run() {
-  const targetEmail = "admin@onneshahospital.com";
-  const targetPassword = "Admin@Onnesha2026!";
+  const targetEmail = process.env.ADMIN_BOOTSTRAP_EMAIL || "admin@onneshahospital.com";
+  const targetPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+
+  if (!targetPassword) {
+    console.error("CRITICAL: ADMIN_BOOTSTRAP_PASSWORD environment variable is required to provision or reset admin user.");
+    console.error("Usage: ADMIN_BOOTSTRAP_PASSWORD=<strong_password> node scripts/create_admin.mjs");
+    process.exit(1);
+  }
 
   const { data: usersData, error: listErr } = await supabase.auth.admin.listUsers();
   if (listErr) {

@@ -33,3 +33,13 @@ export function formatTimeBDT(dateStr: string | Date): string {
     hour12: true,
   }).format(d);
 }
+
+/**
+ * Sanitizes user search input for safe interpolation into PostgREST .or() filter expressions.
+ * Strips PostgREST delimiters and operators: , ( ) . % " '
+ */
+export function sanitizePostgrestSearch(input: string): string {
+  if (!input) return "";
+  return input.replace(/[,().%"']/g, "").trim();
+}
+

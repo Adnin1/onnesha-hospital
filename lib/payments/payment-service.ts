@@ -7,77 +7,48 @@
  * 3. Authoritative contract with `payment_intents` and `organization_integrations` tables.
  * 4. Atomic commit via RPC `verify_and_record_online_payment` prevents race conditions.
  * 5. Automated receipt & SMS notification queued upon successful verification without PHI leakage.
- * 6. Zero fake fallbacks or localhost placeholders in production paths.
+ * 6. Zero browser-side credentials reading or gateway secret handling.
+ * 7. Zero direct browser gateway fallback; Edge Function failure fails closed.
  */
 
 import { createClient } from "@/lib/supabase/client";
 import {
   CreatePaymentIntentParams,
-  PaymentGatewayAdapter,
   PaymentIntent,
   PaymentProvider,
   ProviderInitiateResult,
-  ProviderVerifyResult,
 } from "./types";
-import { BkashAdapter } from "./adapters/bkash-adapter";
-import { NagadAdapter } from "./adapters/nagad-adapter";
-import { SslCommerzAdapter } from "./adapters/sslcommerz-adapter";
 import { NotificationOutboxService } from "../notifications/outbox-service";
 
 const PRODUCTION_SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://onnesha-hospital.pages.dev";
 
 export class PaymentService {
   /**
-   * Instantiates the provider adapter using credentials from DB or environment.
-   * Securely queries organization_integrations using canonical columns:
-   * integration_type = 'PAYMENT_GATEWAY', provider_name, environment, is_enabled = true.
+   * Verifies if an organization has the given payment gateway configured and enabled.
+   * Securely queries organization_integrations using canonical columns without reading secrets.
    */
-  static async getProviderAdapter(
+  static async isProviderConfigured(
     organizationId: string,
     provider: PaymentProvider
-  ): Promise<PaymentGatewayAdapter> {
+  ): Promise<boolean> {
     const supabase = createClient();
     const { data: integ } = await supabase
       .from("organization_integrations")
-      .select("encrypted_credentials, environment, is_enabled")
+      .select("id, is_enabled")
       .eq("organization_id", organizationId)
       .eq("integration_type", "PAYMENT_GATEWAY")
       .eq("provider_name", provider)
       .eq("is_enabled", true)
       .maybeSingle();
 
-    const creds = (integ?.encrypted_credentials as Record<string, unknown>) || {};
-    const isSandbox = integ ? integ.environment === "SANDBOX" : true;
-
-    if (provider === "BKASH") {
-      return new BkashAdapter({
-        appKey: (creds.app_key as string) || process.env.BKASH_APP_KEY || "",
-        appSecret: (creds.app_secret as string) || process.env.BKASH_APP_SECRET || "",
-        username: (creds.username as string) || process.env.BKASH_USERNAME || "",
-        password: (creds.password as string) || process.env.BKASH_PASSWORD || "",
-        isSandbox,
-      });
-    }
-
-    if (provider === "NAGAD") {
-      return new NagadAdapter({
-        merchantId: (creds.merchant_id as string) || process.env.NAGAD_MERCHANT_ID || "",
-        merchantPrivateKey: (creds.private_key as string) || process.env.NAGAD_PRIVATE_KEY || "",
-        nagadPublicKey: (creds.public_key as string) || process.env.NAGAD_PUBLIC_KEY || "",
-        isSandbox,
-      });
-    }
-
-    // SSLCOMMERZ
-    return new SslCommerzAdapter({
-      storeId: (creds.store_id as string) || process.env.SSLCOMMERZ_STORE_ID || "",
-      storePassword: (creds.store_password as string) || process.env.SSLCOMMERZ_STORE_PASSWORD || "",
-      isSandbox,
-    });
+    return !!integ?.is_enabled;
   }
 
   /**
-   * Creates a payment intent after securely calculating invoice due amount.
+   * Creates a payment intent after securely validating invoice due amount.
+   * Delegates intent persistence and gateway session initialization exclusively to
+   * the server-side `payment-initiate` Supabase Edge Function.
+   * Fails closed if the Edge Function fails or gateway is unconfigured.
    */
   static async createPaymentIntent(
     params: CreatePaymentIntentParams
@@ -90,44 +61,16 @@ export class PaymentService {
     try {
       const supabase = createClient();
 
-      // Primary Secure Path: Server-side Supabase Edge Function execution
-      try {
-        const { data: edgeRes, error: edgeErr } = await supabase.functions.invoke("payment-initiate", {
-          body: {
-            organizationId: params.organizationId,
-            invoiceId: params.invoiceId,
-            provider: params.provider,
-            amount: params.amount,
-          },
-        });
-        if (!edgeErr && edgeRes && edgeRes.success) {
-          return {
-            success: true,
-            intent: {
-              id: edgeRes.paymentIntentId,
-              organizationId: params.organizationId,
-              invoiceId: params.invoiceId,
-              intentReference: edgeRes.intentReference,
-              payableAmount: edgeRes.payableAmount,
-              currency: edgeRes.currency || "BDT",
-              provider: edgeRes.provider,
-              status: "PENDING",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
-            initiateResult: {
-              success: true,
-              provider: params.provider,
-              paymentId: edgeRes.intentReference,
-              redirectGatewayUrl: edgeRes.checkoutUrl || "",
-            },
-          };
-        }
-      } catch {
-        // Fall back to direct flow if Edge Runtime is unconfigured locally
+      // 1. Check organization gateway integration status (without exposing secrets to browser)
+      const isConfigured = await this.isProviderConfigured(params.organizationId, params.provider);
+      if (!isConfigured) {
+        return {
+          success: false,
+          error: `Payment provider ${params.provider} is not configured or enabled for this organization.`,
+        };
       }
 
-      // 1. Fetch live invoice from database
+      // 2. Fetch live invoice from database to verify status & balance
       const { data: invoice, error: invError } = await supabase
         .from("invoices")
         .select("id, invoice_number, patient_id, grand_total, paid_amount, due_amount, status")
@@ -144,7 +87,7 @@ export class PaymentService {
         return { success: false, error: "Invoice is already fully settled" };
       }
 
-      // 2. Validate amount: cannot exceed due amount or be <= 0
+      // 3. Validate amount: cannot exceed due amount or be <= 0
       let payableAmount = invoiceDue;
       if (params.amount && params.amount > 0) {
         if (params.amount > invoiceDue) {
@@ -153,118 +96,47 @@ export class PaymentService {
         payableAmount = params.amount;
       }
 
-      // 3. Fetch patient details for customer info (fail-closed if phone unavailable)
-      let customerName = "Patient";
-      let customerPhone = "";
-      if (invoice.patient_id) {
-        const { data: patient } = await supabase
-          .from("patients")
-          .select("full_name, phone")
-          .eq("id", invoice.patient_id)
-          .single();
-
-        if (patient) {
-          customerName = patient.full_name || customerName;
-          customerPhone = patient.phone || "";
-        }
-      }
-
-      // 4. Generate unique collision-resistant intent reference
-      const intentSuffix = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID().slice(0, 8).toUpperCase()
-        : Math.random().toString(36).substring(2, 10).toUpperCase();
-      const intentReference = `PI-${Date.now()}-${intentSuffix}`;
-      const idempotencyKey = `pi_${params.organizationId}_${invoice.id}_${Date.now()}_${intentSuffix}`;
-      const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
-      // 5. Insert payment intent in PENDING status adhering to DB check constraints
-      const { data: insertedIntent, error: insertError } = await supabase
-        .from("payment_intents")
-        .insert({
-          organization_id: params.organizationId,
-          intent_reference: intentReference,
-          invoice_id: invoice.id,
-          patient_id: invoice.patient_id,
-          payable_amount: payableAmount,
-          currency: "BDT",
+      // 4. Delegate to secure server-side Edge Function (payment-initiate)
+      // Enforces caller authentication, role permissions, and secret isolation.
+      const { data: edgeRes, error: edgeErr } = await supabase.functions.invoke("payment-initiate", {
+        body: {
+          organizationId: params.organizationId,
+          invoiceId: params.invoiceId,
           provider: params.provider,
-          status: "PENDING",
-          idempotency_key: idempotencyKey,
-          expires_at: expiresAt,
-        })
-        .select("*")
-        .single();
-
-      if (insertError || !insertedIntent) {
-        return { success: false, error: insertError?.message || "Failed to create payment intent" };
-      }
-
-      // 6. Initiate with Gateway Provider
-      const adapter = await this.getProviderAdapter(params.organizationId, params.provider);
-      const callbackUrl =
-        params.callbackUrl ||
-        (typeof window !== "undefined"
-          ? `${window.location.origin}/app/billing/online-callback`
-          : `${PRODUCTION_SITE_URL}/app/billing/online-callback`);
-
-      const initResult = await adapter.initiatePayment({
-        intentNumber: intentReference,
-        amount: payableAmount,
-        currency: "BDT",
-        callbackUrl,
-        customerPhone,
-        customerName,
+          amount: payableAmount,
+        },
       });
 
-      if (initResult.success) {
-        await supabase
-          .from("payment_intents")
-          .update({
-            provider_session_id: initResult.paymentId,
-            checkout_url: initResult.redirectGatewayUrl,
-            status: "AUTHORIZED",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", insertedIntent.id);
-      } else {
-        await supabase
-          .from("payment_intents")
-          .update({
-            status: "FAILED",
-            failure_reason: initResult.errorMessage || "Gateway provider declined session initialization",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", insertedIntent.id);
+      if (edgeErr || !edgeRes || !edgeRes.success) {
+        return {
+          success: false,
+          error: edgeRes?.error || edgeErr?.message || "Payment initiation failed. Gateway not configured or unavailable.",
+        };
       }
 
       const mappedIntent: PaymentIntent = {
-        id: insertedIntent.id,
-        organizationId: insertedIntent.organization_id,
-        intentReference: insertedIntent.intent_reference,
-        invoiceId: insertedIntent.invoice_id,
-        patientId: insertedIntent.patient_id,
-        payableAmount: Number(insertedIntent.payable_amount),
-        currency: insertedIntent.currency,
-        provider: insertedIntent.provider,
-        status: initResult.success ? "AUTHORIZED" : "FAILED",
-        idempotencyKey: insertedIntent.idempotency_key,
-        providerSessionId: initResult.paymentId,
-        checkoutUrl: initResult.redirectGatewayUrl,
-        expiresAt: insertedIntent.expires_at,
-        createdAt: insertedIntent.created_at,
-        updatedAt: insertedIntent.updated_at,
-        // Compatibility aliases
-        intentNumber: insertedIntent.intent_reference,
-        amount: Number(insertedIntent.payable_amount),
-        providerPaymentId: initResult.paymentId,
-        redirectUrl: initResult.redirectGatewayUrl,
+        id: edgeRes.paymentIntentId,
+        organizationId: params.organizationId,
+        intentReference: edgeRes.intentReference,
+        invoiceId: params.invoiceId,
+        payableAmount: edgeRes.payableAmount,
+        currency: edgeRes.currency || "BDT",
+        provider: edgeRes.provider,
+        status: "PENDING",
+        checkoutUrl: edgeRes.checkoutUrl,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       return {
-        success: initResult.success,
+        success: true,
         intent: mappedIntent,
-        initiateResult: initResult,
-        error: initResult.errorMessage,
+        initiateResult: {
+          success: true,
+          provider: params.provider,
+          paymentId: edgeRes.intentReference,
+          redirectGatewayUrl: edgeRes.checkoutUrl || "",
+        },
       };
     } catch (err) {
       return {
@@ -275,7 +147,10 @@ export class PaymentService {
   }
 
   /**
-   * Verifies an online payment and executes atomic settlement in database.
+   * Verifies an online payment via server-side Edge Function and records settlement.
+   * Invokes `payment-callback` which verifies provider transaction and executes
+   * `verify_and_record_online_payment` database RPC atomically.
+   * Zero browser-side gateway secret handling.
    */
   static async verifyAndSettlePayment(params: {
     paymentIntentId: string;
@@ -302,76 +177,44 @@ export class PaymentService {
         return { success: true, error: "Payment already successfully verified and settled." };
       }
 
-      // Verify with provider adapter
-      const adapter = await this.getProviderAdapter(intent.organization_id, intent.provider);
-      const verifyResult: ProviderVerifyResult = await adapter.verifyPayment({
-        paymentId: intent.provider_session_id || intent.intent_reference,
-        rawPayload: params.rawPayload,
+      // Delegate verification and atomic DB settlement RPC (verify_and_record_online_payment) to secure Edge Function
+      const { data: edgeRes, error: edgeErr } = await supabase.functions.invoke("payment-callback", {
+        body: {
+          provider: intent.provider,
+          intentReference: intent.intent_reference,
+          providerTransactionId: (params.rawPayload?.trx_id as string) || (params.rawPayload?.tran_id as string) || intent.intent_reference,
+          paidAmount: Number(intent.payable_amount),
+          rawPayload: params.rawPayload,
+        },
       });
 
-      if (!verifyResult.success || verifyResult.status !== "COMPLETED") {
-        await supabase
-          .from("payment_intents")
-          .update({
-            status: "FAILED",
-            failure_reason: verifyResult.errorMessage || "Payment provider verification declined transaction.",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", intent.id);
-
+      if (edgeErr || !edgeRes || !edgeRes.success) {
         return {
           success: false,
-          error: verifyResult.errorMessage || "Payment provider verification declined transaction.",
+          error: edgeRes?.error || edgeErr?.message || "Payment verification declined transaction.",
         };
       }
 
-      // Execute atomic DB settlement RPC
-      const { data: rpcResult, error: rpcError } = await supabase.rpc(
-        "verify_and_record_online_payment",
-        {
-          p_org_id: intent.organization_id,
-          p_intent_id: intent.id,
-          p_provider_trx_id: verifyResult.providerTransactionId,
-          p_paid_amount: verifyResult.amount,
-          p_gateway_method: intent.provider,
-        }
-      );
-
-      if (rpcError) {
-        return {
-          success: false,
-          error: `Database payment commit failed: ${rpcError.message}`,
-        };
-      }
-
-      const res = rpcResult as {
-        success: boolean;
-        payment_id?: string;
-        receipt_number?: string;
-        error?: string;
-      };
-
-      if (!res.success) {
-        return { success: false, error: res.error || "Payment recording failed" };
-      }
+      const receiptNumber = edgeRes.receipt_number;
+      const paymentId = edgeRes.payment_id;
 
       // Queue patient SMS receipt if patient phone is available
       const rawPatient = intent.invoices?.patients as { full_name?: string; phone?: string } | undefined;
-      if (rawPatient?.phone) {
+      if (rawPatient?.phone && paymentId) {
         await NotificationOutboxService.enqueueNotification({
           organizationId: intent.organization_id,
           channel: "SMS",
           notificationType: "BILL_RECEIPT",
           recipient: rawPatient.phone,
           patientId: intent.patient_id,
-          sourceReferenceId: res.payment_id,
-          idempotencyKey: `rcpt_${res.payment_id}_sms`,
+          sourceReferenceId: paymentId,
+          idempotencyKey: `rcpt_${paymentId}_sms`,
           variables: {
             patient_name: rawPatient.full_name || "Patient",
-            amount: verifyResult.amount,
+            amount: Number(intent.payable_amount),
             invoice_number: intent.invoices?.invoice_number || intent.invoice_id,
-            due_amount: Math.max(0, Number(intent.invoices?.due_amount || 0) - verifyResult.amount),
-            receipt_url: `${PRODUCTION_SITE_URL}/receipts/${res.receipt_number}`,
+            due_amount: Math.max(0, Number(intent.invoices?.due_amount || 0) - Number(intent.payable_amount)),
+            receipt_url: `${PRODUCTION_SITE_URL}/receipts/${receiptNumber}`,
             hospital_name: "Onnesha Hospital",
           },
         });
@@ -379,8 +222,8 @@ export class PaymentService {
 
       return {
         success: true,
-        receiptNumber: res.receipt_number,
-        paymentId: res.payment_id,
+        receiptNumber,
+        paymentId,
       };
     } catch (err) {
       return {
