@@ -3,38 +3,56 @@
  * 
  * Supports bKash Tokenized Checkout, Nagad Direct Merchant API,
  * and SSLCommerz Session Redirect / IPN.
+ * 
+ * Invariants:
+ * - Authoritative DB columns: intent_reference, payable_amount, provider_session_id, checkout_url, status
+ * - Authoritative DB statuses: CREATED, PENDING, AUTHORIZED, PAID, FAILED, EXPIRED, REFUNDED
  */
 
 export type PaymentProvider = "BKASH" | "NAGAD" | "SSLCOMMERZ";
 
 export type PaymentIntentStatus =
+  | "CREATED"
   | "PENDING"
+  | "AUTHORIZED"
+  | "PAID"
+  | "FAILED"
+  | "EXPIRED"
+  | "REFUNDED"
+  // Backward compatibility aliases
   | "PROCESSING"
   | "SUCCEEDED"
-  | "FAILED"
   | "CANCELLED"
-  | "REFUNDED"
   | "PARTIALLY_REFUNDED";
 
 export interface PaymentIntent {
   id: string;
   organizationId: string;
-  intentNumber: string;
+  intentReference: string;
   invoiceId: string;
   patientId?: string | null;
-  amount: number;
+  payableAmount: number;
   currency: string;
   provider: PaymentProvider;
   status: PaymentIntentStatus;
+  idempotencyKey?: string;
+  providerSessionId?: string | null;
   providerTransactionId?: string | null;
-  providerPaymentId?: string | null;
-  clientIp?: string | null;
-  redirectUrl?: string | null;
-  webhookReceivedAt?: string | null;
+  checkoutUrl?: string | null;
+  expiresAt?: string;
   verifiedAt?: string | null;
-  metadata?: Record<string, unknown> | null;
+  failureReason?: string | null;
   createdAt: string;
   updatedAt: string;
+
+  // Backward-compatibility field aliases:
+  intentNumber?: string;
+  amount?: number;
+  providerPaymentId?: string | null;
+  redirectUrl?: string | null;
+  clientIp?: string | null;
+  webhookReceivedAt?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface CreatePaymentIntentParams {

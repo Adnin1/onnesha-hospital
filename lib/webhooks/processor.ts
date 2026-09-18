@@ -26,7 +26,7 @@ export class WebhookProcessor {
       if (params.providerEventId) {
         const { data: existing } = await supabase
           .from("webhook_events")
-          .select("id, status")
+          .select("id, processing_status")
           .eq("provider", params.provider)
           .eq("provider_event_id", params.providerEventId)
           .maybeSingle();
@@ -44,9 +44,9 @@ export class WebhookProcessor {
           provider: params.provider,
           event_type: params.eventType,
           provider_event_id: params.providerEventId || null,
-          headers: params.headers,
+          signature_header: params.headers ? JSON.stringify(params.headers).slice(0, 250) : null,
           payload: params.payload,
-          status: "RECEIVED",
+          processing_status: "RECEIVED",
         })
         .select("id")
         .single();
@@ -66,7 +66,7 @@ export class WebhookProcessor {
           const { data: intent } = await supabase
             .from("payment_intents")
             .select("id")
-            .eq("intent_number", tranId)
+            .eq("intent_reference", tranId)
             .maybeSingle();
 
           if (intent) {
@@ -99,7 +99,7 @@ export class WebhookProcessor {
         await supabase
           .from("webhook_events")
           .update({
-            status: "PROCESSED",
+            processing_status: "PROCESSED",
             processed_at: new Date().toISOString(),
           })
           .eq("id", logId);

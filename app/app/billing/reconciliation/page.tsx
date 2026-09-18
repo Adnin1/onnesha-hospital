@@ -5,9 +5,9 @@ import { createClient } from "@/lib/supabase/client";
 
 interface PaymentIntentRecord {
   id: string;
-  intent_number: string;
+  intent_reference: string;
   invoice_id: string;
-  amount: number;
+  payable_amount: number;
   provider: string;
   status: string;
   provider_transaction_id: string | null;
@@ -25,7 +25,7 @@ export default function PaymentReconciliationPage() {
       const supabase = createClient();
       let query = supabase
         .from("payment_intents")
-        .select("id, intent_number, invoice_id, amount, provider, status, provider_transaction_id, created_at")
+        .select("id, intent_reference, invoice_id, payable_amount, provider, status, provider_transaction_id, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -89,7 +89,7 @@ export default function PaymentReconciliationPage() {
           <table className="w-full text-left text-sm">
             <thead className="border-b bg-zinc-50 text-xs uppercase text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950">
               <tr>
-                <th className="px-4 py-3">Intent #</th>
+                <th className="px-4 py-3">Intent Ref</th>
                 <th className="px-4 py-3">Provider</th>
                 <th className="px-4 py-3">Amount</th>
                 <th className="px-4 py-3">Provider TrxID</th>
@@ -101,7 +101,7 @@ export default function PaymentReconciliationPage() {
               {intents.map((item) => (
                 <tr key={item.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40">
                   <td className="px-4 py-3 font-mono text-xs font-medium text-zinc-800 dark:text-zinc-200">
-                    {item.intent_number}
+                    {item.intent_reference}
                   </td>
                   <td className="px-4 py-3">
                     <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-semibold dark:bg-zinc-800">
@@ -109,7 +109,7 @@ export default function PaymentReconciliationPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 font-semibold text-zinc-900 dark:text-white">
-                    ৳{Number(item.amount).toLocaleString()}
+                    ৳{Number(item.payable_amount).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-zinc-600 dark:text-zinc-400">
                     {item.provider_transaction_id || "—"}
@@ -117,9 +117,9 @@ export default function PaymentReconciliationPage() {
                   <td className="px-4 py-3">
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                        item.status === "SUCCEEDED"
+                        item.status === "PAID" || item.status === "SUCCEEDED"
                           ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                          : item.status === "PROCESSING"
+                          : item.status === "PENDING" || item.status === "AUTHORIZED" || item.status === "PROCESSING"
                           ? "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300"
                           : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
                       }`}

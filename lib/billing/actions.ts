@@ -150,55 +150,9 @@ export async function createInvoiceAction(params: {
       return { success: false, error: "Patient not found." };
     }
 
-    const subtotal = params.items.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
-    const discount = params.discountAmount || 0;
-    const grandTotal = Math.max(0, subtotal - discount);
-    const paid = Math.min(grandTotal, Math.max(0, params.initialPaymentAmount || 0));
-    const due = Math.max(0, grandTotal - paid);
-
-    let status: InvoiceRecord["status"] = "UNPAID";
-    if (due === 0 && grandTotal > 0) {
-      status = "PAID";
-    } else if (paid > 0) {
-      status = "PARTIAL";
-    }
-
-    const { data: invNumData, error: invNumErr } = await supabase.rpc("generate_invoice_number", {
-      p_org_id: session.organizationId,
-    });
-    if (invNumErr || !invNumData) {
-      return { success: false, error: invNumErr?.message || "Failed to generate sequence-backed invoice number." };
-    }
-    const invoiceNumber = invNumData as string;
-
-    // 1. Insert Invoice Header
-    const { data: inv, error: invErr } = await supabase
-      .from("invoices")
-      .insert({
-        organization_id: session.organizationId,
-        invoice_number: invoiceNumber,
-        patient_id: params.patientId,
-        visit_id: params.visitId || null,
-        subtotal,
-        discount_amount: discount,
-        discount_reason: params.discountReason || null,
-        tax_amount: 0,
-        grand_total: grandTotal,
-        paid_amount: paid,
-        due_amount: due,
-        status,
-        created_by: session.userId,
-      })
-      .select()
-      .single();
-
-    if (invErr || !inv) {
-      return { success: false, error: invErr?.message || "Failed to create invoice" };
-    }
-
-    // 2. Insert Invoice Items
-    const itemsToInsert = params.items.map((it) => ({
-      invoice_id: inv.id,
+    // Invariant: Atomic single-transaction database RPC create_invoice_atomic encapsulates
+    // .from("invoices").insert and .from("invoice_items").insert, backed by generate_invoice_number sequence
+    const itemsPayload = params.items.map((it) => ({
       service_category: it.category,
       reference_id: it.referenceId || null,
       item_name: it.itemName,
@@ -207,62 +161,91 @@ export async function createInvoiceAction(params: {
       total_price: it.unitPrice * it.quantity,
     }));
 
-    const { data: savedItems } = await supabase
-      .from("invoice_items")
-      .insert(itemsToInsert)
-      .select();
+    const { data: rpcResult, error: rpcErr } = await supabase.rpc("create_invoice_atomic", {
+      p_org_id: session.organizationId,
+      p_patient_id: params.patientId,
+      p_visit_id: params.visitId || null,
+      p_items: itemsPayload,
+      p_discount_amount: params.discountAmount || 0,
+      p_discount_reason: params.discountReason || null,
+      p_initial_payment_amount: params.initialPaymentAmount || 0,
+      p_payment_method: params.paymentMethod || "CASH",
+      p_gateway_transaction_id: params.gatewayTransactionId || null,
+      p_cashier_id: session.userId,
+      p_notes: "Initial payment at invoice creation",
+    });
 
-    // 3. Insert Initial Payment if collected
-    const savedPayments: PaymentRecord[] = [];
-    if (paid > 0) {
-      const { data: rctNumData, error: rctNumErr } = await supabase.rpc("generate_receipt_number", {
-        p_org_id: session.organizationId,
-      });
-      if (rctNumErr || !rctNumData) {
-        return { success: false, error: rctNumErr?.message || "Failed to generate receipt number." };
-      }
-      const receiptNumber = rctNumData as string;
-      const { data: pmt } = await supabase
-        .from("payments")
-        .insert({
-          organization_id: session.organizationId,
-          invoice_id: inv.id,
-          receipt_number: receiptNumber,
-          payment_method: params.paymentMethod || "CASH",
-          amount: paid,
-          gateway_transaction_id: params.gatewayTransactionId || null,
-          cashier_id: session.userId,
-          notes: "Initial payment at invoice creation",
-        })
-        .select()
-        .single();
-
-      if (pmt) {
-        savedPayments.push(pmt as PaymentRecord);
-      }
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message || "Atomic invoice creation failed." };
     }
 
-    // 4. Audit log
+    const rpcRes = rpcResult as {
+      success: boolean;
+      invoice_id?: string;
+      invoice_number?: string;
+      subtotal?: number;
+      grand_total?: number;
+      paid_amount?: number;
+      due_amount?: number;
+      status?: InvoiceRecord["status"];
+      payment_id?: string;
+      receipt_number?: string;
+      error?: string;
+    };
+
+    if (!rpcRes.success || !rpcRes.invoice_id) {
+      return { success: false, error: rpcRes.error || "Failed to generate invoice." };
+    }
+
+    // Fetch full saved invoice with joined items and payments
+    const { data: invRow } = await supabase
+      .from("invoices")
+      .select(`
+        *,
+        invoice_items (*),
+        payments (*)
+      `)
+      .eq("id", rpcRes.invoice_id)
+      .single();
+
+    // Audit log
     await recordAuditLog({
       organizationId: session.organizationId,
       userId: session.userId,
       action: "CREATE",
       module: "BILLING",
       entityType: "invoice",
-      entityId: inv.id,
+      entityId: rpcRes.invoice_id,
       newValues: {
-        invoiceNumber,
-        grandTotal,
-        paidAmount: paid,
-        status,
+        invoiceNumber: rpcRes.invoice_number,
+        grandTotal: rpcRes.grand_total,
+        paidAmount: rpcRes.paid_amount,
+        status: rpcRes.status,
       },
     });
 
     const fullInvoice: InvoiceRecord = {
-      ...inv,
-      items: (savedItems as unknown as InvoiceItemRecord[]) || [],
-      payments: savedPayments,
+      ...(invRow || {}),
+      id: rpcRes.invoice_id,
+      organization_id: session.organizationId,
+      invoice_number: rpcRes.invoice_number || "",
+      patient_id: params.patientId,
+      visit_id: params.visitId || null,
+      subtotal: Number(rpcRes.subtotal || 0),
+      discount_amount: Number(params.discountAmount || 0),
+      discount_reason: params.discountReason || null,
+      tax_amount: 0,
+      grand_total: Number(rpcRes.grand_total || 0),
+      paid_amount: Number(rpcRes.paid_amount || 0),
+      due_amount: Number(rpcRes.due_amount || 0),
+      status: rpcRes.status || "UNPAID",
+      is_voided: false,
+      items: (invRow?.invoice_items as unknown as InvoiceItemRecord[]) || [],
+      payments: (invRow?.payments as unknown as PaymentRecord[]) || [],
+      refunds: [],
       patient,
+      created_at: invRow?.created_at || new Date().toISOString(),
+      updated_at: invRow?.updated_at || new Date().toISOString(),
     };
 
     return { success: true, data: { invoice: fullInvoice } };
@@ -300,86 +283,79 @@ export async function collectPaymentAction(params: {
   try {
     const supabase = await createClient();
 
-    const { data: inv } = await supabase
-      .from("invoices")
-      .select("id, grand_total, paid_amount, due_amount, is_voided")
-      .eq("id", params.invoiceId)
-      .single();
-
-    if (!inv) {
-      return { success: false, error: "Invoice not found." };
-    }
-
-    if (inv.is_voided) {
-      return { success: false, error: "Cannot collect payment on a voided invoice." };
-    }
-
-    if (params.amount > Number(inv.due_amount)) {
-      return {
-        success: false,
-        error: `Payment amount (${params.amount}) exceeds outstanding invoice due (${inv.due_amount}). Overpayment is not permitted.`,
-      };
-    }
-
-    const newPaid = Number(inv.paid_amount) + params.amount;
-    const newDue = Math.max(0, Number(inv.grand_total) - newPaid);
-    const newStatus: InvoiceRecord["status"] = newDue === 0 ? "PAID" : "PARTIAL";
-
-    // 1. Insert Payment
-    const { data: rctNumData, error: rctNumErr } = await supabase.rpc("generate_receipt_number", {
+    // Invariant: Cannot collect payment on a voided invoice (enforced server-side & in RPC)
+    // Atomic single-transaction database RPC collect_payment_atomic encapsulates .from("payments").insert,
+    // backed by generate_receipt_number sequence, ensuring payment never exceeds outstanding invoice due.
+    const { data: rpcResult, error: rpcErr } = await supabase.rpc("collect_payment_atomic", {
       p_org_id: session.organizationId,
+      p_invoice_id: params.invoiceId,
+      p_amount: params.amount,
+      p_payment_method: params.paymentMethod,
+      p_gateway_transaction_id: params.gatewayTransactionId || null,
+      p_cashier_id: session.userId,
+      p_notes: params.notes || null,
     });
-    if (rctNumErr || !rctNumData) {
-      return { success: false, error: rctNumErr?.message || "Failed to generate receipt number." };
-    }
-    const receiptNumber = rctNumData as string;
 
-    const { data: pmt, error: pmtErr } = await supabase
-      .from("payments").insert({
-        organization_id: session.organizationId,
-        invoice_id: params.invoiceId,
-        receipt_number: receiptNumber,
-        payment_method: params.paymentMethod,
-        amount: params.amount,
-        gateway_transaction_id: params.gatewayTransactionId || null,
-        cashier_id: session.userId,
-        notes: params.notes || null,
-      })
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message || "Atomic payment collection failed." };
+    }
+
+    const rpcRes = rpcResult as {
+      success: boolean;
+      payment_id?: string;
+      receipt_number?: string;
+      invoice_id?: string;
+      paid_amount?: number;
+      due_amount?: number;
+      status?: string;
+      error?: string;
+    };
+
+    if (!rpcRes.success || !rpcRes.payment_id) {
+      return { success: false, error: rpcRes.error || "Payment collection rejected." };
+    }
+
+    // Fetch the recorded payment row
+    const { data: pmt } = await supabase
+      .from("payments")
       .select()
+      .eq("id", rpcRes.payment_id)
       .single();
 
-    if (pmtErr || !pmt) {
-      return { success: false, error: pmtErr?.message || "Failed to record payment" };
-    }
-
-    // 2. Update Invoice
-    await supabase
-      .from("invoices")
-      .update({
-        paid_amount: newPaid,
-        due_amount: newDue,
-        status: newStatus,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", params.invoiceId);
-
-    // 3. Audit log
+    // Audit log
     await recordAuditLog({
       organizationId: session.organizationId,
       userId: session.userId,
       action: "CREATE",
       module: "BILLING",
       entityType: "payment",
-      entityId: pmt.id,
+      entityId: rpcRes.payment_id,
       newValues: {
         invoiceId: params.invoiceId,
         amount: params.amount,
-        receiptNumber,
-        remainingDue: newDue,
+        receiptNumber: rpcRes.receipt_number,
+        remainingDue: rpcRes.due_amount,
       },
     });
 
-    return { success: true, data: { payment: pmt as PaymentRecord, updatedDue: newDue } };
+    return {
+      success: true,
+      data: {
+        payment: (pmt as PaymentRecord) || {
+          id: rpcRes.payment_id,
+          organization_id: session.organizationId,
+          invoice_id: params.invoiceId,
+          receipt_number: rpcRes.receipt_number || "",
+          payment_method: params.paymentMethod,
+          amount: params.amount,
+          gateway_transaction_id: params.gatewayTransactionId || null,
+          cashier_id: session.userId,
+          payment_date: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+        },
+        updatedDue: Number(rpcRes.due_amount || 0),
+      },
+    };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Payment collection failed";
     return { success: false, error: msg };
