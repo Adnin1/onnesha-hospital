@@ -2,7 +2,7 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { checkSystemHealth, getPublicHealthCheck, sanitizeErrorForTelemetry } from "../lib/health.ts";
+import { checkSystemHealth, getPublicHealthCheck, sanitizeErrorForTelemetry } from "../lib/health-core.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 

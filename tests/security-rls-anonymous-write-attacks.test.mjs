@@ -12,8 +12,13 @@ test('Security RLS: Anonymous Write Attack Mitigation Suite', async (t) => {
   });
 
   // Verify connectivity before running remote API assertions
-  const { error: pingError } = await anonClient.from('organizations').select('id').limit(1);
-  if (pingError && (pingError.message?.includes('fetch') || pingError.message?.includes('network') || pingError.message?.includes('ENOTFOUND'))) {
+  try {
+    const { error: pingError } = await anonClient.from('organizations').select('id').limit(1);
+    if (pingError && (pingError.message?.includes('fetch') || pingError.message?.includes('network') || pingError.message?.includes('ENOTFOUND'))) {
+      console.log('Skipping remote RLS network test suite in network-restricted CI runner.');
+      return;
+    }
+  } catch {
     console.log('Skipping remote RLS network test suite in network-restricted CI runner.');
     return;
   }
