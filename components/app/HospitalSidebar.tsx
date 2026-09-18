@@ -58,6 +58,14 @@ export function HospitalSidebar() {
     } catch {
       // Ignored
     }
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch {
+        // Storage access might be restricted in some privacy modes
+      }
+    }
     router.push("/login");
   };
 
