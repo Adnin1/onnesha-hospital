@@ -31,9 +31,12 @@ for (const file of testFiles) {
 
   if (res.status !== 0) {
     failCount++;
-    console.error(`\n❌ FAILED: ${relPath} (exit code: ${res.status})`);
-    if (res.stdout) console.error(res.stdout);
-    if (res.stderr) console.error(res.stderr);
+    console.error(`\n========================================`);
+    console.error(`❌ FAILED: ${relPath} (exit code: ${res.status})`);
+    console.error(`========================================`);
+    console.error(`STDOUT:\n${res.stdout}`);
+    console.error(`STDERR:\n${res.stderr}`);
+    console.error(`========================================\n`);
   } else {
     process.stdout.write('✓');
   }
