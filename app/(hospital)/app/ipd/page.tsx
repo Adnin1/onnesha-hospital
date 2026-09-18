@@ -223,12 +223,15 @@ export default function IPDAdmissionsPage() {
 
     try {
       const supabase = createClient();
-      // Resolve patient by code or id
-      const { data: patient } = await supabase
-        .from("patients")
-        .select("id")
-        .or(`patient_code.eq.${admissionForm.patientCodeOrId.trim()},id.eq.${admissionForm.patientCodeOrId.trim()}`)
-        .single();
+      const trimmedInput = admissionForm.patientCodeOrId.trim();
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmedInput);
+      let pQuery = supabase.from("patients").select("id");
+      if (isUuid) {
+        pQuery = pQuery.eq("id", trimmedInput);
+      } else {
+        pQuery = pQuery.eq("patient_code", trimmedInput.replace(/[^a-zA-Z0-9_-]/g, ""));
+      }
+      const { data: patient } = await pQuery.maybeSingle();
 
       if (!patient) {
         setActionError("Patient not found. Please provide a valid Patient Code or ID.");
