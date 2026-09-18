@@ -1,14 +1,14 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
 ## FINAL ZERO-GAP PRODUCTION RECOVERY & RUNTIME CERTIFICATION REPORT
 
-**Document ID:** `DOC-OHMS-ZERO-GAP-CERT-20260918-FINAL`  
-**Generated At:** `2026-09-18T21:45:00+06:00`  
+**Document ID:** `DOC-OHMS-ZERO-GAP-CERT-20260919-FINAL`  
+**Generated At:** `2026-09-19T01:25:00+06:00`  
 **Repository:** `https://github.com/Adnin1/onnesha-hospital`  
 **Branch:** `main`  
-**Tested Source Commit:** `52b128d194af092a9617d9e3ad43135dbd29329e`  
-**GitHub Remote `origin/main` Commit:** `52b128d194af092a9617d9e3ad43135dbd29329e`  
+**Tested Source Commit:** `84406ef289e6367d53aee9210e8868898a10cb45`  
+**GitHub Remote `origin/main` Commit:** `84406ef289e6367d53aee9210e8868898a10cb45`  
 **Cloudflare Canonical Production URL:** https://onnesha-hospital.pages.dev (HTTP 200 OK)  
-**Cloudflare Active Preview Deployment:** https://ac8a1f86.onnesha-hospital.pages.dev (HTTP 200 OK)  
+**Cloudflare Active Preview Deployment:** https://3eb646d2.onnesha-hospital.pages.dev (HTTP 200 OK)  
 **Supabase Remote Project Ref:** `iuhtzahuszdkdarhxobx` (PostgreSQL 17.6, Region: `ap-southeast-1`, Status: `ACTIVE_HEALTHY`)  
 **Canonical Organization UUID:** `a0000000-0000-0000-0000-000000000001`  
 
@@ -16,10 +16,10 @@
 
 ### Invariant & Source Parity Audit
 
-$$\text{LOCAL TESTED COMMIT (52b128d)} = \text{ORIGIN/MAIN (52b128d)} = \text{GITHUB MAIN (52b128d)} = \text{DEPLOYED SOURCE}$$
+$$\text{LOCAL TESTED COMMIT (84406ef)} = \text{ORIGIN/MAIN (84406ef)} = \text{GITHUB MAIN (84406ef)} = \text{DEPLOYED SOURCE}$$
 
 - **Working Tree State:** Clean (`git status --porcelain` returns 0 output).
-- **Git Commit Parity:** 100% in lockstep with `origin/main` under commit `52b128d194af092a9617d9e3ad43135dbd29329e`.
+- **Git Commit Parity:** 100% in lockstep with `origin/main` under commit `84406ef289e6367d53aee9210e8868898a10cb45`.
 
 ---
 
