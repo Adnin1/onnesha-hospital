@@ -5,7 +5,11 @@
 **Generated At:** `2026-09-19T14:25:00+06:00`  
 **Repository:** `https://github.com/Adnin1/onnesha-hospital`  
 **Branch:** `main`  
-**Cloudflare Canonical Production URL:** https://onnesha-hospital.pages.dev  
+**Tested Source Commit:** `7df09153b3109450afbd2f167cc5619423fa6be0`  
+**GitHub Remote `origin/main` Commit:** `7df09153b3109450afbd2f167cc5619423fa6be0`  
+**GitHub Actions Verified Run ID:** `35431817676` (Ubuntu: SUCCESS, Windows: SUCCESS)  
+**Cloudflare Canonical Production URL:** https://onnesha-hospital.pages.dev (HTTP 200 OK)  
+**Cloudflare Active Deployment:** https://c6d9abbd.onnesha-hospital.pages.dev (HTTP 200 OK)  
 **Supabase Remote Project Ref:** `iuhtzahuszdkdarhxobx` (PostgreSQL 17.6, Region: `ap-southeast-1`, Status: `ACTIVE_HEALTHY`)  
 **Canonical Organization UUID:** `a0000000-0000-0000-0000-000000000001`  
 
