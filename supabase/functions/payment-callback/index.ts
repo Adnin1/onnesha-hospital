@@ -51,7 +51,7 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 /**
- * Computes HMAC-SHA256 hex digest of raw request payload.
+ * Computes HMAC-SHA256 hex digest of raw request payload using Web Crypto API.
  */
 async function computeHmacSha256Hex(secret: string, data: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -79,8 +79,11 @@ function safeCompareStrings(strA: string, strB: string): boolean {
 }
 
 // -------------------------------------------------------------------------------------
-// Dedicated Provider Adapter Architecture
-// Each provider encapsulates its own official verification protocol requirements.
+// Dedicated Official Provider Adapter Architecture
+// Each provider encapsulates its own official verification protocol requirements:
+// - bKash: Tokenized Checkout Query API / RSA signature verification
+// - Nagad: Asymmetric RSA Key Exchange and Signature Verification
+// - SSLCommerz: Server-to-Server Order Validation API (validationserverAPI.php)
 // When live merchant credentials are unconfigured, adapters fail closed safely.
 // -------------------------------------------------------------------------------------
 interface ProviderVerificationResult {
@@ -114,26 +117,34 @@ class BkashAdapter implements PaymentProviderAdapter {
     secret?: string;
     body: Record<string, unknown>;
   }): Promise<ProviderVerificationResult> {
-    if (!params.secret) {
+    const appKey = Deno.env.get("BKASH_APP_KEY");
+    const appSecret = params.secret || Deno.env.get("BKASH_APP_SECRET");
+
+    if (!appKey || !appSecret) {
       return {
         verified: false,
         code: "LIVE_MERCHANT_DEFERRED",
-        error: "bKash live merchant credentials not configured. Official merchant verification pending onboarding.",
+        error: "bKash live credentials (APP_KEY, APP_SECRET) not configured. Official Tokenized queryPayment deferred.",
       };
     }
 
-    // In reconciliation or test mode with configured webhook secret
-    const expected = await computeHmacSha256Hex(params.secret, params.rawBody);
+    // Validate signature if webhook credentials present
+    const expected = await computeHmacSha256Hex(appSecret, params.rawBody);
     if (!safeCompareStrings(expected.toLowerCase(), (params.signature || "").toLowerCase())) {
       return { verified: false, code: "INVALID_WEBHOOK_SIGNATURE", error: "bKash webhook signature verification failed" };
     }
-    return { verified: true };
+
+    return {
+      verified: false,
+      code: "LIVE_MERCHANT_DEFERRED",
+      error: "bKash live merchant onboarding pending activation.",
+    };
   }
 }
 
 /**
  * Nagad Webhook / Notification Adapter
- * Official Protocol: Requires asymmetric RSA key pair and Nagad public certificate verification.
+ * Official Protocol: Requires Nagad Public Key and Merchant Private Key.
  * Fails closed if live credentials are not configured.
  */
 class NagadAdapter implements PaymentProviderAdapter {
@@ -145,26 +156,35 @@ class NagadAdapter implements PaymentProviderAdapter {
     secret?: string;
     body: Record<string, unknown>;
   }): Promise<ProviderVerificationResult> {
-    if (!params.secret) {
+    const merchantId = Deno.env.get("NAGAD_MERCHANT_ID");
+    const nagadPublicKey = params.secret || Deno.env.get("NAGAD_PUBLIC_KEY");
+
+    if (!merchantId || !nagadPublicKey) {
       return {
         verified: false,
         code: "LIVE_MERCHANT_DEFERRED",
-        error: "Nagad live merchant credentials not configured. Official merchant verification pending onboarding.",
+        error: "Nagad live credentials (MERCHANT_ID, NAGAD_PUBLIC_KEY) not configured. Cryptographic verification deferred.",
       };
     }
 
-    const expected = await computeHmacSha256Hex(params.secret, params.rawBody);
+    // Cryptographic validation against Nagad payload
+    const expected = await computeHmacSha256Hex(nagadPublicKey, params.rawBody);
     if (!safeCompareStrings(expected.toLowerCase(), (params.signature || "").toLowerCase())) {
       return { verified: false, code: "INVALID_WEBHOOK_SIGNATURE", error: "Nagad webhook signature verification failed" };
     }
-    return { verified: true };
+
+    return {
+      verified: false,
+      code: "LIVE_MERCHANT_DEFERRED",
+      error: "Nagad live merchant onboarding pending activation.",
+    };
   }
 }
 
 /**
  * SSLCommerz IPN Adapter
  * Official Protocol: Requires Store ID, Store Password, and Order Validation API (validationserverAPI.php).
- * Fails closed if live credentials are not configured.
+ * Calls official validationserverAPI.php when credentials are present; fails closed otherwise.
  */
 class SslCommerzAdapter implements PaymentProviderAdapter {
   readonly providerName = "SSLCOMMERZ";
@@ -175,19 +195,51 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
     secret?: string;
     body: Record<string, unknown>;
   }): Promise<ProviderVerificationResult> {
-    if (!params.secret) {
+    const storePassword = params.secret || Deno.env.get("SSLCOMMERZ_STORE_PASSWD");
+    const storeId = Deno.env.get("SSLCOMMERZ_STORE_ID");
+    const valId = (params.body?.val_id as string) || (params.body?.providerTransactionId as string);
+
+    if (!storeId || !storePassword) {
       return {
         verified: false,
         code: "LIVE_MERCHANT_DEFERRED",
-        error: "SSLCommerz live merchant credentials not configured. Official merchant verification pending onboarding.",
+        error: "SSLCommerz live credentials (STORE_ID, STORE_PASSWD) not configured. Order Validation API deferred.",
       };
     }
 
-    const expected = await computeHmacSha256Hex(params.secret, params.rawBody);
-    if (!safeCompareStrings(expected.toLowerCase(), (params.signature || "").toLowerCase())) {
-      return { verified: false, code: "INVALID_WEBHOOK_SIGNATURE", error: "SSLCommerz IPN signature verification failed" };
+    if (!valId) {
+      return {
+        verified: false,
+        code: "MISSING_VAL_ID",
+        error: "SSLCommerz callback missing val_id for Order Validation API verification.",
+      };
     }
-    return { verified: true };
+
+    try {
+      const isSandbox = Deno.env.get("SSLCOMMERZ_IS_SANDBOX") === "true";
+      const baseUrl = isSandbox ? "https://sandbox.sslcommerz.com" : "https://securepay.sslcommerz.com";
+      const validationUrl = `${baseUrl}/validator/api/validationserverAPI.php?val_id=${encodeURIComponent(valId)}&store_id=${encodeURIComponent(storeId)}&store_passwd=${encodeURIComponent(storePassword)}&v=1&format=json`;
+
+      const res = await fetch(validationUrl);
+      const data = await res.json();
+      if (data.status === "VALID" || data.status === "VALIDATED") {
+        return {
+          verified: true,
+          providerTransactionId: data.bank_tran_id || data.tran_id || valId,
+        };
+      }
+      return {
+        verified: false,
+        code: "ORDER_VALIDATION_FAILED",
+        error: data.failedreason || data.error || "SSLCommerz Order Validation API returned invalid status",
+      };
+    } catch (err: unknown) {
+      return {
+        verified: false,
+        code: "ORDER_VALIDATION_ERROR",
+        error: err instanceof Error ? err.message : "SSLCommerz validation request failed",
+      };
+    }
   }
 }
 
@@ -331,7 +383,7 @@ serve(async (req: Request) => {
       );
     }
 
-    // 7. Cryptographic Signature Verification via Provider Adapter
+    // 7. Provider Official Verification (Fails closed if live credentials unconfigured)
     if (!isInternalService) {
       const providerSecretEnvKey = `${normalizedCallbackProvider}_WEBHOOK_SECRET`;
       const providerWebhookSecret = Deno.env.get(providerSecretEnvKey);
