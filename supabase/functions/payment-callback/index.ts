@@ -198,10 +198,20 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
       const baseUrl = isSandbox ? "https://sandbox.sslcommerz.com" : "https://securepay.sslcommerz.com";
       const validationUrl = `${baseUrl}/validator/api/validationserverAPI.php?val_id=${encodeURIComponent(valId)}&store_id=${encodeURIComponent(storeId)}&store_passwd=${encodeURIComponent(storePassword)}&v=1&format=json`;
 
-      const res = await fetch(validationUrl);
+      // Bounded 10-second timeout prevents hung requests
+      const res = await fetch(validationUrl, { signal: AbortSignal.timeout(10000) });
       const data = await res.json();
       if (data.status === "VALID" || data.status === "VALIDATED") {
-        // Authoritative verification of amount and currency against Order Validation response
+        // Strict reference matching: tran_id from gateway must match intentReference
+        if (params.body?.intentReference && data.tran_id && String(data.tran_id).trim() !== String(params.body.intentReference).trim()) {
+          return {
+            verified: false,
+            code: "REFERENCE_MISMATCH",
+            error: `SSLCommerz Order Validation transaction reference (${data.tran_id}) does not match payment intent reference (${params.body.intentReference})`,
+          };
+        }
+
+        // Authoritative verification of amount against Order Validation response
         if (params.body?.paidAmount !== undefined && params.body?.paidAmount !== null) {
           const callbackAmount = Number(params.body.paidAmount);
           const validatedAmount = Number(data.amount);
@@ -213,13 +223,16 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
             };
           }
         }
-        if (data.currency_type && String(data.currency_type).toUpperCase() !== "BDT" && String(data.currency).toUpperCase() !== "BDT") {
+
+        // Strict currency validation: BOTH currency_type and currency (if present) must be BDT
+        if (!data.currency_type || String(data.currency_type).toUpperCase() !== "BDT" || (data.currency && String(data.currency).toUpperCase() !== "BDT")) {
           return {
             verified: false,
             code: "CURRENCY_MISMATCH",
-            error: `SSLCommerz Order Validation currency (${data.currency_type || data.currency}) is not BDT`,
+            error: `SSLCommerz Order Validation currency (${data.currency_type || data.currency || "MISSING"}) is not authorized BDT`,
           };
         }
+
         return {
           verified: true,
           providerTransactionId: data.bank_tran_id || data.tran_id || valId,
@@ -234,7 +247,7 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
       return {
         verified: false,
         code: "ORDER_VALIDATION_ERROR",
-        error: err instanceof Error ? err.message : "SSLCommerz validation request failed",
+        error: err instanceof Error ? err.message : "SSLCommerz validation request failed or timed out",
       };
     }
   }
@@ -408,35 +421,33 @@ serve(async (req: Request) => {
       );
     }
 
-    // 7. Provider Official Verification (Fails closed if live credentials unconfigured)
+    // 7. Mandatory Provider Official Verification (Fails closed if live credentials unconfigured)
     let authoritativeTrxId = trimmedClientTrxId;
-    if (!isInternalService) {
-      const providerSecretEnvKey = `${normalizedCallbackProvider}_WEBHOOK_SECRET`;
-      const providerWebhookSecret = Deno.env.get(providerSecretEnvKey);
+    const providerSecretEnvKey = `${normalizedCallbackProvider}_WEBHOOK_SECRET`;
+    const providerWebhookSecret = Deno.env.get(providerSecretEnvKey);
 
-      const verification = await adapter.verifyWebhook({
-        rawBody,
-        signature: providerSig || undefined,
-        secret: providerWebhookSecret,
-        body,
-      });
+    const verification = await adapter.verifyWebhook({
+      rawBody,
+      signature: providerSig || undefined,
+      secret: providerWebhookSecret,
+      body,
+    });
 
-      if (!verification.verified) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            code: verification.code || "INVALID_WEBHOOK_SIGNATURE",
-            status: verification.code === "LIVE_MERCHANT_DEFERRED" ? "REAL_MERCHANT_DEFERRED" : undefined,
-            error: verification.error || "Provider webhook verification failed",
-          }),
-          { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
-        );
-      }
+    if (!verification.verified) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          code: verification.code || "INVALID_WEBHOOK_SIGNATURE",
+          status: verification.code === "LIVE_MERCHANT_DEFERRED" ? "REAL_MERCHANT_DEFERRED" : undefined,
+          error: verification.error || "Provider webhook verification failed",
+        }),
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
 
-      // If provider returns an authoritative transaction ID (e.g. SSLCommerz bank_tran_id), enforce it
-      if (verification.providerTransactionId && typeof verification.providerTransactionId === "string" && verification.providerTransactionId.trim().length > 0) {
-        authoritativeTrxId = verification.providerTransactionId.trim();
-      }
+    // If provider returns an authoritative transaction ID (e.g. SSLCommerz bank_tran_id), enforce it
+    if (verification.providerTransactionId && typeof verification.providerTransactionId === "string" && verification.providerTransactionId.trim().length > 0) {
+      authoritativeTrxId = verification.providerTransactionId.trim();
     }
 
     // 8. Amount verification against intent to prevent tampering
@@ -472,20 +483,25 @@ serve(async (req: Request) => {
       );
     }
 
-    if (isInternalService) {
-      await supabaseClient.from("audit_logs").insert({
-        organization_id: intent.organization_id,
-        action: "INTERNAL_RECONCILIATION_SETTLEMENT",
-        entity_type: "PAYMENT_INTENT",
-        entity_id: intent.id,
-        metadata: {
-          intent_reference: intentReference,
-          provider: intent.provider,
-          amount: parsedAmount,
-          transaction_id: authoritativeTrxId,
-          source: "internal_reconciliation_service",
-        },
-      });
+    // 10. Audit log insertion into immutable audit vault (conforms to public.audit_logs schema)
+    const { error: auditErr } = await supabaseClient.from("audit_logs").insert({
+      organization_id: intent.organization_id,
+      action: "VERIFY",
+      module: "BILLING",
+      entity_type: "PAYMENT_INTENT",
+      entity_id: String(intent.id),
+      new_values: {
+        event: isInternalService ? "INTERNAL_RECONCILIATION_SETTLEMENT" : "PROVIDER_SETTLEMENT",
+        intent_reference: intentReference,
+        provider: intent.provider,
+        amount: parsedAmount,
+        transaction_id: authoritativeTrxId,
+        source: isInternalService ? "internal_reconciliation_service" : "provider_webhook",
+        settled_at: new Date().toISOString(),
+      },
+    });
+    if (auditErr) {
+      console.error("Audit log insertion failed:", auditErr);
     }
 
     return new Response(

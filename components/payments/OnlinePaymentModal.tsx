@@ -27,7 +27,7 @@ export function OnlinePaymentModal({
   const [payingAmount, setPayingAmount] = useState<number>(dueAmount);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [sessionKey] = useState<string>(() => `idem_${invoiceId}_${Date.now()}`);
+  const [sessionKey] = useState<string>(() => `idem_${invoiceId}_${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Date.now()}`);
 
   if (!isOpen) return null;
 
@@ -45,7 +45,7 @@ export function OnlinePaymentModal({
       });
 
       if (!res.success || !res.initiateResult) {
-        setErrorMessage(res.error || "Failed to initiate online payment session.");
+        setErrorMessage(res.error || "Online payment is not configured for this hospital yet.");
         setLoading(false);
         return;
       }

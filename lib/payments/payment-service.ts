@@ -74,16 +74,7 @@ export class PaymentService {
 
       const supabase = createClient();
 
-      // 1. Check organization gateway integration status (without exposing secrets to browser)
-      const isConfigured = await this.isProviderConfigured(params.organizationId, params.provider);
-      if (!isConfigured) {
-        return {
-          success: false,
-          error: `Payment provider ${params.provider} is not configured or enabled for this organization.`,
-        };
-      }
-
-      // 2. Fetch live invoice from database to verify status & balance
+      // 1. Fetch live invoice from database to verify status & balance
       const { data: invoice, error: invError } = await supabase
         .from("invoices")
         .select("id, invoice_number, patient_id, grand_total, paid_amount, due_amount, status")
@@ -100,7 +91,7 @@ export class PaymentService {
         return { success: false, error: "Invoice is already fully settled" };
       }
 
-      // 3. Validate amount: cannot exceed due amount or be <= 0
+      // 2. Validate amount: cannot exceed due amount or be <= 0
       let payableAmount = invoiceDue;
       if (params.amount && params.amount > 0) {
         if (params.amount > invoiceDue) {
@@ -109,15 +100,18 @@ export class PaymentService {
         payableAmount = params.amount;
       }
 
-      // 4. Delegate to secure server-side Edge Function (payment-initiate)
+      // 3. Delegate to secure server-side Edge Function (payment-initiate)
       // Enforces caller authentication, role permissions, and secret isolation.
+      // Stable attempt identity: uses caller's key or generates deterministic provider key
+      const idempotencyKey = params.idempotencyKey || `idem_${params.organizationId}_${params.invoiceId}_${params.provider}`;
+
       const { data: edgeRes, error: edgeErr } = await supabase.functions.invoke("payment-initiate", {
         body: {
           organizationId: params.organizationId,
           invoiceId: params.invoiceId,
           provider: params.provider,
           amount: payableAmount,
-          idempotencyKey: params.idempotencyKey || `idem_${params.organizationId}_${params.invoiceId}_${params.provider}`,
+          idempotencyKey,
         },
       });
 
