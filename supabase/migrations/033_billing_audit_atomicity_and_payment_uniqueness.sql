@@ -426,36 +426,14 @@ DECLARE
 BEGIN
     v_calling_user_id := auth.uid();
 
-    -- Gate 1: Require authenticated user (or internal service_role execution)
-    IF v_calling_user_id IS NULL AND current_user != 'service_role' THEN
-        RETURN jsonb_build_object('success', false, 'error', '401 Unauthorized: Authentication required for payment settlement.');
+    -- Gate 1: Execution is restricted strictly to server-side service_role / internal webhook caller
+    IF auth.role() IS NOT NULL AND auth.role() != 'service_role' THEN
+        RETURN jsonb_build_object('success', false, 'error', '403 Forbidden: Direct client payment settlement is prohibited. Settlement must be processed via verified provider webhook.');
     END IF;
 
-    -- Gate 2: If called by an authenticated user, enforce active profile and billing authorization
-    IF v_calling_user_id IS NOT NULL THEN
-        IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = v_calling_user_id AND is_active = TRUE) THEN
-            RETURN jsonb_build_object('success', false, 'error', '403 Forbidden: User profile inactive or non-existent.');
-        END IF;
-
-        SELECT EXISTS (
-            SELECT 1 FROM public.user_roles ur
-            JOIN public.roles r ON ur.role_id = r.id
-            WHERE ur.user_id = v_calling_user_id AND ur.organization_id = p_org_id
-              AND LOWER(r.name) IN ('super_admin', 'admin', 'cashier', 'accountant', 'finance_manager')
-        ) INTO v_has_perm;
-
-        IF v_has_perm IS NOT TRUE THEN
-            SELECT EXISTS (
-                SELECT 1 FROM public.user_roles ur
-                JOIN public.role_permissions rp ON ur.role_id = rp.role_id
-                WHERE ur.user_id = v_calling_user_id AND ur.organization_id = p_org_id
-                  AND rp.permission_key IN ('billing.manage', 'billing.create', 'payments.create', '*')
-            ) INTO v_has_perm;
-
-            IF v_has_perm IS NOT TRUE THEN
-                RETURN jsonb_build_object('success', false, 'error', '403 Forbidden: Caller lacks billing settlement authorization.');
-            END IF;
-        END IF;
+    -- Gate 2: If invoked from client environment without service_role credentials, deny access
+    IF current_user != 'service_role' AND (auth.role() IS NULL OR auth.role() != 'service_role') THEN
+        RETURN jsonb_build_object('success', false, 'error', '401 Unauthorized: Only trusted webhook settlement service can invoke payment settlement.');
     END IF;
 
     -- Gate 3: Lock payment intent within the specified organization
@@ -573,5 +551,5 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.verify_and_record_online_payment(UUID, UUID, VARCHAR, NUMERIC, VARCHAR, UUID) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.verify_and_record_online_payment(UUID, UUID, VARCHAR, NUMERIC, VARCHAR, UUID) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.verify_and_record_online_payment(UUID, UUID, VARCHAR, NUMERIC, VARCHAR, UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.verify_and_record_online_payment(UUID, UUID, VARCHAR, NUMERIC, VARCHAR, UUID) TO service_role;

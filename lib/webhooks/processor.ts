@@ -6,7 +6,6 @@
  */
 
 import { createClient } from "@/lib/supabase/client";
-import { PaymentService } from "../payments/payment-service";
 
 export class WebhookProcessor {
   /**
@@ -59,23 +58,8 @@ export class WebhookProcessor {
 
       // 3. Dispatch according to provider event
       if (params.provider === "SSLCOMMERZ" && params.eventType === "PAYMENT_IPN") {
-        const tranId = params.payload.tran_id as string;
-        const valId = params.payload.val_id as string;
-
-        if (tranId && valId) {
-          const { data: intent } = await supabase
-            .from("payment_intents")
-            .select("id")
-            .eq("intent_reference", tranId)
-            .maybeSingle();
-
-          if (intent) {
-            await PaymentService.verifyAndSettlePayment({
-              paymentIntentId: intent.id,
-              rawPayload: params.payload,
-            });
-          }
-        }
+        // Online payment settlements are processed exclusively by server-side payment-callback Edge Function.
+        // WebhookProcessor logs the receipt of the IPN payload to webhook_events for auditability.
       } else if (params.provider === "SMS" || params.provider === "WHATSAPP") {
         // Delivery status callback
         const messageId = (params.payload.messageId || params.payload.id || params.payload.csms_id) as string;

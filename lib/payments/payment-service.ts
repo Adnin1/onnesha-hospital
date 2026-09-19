@@ -18,9 +18,6 @@ import {
   PaymentProvider,
   ProviderInitiateResult,
 } from "./types";
-import { NotificationOutboxService } from "../notifications/outbox-service";
-
-const PRODUCTION_SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://onnesha-hospital.pages.dev";
 
 export class PaymentService {
   /**
@@ -147,89 +144,53 @@ export class PaymentService {
   }
 
   /**
-   * Verifies an online payment via server-side Edge Function and records settlement.
-   * Invokes `payment-callback` which verifies provider transaction and executes
-   * `verify_and_record_online_payment` database RPC atomically.
-   * Zero browser-side gateway secret handling.
+   * Authoritatively queries the status of a payment intent from the database.
+   * Allows the frontend UI to display pending or confirmed status without settling payments.
    */
-  static async verifyAndSettlePayment(params: {
-    paymentIntentId: string;
-    rawPayload?: Record<string, unknown>;
-  }): Promise<{
-    success: boolean;
-    receiptNumber?: string;
-    paymentId?: string;
+  static async checkPaymentStatus(paymentIntentId: string): Promise<{
+    status: string;
+    isPaid: boolean;
+    payableAmount: number;
     error?: string;
   }> {
     try {
       const supabase = createClient();
-      const { data: intent, error: intentError } = await supabase
+      const { data: intent, error } = await supabase
         .from("payment_intents")
-        .select("*, invoices(invoice_number, due_amount, patients(full_name, phone))")
-        .eq("id", params.paymentIntentId)
+        .select("id, status, payable_amount")
+        .eq("id", paymentIntentId)
         .single();
 
-      if (intentError || !intent) {
-        return { success: false, error: "Payment intent not found" };
-      }
-
-      if (intent.status === "PAID") {
-        return { success: true, error: "Payment already successfully verified and settled." };
-      }
-
-      // Delegate verification and atomic DB settlement RPC (verify_and_record_online_payment) to secure Edge Function
-      const { data: edgeRes, error: edgeErr } = await supabase.functions.invoke("payment-callback", {
-        body: {
-          provider: intent.provider,
-          intentReference: intent.intent_reference,
-          providerTransactionId: (params.rawPayload?.trx_id as string) || (params.rawPayload?.tran_id as string) || intent.intent_reference,
-          paidAmount: Number(intent.payable_amount),
-          rawPayload: params.rawPayload,
-        },
-      });
-
-      if (edgeErr || !edgeRes || !edgeRes.success) {
-        return {
-          success: false,
-          error: edgeRes?.error || edgeErr?.message || "Payment verification declined transaction.",
-        };
-      }
-
-      const receiptNumber = edgeRes.receipt_number;
-      const paymentId = edgeRes.payment_id;
-
-      // Queue patient SMS receipt if patient phone is available
-      const rawPatient = intent.invoices?.patients as { full_name?: string; phone?: string } | undefined;
-      if (rawPatient?.phone && paymentId) {
-        await NotificationOutboxService.enqueueNotification({
-          organizationId: intent.organization_id,
-          channel: "SMS",
-          notificationType: "BILL_RECEIPT",
-          recipient: rawPatient.phone,
-          patientId: intent.patient_id,
-          sourceReferenceId: paymentId,
-          idempotencyKey: `rcpt_${paymentId}_sms`,
-          variables: {
-            patient_name: rawPatient.full_name || "Patient",
-            amount: Number(intent.payable_amount),
-            invoice_number: intent.invoices?.invoice_number || intent.invoice_id,
-            due_amount: Math.max(0, Number(intent.invoices?.due_amount || 0) - Number(intent.payable_amount)),
-            receipt_url: `${PRODUCTION_SITE_URL}/receipts/${receiptNumber}`,
-            hospital_name: "Onnesha Hospital",
-          },
-        });
+      if (error || !intent) {
+        return { status: "NOT_FOUND", isPaid: false, payableAmount: 0, error: "Payment intent not found" };
       }
 
       return {
-        success: true,
-        receiptNumber,
-        paymentId,
+        status: intent.status,
+        isPaid: intent.status === "PAID",
+        payableAmount: Number(intent.payable_amount),
       };
     } catch (err) {
       return {
-        success: false,
-        error: err instanceof Error ? err.message : "Payment verification exception",
+        status: "ERROR",
+        isPaid: false,
+        payableAmount: 0,
+        error: err instanceof Error ? err.message : "Error checking payment status",
       };
     }
+  }
+
+  /**
+   * Direct client-side payment settlement is strictly prohibited.
+   * Payment verification and settlement are executed exclusively via verified server-side webhooks.
+   */
+  static async verifyAndSettlePayment(): Promise<{
+    success: boolean;
+    error: string;
+  }> {
+    return {
+      success: false,
+      error: "Direct client browser payment settlement is strictly prohibited. Payment settlement is handled authoritatively by server-side webhook.",
+    };
   }
 }

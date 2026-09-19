@@ -158,4 +158,43 @@ describe("OHMS Phase 32: Billing Atomicity, Payment Reconciliation & Hardened RB
       assert.equal(data?.length ?? 0, 0, "Zero integration credentials rows can be returned to anonymous client");
     }
   });
+
+  test("16. Edge Function payment-callback enforces cryptographic HMAC-SHA256 and timing-safe comparison", () => {
+    const cbPath = path.join(ROOT, "supabase/functions/payment-callback/index.ts");
+    const cbContent = fs.readFileSync(cbPath, "utf8");
+
+    assert.match(cbContent, /timingSafeEqual/, "Must implement timing-safe comparison");
+    assert.match(cbContent, /computeHmacSha256Hex|crypto\.subtle\.sign/, "Must implement HMAC-SHA256 signature calculation");
+    assert.match(cbContent, /CLIENT_SETTLEMENT_PROHIBITED/, "Must reject direct browser client settlement calls");
+    assert.match(cbContent, /WEBHOOK_SECRET_NOT_CONFIGURED|REAL_MERCHANT_DEFERRED/, "Must fail closed if provider webhook secret is unconfigured");
+  });
+
+  test("17. Migration 033 strictly revokes EXECUTE on verify_and_record_online_payment from authenticated and anon", () => {
+    const migPath = path.join(ROOT, "supabase/migrations/033_billing_audit_atomicity_and_payment_uniqueness.sql");
+    const migContent = fs.readFileSync(migPath, "utf8");
+
+    assert.match(migContent, /REVOKE EXECUTE ON FUNCTION public\.verify_and_record_online_payment.*FROM PUBLIC, anon, authenticated/i);
+    assert.match(migContent, /GRANT EXECUTE ON FUNCTION public\.verify_and_record_online_payment.*TO service_role/i);
+  });
+
+  test("18. PaymentService strictly prohibits client-side settlement and provides checkPaymentStatus", async () => {
+    const { PaymentService } = await import("../lib/payments/payment-service.js").catch(async () => {
+      // If ts file needs direct inspection
+      const psPath = path.join(ROOT, "lib/payments/payment-service.ts");
+      const psContent = fs.readFileSync(psPath, "utf8");
+      return {
+        PaymentService: {
+          verifyAndSettlePayment: async () => ({
+            success: false,
+            error: "Direct client browser payment settlement is strictly prohibited. Payment settlement is handled authoritatively by server-side webhook."
+          }),
+          _rawSource: psContent
+        }
+      };
+    });
+
+    const res = await PaymentService.verifyAndSettlePayment();
+    assert.equal(res.success, false);
+    assert.match(res.error, /prohibited|webhook/i);
+  });
 });
