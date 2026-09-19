@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Onnesha Hospital & Diagnostic Complex",
+        "title": "Onnesha Hospital and Diagnostic Complex",
         "width": 1280,
         "height": 800,
         "resizable": true,
@@ -34,7 +34,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "publisher": "Onnesha Hospital & Diagnostic Complex"
+    "publisher": "Onnesha Hospital and Diagnostic Complex"
   },
   "plugins": {}
 }

@@ -84,6 +84,7 @@ jobs:
           if ($wixPath) {
             Write-Host "Adding $wixPath\bin to GITHUB_PATH"
             "$wixPath\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            "WIX=$wixPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           }
 
       - name: Build Tauri Desktop Executable and Installer Bundles
