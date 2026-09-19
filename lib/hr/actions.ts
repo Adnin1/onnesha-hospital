@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
+import { getDhakaDateString } from "@/lib/datetime";
 import {
   EmployeeRecord,
   AttendanceRecordItem,
@@ -126,7 +127,7 @@ export async function createEmployeeAction(params: {
         house_rent: Number(((params.basicSalary || 20000) * 0.4).toFixed(2)),
         medical_allowance: 2000.0,
         biometric_device_pin: params.biometricPin || null,
-        joining_date: params.joiningDate || new Date().toISOString().split("T")[0],
+        joining_date: params.joiningDate || getDhakaDateString(),
         status: "ACTIVE",
       })
       .select()
@@ -242,7 +243,7 @@ export async function getTodayAttendanceAction(): Promise<
 
   try {
     const supabase = await createClient();
-    const today = new Date().toISOString().split("T")[0];
+    const today = getDhakaDateString();
 
     const { data, error } = await supabase
       .from("attendance_records")

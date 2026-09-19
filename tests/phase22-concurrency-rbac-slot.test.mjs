@@ -118,7 +118,7 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
     assert.ok(nextConfig.includes('output: "export"'), "Static export mode required");
   });
 
-  test("16. Concurrency Advisory Lock DB Verification: Parallel execution across 10 concurrent requests with capacity limit", async () => {
+  test("16. Concurrency Advisory Lock DB Verification: Parallel execution across 10 concurrent requests with capacity limit", async (t) => {
     let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     let serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
     const envPath = path.join(ROOT, ".env.local");
@@ -132,8 +132,7 @@ describe("OHMS Phase 22 Production Hardening: Authoritative Slot, Concurrency Lo
     }
 
     if (!supabaseUrl || !serviceKey) {
-      console.log("SKIP: Concurrency DB test requires SUPABASE_SERVICE_ROLE_KEY in environment.");
-      assert.ok(true);
+      t.skip("Concurrency DB test requires SUPABASE_SERVICE_ROLE_KEY in environment.");
       return;
     }
 

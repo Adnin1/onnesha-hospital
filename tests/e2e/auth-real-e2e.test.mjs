@@ -27,7 +27,7 @@ const testPassword = process.env.E2E_ADMIN_PASSWORD || "";
 describe("OHMS Authentication & Session API Integration Suite", async () => {
   const anonClient = createClient(supabaseUrl, anonKey);
 
-  test("1. Production login portal HTTP GET returns 200 OK with clean blank form inputs", async () => {
+  test("1. Production login portal HTTP GET returns 200 OK with clean blank form inputs", async (t) => {
     try {
       const res = await fetch(`${siteUrl}/login`, { signal: AbortSignal.timeout(10000) });
       if (res.status === 200) {
@@ -37,11 +37,11 @@ describe("OHMS Authentication & Session API Integration Suite", async () => {
         assert.ok(!html.includes('value="password'), "No hardcoded pre-filled password in production HTML");
       }
     } catch {
-      assert.ok(true, "Skipped external fetch in network-restricted CI runner");
+      t.skip("Skipped external fetch in network-restricted CI runner");
     }
   });
 
-  test("2. Invalid login credentials return sanitized error message without account enumeration", async () => {
+  test("2. Invalid login credentials return sanitized error message without account enumeration", async (t) => {
     try {
       const { data, error } = await anonClient.auth.signInWithPassword({
         email: "nonexistent.user@onneshahospital.com",
@@ -54,13 +54,13 @@ describe("OHMS Authentication & Session API Integration Suite", async () => {
         "Error message must be sanitized"
       );
     } catch {
-      assert.ok(true, "Skipped due to runner network isolation");
+      t.skip("Skipped due to runner network isolation");
     }
   });
 
-  test("3. Valid admin account authenticates and initiates AAL1 session state", async () => {
+  test("3. Valid admin account authenticates and initiates AAL1 session state", async (t) => {
     if (!testPassword) {
-      assert.ok(true, "Skipping admin login check when E2E_ADMIN_PASSWORD environment variable is not set");
+      t.skip("Skipping admin login check when E2E_ADMIN_PASSWORD environment variable is not set");
       return;
     }
     const { data, error } = await anonClient.auth.signInWithPassword({
@@ -79,7 +79,7 @@ describe("OHMS Authentication & Session API Integration Suite", async () => {
     await anonClient.auth.signOut();
   });
 
-  test("4. Unauthenticated access to protected /app/dashboard is rejected at client/guard level", async () => {
+  test("4. Unauthenticated access to protected /app/dashboard is rejected at client/guard level", async (t) => {
     try {
       const res = await fetch(`${siteUrl}/app/dashboard`, { signal: AbortSignal.timeout(10000) });
       if (res.status === 200) {
@@ -87,13 +87,13 @@ describe("OHMS Authentication & Session API Integration Suite", async () => {
         assert.ok(html.includes("OH") || html.includes("main-content") || html.includes("div"), "AuthGuard page container must render");
       }
     } catch {
-      assert.ok(true, "Skipped external fetch in network-restricted CI runner");
+      t.skip("Skipped external fetch in network-restricted CI runner");
     }
   });
 
-  test("5. Logout invalidates active authentication session", async () => {
+  test("5. Logout invalidates active authentication session", async (t) => {
     if (!testPassword) {
-      assert.ok(true, "Skipping logout check when E2E_ADMIN_PASSWORD environment variable is not set");
+      t.skip("Skipping logout check when E2E_ADMIN_PASSWORD environment variable is not set");
       return;
     }
     const { data } = await anonClient.auth.signInWithPassword({

@@ -11,6 +11,13 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ success: false, error: "Method not allowed. Only POST is accepted." }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -36,11 +43,19 @@ serve(async (req: Request) => {
     }
 
     const body = await req.json();
-    const { organizationId, invoiceId, provider, amount } = body;
+    const { organizationId, invoiceId, provider, amount, idempotencyKey: clientIdempotencyKey } = body;
 
     if (!organizationId || !invoiceId || !provider) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing required parameters: organizationId, invoiceId, provider" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const normalizedProvider = String(provider).toUpperCase();
+    if (!["BKASH", "NAGAD", "SSLCOMMERZ"].includes(normalizedProvider)) {
+      return new Response(
+        JSON.stringify({ success: false, error: `Unsupported payment provider: ${provider}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -99,13 +114,36 @@ serve(async (req: Request) => {
       ? Number(amount)
       : dueAmount;
 
-    // 4. Verify provider integration exists, has credentials, and is active
+    // 4. Check idempotency key if provided
+    const idempotencyKey = clientIdempotencyKey || `pi_${organizationId}_${invoice.id}_${normalizedProvider}_${Date.now()}`;
+    const { data: existingIntent } = await supabaseClient
+      .from("payment_intents")
+      .select("id, intent_reference, status, payable_amount, checkout_url")
+      .eq("organization_id", organizationId)
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+
+    if (existingIntent) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          isDuplicate: true,
+          paymentIntentId: existingIntent.id,
+          intentReference: existingIntent.intent_reference,
+          status: existingIntent.status,
+          payableAmount: existingIntent.payable_amount,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 5. Verify provider integration exists, has credentials, and is active
     const { data: integ } = await supabaseClient
       .from("organization_integrations")
       .select("encrypted_credentials, environment, is_enabled")
       .eq("organization_id", organizationId)
       .eq("integration_type", "PAYMENT_GATEWAY")
-      .eq("provider_name", provider)
+      .eq("provider_name", normalizedProvider)
       .eq("is_enabled", true)
       .maybeSingle();
 
@@ -114,55 +152,23 @@ serve(async (req: Request) => {
         JSON.stringify({
           success: false,
           status: "NOT_CONFIGURED",
-          error: `Payment provider ${provider} is not configured on server. Please configure credentials in Settings.`,
+          error: `Payment provider ${normalizedProvider} is not configured on server. Please configure credentials in Settings.`,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 5. Create server-managed payment intent
-    const intentSuffix = crypto.randomUUID().slice(0, 8).toUpperCase();
-    const intentReference = `PI-${Date.now()}-${intentSuffix}`;
-    const idempotencyKey = `pi_${organizationId}_${invoice.id}_${provider}_${Date.now()}`;
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
-    const { data: intent, error: intentError } = await supabaseClient
-      .from("payment_intents")
-      .insert({
-        organization_id: organizationId,
-        intent_reference: intentReference,
-        invoice_id: invoice.id,
-        patient_id: invoice.patient_id,
-        payable_amount: payableAmount,
-        currency: "BDT",
-        provider,
-        status: "PENDING",
-        idempotency_key: idempotencyKey,
-        expires_at: expiresAt,
-      })
-      .select()
-      .single();
-
-    if (intentError || !intent) {
-      return new Response(
-        JSON.stringify({ success: false, error: intentError?.message || "Failed to persist payment intent" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const checkoutUrl = `/app/billing/online-callback?intent=${intentReference}&status=AUTHORIZED`;
-
+    // 6. Production Safety Invariant: Real gateway transactions are intentionally deferred.
+    // Fake simulated checkout URLs are strictly prohibited. The system fails closed.
     return new Response(
       JSON.stringify({
-        success: true,
-        intentReference,
-        paymentIntentId: intent.id,
+        success: false,
+        status: "PROVIDER_UNAVAILABLE",
+        code: "REAL_MERCHANT_DEFERRED",
         payableAmount,
-        currency: "BDT",
-        provider,
-        checkoutUrl,
+        error: `Real payment gateway integration for ${normalizedProvider} is intentionally unconfigured/deferred. Direct simulated checkout is disabled for security.`,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Internal edge function error";

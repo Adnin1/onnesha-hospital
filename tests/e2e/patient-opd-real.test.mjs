@@ -22,8 +22,8 @@ if (fs.existsSync(envPath)) {
 
 describe("OHMS Database & API Integration Suite: Patient Registration & OPD Schema", async () => {
   if (!serviceKey) {
-    test("Live DB Patient Test skipped: SUPABASE_SERVICE_ROLE_KEY not configured in environment", () => {
-      assert.ok(true);
+    test("Live DB Patient Test skipped: SUPABASE_SERVICE_ROLE_KEY not configured in environment", (t) => {
+      t.skip("SUPABASE_SERVICE_ROLE_KEY not configured in environment");
     });
     return;
   }

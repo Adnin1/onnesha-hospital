@@ -22,8 +22,8 @@ if (fs.existsSync(envPath)) {
 
 describe("OHMS Real E2E Test Suite 3: Billing & Financial Integrity", async () => {
   if (!serviceKey) {
-    test("Live DB Billing Test skipped: SUPABASE_SERVICE_ROLE_KEY not configured in environment", () => {
-      assert.ok(true);
+    test("Live DB Billing Test skipped: SUPABASE_SERVICE_ROLE_KEY not configured in environment", (t) => {
+      t.skip("SUPABASE_SERVICE_ROLE_KEY not configured in environment");
     });
     return;
   }

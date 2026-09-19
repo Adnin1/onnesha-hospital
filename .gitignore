@@ -44,3 +44,4 @@ next-env.d.ts
 
 # rust / tauri
 src-tauri/target/
+src-tauri/gen/

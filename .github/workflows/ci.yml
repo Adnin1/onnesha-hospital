@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: Typecheck, Lint, Test & Build
@@ -75,3 +78,12 @@ jobs:
 
       - name: Build Tauri Desktop Executable
         run: npx tauri build --no-bundle
+
+      - name: Upload Windows Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-windows-desktop
+          path: |
+            src-tauri/target/release/*.exe
+            src-tauri/target/release/bundle/
+          if-no-files-found: warn

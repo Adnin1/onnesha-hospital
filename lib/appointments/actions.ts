@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
+import { getDhakaDateString } from "@/lib/datetime";
 import {
   DoctorRecord,
   DoctorScheduleRecord,
@@ -282,7 +283,7 @@ export async function bookAppointmentAction(params: {
     return { success: false, error: msg };
   }
 
-  const apptDate = params.appointmentDate || new Date().toISOString().split("T")[0];
+  const apptDate = params.appointmentDate || getDhakaDateString();
   const source = params.source || "WALKIN";
 
   try {

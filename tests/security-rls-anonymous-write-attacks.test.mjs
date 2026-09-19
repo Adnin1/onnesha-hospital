@@ -23,14 +23,14 @@ test('Security RLS: Anonymous Write Attack Mitigation Suite', async (t) => {
     return;
   }
 
-  await t.test('1. Anonymous SELECT organizations: permitted for canonical public org', async () => {
+  await t.test('1. Anonymous SELECT organizations: permitted for canonical public org', async (st) => {
     const { data, error } = await anonClient
       .from('organizations')
       .select('id, name, is_canonical_public')
       .eq('is_canonical_public', true);
     
     if (error && (error.message?.includes('fetch') || error.message?.includes('ENOTFOUND'))) {
-      assert.ok(true, 'Skipping due to runner network isolation');
+      st.skip('Skipping due to runner network isolation');
       return;
     }
     assert.equal(error, null);

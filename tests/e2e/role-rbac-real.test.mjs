@@ -27,9 +27,9 @@ if (fs.existsSync(envPath)) {
 describe("OHMS Real E2E Test Suite 4: Multi-Tenant & RLS Cross-Access Block", async () => {
   const anonClient = createClient(supabaseUrl, anonKey);
 
-  test("1. Profiles / Auth schema verifies user profile attributes", async () => {
+  test("1. Profiles / Auth schema verifies user profile attributes", async (t) => {
     if (!serviceKey) {
-      assert.ok(true, "Skipped service key query in CI");
+      t.skip("Skipped service key query in CI");
       return;
     }
     const adminClient = createClient(supabaseUrl, serviceKey);
@@ -39,11 +39,11 @@ describe("OHMS Real E2E Test Suite 4: Multi-Tenant & RLS Cross-Access Block", as
     }
   });
 
-  test("2. Unauthenticated anon client SELECT on patient records is isolated by RLS policy", async () => {
+  test("2. Unauthenticated anon client SELECT on patient records is isolated by RLS policy", async (t) => {
     const { data, error } = await anonClient.from("patients").select("id, full_name");
     if (error) {
       if (error.message?.includes("fetch") || error.message?.includes("network") || error.message?.includes("ENOTFOUND")) {
-        assert.ok(true, "Skipped due to runner network isolation");
+        t.skip("Skipped due to runner network isolation");
         return;
       }
       assert.ok(error.message.includes("permission") || error.code === "PGRST301" || error.code === "42501");

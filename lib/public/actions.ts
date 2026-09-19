@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { normalizeBDPhone, isValidNormalizedBDPhone } from "@/lib/patient/phone";
+import { getDhakaDateString } from "@/lib/datetime";
 
 export interface PublicDoctor {
   id: string;
@@ -353,7 +354,7 @@ export async function getLiveWaitingQueueAction(): Promise<{
 }> {
   try {
     const supabase = await createClient();
-    const today = new Date().toISOString().split("T")[0];
+    const today = getDhakaDateString();
 
     const { data, error } = await supabase
       .from("appointments")

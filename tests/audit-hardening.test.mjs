@@ -32,7 +32,10 @@ test("OHMS Master Production Audit & Phase 1-12 Hardening Suite", async (t) => {
     );
     assert.match(configContent, /HOSPITAL_METADATA/);
     assert.match(configContent, /Onnesha Hospital/);
-    assert.match(configContent, /01700-112233/);
+    assert.match(configContent, /emergencyHotline/);
+    assert.match(configContent, /ambulanceHotline/);
+    assert.ok(!configContent.includes("01700-112233"), "Must not contain invented emergency hotline");
+    assert.ok(!configContent.includes("01800-445566"), "Must not contain invented ambulance hotline");
   });
 
   await t.test("3. Billing actions enforce overpayment validation and database sequences", () => {

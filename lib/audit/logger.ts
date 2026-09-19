@@ -1,4 +1,3 @@
-import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/client";
 import { requirePermission } from "@/lib/auth/session";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -54,9 +53,7 @@ export async function recordAuditLog(entry: AuditEntry): Promise<void> {
       user_agent: entry.userAgent || null,
     };
 
-    const client = process.env.SUPABASE_SERVICE_ROLE_KEY
-      ? createAdminClient()
-      : createClient();
+    const client = createClient();
 
     const { error } = await client.from("audit_logs").insert(payload);
 

@@ -110,7 +110,7 @@ describe("OHMS Phase 32: Billing Atomicity, Payment Reconciliation & Hardened RB
     assert.ok(fs.existsSync(cbPath), "payment-callback function must exist");
   });
 
-  test("13. Live DB Security: Anonymous execution of create_invoice_atomic is strictly blocked", async () => {
+  test("13. Live DB Security: Anonymous execution of create_invoice_atomic is strictly blocked", async (t) => {
     const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
     const { data, error } = await anonClient.rpc("create_invoice_atomic", {
       p_org_id: CANONICAL_ORG_ID,
@@ -119,13 +119,13 @@ describe("OHMS Phase 32: Billing Atomicity, Payment Reconciliation & Hardened RB
     });
 
     if (error && (error.message?.includes("fetch") || error.message?.includes("network") || error.message?.includes("ENOTFOUND"))) {
-      assert.ok(true, "Skipped due to network isolation");
+      t.skip("Skipped due to network isolation");
       return;
     }
     assert.ok(error !== null || (data && data.success === false), "Anonymous create_invoice_atomic must fail");
   });
 
-  test("14. Live DB Security: Anonymous execution of collect_payment_atomic is strictly blocked", async () => {
+  test("14. Live DB Security: Anonymous execution of collect_payment_atomic is strictly blocked", async (t) => {
     const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
     const { data, error } = await anonClient.rpc("collect_payment_atomic", {
       p_org_id: CANONICAL_ORG_ID,
@@ -135,13 +135,13 @@ describe("OHMS Phase 32: Billing Atomicity, Payment Reconciliation & Hardened RB
     });
 
     if (error && (error.message?.includes("fetch") || error.message?.includes("network") || error.message?.includes("ENOTFOUND"))) {
-      assert.ok(true, "Skipped due to network isolation");
+      t.skip("Skipped due to network isolation");
       return;
     }
     assert.ok(error !== null || (data && data.success === false), "Anonymous collect_payment_atomic must fail");
   });
 
-  test("15. Live DB Security: Anonymous direct SELECT on organization_integrations returns 0 rows / blocked", async () => {
+  test("15. Live DB Security: Anonymous direct SELECT on organization_integrations returns 0 rows / blocked", async (t) => {
     const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
     const { data, error } = await anonClient
       .from("organization_integrations")
@@ -150,7 +150,7 @@ describe("OHMS Phase 32: Billing Atomicity, Payment Reconciliation & Hardened RB
 
     if (error) {
       if (error.message?.includes("fetch") || error.message?.includes("network") || error.message?.includes("ENOTFOUND")) {
-        assert.ok(true, "Skipped due to network isolation");
+        t.skip("Skipped due to network isolation");
         return;
       }
       assert.match(error.message, /permission denied|violates row-level security/i);

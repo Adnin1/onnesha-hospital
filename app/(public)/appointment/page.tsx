@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { formatCurrencyBDT } from "@/lib/utils";
 import { HospitalPrintHeader } from "@/components/print/HospitalPrintHeader";
+import { getDhakaDateString } from "@/lib/datetime";
 import {
   getPublicDoctorsAction,
   getPublicDoctorSchedulesAction,
@@ -36,7 +37,7 @@ export default function AppointmentBookingPage() {
   const [appointmentDate, setAppointmentDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    return d.toISOString().split("T")[0];
+    return getDhakaDateString(d);
   });
   const [timeSlot, setTimeSlot] = useState("");
 
@@ -277,7 +278,7 @@ export default function AppointmentBookingPage() {
                 <input
                   type="date"
                   value={appointmentDate}
-                  min={new Date().toISOString().split("T")[0]}
+                  min={getDhakaDateString()}
                   onChange={(e) => setAppointmentDate(e.target.value)}
                   className="w-full p-2.5 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
                 />

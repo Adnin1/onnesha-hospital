@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { OTBookingRecord, OTRoomRecord } from "@/types/beds-ot";
 import { DoctorRecord } from "@/types/appointments";
+import { getDhakaDateString } from "@/lib/datetime";
 import {
   getOTBookingsAction,
   getOTRoomsAction,
@@ -34,7 +35,7 @@ export default function OperationTheaterPage() {
   const [formRoomId, setFormRoomId] = useState("");
   const [formSurgeonId, setFormSurgeonId] = useState("");
   const [formAnesthesia, setFormAnesthesia] = useState("GENERAL");
-  const [formDate, setFormDate] = useState(new Date().toISOString().split("T")[0]);
+  const [formDate, setFormDate] = useState(getDhakaDateString());
   const [formStartTime, setFormStartTime] = useState("09:00");
   const [formEndTime, setFormEndTime] = useState("11:30");
   const [formOtCharge, setFormOtCharge] = useState(5000);

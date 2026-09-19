@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
+import { getDhakaDateString } from "@/lib/datetime";
 import {
   InvoiceRecord,
   InvoiceItemRecord,
@@ -433,7 +434,7 @@ export async function getCashRegisterSummaryAction(): Promise<
 
   try {
     const supabase = await createClient();
-    const today = new Date().toISOString().split("T")[0];
+    const today = getDhakaDateString();
 
     // Today's Payments
     const { data: payments } = await supabase

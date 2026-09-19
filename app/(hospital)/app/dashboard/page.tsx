@@ -19,6 +19,7 @@ import {
 } from "@/components/dashboard/DashboardWidgets";
 import { WaitingQueueItem } from "@/types";
 import { formatCurrencyBDT } from "@/lib/utils";
+import { getDhakaDateString } from "@/lib/datetime";
 
 export default function HospitalDashboardPage() {
   const [waitingQueue, setWaitingQueue] = useState<WaitingQueueItem[]>([]);
@@ -55,7 +56,7 @@ export default function HospitalDashboardPage() {
           bedsData?.filter((b) => b.status === "available" || b.status === "VACANT").length || 0;
 
         // 3. Fetch real invoices for today
-        const todayStr = new Date().toISOString().split("T")[0];
+        const todayStr = getDhakaDateString();
         const { data: invoicesData } = await supabase
           .from("invoices")
           .select("paid_amount, due_amount")

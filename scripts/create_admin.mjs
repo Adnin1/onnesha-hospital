@@ -77,7 +77,7 @@ async function run() {
     id: user.id,
     email: targetEmail,
     full_name: "Hospital Director",
-    phone: process.env.ADMIN_PHONE || process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01712345678",
+    phone: process.env.ADMIN_PHONE || process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "",
     is_active: true
   });
 
@@ -91,7 +91,7 @@ async function run() {
   console.log("SUCCESS! INITIAL ADMIN ACCOUNT CREATED & VERIFIED:");
   console.log(`LOGIN URL: https://onnesha-hospital.pages.dev/login`);
   console.log(`EMAIL:    ${targetEmail}`);
-  console.log(`PASSWORD: ${targetPassword}`);
+  console.log("PASSWORD: [REDACTED - SET FROM ADMIN_BOOTSTRAP_PASSWORD]");
   console.log("==========================================\n");
 }
 
