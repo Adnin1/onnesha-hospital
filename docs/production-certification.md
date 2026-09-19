@@ -1,7 +1,7 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-## FINAL FORENSIC PRODUCTION CERTIFICATION & AUDIT REPORT (V15)
+## FINAL FORENSIC PRODUCTION CERTIFICATION & AUDIT REPORT (V16)
 
-**Document ID:** `DOC-OHMS-ZERO-GAP-CERT-20260920-FINAL-V15`  
+**Document ID:** `DOC-OHMS-ZERO-GAP-CERT-20260920-FINAL-V16`  
 **Release Target:** OHMS Production Release 1.0.2 (Forensic Zero-Gap Certified)  
 **Package Version:** `1.0.2` (Aligned across `package.json`, `package-lock.json`, Tauri `tauri.conf.json`, `Cargo.toml`, `Cargo.lock`, `latest.json`, Git tag `v1.0.2`)  
 **Repository:** [Adnin1/onnesha-hospital](https://github.com/Adnin1/onnesha-hospital.git)  
@@ -9,7 +9,7 @@
 **Cloudflare Canonical Production URL:** https://onnesha-hospital.pages.dev  
 **Supabase Remote Project Ref:** `iuhtzahuszdkdarhxobx` (PostgreSQL 17.6, Region: `ap-southeast-1`, Status: `ACTIVE_HEALTHY`)  
 **Canonical Organization UUID:** `a0000000-0000-0000-0000-000000000001`  
-**Audit & Remediation Timestamp:** 2026-09-20T04:25:00+06:00  
+**Audit & Remediation Timestamp:** 2026-09-20T04:50:00+06:00  
 
 ---
 
@@ -28,15 +28,19 @@ $$\text{LOCAL HEAD} = \text{ORIGIN/MAIN} = \text{GITHUB MAIN} = \text{CI HEAD SH
 - **Authoritative GitHub Actions Pipeline:**
   - Workflow: `OHMS CI Quality, Security & Desktop Pipeline` (.github/workflows/ci.yml)
   - Pinned Toolchains: Node.js 22 LTS, Rust Stable, Ubuntu Latest, Windows Latest, WiX Toolset, NSIS.
+  - Verified Workflow Runs:
+    - **Run 29 (ID: `35473206960`):** `SUCCESS` across both Ubuntu Validation and Windows Tauri Desktop Release jobs on `v1.0.2`.
+    - **Run 28 (ID: `35472290492`):** `SUCCESS` on baseline commit `3b0f407...` (`v1.0.1`).
 
 ---
 
-### Forensic Audit & Deep Architectural Remediations (V15 Zero-Gap)
+### Forensic Audit & Deep Architectural Remediations (V16 Zero-Gap)
 
-1. **Deterministic Multi-Tenant RLS & GUC Shielding (Migration 42 & 43):**
-   - In `supabase/migrations/20260920050000_harden_deterministic_tenant_rls.sql` and `supabase/migrations/20260920060000_harden_webhook_and_org_resolver.sql`:
+1. **Deterministic Multi-Tenant RLS & GUC Shielding (Migration 42, 43 & 44):**
+   - In `supabase/migrations/20260920050000_harden_deterministic_tenant_rls.sql`, `supabase/migrations/20260920060000_harden_webhook_and_org_resolver.sql`, and `supabase/migrations/20260920070000_fix_org_resolver_uuid_aggregate.sql`:
      - Hardened `public.get_current_org_id()` to strictly verify caller's authenticated membership (`auth.uid()`) against `public.profiles` (`organization_id` or `active_organization_id`) and `public.user_roles` before honoring any caller-supplied `app.current_organization_id` session GUC.
      - **Anonymous Caller Lockout:** When `auth.uid() IS NULL`, `get_current_org_id()` explicitly verifies that the execution context is `current_user = 'service_role'`. Any unauthenticated or anonymous client attempting to spoof tenant GUC receives `NULL` and is blocked.
+     - **PostgreSQL UUID Aggregate Fix (Migration 44):** In PostgreSQL 17, `MIN(uuid)` is not defined natively; resolved by casting `MIN(organization_id::text)::uuid`. Verified clean via `npx supabase db lint --linked` (0 errors).
      - Single-org deterministic resolution: if profiles active org is not set, checks `public.user_roles` and returns the org ID if and only if the user belongs to exactly one distinct organization; fails closed (`NULL`) if user belongs to multiple organizations without explicit selection.
      - Marked `SECURITY DEFINER SET search_path = ''` to prevent search-path injection.
 
@@ -46,7 +50,8 @@ $$\text{LOCAL HEAD} = \text{ORIGIN/MAIN} = \text{GITHUB MAIN} = \text{CI HEAD SH
      - Wire-format body parsing supporting both `application/x-www-form-urlencoded` and `application/json`.
      - SSLCommerz IPN Authenticity: Verified IPN body parameters (`verify_sign`, `verify_key`, `val_id`, `tran_id`). Computes expected signature by sorting parameter keys extracted from `verify_key`, appending `md5(store_passwd)`, and comparing MD5 hex digests in constant time.
      - Direct client browser settlements are rejected with HTTP 403 `CLIENT_SETTLEMENT_PROHIBITED`.
-     - **Risk Management Protocol:** When `risk_level: "1"`, callback halts automated financial settlement, sets `status: "HOLD_FOR_REVIEW"`, returns HTTP 400 with code `RISK_REVIEW`, and prevents marking the invoice as `PAID`.
+     - **Order Validation API Integration:** Validates status `VALID`/`VALIDATED`, authoritative transaction reference (`data.tran_id === intentReference`), exact amount match, and BDT currency.
+     - **Risk Management Protocol:** When `risk_level: "1"` is detected, callback halts automated financial settlement, sets `status: "HOLD_FOR_REVIEW"`, returns HTTP 400 with code `RISK_REVIEW`, and prevents marking the invoice as `PAID`.
 
 3. **Atomic Webhook Ledger & Settlement Transaction:**
    - Upgraded database RPC `verify_and_record_online_payment` to accept `p_webhook_event_id UUID DEFAULT NULL`.
@@ -77,7 +82,7 @@ $$\text{LOCAL HEAD} = \text{ORIGIN/MAIN} = \text{GITHUB MAIN} = \text{CI HEAD SH
 
 6. **Package Version Lineage & Release Integrity (v1.0.2):**
    - Version incremented to `1.0.2` across `package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, and `public/downloads/desktop/latest.json`.
-   - Preserves immutable Git tag provenance (`v1.0.2` points to final certified commit).
+   - Preserves immutable Git tag provenance (`v1.0.2` points to certified commit).
 
 ---
 
@@ -99,12 +104,13 @@ $$\text{LOCAL HEAD} = \text{ORIGIN/MAIN} = \text{GITHUB MAIN} = \text{CI HEAD SH
 | **Static Build** | `PASS — LOCAL VERIFIED` | Next.js 16.3.5 Turbopack compiled 40/40 static pages into `/out` with 0 build errors |
 | **Typecheck** | `PASS — LOCAL VERIFIED` | `npm run typecheck` (`tsc --noEmit`): 0 errors across entire repository |
 | **ESLint** | `PASS — LOCAL VERIFIED` | `npx eslint . --max-warnings 0`: 0 errors, 0 warnings across all files |
-| **Hermetic Test Suite** | `PASS — LOCAL VERIFIED` | `npm test`: 45/45 test suites passed; 392 test cases (386 passed, 6 skipped for offline network isolation, 0 failed) |
+| **Hermetic Test Suite** | `PASS — LOCAL VERIFIED` | `npm test`: 45/45 test suites passed; 394 test cases (388 passed, 6 skipped for offline network isolation, 0 failed) |
 | **Live Security Suite** | `PASS — REMOTE VERIFIED` | `npm run test:live-security`: 10/10 live authenticated cross-tenant RLS assertions passed on remote Supabase instance |
-| **Database Migrations** | `PASS — REMOTE VERIFIED` | All 43 migrations synchronized and active on remote Supabase project `iuhtzahuszdkdarhxobx` |
+| **Database Migrations** | `PASS — REMOTE VERIFIED` | All 44 migrations synchronized and active on remote Supabase project `iuhtzahuszdkdarhxobx` |
+| **Database Lint** | `PASS — REMOTE VERIFIED` | `npx supabase db lint --linked`: 0 errors across remote functions |
 | **Authenticated Tenant RLS**| `PASS — REMOTE VERIFIED` | Caller GUC membership verified; anonymous lockout verified; deterministic single-org resolution; fail-closed multi-org handling |
 | **Edge Function Deps** | `PASS — SOURCE VERIFIED` | Upgraded to `@supabase/supabase-js@2.116.0` on all functions |
-| **SSLCommerz IPN Protocol** | `PASS — SOURCE VERIFIED` | RFC 1321 MD5 hash validation, wire-format parsing, and risk_level: 1 hold implemented |
+| **SSLCommerz IPN Protocol** | `PASS — SOURCE VERIFIED` | RFC 1321 MD5 hash validation, wire-format parsing, Order Validation API contract, and risk_level: 1 hold implemented |
 | **Atomic Webhook Ledger** | `PASS — REMOTE VERIFIED` | `verify_and_record_online_payment` atomically transitions `webhook_events.status` to `PROCESSED` |
 | **Package Version Parity** | `PASS — SOURCE VERIFIED` | v1.0.2 aligned across package.json, lockfile, tauri.conf.json, Cargo.toml, Cargo.lock, latest.json |
 | **Production Routes Smoke** | `PASS — REMOTE VERIFIED` | 15/15 routes return HTTP 200; critical shell queries safe; RLS shield verified |

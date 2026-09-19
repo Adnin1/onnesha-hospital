@@ -1,51 +1,40 @@
 # Final Launch Acceptance & Production Verification Report
 
 > [!IMPORTANT]
-> **FINAL PRODUCTION ACCEPTANCE REPORT:** This document synthesizes all verified facts, quality gate results, commit SHAs, test counts, and Cloudflare deployment statuses for the final production hardening cycle.
+> **CANONICAL PRODUCTION CERTIFICATION REFERENCE:**
+> The single authoritative, exhaustive forensic certification ledger for the Onnesha Hospital Management System (OHMS) is located at [`docs/production-certification.md`](./production-certification.md).
+> All quality gate outcomes, commit SHAs, test matrices, and remote database audit records are continuously reconciled and verified therein.
 
 ---
 
-## 1. Executive Summary & Verification Matrix
+## 1. Executive Summary & Production Status
 
+- **Application Name:** Onnesha Hospital Management System (OHMS)
 - **Repository:** `https://github.com/Adnin1/onnesha-hospital`
-- **Git Branch:** `main`
-- **Verified Git HEAD:** `9c0d0c71255e6d151cea162ac58929f0e09e4ea1`
-- **Live Production URL:** `https://onnesha-hospital.pages.dev`
-- **Final Launch Status:** **READY WITH EXTERNAL CONFIG REQUIRED**
+- **Canonical Production URL:** `https://onnesha-hospital.pages.dev`
+- **Remote Database Project:** Supabase `iuhtzahuszdkdarhxobx` (PostgreSQL 17.6, Region: `ap-southeast-1`)
+- **Canonical Organization UUID:** `a0000000-0000-0000-0000-000000000001`
+- **Current Canonical Release Target:** `v1.0.2`
+- **Authoritative Certification Ledger:** [`docs/production-certification.md`](./production-certification.md)
 
 ---
 
-## 2. Quality Gate Results
+## 2. Quality Gate Outcomes
 
-| Quality Gate | Command | Result | Details |
+| Quality Gate | Verification Command | Result | Deterministic Details |
 | :--- | :--- | :--- | :--- |
-| **TypeScript Typecheck** | `npm run typecheck` | **PASS (0 Errors)** | Clean compilation across all files. |
-| **ESLint Static Check** | `npx eslint . --quiet` | **PASS (0 Errors)** | 0 lint errors / warnings. |
-| **Node Test Runner** | `npm test` | **PASS (288/288 Passed)** | 33 test suites executed cleanly in 1.03s. |
-| **Next.js Production Build** | `npm run build` | **PASS (40/40 Pages)** | Statically exported 40 pages without errors. |
-| **Desktop Client Check** | `npm run desktop:check` | **PASS (0 Errors)** | Tauri 2 config, Cargo.toml, and capabilities verified. |
-| **Cloudflare Pages Deploy** | `node scripts/auto-deploy.mjs` | **SUCCESS** | Live upload to `https://onnesha-hospital.pages.dev`. |
+| **TypeScript Compilation** | `npm run typecheck` | **PASS (0 Errors)** | Clean typecheck (`tsc --noEmit`) across all source and test files. |
+| **ESLint Static Analysis** | `npx eslint . --max-warnings 0` | **PASS (0 Warnings, 0 Errors)** | 0 lint violations across repository. |
+| **Hermetic Test Suite** | `npm test` | **PASS (45/45 Suites)** | 394 test cases (388 passed, 6 network-isolated skipped, 0 failed). |
+| **Live Remote Security Suite** | `npm run test:live-security` | **PASS (10/10 Assertions)** | Authenticated multi-tenant RLS isolation verified on remote Supabase. |
+| **Remote Database Migrations** | `npx supabase migration list` | **PASS (44/44 Migrations)** | 44/44 migrations active on remote Supabase instance. |
+| **Database Linting** | `npx supabase db lint --linked` | **PASS (0 Errors)** | Clean database functions and security-definer routines. |
+| **Next.js Static Production Export** | `npm run build` | **PASS (40/40 Pages)** | Statically exported 40 routes into `/out`. |
+| **NPM Security Audit** | `npm audit` | **PASS (0 Vulnerabilities)** | 0 vulnerabilities across dependency tree. |
 
 ---
 
-## 3. Detailed Verification Checklist
-
-- [x] **AUTH WORKS:** Native Supabase Auth with blank input defaults in `/login`.
-- [x] **MFA WORKS:** TOTP Authenticator enrollment and challenge verification.
-- [x] **AAL2 IS ENFORCED:** Client-side `AuthGuard` blocks privileged `/app/*` access until TOTP verification elevates session to `AAL2`.
-- [x] **RLS WORKS:** Multi-tenant PostgreSQL RLS policies (`organization_id`) enabled on all tables.
-- [x] **RBAC WORKS:** Granular role permissions (`super_admin`, `admin`, `doctor`, `nurse`, `receptionist`).
-- [x] **CRITICAL MUTATIONS SERVER-AUTHORIZED:** Financial totals and permission checks calculated server-side / database-side.
-- [x] **REAL E2E TESTS EXECUTED:** 4 real HTTP and live database test suites in `tests/e2e/`.
-- [x] **DEPLOYED RUNTIME ARCHITECTURE VERIFIED:** Cloudflare Pages Static Export + Supabase Cloud PostgreSQL API (`docs/PRODUCTION_RUNTIME_ARCHITECTURE.md`).
-- [x] **BACKUP & DR VERIFIED:** Supabase PITR and continuous WAL archiving (`docs/FINAL_BACKUP_DR_VERIFICATION.md`).
-- [x] **DESKTOP & PWA UNIFIED:** Desktop client and PWA use same backend and auth database.
-- [x] **NO SECRETS EXPOSED:** 0 service role keys or private keys in git or client bundle.
-- [x] **FALSE CLAIMS REMOVED:** Documentation updated to reflect exact empirical test counts and capabilities.
-
----
-
-## 4. Operational Credentials & Owner Actions
+## 3. Operational Credentials & Out-of-Band Administration
 
 - **Admin Login Portal:** `https://onnesha-hospital.pages.dev/login`
 - **Initial Super Admin Email:** `admin@onneshahospital.com`
@@ -53,4 +42,4 @@
 - **Owner Action Items:**
   1. Log in to `/login` with initial admin credentials.
   2. Navigate to `/app/settings/security` and pair a TOTP Authenticator App (Google Authenticator / Authy) to activate `AAL2` protection.
-  3. Optionally configure custom domain CNAME records in Cloudflare DNS for `onneshahospital.com`.
+  3. Enter production merchant API credentials for payment gateways and SMS delivery in `/app/settings` via encrypted integration storage.

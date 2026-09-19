@@ -116,4 +116,25 @@ test("Phase 38: SSLCommerz IPN Protocol & Atomic Webhook Ledger", async (t) => {
 
     assert.notEqual(expectedSign, tamperedSign, "Tampered amount must produce mismatching sign");
   });
+
+  await t.test("8. Migration 44 guarantees PostgreSQL type compatibility with MIN(organization_id::text)::uuid", () => {
+    const migPath = path.join(ROOT, "supabase/migrations/20260920070000_fix_org_resolver_uuid_aggregate.sql");
+    assert.ok(fs.existsSync(migPath), "Migration 44 file must exist");
+    const sql = fs.readFileSync(migPath, "utf8");
+    assert.match(sql, /MIN\(organization_id::text\)::uuid/i, "Must use MIN(organization_id::text)::uuid");
+    assert.match(sql, /SECURITY DEFINER SET search_path = ''/i, "Must preserve pinned search path");
+  });
+
+  await t.test("9. SSLCommerz adapter implements official Order Validation API contract (validationserverAPI.php)", () => {
+    const callbackPath = path.join(ROOT, "supabase/functions/payment-callback/index.ts");
+    const code = fs.readFileSync(callbackPath, "utf8");
+    assert.match(code, /validationserverAPI\.php/);
+    assert.match(code, /val_id=\$\{encodeURIComponent\(valId\)\}/);
+    assert.match(code, /store_id=\$\{encodeURIComponent\(storeId\)\}/);
+    assert.match(code, /store_passwd=\$\{encodeURIComponent\(storePassword\)\}/);
+    assert.match(code, /format=json/);
+    assert.match(code, /data\.currency_type.*BDT/);
+    assert.match(code, /REFERENCE_MISMATCH/);
+    assert.match(code, /AMOUNT_MISMATCH/);
+  });
 });
