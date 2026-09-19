@@ -33,15 +33,13 @@ try {
   console.log('\n🧪 Step 3: Running Node unit & integration test suite...');
   execSync('npm test', { stdio: 'inherit' });
 
-  // Step 4: Ensure working tree is clean or commit changes
-  console.log('\n🐙 Step 4: Checking Git working tree...');
+  // Step 4: Ensure working tree is clean (fail closed if dirty; no auto-commit)
+  console.log('\n🐙 Step 4: Verifying Git working tree is clean...');
   const status = execSync('git status --porcelain').toString().trim();
   if (status.length > 0) {
-    console.log('Working tree has uncommitted modifications:\n' + status);
-    const commitMsg = process.argv[2] || `release: verified production build (${new Date().toISOString()})`;
-    console.log(`Committing changes: "${commitMsg}"...`);
-    execSync('git add -A', { stdio: 'inherit' });
-    execSync(`git commit -m "${commitMsg}"`, { stdio: 'inherit' });
+    throw new Error(
+      `Working tree has uncommitted modifications:\n${status}\nProduction deployment requires an explicitly reviewed, committed, and clean working tree. Auto-commit is disabled.`
+    );
   }
 
   // Step 5: Synchronize with GitHub main using authenticated SSH transport

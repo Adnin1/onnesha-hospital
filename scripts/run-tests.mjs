@@ -86,6 +86,8 @@ console.log(`========================================\n`);
 if (failCount > 0 || totalFail > 0) {
   console.error('❌ Test suite finished with failures.\n');
   process.exit(1);
+} else if (totalSkipped > 0) {
+  console.log(`✅ All active test suites passed (${totalPass} passed, ${totalSkipped} deferred/skipped with explicit rationale).\n`);
 } else {
   console.log('🎉 All test suites executed and verified with zero gaps!\n');
 }

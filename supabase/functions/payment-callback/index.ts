@@ -89,13 +89,14 @@ export function md5Hex(str: string): string {
     return md5cmn(c ^ (b | ~d), a, b, x, s, t);
   }
 
+  const utf8Bytes = typeof str === "string" ? new TextEncoder().encode(str) : str;
+  const nBytes = utf8Bytes.length;
   const bin: number[] = [];
-  const mask = (1 << 8) - 1;
-  for (let i = 0; i < str.length * 8; i += 8) {
-    bin[i >> 5] = (bin[i >> 5] || 0) | ((str.charCodeAt(i / 8) & mask) << (i % 32));
+  for (let i = 0; i < nBytes; i++) {
+    bin[i >> 2] = (bin[i >> 2] || 0) | (utf8Bytes[i] << ((i % 4) * 8));
   }
-  bin[str.length >> 2] = (bin[str.length >> 2] || 0) | (0x80 << ((str.length % 4) * 8));
-  bin[(((str.length + 8) >> 6) << 4) + 14] = str.length * 8;
+  bin[nBytes >> 2] = (bin[nBytes >> 2] || 0) | (0x80 << ((nBytes % 4) * 8));
+  bin[(((nBytes + 8) >> 6) << 4) + 14] = nBytes * 8;
 
   let a = 1732584193, b = -271733879, c = -1732584194, d = 271733878;
   for (let i = 0; i < bin.length; i += 16) {
@@ -339,6 +340,12 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
           error: "SSLCommerz IPN verify_sign hash validation failed. Payload integrity rejected.",
         };
       }
+    } else {
+      return {
+        verified: false,
+        code: "MISSING_IPN_SIGNATURE",
+        error: "SSLCommerz IPN requires verify_sign and verify_key for cryptographic payload integrity verification.",
+      };
     }
 
     // Step 2: Risk indicator evaluation from callback body
@@ -421,6 +428,24 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
   }
 }
 
+function sanitizeWebhookPayload(raw: Record<string, unknown>): Record<string, unknown> {
+  const sensitiveKeys = new Set([
+    "card_number", "card_no", "pan", "cvv", "cvv2", "cvc", "password", "store_passwd",
+    "pin", "otp", "token", "auth_token", "secret", "apikey", "api_key"
+  ]);
+  const sanitized: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (sensitiveKeys.has(k.toLowerCase())) {
+      sanitized[k] = "[REDACTED]";
+    } else if (v && typeof v === "object" && !Array.isArray(v)) {
+      sanitized[k] = sanitizeWebhookPayload(v as Record<string, unknown>);
+    } else {
+      sanitized[k] = v;
+    }
+  }
+  return sanitized;
+}
+
 const PROVIDER_ADAPTERS: Record<string, PaymentProviderAdapter> = {
   BKASH: new BkashAdapter(),
   NAGAD: new NagadAdapter(),
@@ -429,7 +454,10 @@ const PROVIDER_ADAPTERS: Record<string, PaymentProviderAdapter> = {
 
 serve(async (req: Request) => {
   const { headers: cors, isAllowed } = getCorsHeaders(req);
-  const correlationId = req.headers.get("x-correlation-id") || crypto.randomUUID();
+  const rawCorrId = req.headers.get("x-correlation-id") || "";
+  const correlationId = /^[0-9a-fA-F-]{8,64}$/.test(rawCorrId.trim())
+    ? rawCorrId.trim()
+    : crypto.randomUUID();
 
   if (!isAllowed) {
     return new Response(
@@ -592,6 +620,7 @@ serve(async (req: Request) => {
     }
 
     let webhookEventId: string | null = null;
+    const sanitizedPayload = sanitizeWebhookPayload(body);
     const { data: insertedEvent } = await supabaseClient
       .from("webhook_events")
       .insert({
@@ -601,7 +630,7 @@ serve(async (req: Request) => {
         provider_event_id: providerEventId,
         signature_header: (providerSig || (body.verify_sign as string) || "").slice(0, 250),
         is_signature_valid: false,
-        payload: body,
+        payload: sanitizedPayload,
         processing_status: "RECEIVED",
         correlation_id: correlationId,
       })
@@ -610,6 +639,40 @@ serve(async (req: Request) => {
 
     if (insertedEvent?.id) {
       webhookEventId = insertedEvent.id;
+    } else if (providerEventId) {
+      const { data: existingEvent } = await supabaseClient
+        .from("webhook_events")
+        .select("id, processing_status")
+        .eq("organization_id", intent.organization_id)
+        .eq("provider", normalizedCallbackProvider)
+        .eq("provider_event_id", providerEventId)
+        .maybeSingle();
+
+      if (existingEvent?.id) {
+        if (existingEvent.processing_status === "PROCESSED") {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: "Webhook event already processed (idempotent duplicate)",
+              correlationId,
+            }),
+            { headers: { ...cors, "Content-Type": "application/json" } }
+          );
+        }
+        webhookEventId = existingEvent.id;
+      }
+    }
+
+    if (!webhookEventId) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          code: "LEDGER_PERSISTENCE_FAILED",
+          error: "Failed to persist webhook ledger event. Settlement aborted to prevent financial drift.",
+          correlationId,
+        }),
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
+      );
     }
 
     // 7. Strict Provider Matching Check

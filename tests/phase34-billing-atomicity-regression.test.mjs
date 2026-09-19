@@ -63,8 +63,8 @@ describe("OHMS Phase 34: Billing Pre-Validation Atomicity & Idempotency Hardenin
     const pagePath = path.join(ROOT, "app/(public)/downloads/desktop/page.tsx");
     const content = fs.readFileSync(pagePath, "utf8");
 
-    assert.match(content, /Onnesha-Hospital-Setup-1\.0\.0\.exe/, "Must link to NSIS setup executable");
-    assert.match(content, /Onnesha-Hospital-1\.0\.0\.msi/, "Must link to MSI package");
+    assert.match(content, /Onnesha-Hospital-Setup-1\.0\.3\.exe/, "Must link to NSIS setup executable");
+    assert.match(content, /Onnesha-Hospital-1\.0\.3\.msi/, "Must link to MSI package");
     assert.match(content, /~2\.0 MB/, "Must display realistic NSIS setup size");
     assert.match(content, /~2\.5 MB/, "Must display realistic MSI package size");
   });
@@ -73,9 +73,9 @@ describe("OHMS Phase 34: Billing Pre-Validation Atomicity & Idempotency Hardenin
     const manifestPath = path.join(ROOT, "public/downloads/desktop/latest.json");
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 
-    assert.equal(manifest.version, "1.0.2");
-    assert.match(manifest.platforms["windows-x86_64"].installer_exe, /Onnesha-Hospital-Setup-1\.0\.2\.exe/);
-    assert.match(manifest.platforms["windows-x86_64"].installer_msi, /Onnesha-Hospital-1\.0\.2\.msi/);
+    assert.equal(manifest.version, "1.0.3");
+    assert.match(manifest.platforms["windows-x86_64"].installer_exe, /Onnesha-Hospital-Setup-1\.0\.3\.exe/);
+    assert.match(manifest.platforms["windows-x86_64"].installer_msi, /Onnesha-Hospital-1\.0\.3\.msi/);
     assert.equal(manifest.signing.enabled, false);
   });
 });

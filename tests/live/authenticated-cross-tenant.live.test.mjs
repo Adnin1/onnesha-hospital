@@ -61,6 +61,13 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
     return;
   }
 
+  // Strict Production Safety Shield: Refuse execution targeting production project or canonical org
+  const isProdTarget = SUPABASE_URL.includes("iuhtzahuszdkdarhxobx") || SUPABASE_URL.includes("onnesha-hospital");
+  if (isProdTarget && process.env.ALLOW_MUTATING_PRODUCTION_TESTS !== "true") {
+    t.skip("SAFETY INVARIANT: Refusing to run live mutating cross-tenant test against production Supabase instance (iuhtzahuszdkdarhxobx). Set ALLOW_MUTATING_PRODUCTION_TESTS=true to override.");
+    return;
+  }
+
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
     t.skip("Skipping runtime test: Supabase live credentials not configured in environment");
     return;

@@ -35,7 +35,7 @@ async function runProductionSmokeTests() {
   for (const r of routes) {
     try {
       const res = await fetch(base + r, { redirect: 'manual' });
-      const ok = res.status >= 200 && res.status < 400;
+      const ok = res.status === 200;
       console.log(`  [${ok ? '✓' : '✗'}] ${r.padEnd(20)} HTTP ${res.status}`);
       if (ok) layerAPassed++;
     } catch (e) {

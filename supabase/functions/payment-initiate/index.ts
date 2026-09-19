@@ -200,17 +200,19 @@ serve(async (req: Request) => {
         );
       }
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          isDuplicate: true,
-          paymentIntentId: existingIntent.id,
-          intentReference: existingIntent.intent_reference,
-          status: existingIntent.status,
-          payableAmount: existingIntent.payable_amount,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      if (existingIntent.status !== "FAILED" && existingIntent.status !== "EXPIRED") {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            isDuplicate: true,
+            paymentIntentId: existingIntent.id,
+            intentReference: existingIntent.intent_reference,
+            status: existingIntent.status,
+            payableAmount: existingIntent.payable_amount,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // 5. Verify provider integration exists, has credentials, and is active
@@ -246,10 +248,13 @@ serve(async (req: Request) => {
       }),
       { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Internal edge function error";
+  } catch {
     return new Response(
-      JSON.stringify({ success: false, error: errorMsg }),
+      JSON.stringify({
+        success: false,
+        code: "INTERNAL_ERROR",
+        error: "An internal error occurred while initiating payment.",
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
