@@ -56,6 +56,22 @@ export class PaymentService {
     error?: string;
   }> {
     try {
+      if (!params.organizationId || typeof params.organizationId !== "string" || !params.organizationId.trim()) {
+        return { success: false, error: "Invalid organization ID" };
+      }
+      if (!params.invoiceId || typeof params.invoiceId !== "string" || !params.invoiceId.trim()) {
+        return { success: false, error: "Invalid invoice ID" };
+      }
+      if (!params.provider || !["BKASH", "NAGAD", "SSLCOMMERZ"].includes(String(params.provider).toUpperCase())) {
+        return { success: false, error: "Invalid payment provider" };
+      }
+      if (params.amount !== undefined && params.amount !== null) {
+        const num = Number(params.amount);
+        if (!Number.isFinite(num) || num <= 0 || isNaN(num)) {
+          return { success: false, error: "Payment amount must be a positive finite number" };
+        }
+      }
+
       const supabase = createClient();
 
       // 1. Check organization gateway integration status (without exposing secrets to browser)
