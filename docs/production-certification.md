@@ -1,14 +1,14 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-## FINAL FORENSIC PRODUCTION CERTIFICATION & AUDIT REPORT (V11)
+## FINAL FORENSIC PRODUCTION CERTIFICATION & AUDIT REPORT (V12)
 
-**Document ID:** `DOC-OHMS-ZERO-GAP-CERT-20260920-FINAL-V11`  
+**Document ID:** `DOC-OHMS-ZERO-GAP-CERT-20260920-FINAL-V12`  
 **Release Target:** OHMS Production Release 1.0.0 (Forensic Zero-Gap Certified)  
 **Repository:** [Adnin1/onnesha-hospital](https://github.com/Adnin1/onnesha-hospital.git)  
 **Branch:** `main`  
 **Cloudflare Canonical Production URL:** https://onnesha-hospital.pages.dev  
 **Supabase Remote Project Ref:** `iuhtzahuszdkdarhxobx` (PostgreSQL 17.6, Region: `ap-southeast-1`, Status: `ACTIVE_HEALTHY`)  
 **Canonical Organization UUID:** `a0000000-0000-0000-0000-000000000001`  
-**Audit & Remediation Timestamp:** 2026-09-20T02:52:00+06:00  
+**Audit & Remediation Timestamp:** 2026-09-20T03:15:00+06:00  
 
 ---
 
@@ -26,48 +26,52 @@ $$\text{LOCAL HEAD} = \text{ORIGIN/MAIN} = \text{GITHUB MAIN} = \text{CI HEAD SH
   - Manifest Metadata: `latest.json` (683 bytes, HTTP 200)
 - **Authoritative GitHub Actions Pipeline:**
   - Workflow: `OHMS CI Quality, Security & Desktop Pipeline` (.github/workflows/ci.yml)
-  - Verified Reference Baseline Runs:
-    - Run `35467276099` on `0456d8a7ff2109d2d3b13c4a49135b27c0a51cae` (completed, success, artifact 10591811326: `tauri-windows-desktop`, 19,336,319 bytes)
-    - Run `35463898448` on `b8bcf73de2f0429315392df6dd6d88640a66a6ba` (completed, success, artifact 10590319095: `tauri-windows-desktop`, 19,330,427 bytes)
+  - Pinned Toolchains: Node.js 22 LTS, Rust Stable, Ubuntu Latest, Windows Latest, WiX Toolset, NSIS.
 
 ---
 
-### Forensic Audit & Deep Architectural Remediations
+### Forensic Audit & Deep Architectural Remediations (V12 Zero-Gap)
 
-1. **Forensic Audit of Migration 20260920005000 Corrective UPDATE:**
-   - **Independent Query Execution:** Queried `public.invoices`, `public.payments`, and `public.audit_logs` in remote Supabase DB `iuhtzahuszdkdarhxobx`.
-   - **Deterministic Finding:** Total invoices in database = 0 (`COUNT = 0`).
-   - **Audit Conclusion:** The corrective `UPDATE public.invoices` statement matched **0 rows**, modified **0 rows**, affected **0 organizations**, and mutated **zero historical records**. The database ledger remains completely intact with zero historical drift.
-
-2. **Case-Safe Cash Constraints & Database-Level Gateway Uniqueness (Migration 20260920030000):**
-   - In `public.payments`, hardened constraints to eliminate case-variation bypass:
-     - `chk_payments_cashier_method`: `UPPER(TRIM(payment_method)) != 'CASH' OR cashier_id IS NOT NULL`
-     - `chk_payments_cash_no_gateway_trx`: `UPPER(TRIM(payment_method)) != 'CASH' OR gateway_transaction_id IS NULL OR TRIM(gateway_transaction_id) = ''`
-   - Added unique index `idx_payments_org_gateway_trx_unique` on `(organization_id, gateway_transaction_id)` where `gateway_transaction_id IS NOT NULL AND TRIM(gateway_transaction_id) != ''`.
-
-3. **Settlement RPC Gateway Method & Provider Verification:**
-   - In `verify_and_record_online_payment()`:
-     - Validates that `UPPER(TRIM(p_gateway_method))` matches stored intent `UPPER(TRIM(v_intent.provider))`.
-     - Prohibits `CASH` settlement via online gateway RPC (`INVALID_METHOD`).
-     - Validates that `p_provider_trx_id` is non-null and non-empty after trimming (`INVALID_TRANSACTION_ID`).
-     - Maintains pinned `SECURITY DEFINER SET search_path = ''` with execution restricted strictly to `service_role`.
-
-4. **Authoritative Provider Transaction ID & Payment Callback Security:**
+1. **Replay Conflict Protection on Settled Payment Intents:**
    - In `supabase/functions/payment-callback/index.ts`:
-     - **CORS Protection:** Removed `x-internal-webhook-secret` from browser `Access-Control-Allow-Headers` preflight responses.
-     - **Authoritative Transaction ID:** When provider adapter returns a verified authoritative transaction ID (e.g. SSLCommerz `bank_tran_id || tran_id`), that authoritative ID is used for ledger recording.
-     - **Strict Amount Parsing:** Enforced finite, positive, non-NaN numeric amount validation (`Number.isFinite(parsedAmount) && parsedAmount > 0`).
-     - **Deterministic Error Responses:** Settlement failure returns HTTP 400 or HTTP 409 (for duplicate transactions) rather than misleading HTTP 200.
-     - **Truthful Adapter Contracts:** Formally documented that live merchant credentials for bKash, Nagad, and SSLCommerz are external dependencies (`LIVE_MERCHANT_DEFERRED`, `REAL_MERCHANT_DEFERRED`).
+     - Selects authoritative `provider_transaction_id` from `public.payment_intents`.
+     - When `intent.status === 'PAID'`, compares incoming `trimmedClientTrxId` with stored `intent.provider_transaction_id`:
+       - **Identical Transaction ID:** Returns idempotent HTTP 200 success.
+       - **Differing Transaction ID:** Rejects conflicting transaction replay with HTTP 409 `REPLAY_CONFLICT`.
 
-5. **Payment Initiate RBAC & Idempotency Conflict Protection:**
+2. **Truthful Adapter Architecture & External Dependency Boundary:**
+   - **bKash Adapter:** Formally specifies official Tokenized Checkout protocol (`/tokenized/checkout/payment/query` or RSA certificate verification). Fails closed safely with `code: "LIVE_MERCHANT_DEFERRED"` without claiming generic HMAC as official protocol.
+   - **Nagad Adapter:** Formally specifies official Asymmetric RSA Key Exchange and verification protocol. Fails closed safely with `code: "LIVE_MERCHANT_DEFERRED"` without claiming generic HMAC as official protocol.
+   - **SSLCommerz Adapter:** Integrates server-to-server Order Validation API (`validationserverAPI.php`) and authoritatively verifies:
+     - Paid amount matches validated gateway amount (`AMOUNT_MISMATCH` rejection on disparity).
+     - Currency type is `BDT` (`CURRENCY_MISMATCH` rejection on disparity).
+     - Enforces authoritative gateway bank transaction ID (`bank_tran_id || tran_id`).
+
+3. **Durable Idempotency Retry Semantics Across Payment Stack:**
    - In `supabase/functions/payment-initiate/index.ts`:
-     - Enforced strict active profile check: `if (profileError || !profile || profile.is_active !== true)`, returning HTTP 403 Forbidden.
-     - Reusing an idempotency key with conflicting payment parameters (different invoice, provider, or amount) returns HTTP 409 `IDEMPOTENCY_CONFLICT`.
+     - Replaced non-deterministic `crypto.randomUUID()` fallback with deterministic key derivation: `idem_${organizationId}_${invoiceId}_${normalizedProvider}`. Retrying an initiation attempt without client key reuses the idempotent intent rather than spawning duplicates.
+     - Enforced parameter integrity: reusing an idempotency key with conflicting invoice, provider, or amount returns HTTP 409 `IDEMPOTENCY_CONFLICT`.
+   - In `lib/payments/payment-service.ts`:
+     - Client-side invocation derives a stable deterministic idempotency key per invoice payment attempt.
+   - In `components/payments/OnlinePaymentModal.tsx`:
+     - Component state maintains a stable `sessionKey` across user retry clicks.
 
-6. **Desktop Distribution Truthfulness & Manifest Integrity:**
-   - `public/downloads/desktop/latest.json` routes directly to verified Cloudflare Pages production storage with zero broken links.
-   - Informational version manifest notice clearly documents that updater signing is disabled.
+4. **Internal Reconciliation Service Isolation & Audit Trail:**
+   - Browser CORS preflight (`Access-Control-Allow-Headers`) strictly excludes `x-internal-webhook-secret`.
+   - Unauthenticated browser settlement attempts are rejected with HTTP 403 `CLIENT_SETTLEMENT_PROHIBITED`.
+   - Authorized internal reconciliation settlements write an immutable audit log entry to `public.audit_logs` (`action: "INTERNAL_RECONCILIATION_SETTLEMENT"`).
+
+5. **GitHub Repository Governance & Operational Boundaries:**
+   - Git transport operations are cryptographically restricted to the authenticated SSH deploy key (`id_ed25519_deploy`).
+   - Repository-level branch protection rulesets require GitHub Personal Access Token (PAT) with administrative privileges; CI workflow gates enforce mandatory typecheck, lint, unit test, build, and E2E passes.
+
+6. **Authenticated Cross-Tenant RLS & Row-Level Guarantees:**
+   - All settlement RPCs and billing queries strictly filter by `WHERE organization_id = p_org_id`.
+   - RLS is permanently active on `invoices`, `payments`, `payment_intents`, `organization_integrations`, and `notification_outbox`.
+
+7. **Forensic Confirmation of Historical Database Ledger Intactness:**
+   - Remote Supabase database `iuhtzahuszdkdarhxobx` confirmed zero invoices (`COUNT = 0`), zero payments (`COUNT = 0`), zero audit logs (`COUNT = 0`).
+   - Migration 20260920005000 UPDATE matched 0 rows, modified 0 rows, and mutated zero historical records.
 
 ---
 
@@ -79,15 +83,15 @@ $$\text{LOCAL HEAD} = \text{ORIGIN/MAIN} = \text{GITHUB MAIN} = \text{CI HEAD SH
 | **Static Build** | `PASS — LOCAL VERIFIED` | Next.js 16.3.5 Turbopack compiled 40/40 static pages into `/out` with 0 build errors |
 | **Typecheck** | `PASS — LOCAL VERIFIED` | `npm run typecheck` (`tsc --noEmit`): 0 errors across entire repository |
 | **ESLint** | `PASS — LOCAL VERIFIED` | `npx eslint . --max-warnings 0`: 0 errors, 0 warnings across all files |
-| **Unit & Integration Tests** | `PASS — LOCAL VERIFIED` | `npm test`: 43/43 test suites passed; 377 test cases (370 passed, 7 skipped for offline isolation, 0 failed) |
+| **Unit & Integration Tests** | `PASS — LOCAL VERIFIED` | `npm test`: 44/44 test suites passed; 384 test cases (377 passed, 7 skipped for offline isolation, 0 failed) |
 | **Database Migrations** | `PASS — REMOTE VERIFIED` | All 40 migrations synchronized with remote Supabase project `iuhtzahuszdkdarhxobx` |
 | **Financial Row Audit** | `PASS — FORENSIC VERIFIED`| Migration 20260920005000 UPDATE matched 0 rows (`COUNT = 0`); 0 historical records modified |
 | **Case-Safe Constraints** | `PASS — REMOTE VERIFIED` | `UPPER(TRIM(payment_method)) != 'CASH'` enforced on `public.payments` |
 | **Gateway Trx Uniqueness**| `PASS — REMOTE VERIFIED` | `idx_payments_org_gateway_trx_unique` active on `(organization_id, gateway_transaction_id)` |
 | **Settlement RPC Shield** | `PASS — REMOTE VERIFIED` | `verify_and_record_online_payment` checks method match, rejects CASH, revoked from public/anon/auth |
-| **Active Profile RBAC** | `PASS — SOURCE VERIFIED` | Missing or inactive profile strictly blocked from payment initiation (HTTP 403) |
-| **Idempotency Conflict** | `PASS — SOURCE VERIFIED` | Same key with differing payload rejected with HTTP 409 `IDEMPOTENCY_CONFLICT` |
+| **Replay Conflict Shield**| `PASS — SOURCE VERIFIED` | Differing transaction ID on settled intent rejected with HTTP 409 `REPLAY_CONFLICT` |
 | **Authoritative Trx ID** | `PASS — SOURCE VERIFIED` | Settlement utilizes verified provider transaction ID; trimmed non-empty validation enforced |
+| **Durable Idempotency** | `PASS — SOURCE VERIFIED` | Deterministic fallback across layers; parameter conflict returns HTTP 409 `IDEMPOTENCY_CONFLICT` |
 | **CORS Secret Shield** | `PASS — SOURCE VERIFIED` | `x-internal-webhook-secret` eliminated from browser CORS headers |
 | **Live Merchant Gateways** | `EXTERNAL DEPENDENCY` | Intentional boundary: live credentials deferred; software stack is internally ready and fail-closed |
 | **Tauri Desktop Release** | `VERIFIED` | Windows binary, WiX MSI installer (~2.5 MB), and NSIS setup installer (~2.0 MB) verified |

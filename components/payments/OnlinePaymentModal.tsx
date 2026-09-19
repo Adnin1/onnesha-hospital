@@ -27,6 +27,7 @@ export function OnlinePaymentModal({
   const [payingAmount, setPayingAmount] = useState<number>(dueAmount);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [sessionKey] = useState<string>(() => `idem_${invoiceId}_${Date.now()}`);
 
   if (!isOpen) return null;
 
@@ -40,6 +41,7 @@ export function OnlinePaymentModal({
         invoiceId,
         provider: selectedProvider,
         amount: Number(payingAmount),
+        idempotencyKey: sessionKey,
       });
 
       if (!res.success || !res.initiateResult) {

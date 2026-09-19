@@ -174,7 +174,7 @@ serve(async (req: Request) => {
     // 4. Robust Database-backed Idempotency Check (Zero Date.now() timestamp fallback)
     const idempotencyKey = clientIdempotencyKey && typeof clientIdempotencyKey === "string" && clientIdempotencyKey.trim().length > 0
       ? clientIdempotencyKey.trim()
-      : crypto.randomUUID();
+      : `idem_${organizationId}_${invoiceId}_${normalizedProvider}`;
 
     const { data: existingIntent } = await supabaseClient
       .from("payment_intents")

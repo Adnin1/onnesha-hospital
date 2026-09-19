@@ -159,14 +159,14 @@ describe("OHMS Phase 32: Billing Atomicity, Payment Reconciliation & Hardened RB
     }
   });
 
-  test("16. Edge Function payment-callback enforces cryptographic HMAC-SHA256 and timing-safe comparison", () => {
+  test("16. Edge Function payment-callback enforces timing-safe comparison and official adapter verification", () => {
     const cbPath = path.join(ROOT, "supabase/functions/payment-callback/index.ts");
     const cbContent = fs.readFileSync(cbPath, "utf8");
 
     assert.match(cbContent, /timingSafeEqual/, "Must implement timing-safe comparison");
-    assert.match(cbContent, /computeHmacSha256Hex|crypto\.subtle\.sign/, "Must implement HMAC-SHA256 signature calculation");
+    assert.match(cbContent, /safeCompareStrings/, "Must implement timing-safe string comparison");
     assert.match(cbContent, /CLIENT_SETTLEMENT_PROHIBITED/, "Must reject direct browser client settlement calls");
-    assert.match(cbContent, /WEBHOOK_SECRET_NOT_CONFIGURED|REAL_MERCHANT_DEFERRED/, "Must fail closed if provider webhook secret is unconfigured");
+    assert.match(cbContent, /WEBHOOK_SECRET_NOT_CONFIGURED|REAL_MERCHANT_DEFERRED|LIVE_MERCHANT_DEFERRED/, "Must fail closed if provider webhook secret is unconfigured");
   });
 
   test("17. Migration 033 strictly revokes EXECUTE on verify_and_record_online_payment from authenticated and anon", () => {

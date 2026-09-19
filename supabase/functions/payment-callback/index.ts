@@ -51,24 +51,6 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 /**
- * Computes HMAC-SHA256 hex digest of raw request payload using Web Crypto API.
- */
-async function computeHmacSha256Hex(secret: string, data: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(data));
-  return Array.from(new Uint8Array(signature))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-/**
  * Timing-safe string comparison for hex digests and bearer secrets.
  */
 function safeCompareStrings(strA: string, strB: string): boolean {
@@ -105,8 +87,10 @@ interface PaymentProviderAdapter {
 
 /**
  * bKash Webhook / IPN Adapter
- * Official Protocol: Requires bKash Public Key certificate or Tokenized API queryPayment.
- * Fails closed if live credentials are not configured.
+ * Official Protocol: Requires bKash Tokenized Checkout queryPayment API (/tokenized/checkout/payment/query)
+ * or RSA signature verification using official bKash public key certificate.
+ * Live merchant onboarding and direct checkout integration is an external provider dependency (LIVE_MERCHANT_DEFERRED).
+ * This adapter explicitly fails closed without simulating verification or using generic HMAC.
  */
 class BkashAdapter implements PaymentProviderAdapter {
   readonly providerName = "BKASH";
@@ -124,28 +108,26 @@ class BkashAdapter implements PaymentProviderAdapter {
       return {
         verified: false,
         code: "LIVE_MERCHANT_DEFERRED",
-        error: "bKash live credentials (APP_KEY, APP_SECRET) not configured. Official Tokenized queryPayment deferred.",
+        error: "bKash live merchant credentials (BKASH_APP_KEY, BKASH_APP_SECRET) not configured. Official Tokenized queryPayment deferred.",
       };
     }
 
-    // Validate signature if webhook credentials present
-    const expected = await computeHmacSha256Hex(appSecret, params.rawBody);
-    if (!safeCompareStrings(expected.toLowerCase(), (params.signature || "").toLowerCase())) {
-      return { verified: false, code: "INVALID_WEBHOOK_SIGNATURE", error: "bKash webhook signature verification failed" };
-    }
-
+    // Official bKash Tokenized Checkout protocol requires server-to-server queryPayment or official RSA certificate verification.
+    // Generic HMAC is not the official protocol; live settlement is deferred until live merchant onboarding completes.
     return {
       verified: false,
       code: "LIVE_MERCHANT_DEFERRED",
-      error: "bKash live merchant onboarding pending activation.",
+      error: "bKash live merchant onboarding and official Tokenized Checkout API query integration is pending activation (LIVE_MERCHANT_DEFERRED).",
     };
   }
 }
 
 /**
  * Nagad Webhook / Notification Adapter
- * Official Protocol: Requires Nagad Public Key and Merchant Private Key.
- * Fails closed if live credentials are not configured.
+ * Official Protocol: Requires Nagad Public Key and Merchant Private Key with asymmetric RSA decryption
+ * and server-to-server verification endpoint (/check-payment-status).
+ * Live merchant onboarding is an external provider dependency (LIVE_MERCHANT_DEFERRED).
+ * This adapter explicitly fails closed without simulating verification or using generic HMAC.
  */
 class NagadAdapter implements PaymentProviderAdapter {
   readonly providerName = "NAGAD";
@@ -163,20 +145,16 @@ class NagadAdapter implements PaymentProviderAdapter {
       return {
         verified: false,
         code: "LIVE_MERCHANT_DEFERRED",
-        error: "Nagad live credentials (MERCHANT_ID, NAGAD_PUBLIC_KEY) not configured. Cryptographic verification deferred.",
+        error: "Nagad live merchant credentials (NAGAD_MERCHANT_ID, NAGAD_PUBLIC_KEY) not configured. Cryptographic verification deferred.",
       };
     }
 
-    // Cryptographic validation against Nagad payload
-    const expected = await computeHmacSha256Hex(nagadPublicKey, params.rawBody);
-    if (!safeCompareStrings(expected.toLowerCase(), (params.signature || "").toLowerCase())) {
-      return { verified: false, code: "INVALID_WEBHOOK_SIGNATURE", error: "Nagad webhook signature verification failed" };
-    }
-
+    // Official Nagad protocol requires Asymmetric RSA verification and server query.
+    // Generic HMAC is not the official protocol; live settlement is deferred until live merchant onboarding completes.
     return {
       verified: false,
       code: "LIVE_MERCHANT_DEFERRED",
-      error: "Nagad live merchant onboarding pending activation.",
+      error: "Nagad live merchant onboarding and official Asymmetric Key verification is pending activation (LIVE_MERCHANT_DEFERRED).",
     };
   }
 }
@@ -184,7 +162,7 @@ class NagadAdapter implements PaymentProviderAdapter {
 /**
  * SSLCommerz IPN Adapter
  * Official Protocol: Requires Store ID, Store Password, and Order Validation API (validationserverAPI.php).
- * Calls official validationserverAPI.php when credentials are present; fails closed otherwise.
+ * Authoritatively verifies amount, currency, and transaction status via validationserverAPI.php.
  */
 class SslCommerzAdapter implements PaymentProviderAdapter {
   readonly providerName = "SSLCOMMERZ";
@@ -223,6 +201,25 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
       const res = await fetch(validationUrl);
       const data = await res.json();
       if (data.status === "VALID" || data.status === "VALIDATED") {
+        // Authoritative verification of amount and currency against Order Validation response
+        if (params.body?.paidAmount !== undefined && params.body?.paidAmount !== null) {
+          const callbackAmount = Number(params.body.paidAmount);
+          const validatedAmount = Number(data.amount);
+          if (Number.isFinite(validatedAmount) && Math.abs(callbackAmount - validatedAmount) > 0.01) {
+            return {
+              verified: false,
+              code: "AMOUNT_MISMATCH",
+              error: `SSLCommerz Order Validation amount (${validatedAmount}) does not match callback amount (${callbackAmount})`,
+            };
+          }
+        }
+        if (data.currency_type && String(data.currency_type).toUpperCase() !== "BDT" && String(data.currency).toUpperCase() !== "BDT") {
+          return {
+            verified: false,
+            code: "CURRENCY_MISMATCH",
+            error: `SSLCommerz Order Validation currency (${data.currency_type || data.currency}) is not BDT`,
+          };
+        }
         return {
           verified: true,
           providerTransactionId: data.bank_tran_id || data.tran_id || valId,
@@ -362,7 +359,7 @@ serve(async (req: Request) => {
     // 4. Authoritatively load payment intent from database
     const { data: intent, error: intentError } = await supabaseClient
       .from("payment_intents")
-      .select("id, organization_id, provider, status, payable_amount")
+      .select("id, organization_id, provider, status, payable_amount, provider_transaction_id")
       .eq("intent_reference", intentReference)
       .single();
 
@@ -388,9 +385,19 @@ serve(async (req: Request) => {
 
     // 6. Check intent status (Replay Protection)
     if (intent.status === "PAID") {
+      if (intent.provider_transaction_id && intent.provider_transaction_id === trimmedClientTrxId) {
+        return new Response(
+          JSON.stringify({ success: true, message: "Payment intent is already settled with this transaction ID" }),
+          { headers: { ...cors, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
-        JSON.stringify({ success: true, message: "Payment intent is already settled" }),
-        { headers: { ...cors, "Content-Type": "application/json" } }
+        JSON.stringify({
+          success: false,
+          code: "REPLAY_CONFLICT",
+          error: `Payment intent is already settled with transaction ID '${intent.provider_transaction_id}', but callback received '${trimmedClientTrxId}'. Conflict rejected.`,
+        }),
+        { status: 409, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -463,6 +470,22 @@ serve(async (req: Request) => {
         JSON.stringify(rpcRes),
         { status, headers: { ...cors, "Content-Type": "application/json" } }
       );
+    }
+
+    if (isInternalService) {
+      await supabaseClient.from("audit_logs").insert({
+        organization_id: intent.organization_id,
+        action: "INTERNAL_RECONCILIATION_SETTLEMENT",
+        entity_type: "PAYMENT_INTENT",
+        entity_id: intent.id,
+        metadata: {
+          intent_reference: intentReference,
+          provider: intent.provider,
+          amount: parsedAmount,
+          transaction_id: authoritativeTrxId,
+          source: "internal_reconciliation_service",
+        },
+      });
     }
 
     return new Response(

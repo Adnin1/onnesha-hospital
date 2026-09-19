@@ -117,7 +117,7 @@ export class PaymentService {
           invoiceId: params.invoiceId,
           provider: params.provider,
           amount: payableAmount,
-          idempotencyKey: params.idempotencyKey || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : undefined),
+          idempotencyKey: params.idempotencyKey || `idem_${params.organizationId}_${params.invoiceId}_${params.provider}`,
         },
       });
 
