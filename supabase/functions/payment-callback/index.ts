@@ -69,14 +69,76 @@ async function computeHmacSha256Hex(secret: string, data: string): Promise<strin
 }
 
 /**
- * Timing-safe string comparison for hex digests.
+ * Timing-safe string comparison for hex digests and bearer secrets.
  */
-function safeCompareHex(hexA: string, hexB: string): boolean {
+function safeCompareStrings(strA: string, strB: string): boolean {
   const encoder = new TextEncoder();
-  const bufA = encoder.encode(hexA.trim().toLowerCase());
-  const bufB = encoder.encode(hexB.trim().toLowerCase());
+  const bufA = encoder.encode(strA.trim());
+  const bufB = encoder.encode(strB.trim());
   return timingSafeEqual(bufA, bufB);
 }
+
+// -------------------------------------------------------------------------------------
+// Provider Adapter Architecture
+// -------------------------------------------------------------------------------------
+interface ProviderVerificationResult {
+  verified: boolean;
+  code?: string;
+  error?: string;
+}
+
+interface PaymentProviderAdapter {
+  verifyWebhook(params: {
+    rawBody: string;
+    signature?: string;
+    secret?: string;
+  }): Promise<ProviderVerificationResult>;
+}
+
+class BkashAdapter implements PaymentProviderAdapter {
+  async verifyWebhook(params: { rawBody: string; signature?: string; secret?: string }): Promise<ProviderVerificationResult> {
+    if (!params.secret) {
+      return { verified: false, code: "WEBHOOK_SECRET_NOT_CONFIGURED", error: "bKash webhook secret is not configured" };
+    }
+    const expected = await computeHmacSha256Hex(params.secret, params.rawBody);
+    if (!safeCompareStrings(expected.toLowerCase(), (params.signature || "").toLowerCase())) {
+      return { verified: false, code: "INVALID_WEBHOOK_SIGNATURE", error: "bKash HMAC signature verification failed" };
+    }
+    return { verified: true };
+  }
+}
+
+class NagadAdapter implements PaymentProviderAdapter {
+  async verifyWebhook(params: { rawBody: string; signature?: string; secret?: string }): Promise<ProviderVerificationResult> {
+    if (!params.secret) {
+      return { verified: false, code: "WEBHOOK_SECRET_NOT_CONFIGURED", error: "Nagad webhook secret is not configured" };
+    }
+    const expected = await computeHmacSha256Hex(params.secret, params.rawBody);
+    if (!safeCompareStrings(expected.toLowerCase(), (params.signature || "").toLowerCase())) {
+      return { verified: false, code: "INVALID_WEBHOOK_SIGNATURE", error: "Nagad HMAC signature verification failed" };
+    }
+    return { verified: true };
+  }
+}
+
+class SslCommerzAdapter implements PaymentProviderAdapter {
+  async verifyWebhook(params: { rawBody: string; signature?: string; secret?: string }): Promise<ProviderVerificationResult> {
+    if (!params.secret) {
+      return { verified: false, code: "WEBHOOK_SECRET_NOT_CONFIGURED", error: "SSLCommerz webhook secret is not configured" };
+    }
+    const expected = await computeHmacSha256Hex(params.secret, params.rawBody);
+    if (!safeCompareStrings(expected.toLowerCase(), (params.signature || "").toLowerCase())) {
+      return { verified: false, code: "INVALID_WEBHOOK_SIGNATURE", error: "SSLCommerz IPN signature verification failed" };
+    }
+    return { verified: true };
+  }
+}
+
+const PROVIDER_ADAPTERS: Record<string, PaymentProviderAdapter> = {
+  BKASH: new BkashAdapter(),
+  NAGAD: new NagadAdapter(),
+  SSLCOMMERZ: new SslCommerzAdapter(),
+};
 
 serve(async (req: Request) => {
   const { headers: cors, isAllowed } = getCorsHeaders(req);
@@ -122,7 +184,7 @@ serve(async (req: Request) => {
     const isInternalService = Boolean(
       internalSecretHeader &&
       configuredInternalSecret &&
-      internalSecretHeader === configuredInternalSecret
+      safeCompareStrings(internalSecretHeader, configuredInternalSecret)
     );
 
     // 3. Reject direct client browser settlement calls unconditionally
@@ -161,44 +223,16 @@ serve(async (req: Request) => {
       );
     }
 
-    const normalizedProvider = String(provider).toUpperCase();
-
-    // 4. Cryptographic HMAC Signature Verification for External Webhooks
-    if (!isInternalService) {
-      const providerSecretEnvKey = `${normalizedProvider}_WEBHOOK_SECRET`;
-      const providerWebhookSecret = Deno.env.get(providerSecretEnvKey);
-
-      if (!providerWebhookSecret) {
-        // Production Safety Invariant: Real gateway merchant credentials are unconfigured/deferred.
-        // Webhook fails closed safely if provider secret is not configured on server.
-        return new Response(
-          JSON.stringify({
-            success: false,
-            code: "WEBHOOK_SECRET_NOT_CONFIGURED",
-            status: "REAL_MERCHANT_DEFERRED",
-            error: `Webhook secret for ${normalizedProvider} is not configured. Gateway integration is intentionally deferred.`,
-          }),
-          { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Compute HMAC-SHA256 of raw request payload
-      const expectedSignature = await computeHmacSha256Hex(providerWebhookSecret, rawBody);
-      const isSignatureValid = safeCompareHex(expectedSignature, providerSig || "");
-
-      if (!isSignatureValid) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            code: "INVALID_WEBHOOK_SIGNATURE",
-            error: "Cryptographic webhook signature verification failed. Request rejected.",
-          }),
-          { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
-        );
-      }
+    const normalizedCallbackProvider = String(provider).toUpperCase();
+    const adapter = PROVIDER_ADAPTERS[normalizedCallbackProvider];
+    if (!adapter) {
+      return new Response(
+        JSON.stringify({ success: false, error: `Unsupported callback provider: ${provider}` }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
     }
 
-    // 5. Authoritatively load payment intent from database
+    // 4. Authoritatively load payment intent from database
     const { data: intent, error: intentError } = await supabaseClient
       .from("payment_intents")
       .select("id, organization_id, provider, status, payable_amount")
@@ -212,6 +246,20 @@ serve(async (req: Request) => {
       );
     }
 
+    // 5. CRITICAL: Strict Provider Matching Check
+    const storedIntentProvider = String(intent.provider).toUpperCase();
+    if (normalizedCallbackProvider !== storedIntentProvider) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          code: "PROVIDER_MISMATCH",
+          error: `Provider mismatch: callback specifies ${normalizedCallbackProvider} but intent was created for ${storedIntentProvider}. Settlement rejected.`,
+        }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 6. Check intent status (Replay Protection)
     if (intent.status === "PAID") {
       return new Response(
         JSON.stringify({ success: true, message: "Payment intent is already settled" }),
@@ -226,28 +274,31 @@ serve(async (req: Request) => {
       );
     }
 
-    // 6. Verify provider integration credentials exist and are active
-    const { data: integ } = await supabaseClient
-      .from("organization_integrations")
-      .select("encrypted_credentials, environment, is_enabled")
-      .eq("organization_id", intent.organization_id)
-      .eq("integration_type", "PAYMENT_GATEWAY")
-      .eq("provider_name", intent.provider)
-      .eq("is_enabled", true)
-      .maybeSingle();
+    // 7. Cryptographic HMAC Signature Verification via Provider Adapter
+    if (!isInternalService) {
+      const providerSecretEnvKey = `${normalizedCallbackProvider}_WEBHOOK_SECRET`;
+      const providerWebhookSecret = Deno.env.get(providerSecretEnvKey);
 
-    if (!integ || !integ.is_enabled || !integ.encrypted_credentials || Object.keys(integ.encrypted_credentials as object).length === 0) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          status: "NOT_CONFIGURED",
-          error: `Payment provider ${intent.provider} credentials are not configured on server.`,
-        }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
-      );
+      const verification = await adapter.verifyWebhook({
+        rawBody,
+        signature: providerSig || undefined,
+        secret: providerWebhookSecret,
+      });
+
+      if (!verification.verified) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            code: verification.code || "INVALID_WEBHOOK_SIGNATURE",
+            status: verification.code === "WEBHOOK_SECRET_NOT_CONFIGURED" ? "REAL_MERCHANT_DEFERRED" : undefined,
+            error: verification.error || "Provider webhook verification failed",
+          }),
+          { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
+        );
+      }
     }
 
-    // 7. Amount verification to prevent tampering
+    // 8. Amount verification to prevent tampering
     if (Number(paidAmount) !== Number(intent.payable_amount)) {
       return new Response(
         JSON.stringify({ success: false, error: `Paid amount (${paidAmount}) does not match intent amount (${intent.payable_amount})` }),
@@ -255,7 +306,7 @@ serve(async (req: Request) => {
       );
     }
 
-    // 8. Execute atomic DB settlement RPC (runs as service_role)
+    // 9. Execute atomic DB settlement RPC (runs as service_role)
     const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc("verify_and_record_online_payment", {
       p_org_id: intent.organization_id,
       p_intent_id: intent.id,

@@ -49,6 +49,7 @@ export interface CreatePaymentIntentParams {
   invoiceId: string;
   provider: PaymentProvider;
   amount?: number; // Optional partial pay; validated against server invoice due
+  idempotencyKey?: string; // Stable client-generated idempotency key
   clientIp?: string;
   callbackUrl?: string;
   metadata?: Record<string, unknown>;

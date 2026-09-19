@@ -150,12 +150,32 @@ serve(async (req: Request) => {
       );
     }
 
-    const payableAmount = amount && Number(amount) > 0 && Number(amount) <= dueAmount
-      ? Number(amount)
-      : dueAmount;
+    // Strict amount validation: Do not silently fallback on invalid input
+    let payableAmount: number;
+    if (amount !== undefined && amount !== null) {
+      const numAmount = Number(amount);
+      if (!Number.isFinite(numAmount) || numAmount <= 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Invalid payment amount: must be a positive finite number" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (numAmount > dueAmount) {
+        return new Response(
+          JSON.stringify({ success: false, error: `Requested payment amount (${numAmount}) exceeds outstanding invoice due (${dueAmount})` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      payableAmount = numAmount;
+    } else {
+      payableAmount = dueAmount;
+    }
 
-    // 4. Check idempotency key if provided
-    const idempotencyKey = clientIdempotencyKey || `pi_${organizationId}_${invoice.id}_${normalizedProvider}_${Date.now()}`;
+    // 4. Robust Database-backed Idempotency Check (Zero Date.now() timestamp fallback)
+    const idempotencyKey = clientIdempotencyKey && typeof clientIdempotencyKey === "string" && clientIdempotencyKey.trim().length > 0
+      ? clientIdempotencyKey.trim()
+      : crypto.randomUUID();
+
     const { data: existingIntent } = await supabaseClient
       .from("payment_intents")
       .select("id, intent_reference, status, payable_amount, checkout_url")

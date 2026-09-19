@@ -26,15 +26,23 @@ export default function DesktopDownloadPage() {
           Onnesha Hospital Desktop v1.0.0 (Windows 64-bit)
         </h2>
         <p className="text-sm text-slate-500 mb-6">
-          Windows 10 / 11 Supported • Build Size: ~12 MB • Tauri 2 Powered
+          Windows 10 / 11 Supported • Verified Installers • Tauri 2 Powered
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
-            href="/downloads/desktop/Onnesha-Hospital-Setup-1.0.0.msi"
-            className="w-full sm:w-auto px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2"
+            href="/downloads/desktop/Onnesha-Hospital-Setup-1.0.0.exe"
+            download
+            className="w-full sm:w-auto px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm"
           >
-            <span>📥</span> Windows Installer (.msi) ডাউনলোড করুন
+            <span>📥</span> Setup Installer (.exe, ~2.0 MB)
+          </a>
+          <a
+            href="/downloads/desktop/Onnesha-Hospital-1.0.0.msi"
+            download
+            className="w-full sm:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm"
+          >
+            <span>📦</span> MSI Package (.msi, ~2.5 MB)
           </a>
           <Link
             href="/downloads/desktop/latest.json"

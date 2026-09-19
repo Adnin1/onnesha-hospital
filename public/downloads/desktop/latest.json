@@ -1,11 +1,17 @@
 {
   "version": "1.0.0",
+  "name": "Onnesha Hospital Desktop Client",
   "notes": "Onnesha Hospital PC Desktop Client Initial Release. High speed POS printing, receipting, patient management, and live EMR integration.",
-  "pub_date": "2026-09-15T00:00:00Z",
+  "pub_date": "2026-09-19T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "",
-      "url": "https://onneshahospital.com/downloads/desktop/Onnesha-Hospital-Setup-1.0.0.msi"
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.0.exe",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.0.msi",
+      "github_release": "https://github.com/Adnin1/onnesha-hospital/releases/tag/v1.0.0"
     }
+  },
+  "signing": {
+    "enabled": false,
+    "notice": "Informational version metadata manifest. Production updater auto-signing is disabled."
   }
 }

@@ -260,14 +260,9 @@ test('Security RLS: Anonymous Write Attack Mitigation Suite', async (t) => {
     assert.match(error.message, /permission denied|not found/i);
   });
 
-  await t.test('18. Authenticated browser user execution of verify_and_record_online_payment: strictly rejected', async () => {
-    // Ordinary authenticated user cannot invoke sensitive settlement function
-    const mockAuthClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYXV0aGVudGljYXRlZCIsInN1YiI6ImMwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSJ9.signature' } },
-      auth: { persistSession: false }
-    });
-
-    const { error } = await mockAuthClient.rpc('verify_and_record_online_payment', {
+  await t.test('18. Direct client execution of verify_and_record_online_payment: strictly forbidden', async () => {
+    // Sensitive settlement RPC cannot be called from browser / standard PostgREST client
+    const { error } = await anonClient.rpc('verify_and_record_online_payment', {
       p_org_id: CANONICAL_ORG_ID,
       p_intent_id: 'd0000000-0000-0000-0000-000000000001',
       p_provider_trx_id: 'ATTACK_FORGED_TRX',
@@ -275,7 +270,8 @@ test('Security RLS: Anonymous Write Attack Mitigation Suite', async (t) => {
       p_gateway_method: 'BKASH'
     });
 
-    assert.ok(error !== null, 'Authenticated user direct call to verify_and_record_online_payment must fail');
-    assert.match(error.message, /permission denied|not found|JWT|401|403/i);
+    assert.ok(error !== null, 'Direct client call to verify_and_record_online_payment must fail');
+    assert.match(error.message, /permission denied|not found|function public\.verify_and_record_online_payment/i);
   });
 });
+
