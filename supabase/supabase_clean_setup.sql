@@ -1,6 +1,8 @@
 -- ==============================================================================
--- ONNESHA HOSPITAL - 100% CLEAN SUPABASE PRODUCTION SCHEMA & SEED
--- Guaranteed Error-Free Execution
+-- ONNESHA HOSPITAL - HISTORICAL INITIAL BOOTSTRAP SETUP ONLY
+-- NOTE: This file is for documentation/historical reference.
+-- The authoritative source of truth for database migrations is supabase/migrations/*.sql.
+-- Do NOT run this directly against an active production database.
 -- ==============================================================================
 
 -- 1. Enable Core Extensions

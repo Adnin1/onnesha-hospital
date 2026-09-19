@@ -22,9 +22,6 @@ try {
   console.log('Notice: .env.local load pass.');
 }
 
-const gitCmd = 'C:\\Users\\mahin khan\\AppData\\Local\\GitHubDesktop\\app-3.6.4\\resources\\app\\git\\cmd';
-process.env.PATH = `${gitCmd};${process.env.PATH}`;
-
 try {
   // Step 1: Pre-deployment quality checks
   console.log('\n🔍 Step 1: Running strict TypeScript typecheck...');
@@ -33,8 +30,11 @@ try {
   console.log('\n🔍 Step 2: Running ESLint zero-warning gate...');
   execSync('npx eslint . --max-warnings 0', { stdio: 'inherit' });
 
-  // Step 2: Ensure all changes are committed
-  console.log('\n🐙 Step 3: Checking Git working tree...');
+  console.log('\n🧪 Step 3: Running Node unit & integration test suite...');
+  execSync('npm test', { stdio: 'inherit' });
+
+  // Step 4: Ensure working tree is clean or commit changes
+  console.log('\n🐙 Step 4: Checking Git working tree...');
   const status = execSync('git status --porcelain').toString().trim();
   if (status.length > 0) {
     console.log('Working tree has uncommitted modifications:\n' + status);
@@ -44,32 +44,40 @@ try {
     execSync(`git commit -m "${commitMsg}"`, { stdio: 'inherit' });
   }
 
-  // Step 3: Synchronize with GitHub main using authenticated SSH transport
-  console.log('\n🐙 Step 4: Pushing exact commit to GitHub main...');
-  execSync('node scripts/git-sync.mjs push', { stdio: 'inherit' });
-  console.log('✅ GitHub synchronization verified.');
+  // Step 5: Synchronize with GitHub main using authenticated SSH transport
+  console.log('\n🐙 Step 5: Pushing exact commit to GitHub main...');
+  const pushRes = execSync('node scripts/git-sync.mjs push', { stdio: 'pipe', encoding: 'utf8' });
+  console.log(pushRes);
+  if (pushRes.includes('error:') || pushRes.includes('fatal:')) {
+    throw new Error('Git push failed to synchronize with remote origin.');
+  }
 
-  // Step 4: Verify working tree is 100% clean and retrieve exact SHA
+  // Step 6: Verify working tree is 100% clean and retrieve exact SHA
   const finalStatus = execSync('git status --porcelain').toString().trim();
   if (finalStatus.length > 0) {
     throw new Error(`Working tree is dirty after push: ${finalStatus}. Deployment aborted.`);
   }
 
   const headSha = execSync('git rev-parse HEAD').toString().trim();
-  const commitMsg = execSync('git log -1 --pretty=%B').toString().trim().replace(/["\r\n]+/g, ' ');
-  console.log(`\n📌 Authoritative Commit SHA: ${headSha}`);
+  const remoteSha = execSync('node scripts/git-sync.mjs ls-remote').toString().trim().split(/\s+/)[0];
+  if (headSha !== remoteSha) {
+    throw new Error(`SHA parity mismatch: local HEAD (${headSha}) != remote main (${remoteSha}). Deployment aborted.`);
+  }
 
-  // Step 5: Build static production export
-  console.log('\n📦 Step 5: Compiling Next.js production static export...');
+  const commitMsg = execSync('git log -1 --pretty=%B').toString().trim().replace(/["\r\n]+/g, ' ');
+  console.log(`\n📌 Authoritative Synchronized Commit SHA: ${headSha}`);
+
+  // Step 7: Build static production export
+  console.log('\n📦 Step 7: Compiling Next.js production static export...');
   execSync('npm run build', { stdio: 'inherit' });
 
-  // Step 6: Deploy exact tested commit to Cloudflare Pages (commit-dirty = false)
-  console.log(`\n☁️ Step 6: Deploying to Cloudflare Pages (commit_dirty = false, SHA = ${headSha})...`);
+  // Step 8: Deploy exact tested commit to Cloudflare Pages (commit-dirty = false)
+  console.log(`\n☁️ Step 8: Deploying to Cloudflare Pages (commit_dirty = false, SHA = ${headSha})...`);
   const deployCmd = `npx wrangler pages deploy out --project-name=onnesha-hospital --branch=main --commit-hash=${headSha} --commit-dirty=false --commit-message="${commitMsg}"`;
   execSync(deployCmd, { stdio: 'inherit' });
 
-  // Step 7: Run production smoke tests
-  console.log('\n🧪 Step 7: Running production route smoke tests...');
+  // Step 9: Run production smoke tests
+  console.log('\n🧪 Step 9: Running production route smoke tests...');
   execSync('node scripts/smoke_test.mjs', { stdio: 'inherit' });
 
   console.log('\n🎉 PRODUCTION RELEASE SUCCESSFUL:');

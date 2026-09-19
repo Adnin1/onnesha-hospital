@@ -1,4 +1,9 @@
 
+-- =====================================================================================
+-- HISTORICAL CONSOLIDATED REFERENCE ONLY
+-- Individual migrations 022 through 030 in supabase/migrations/ are the active source of truth.
+-- Do NOT run this file directly against an active database.
+-- =====================================================================================
 -- ==========================================
 -- FILE: 022_phase13_public_online_booking.sql
 -- ==========================================

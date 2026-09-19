@@ -177,24 +177,10 @@ describe("OHMS Phase 32: Billing Atomicity, Payment Reconciliation & Hardened RB
     assert.match(migContent, /GRANT EXECUTE ON FUNCTION public\.verify_and_record_online_payment.*TO service_role/i);
   });
 
-  test("18. PaymentService strictly prohibits client-side settlement and provides checkPaymentStatus", async () => {
-    const { PaymentService } = await import("../lib/payments/payment-service.js").catch(async () => {
-      // If ts file needs direct inspection
-      const psPath = path.join(ROOT, "lib/payments/payment-service.ts");
-      const psContent = fs.readFileSync(psPath, "utf8");
-      return {
-        PaymentService: {
-          verifyAndSettlePayment: async () => ({
-            success: false,
-            error: "Direct client browser payment settlement is strictly prohibited. Payment settlement is handled authoritatively by server-side webhook."
-          }),
-          _rawSource: psContent
-        }
-      };
-    });
-
-    const res = await PaymentService.verifyAndSettlePayment();
-    assert.equal(res.success, false);
-    assert.match(res.error, /prohibited|webhook/i);
+  test("18. PaymentService strictly removes verifyAndSettlePayment and provides checkPaymentStatus", async () => {
+    const psPath = path.join(ROOT, "lib/payments/payment-service.ts");
+    const psContent = fs.readFileSync(psPath, "utf8");
+    assert.ok(!psContent.includes("verifyAndSettlePayment"), "verifyAndSettlePayment must be completely removed from PaymentService");
+    assert.ok(psContent.includes("checkPaymentStatus"), "PaymentService must provide checkPaymentStatus");
   });
 });

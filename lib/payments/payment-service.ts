@@ -180,17 +180,5 @@ export class PaymentService {
     }
   }
 
-  /**
-   * Direct client-side payment settlement is strictly prohibited.
-   * Payment verification and settlement are executed exclusively via verified server-side webhooks.
-   */
-  static async verifyAndSettlePayment(): Promise<{
-    success: boolean;
-    error: string;
-  }> {
-    return {
-      success: false,
-      error: "Direct client browser payment settlement is strictly prohibited. Payment settlement is handled authoritatively by server-side webhook.",
-    };
-  }
+
 }
