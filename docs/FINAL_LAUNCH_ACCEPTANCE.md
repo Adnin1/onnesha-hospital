@@ -49,7 +49,7 @@
 
 - **Admin Login Portal:** `https://onnesha-hospital.pages.dev/login`
 - **Initial Super Admin Email:** `admin@onneshahospital.com`
-- **Initial Super Admin Password:** `Admin@Onnesha2026!`
+- **Initial Super Admin Password:** `[REDACTED / MANAGED VIA OUT-OF-BAND SECURE CHANNEL]`
 - **Owner Action Items:**
   1. Log in to `/login` with initial admin credentials.
   2. Navigate to `/app/settings/security` and pair a TOTP Authenticator App (Google Authenticator / Authy) to activate `AAL2` protection.

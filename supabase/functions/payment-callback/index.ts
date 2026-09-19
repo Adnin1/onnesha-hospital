@@ -60,12 +60,135 @@ export function safeCompareStrings(strA: string, strB: string): boolean {
   return timingSafeEqual(bufA, bufB);
 }
 
+/**
+ * RFC 1321 compliant MD5 hashing implementation in pure TypeScript/JavaScript.
+ * Deterministic and portable across Deno, Node, and browser runtimes.
+ */
+export function md5Hex(str: string): string {
+  function safeAdd(x: number, y: number): number {
+    const lsw = (x & 0xffff) + (y & 0xffff);
+    const msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+    return (msw << 16) | (lsw & 0xffff);
+  }
+  function bitRol(num: number, cnt: number): number {
+    return (num << cnt) | (num >>> (32 - cnt));
+  }
+  function md5cmn(q: number, a: number, b: number, x: number, s: number, t: number): number {
+    return safeAdd(bitRol(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b);
+  }
+  function md5ff(a: number, b: number, c: number, d: number, x: number, s: number, t: number): number {
+    return md5cmn((b & c) | (~b & d), a, b, x, s, t);
+  }
+  function md5gg(a: number, b: number, c: number, d: number, x: number, s: number, t: number): number {
+    return md5cmn((b & d) | (c & ~d), a, b, x, s, t);
+  }
+  function md5hh(a: number, b: number, c: number, d: number, x: number, s: number, t: number): number {
+    return md5cmn(b ^ c ^ d, a, b, x, s, t);
+  }
+  function md5ii(a: number, b: number, c: number, d: number, x: number, s: number, t: number): number {
+    return md5cmn(c ^ (b | ~d), a, b, x, s, t);
+  }
+
+  const bin: number[] = [];
+  const mask = (1 << 8) - 1;
+  for (let i = 0; i < str.length * 8; i += 8) {
+    bin[i >> 5] = (bin[i >> 5] || 0) | ((str.charCodeAt(i / 8) & mask) << (i % 32));
+  }
+  bin[str.length >> 2] = (bin[str.length >> 2] || 0) | (0x80 << ((str.length % 4) * 8));
+  bin[(((str.length + 8) >> 6) << 4) + 14] = str.length * 8;
+
+  let a = 1732584193, b = -271733879, c = -1732584194, d = 271733878;
+  for (let i = 0; i < bin.length; i += 16) {
+    const olda = a, oldb = b, oldc = c, oldd = d;
+    a = md5ff(a, b, c, d, bin[i] || 0, 7, -680876936);
+    d = md5ff(d, a, b, c, bin[i + 1] || 0, 12, -389564586);
+    c = md5ff(c, d, a, b, bin[i + 2] || 0, 17, 606105819);
+    b = md5ff(b, c, d, a, bin[i + 3] || 0, 22, -1044525330);
+    a = md5ff(a, b, c, d, bin[i + 4] || 0, 7, -176418897);
+    d = md5ff(d, a, b, c, bin[i + 5] || 0, 12, 1200080426);
+    c = md5ff(c, d, a, b, bin[i + 6] || 0, 17, -1473231341);
+    b = md5ff(b, c, d, a, bin[i + 7] || 0, 22, -45705983);
+    a = md5ff(a, b, c, d, bin[i + 8] || 0, 7, 1770035416);
+    d = md5ff(d, a, b, c, bin[i + 9] || 0, 12, -1958414417);
+    c = md5ff(c, d, a, b, bin[i + 10] || 0, 17, -42063);
+    b = md5ff(b, c, d, a, bin[i + 11] || 0, 22, -1990404162);
+    a = md5ff(a, b, c, d, bin[i + 12] || 0, 7, 1804603682);
+    d = md5ff(d, a, b, c, bin[i + 13] || 0, 12, -40341101);
+    c = md5ff(c, d, a, b, bin[i + 14] || 0, 17, -1502002290);
+    b = md5ff(b, c, d, a, bin[i + 15] || 0, 22, 1236535329);
+
+    a = md5gg(a, b, c, d, bin[i + 1] || 0, 5, -165796510);
+    d = md5gg(d, a, b, c, bin[i + 6] || 0, 9, -1069501632);
+    c = md5gg(c, d, a, b, bin[i + 11] || 0, 14, 643717713);
+    b = md5gg(b, c, d, a, bin[i] || 0, 20, -373897302);
+    a = md5gg(a, b, c, d, bin[i + 5] || 0, 5, -701558691);
+    d = md5gg(d, a, b, c, bin[i + 10] || 0, 9, 38016083);
+    c = md5gg(c, d, a, b, bin[i + 15] || 0, 14, -660478335);
+    b = md5gg(b, c, d, a, bin[i + 4] || 0, 20, -405537848);
+    a = md5gg(a, b, c, d, bin[i + 9] || 0, 5, 568446438);
+    d = md5gg(d, a, b, c, bin[i + 14] || 0, 9, -1019803690);
+    c = md5gg(c, d, a, b, bin[i + 3] || 0, 14, -187363961);
+    b = md5gg(b, c, d, a, bin[i + 8] || 0, 20, 1163531501);
+    a = md5gg(a, b, c, d, bin[i + 13] || 0, 5, -1444681467);
+    d = md5gg(d, a, b, c, bin[i + 2] || 0, 9, -51403784);
+    c = md5gg(c, d, a, b, bin[i + 7] || 0, 14, 1735328473);
+    b = md5gg(b, c, d, a, bin[i + 12] || 0, 20, -1926607734);
+
+    a = md5hh(a, b, c, d, bin[i + 5] || 0, 4, -378558);
+    d = md5hh(d, a, b, c, bin[i + 8] || 0, 11, -2022574463);
+    c = md5hh(c, d, a, b, bin[i + 11] || 0, 16, 1839030562);
+    b = md5hh(b, c, d, a, bin[i + 14] || 0, 23, -35309556);
+    a = md5hh(a, b, c, d, bin[i + 1] || 0, 4, -1530992060);
+    d = md5hh(d, a, b, c, bin[i + 4] || 0, 11, 1272893353);
+    c = md5hh(c, d, a, b, bin[i + 7] || 0, 16, -155497632);
+    b = md5hh(b, c, d, a, bin[i + 10] || 0, 23, -1094730640);
+    a = md5hh(a, b, c, d, bin[i + 13] || 0, 4, 681279174);
+    d = md5hh(d, a, b, c, bin[i] || 0, 11, -358537222);
+    c = md5hh(c, d, a, b, bin[i + 3] || 0, 16, -722521979);
+    b = md5hh(b, c, d, a, bin[i + 6] || 0, 23, 76029189);
+    a = md5hh(a, b, c, d, bin[i + 9] || 0, 4, -640364487);
+    d = md5hh(d, a, b, c, bin[i + 12] || 0, 11, -421815835);
+    c = md5hh(c, d, a, b, bin[i + 15] || 0, 16, 530742520);
+    b = md5hh(b, c, d, a, bin[i + 2] || 0, 23, -995338651);
+
+    a = md5ii(a, b, c, d, bin[i] || 0, 6, -198630844);
+    d = md5ii(d, a, b, c, bin[i + 7] || 0, 10, 1126891415);
+    c = md5ii(c, d, a, b, bin[i + 14] || 0, 15, -1416354905);
+    b = md5ii(b, c, d, a, bin[i + 5] || 0, 21, -57434055);
+    a = md5ii(a, b, c, d, bin[i + 12] || 0, 6, 1700485571);
+    d = md5ii(d, a, b, c, bin[i + 3] || 0, 10, -1894986606);
+    c = md5ii(c, d, a, b, bin[i + 10] || 0, 15, -1051523);
+    b = md5ii(b, c, d, a, bin[i + 1] || 0, 21, -2054922799);
+    a = md5ii(a, b, c, d, bin[i + 8] || 0, 6, 1873313359);
+    d = md5ii(d, a, b, c, bin[i + 15] || 0, 10, -30611744);
+    c = md5ii(c, d, a, b, bin[i + 6] || 0, 15, -1560198380);
+    b = md5ii(b, c, d, a, bin[i + 13] || 0, 21, 1309151649);
+    a = md5ii(a, b, c, d, bin[i + 4] || 0, 6, -145523070);
+    d = md5ii(d, a, b, c, bin[i + 11] || 0, 10, -1120210379);
+    c = md5ii(c, d, a, b, bin[i + 2] || 0, 15, 718787259);
+    b = md5ii(b, c, d, a, bin[i + 9] || 0, 21, -343485551);
+
+    a = safeAdd(a, olda);
+    b = safeAdd(b, oldb);
+    c = safeAdd(c, oldc);
+    d = safeAdd(d, oldd);
+  }
+
+  const hex: string[] = [];
+  for (const n of [a, b, c, d]) {
+    for (let j = 0; j < 4; j++) {
+      hex.push(((n >> (j * 8)) & 0xff).toString(16).padStart(2, "0"));
+    }
+  }
+  return hex.join("");
+}
+
 // -------------------------------------------------------------------------------------
 // Dedicated Official Provider Adapter Architecture
 // Each provider encapsulates its own official verification protocol requirements:
 // - bKash: Tokenized Checkout Query API / RSA signature verification
 // - Nagad: Asymmetric RSA Key Exchange and Signature Verification
-// - SSLCommerz: Server-to-Server Order Validation API (validationserverAPI.php)
+// - SSLCommerz: Form-urlencoded / JSON IPN Hash validation & Order Validation API
 // When live merchant credentials are unconfigured, adapters fail closed safely.
 // -------------------------------------------------------------------------------------
 interface ProviderVerificationResult {
@@ -89,8 +212,8 @@ interface PaymentProviderAdapter {
  * bKash Webhook / IPN Adapter
  * Official Protocol: Requires bKash Tokenized Checkout queryPayment API (/tokenized/checkout/payment/query)
  * or RSA signature verification using official bKash public key certificate.
- * Live merchant onboarding and direct checkout integration is an external provider dependency (LIVE_MERCHANT_DEFERRED).
- * This adapter explicitly fails closed without simulating verification or using generic HMAC.
+ * Live merchant onboarding is an external provider dependency (LIVE_MERCHANT_DEFERRED).
+ * This adapter explicitly fails closed without simulating verification.
  */
 class BkashAdapter implements PaymentProviderAdapter {
   readonly providerName = "BKASH";
@@ -112,8 +235,6 @@ class BkashAdapter implements PaymentProviderAdapter {
       };
     }
 
-    // Official bKash Tokenized Checkout protocol requires server-to-server queryPayment or official RSA certificate verification.
-    // Generic HMAC is not the official protocol; live settlement is deferred until live merchant onboarding completes.
     return {
       verified: false,
       code: "LIVE_MERCHANT_DEFERRED",
@@ -127,7 +248,7 @@ class BkashAdapter implements PaymentProviderAdapter {
  * Official Protocol: Requires Nagad Public Key and Merchant Private Key with asymmetric RSA decryption
  * and server-to-server verification endpoint (/check-payment-status).
  * Live merchant onboarding is an external provider dependency (LIVE_MERCHANT_DEFERRED).
- * This adapter explicitly fails closed without simulating verification or using generic HMAC.
+ * This adapter explicitly fails closed without simulating verification.
  */
 class NagadAdapter implements PaymentProviderAdapter {
   readonly providerName = "NAGAD";
@@ -149,8 +270,6 @@ class NagadAdapter implements PaymentProviderAdapter {
       };
     }
 
-    // Official Nagad protocol requires Asymmetric RSA verification and server query.
-    // Generic HMAC is not the official protocol; live settlement is deferred until live merchant onboarding completes.
     return {
       verified: false,
       code: "LIVE_MERCHANT_DEFERRED",
@@ -161,8 +280,11 @@ class NagadAdapter implements PaymentProviderAdapter {
 
 /**
  * SSLCommerz IPN Adapter
- * Official Protocol: Requires Store ID, Store Password, and Order Validation API (validationserverAPI.php).
- * Authoritatively verifies amount, currency, and transaction status via validationserverAPI.php.
+ * Official Protocol:
+ * 1. IPN Payload Integrity: Validates MD5 hash using verify_sign, verify_key, and md5(store_passwd)
+ * 2. Risk Evaluation: Detects risk_level = 1 and flags for manual review (HOLD_FOR_REVIEW)
+ * 3. Server-to-Server Order Validation API (validationserverAPI.php): Authoritatively validates
+ *    status, transaction reference, amount, and BDT currency.
  */
 class SslCommerzAdapter implements PaymentProviderAdapter {
   readonly providerName = "SSLCOMMERZ";
@@ -193,6 +315,43 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
       };
     }
 
+    // Step 1: Verify IPN verify_sign hash if present in documented IPN payload
+    const verifySign = params.body?.verify_sign as string | undefined;
+    const verifyKey = params.body?.verify_key as string | undefined;
+
+    if (verifySign && verifyKey) {
+      const keys = verifyKey.split(",").map((k) => k.trim()).filter(Boolean);
+      const postData: Record<string, string> = {};
+      for (const k of keys) {
+        if (params.body[k] !== undefined && params.body[k] !== null) {
+          postData[k] = String(params.body[k]);
+        }
+      }
+      postData["store_passwd"] = md5Hex(storePassword);
+      const sortedKeys = Object.keys(postData).sort();
+      const queryString = sortedKeys.map((k) => `${k}=${postData[k]}`).join("&");
+      const calculatedSign = md5Hex(queryString);
+
+      if (!safeCompareStrings(calculatedSign.toLowerCase(), verifySign.toLowerCase())) {
+        return {
+          verified: false,
+          code: "INVALID_IPN_HASH",
+          error: "SSLCommerz IPN verify_sign hash validation failed. Payload integrity rejected.",
+        };
+      }
+    }
+
+    // Step 2: Risk indicator evaluation from callback body
+    const incomingRiskLevel = params.body?.risk_level;
+    if (incomingRiskLevel !== undefined && (String(incomingRiskLevel) === "1" || Number(incomingRiskLevel) === 1)) {
+      return {
+        verified: false,
+        code: "RISK_REVIEW",
+        error: `SSLCommerz flagged transaction for risk review (risk_level=1, title: ${params.body?.risk_title || "High Risk"}). Settlement held.`,
+      };
+    }
+
+    // Step 3: Order Validation API Server-to-Server Verification
     try {
       const isSandbox = Deno.env.get("SSLCOMMERZ_IS_SANDBOX") === "true";
       const baseUrl = isSandbox ? "https://sandbox.sslcommerz.com" : "https://securepay.sslcommerz.com";
@@ -202,6 +361,15 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
       const res = await fetch(validationUrl, { signal: AbortSignal.timeout(10000) });
       const data = await res.json();
       if (data.status === "VALID" || data.status === "VALIDATED") {
+        // Risk evaluation from official validation API
+        if (data.risk_level !== undefined && (String(data.risk_level) === "1" || Number(data.risk_level) === 1)) {
+          return {
+            verified: false,
+            code: "RISK_REVIEW",
+            error: `SSLCommerz Order Validation returned risk_level=1 (${data.risk_title || "High Risk"}). Settlement held for review.`,
+          };
+        }
+
         // Strict reference matching: tran_id from gateway must match intentReference
         if (params.body?.intentReference && data.tran_id && String(data.tran_id).trim() !== String(params.body.intentReference).trim()) {
           return {
@@ -287,7 +455,7 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // 1. Read raw body text for exact cryptographic signature verification
+    // 1. Read raw body text for exact cryptographic signature / hash verification
     const rawBody = await req.text();
     if (!rawBody || rawBody.trim().length === 0) {
       return new Response(
@@ -296,39 +464,56 @@ serve(async (req: Request) => {
       );
     }
 
-    // 2. Strict external provider signature verification (Internal webhook bypasses eliminated)
-    const providerSig = req.headers.get("x-provider-signature") || req.headers.get("x-webhook-signature");
+    // 2. Parse request payload: support application/x-www-form-urlencoded (SSLCommerz IPN) and application/json
+    const contentType = req.headers.get("content-type") || "";
+    let body: Record<string, unknown> = {};
 
-    if (!providerSig) {
+    if (contentType.includes("application/x-www-form-urlencoded")) {
+      const params = new URLSearchParams(rawBody);
+      for (const [k, v] of params.entries()) {
+        body[k] = v;
+      }
+    } else {
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        if (rawBody.includes("=") && rawBody.includes("&")) {
+          const params = new URLSearchParams(rawBody);
+          for (const [k, v] of params.entries()) {
+            body[k] = v;
+          }
+        } else {
+          return new Response(
+            JSON.stringify({ success: false, code: "INVALID_CALLBACK", error: "Malformed request payload", correlationId }),
+            { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+
+    // 3. Authenticity gate: external cryptographic signature header OR documented SSLCommerz IPN parameters
+    const providerSig = req.headers.get("x-provider-signature") || req.headers.get("x-webhook-signature");
+    const isSslCommerzIpn = Boolean((body.val_id && body.tran_id) || (body.verify_sign && body.verify_key));
+
+    if (!providerSig && !isSslCommerzIpn) {
       return new Response(
         JSON.stringify({
           success: false,
           code: "CLIENT_SETTLEMENT_PROHIBITED",
-          error: "Direct client payment settlement is prohibited. Settlement must be driven by verified external provider webhook.",
+          error: "Direct client payment settlement is prohibited. Settlement must be driven by verified external provider webhook or IPN.",
           correlationId,
         }),
         { status: 403, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
-    let body: Record<string, unknown>;
-    try {
-      body = JSON.parse(rawBody);
-    } catch {
-      return new Response(
-        JSON.stringify({ success: false, code: "INVALID_CALLBACK", error: "Malformed JSON payload", correlationId }),
-        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
-      );
-    }
+    // 4. Extract and normalize parameters
+    const rawProvider = (body.provider as string) || (isSslCommerzIpn ? "SSLCOMMERZ" : undefined);
+    const intentReference = (body.intentReference as string) || (body.tran_id as string);
+    const providerTransactionId = (body.providerTransactionId as string) || (body.bank_tran_id as string) || (body.val_id as string);
+    const rawPaidAmount = body.paidAmount !== undefined ? body.paidAmount : body.amount;
 
-    const { provider, intentReference, providerTransactionId, paidAmount } = body as {
-      provider?: string;
-      intentReference?: string;
-      providerTransactionId?: string;
-      paidAmount?: number | string;
-    };
-
-    if (!provider || !intentReference || !providerTransactionId || paidAmount === undefined || paidAmount === null) {
+    if (!rawProvider || !intentReference || !providerTransactionId || rawPaidAmount === undefined || rawPaidAmount === null) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -350,7 +535,7 @@ serve(async (req: Request) => {
     }
 
     // Strict finite positive numeric amount parsing & validation
-    const parsedAmount = typeof paidAmount === "number" ? paidAmount : Number(paidAmount);
+    const parsedAmount = typeof rawPaidAmount === "number" ? rawPaidAmount : Number(rawPaidAmount);
     if (!Number.isFinite(parsedAmount) || isNaN(parsedAmount) || parsedAmount <= 0) {
       return new Response(
         JSON.stringify({ success: false, code: "INVALID_CALLBACK", error: "Invalid payment amount: must be a positive finite number", correlationId }),
@@ -358,16 +543,16 @@ serve(async (req: Request) => {
       );
     }
 
-    const normalizedCallbackProvider = String(provider).toUpperCase();
+    const normalizedCallbackProvider = String(rawProvider).toUpperCase();
     const adapter = PROVIDER_ADAPTERS[normalizedCallbackProvider];
     if (!adapter) {
       return new Response(
-        JSON.stringify({ success: false, code: "PROVIDER_MISMATCH", error: `Unsupported callback provider: ${provider}`, correlationId }),
+        JSON.stringify({ success: false, code: "PROVIDER_MISMATCH", error: `Unsupported callback provider: ${rawProvider}`, correlationId }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
-    // 3. Authoritatively load payment intent from database
+    // 5. Authoritatively load payment intent from database
     const { data: intent, error: intentError } = await supabaseClient
       .from("payment_intents")
       .select("id, organization_id, provider, status, payable_amount, provider_transaction_id")
@@ -381,7 +566,7 @@ serve(async (req: Request) => {
       );
     }
 
-    // 4. Durable Webhook Events Ledger (Audit & Deduplication)
+    // 6. Durable Webhook Events Ledger (Audit & Deduplication)
     const providerEventId = (typeof body.provider_event_id === "string" && body.provider_event_id.trim())
       || (typeof body.val_id === "string" && body.val_id.trim())
       || trimmedClientTrxId;
@@ -414,7 +599,7 @@ serve(async (req: Request) => {
         provider: normalizedCallbackProvider,
         event_type: "PAYMENT_NOTIFICATION",
         provider_event_id: providerEventId,
-        signature_header: (providerSig || "").slice(0, 250),
+        signature_header: (providerSig || (body.verify_sign as string) || "").slice(0, 250),
         is_signature_valid: false,
         payload: body,
         processing_status: "RECEIVED",
@@ -427,7 +612,7 @@ serve(async (req: Request) => {
       webhookEventId = insertedEvent.id;
     }
 
-    // 5. CRITICAL: Strict Provider Matching Check
+    // 7. Strict Provider Matching Check
     const storedIntentProvider = String(intent.provider).toUpperCase();
     if (normalizedCallbackProvider !== storedIntentProvider) {
       if (webhookEventId) {
@@ -448,7 +633,7 @@ serve(async (req: Request) => {
       );
     }
 
-    // 6. Check intent status (Replay Protection)
+    // 8. Replay Protection
     if (intent.status === "PAID") {
       if (intent.provider_transaction_id && intent.provider_transaction_id === trimmedClientTrxId) {
         if (webhookEventId) {
@@ -496,7 +681,7 @@ serve(async (req: Request) => {
       );
     }
 
-    // 7. Mandatory Provider Official Verification (Fails closed if live credentials unconfigured)
+    // 9. Mandatory Provider Verification
     let authoritativeTrxId = trimmedClientTrxId;
     const providerSecretEnvKey = `${normalizedCallbackProvider}_WEBHOOK_SECRET`;
     const providerWebhookSecret = Deno.env.get(providerSecretEnvKey);
@@ -520,11 +705,11 @@ serve(async (req: Request) => {
         JSON.stringify({
           success: false,
           code: verification.code || "UNAUTHORIZED",
-          status: verification.code === "LIVE_MERCHANT_DEFERRED" ? "REAL_MERCHANT_DEFERRED" : undefined,
+          status: verification.code === "LIVE_MERCHANT_DEFERRED" ? "REAL_MERCHANT_DEFERRED" : (verification.code === "RISK_REVIEW" ? "HOLD_FOR_REVIEW" : undefined),
           error: verification.error || "Provider webhook verification failed",
           correlationId,
         }),
-        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
+        { status: verification.code === "RISK_REVIEW" ? 400 : 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -532,12 +717,11 @@ serve(async (req: Request) => {
       await supabaseClient.from("webhook_events").update({ is_signature_valid: true }).eq("id", webhookEventId);
     }
 
-    // If provider returns an authoritative transaction ID (e.g. SSLCommerz bank_tran_id), enforce it
     if (verification.providerTransactionId && typeof verification.providerTransactionId === "string" && verification.providerTransactionId.trim().length > 0) {
       authoritativeTrxId = verification.providerTransactionId.trim();
     }
 
-    // 8. Amount verification against intent to prevent tampering
+    // 10. Amount verification against intent to prevent tampering
     if (parsedAmount !== Number(intent.payable_amount)) {
       if (webhookEventId) {
         await supabaseClient.from("webhook_events").update({
@@ -557,15 +741,17 @@ serve(async (req: Request) => {
       );
     }
 
-    // 9. Execute atomic DB settlement RPC (runs as service_role)
-    // cashier_id is omitted (defaults to NULL) for automated gateway settlement.
-    // The RPC atomically settles invoice, updates intent, inserts payment, and logs audit record in one transaction.
+    // 11. Execute atomic DB settlement RPC (runs as service_role)
+    // The RPC atomically settles invoice, updates intent, inserts payment, inserts audit record,
+    // and updates webhook_events to 'PROCESSED' in a single database transaction.
     const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc("verify_and_record_online_payment", {
       p_org_id: intent.organization_id,
       p_intent_id: intent.id,
       p_provider_trx_id: authoritativeTrxId,
       p_paid_amount: parsedAmount,
       p_gateway_method: intent.provider,
+      p_cashier_id: null,
+      p_webhook_event_id: webhookEventId,
     });
 
     if (rpcErr) {
@@ -606,14 +792,6 @@ serve(async (req: Request) => {
         }),
         { status, headers: { ...cors, "Content-Type": "application/json" } }
       );
-    }
-
-    // Settlement succeeded atomically! Update durable webhook ledger to PROCESSED
-    if (webhookEventId) {
-      await supabaseClient.from("webhook_events").update({
-        processing_status: "PROCESSED",
-        processed_at: new Date().toISOString(),
-      }).eq("id", webhookEventId);
     }
 
     return new Response(

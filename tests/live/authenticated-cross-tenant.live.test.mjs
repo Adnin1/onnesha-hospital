@@ -85,7 +85,7 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
   const nonce = Math.floor(Math.random() * 1000000);
   const emailA = `test-user-a-${nonce}@onnesha-test.local`;
   const emailB = `test-user-b-${nonce}@onnesha-test.local`;
-  const password = "TestPasswordSecure123!";
+  const password = 'Sec_' + crypto.randomBytes(16).toString('hex') + '!1Aa';
 
   let userAId = null;
   let userBId = null;
@@ -266,6 +266,44 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
 
       assert.ok(!error, "Query executed with RLS");
       assert.equal(data?.length ?? 0, 0, "User B must see zero rows of Tenant A gateway integrations");
+    });
+
+    await t.test("7. User B cannot SELECT Tenant A invoices or billing data", async () => {
+      const { data, error } = await clientB
+        .from("invoices")
+        .select("id, organization_id, grand_total")
+        .eq("organization_id", CANONICAL_ORG_A);
+
+      assert.ok(!error, "Query executed under RLS without error");
+      assert.equal(data?.length ?? 0, 0, "User B must receive 0 invoices belonging to Tenant A");
+    });
+
+    await t.test("8. User B cannot SELECT Tenant A appointments", async () => {
+      const { data, error } = await clientB
+        .from("appointments")
+        .select("id, organization_id")
+        .eq("organization_id", CANONICAL_ORG_A);
+
+      assert.ok(!error, "Query executed under RLS without error");
+      assert.equal(data?.length ?? 0, 0, "User B must receive 0 appointments belonging to Tenant A");
+    });
+
+    await t.test("9. User B cannot access Tenant A payment intents or audit logs", async () => {
+      const { data: intents, error: intErr } = await clientB
+        .from("payment_intents")
+        .select("id, organization_id")
+        .eq("organization_id", CANONICAL_ORG_A);
+
+      assert.ok(!intErr, "Query executed under RLS");
+      assert.equal(intents?.length ?? 0, 0, "User B must see 0 payment intents belonging to Tenant A");
+
+      const { data: audits, error: audErr } = await clientB
+        .from("audit_logs")
+        .select("id, organization_id")
+        .eq("organization_id", CANONICAL_ORG_A);
+
+      assert.ok(!audErr, "Query executed under RLS");
+      assert.equal(audits?.length ?? 0, 0, "User B must see 0 audit log entries belonging to Tenant A");
     });
   } finally {
     // -----------------------------------------------------------------------------------
