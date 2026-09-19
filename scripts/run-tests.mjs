@@ -8,6 +8,9 @@ function findTestFiles(dir) {
   let results = [];
   const list = fs.readdirSync(dir, { withFileTypes: true });
   for (const item of list) {
+    if (item.name === 'live' || item.name.endsWith('.live.test.mjs')) {
+      continue;
+    }
     const fullPath = path.join(dir, item.name);
     if (item.isDirectory()) {
       results = results.concat(findTestFiles(fullPath));

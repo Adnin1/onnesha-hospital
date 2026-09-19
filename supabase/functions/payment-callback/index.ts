@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.116.0";
 
 // Secure CORS configuration: Restrict to production and local authorized origins
 const ALLOWED_ORIGINS = [
@@ -15,7 +15,7 @@ function getCorsHeaders(req: Request): { headers: Record<string, string>; isAllo
     return {
       headers: {
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-provider-signature, x-webhook-signature",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-provider-signature, x-webhook-signature, x-correlation-id",
       },
       isAllowed: true,
     };
@@ -32,7 +32,7 @@ function getCorsHeaders(req: Request): { headers: Record<string, string>; isAllo
     headers: {
       "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-provider-signature, x-webhook-signature",
+      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-provider-signature, x-webhook-signature, x-correlation-id",
     },
     isAllowed: true,
   };
@@ -41,7 +41,7 @@ function getCorsHeaders(req: Request): { headers: Record<string, string>; isAllo
 /**
  * Constant-time comparison to prevent timing side-channel attacks.
  */
-function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+export function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
   for (let i = 0; i < a.length; i++) {
@@ -53,7 +53,7 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
 /**
  * Timing-safe string comparison for hex digests and bearer secrets.
  */
-function safeCompareStrings(strA: string, strB: string): boolean {
+export function safeCompareStrings(strA: string, strB: string): boolean {
   const encoder = new TextEncoder();
   const bufA = encoder.encode(strA.trim());
   const bufB = encoder.encode(strB.trim());
@@ -188,7 +188,7 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
     if (!valId) {
       return {
         verified: false,
-        code: "MISSING_VAL_ID",
+        code: "INVALID_CALLBACK",
         error: "SSLCommerz callback missing val_id for Order Validation API verification.",
       };
     }
@@ -240,13 +240,13 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
       }
       return {
         verified: false,
-        code: "ORDER_VALIDATION_FAILED",
+        code: "UNAUTHORIZED",
         error: data.failedreason || data.error || "SSLCommerz Order Validation API returned invalid status",
       };
     } catch (err: unknown) {
       return {
         verified: false,
-        code: "ORDER_VALIDATION_ERROR",
+        code: "PROVIDER_UNAVAILABLE",
         error: err instanceof Error ? err.message : "SSLCommerz validation request failed or timed out",
       };
     }
@@ -261,10 +261,11 @@ const PROVIDER_ADAPTERS: Record<string, PaymentProviderAdapter> = {
 
 serve(async (req: Request) => {
   const { headers: cors, isAllowed } = getCorsHeaders(req);
+  const correlationId = req.headers.get("x-correlation-id") || crypto.randomUUID();
 
   if (!isAllowed) {
     return new Response(
-      JSON.stringify({ success: false, error: "CORS origin rejected" }),
+      JSON.stringify({ success: false, code: "UNAUTHORIZED", error: "CORS origin rejected", correlationId }),
       { status: 403, headers: { "Content-Type": "application/json" } }
     );
   }
@@ -275,7 +276,7 @@ serve(async (req: Request) => {
 
   if (req.method !== "POST") {
     return new Response(
-      JSON.stringify({ success: false, error: "Method not allowed. Only POST is accepted." }),
+      JSON.stringify({ success: false, code: "INVALID_CALLBACK", error: "Method not allowed. Only POST is accepted.", correlationId }),
       { status: 405, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
@@ -290,29 +291,21 @@ serve(async (req: Request) => {
     const rawBody = await req.text();
     if (!rawBody || rawBody.trim().length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: "Empty request body" }),
+        JSON.stringify({ success: false, code: "INVALID_CALLBACK", error: "Empty request body", correlationId }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
-    // 2. Identify caller credentials
+    // 2. Strict external provider signature verification (Internal webhook bypasses eliminated)
     const providerSig = req.headers.get("x-provider-signature") || req.headers.get("x-webhook-signature");
-    const internalSecretHeader = req.headers.get("x-internal-webhook-secret");
-    const configuredInternalSecret = Deno.env.get("INTERNAL_WEBHOOK_SECRET");
 
-    const isInternalService = Boolean(
-      internalSecretHeader &&
-      configuredInternalSecret &&
-      safeCompareStrings(internalSecretHeader, configuredInternalSecret)
-    );
-
-    // 3. Reject direct client browser settlement calls unconditionally
-    if (!providerSig && !isInternalService) {
+    if (!providerSig) {
       return new Response(
         JSON.stringify({
           success: false,
           code: "CLIENT_SETTLEMENT_PROHIBITED",
-          error: "Direct client payment settlement is prohibited. Settlement must be driven by verified provider webhook or internal reconciliation service.",
+          error: "Direct client payment settlement is prohibited. Settlement must be driven by verified external provider webhook.",
+          correlationId,
         }),
         { status: 403, headers: { ...cors, "Content-Type": "application/json" } }
       );
@@ -323,7 +316,7 @@ serve(async (req: Request) => {
       body = JSON.parse(rawBody);
     } catch {
       return new Response(
-        JSON.stringify({ success: false, error: "Malformed JSON payload" }),
+        JSON.stringify({ success: false, code: "INVALID_CALLBACK", error: "Malformed JSON payload", correlationId }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
@@ -337,7 +330,12 @@ serve(async (req: Request) => {
 
     if (!provider || !intentReference || !providerTransactionId || paidAmount === undefined || paidAmount === null) {
       return new Response(
-        JSON.stringify({ success: false, error: "Missing mandatory callback fields: provider, intentReference, providerTransactionId, paidAmount" }),
+        JSON.stringify({
+          success: false,
+          code: "INVALID_CALLBACK",
+          error: "Missing mandatory callback fields: provider, intentReference, providerTransactionId, paidAmount",
+          correlationId,
+        }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
@@ -346,7 +344,7 @@ serve(async (req: Request) => {
     const trimmedClientTrxId = typeof providerTransactionId === "string" ? providerTransactionId.trim() : "";
     if (trimmedClientTrxId.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: "Missing or empty provider transaction ID" }),
+        JSON.stringify({ success: false, code: "INVALID_CALLBACK", error: "Missing or empty provider transaction ID", correlationId }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
@@ -355,7 +353,7 @@ serve(async (req: Request) => {
     const parsedAmount = typeof paidAmount === "number" ? paidAmount : Number(paidAmount);
     if (!Number.isFinite(parsedAmount) || isNaN(parsedAmount) || parsedAmount <= 0) {
       return new Response(
-        JSON.stringify({ success: false, error: "Invalid payment amount: must be a positive finite number" }),
+        JSON.stringify({ success: false, code: "INVALID_CALLBACK", error: "Invalid payment amount: must be a positive finite number", correlationId }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
@@ -364,12 +362,12 @@ serve(async (req: Request) => {
     const adapter = PROVIDER_ADAPTERS[normalizedCallbackProvider];
     if (!adapter) {
       return new Response(
-        JSON.stringify({ success: false, error: `Unsupported callback provider: ${provider}` }),
+        JSON.stringify({ success: false, code: "PROVIDER_MISMATCH", error: `Unsupported callback provider: ${provider}`, correlationId }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
-    // 4. Authoritatively load payment intent from database
+    // 3. Authoritatively load payment intent from database
     const { data: intent, error: intentError } = await supabaseClient
       .from("payment_intents")
       .select("id, organization_id, provider, status, payable_amount, provider_transaction_id")
@@ -378,19 +376,73 @@ serve(async (req: Request) => {
 
     if (intentError || !intent) {
       return new Response(
-        JSON.stringify({ success: false, error: "Payment intent not found" }),
+        JSON.stringify({ success: false, code: "PAYMENT_INTENT_NOT_FOUND", error: "Payment intent not found", correlationId }),
         { status: 404, headers: { ...cors, "Content-Type": "application/json" } }
       );
+    }
+
+    // 4. Durable Webhook Events Ledger (Audit & Deduplication)
+    const providerEventId = (typeof body.provider_event_id === "string" && body.provider_event_id.trim())
+      || (typeof body.val_id === "string" && body.val_id.trim())
+      || trimmedClientTrxId;
+
+    const { data: existingEvent } = await supabaseClient
+      .from("webhook_events")
+      .select("id, processing_status")
+      .eq("organization_id", intent.organization_id)
+      .eq("provider", normalizedCallbackProvider)
+      .eq("provider_event_id", providerEventId)
+      .maybeSingle();
+
+    if (existingEvent && existingEvent.processing_status === "PROCESSED") {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          code: "DUPLICATE_TRANSACTION",
+          message: "Webhook event has already been processed successfully",
+          correlationId,
+        }),
+        { headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    let webhookEventId: string | null = null;
+    const { data: insertedEvent } = await supabaseClient
+      .from("webhook_events")
+      .insert({
+        organization_id: intent.organization_id,
+        provider: normalizedCallbackProvider,
+        event_type: "PAYMENT_NOTIFICATION",
+        provider_event_id: providerEventId,
+        signature_header: (providerSig || "").slice(0, 250),
+        is_signature_valid: false,
+        payload: body,
+        processing_status: "RECEIVED",
+        correlation_id: correlationId,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (insertedEvent?.id) {
+      webhookEventId = insertedEvent.id;
     }
 
     // 5. CRITICAL: Strict Provider Matching Check
     const storedIntentProvider = String(intent.provider).toUpperCase();
     if (normalizedCallbackProvider !== storedIntentProvider) {
+      if (webhookEventId) {
+        await supabaseClient.from("webhook_events").update({
+          processing_status: "FAILED",
+          failure_reason: "PROVIDER_MISMATCH",
+          processed_at: new Date().toISOString(),
+        }).eq("id", webhookEventId);
+      }
       return new Response(
         JSON.stringify({
           success: false,
           code: "PROVIDER_MISMATCH",
           error: `Provider mismatch: callback specifies ${normalizedCallbackProvider} but intent was created for ${storedIntentProvider}. Settlement rejected.`,
+          correlationId,
         }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
@@ -399,24 +451,47 @@ serve(async (req: Request) => {
     // 6. Check intent status (Replay Protection)
     if (intent.status === "PAID") {
       if (intent.provider_transaction_id && intent.provider_transaction_id === trimmedClientTrxId) {
+        if (webhookEventId) {
+          await supabaseClient.from("webhook_events").update({
+            processing_status: "PROCESSED",
+            processed_at: new Date().toISOString(),
+          }).eq("id", webhookEventId);
+        }
         return new Response(
-          JSON.stringify({ success: true, message: "Payment intent is already settled with this transaction ID" }),
+          JSON.stringify({ success: true, message: "Payment intent is already settled with this transaction ID", correlationId }),
           { headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
+
+      if (webhookEventId) {
+        await supabaseClient.from("webhook_events").update({
+          processing_status: "FAILED",
+          failure_reason: "REPLAY_CONFLICT",
+          processed_at: new Date().toISOString(),
+        }).eq("id", webhookEventId);
+      }
+
       return new Response(
         JSON.stringify({
           success: false,
           code: "REPLAY_CONFLICT",
           error: `Payment intent is already settled with transaction ID '${intent.provider_transaction_id}', but callback received '${trimmedClientTrxId}'. Conflict rejected.`,
+          correlationId,
         }),
         { status: 409, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
     if (intent.status !== "PENDING" && intent.status !== "AUTHORIZED") {
+      if (webhookEventId) {
+        await supabaseClient.from("webhook_events").update({
+          processing_status: "FAILED",
+          failure_reason: "INVALID_INTENT_STATE",
+          processed_at: new Date().toISOString(),
+        }).eq("id", webhookEventId);
+      }
       return new Response(
-        JSON.stringify({ success: false, error: `Invalid payment intent state for settlement: ${intent.status}` }),
+        JSON.stringify({ success: false, code: "INVALID_CALLBACK", error: `Invalid payment intent state for settlement: ${intent.status}`, correlationId }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
@@ -434,15 +509,27 @@ serve(async (req: Request) => {
     });
 
     if (!verification.verified) {
+      if (webhookEventId) {
+        await supabaseClient.from("webhook_events").update({
+          processing_status: "FAILED",
+          failure_reason: verification.code || "UNAUTHORIZED",
+          processed_at: new Date().toISOString(),
+        }).eq("id", webhookEventId);
+      }
       return new Response(
         JSON.stringify({
           success: false,
-          code: verification.code || "INVALID_WEBHOOK_SIGNATURE",
+          code: verification.code || "UNAUTHORIZED",
           status: verification.code === "LIVE_MERCHANT_DEFERRED" ? "REAL_MERCHANT_DEFERRED" : undefined,
           error: verification.error || "Provider webhook verification failed",
+          correlationId,
         }),
         { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
+    }
+
+    if (webhookEventId) {
+      await supabaseClient.from("webhook_events").update({ is_signature_valid: true }).eq("id", webhookEventId);
     }
 
     // If provider returns an authoritative transaction ID (e.g. SSLCommerz bank_tran_id), enforce it
@@ -452,14 +539,27 @@ serve(async (req: Request) => {
 
     // 8. Amount verification against intent to prevent tampering
     if (parsedAmount !== Number(intent.payable_amount)) {
+      if (webhookEventId) {
+        await supabaseClient.from("webhook_events").update({
+          processing_status: "FAILED",
+          failure_reason: "AMOUNT_MISMATCH",
+          processed_at: new Date().toISOString(),
+        }).eq("id", webhookEventId);
+      }
       return new Response(
-        JSON.stringify({ success: false, error: `Paid amount (${parsedAmount}) does not match intent amount (${intent.payable_amount})` }),
+        JSON.stringify({
+          success: false,
+          code: "AMOUNT_MISMATCH",
+          error: `Paid amount (${parsedAmount}) does not match intent amount (${intent.payable_amount})`,
+          correlationId,
+        }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
     // 9. Execute atomic DB settlement RPC (runs as service_role)
-    // cashier_id is omitted (defaults to NULL) for automated gateway settlement
+    // cashier_id is omitted (defaults to NULL) for automated gateway settlement.
+    // The RPC atomically settles invoice, updates intent, inserts payment, and logs audit record in one transaction.
     const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc("verify_and_record_online_payment", {
       p_org_id: intent.organization_id,
       p_intent_id: intent.id,
@@ -469,49 +569,65 @@ serve(async (req: Request) => {
     });
 
     if (rpcErr) {
+      if (webhookEventId) {
+        await supabaseClient.from("webhook_events").update({
+          processing_status: "FAILED",
+          failure_reason: "INTERNAL_ERROR",
+          processed_at: new Date().toISOString(),
+        }).eq("id", webhookEventId);
+      }
       return new Response(
-        JSON.stringify({ success: false, error: rpcErr.message }),
+        JSON.stringify({
+          success: false,
+          code: "INTERNAL_ERROR",
+          error: "Payment settlement transaction failed",
+          correlationId,
+        }),
         { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
     if (rpcRes && rpcRes.success === false) {
-      const status = rpcRes.code === "DUPLICATE_TRANSACTION" ? 409 : 400;
+      const code = rpcRes.code === "DUPLICATE_TRANSACTION" ? "DUPLICATE_TRANSACTION" : (rpcRes.code || "INVALID_CALLBACK");
+      const status = code === "DUPLICATE_TRANSACTION" ? 409 : 400;
+      if (webhookEventId) {
+        await supabaseClient.from("webhook_events").update({
+          processing_status: "FAILED",
+          failure_reason: code,
+          processed_at: new Date().toISOString(),
+        }).eq("id", webhookEventId);
+      }
       return new Response(
-        JSON.stringify(rpcRes),
+        JSON.stringify({
+          success: false,
+          code,
+          error: rpcRes.error || "Payment settlement could not be completed",
+          correlationId,
+        }),
         { status, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
-    // 10. Audit log insertion into immutable audit vault (conforms to public.audit_logs schema)
-    const { error: auditErr } = await supabaseClient.from("audit_logs").insert({
-      organization_id: intent.organization_id,
-      action: "VERIFY",
-      module: "BILLING",
-      entity_type: "PAYMENT_INTENT",
-      entity_id: String(intent.id),
-      new_values: {
-        event: isInternalService ? "INTERNAL_RECONCILIATION_SETTLEMENT" : "PROVIDER_SETTLEMENT",
-        intent_reference: intentReference,
-        provider: intent.provider,
-        amount: parsedAmount,
-        transaction_id: authoritativeTrxId,
-        source: isInternalService ? "internal_reconciliation_service" : "provider_webhook",
-        settled_at: new Date().toISOString(),
-      },
-    });
-    if (auditErr) {
-      console.error("Audit log insertion failed:", auditErr);
+    // Settlement succeeded atomically! Update durable webhook ledger to PROCESSED
+    if (webhookEventId) {
+      await supabaseClient.from("webhook_events").update({
+        processing_status: "PROCESSED",
+        processed_at: new Date().toISOString(),
+      }).eq("id", webhookEventId);
     }
 
     return new Response(
-      JSON.stringify(rpcRes),
+      JSON.stringify({ ...rpcRes, correlationId }),
       { headers: { ...cors, "Content-Type": "application/json" } }
     );
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Internal callback error";
+  } catch {
     return new Response(
-      JSON.stringify({ success: false, error: errorMsg }),
+      JSON.stringify({
+        success: false,
+        code: "INTERNAL_ERROR",
+        error: "An unexpected error occurred during webhook processing",
+        correlationId,
+      }),
       { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }

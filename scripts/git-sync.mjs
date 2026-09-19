@@ -15,7 +15,7 @@ if (action === 'fetch') {
   if (res.stdout) console.log(res.stdout);
   if (res.stderr) console.log(res.stderr);
 } else if (action === 'push') {
-  const res = spawnSync('git', ['push', 'ssh-origin', 'main'], {
+  const res = spawnSync('git', ['push', 'ssh-origin', 'main', '--follow-tags'], {
     env: { ...process.env, GIT_SSH_COMMAND: sshCmd },
     encoding: 'utf8',
   });

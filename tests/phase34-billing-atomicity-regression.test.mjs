@@ -73,9 +73,9 @@ describe("OHMS Phase 34: Billing Pre-Validation Atomicity & Idempotency Hardenin
     const manifestPath = path.join(ROOT, "public/downloads/desktop/latest.json");
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 
-    assert.equal(manifest.version, "1.0.0");
-    assert.match(manifest.platforms["windows-x86_64"].installer_exe, /Onnesha-Hospital-Setup-1\.0\.0\.exe/);
-    assert.match(manifest.platforms["windows-x86_64"].installer_msi, /Onnesha-Hospital-1\.0\.0\.msi/);
+    assert.equal(manifest.version, "1.0.1");
+    assert.match(manifest.platforms["windows-x86_64"].installer_exe, /Onnesha-Hospital-Setup-1\.0\.1\.exe/);
+    assert.match(manifest.platforms["windows-x86_64"].installer_msi, /Onnesha-Hospital-1\.0\.1\.msi/);
     assert.equal(manifest.signing.enabled, false);
   });
 });

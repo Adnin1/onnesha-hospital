@@ -1,6 +1,6 @@
 {
   "name": "onnesha-hospital",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-tests.mjs",
     "test:security": "node --test tests/security.test.mjs",
+    "test:live-security": "node --test tests/live/*.live.test.mjs",
     "test:e2e": "playwright test",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",

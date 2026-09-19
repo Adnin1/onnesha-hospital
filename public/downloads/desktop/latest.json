@@ -1,16 +1,17 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop Client Initial Release. High speed POS thermal printing, receipting, patient management, and real-time EMR integration.",
-  "pub_date": "2026-09-19T00:00:00Z",
+  "notes": "Onnesha Hospital PC Desktop Client v1.0.1. High speed POS thermal printing, receipting, patient management, and real-time EMR integration.",
+  "pub_date": "2026-09-20T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.0.exe",
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.0.msi"
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.1.exe",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.1.msi"
     }
   },
   "signing": {
     "enabled": false,
-    "notice": "Informational version metadata manifest. Production updater auto-signing is disabled."
+    "distribution": "manual_installer",
+    "notice": "Informational version metadata manifest. Production updater auto-signing is disabled; distribution is via direct manual installers (WiX MSI / NSIS EXE)."
   }
 }

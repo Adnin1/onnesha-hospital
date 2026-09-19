@@ -1,8 +1,8 @@
 /**
- * Phase 37: Real Authenticated Cross-Tenant Runtime Isolation Suite
+ * Phase 37 (Live Security Suite): Real Authenticated Cross-Tenant Runtime Isolation
  * 
  * Executes LIVE runtime queries against remote Supabase instance:
- * 1. Creates disposable Tenant B and two disposable test users: User A (Tenant A) and User B (Tenant B).
+ * 1. Creates dynamic disposable Tenant B (crypto.randomUUID()) and two disposable test users: User A (Tenant A) and User B (Tenant B).
  * 2. Authenticates both users through Supabase Auth (signInWithPassword) to obtain real cryptographic JWTs.
  * 3. Verifies runtime row-level security:
  *    - User A accessing Tenant A: ALLOWED
@@ -11,19 +11,23 @@
  *    - User B attempting to INSERT into Tenant A: REJECTED (RLS policy violation)
  *    - User B attempting to UPDATE Tenant A data: REJECTED (0 rows affected)
  *    - User B attempting to DELETE Tenant A data: REJECTED (0 rows affected)
+ *    - User B attempting to access Tenant A organization_integrations: STRICTLY SHIELDED (0 rows returned)
  * 4. Cleans up all disposable test entities on completion.
+ * 
+ * SAFETY GUARD: Requires RUN_LIVE_SUPABASE_TESTS=true and ALLOW_MUTATING_REMOTE_TESTS=true.
  */
 
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = path.resolve(__dirname, "../..");
 
 // Load live credentials from environment or local env files
 let SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -48,10 +52,16 @@ for (const envFile of [".env.local.temp", ".env.local", ".env"]) {
 }
 
 const CANONICAL_ORG_A = "a0000000-0000-0000-0000-000000000001";
-const DISPOSABLE_ORG_B = "b0000000-0000-0000-0000-000000000002";
+const DISPOSABLE_ORG_B = crypto.randomUUID();
 
-test("Phase 37: Real Authenticated Cross-Tenant Runtime Isolation", async (t) => {
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async (t) => {
+  const isEnabled = process.env.RUN_LIVE_SUPABASE_TESTS === "true" && process.env.ALLOW_MUTATING_REMOTE_TESTS === "true";
+  if (!isEnabled) {
+    t.skip("Skipping live security test: Set RUN_LIVE_SUPABASE_TESTS=true and ALLOW_MUTATING_REMOTE_TESTS=true to execute live mutating tests against remote Supabase.");
+    return;
+  }
+
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
     t.skip("Skipping runtime test: Supabase live credentials not configured in environment");
     return;
   }
@@ -84,10 +94,10 @@ test("Phase 37: Real Authenticated Cross-Tenant Runtime Isolation", async (t) =>
   let clientB = null;
 
   try {
-    // 1. Ensure Tenant B exists in organizations
+    // 1. Ensure Tenant B exists in organizations with dynamic UUID
     const { error: orgBErr } = await adminClient.from("organizations").upsert({
       id: DISPOSABLE_ORG_B,
-      name: "Isolation Hospital B (Disposable Test)",
+      name: "Isolation Hospital B (Disposable Dynamic Test)",
       code: `HB-${nonce}`,
       slug: `hb-test-${nonce}`,
       phone: "01700-000000",

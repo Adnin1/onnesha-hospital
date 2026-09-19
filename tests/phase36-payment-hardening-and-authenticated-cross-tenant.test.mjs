@@ -90,10 +90,20 @@ test("Phase 36: Payment Architecture Hardening & Cross-Tenant RLS", async (t) =>
     assert.match(initiateCode, /status:\s*409/);
   });
 
-  await t.test("5. Internal reconciliation service logs audit event on settlement", () => {
-    assert.match(callbackCode, /isInternalService/);
-    assert.match(callbackCode, /INTERNAL_RECONCILIATION_SETTLEMENT/);
-    assert.match(callbackCode, /from\("audit_logs"\)\.insert\(/);
+  await t.test("5. Durable webhook events ledger recording and external signature enforcement", () => {
+    // Internal secret bypass is strictly scrubbed
+    assert.ok(!callbackCode.includes("isInternalService"), "Internal webhook bypass must be removed");
+    assert.ok(!callbackCode.includes("INTERNAL_WEBHOOK_SECRET"), "INTERNAL_WEBHOOK_SECRET must be removed");
+    assert.ok(!callbackCode.includes("x-internal-webhook-secret"), "x-internal-webhook-secret header must be removed");
+
+    // Durable webhook_events table integration
+    assert.match(callbackCode, /from\("webhook_events"\)/);
+    assert.match(callbackCode, /event_type:\s*"PAYMENT_NOTIFICATION"/);
+    assert.match(callbackCode, /correlation_id:\s*correlationId/);
+
+    // Dependencies upgraded to 2.116.0
+    assert.match(callbackCode, /@supabase\/supabase-js@2\.116\.0/);
+    assert.match(initiateCode, /@supabase\/supabase-js@2\.116\.0/);
   });
 
   await t.test("6. Cross-tenant RLS guarantees across billing migrations", () => {
