@@ -7,18 +7,45 @@ const ALLOWED_ORIGINS = [
   "tauri://localhost",
 ];
 
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("origin") || "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+function getCorsHeaders(req: Request): { headers: Record<string, string>; isAllowed: boolean } {
+  const origin = req.headers.get("origin");
+  if (!origin) {
+    // Non-browser or same-origin request
+    return {
+      headers: {
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+      },
+      isAllowed: true,
+    };
+  }
+
+  if (!ALLOWED_ORIGINS.includes(origin)) {
+    return {
+      headers: {},
+      isAllowed: false,
+    };
+  }
+
   return {
-    "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    headers: {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    },
+    isAllowed: true,
   };
 }
 
 serve(async (req: Request) => {
-  const corsHeaders = getCorsHeaders(req);
+  const { headers: corsHeaders, isAllowed } = getCorsHeaders(req);
+
+  if (!isAllowed) {
+    return new Response(
+      JSON.stringify({ success: false, error: "CORS origin rejected" }),
+      { status: 403, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
