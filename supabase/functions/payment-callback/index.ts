@@ -15,7 +15,7 @@ function getCorsHeaders(req: Request): { headers: Record<string, string>; isAllo
     return {
       headers: {
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-provider-signature, x-webhook-signature, x-internal-webhook-secret",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-provider-signature, x-webhook-signature",
       },
       isAllowed: true,
     };
@@ -32,7 +32,7 @@ function getCorsHeaders(req: Request): { headers: Record<string, string>; isAllo
     headers: {
       "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-provider-signature, x-webhook-signature, x-internal-webhook-secret",
+      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-provider-signature, x-webhook-signature",
     },
     isAllowed: true,
   };
@@ -325,9 +325,27 @@ serve(async (req: Request) => {
       paidAmount?: number | string;
     };
 
-    if (!provider || !intentReference || !providerTransactionId || !paidAmount) {
+    if (!provider || !intentReference || !providerTransactionId || paidAmount === undefined || paidAmount === null) {
       return new Response(
         JSON.stringify({ success: false, error: "Missing mandatory callback fields: provider, intentReference, providerTransactionId, paidAmount" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Strict non-empty trimmed transaction ID validation
+    const trimmedClientTrxId = typeof providerTransactionId === "string" ? providerTransactionId.trim() : "";
+    if (trimmedClientTrxId.length === 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing or empty provider transaction ID" }),
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Strict finite positive numeric amount parsing & validation
+    const parsedAmount = typeof paidAmount === "number" ? paidAmount : Number(paidAmount);
+    if (!Number.isFinite(parsedAmount) || isNaN(parsedAmount) || parsedAmount <= 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid payment amount: must be a positive finite number" }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
@@ -384,6 +402,7 @@ serve(async (req: Request) => {
     }
 
     // 7. Provider Official Verification (Fails closed if live credentials unconfigured)
+    let authoritativeTrxId = trimmedClientTrxId;
     if (!isInternalService) {
       const providerSecretEnvKey = `${normalizedCallbackProvider}_WEBHOOK_SECRET`;
       const providerWebhookSecret = Deno.env.get(providerSecretEnvKey);
@@ -406,12 +425,17 @@ serve(async (req: Request) => {
           { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
+
+      // If provider returns an authoritative transaction ID (e.g. SSLCommerz bank_tran_id), enforce it
+      if (verification.providerTransactionId && typeof verification.providerTransactionId === "string" && verification.providerTransactionId.trim().length > 0) {
+        authoritativeTrxId = verification.providerTransactionId.trim();
+      }
     }
 
-    // 8. Amount verification to prevent tampering
-    if (Number(paidAmount) !== Number(intent.payable_amount)) {
+    // 8. Amount verification against intent to prevent tampering
+    if (parsedAmount !== Number(intent.payable_amount)) {
       return new Response(
-        JSON.stringify({ success: false, error: `Paid amount (${paidAmount}) does not match intent amount (${intent.payable_amount})` }),
+        JSON.stringify({ success: false, error: `Paid amount (${parsedAmount}) does not match intent amount (${intent.payable_amount})` }),
         { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
@@ -421,8 +445,8 @@ serve(async (req: Request) => {
     const { data: rpcRes, error: rpcErr } = await supabaseClient.rpc("verify_and_record_online_payment", {
       p_org_id: intent.organization_id,
       p_intent_id: intent.id,
-      p_provider_trx_id: providerTransactionId,
-      p_paid_amount: Number(paidAmount),
+      p_provider_trx_id: authoritativeTrxId,
+      p_paid_amount: parsedAmount,
       p_gateway_method: intent.provider,
     });
 
@@ -430,6 +454,14 @@ serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ success: false, error: rpcErr.message }),
         { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (rpcRes && rpcRes.success === false) {
+      const status = rpcRes.code === "DUPLICATE_TRANSACTION" ? 409 : 400;
+      return new Response(
+        JSON.stringify(rpcRes),
+        { status, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 

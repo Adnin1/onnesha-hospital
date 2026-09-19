@@ -100,16 +100,16 @@ serve(async (req: Request) => {
       );
     }
 
-    // 2. Role-based Access Control: Caller profile must be active, and caller must belong to the organization
-    const { data: profile } = await supabaseClient
+    // 2. Role-based Access Control: Caller profile must exist and be active, and caller must belong to the organization
+    const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
       .select("id, is_active")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (profile && profile.is_active === false) {
+    if (profileError || !profile || profile.is_active !== true) {
       return new Response(
-        JSON.stringify({ success: false, error: "Forbidden: User account is inactive" }),
+        JSON.stringify({ success: false, error: "Forbidden: Active user profile is required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -178,12 +178,28 @@ serve(async (req: Request) => {
 
     const { data: existingIntent } = await supabaseClient
       .from("payment_intents")
-      .select("id, intent_reference, status, payable_amount, checkout_url")
+      .select("id, invoice_id, provider, intent_reference, status, payable_amount, checkout_url")
       .eq("organization_id", organizationId)
       .eq("idempotency_key", idempotencyKey)
       .maybeSingle();
 
     if (existingIntent) {
+      // Reject if idempotency key is reused with conflicting parameters
+      if (
+        existingIntent.invoice_id !== invoiceId ||
+        existingIntent.provider !== normalizedProvider ||
+        Number(existingIntent.payable_amount) !== Number(payableAmount)
+      ) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            code: "IDEMPOTENCY_CONFLICT",
+            error: "Idempotency key conflict: key was previously used with different payment parameters (invoice, provider, or amount).",
+          }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
