@@ -122,13 +122,13 @@ test("Phase 40: V1.0.x Quality Gates & Forensic Certification", async (t) => {
     const latest = JSON.parse(fs.readFileSync(latestJsonPath, "utf8"));
     const desktopPage = fs.readFileSync(desktopPagePath, "utf8");
 
-    assert.equal(pkg.version, "1.0.5");
-    assert.equal(lock.version, "1.0.5");
-    assert.equal(tauri.version, "1.0.5");
-    assert.match(cargo, /version = "1\.0\.5"/);
-    assert.equal(latest.version, "1.0.5");
-    assert.match(latest.platforms["windows-x86_64"].installer_exe, /1\.0\.5\.exe/);
-    assert.match(latest.platforms["windows-x86_64"].installer_msi, /1\.0\.5\.msi/);
+    assert.equal(pkg.version, "1.0.6");
+    assert.equal(lock.version, "1.0.6");
+    assert.equal(tauri.version, "1.0.6");
+    assert.match(cargo, /version = "1\.0\.6"/);
+    assert.equal(latest.version, "1.0.6");
+    assert.match(latest.platforms["windows-x86_64"].installer_exe, /1\.0\.6\.exe/);
+    assert.match(latest.platforms["windows-x86_64"].installer_msi, /1\.0\.6\.msi/);
     assert.match(desktopPage, /import pkg from "@/);
     assert.match(desktopPage, /pkg\.version/);
   });

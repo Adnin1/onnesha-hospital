@@ -20,6 +20,13 @@ const routes = [
 
 const base = 'https://onnesha-hospital.pages.dev';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iuhtzahuszdkdarhxobx.supabase.co';
+
+// Load .env.local if available and key not set in process.env
+if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile('.env.local');
+  } catch {}
+}
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 async function runProductionSmokeTests() {
@@ -99,11 +106,12 @@ async function runProductionSmokeTests() {
 
   // 3. Organization Integrations credentials read attempt
   const { data: intData, error: intErr } = await anonClient.from('organization_integrations').select('encrypted_credentials').limit(5);
-  if (!intErr && Array.isArray(intData) && intData.length === 0) {
-    console.log('  [✓] Table Read: integrations    Shielded (0 secret credentials accessible)');
+  const isIntShielded = (!intErr && Array.isArray(intData) && intData.length === 0) || (intErr && (intErr.code === '42501' || /permission denied/i.test(intErr.message)));
+  if (isIntShielded) {
+    console.log('  [✓] Table Read: integrations    Shielded (0 secret credentials accessible / permission denied)');
     layerCPassed++;
   } else {
-    console.error('  [✗] Table Read: integrations    LEAK! Returned data to anonymous caller:', intData);
+    console.error('  [✗] Table Read: integrations    LEAK! Returned data or unshielded state:', intErr || intData);
   }
 
   // 4. Production mutation is intentionally not attempted.
