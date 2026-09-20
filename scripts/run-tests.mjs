@@ -62,15 +62,22 @@ for (const file of testFiles) {
     const skipNum = parseInt(skippedMatch[1], 10);
     totalSkipped += skipNum;
 
-    // Classify skip reasons from output lines
-    const skipLines = stdout.split('\n').filter(line => line.includes('# SKIP') || line.includes('# STATUS:'));
+    // Classify skip reasons from output lines (extracting only the directive text after # SKIP / # STATUS:)
+    const skipLines = stdout.split('\n').filter(line => /#\s*(?:SKIP|Skipped|STATUS:)/i.test(line));
     for (const sLine of skipLines) {
-      const lower = sLine.toLowerCase();
-      if (lower.includes('not configured') || lower.includes('not_configured')) {
+      let reason = '';
+      const match = sLine.match(/#\s*(?:SKIP|Skipped|STATUS:)\s*(.*)$/i);
+      if (match && match[1]) {
+        reason = match[1].toLowerCase().trim();
+      } else {
+        reason = sLine.toLowerCase().trim();
+      }
+
+      if (reason.includes('not configured') || reason.includes('not_configured')) {
         notConfiguredCount++;
-      } else if (lower.includes('deferred') || lower.includes('pending activation') || lower.includes('live_merchant')) {
+      } else if (reason.includes('deferred') || reason.includes('pending activation') || reason.includes('live_merchant')) {
         deferredCount++;
-      } else if (lower.includes('blocked')) {
+      } else if (reason.includes('blocked') || reason.startsWith('blocked')) {
         blockedCount++;
       } else {
         standardSkippedCount++;

@@ -59,23 +59,39 @@ buildProcess.on("close", (code) => {
     fs.mkdirSync(destDir, { recursive: true });
   }
 
-  // Find MSI
-  const msiFiles = fs.readdirSync(msiBundleDir).filter((f) => f.endsWith(".msi"));
-  if (msiFiles.length === 0) {
-    console.error("❌ No MSI file found in bundle/msi directory");
-    process.exit(1);
+  // Find MSI matching current version (or newest by mtime)
+  let sourceMsi = "";
+  const versionedMsi = fs.readdirSync(msiBundleDir).filter((f) => f.endsWith(".msi") && f.includes(version));
+  if (versionedMsi.length > 0) {
+    sourceMsi = path.join(msiBundleDir, versionedMsi[0]);
+  } else {
+    const allMsi = fs.readdirSync(msiBundleDir)
+      .filter((f) => f.endsWith(".msi"))
+      .sort((a, b) => fs.statSync(path.join(msiBundleDir, b)).mtimeMs - fs.statSync(path.join(msiBundleDir, a)).mtimeMs);
+    if (allMsi.length === 0) {
+      console.error("❌ No MSI file found in bundle/msi directory");
+      process.exit(1);
+    }
+    sourceMsi = path.join(msiBundleDir, allMsi[0]);
   }
-  const sourceMsi = path.join(msiBundleDir, msiFiles[0]);
   const destMsi = path.join(destDir, `Onnesha-Hospital-${version}.msi`);
   fs.copyFileSync(sourceMsi, destMsi);
 
-  // Find NSIS
-  const exeFiles = fs.readdirSync(nsisBundleDir).filter((f) => f.endsWith(".exe"));
-  if (exeFiles.length === 0) {
-    console.error("❌ No NSIS setup EXE found in bundle/nsis directory");
-    process.exit(1);
+  // Find NSIS matching current version (or newest by mtime)
+  let sourceExe = "";
+  const versionedExe = fs.readdirSync(nsisBundleDir).filter((f) => f.endsWith(".exe") && f.includes(version));
+  if (versionedExe.length > 0) {
+    sourceExe = path.join(nsisBundleDir, versionedExe[0]);
+  } else {
+    const allExe = fs.readdirSync(nsisBundleDir)
+      .filter((f) => f.endsWith(".exe"))
+      .sort((a, b) => fs.statSync(path.join(nsisBundleDir, b)).mtimeMs - fs.statSync(path.join(nsisBundleDir, a)).mtimeMs);
+    if (allExe.length === 0) {
+      console.error("❌ No NSIS setup EXE found in bundle/nsis directory");
+      process.exit(1);
+    }
+    sourceExe = path.join(nsisBundleDir, allExe[0]);
   }
-  const sourceExe = path.join(nsisBundleDir, exeFiles[0]);
   const destExe = path.join(destDir, `Onnesha-Hospital-Setup-${version}.exe`);
   fs.copyFileSync(sourceExe, destExe);
 

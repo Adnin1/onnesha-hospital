@@ -1,12 +1,16 @@
 {
-  "version": "1.1.3",
+  "version": "1.1.4",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.3. Hardened 3-way match, fiscal period authorization, journal immutability, line-move attack prevention, and strict fail-closed release gates.",
-  "pub_date": "2026-09-21T05:00:00Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.4. Hardened 3-way match, fiscal period authorization, journal immutability, line-move attack prevention, and strict fail-closed release gates.",
+  "pub_date": "2026-09-21T06:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.3.exe",
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.3.msi"
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.4.exe",
+      "installer_exe_sha256": "C4F7DE8E560304E05AE9535D0DC165822AA1714B05450D22BED2249B2C59441E",
+      "installer_exe_size": 38006163,
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.4.msi",
+      "installer_msi_sha256": "2B0343051FA41D4F90B21BB4A9DC23809236FD467725E25B3D0584A9DFC64336",
+      "installer_msi_size": 38313984
     }
   },
   "signing": {

@@ -111,6 +111,10 @@ describe("OHMS Phase 32: Billing Atomicity, Payment Reconciliation & Hardened RB
   });
 
   test("13. Live DB Security: Anonymous execution of create_invoice_atomic is strictly blocked", async (t) => {
+    if (SUPABASE_URL.includes("mock") || !SUPABASE_URL.startsWith("https://")) {
+      t.skip("Skipped in hermetic CI environment without live database");
+      return;
+    }
     const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
     const { data, error } = await anonClient.rpc("create_invoice_atomic", {
       p_org_id: CANONICAL_ORG_ID,
@@ -126,6 +130,10 @@ describe("OHMS Phase 32: Billing Atomicity, Payment Reconciliation & Hardened RB
   });
 
   test("14. Live DB Security: Anonymous execution of collect_payment_atomic is strictly blocked", async (t) => {
+    if (SUPABASE_URL.includes("mock") || !SUPABASE_URL.startsWith("https://")) {
+      t.skip("Skipped in hermetic CI environment without live database");
+      return;
+    }
     const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
     const { data, error } = await anonClient.rpc("collect_payment_atomic", {
       p_org_id: CANONICAL_ORG_ID,
@@ -142,6 +150,10 @@ describe("OHMS Phase 32: Billing Atomicity, Payment Reconciliation & Hardened RB
   });
 
   test("15. Live DB Security: Anonymous direct SELECT on organization_integrations returns 0 rows / blocked", async (t) => {
+    if (SUPABASE_URL.includes("mock") || !SUPABASE_URL.startsWith("https://")) {
+      t.skip("Skipped in hermetic CI environment without live database");
+      return;
+    }
     const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
     const { data, error } = await anonClient
       .from("organization_integrations")

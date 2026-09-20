@@ -42,6 +42,10 @@ describe("OHMS Phase 34: Billing Pre-Validation Atomicity & Idempotency Hardenin
   });
 
   test("4. Live DB Security: Anonymous execution of create_invoice_atomic is rejected", async (t) => {
+    if (SUPABASE_URL.includes("mock") || !SUPABASE_URL.startsWith("https://")) {
+      t.skip("Skipped in hermetic CI environment without live database");
+      return;
+    }
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
     const { data, error } = await client.rpc("create_invoice_atomic", {
       p_org_id: CANONICAL_ORG_ID,
