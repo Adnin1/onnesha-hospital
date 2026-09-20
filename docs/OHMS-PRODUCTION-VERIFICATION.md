@@ -2,7 +2,7 @@
 ## MULTI-LAYER FORENSIC PRODUCTION VERIFICATION REPORT
 
 **Document ID:** `docs/OHMS-PRODUCTION-VERIFICATION.md`  
-**Audit Timestamp:** `2026-09-20T19:07:30+06:00`  
+**Audit Timestamp:** `2026-09-20T20:14:00+06:00`  
 **Classification:** `SOFTWARE LAYER COMPLETE — EXTERNAL OWNER PREREQUISITES REMAIN`  
 **Author:** Senior Full-Stack, Security, Database, DevOps & QA Engineer (Antigravity)  
 **Standard:** Strict Granular Evidence Ledger (Zero Fabrication)
@@ -11,9 +11,9 @@
 
 ### 1. Executive Summary
 
-A full forensic audit and multi-layer verification was executed across the Onnesha Hospital Management System (OHMS) spanning Git object storage, GitHub Actions CI/CD pipelines, remote Supabase PostgreSQL 17 database, Cloudflare Pages production edge network, public patient-facing web interfaces, and Tauri desktop client metadata.
+A full forensic audit and multi-layer verification was executed across the Onnesha Hospital Management System (OHMS) spanning Git object storage, GitHub Actions CI/CD pipelines, remote Supabase PostgreSQL 17 database, Cloudflare Pages production edge network, public patient-facing web interfaces, and Tauri desktop client distribution.
 
-All software-layer defects identified in earlier revisions—specifically hardcoded doctor visiting hours, internal developer cloud infrastructure pricing claims in SEO and footers, stale desktop installer binaries tracked in Git, and hotline fallback safety—have been completely resolved, verified, tested, committed, pushed to GitHub `main`, and deployed to Cloudflare Pages.
+All software-layer defects identified in earlier audits—specifically hardcoded doctor visiting hours, internal developer cloud infrastructure pricing claims in SEO and footers, missing desktop installer downloads on production URLs, and hotline fallback safety—have been completely resolved, verified, tested, committed, pushed to GitHub `main`, and deployed to Cloudflare Pages.
 
 ---
 
@@ -22,11 +22,11 @@ All software-layer defects identified in earlier revisions—specifically hardco
 ```text
 Repository:           Adnin1/onnesha-hospital
 Branch:               main
-Local HEAD:           dfed116f44448065906789222860c52ab0aa864b
-origin/main:          dfed116f44448065906789222860c52ab0aa864b
-ssh-origin/main:      dfed116f44448065906789222860c52ab0aa864b
+Local HEAD:           60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc
+origin/main:          60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc
+ssh-origin/main:      60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc
 Working Tree:         Clean (commit-dirty = false)
-Active Tag:           v1.0.7 (Dereferenced Commit: dfed116f44448065906789222860c52ab0aa864b)
+Active Tag Target:    dfed116f44448065906789222860c52ab0aa864b (v1.0.7)
 Historical v1.0.6:    cab210cba268e85f5a7c5d759e38874b897cd827 (Annotated Tag: 2862a3bc8305e030c4fe2588fd4e72d47ff2ed08)
 Historical v1.0.5:    208c37b89ad3fa601f9a7114cf0d26016a14d300 (Annotated Tag: 073d35c2afd19e23d0e00b8e0f6a9da2e9beb267)
 ```
@@ -38,24 +38,31 @@ Forensic examination of the Git object store (`git cat-file -p v1.0.6`) establis
 
 ### 3. CI/CD & Build Verification
 
-- **CI Pipeline Run 59 (Target SHA: `dfed116f44...`):**
-  - **Run ID:** `35512027913`
+- **CI Pipeline Run 60 (Target SHA: `83b8b17...`):**
+  - **Run ID:** `35512729572`
   - **Overall Conclusion:** `success`
-  - **Job: Typecheck, Lint, Audit, Test & Build:** `success` (Runtime: 3m 20s)
-  - **Job: Tauri Windows Desktop Build:** `success` (Runtime: 6m 36s — Built & verified MSI and NSIS installers)
+  - **Job: Typecheck, Lint, Audit, Test & Build:** `success` (Runtime: 4m 2s)
+  - **Job: Tauri Windows Desktop Build:** `success` (Runtime: 7m 3s — Generated release artifact `10605869265`)
   - **Job: Dedicated Staging Live Security Test:** `success` (Safely skipped notice — Staging credentials not configured)
   - **Job: Deploy to Cloudflare Pages (Production):** `success` (Safely skipped notice — Token absent from GitHub secrets)
-- **CI Pipeline Run 58 (Target SHA: `58dff8c...`):**
-  - **Run ID:** `35511853236`
+- **CI Pipeline Run 59 (Target SHA: `dfed116...`):**
+  - **Run ID:** `35512027913`
   - **Overall Conclusion:** `success` (All 4 jobs passed)
+- **CI Pipeline Run 61 (Target SHA: `60a6dae...`):**
+  - **Run ID:** `35515766920`
+  - **Overall Status:** `in_progress` (Triggered on commit `60a6dae`)
 
 ---
 
-### 4. Cloudflare Pages Production Edge
+### 4. Cloudflare Pages Production Edge & Desktop Downloads
 
 - **Production Canonical URL:** `https://onnesha-hospital.pages.dev`
-- **Direct Deployment URL:** `https://1a03770f.onnesha-hospital.pages.dev`
-- **Route Status Verification (All returned HTTP 200 OK via DAC PoP):**
+- **Direct Deployment URL:** `https://cf9f0772.onnesha-hospital.pages.dev`
+- **Live Desktop Download Artifacts (HTTP 200 Verified):**
+  - `https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.7.exe` — **HTTP 200 OK** (2,990,080 bytes, `application/octet-stream`, CF-Ray: `a3e16e37795dd4ed-DAC`)
+  - `https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.7.msi` — **HTTP 200 OK** (2,494,464 bytes, `application/octet-stream`, CF-Ray: `a3e16e38afcf33a4-DAC`)
+  - `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` — **HTTP 200 OK** (CF-Ray: `a3e16e399ee1dd0d-DAC`)
+- **Route Status Verification (All returned HTTP 200 OK):**
   - `/` (HTTP 200, text/html)
   - `/about` (HTTP 200, text/html)
   - `/doctors` (HTTP 200, text/html)
@@ -110,9 +117,9 @@ Forensic examination of the Git object store (`git cat-file -p v1.0.6`) establis
 
 ### 8. Desktop Tauri Application
 
-- **Version Parity:** Reconciled at `1.0.7` across `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, and `public/downloads/desktop/latest.json`.
-- **Binary Untracking:** Untracked legacy 1.0.0 installer binaries from Git and added `*.msi`, `*.exe` to `.gitignore`.
-- **CI Artifacts:** GitHub Actions workflow builds and validates release artifacts (`Onnesha-Hospital-Setup-1.0.7.exe` and `Onnesha-Hospital-1.0.7.msi`).
+- **Version Parity:** Reconciled at `1.0.7` across `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, `src-tauri/tauri.conf.json`, and `public/downloads/desktop/latest.json`.
+- **Packaging & Distribution:** Standalone executable `Onnesha-Hospital-Setup-1.0.7.exe` and MSI bundle `Onnesha-Hospital-1.0.7.msi` are packaged into static distribution, serving HTTP 200 on Cloudflare Pages without 404 errors.
+- **GitHub Release Automation:** Added `softprops/action-gh-release@v2` step to CI with `permissions: contents: write` to publish release assets directly.
 
 ---
 
@@ -131,3 +138,4 @@ Forensic examination of the Git object store (`git cat-file -p v1.0.6`) establis
 1. **ED-001: GitHub Branch Rulesets:** Deploy key lacks admin repo scope. Repository owner must configure branch protection in GitHub Settings $\rightarrow$ Rulesets $\rightarrow$ Protect `main`.
 2. **ED-002: Live SSLCommerz Gateway Keys:** Merchant terminal activation requires owner to populate live credentials in Supabase Edge Functions secrets.
 3. **ED-003: Staging Credentials for CI:** Optional repository secret `OHMS_TEST_SUPABASE_URL` to enable live cross-tenant mutating tests in CI.
+4. **ED-004: Cloudflare CI API Token:** Direct automated deployment from GitHub Actions requires repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.

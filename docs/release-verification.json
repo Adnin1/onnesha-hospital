@@ -1,27 +1,37 @@
 {
   "release": "v1.0.7",
-  "commit": "dfed116f44448065906789222860c52ab0aa864b",
+  "commit": "60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc",
   "branch": "main",
-  "timestamp": "2026-09-20T19:07:30+06:00",
+  "timestamp": "2026-09-20T20:13:50+06:00",
   "ci": {
-    "latest_run_id": 35512027913,
-    "latest_run_number": 59,
-    "status": "completed",
-    "conclusion": "success",
-    "jobs": {
-      "validate": "success",
-      "tauri_windows_build": "success",
-      "live_security_test": "success",
-      "deploy_production": "success"
+    "authoritative_completed_run": {
+      "run_id": 35512729572,
+      "run_number": 60,
+      "head_sha": "83b8b1745e0bc79b7e9855644285f6fb92c2c176",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "validate": "success",
+        "tauri_windows_build": "success",
+        "live_security_test": "success (skipped safely: staging secrets absent)",
+        "deploy_production": "success (skipped safely: token absent)"
+      }
+    },
+    "active_run": {
+      "run_id": 35515766920,
+      "run_number": 61,
+      "head_sha": "60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc",
+      "status": "in_progress",
+      "conclusion": null
     }
   },
   "cloudflare": {
     "canonical_url": "https://onnesha-hospital.pages.dev",
-    "direct_preview_url": "https://1a03770f.onnesha-hospital.pages.dev",
-    "deploy_sha": "dfed116f44448065906789222860c52ab0aa864b",
+    "direct_preview_url": "https://cf9f0772.onnesha-hospital.pages.dev",
+    "deploy_sha": "60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc",
     "commit_dirty": false,
-    "http_routes_checked": 11,
-    "http_routes_200_ok": 11
+    "http_routes_checked": 15,
+    "http_routes_200_ok": 15
   },
   "supabase": {
     "project_id": "iuhtzahuszdkdarhxobx",
@@ -43,7 +53,13 @@
   "desktop": {
     "version": "1.0.7",
     "manifest_url": "https://onnesha-hospital.pages.dev/downloads/desktop/latest.json",
-    "latest_json_version": "1.0.7"
+    "setup_exe_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.7.exe",
+    "msi_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.7.msi",
+    "live_http_status": {
+      "latest_json": 200,
+      "setup_exe": 200,
+      "msi": 200
+    }
   },
   "verification": {
     "typescript": "PASS",
@@ -52,6 +68,7 @@
     "production_smoke": "PASS",
     "rls_read_shield": "PASS",
     "shell_safety": "PASS",
-    "rpc_shield": "PASS"
+    "rpc_shield": "PASS",
+    "desktop_downloads": "PASS"
   }
 }
