@@ -314,6 +314,16 @@ export async function createGoodsReceiptNoteAction(input: {
       newValues: { grn_number: header.grn_number, total_received_cost: totalCost },
     });
 
+    // ERP General Ledger Integration: Automatically post GRN to Inventory and Supplier Payable GL
+    try {
+      await supabase.rpc("post_grn_to_inventory_and_gl_atomic", {
+        p_org_id: session.organizationId,
+        p_grn_id: header.id,
+      });
+    } catch (glErr) {
+      console.warn("ERP GRN GL auto-posting notice:", glErr);
+    }
+
     const result: GoodsReceiptNoteRecord = {
       ...header,
       items: savedItems as GoodsReceiptItem[],

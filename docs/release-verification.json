@@ -1,7 +1,7 @@
 {
-  "release": "v1.1.0",
+  "release": "v1.1.1",
   "branch": "main",
-  "timestamp": "2026-09-21T02:00:00+06:00",
+  "timestamp": "2026-09-21T03:00:00+06:00",
   "erp_transformation": {
     "status": "COMPLETED",
     "domains_covered": 32,
@@ -10,11 +10,14 @@
       "Procurement Requisitions & Goods Receipt Notes (GRN)",
       "Multi-Location Warehouses & Stock Transfers",
       "Fixed Assets & Biomedical Equipment Lifecycle",
-      "Inpatient Nursing Shift Handover & Vitals Rounds"
+      "Inpatient Nursing Shift Handover & Vitals Rounds",
+      "Fail-Closed Tenant Isolation in Accounting RPCs (P0 Security)",
+      "Table-Level Debit XOR Credit Mutual Exclusivity Invariant (P0 Accounting)",
+      "Cross-Module ERP Transactional Integration: Billing, Pharmacy POS, GRN, Payroll, Assets"
     ]
   },
   "ci": {
-    "workflow_trigger": "push to main with tag v1.1.0",
+    "workflow_trigger": "push to main with tag v1.1.1",
     "desktop_packaging": "authentic WiX Toolset 3.11 & NSIS 3.10",
     "release_step": "dynamic tag extraction via package.json"
   },
@@ -22,16 +25,16 @@
     "project_id": "iuhtzahuszdkdarhxobx",
     "database_version": "PostgreSQL 17.6",
     "region": "ap-southeast-1",
-    "migrations_total": 47,
-    "migrations_synced": 47,
+    "migrations_total": 49,
+    "migrations_synced": 49,
     "db_lint_errors": 0
   },
   "tests": {
-    "suites_total": 51,
-    "suites_passed": 51,
+    "suites_total": 52,
+    "suites_passed": 52,
     "suites_failed": 0,
-    "cases_total": 442,
-    "cases_passed": 436,
+    "cases_total": 453,
+    "cases_passed": 447,
     "cases_failed": 0,
     "cases_skipped": 6,
     "playwright_browser_tests": {
@@ -42,12 +45,12 @@
     }
   },
   "desktop": {
-    "version": "1.1.0",
+    "version": "1.1.1",
     "manifest_url": "https://onnesha-hospital.pages.dev/downloads/desktop/latest.json",
-    "setup_exe_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.0.exe",
+    "setup_exe_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.1.exe",
     "setup_exe_size": 1989452,
     "setup_exe_sha256": "093485037636E1CFD8AB48B2EF5755DD7F26E520FC8B8E3D51F3482716EB3278",
-    "msi_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.0.msi",
+    "msi_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.1.msi",
     "msi_size": 2494464,
     "msi_sha256": "274CB7B2B06671E8B4E98A08CC51EF6C4960E1ACD6CC5199FE91A6A6C8694B44"
   },

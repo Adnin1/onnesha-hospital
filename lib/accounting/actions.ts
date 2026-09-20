@@ -269,6 +269,18 @@ export async function postJournalEntryAction(input: {
     return { success: false, error: "Journal entry must have at least two lines" };
   }
 
+  // Validate line-level mutual exclusivity constraint (debit XOR credit)
+  for (const line of input.lines) {
+    const d = Number(line.debit) || 0;
+    const c = Number(line.credit) || 0;
+    if ((d > 0 && c > 0) || (d === 0 && c === 0)) {
+      return {
+        success: false,
+        error: `Invalid journal line: Each line must have debit > 0 XOR credit > 0 (found debit=${d}, credit=${c})`,
+      };
+    }
+  }
+
   // Double-Entry Invariant check: Sum(Debit) === Sum(Credit)
   const totalDebit = input.lines.reduce((acc, l) => acc + (Number(l.debit) || 0), 0);
   const totalCredit = input.lines.reduce((acc, l) => acc + (Number(l.credit) || 0), 0);
@@ -405,6 +417,192 @@ export async function getTrialBalanceAction(): Promise<ActionResult<{ trialBalan
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to calculate trial balance";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 6. ERP Integration 1: Post Billing Invoice to General Ledger
+ */
+export async function postBillingToGlAction(invoiceId: string): Promise<ActionResult<{ entry_number: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("post_billing_to_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_invoice_id: invoiceId,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      data: { entry_number: (data as { entry_number: string })?.entry_number || "" },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to post invoice to General Ledger";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 7. ERP Integration 2: Record Pharmacy Sale with Stock Deduction & COGS GL
+ */
+export async function recordPharmacySaleErpAction(input: {
+  patientId: string;
+  items: Array<{ batch_id: string; quantity: number; unit_price: number }>;
+  paymentMethod?: string;
+  notes?: string;
+}): Promise<ActionResult<{ sale_id: string; sale_number: string; total_sale: number; journal_entry_number: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("record_pharmacy_sale_erp_atomic", {
+      p_org_id: session.organizationId,
+      p_patient_id: input.patientId,
+      p_items: input.items,
+      p_payment_method: input.paymentMethod || "CASH",
+      p_notes: input.notes || null,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      data: data as { sale_id: string; sale_number: string; total_sale: number; journal_entry_number: string },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to process pharmacy ERP sale";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 8. ERP Integration 3: Post Procurement GRN to Inventory & Supplier Payable GL
+ */
+export async function postGrnToInventoryAndGlAction(grnId: string): Promise<ActionResult<{ grn_id: string; total_amount: number; journal_entry_number: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("post_grn_to_inventory_and_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_grn_id: grnId,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const payload = data as { grn_id: string; total_amount: number; journal_entry: { entry_number: string } };
+    return {
+      success: true,
+      data: {
+        grn_id: payload.grn_id,
+        total_amount: payload.total_amount,
+        journal_entry_number: payload.journal_entry?.entry_number || "",
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to post GRN to inventory and GL";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 9. ERP Integration 4: Disburse Payroll to GL
+ */
+export async function disbursePayrollToGlAction(payrollRunId: string): Promise<ActionResult<{ payroll_run_id: string; total_disbursed: number; journal_entry_number: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("disburse_payroll_to_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_payroll_run_id: payrollRunId,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const payload = data as { payroll_run_id: string; total_disbursed: number; journal_entry: { entry_number: string } };
+    return {
+      success: true,
+      data: {
+        payroll_run_id: payload.payroll_run_id,
+        total_disbursed: payload.total_disbursed,
+        journal_entry_number: payload.journal_entry?.entry_number || "",
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to disburse payroll to GL";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 10. ERP Integration 5: Record Asset Depreciation to GL
+ */
+export async function recordAssetDepreciationToGlAction(input: {
+  assetId: string;
+  depreciationAmount: number;
+  notes?: string;
+}): Promise<ActionResult<{ asset_id: string; depreciation_amount: number; new_current_value: number; journal_entry_number: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("record_asset_depreciation_to_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_asset_id: input.assetId,
+      p_depreciation_amount: input.depreciationAmount,
+      p_notes: input.notes || null,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const payload = data as {
+      asset_id: string;
+      depreciation_amount: number;
+      new_current_value: number;
+      journal_entry: { entry_number: string };
+    };
+
+    return {
+      success: true,
+      data: {
+        asset_id: payload.asset_id,
+        depreciation_amount: payload.depreciation_amount,
+        new_current_value: payload.new_current_value,
+        journal_entry_number: payload.journal_entry?.entry_number || "",
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to record asset depreciation to GL";
     return { success: false, error: msg };
   }
 }

@@ -254,3 +254,72 @@ export async function createAssetMaintenanceLogAction(input: {
     return { success: false, error: msg };
   }
 }
+
+/**
+ * 4. Record Asset Depreciation & Auto-Post to General Ledger
+ */
+export async function recordAssetDepreciationAction(input: {
+  assetId: string;
+  depreciationAmount: number;
+  notes?: string;
+}): Promise<ActionResult<{ asset_id: string; depreciation_amount: number; new_current_value: number; journal_entry_number: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.ASSETS_MANAGE);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Forbidden: insufficient assets management permissions";
+    return { success: false, error: msg };
+  }
+
+  if (input.depreciationAmount <= 0) {
+    return { success: false, error: "Depreciation amount must be greater than zero." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("record_asset_depreciation_to_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_asset_id: input.assetId,
+      p_depreciation_amount: input.depreciationAmount,
+      p_notes: input.notes || null,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const payload = data as {
+      asset_id: string;
+      depreciation_amount: number;
+      new_current_value: number;
+      journal_entry: { entry_number: string };
+    };
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId || undefined,
+      action: "UPDATE",
+      module: "ASSETS",
+      entityType: "hospital_assets",
+      entityId: input.assetId,
+      newValues: { depreciation_amount: input.depreciationAmount, new_current_value: payload.new_current_value },
+    });
+
+    return {
+      success: true,
+      data: {
+        asset_id: payload.asset_id,
+        depreciation_amount: payload.depreciation_amount,
+        new_current_value: payload.new_current_value,
+        journal_entry_number: payload.journal_entry?.entry_number || "",
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to record asset depreciation";
+    return { success: false, error: msg };
+  }
+}
