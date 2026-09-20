@@ -73,7 +73,7 @@ describe("OHMS Phase 34: Billing Pre-Validation Atomicity & Idempotency Hardenin
     const manifestPath = path.join(ROOT, "public/downloads/desktop/latest.json");
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 
-    assert.match(manifest.version, /^1\.0\.[34]/);
+    assert.match(manifest.version, /^1\.0\.\d+$/);
     assert.match(manifest.platforms["windows-x86_64"].installer_exe, /Onnesha-Hospital-Setup-1\.0\.\d+\.exe/);
     assert.match(manifest.platforms["windows-x86_64"].installer_msi, /Onnesha-Hospital-1\.0\.\d+\.msi/);
     assert.equal(manifest.signing.enabled, false);
