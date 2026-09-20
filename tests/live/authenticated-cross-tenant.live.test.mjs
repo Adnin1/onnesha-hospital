@@ -41,9 +41,9 @@ assert.notEqual(DISPOSABLE_ORG_A, CANONICAL_PROD_ORG);
 assert.notEqual(DISPOSABLE_ORG_B, CANONICAL_PROD_ORG);
 
 test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async (t) => {
-  const isEnabled = process.env.RUN_LIVE_SUPABASE_TESTS === "true" && process.env.ALLOW_MUTATING_REMOTE_TESTS === "true";
+  const isEnabled = process.env.RUN_LIVE_SUPABASE_TESTS === "true";
   if (!isEnabled) {
-    t.skip("STATUS: SKIPPED. Set RUN_LIVE_SUPABASE_TESTS=true and ALLOW_MUTATING_REMOTE_TESTS=true to execute live mutating tests against dedicated staging Supabase.");
+    t.skip("STATUS: SKIPPED. Set RUN_LIVE_SUPABASE_TESTS=true to execute live mutating tests against dedicated non-production staging Supabase.");
     return;
   }
 
