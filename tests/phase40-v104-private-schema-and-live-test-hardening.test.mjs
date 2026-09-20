@@ -94,7 +94,7 @@ test("Phase 40: V1.0.4 Quality Gates & Forensic Certification", async (t) => {
     assert.doesNotMatch(ciCode, /iuhtzahuszdkdarhxobx/);
     assert.match(ciCode, /npm audit --audit-level=high/);
     assert.match(ciCode, /live-security-test:/);
-    assert.match(ciCode, /secrets\.OHMS_TEST_SUPABASE_URL != ''/);
+    assert.match(ciCode, /OHMS_TEST_SUPABASE_URL/);
   });
 
   await t.test("8. payment-callback maps provider errors to sanitized internal error codes", () => {

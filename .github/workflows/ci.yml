@@ -60,28 +60,36 @@ jobs:
     name: Dedicated Staging Live Security Test
     runs-on: ubuntu-latest
     needs: validate
-    if: ${{ secrets.OHMS_TEST_SUPABASE_URL != '' && secrets.OHMS_TEST_SERVICE_ROLE_KEY != '' }}
+    env:
+      OHMS_TEST_SUPABASE_URL: ${{ secrets.OHMS_TEST_SUPABASE_URL }}
+      OHMS_TEST_SERVICE_ROLE_KEY: ${{ secrets.OHMS_TEST_SERVICE_ROLE_KEY }}
+      OHMS_TEST_PUBLISHABLE_KEY: ${{ secrets.OHMS_TEST_PUBLISHABLE_KEY }}
     steps:
       - name: Checkout repository
+        if: env.OHMS_TEST_SUPABASE_URL != '' && env.OHMS_TEST_SERVICE_ROLE_KEY != ''
         uses: actions/checkout@v4
 
       - name: Setup Node.js 22
+        if: env.OHMS_TEST_SUPABASE_URL != '' && env.OHMS_TEST_SERVICE_ROLE_KEY != ''
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
+        if: env.OHMS_TEST_SUPABASE_URL != '' && env.OHMS_TEST_SERVICE_ROLE_KEY != ''
         run: npm ci
 
       - name: Execute Authenticated Cross-Tenant Live Suite
+        if: env.OHMS_TEST_SUPABASE_URL != '' && env.OHMS_TEST_SERVICE_ROLE_KEY != ''
         env:
           RUN_LIVE_SUPABASE_TESTS: "true"
           ALLOW_MUTATING_REMOTE_TESTS: "true"
-          OHMS_TEST_SUPABASE_URL: ${{ secrets.OHMS_TEST_SUPABASE_URL }}
-          OHMS_TEST_PUBLISHABLE_KEY: ${{ secrets.OHMS_TEST_PUBLISHABLE_KEY || secrets.OHMS_TEST_ANON_KEY }}
-          OHMS_TEST_SERVICE_ROLE_KEY: ${{ secrets.OHMS_TEST_SERVICE_ROLE_KEY }}
         run: node --test tests/live/authenticated-cross-tenant.live.test.mjs
+
+      - name: Notice when staging credentials are not provided
+        if: env.OHMS_TEST_SUPABASE_URL == '' || env.OHMS_TEST_SERVICE_ROLE_KEY == ''
+        run: echo "Dedicated non-production staging secrets are not configured in GitHub repository. Live security suite skipped safely."
 
   tauri-windows-build:
     name: Tauri Windows Desktop Build
