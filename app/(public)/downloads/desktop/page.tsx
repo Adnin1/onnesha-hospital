@@ -54,6 +54,17 @@ export default function DesktopDownloadPage() {
             ভার্সন আপডেট রিলিজ নোটস (JSON)
           </Link>
         </div>
+        <p className="text-xs text-slate-500 mt-4">
+          All desktop releases are built via CI and digitally archived on{" "}
+          <a
+            href="https://github.com/Adnin1/onnesha-hospital/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sky-600 hover:underline"
+          >
+            GitHub Releases
+          </a>.
+        </p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6 text-left">

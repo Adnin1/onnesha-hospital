@@ -166,12 +166,20 @@ jobs:
             src-tauri/target/release/bundle/
           if-no-files-found: error
 
+      - name: Determine Release Version
+        shell: powershell
+        run: |
+          $ver = (Get-Content package.json | ConvertFrom-Json).version
+          Write-Host "Determined release version: v$ver"
+          "OHMS_RELEASE_TAG=v$ver" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "OHMS_RELEASE_NAME=Onnesha Hospital Desktop v$ver (Windows)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Publish GitHub Release with Desktop Installers
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.7
-          name: "Onnesha Hospital Desktop v1.0.7 (Windows)"
+          tag_name: ${{ env.OHMS_RELEASE_TAG }}
+          name: ${{ env.OHMS_RELEASE_NAME }}
           draft: false
           prerelease: false
           generate_release_notes: true

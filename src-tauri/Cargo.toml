@@ -1,6 +1,6 @@
 [package]
 name = "onnesha-hospital-desktop"
-version = "1.0.7"
+version = "1.0.8"
 description = "Onnesha Hospital & Diagnostic Complex - Windows Desktop HMS Client"
 authors = ["Onnesha Hospital Engineering Team"]
 edition = "2021"
