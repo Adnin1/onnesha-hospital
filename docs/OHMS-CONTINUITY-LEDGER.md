@@ -1,8 +1,8 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-## AUTHORITATIVE PRODUCTION CONTINUITY LEDGER
+## AUTHORITATIVE PRODUCTION CONTINUITY LEDGER (v1.0.8)
 
 **Document Ref:** `docs/OHMS-CONTINUITY-LEDGER.md`  
-**Last Verified Timestamp:** `2026-09-20T20:14:00+06:00`  
+**Last Verified Timestamp:** `2026-09-21T01:30:00+06:00`  
 **Auditor:** Senior Full-Stack & Release Engineer (Antigravity)  
 **Standard:** Strict Granular Truth & Zero Fabrication
 
@@ -14,35 +14,36 @@
 |---|---|---|
 | **Repository** | `Adnin1/onnesha-hospital` | `git remote -v` |
 | **Active Branch** | `main` | `git branch --show-current` |
-| **Local HEAD SHA** | `60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc` | `git rev-parse HEAD` |
-| **Remote origin/main** | `60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc` | `git rev-parse origin/main` |
-| **Remote ssh-origin/main**| `60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc` | `git rev-parse ssh-origin/main` |
-| **Tag v1.0.7 Target** | `dfed116f44448065906789222860c52ab0aa864b` | `git rev-parse 'v1.0.7^{commit}'` |
-| **Historical v1.0.6 SHA**| `cab210cba268e85f5a7c5d759e38874b897cd827` | `git rev-parse 'v1.0.6^{commit}'` |
-| **Historical v1.0.5 SHA**| `208c37b89ad3fa601f9a7114cf0d26016a14d300` | `git rev-parse 'v1.0.5^{commit}'` |
+| **Local HEAD SHA** | `39728c93b67e28daf705ef61890c1790c958fa70` | `git rev-parse HEAD` |
+| **Remote origin/main** | `39728c93b67e28daf705ef61890c1790c958fa70` | `node scripts/git-sync.mjs ls-remote` |
+| **Remote ssh-origin/main**| `39728c93b67e28daf705ef61890c1790c958fa70` | `node scripts/git-sync.mjs ls-remote` |
+| **Active Release Tag** | `v1.0.8` $\rightarrow$ `39728c93b67e28daf705ef61890c1790c958fa70` | `git rev-parse 'v1.0.8^{commit}'` |
+| **Historical Tag v1.0.7 Target** | `dfed116f44448065906789222860c52ab0aa864b` | `git rev-parse 'v1.0.7^{commit}'` |
+| **Historical Tag v1.0.6 Target** | `cab210cba268e85f5a7c5d759e38874b897cd827` | `git rev-parse 'v1.0.6^{commit}'` |
+| **Historical Tag v1.0.5 Target** | `208c37b89ad3fa601f9a7114cf0d26016a14d300` | `git rev-parse 'v1.0.5^{commit}'` |
 | **Working Tree State** | `CLEAN` (commit-dirty = false) | `git status --porcelain` |
 
 ---
 
-### 2. CI/CD & Build Pipeline Status
-
-| Pipeline Run | Run ID | Target SHA | Status | Conclusion | Job Breakdown |
-|---|---|---|---|---|---|
-| **Active CI Run** | `35515766920` (Run 61) | `60a6dae...` | `in_progress` | Pending terminal conclusion | Typecheck, Lint, Audit, Test & Build: in progress |
-| **Authoritative Completed CI** | `35512729572` (Run 60) | `83b8b17...` | `completed` | `success` | Validate: `success`<br>Tauri Windows Desktop: `success`<br>Staging Live: `success` (notice skipped)<br>Deploy: `success` (notice skipped) |
-| **Prior CI Baseline** | `35512027913` (Run 59) | `dfed116...` | `completed` | `success` | Validate: `success`<br>Tauri: `success`<br>Staging: `success`<br>Deploy: `success` |
-
----
-
-### 3. Edge Runtime & Deployment (Cloudflare Pages)
+### 2. Edge Runtime & Deployment (Cloudflare Pages)
 
 | Endpoint | Target URL | HTTP Status | Cloudflare Ray ID | Content & Artifact Status |
 |---|---|---|---|---|
-| **Production Canonical** | `https://onnesha-hospital.pages.dev` | 200 OK | `a3e16e399ee1dd0d-DAC` | All pricing purged; dynamic doctor visiting hours live |
-| **Direct SHA Deployment** | `https://cf9f0772.onnesha-hospital.pages.dev` | 200 OK | `a3e16e37795dd4ed-DAC` | Verified matching commit `60a6dae` |
-| **Desktop Updater Manifest** | `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` | 200 OK | `a3e16e399ee1dd0d-DAC` | Version: `1.0.7`, JSON valid |
-| **Windows Setup Installer (.exe)** | `https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.7.exe` | 200 OK | `a3e16e37795dd4ed-DAC` | 2,990,080 bytes (`application/octet-stream`) |
-| **Windows MSI Package (.msi)** | `https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.7.msi` | 200 OK | `a3e16e38afcf33a4-DAC` | 2,494,464 bytes (`application/octet-stream`) |
+| **Production Canonical** | `https://onnesha-hospital.pages.dev` | 200 OK | `a3e33e200ca6dd0d-DAC` | All pricing purged; dynamic doctor visiting hours live |
+| **Direct Deployment Preview** | `https://ff3acec6.onnesha-hospital.pages.dev` | 200 OK | Wrangler deploy output | Verified matching commit `39728c9` |
+| **Desktop Manifest (latest.json)** | `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` | 200 OK | `a3e33e200ca6dd0d-DAC` | Version: `1.0.8`, JSON valid, matching checksums |
+| **Windows Setup Installer (.exe)** | `https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.8.exe` | 200 OK | `a3e33e2a0887d4ed-DAC` | 2,996,122 bytes (`application/octet-stream`), authentic NSIS 3.10 bundle |
+| **Windows MSI Package (.msi)** | `https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.8.msi` | 200 OK | `a3e33e21ea65dd0d-DAC` | 3,477,504 bytes (`application/octet-stream`), authentic WiX 3.11 bundle |
+
+---
+
+### 3. Cryptographic Artifact Checksums (SHA-256)
+
+| Binary File | Size (Bytes) | SHA-256 Checksum | Origin Compiler |
+|---|---|---|---|
+| `Onnesha-Hospital-Setup-1.0.8.exe` | 2,996,122 | `42E0B1416B1FEF7D92EC682F7DF9BF881F9CEE598DE9885A6920CDD794827A0D` | NSIS 3.10 (`makensis.exe`) |
+| `Onnesha-Hospital-1.0.8.msi` | 3,477,504 | `0F54B6344CC5AC42FE8A81843B1494BF2137BA7460678E6A4A63309863D75E2A` | WiX Toolset 3.11 (`candle` + `light`) |
+| `latest.json` | 798 | `29FE025A720AD38DABFF6F44408BD543467B9946B2AF5005A4FED38AC5FB071A` | UTF-8 JSON Manifest |
 
 ---
 
@@ -67,10 +68,9 @@
 | **ESLint Gate** | 0 warnings, 0 errors | `npx eslint . --max-warnings 0` |
 | **Dependency Security** | 0 vulnerabilities | `npm audit --audit-level=high` |
 | **Total Test Suites** | 48 discovered, 48 passed | `npm test` |
-| **Total Test Cases** | 424 | `npm test` |
-| **Passed Tests** | 418 | `npm test` |
-| **Failed Tests** | 0 | `npm test` |
-| **Skipped Tests** | 6 (explicitly classified rationale) | `npm test` |
+| **Total Test Cases** | 424 (418 passed, 6 standard skipped) | `npm test` |
+| **Playwright Browser E2E** | 19 specs executed, 19 passed | `npx playwright test --project=chromium` |
+| **Production Smoke Test** | 15/15 routes, 4/4 shells, 3/3 table shields, 2/2 RPC shields | `node scripts/smoke_test.mjs` |
 
 ---
 

@@ -1,34 +1,17 @@
 {
-  "release": "v1.0.7",
-  "commit": "60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc",
+  "release": "v1.0.8",
+  "commit": "39728c93b67e28daf705ef61890c1790c958fa70",
   "branch": "main",
-  "timestamp": "2026-09-20T20:13:50+06:00",
+  "timestamp": "2026-09-21T01:30:00+06:00",
   "ci": {
-    "authoritative_completed_run": {
-      "run_id": 35512729572,
-      "run_number": 60,
-      "head_sha": "83b8b1745e0bc79b7e9855644285f6fb92c2c176",
-      "status": "completed",
-      "conclusion": "success",
-      "jobs": {
-        "validate": "success",
-        "tauri_windows_build": "success",
-        "live_security_test": "success (skipped safely: staging secrets absent)",
-        "deploy_production": "success (skipped safely: token absent)"
-      }
-    },
-    "active_run": {
-      "run_id": 35515766920,
-      "run_number": 61,
-      "head_sha": "60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc",
-      "status": "in_progress",
-      "conclusion": null
-    }
+    "workflow_trigger": "push to main with tag v1.0.8",
+    "desktop_packaging": "authentic WiX Toolset 3.11 & NSIS 3.10",
+    "release_step": "dynamic tag extraction via package.json"
   },
   "cloudflare": {
     "canonical_url": "https://onnesha-hospital.pages.dev",
-    "direct_preview_url": "https://cf9f0772.onnesha-hospital.pages.dev",
-    "deploy_sha": "60a6dae2fab50b24c957579ca2d0d7cbbf21f0fc",
+    "direct_preview_url": "https://ff3acec6.onnesha-hospital.pages.dev",
+    "deploy_sha": "39728c93b67e28daf705ef61890c1790c958fa70",
     "commit_dirty": false,
     "http_routes_checked": 15,
     "http_routes_200_ok": 15
@@ -48,13 +31,23 @@
     "cases_total": 424,
     "cases_passed": 418,
     "cases_failed": 0,
-    "cases_skipped": 6
+    "cases_skipped": 6,
+    "playwright_browser_tests": {
+      "projects": ["chromium"],
+      "specs_total": 19,
+      "specs_passed": 19,
+      "specs_failed": 0
+    }
   },
   "desktop": {
-    "version": "1.0.7",
+    "version": "1.0.8",
     "manifest_url": "https://onnesha-hospital.pages.dev/downloads/desktop/latest.json",
-    "setup_exe_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.7.exe",
-    "msi_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.7.msi",
+    "setup_exe_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.8.exe",
+    "setup_exe_size": 2996122,
+    "setup_exe_sha256": "42E0B1416B1FEF7D92EC682F7DF9BF881F9CEE598DE9885A6920CDD794827A0D",
+    "msi_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.8.msi",
+    "msi_size": 3477504,
+    "msi_sha256": "0F54B6344CC5AC42FE8A81843B1494BF2137BA7460678E6A4A63309863D75E2A",
     "live_http_status": {
       "latest_json": 200,
       "setup_exe": 200,
@@ -65,10 +58,12 @@
     "typescript": "PASS",
     "eslint": "PASS",
     "audit": "PASS",
+    "playwright_e2e": "PASS",
     "production_smoke": "PASS",
     "rls_read_shield": "PASS",
     "shell_safety": "PASS",
     "rpc_shield": "PASS",
-    "desktop_downloads": "PASS"
+    "desktop_downloads": "PASS",
+    "checksum_integrity": "PASS"
   }
 }
