@@ -106,7 +106,11 @@ async function runProductionSmokeTests() {
     console.error('  [✗] Table Read: integrations    LEAK! Returned data to anonymous caller:', intData);
   }
 
-  // 4. Production mutation is intentionally not attempted.\n  // Authenticated INSERT/UPDATE/DELETE isolation is covered only by the disposable staging suite.\n  console.log('  [✓] Table Write: patients       NOT MUTATED (staging suite owns write-authorization testing)');\n\n  // LAYER D: PostgREST RPC Endpoint Access Control
+  // 4. Production mutation is intentionally not attempted.
+  // Authenticated INSERT/UPDATE/DELETE isolation is covered only by the disposable staging suite.
+  console.log('  [✓] Table Write: patients       NOT MUTATED (staging suite owns write-authorization testing)');
+
+  // LAYER D: PostgREST RPC Endpoint Access Control
   console.log('\n--- LAYER D: PostgREST RPC Endpoint Access Control ---');
   let layerDPassed = 0;
 
