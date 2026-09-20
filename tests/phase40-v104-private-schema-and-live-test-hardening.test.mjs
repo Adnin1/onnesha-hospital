@@ -1,5 +1,5 @@
 /**
- * Phase 40: V1.0.4 Forensic Quality Gates
+ * Phase 40: V1.0.5 Forensic Quality Gates
  * 
  * Verifies:
  * 1. Migration 46 exists and establishes unexposed private schema.
@@ -12,7 +12,7 @@
  * 8. CI workflow is hermetic, includes npm audit gate, and separates dedicated staging live security job.
  * 9. payment-callback maps all provider errors to sanitized internal codes without reflecting raw errors.
  * 10. Smoke test verifies route health, shell safety, table read/write shielding, and RPC access control.
- * 11. Version metadata is perfectly synchronized at 1.0.4 across all manifests and dynamic download page.
+ * 11. Version metadata is perfectly synchronized at 1.0.5 across all manifests and dynamic download page.
  */
 
 import test from "node:test";
@@ -122,11 +122,11 @@ test("Phase 40: V1.0.x Quality Gates & Forensic Certification", async (t) => {
     const latest = JSON.parse(fs.readFileSync(latestJsonPath, "utf8"));
     const desktopPage = fs.readFileSync(desktopPagePath, "utf8");
 
-    assert.equal(pkg.version, "1.0.4");
-    assert.equal(lock.version, "1.0.4");
-    assert.equal(tauri.version, "1.0.4");
+    assert.equal(pkg.version, "1.0.5");
+    assert.equal(lock.version, "1.0.5");
+    assert.equal(tauri.version, "1.0.5");
     assert.match(cargo, /version = "1\.0\.4"/);
-    assert.equal(latest.version, "1.0.4");
+    assert.equal(latest.version, "1.0.5");
     assert.match(latest.platforms["windows-x86_64"].installer_exe, /1\.0\.4\.exe/);
     assert.match(latest.platforms["windows-x86_64"].installer_msi, /1\.0\.4\.msi/);
     assert.match(desktopPage, /import pkg from "@/);
