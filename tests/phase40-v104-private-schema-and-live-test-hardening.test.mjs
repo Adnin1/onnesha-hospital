@@ -125,10 +125,10 @@ test("Phase 40: V1.0.x Quality Gates & Forensic Certification", async (t) => {
     assert.equal(pkg.version, "1.0.5");
     assert.equal(lock.version, "1.0.5");
     assert.equal(tauri.version, "1.0.5");
-    assert.match(cargo, /version = "1\.0\.4"/);
+    assert.match(cargo, /version = "1\.0\.5"/);
     assert.equal(latest.version, "1.0.5");
-    assert.match(latest.platforms["windows-x86_64"].installer_exe, /1\.0\.4\.exe/);
-    assert.match(latest.platforms["windows-x86_64"].installer_msi, /1\.0\.4\.msi/);
+    assert.match(latest.platforms["windows-x86_64"].installer_exe, /1\.0\.5\.exe/);
+    assert.match(latest.platforms["windows-x86_64"].installer_msi, /1\.0\.5\.msi/);
     assert.match(desktopPage, /import pkg from "@/);
     assert.match(desktopPage, /pkg\.version/);
   });
