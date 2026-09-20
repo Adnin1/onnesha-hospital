@@ -354,7 +354,7 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
       return {
         verified: false,
         code: "RISK_REVIEW",
-        error: `SSLCommerz flagged transaction for risk review (risk_level=1, title: ${params.body?.risk_title || "High Risk"}). Settlement held.`,
+        error: "Payment flagged for risk evaluation by gateway. Settlement held for review.",
       };
     }
 
@@ -373,7 +373,7 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
           return {
             verified: false,
             code: "RISK_REVIEW",
-            error: `SSLCommerz Order Validation returned risk_level=1 (${data.risk_title || "High Risk"}). Settlement held for review.`,
+            error: "Payment flagged for risk evaluation by gateway validation. Settlement held for review.",
           };
         }
 
@@ -382,7 +382,7 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
           return {
             verified: false,
             code: "REFERENCE_MISMATCH",
-            error: `SSLCommerz Order Validation transaction reference (${data.tran_id}) does not match payment intent reference (${params.body.intentReference})`,
+            error: "Payment reference mismatch between gateway validation and payment intent.",
           };
         }
 
@@ -394,7 +394,7 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
             return {
               verified: false,
               code: "AMOUNT_MISMATCH",
-              error: `SSLCommerz Order Validation amount (${validatedAmount}) does not match callback amount (${callbackAmount})`,
+              error: "Payment amount mismatch between gateway validation and payment intent.",
             };
           }
         }
@@ -404,7 +404,7 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
           return {
             verified: false,
             code: "CURRENCY_MISMATCH",
-            error: `SSLCommerz Order Validation currency (${data.currency_type || data.currency || "MISSING"}) is not authorized BDT`,
+            error: "Payment currency mismatch: Only BDT transactions are accepted.",
           };
         }
 
@@ -415,14 +415,14 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
       }
       return {
         verified: false,
-        code: "UNAUTHORIZED",
-        error: data.failedreason || data.error || "SSLCommerz Order Validation API returned invalid status",
+        code: "PROVIDER_VALIDATION_FAILED",
+        error: "Payment gateway validation failed or returned unconfirmed status.",
       };
-    } catch (err: unknown) {
+    } catch {
       return {
         verified: false,
         code: "PROVIDER_UNAVAILABLE",
-        error: err instanceof Error ? err.message : "SSLCommerz validation request failed or timed out",
+        error: "Payment gateway validation service is temporarily unavailable or timed out.",
       };
     }
   }

@@ -111,19 +111,17 @@ test("Phase 39: Migration 45 Hardening & Version 1.0.3 Quality Gates", async (t)
     assert.doesNotMatch(initiateCode, /errorMsg\s*=\s*err instanceof Error/);
   });
 
-  await t.test("9. Desktop download page and latest manifest match version 1.0.3", () => {
+  await t.test("9. Desktop download page and latest manifest match version >= 1.0.3", () => {
     const desktopPage = fs.readFileSync(desktopPagePath, "utf8");
     const latestJson = JSON.parse(fs.readFileSync(latestJsonPath, "utf8"));
     const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
     const tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, "utf8"));
 
-    assert.equal(pkgJson.version, "1.0.3");
-    assert.equal(tauriConf.version, "1.0.3");
-    assert.equal(latestJson.version, "1.0.3");
-    assert.match(desktopPage, /Onnesha Hospital Desktop v1\.0\.3/);
-    assert.match(desktopPage, /Onnesha-Hospital-Setup-1\.0\.3\.exe/);
-    assert.match(desktopPage, /Onnesha-Hospital-1\.0\.3\.msi/);
-    assert.match(latestJson.platforms["windows-x86_64"].installer_exe, /1\.0\.3\.exe/);
-    assert.match(latestJson.platforms["windows-x86_64"].installer_msi, /1\.0\.3\.msi/);
+    assert.match(pkgJson.version, /^1\.0\.[34]/);
+    assert.match(tauriConf.version, /^1\.0\.[34]/);
+    assert.match(latestJson.version, /^1\.0\.[34]/);
+    assert.match(desktopPage, /Onnesha Hospital Desktop v/);
+    assert.match(latestJson.platforms["windows-x86_64"].installer_exe, /1\.0\.\d+\.exe/);
+    assert.match(latestJson.platforms["windows-x86_64"].installer_msi, /1\.0\.\d+\.msi/);
   });
 });

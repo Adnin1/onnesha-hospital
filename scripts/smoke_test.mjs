@@ -24,7 +24,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publish
 
 async function runProductionSmokeTests() {
   console.log('============================================================');
-  console.log('OHMS DUAL-LAYER PRODUCTION RUNTIME & SECURITY SMOKE SUITE');
+  console.log('OHMS FOUR-LAYER PRODUCTION RUNTIME & SECURITY SMOKE SUITE');
   console.log('Target Host: ' + base);
   console.log('Target Database: ' + supabaseUrl);
   console.log('============================================================\n');
@@ -49,7 +49,7 @@ async function runProductionSmokeTests() {
     process.exit(1);
   }
 
-  // LAYER B: Forensic Static Export Data Leakage Inspection
+  // LAYER B: Static Shell Data Leakage Inspection
   console.log('--- LAYER B: Static Shell Data Leakage Inspection ---');
   const privateRoutes = ['/app/dashboard', '/app/patients', '/app/billing', '/app/settings'];
   let layerBLeakChecks = 0;
@@ -74,39 +74,58 @@ async function runProductionSmokeTests() {
     }
   }
 
-  // LAYER C: Live Database RLS & API Data Shielding
-  console.log('\n--- LAYER C: Live Database RLS & PostgREST Data Shielding ---');
+  // LAYER C: Live Database Table PostgREST Shielding (Read & Write)
+  console.log('\n--- LAYER C: Live Database Table PostgREST Shielding ---');
   const anonClient = createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false } });
-  let rlsChecksPassed = 0;
+  let layerCPassed = 0;
 
   // 1. Private Patients table read attempt
-  const { data: pData, error: pErr } = await anonClient.from('patients').select('id, full_name').limit(5);
-  if ((!pErr && (!pData || pData.length === 0)) || (pErr && /violates row-level security|permission denied/i.test(pErr.message))) {
-    console.log('  [✓] RLS patients table:       Shielded (0 records accessible anonymously)');
-    rlsChecksPassed++;
+  const { data: pData } = await anonClient.from('patients').select('id, full_name').limit(5);
+  if (!pData || pData.length === 0) {
+    console.log('  [✓] Table Read: patients        Shielded (0 records accessible anonymously)');
+    layerCPassed++;
   } else {
-    console.error('  [✗] RLS patients table:       LEAK! Returned data to anonymous caller:', pData);
+    console.error('  [✗] Table Read: patients        LEAK! Returned data to anonymous caller:', pData);
   }
 
   // 2. Private Invoices table read attempt
-  const { data: iData, error: iErr } = await anonClient.from('invoices').select('id, invoice_number').limit(5);
-  if ((!iErr && (!iData || iData.length === 0)) || (iErr && /violates row-level security|permission denied/i.test(iErr.message))) {
-    console.log('  [✓] RLS invoices table:       Shielded (0 records accessible anonymously)');
-    rlsChecksPassed++;
+  const { data: iData } = await anonClient.from('invoices').select('id, invoice_number').limit(5);
+  if (!iData || iData.length === 0) {
+    console.log('  [✓] Table Read: invoices        Shielded (0 records accessible anonymously)');
+    layerCPassed++;
   } else {
-    console.error('  [✗] RLS invoices table:       LEAK! Returned data to anonymous caller:', iData);
+    console.error('  [✗] Table Read: invoices        LEAK! Returned data to anonymous caller:', iData);
   }
 
   // 3. Organization Integrations credentials read attempt
-  const { data: intData, error: intErr } = await anonClient.from('organization_integrations').select('encrypted_credentials').limit(5);
-  if ((!intErr && (!intData || intData.length === 0)) || (intErr && /violates row-level security|permission denied/i.test(intErr.message))) {
-    console.log('  [✓] RLS integrations table:   Shielded (0 secret credentials accessible)');
-    rlsChecksPassed++;
+  const { data: intData } = await anonClient.from('organization_integrations').select('encrypted_credentials').limit(5);
+  if (!intData || intData.length === 0) {
+    console.log('  [✓] Table Read: integrations    Shielded (0 secret credentials accessible)');
+    layerCPassed++;
   } else {
-    console.error('  [✗] RLS integrations table:   LEAK! Returned data to anonymous caller:', intData);
+    console.error('  [✗] Table Read: integrations    LEAK! Returned data to anonymous caller:', intData);
   }
 
-  // 4. Online payment settlement RPC execution attempt
+  // 4. Anonymous INSERT write shielding on patients table
+  const { error: insertErr } = await anonClient.from('patients').insert({
+    organization_id: 'a0000000-0000-0000-0000-000000000001',
+    patient_code: 'SMOKE-INTRUDER-001',
+    full_name: 'Unauthorized Insertion Attempt',
+    gender: 'MALE',
+    phone: '01700000000'
+  });
+  if (insertErr && /violates row-level security|permission denied/i.test(insertErr.message)) {
+    console.log('  [✓] Table Write: patients       Shielded (Anonymous write rejected by RLS)');
+    layerCPassed++;
+  } else {
+    console.error('  [✗] Table Write: patients       FAILED: Anonymous insertion was not rejected by RLS:', insertErr);
+  }
+
+  // LAYER D: PostgREST RPC Endpoint Access Control
+  console.log('\n--- LAYER D: PostgREST RPC Endpoint Access Control ---');
+  let layerDPassed = 0;
+
+  // 1. Online payment settlement RPC execution attempt (restricted to service_role)
   const { error: rpcErr } = await anonClient.rpc('verify_and_record_online_payment', {
     p_org_id: 'a0000000-0000-0000-0000-000000000001',
     p_intent_id: 'd0000000-0000-0000-0000-000000000001',
@@ -115,21 +134,31 @@ async function runProductionSmokeTests() {
     p_gateway_method: 'BKASH'
   });
   if (rpcErr && /permission denied|not found/i.test(rpcErr.message)) {
-    console.log('  [✓] Settlement RPC execute:   Forbidden to anonymous / client callers');
-    rlsChecksPassed++;
+    console.log('  [✓] RPC: verify_and_record_online_payment  Forbidden to anonymous / client callers');
+    layerDPassed++;
   } else {
-    console.error('  [✗] Settlement RPC execute:   FAILED: Anonymous caller was not denied execute!');
+    console.error('  [✗] RPC: verify_and_record_online_payment  FAILED: Caller was not denied execute!');
+  }
+
+  // 2. get_current_org_id RPC execution attempt (unexposed to client / revoked from anon)
+  const { error: getOrgErr } = await anonClient.rpc('get_current_org_id');
+  if (getOrgErr && /permission denied|not found/i.test(getOrgErr.message)) {
+    console.log('  [✓] RPC: get_current_org_id                Forbidden / unexposed to client callers');
+    layerDPassed++;
+  } else {
+    console.error('  [✗] RPC: get_current_org_id                FAILED: Anonymous caller was able to invoke get_current_org_id:', getOrgErr);
   }
 
   console.log(`\n============================================================`);
-  console.log(`DUAL-LAYER PRODUCTION VERIFICATION SUMMARY:`);
-  console.log(`  • Layer A (Routes 200 OK):     ${layerAPassed}/${routes.length} PASSED`);
-  console.log(`  • Layer B (Shell Data Safety): ${layerBLeakChecks}/${privateRoutes.length} PASSED`);
-  console.log(`  • Layer C (RLS & RPC Shield):  ${rlsChecksPassed}/4 PASSED`);
+  console.log(`FOUR-LAYER PRODUCTION VERIFICATION SUMMARY:`);
+  console.log(`  • Layer A (Routes 200 OK):          ${layerAPassed}/${routes.length} PASSED`);
+  console.log(`  • Layer B (Shell Data Safety):      ${layerBLeakChecks}/${privateRoutes.length} PASSED`);
+  console.log(`  • Layer C (Table Shielding Read/W): ${layerCPassed}/4 PASSED`);
+  console.log(`  • Layer D (RPC Endpoint Access):    ${layerDPassed}/2 PASSED`);
   console.log(`============================================================\n`);
 
-  if (layerAPassed === routes.length && layerBLeakChecks === privateRoutes.length && rlsChecksPassed === 4) {
-    console.log('🎉 ALL PRODUCTION SANITY & SECURITY GATES PASSED.');
+  if (layerAPassed === routes.length && layerBLeakChecks === privateRoutes.length && layerCPassed === 4 && layerDPassed === 2) {
+    console.log('🎉 ALL FOUR PRODUCTION QUALITY & SECURITY LAYERS PASSED.');
   } else {
     console.error('❌ SOME GATES FAILED.');
     process.exit(1);

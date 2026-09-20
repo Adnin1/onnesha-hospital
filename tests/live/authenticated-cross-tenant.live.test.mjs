@@ -1,10 +1,11 @@
 /**
  * Phase 37 (Live Security Suite): Real Authenticated Cross-Tenant Runtime Isolation
  * 
- * Executes LIVE runtime queries against remote Supabase instance:
- * 1. Creates dynamic disposable Tenant B (crypto.randomUUID()) and two disposable test users: User A (Tenant A) and User B (Tenant B).
- * 2. Authenticates both users through Supabase Auth (signInWithPassword) to obtain real cryptographic JWTs.
- * 3. Verifies runtime row-level security:
+ * Executes LIVE runtime queries against a dedicated non-production test/staging Supabase instance:
+ * 1. Creates two dynamic disposable tenants (Tenant A and Tenant B) using crypto.randomUUID().
+ * 2. Creates disposable test users: User A (Tenant A) and User B (Tenant B).
+ * 3. Authenticates both users through Supabase Auth (signInWithPassword) to obtain real cryptographic JWTs.
+ * 4. Verifies runtime row-level security:
  *    - User A accessing Tenant A: ALLOWED
  *    - User B accessing Tenant B: ALLOWED
  *    - User B attempting to SELECT Tenant A data: STRICTLY SHIELDED (0 rows returned)
@@ -12,82 +13,55 @@
  *    - User B attempting to UPDATE Tenant A data: REJECTED (0 rows affected)
  *    - User B attempting to DELETE Tenant A data: REJECTED (0 rows affected)
  *    - User B attempting to access Tenant A organization_integrations: STRICTLY SHIELDED (0 rows returned)
- * 4. Cleans up all disposable test entities on completion.
+ * 5. Cleans up all disposable test entities on completion.
  * 
- * SAFETY GUARD: Requires RUN_LIVE_SUPABASE_TESTS=true and ALLOW_MUTATING_REMOTE_TESTS=true.
+ * SAFETY INVARIANT:
+ * - Production database mutation from test code is permanently blocked in code.
+ * - Automatic discovery of local environment files is eliminated.
+ * - Targets matching production (iuhtzahuszdkdarhxobx / onnesha-hospital) or canonical org
+ *   (a0000000-0000-0000-0000-000000000001) are rejected with a hard security violation error.
+ * - If dedicated staging variables are absent, reports 'NOT CONFIGURED'.
  */
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import crypto from "node:crypto";
-import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const ROOT = path.resolve(__dirname, "../..");
+// Read strictly from dedicated non-production test environment variables
+const TEST_SUPABASE_URL = process.env.OHMS_TEST_SUPABASE_URL || "";
+const TEST_ANON_KEY = process.env.OHMS_TEST_PUBLISHABLE_KEY || process.env.OHMS_TEST_ANON_KEY || "";
+const TEST_SERVICE_ROLE_KEY = process.env.OHMS_TEST_SERVICE_ROLE_KEY || "";
 
-// Load live credentials from environment or local env files
-let SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-let SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-let SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-
-for (const envFile of [".env.local.temp", ".env.local", ".env"]) {
-  const envPath = path.join(ROOT, envFile);
-  if (fs.existsSync(envPath)) {
-    const content = fs.readFileSync(envPath, "utf8");
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (!SUPABASE_URL && trimmed.startsWith("NEXT_PUBLIC_SUPABASE_URL=")) {
-        SUPABASE_URL = trimmed.split("=")[1].trim().replace(/^["']|["']$/g, "");
-      } else if (!SUPABASE_ANON_KEY && trimmed.startsWith("NEXT_PUBLIC_SUPABASE_ANON_KEY=")) {
-        SUPABASE_ANON_KEY = trimmed.split("=")[1].trim().replace(/^["']|["']$/g, "");
-      } else if (!SERVICE_ROLE_KEY && trimmed.startsWith("SUPABASE_SERVICE_ROLE_KEY=")) {
-        SERVICE_ROLE_KEY = trimmed.split("=")[1].trim().replace(/^["']|["']$/g, "");
-      }
-    }
-  }
-}
-
-const CANONICAL_ORG_A = "a0000000-0000-0000-0000-000000000001";
+// Two dynamically generated disposable test tenants (Never touches production canonical org)
+const DISPOSABLE_ORG_A = crypto.randomUUID();
 const DISPOSABLE_ORG_B = crypto.randomUUID();
+const CANONICAL_PROD_ORG = "a0000000-0000-0000-0000-000000000001";
+assert.notEqual(DISPOSABLE_ORG_A, CANONICAL_PROD_ORG);
+assert.notEqual(DISPOSABLE_ORG_B, CANONICAL_PROD_ORG);
 
 test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async (t) => {
   const isEnabled = process.env.RUN_LIVE_SUPABASE_TESTS === "true" && process.env.ALLOW_MUTATING_REMOTE_TESTS === "true";
   if (!isEnabled) {
-    t.skip("Skipping live security test: Set RUN_LIVE_SUPABASE_TESTS=true and ALLOW_MUTATING_REMOTE_TESTS=true to execute live mutating tests against remote Supabase.");
+    t.skip("STATUS: SKIPPED. Set RUN_LIVE_SUPABASE_TESTS=true and ALLOW_MUTATING_REMOTE_TESTS=true to execute live mutating tests against dedicated staging Supabase.");
     return;
   }
 
-  // Strict Production Safety Shield: Refuse execution targeting production project or canonical org
-  const isProdTarget = SUPABASE_URL.includes("iuhtzahuszdkdarhxobx") || SUPABASE_URL.includes("onnesha-hospital");
-  if (isProdTarget && process.env.ALLOW_MUTATING_PRODUCTION_TESTS !== "true") {
-    t.skip("SAFETY INVARIANT: Refusing to run live mutating cross-tenant test against production Supabase instance (iuhtzahuszdkdarhxobx). Set ALLOW_MUTATING_PRODUCTION_TESTS=true to override.");
+  // Pre-flight check: Dedicated non-production test environment configuration
+  if (!TEST_SUPABASE_URL || !TEST_SERVICE_ROLE_KEY || !TEST_ANON_KEY) {
+    t.skip("STATUS: NOT CONFIGURED. Dedicated non-production staging/test environment not provided in environment (requires OHMS_TEST_SUPABASE_URL, OHMS_TEST_SERVICE_ROLE_KEY, OHMS_TEST_PUBLISHABLE_KEY).");
     return;
   }
 
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !SUPABASE_ANON_KEY) {
-    t.skip("Skipping runtime test: Supabase live credentials not configured in environment");
-    return;
+  // Strict Production Safety Shield: Permanent hard-fail if targeting production database
+  const isProdTarget = TEST_SUPABASE_URL.includes("iuhtzahuszdkdarhxobx") || TEST_SUPABASE_URL.includes("onnesha-hospital");
+  if (isProdTarget) {
+    throw new Error("SECURITY INVARIANT VIOLATION: Refusing to execute mutating live test against production Supabase instance (iuhtzahuszdkdarhxobx). Production mutation is permanently blocked in code.");
   }
 
-  const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  const adminClient = createClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
-
-  // Check connectivity
-  const { data: pingOrg, error: pingErr } = await adminClient
-    .from("organizations")
-    .select("id")
-    .eq("id", CANONICAL_ORG_A)
-    .maybeSingle();
-
-  if (pingErr || !pingOrg) {
-    t.skip("Skipping runtime test: Supabase database unreachable or isolated");
-    return;
-  }
 
   const nonce = Math.floor(Math.random() * 1000000);
   const emailA = `test-user-a-${nonce}@onnesha-test.local`;
@@ -101,13 +75,27 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
   let clientB = null;
 
   try {
-    // 1. Ensure Tenant B exists in organizations with dynamic UUID
+    // 1. Create Tenant A with dynamic UUID
+    const { error: orgAErr } = await adminClient.from("organizations").upsert({
+      id: DISPOSABLE_ORG_A,
+      name: "Isolation Hospital A (Disposable Dynamic Test)",
+      code: `HA-${nonce}`,
+      slug: `ha-test-${nonce}`,
+      phone: "01700-000001",
+      email: "hospital-a@test.local",
+      address: "Dhaka, Bangladesh",
+      status: "ACTIVE",
+      is_active: true,
+    });
+    assert.ok(!orgAErr, `Failed to ensure Tenant A: ${orgAErr?.message}`);
+
+    // 2. Create Tenant B with dynamic UUID
     const { error: orgBErr } = await adminClient.from("organizations").upsert({
       id: DISPOSABLE_ORG_B,
       name: "Isolation Hospital B (Disposable Dynamic Test)",
       code: `HB-${nonce}`,
       slug: `hb-test-${nonce}`,
-      phone: "01700-000000",
+      phone: "01700-000002",
       email: "hospital-b@test.local",
       address: "Chittagong, Bangladesh",
       status: "ACTIVE",
@@ -115,7 +103,7 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
     });
     assert.ok(!orgBErr, `Failed to ensure Tenant B: ${orgBErr?.message}`);
 
-    // 2. Create User A and User B in auth.users
+    // 3. Create User A and User B in auth.users
     const { data: userARes, error: userAErr } = await adminClient.auth.admin.createUser({
       email: emailA,
       password: password,
@@ -134,13 +122,13 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
     assert.ok(!userBErr && userBRes?.user, `Failed to create User B: ${userBErr?.message}`);
     userBId = userBRes.user.id;
 
-    // 3. Create profiles linking User A -> Tenant A and User B -> Tenant B
+    // 4. Create profiles linking User A -> Tenant A and User B -> Tenant B
     const phoneA = `017${String(nonce).padStart(8, "0")}`;
     const phoneB = `018${String(nonce).padStart(8, "0")}`;
 
     const { error: profAErr } = await adminClient.from("profiles").upsert({
       id: userAId,
-      organization_id: CANONICAL_ORG_A,
+      organization_id: DISPOSABLE_ORG_A,
       phone: phoneA,
       full_name: "Staff A Tenant A",
       is_active: true,
@@ -156,26 +144,26 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
     });
     assert.ok(!profBErr, `Failed to create profile B: ${profBErr?.message}`);
 
-    // 4. Authenticate both users using anon key to obtain real authenticated JWT sessions
-    clientA = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+    // 5. Authenticate both users using anon key to obtain real authenticated JWT sessions
+    clientA = createClient(TEST_SUPABASE_URL, TEST_ANON_KEY, { auth: { persistSession: false } });
     const { data: authA, error: authAErr } = await clientA.auth.signInWithPassword({
       email: emailA,
       password: password,
     });
     assert.ok(!authAErr && authA?.session?.access_token, "User A must receive valid authenticated JWT");
 
-    clientB = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+    clientB = createClient(TEST_SUPABASE_URL, TEST_ANON_KEY, { auth: { persistSession: false } });
     const { data: authB, error: authBErr } = await clientB.auth.signInWithPassword({
       email: emailB,
       password: password,
     });
     assert.ok(!authBErr && authB?.session?.access_token, "User B must receive valid authenticated JWT");
 
-    // 5. User A inserts a record in Tenant A (e.g. a test patient)
+    // 6. User A inserts a record in Tenant A (e.g. a test patient)
     const { data: patientA, error: patientAErr } = await clientA
       .from("patients")
       .insert({
-        organization_id: CANONICAL_ORG_A,
+        organization_id: DISPOSABLE_ORG_A,
         patient_code: `PT-TEST-${nonce}`,
         full_name: "Confidential Patient A",
         gender: "MALE",
@@ -216,7 +204,7 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
       const { data, error } = await clientB
         .from("patients")
         .insert({
-          organization_id: CANONICAL_ORG_A, // Attempting cross-tenant write into Tenant A
+          organization_id: DISPOSABLE_ORG_A, // Attempting cross-tenant write into Tenant A
           patient_code: `PT-INTRUDER-${nonce}`,
           full_name: "Intruder Record",
           gender: "FEMALE",
@@ -269,7 +257,7 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
       const { data, error } = await clientB
         .from("organization_integrations")
         .select("*")
-        .eq("organization_id", CANONICAL_ORG_A);
+        .eq("organization_id", DISPOSABLE_ORG_A);
 
       assert.ok(!error, "Query executed with RLS");
       assert.equal(data?.length ?? 0, 0, "User B must see zero rows of Tenant A gateway integrations");
@@ -279,7 +267,7 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
       const { data, error } = await clientB
         .from("invoices")
         .select("id, organization_id, grand_total")
-        .eq("organization_id", CANONICAL_ORG_A);
+        .eq("organization_id", DISPOSABLE_ORG_A);
 
       assert.ok(!error, "Query executed under RLS without error");
       assert.equal(data?.length ?? 0, 0, "User B must receive 0 invoices belonging to Tenant A");
@@ -289,7 +277,7 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
       const { data, error } = await clientB
         .from("appointments")
         .select("id, organization_id")
-        .eq("organization_id", CANONICAL_ORG_A);
+        .eq("organization_id", DISPOSABLE_ORG_A);
 
       assert.ok(!error, "Query executed under RLS without error");
       assert.equal(data?.length ?? 0, 0, "User B must receive 0 appointments belonging to Tenant A");
@@ -299,7 +287,7 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
       const { data: intents, error: intErr } = await clientB
         .from("payment_intents")
         .select("id, organization_id")
-        .eq("organization_id", CANONICAL_ORG_A);
+        .eq("organization_id", DISPOSABLE_ORG_A);
 
       assert.ok(!intErr, "Query executed under RLS");
       assert.equal(intents?.length ?? 0, 0, "User B must see 0 payment intents belonging to Tenant A");
@@ -307,7 +295,7 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
       const { data: audits, error: audErr } = await clientB
         .from("audit_logs")
         .select("id, organization_id")
-        .eq("organization_id", CANONICAL_ORG_A);
+        .eq("organization_id", DISPOSABLE_ORG_A);
 
       assert.ok(!audErr, "Query executed under RLS");
       assert.equal(audits?.length ?? 0, 0, "User B must see 0 audit log entries belonging to Tenant A");
@@ -327,6 +315,7 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
       await adminClient.from("profiles").delete().eq("id", userBId);
       await adminClient.auth.admin.deleteUser(userBId);
     }
+    await adminClient.from("organizations").delete().eq("id", DISPOSABLE_ORG_A);
     await adminClient.from("organizations").delete().eq("id", DISPOSABLE_ORG_B);
   }
 });

@@ -1,26 +1,6 @@
 import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
 
 console.log('\n🚀 [OHMS PRODUCTION RELEASE & DEPLOY PIPELINE STARTING...]');
-
-// 1. Verify environment prerequisites
-try {
-  const envPath = path.resolve(process.cwd(), '.env.local');
-  if (fs.existsSync(envPath)) {
-    const envFile = fs.readFileSync(envPath, 'utf8');
-    envFile.split(/\r?\n/).forEach(line => {
-      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-      if (match) {
-        let val = (match[2] || '').trim();
-        if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
-        process.env[match[1]] = val;
-      }
-    });
-  }
-} catch {
-  console.log('Notice: .env.local load pass.');
-}
 
 try {
   // Step 1: Pre-deployment quality checks

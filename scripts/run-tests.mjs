@@ -31,6 +31,11 @@ let totalFail = 0;
 let totalSkipped = 0;
 let totalCancelled = 0;
 
+let notConfiguredCount = 0;
+let deferredCount = 0;
+let blockedCount = 0;
+let standardSkippedCount = 0;
+
 for (const file of testFiles) {
   const relPath = file.replace(/\\/g, '/');
   const res = spawnSync('node', ['--test', relPath], {
@@ -51,7 +56,25 @@ for (const file of testFiles) {
   if (testsMatch) totalTests += parseInt(testsMatch[1], 10);
   if (passMatch) totalPass += parseInt(passMatch[1], 10);
   if (failMatch) totalFail += parseInt(failMatch[1], 10);
-  if (skippedMatch) totalSkipped += parseInt(skippedMatch[1], 10);
+  if (skippedMatch) {
+    const skipNum = parseInt(skippedMatch[1], 10);
+    totalSkipped += skipNum;
+
+    // Classify skip reasons from output lines
+    const skipLines = stdout.split('\n').filter(line => line.includes('# SKIP') || line.includes('# STATUS:'));
+    for (const sLine of skipLines) {
+      const lower = sLine.toLowerCase();
+      if (lower.includes('not configured') || lower.includes('not_configured')) {
+        notConfiguredCount++;
+      } else if (lower.includes('deferred') || lower.includes('pending activation') || lower.includes('live_merchant')) {
+        deferredCount++;
+      } else if (lower.includes('blocked')) {
+        blockedCount++;
+      } else {
+        standardSkippedCount++;
+      }
+    }
+  }
   if (cancelledMatch) totalCancelled += parseInt(cancelledMatch[1], 10);
 
   if (res.status !== 0) {
@@ -67,6 +90,11 @@ for (const file of testFiles) {
   }
 }
 
+// Reconcile skip breakdown if counts don't match
+if (totalSkipped > 0 && (notConfiguredCount + deferredCount + blockedCount + standardSkippedCount) !== totalSkipped) {
+  standardSkippedCount = Math.max(0, totalSkipped - (notConfiguredCount + deferredCount + blockedCount));
+}
+
 console.log(`\n\n========================================`);
 console.log(`           OHMS TEST SUMMARY            `);
 console.log(`========================================`);
@@ -75,11 +103,17 @@ console.log(`Passed Suites:        ${testFiles.length - failCount}`);
 console.log(`Failed Suites:        ${failCount}`);
 console.log(`----------------------------------------`);
 console.log(`Total Test Cases:     ${totalTests}`);
-console.log(`Tests Passed:         ${totalPass}`);
-console.log(`Tests Skipped:        ${totalSkipped}`);
-console.log(`Tests Failed:         ${totalFail}`);
+console.log(`  • PASSED:           ${totalPass}`);
+console.log(`  • FAILED:           ${totalFail}`);
+console.log(`  • SKIPPED / OTHER:  ${totalSkipped}`);
+if (totalSkipped > 0) {
+  console.log(`    - DEFERRED:       ${deferredCount} (e.g. pending external merchant activation)`);
+  console.log(`    - NOT_CONFIGURED: ${notConfiguredCount} (e.g. optional local staging envs)`);
+  console.log(`    - BLOCKED:        ${blockedCount}`);
+  console.log(`    - STANDARD_SKIP:  ${standardSkippedCount}`);
+}
 if (totalCancelled > 0) {
-  console.log(`Tests Cancelled:      ${totalCancelled}`);
+  console.log(`  • CANCELLED:        ${totalCancelled}`);
 }
 console.log(`========================================\n`);
 

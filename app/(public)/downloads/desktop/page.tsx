@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import pkg from "@/package.json";
 
 export const metadata: Metadata = {
   title: "Windows Desktop App Download | Onnesha Hospital",
@@ -7,6 +8,8 @@ export const metadata: Metadata = {
 };
 
 export default function DesktopDownloadPage() {
+  const version = pkg.version;
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
       <div className="text-center mb-10">
@@ -23,7 +26,7 @@ export default function DesktopDownloadPage() {
           💻
         </div>
         <h2 className="text-xl font-semibold text-slate-800 mb-2">
-          Onnesha Hospital Desktop v1.0.3 (Windows 64-bit)
+          Onnesha Hospital Desktop v{version} (Windows 64-bit)
         </h2>
         <p className="text-sm text-slate-500 mb-6">
           Windows 10 / 11 Supported • Verified Installers • Tauri 2 Powered
@@ -31,14 +34,14 @@ export default function DesktopDownloadPage() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
-            href="/downloads/desktop/Onnesha-Hospital-Setup-1.0.3.exe"
+            href={`/downloads/desktop/Onnesha-Hospital-Setup-${version}.exe`}
             download
             className="w-full sm:w-auto px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm"
           >
             <span>📥</span> Setup Installer (.exe, ~2.0 MB)
           </a>
           <a
-            href="/downloads/desktop/Onnesha-Hospital-1.0.3.msi"
+            href={`/downloads/desktop/Onnesha-Hospital-${version}.msi`}
             download
             className="w-full sm:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm"
           >
