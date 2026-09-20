@@ -92,10 +92,22 @@ test("Phase 41 - v1.0.7 Public Schedules, Content Hardening & Release Governance
     assert.match(doctorsCode, /doc\.visiting_hours_text/);
   });
 
-  await t.test("4. Dev cluster pricing banner is permanently removed from homepage", () => {
+  await t.test("4. Dev cluster pricing banner is permanently removed from homepage, layout, footer, and llms.txt", () => {
     assert.doesNotMatch(homeCode, /Dedicated Cloud Cluster/i);
     assert.doesNotMatch(homeCode, /\$25\s*-\s*\$65/);
     assert.match(homeCode, /HOSPITAL_METADATA\.emergencyHotline \?/);
+
+    const layoutCode = fs.readFileSync(path.join(ROOT, "app/layout.tsx"), "utf8");
+    assert.doesNotMatch(layoutCode, /\$25/);
+    assert.doesNotMatch(layoutCode, /\$65/);
+
+    const footerCode = fs.readFileSync(path.join(ROOT, "components/public/PublicFooter.tsx"), "utf8");
+    assert.doesNotMatch(footerCode, /\$25/);
+    assert.doesNotMatch(footerCode, /\$65/);
+
+    const llmsCode = fs.readFileSync(path.join(ROOT, "public/llms.txt"), "utf8");
+    assert.doesNotMatch(llmsCode, /\$25/);
+    assert.doesNotMatch(llmsCode, /\$65/);
   });
 
   await t.test("5. Emergency & ambulance hotline gracefully handles missing values in PublicNavbar", () => {

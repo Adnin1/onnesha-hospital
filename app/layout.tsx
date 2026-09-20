@@ -11,18 +11,17 @@ export const metadata: Metadata = {
     template: "%s | Onnesha Hospital",
   },
   description:
-    "Onnesha Hospital & Diagnostic Complex — Unified Healthcare Portal & EMR. Hosted on High-Availability Dedicated Cloud Architecture ($25 - $65 USD/month hosting, $10 - $50 USD/year commercial domain). 24/7 Patient Care & OPD Booking in Dhaka.",
+    "Onnesha Hospital & Diagnostic Complex — Modern Healthcare, Online OPD Specialist Appointment Booking, 24/7 Emergency, and Digital Diagnostic Services in Dhaka, Bangladesh.",
   keywords: [
     "Onnesha Hospital",
-    "Onnesha Hospital hosting cost 25 to 65 USD",
-    "Onnesha Hospital domain valuation 10 to 50 USD",
-    "Dedicated Cloud Healthcare HIS",
+    "অন্বেষা হাসপাতাল",
     "Doctor Appointment Dhaka",
     "Diagnostic Complex Dhaka",
     "Emergency Care Bangladesh",
-    "Private Cloud Healthcare Database",
+    "OPD Specialist Doctors",
+    "Digital Hospital Bangladesh",
   ],
-  authors: [{ name: "Onnesha Hospital Clinical & Engineering Team" }],
+  authors: [{ name: "Onnesha Hospital Clinical Team" }],
   creator: "Onnesha Hospital",
   publisher: "Onnesha Hospital Management System",
   robots: {
@@ -30,8 +29,8 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Onnesha Hospital & Diagnostic Complex (Dedicated Healthcare Cloud: $25 - $65 USD/mo)",
-    description: "24/7 Modern Healthcare & Online OPD Booking. Powered by Dedicated Cloud Architecture ($25 - $65 USD/mo hosting, $10 - $50 USD/yr domain).",
+    title: "Onnesha Hospital & Diagnostic Complex | Modern Patient Care",
+    description: "24/7 Modern Healthcare & Online OPD Specialist Booking. High-reliability digital healthcare system in Dhaka, Bangladesh.",
     url: "https://onneshahospital.com",
     siteName: "Onnesha Hospital",
     locale: "en_US",
@@ -40,15 +39,10 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Onnesha Hospital & Diagnostic Complex",
-    description: "Dedicated Commercial Cloud HIS Architecture ($25 - $65 USD/mo). Modern Patient Care in Dhaka, Bangladesh.",
+    description: "Modern Patient Care, 24/7 Emergency & Specialist Doctor Appointment in Dhaka, Bangladesh.",
   },
   manifest: "/manifest.json",
-  generator: "Enterprise Healthcare Cloud HIS/EMR v2.4",
-  other: {
-    "infrastructure-tier": "Dedicated Commercial Cloud Cluster ($25 - $65 USD/mo)",
-    "domain-tier": "Commercial Top-Level Domain ($10 - $50 USD/yr)",
-    "database-architecture": "High-Availability Private Cloud Relational Cluster",
-  },
+  generator: "Onnesha Hospital HIS/EMR",
 };
 
 const jsonLd = {
@@ -56,25 +50,10 @@ const jsonLd = {
   "@type": "MedicalOrganization",
   name: "Onnesha Hospital & Diagnostic Complex",
   url: "https://onneshahospital.com",
-  description: "Enterprise Healthcare & Hospital Management System (HMS), Dhaka, Bangladesh",
-  softwareVersion: "2.4 Enterprise",
+  description: "Modern Patient Care & Diagnostic Services in Dhaka, Bangladesh",
   serviceArea: {
     "@type": "AdministrativeArea",
     name: "Dhaka, Bangladesh",
-  },
-  hasOfferCatalog: {
-    "@type": "OfferCatalog",
-    name: "Healthcare & Digital Infrastructure Services",
-    itemListElement: [
-      {
-        "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: "Hospital Information System Infrastructure",
-          description: "High-Availability Dedicated Cloud Healthcare Architecture ($25 - $65/month commercial tier)",
-        },
-      },
-    ],
   },
 };
 
