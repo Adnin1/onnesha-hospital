@@ -1,23 +1,28 @@
 {
-  "release": "v1.1.1",
+  "release": "v1.1.2",
   "branch": "main",
-  "timestamp": "2026-09-21T03:00:00+06:00",
+  "timestamp": "2026-09-21T04:15:00+06:00",
   "erp_transformation": {
     "status": "COMPLETED",
     "domains_covered": 32,
     "core_foundations": [
       "Double-Entry Chart of Accounts & General Ledger",
-      "Procurement Requisitions & Goods Receipt Notes (GRN)",
+      "Accounting Period Control (public.fiscal_periods & closed-period blocking)",
+      "Posted Journal Immutability Triggers (public.journal_entries & journal_entry_lines)",
+      "Atomic Journal Reversal RPC (public.reverse_journal_entry_atomic)",
+      "Procurement 3-Way Match & Supplier Invoices (public.supplier_invoices)",
+      "Supplier Payment Disbursement to GL RPC (public.record_supplier_payment_to_gl_atomic)",
+      "Jurisdictional Payroll Accrual to GL (Gross, Withholdings, Net Salaries Payable)",
+      "Fixed Asset Maintenance Expense vs Capitalization GL Posting",
+      "FEFO Clinical Non-Expired Batch Validation in Pharmacy Dispensing",
       "Multi-Location Warehouses & Stock Transfers",
-      "Fixed Assets & Biomedical Equipment Lifecycle",
       "Inpatient Nursing Shift Handover & Vitals Rounds",
       "Fail-Closed Tenant Isolation in Accounting RPCs (P0 Security)",
-      "Table-Level Debit XOR Credit Mutual Exclusivity Invariant (P0 Accounting)",
-      "Cross-Module ERP Transactional Integration: Billing, Pharmacy POS, GRN, Payroll, Assets"
+      "Table-Level Debit XOR Credit Mutual Exclusivity Invariant (P0 Accounting)"
     ]
   },
   "ci": {
-    "workflow_trigger": "push to main with tag v1.1.1",
+    "workflow_trigger": "push to main with tag v1.1.2",
     "desktop_packaging": "authentic WiX Toolset 3.11 & NSIS 3.10",
     "release_step": "dynamic tag extraction via package.json"
   },
@@ -25,16 +30,16 @@
     "project_id": "iuhtzahuszdkdarhxobx",
     "database_version": "PostgreSQL 17.6",
     "region": "ap-southeast-1",
-    "migrations_total": 49,
-    "migrations_synced": 49,
+    "migrations_total": 51,
+    "migrations_synced": 51,
     "db_lint_errors": 0
   },
   "tests": {
-    "suites_total": 52,
-    "suites_passed": 52,
+    "suites_total": 53,
+    "suites_passed": 53,
     "suites_failed": 0,
-    "cases_total": 453,
-    "cases_passed": 447,
+    "cases_total": 466,
+    "cases_passed": 460,
     "cases_failed": 0,
     "cases_skipped": 6,
     "playwright_browser_tests": {
@@ -45,12 +50,12 @@
     }
   },
   "desktop": {
-    "version": "1.1.1",
+    "version": "1.1.2",
     "manifest_url": "https://onnesha-hospital.pages.dev/downloads/desktop/latest.json",
-    "setup_exe_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.1.exe",
+    "setup_exe_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.2.exe",
     "setup_exe_size": 1989452,
     "setup_exe_sha256": "093485037636E1CFD8AB48B2EF5755DD7F26E520FC8B8E3D51F3482716EB3278",
-    "msi_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.1.msi",
+    "msi_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.2.msi",
     "msi_size": 2494464,
     "msi_sha256": "274CB7B2B06671E8B4E98A08CC51EF6C4960E1ACD6CC5199FE91A6A6C8694B44"
   },
@@ -59,6 +64,8 @@
     "eslint": "PASS",
     "audit": "PASS",
     "tests_node": "PASS",
-    "tests_playwright": "PASS"
+    "tests_playwright": "PASS",
+    "cloudflare_pages": "PASS",
+    "desktop_binary_parity": "PASS"
   }
 }
