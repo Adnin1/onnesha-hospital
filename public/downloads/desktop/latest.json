@@ -6,11 +6,11 @@
   "platforms": {
     "windows-x86_64": {
       "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.4.exe",
-      "installer_exe_sha256": "C4F7DE8E560304E05AE9535D0DC165822AA1714B05450D22BED2249B2C59441E",
-      "installer_exe_size": 38006163,
+      "installer_exe_sha256": "78B337CB1AD027582298ECEECAF99E3BFD6A93C3B3AEA5E6A7E8710B1E82A838",
+      "installer_exe_size": 2010152,
       "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.4.msi",
-      "installer_msi_sha256": "2B0343051FA41D4F90B21BB4A9DC23809236FD467725E25B3D0584A9DFC64336",
-      "installer_msi_size": 38313984
+      "installer_msi_sha256": "D528C533F5B99B4E273C7AF9F8851D90093283DB2A4FB0DEEF9CD3C02F7AA48A",
+      "installer_msi_size": 2506752
     }
   },
   "signing": {

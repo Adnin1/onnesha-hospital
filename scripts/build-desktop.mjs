@@ -115,5 +115,27 @@ buildProcess.on("close", (code) => {
   console.log(`    - Size:   ${exeInfo.size.toLocaleString()} bytes`);
   console.log(`    - SHA256: ${exeInfo.hash}`);
 
+  // Auto-update latest.json
+  const manifestPath = path.join(destDir, "latest.json");
+  let manifest = {};
+  if (fs.existsSync(manifestPath)) {
+    try {
+      manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    } catch (_) {}
+  }
+  manifest.version = version;
+  manifest.pub_date = new Date().toISOString();
+  manifest.platforms = manifest.platforms || {};
+  manifest.platforms["windows-x86_64"] = {
+    installer_exe: `https://onnesha-hospital.pages.dev/downloads/desktop/${path.basename(destExe)}`,
+    installer_exe_sha256: exeInfo.hash,
+    installer_exe_size: exeInfo.size,
+    installer_msi: `https://onnesha-hospital.pages.dev/downloads/desktop/${path.basename(destMsi)}`,
+    installer_msi_sha256: msiInfo.hash,
+    installer_msi_size: msiInfo.size,
+  };
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n", "utf8");
+  console.log(`  Updated ${manifestPath} successfully.`);
+
   console.log(`\n🎉 Desktop compilation and packaging succeeded!\n`);
 });
