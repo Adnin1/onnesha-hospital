@@ -59,8 +59,13 @@ export default function HomePage() {
       }
     }
     void loadLandingData();
+    const timer = window.setInterval(() => {
+      void loadLandingData();
+    }, 15000);
+
     return () => {
       isMounted = false;
+      window.clearInterval(timer);
     };
   }, []);
   return (
