@@ -42,6 +42,12 @@ if (action === 'fetch') {
     encoding: 'utf8',
   });
   console.log(res.stdout.trim());
+} else if (action === 'ls-tags') {
+  const res = spawnSync('git', ['ls-remote', '--tags', 'ssh-origin'], {
+    env: { ...process.env, GIT_SSH_COMMAND: sshCmd },
+    encoding: 'utf8',
+  });
+  console.log(res.stdout.trim());
 } else {
-  console.log('Available actions: fetch, push, ls-remote');
+  console.log('Available actions: fetch, push, ls-remote, ls-tags');
 }
