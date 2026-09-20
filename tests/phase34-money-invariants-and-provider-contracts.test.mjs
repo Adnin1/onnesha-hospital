@@ -52,7 +52,7 @@ test("Phase 34: Financial Invariants & Gateway Contracts Audit", async (t) => {
     const content = fs.readFileSync(manifestPath, "utf8");
     const parsed = JSON.parse(content);
 
-    assert.match(parsed.version, /^1\.0\.[34]/);
+    assert.match(parsed.version, /^1\.0\.\d+$/);
     assert.ok(!parsed.platforms["windows-x86_64"].github_release, "Broken GitHub release URL must not exist in manifest");
     assert.match(parsed.platforms["windows-x86_64"].installer_exe, /https:\/\/onnesha-hospital\.pages\.dev\/downloads\/desktop\/Onnesha-Hospital-Setup-1\.0\.\d+\.exe/);
     assert.match(parsed.platforms["windows-x86_64"].installer_msi, /https:\/\/onnesha-hospital\.pages\.dev\/downloads\/desktop\/Onnesha-Hospital-1\.0\.\d+\.msi/);
