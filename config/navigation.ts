@@ -14,6 +14,9 @@ import {
   UserCheck,
   BarChart3,
   Settings,
+  Scale,
+  ShoppingCart,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -125,13 +128,31 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: "Finance, HR & Admin",
+    title: "Finance & Enterprise ERP",
     items: [
       {
         href: "/app/billing",
         label: "Billing & Cashier",
         icon: Receipt,
         perm: PERMISSIONS.BILLING_VIEW,
+      },
+      {
+        href: "/app/accounting",
+        label: "Accounting & Ledger",
+        icon: Scale,
+        perm: PERMISSIONS.ACCOUNTING_VIEW,
+      },
+      {
+        href: "/app/procurement",
+        label: "Procurement & GRN",
+        icon: ShoppingCart,
+        perm: PERMISSIONS.PROCUREMENT_VIEW,
+      },
+      {
+        href: "/app/assets",
+        label: "Fixed Assets & Equipment",
+        icon: Wrench,
+        perm: PERMISSIONS.ASSETS_VIEW,
       },
       {
         href: "/app/hr",

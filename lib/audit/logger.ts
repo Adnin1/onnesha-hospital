@@ -6,7 +6,7 @@ export interface AuditEntry {
   organizationId: string;
   userId?: string;
   action: "CREATE" | "UPDATE" | "DELETE" | "VOID" | "REFUND" | "VERIFY" | "LOGIN" | "LOGOUT" | "VIEW" | "DOWNLOAD" | "PRINT" | "DISCOUNT";
-  module: "BILLING" | "PATIENT" | "PHARMACY" | "LAB" | "IPD" | "IAM" | "HR" | "APPOINTMENT" | "DOCUMENT" | "CLINICAL";
+  module: "BILLING" | "PATIENT" | "PHARMACY" | "LAB" | "IPD" | "IAM" | "HR" | "APPOINTMENT" | "DOCUMENT" | "CLINICAL" | "ACCOUNTING" | "PROCUREMENT" | "ASSETS" | "NURSING";
   entityType: string;
   entityId: string;
   oldValues?: Record<string, unknown>;

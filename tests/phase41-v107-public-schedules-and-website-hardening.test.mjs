@@ -135,13 +135,13 @@ test("Phase 41 - v1.0.7 Public Schedules, Content Hardening & Release Governance
     );
   });
 
-  await t.test("8. v1.0.8 version synchronization across all manifests and configs", () => {
-    assert.equal(pkgJson.version, "1.0.8");
-    assert.equal(pkgLock.version, "1.0.8");
-    assert.equal(tauriConf.version, "1.0.8");
-    assert.match(cargoToml, /version = "1\.0\.8"/);
-    assert.equal(latestJson.version, "1.0.8");
-    assert.match(latestJson.platforms["windows-x86_64"].installer_exe, /1\.0\.8\.exe/);
-    assert.match(latestJson.platforms["windows-x86_64"].installer_msi, /1\.0\.8.*\.msi/);
+  await t.test("8. v1.1.0 version synchronization across all manifests and configs", () => {
+    assert.equal(pkgJson.version, "1.1.0");
+    assert.equal(pkgLock.version, "1.1.0");
+    assert.equal(tauriConf.version, "1.1.0");
+    assert.match(cargoToml, /version = "1\.1\.0"/);
+    assert.equal(latestJson.version, "1.1.0");
+    assert.match(latestJson.platforms["windows-x86_64"].installer_exe, /1\.1\.0\.exe/);
+    assert.match(latestJson.platforms["windows-x86_64"].installer_msi, /1\.1\.0.*\.msi/);
   });
 });

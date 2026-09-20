@@ -117,11 +117,11 @@ test("Phase 39: Migration 45 Hardening & Version 1.0.3 Quality Gates", async (t)
     const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
     const tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, "utf8"));
 
-    assert.match(pkgJson.version, /^1\.0\.\d+$/);
-    assert.match(tauriConf.version, /^1\.0\.\d+$/);
-    assert.match(latestJson.version, /^1\.0\.\d+$/);
+    assert.match(pkgJson.version, /^1\.\d+\.\d+$/);
+    assert.match(tauriConf.version, /^1\.\d+\.\d+$/);
+    assert.match(latestJson.version, /^1\.\d+\.\d+$/);
     assert.match(desktopPage, /Onnesha Hospital Desktop v/);
-    assert.match(latestJson.platforms["windows-x86_64"].installer_exe, /1\.0\.\d+\.exe/);
-    assert.match(latestJson.platforms["windows-x86_64"].installer_msi, /1\.0\.\d+\.msi/);
+    assert.match(latestJson.platforms["windows-x86_64"].installer_exe, /1\.\d+\.\d+\.exe/);
+    assert.match(latestJson.platforms["windows-x86_64"].installer_msi, /1\.\d+\.\d+\.msi/);
   });
 });

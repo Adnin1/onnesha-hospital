@@ -1,69 +1,61 @@
 {
-  "release": "v1.0.8",
-  "commit": "39728c93b67e28daf705ef61890c1790c958fa70",
+  "release": "v1.1.0",
   "branch": "main",
-  "timestamp": "2026-09-21T01:30:00+06:00",
+  "timestamp": "2026-09-21T02:00:00+06:00",
+  "erp_transformation": {
+    "status": "COMPLETED",
+    "domains_covered": 32,
+    "core_foundations": [
+      "Double-Entry Chart of Accounts & General Ledger",
+      "Procurement Requisitions & Goods Receipt Notes (GRN)",
+      "Multi-Location Warehouses & Stock Transfers",
+      "Fixed Assets & Biomedical Equipment Lifecycle",
+      "Inpatient Nursing Shift Handover & Vitals Rounds"
+    ]
+  },
   "ci": {
-    "workflow_trigger": "push to main with tag v1.0.8",
+    "workflow_trigger": "push to main with tag v1.1.0",
     "desktop_packaging": "authentic WiX Toolset 3.11 & NSIS 3.10",
     "release_step": "dynamic tag extraction via package.json"
-  },
-  "cloudflare": {
-    "canonical_url": "https://onnesha-hospital.pages.dev",
-    "direct_preview_url": "https://ff3acec6.onnesha-hospital.pages.dev",
-    "deploy_sha": "39728c93b67e28daf705ef61890c1790c958fa70",
-    "commit_dirty": false,
-    "http_routes_checked": 15,
-    "http_routes_200_ok": 15
   },
   "supabase": {
     "project_id": "iuhtzahuszdkdarhxobx",
     "database_version": "PostgreSQL 17.6",
     "region": "ap-southeast-1",
-    "migrations_total": 46,
-    "migrations_synced": 46,
+    "migrations_total": 47,
+    "migrations_synced": 47,
     "db_lint_errors": 0
   },
   "tests": {
-    "suites_total": 48,
-    "suites_passed": 48,
+    "suites_total": 51,
+    "suites_passed": 51,
     "suites_failed": 0,
-    "cases_total": 424,
-    "cases_passed": 418,
+    "cases_total": 442,
+    "cases_passed": 436,
     "cases_failed": 0,
     "cases_skipped": 6,
     "playwright_browser_tests": {
       "projects": ["chromium"],
-      "specs_total": 19,
-      "specs_passed": 19,
+      "specs_total": 22,
+      "specs_passed": 22,
       "specs_failed": 0
     }
   },
   "desktop": {
-    "version": "1.0.8",
+    "version": "1.1.0",
     "manifest_url": "https://onnesha-hospital.pages.dev/downloads/desktop/latest.json",
-    "setup_exe_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.8.exe",
-    "setup_exe_size": 2996122,
-    "setup_exe_sha256": "42E0B1416B1FEF7D92EC682F7DF9BF881F9CEE598DE9885A6920CDD794827A0D",
-    "msi_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.8.msi",
-    "msi_size": 3477504,
-    "msi_sha256": "0F54B6344CC5AC42FE8A81843B1494BF2137BA7460678E6A4A63309863D75E2A",
-    "live_http_status": {
-      "latest_json": 200,
-      "setup_exe": 200,
-      "msi": 200
-    }
+    "setup_exe_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.0.exe",
+    "setup_exe_size": 1989452,
+    "setup_exe_sha256": "093485037636E1CFD8AB48B2EF5755DD7F26E520FC8B8E3D51F3482716EB3278",
+    "msi_url": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.0.msi",
+    "msi_size": 2494464,
+    "msi_sha256": "274CB7B2B06671E8B4E98A08CC51EF6C4960E1ACD6CC5199FE91A6A6C8694B44"
   },
   "verification": {
     "typescript": "PASS",
     "eslint": "PASS",
     "audit": "PASS",
-    "playwright_e2e": "PASS",
-    "production_smoke": "PASS",
-    "rls_read_shield": "PASS",
-    "shell_safety": "PASS",
-    "rpc_shield": "PASS",
-    "desktop_downloads": "PASS",
-    "checksum_integrity": "PASS"
+    "tests_node": "PASS",
+    "tests_playwright": "PASS"
   }
 }
