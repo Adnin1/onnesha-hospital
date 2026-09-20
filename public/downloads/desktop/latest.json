@@ -1,12 +1,12 @@
 {
-  "version": "1.0.6",
+  "version": "1.0.7",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop Client v1.0.6. High speed POS thermal printing, receipting, patient management, and real-time EMR integration.",
-  "pub_date": "2026-09-20T12:00:00Z",
+  "notes": "Onnesha Hospital PC Desktop Client v1.0.7. High speed POS thermal printing, receipting, patient management, and real-time EMR integration.",
+  "pub_date": "2026-09-20T13:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.6.exe",
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.6.msi"
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.0.7.exe",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.0.7.msi"
     }
   },
   "signing": {

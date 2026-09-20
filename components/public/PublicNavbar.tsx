@@ -26,14 +26,23 @@ export function PublicNavbar() {
       <div className="bg-sky-950 text-white text-xs py-1.5 px-4">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center space-x-4">
-            <span className="flex items-center text-sky-200">
-              <Phone className="w-3.5 h-3.5 mr-1 text-emerald-400" />
-              Emergency: <strong className="ml-1 text-white">{HOSPITAL_METADATA.emergencyHotline}</strong>
-            </span>
-            <span className="hidden sm:flex items-center text-sky-200">
-              <ShieldAlert className="w-3.5 h-3.5 mr-1 text-red-400" />
-              Ambulance: <strong className="ml-1 text-white">{HOSPITAL_METADATA.ambulanceHotline}</strong>
-            </span>
+            {HOSPITAL_METADATA.emergencyHotline ? (
+              <span className="flex items-center text-sky-200">
+                <Phone className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+                Emergency: <strong className="ml-1 text-white">{HOSPITAL_METADATA.emergencyHotline}</strong>
+              </span>
+            ) : (
+              <Link href="/contact" className="flex items-center text-sky-200 hover:text-white transition">
+                <Phone className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+                Emergency: <strong className="ml-1 text-white underline">24/7 Desk</strong>
+              </Link>
+            )}
+            {HOSPITAL_METADATA.ambulanceHotline ? (
+              <span className="hidden sm:flex items-center text-sky-200">
+                <ShieldAlert className="w-3.5 h-3.5 mr-1 text-red-400" />
+                Ambulance: <strong className="ml-1 text-white">{HOSPITAL_METADATA.ambulanceHotline}</strong>
+              </span>
+            ) : null}
           </div>
           <div className="flex items-center space-x-4">
             <span className="hidden md:flex items-center text-sky-200">

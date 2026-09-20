@@ -186,7 +186,7 @@ export default function DoctorsDirectoryPage() {
                       <div className="text-right">
                         <span className="text-[11px] text-slate-500 block">Visiting Hours</span>
                         <span className="text-xs font-semibold text-slate-800">
-                          05:00 PM - 08:30 PM
+                          {doc.visiting_hours_text || "Schedule on request"}
                         </span>
                       </div>
                     </div>

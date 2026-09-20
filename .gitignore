@@ -45,3 +45,8 @@ next-env.d.ts
 # rust / tauri
 src-tauri/target/
 src-tauri/gen/
+
+# desktop installer binaries (release assets, not git tracked)
+public/downloads/desktop/*.msi
+public/downloads/desktop/*.exe
+public/downloads/desktop/*.zip

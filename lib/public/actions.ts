@@ -3,6 +3,14 @@ import { HOSPITAL_METADATA } from "@/config/hospital";
 import { normalizeBDPhone, isValidNormalizedBDPhone } from "@/lib/patient/phone";
 import { getDhakaDateString } from "@/lib/datetime";
 
+export interface PublicDoctorScheduleSummary {
+  id: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  is_active?: boolean;
+}
+
 export interface PublicDoctor {
   id: string;
   full_name: string;
@@ -19,6 +27,31 @@ export interface PublicDoctor {
   experience_years?: number;
   department_name: string;
   department_slug?: string;
+  schedules?: PublicDoctorScheduleSummary[];
+  visiting_hours_text?: string;
+}
+
+export function formatVisitingHoursSummary(
+  schedules?: Array<{ day_of_week: string; start_time: string; end_time: string; is_active?: boolean }>
+): string {
+  const active = (schedules || []).filter((s) => s.is_active !== false);
+  if (active.length === 0) return "Schedule on request";
+
+  const formatTime12h = (timeStr: string) => {
+    if (!timeStr) return "";
+    const parts = timeStr.split(":");
+    const h = parseInt(parts[0], 10);
+    const m = parts[1] || "00";
+    if (isNaN(h)) return timeStr;
+    const ampm = h >= 12 ? "PM" : "AM";
+    const hour12 = h % 12 || 12;
+    return `${hour12.toString().padStart(2, "0")}:${m} ${ampm}`;
+  };
+
+  const first = active[0];
+  const timeRange = `${formatTime12h(first.start_time)} - ${formatTime12h(first.end_time)}`;
+  const days = active.map((s) => s.day_of_week.slice(0, 3)).join(", ");
+  return `${days} (${timeRange})`;
 }
 
 export interface PublicDepartment {
@@ -67,7 +100,8 @@ export async function getPublicDoctorsAction(): Promise<{
         followup_fee,
         avatar_url,
         bio,
-        departments(id, name)
+        departments(id, name),
+        doctor_schedules(id, day_of_week, start_time, end_time, is_active)
       `)
       .eq("organization_id", HOSPITAL_METADATA.id)
       .eq("is_active", true)
@@ -78,7 +112,15 @@ export async function getPublicDoctorsAction(): Promise<{
       return { success: false, doctors: [], error: error.message };
     }
 
-    interface DoctorWithDept {
+    interface SchedItem {
+      id: string;
+      day_of_week: string;
+      start_time: string;
+      end_time: string;
+      is_active?: boolean;
+    }
+
+    interface DoctorWithDeptAndSched {
       id: string;
       full_name: string;
       degrees: string;
@@ -91,23 +133,31 @@ export async function getPublicDoctorsAction(): Promise<{
       avatar_url?: string | null;
       bio?: string | null;
       departments?: { id: string; name: string } | null;
+      doctor_schedules?: SchedItem[] | null;
     }
 
-    const doctors: PublicDoctor[] = ((data || []) as unknown as DoctorWithDept[]).map((d) => ({
-      id: d.id,
-      full_name: d.full_name,
-      degrees: d.degrees,
-      designation: d.designation,
-      specialization: d.specialization,
-      bmdc_reg_number: d.bmdc_reg_number,
-      room_number: d.room_number,
-      opd_fee: Number(d.opd_fee) || 0,
-      followup_fee: Number(d.followup_fee) || 0,
-      avatar_url: d.avatar_url,
-      bio: d.bio,
-      department_name: d.departments?.name || "",
-      department_slug: d.departments?.name ? d.departments.name.toLowerCase().replace(/\s+/g, "-") : "",
-    }));
+    const doctors: PublicDoctor[] = ((data || []) as unknown as DoctorWithDeptAndSched[]).map((d) => {
+      const schedules = (d.doctor_schedules || []).filter((s) => s.is_active !== false);
+      const visiting_hours_text = formatVisitingHoursSummary(schedules);
+
+      return {
+        id: d.id,
+        full_name: d.full_name,
+        degrees: d.degrees,
+        designation: d.designation,
+        specialization: d.specialization,
+        bmdc_reg_number: d.bmdc_reg_number,
+        room_number: d.room_number,
+        opd_fee: Number(d.opd_fee) || 0,
+        followup_fee: Number(d.followup_fee) || 0,
+        avatar_url: d.avatar_url,
+        bio: d.bio,
+        department_name: d.departments?.name || "",
+        department_slug: d.departments?.name ? d.departments.name.toLowerCase().replace(/\s+/g, "-") : "",
+        schedules,
+        visiting_hours_text,
+      };
+    });
 
     return { success: true, doctors };
   } catch (err: unknown) {

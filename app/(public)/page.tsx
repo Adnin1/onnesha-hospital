@@ -82,9 +82,6 @@ export default function HomePage() {
                   <Activity className="w-3.5 h-3.5 text-emerald-400" />
                   <span>24/7 Critical Care & Advanced Diagnostics in Dhaka</span>
                 </div>
-                <div className="inline-flex items-center space-x-1.5 bg-emerald-500/20 border border-emerald-400/40 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-300 backdrop-blur-xs">
-                  <span>☁️ Dedicated Cloud Cluster: $25 - $65 USD/mo | Domain: $10 - $50 USD/yr</span>
-                </div>
               </div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
@@ -92,7 +89,7 @@ export default function HomePage() {
               </h1>
 
               <p className="text-sm sm:text-base text-sky-100 max-w-2xl leading-relaxed">
-                Welcome to <strong>Onnesha Hospital</strong> ({HOSPITAL_METADATA.banglaName}). We provide compassionate, patient-first care backed by Bangladesh&apos;s leading medical specialists, modern ICUs, advanced laparoscopic surgery, and accurate digital diagnostics.
+                Welcome to <strong>Onnesha Hospital</strong> ({HOSPITAL_METADATA.banglaName}). We provide compassionate, patient-first care backed by experienced medical specialists, modern inpatient facilities, surgical care, and accurate digital diagnostics.
               </p>
 
               <div className="flex flex-wrap gap-4 pt-2">
@@ -115,11 +112,11 @@ export default function HomePage() {
               {/* Quick stats strip */}
               <div className="grid grid-cols-3 gap-4 pt-6 border-t border-sky-700/60 max-w-lg">
                 <div>
-                  <div className="text-2xl font-bold text-white">20+</div>
-                  <div className="text-xs text-sky-200">Senior Specialists</div>
+                  <div className="text-2xl font-bold text-white">OPD & IPD</div>
+                  <div className="text-xs text-sky-200">Consultant Care</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-white">100+</div>
+                  <div className="text-2xl font-bold text-white">Modern</div>
                   <div className="text-xs text-sky-200">Beds & Cabins</div>
                 </div>
                 <div>
@@ -214,13 +211,23 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <a
-              href={`tel:${HOSPITAL_METADATA.emergencyHotline}`}
-              className="inline-flex items-center bg-white text-red-700 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition"
-            >
-              <Phone className="w-3.5 h-3.5 mr-1.5 text-red-600" />
-              Call {HOSPITAL_METADATA.emergencyHotline}
-            </a>
+            {HOSPITAL_METADATA.emergencyHotline ? (
+              <a
+                href={`tel:${HOSPITAL_METADATA.emergencyHotline}`}
+                className="inline-flex items-center bg-white text-red-700 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition"
+              >
+                <Phone className="w-3.5 h-3.5 mr-1.5 text-red-600" />
+                Call {HOSPITAL_METADATA.emergencyHotline}
+              </a>
+            ) : (
+              <Link
+                href="/contact"
+                className="inline-flex items-center bg-white text-red-700 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition"
+              >
+                <Phone className="w-3.5 h-3.5 mr-1.5 text-red-600" />
+                Contact Reception
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -434,10 +441,10 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 mb-2">
-                অনলাইন পোর্টালের ডাটাবেজ ও ক্লাউড হোস্টিং অবকাঠামো কেমন?
+                অনলাইন পোর্টালের ডাটাবেজ ও ক্লাউড অবকাঠামো কেমন?
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                অন্বেষা হাসপাতালের সম্পূর্ণ ডিজিটাল ওপিডি, আইপিডি ও প্যাথলজি সিস্টেম আন্তর্জাতিক মানের ডেডিকেটেড ক্লাউড ডাটাবেজ ক্লাস্টারে পরিচালিত। এর মাসিক ক্লাউড সার্ভার ও ডাটাবেজ হোস্টিং ব্যয় <strong>২৫$ থেকে ৬৫$ ডলার ($25 - $65 USD / Month)</strong> এবং অফিসিয়াল কমার্শিয়াল ডোমেইনের বার্ষিক মূল্য <strong>১০$ থেকে ৫০$ ডলার ($10 - $50 USD / Year)</strong>। এটি কোনো ফ্রি হোস্টিং বা শেয়ার্ড প্ল্যাটফর্মে হোস্ট করা নয়।
+                অন্বেষা হাসপাতালের সম্পূর্ণ ডিজিটাল ওপিডি, আইপিডি ও প্যাথলজি সিস্টেম উচ্চক্ষমতাসম্পন্ন ক্লাউড ডাটাবেজ আর্কিটেকচারে পরিচালিত। রিয়েল-টাইম এনক্রিপশন ও স্বয়ংক্রিয় ব্যাকআপ ব্যবস্থার মাধ্যমে ডেটা সর্বদা সুরক্ষিত থাকে।
               </p>
             </div>
 
