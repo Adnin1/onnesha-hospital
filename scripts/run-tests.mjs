@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
 
-console.log('🧪 [OHMS TEST RUNNER] Starting test discovery across tests/ ...');
+const isCertificationMode = process.argv.includes('--certification') || process.env.CERTIFICATION_MODE === 'true';
+
+console.log(`🧪 [OHMS TEST RUNNER] Starting test discovery across tests/ ... (Certification Mode: ${isCertificationMode ? 'STRICT' : 'STANDARD'})`);
 
 function findTestFiles(dir) {
   let results = [];
@@ -103,8 +105,8 @@ console.log(`Passed Suites:        ${testFiles.length - failCount}`);
 console.log(`Failed Suites:        ${failCount}`);
 console.log(`----------------------------------------`);
 console.log(`Total Test Cases:     ${totalTests}`);
-console.log(`  • PASSED:           ${totalPass}`);
-console.log(`  • FAILED:           ${totalFail}`);
+console.log(`  • ACTIVE_PASS:      ${totalPass}`);
+console.log(`  • ACTIVE_FAIL:      ${totalFail}`);
 console.log(`  • SKIPPED / OTHER:  ${totalSkipped}`);
 if (totalSkipped > 0) {
   console.log(`    - DEFERRED:       ${deferredCount} (e.g. pending external merchant activation)`);
@@ -120,6 +122,14 @@ console.log(`========================================\n`);
 if (failCount > 0 || totalFail > 0) {
   console.error('❌ Test suite finished with failures.\n');
   process.exit(1);
+}
+
+if (isCertificationMode) {
+  if (blockedCount > 0) {
+    console.error(`❌ Certification Failed: ${blockedCount} test case(s) are BLOCKED by unresolved issues.\n`);
+    process.exit(1);
+  }
+  console.log(`✅ CERTIFICATION PASS: All ${testFiles.length} suites passed (${totalPass} active passes, 0 failures, 0 blocked).\n`);
 } else if (totalSkipped > 0) {
   console.log(`✅ All active test suites passed (${totalPass} passed, ${totalSkipped} deferred/skipped with explicit rationale).\n`);
 } else {

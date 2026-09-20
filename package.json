@@ -1,6 +1,6 @@
 {
   "name": "onnesha-hospital",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,6 +10,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-tests.mjs",
+    "test:certification": "node scripts/run-tests.mjs --certification",
     "test:security": "node --test tests/security.test.mjs",
     "test:live-security": "node --test tests/live/*.live.test.mjs",
     "test:e2e": "playwright test",
