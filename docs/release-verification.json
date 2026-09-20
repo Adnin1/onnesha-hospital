@@ -1,0 +1,57 @@
+{
+  "release": "v1.0.7",
+  "commit": "dfed116f44448065906789222860c52ab0aa864b",
+  "branch": "main",
+  "timestamp": "2026-09-20T19:07:30+06:00",
+  "ci": {
+    "latest_run_id": 35512027913,
+    "latest_run_number": 59,
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": {
+      "validate": "success",
+      "tauri_windows_build": "success",
+      "live_security_test": "success",
+      "deploy_production": "success"
+    }
+  },
+  "cloudflare": {
+    "canonical_url": "https://onnesha-hospital.pages.dev",
+    "direct_preview_url": "https://1a03770f.onnesha-hospital.pages.dev",
+    "deploy_sha": "dfed116f44448065906789222860c52ab0aa864b",
+    "commit_dirty": false,
+    "http_routes_checked": 11,
+    "http_routes_200_ok": 11
+  },
+  "supabase": {
+    "project_id": "iuhtzahuszdkdarhxobx",
+    "database_version": "PostgreSQL 17.6",
+    "region": "ap-southeast-1",
+    "migrations_total": 46,
+    "migrations_synced": 46,
+    "db_lint_errors": 0
+  },
+  "tests": {
+    "suites_total": 48,
+    "suites_passed": 48,
+    "suites_failed": 0,
+    "cases_total": 424,
+    "cases_passed": 418,
+    "cases_failed": 0,
+    "cases_skipped": 6
+  },
+  "desktop": {
+    "version": "1.0.7",
+    "manifest_url": "https://onnesha-hospital.pages.dev/downloads/desktop/latest.json",
+    "latest_json_version": "1.0.7"
+  },
+  "verification": {
+    "typescript": "PASS",
+    "eslint": "PASS",
+    "audit": "PASS",
+    "production_smoke": "PASS",
+    "rls_read_shield": "PASS",
+    "shell_safety": "PASS",
+    "rpc_shield": "PASS"
+  }
+}

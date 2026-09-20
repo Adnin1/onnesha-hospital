@@ -7,7 +7,11 @@ const sshCmd = `ssh -i "${keyPath}" -o StrictHostKeyChecking=accept-new`;
 const action = process.argv[2] || 'status';
 
 if (action === 'fetch') {
-  const res = spawnSync('git', ['fetch', 'ssh-origin'], {
+  const res = spawnSync('git', ['fetch', 'ssh-origin', '--prune', '--tags'], {
+    env: { ...process.env, GIT_SSH_COMMAND: sshCmd },
+    encoding: 'utf8',
+  });
+  spawnSync('git', ['fetch', 'origin', '--prune', '--tags'], {
     env: { ...process.env, GIT_SSH_COMMAND: sshCmd },
     encoding: 'utf8',
   });
