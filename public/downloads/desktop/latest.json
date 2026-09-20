@@ -1,12 +1,12 @@
 {
-  "version": "1.1.1",
+  "version": "1.1.2",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.1. Enterprise General Ledger, double-entry accounting, procurement requisitions, biomedical asset tracking, thermal POS printing, and real-time EMR integration.",
-  "pub_date": "2026-09-21T03:00:00Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.2. Accounting period control, posted journal immutability, procurement 3-way match, payroll accrual, and FEFO expiry validation.",
+  "pub_date": "2026-09-21T04:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.1.exe",
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.1.msi"
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.2.exe",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.2.msi"
     }
   },
   "signing": {

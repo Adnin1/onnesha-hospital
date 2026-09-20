@@ -35,7 +35,7 @@ export interface JournalEntryRecord {
   reference_type?: string | null;
   reference_id?: string | null;
   description: string;
-  status: "DRAFT" | "POSTED" | "VOID";
+  status: "DRAFT" | "POSTED" | "VOID" | "REVERSED";
   total_debit: number;
   total_credit: number;
   posted_by?: string | null;
@@ -203,7 +203,7 @@ export async function getJournalEntriesAction(params?: {
       reference_type?: string | null;
       reference_id?: string | null;
       description: string;
-      status: "DRAFT" | "POSTED" | "VOID";
+      status: "DRAFT" | "POSTED" | "VOID" | "REVERSED";
       total_debit: number | string;
       total_credit: number | string;
       posted_by?: string | null;
@@ -606,3 +606,327 @@ export async function recordAssetDepreciationToGlAction(input: {
     return { success: false, error: msg };
   }
 }
+
+export interface FiscalPeriodRecord {
+  id: string;
+  organization_id: string;
+  period_name: string;
+  start_date: string;
+  end_date: string;
+  is_closed: boolean;
+  closed_at?: string | null;
+  closed_by?: string | null;
+  created_at: string;
+}
+
+/**
+ * 11. Fetch Fiscal Periods
+ */
+export async function getFiscalPeriodsAction(): Promise<ActionResult<{ periods: FiscalPeriodRecord[] }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("fiscal_periods")
+      .select("*")
+      .eq("organization_id", session.organizationId)
+      .order("start_date", { ascending: false });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: { periods: (data as FiscalPeriodRecord[]) || [] } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to fetch fiscal periods";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 12. Close Fiscal Period
+ */
+export async function closeFiscalPeriodAction(periodId: string): Promise<ActionResult<{ period_id: string; is_closed: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.ACCOUNTING_MANAGE);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Forbidden: insufficient accounting permissions";
+    return { success: false, error: msg };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("close_fiscal_period", {
+      p_org_id: session.organizationId,
+      p_period_id: periodId,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId || undefined,
+      action: "UPDATE",
+      module: "ACCOUNTING",
+      entityType: "fiscal_periods",
+      entityId: periodId,
+      newValues: { is_closed: true },
+    });
+
+    return { success: true, data: data as { period_id: string; is_closed: boolean } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to close fiscal period";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 13. Reopen Fiscal Period (Super Admin only)
+ */
+export async function reopenFiscalPeriodAction(periodId: string): Promise<ActionResult<{ period_id: string; is_closed: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("reopen_fiscal_period", {
+      p_org_id: session.organizationId,
+      p_period_id: periodId,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId || undefined,
+      action: "UPDATE",
+      module: "ACCOUNTING",
+      entityType: "fiscal_periods",
+      entityId: periodId,
+      newValues: { is_closed: false },
+    });
+
+    return { success: true, data: data as { period_id: string; is_closed: boolean } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to reopen fiscal period";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 14. Reverse Journal Entry Atomically
+ */
+export async function reverseJournalEntryAction(input: {
+  originalEntryId: string;
+  reversalReason: string;
+  reversalDate?: string;
+}): Promise<ActionResult<{ reversal_entry: { entry_id: string; entry_number: string } }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.ACCOUNTING_MANAGE);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Forbidden: insufficient accounting permissions";
+    return { success: false, error: msg };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("reverse_journal_entry_atomic", {
+      p_org_id: session.organizationId,
+      p_original_entry_id: input.originalEntryId,
+      p_reversal_reason: input.reversalReason.trim(),
+      p_reversal_date: input.reversalDate || getDhakaDateString(),
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const payload = data as { reversal_entry: { entry_id: string; entry_number: string } };
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId || undefined,
+      action: "CREATE",
+      module: "ACCOUNTING",
+      entityType: "journal_entries",
+      entityId: payload.reversal_entry?.entry_id || input.originalEntryId,
+      newValues: {
+        reversal_of: input.originalEntryId,
+        reason: input.reversalReason,
+        entry_number: payload.reversal_entry?.entry_number,
+      },
+    });
+
+    return { success: true, data: payload };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to reverse journal entry";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 15. Post Supplier Invoice to Accounts Payable GL (3-Way Match)
+ */
+export async function postSupplierInvoiceToGlAction(supplierInvoiceId: string): Promise<ActionResult<{ supplier_invoice_id: string; match_status: string; journal_entry_number: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("post_supplier_invoice_to_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_supplier_invoice_id: supplierInvoiceId,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const payload = data as { supplier_invoice_id: string; match_status: string; journal_entry: { entry_number: string } };
+    return {
+      success: true,
+      data: {
+        supplier_invoice_id: payload.supplier_invoice_id,
+        match_status: payload.match_status,
+        journal_entry_number: payload.journal_entry?.entry_number || "",
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to post supplier invoice to GL";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 16. Record Supplier Invoice Payment to GL
+ */
+export async function recordSupplierPaymentToGlAction(input: {
+  supplierInvoiceId: string;
+  paymentAmount: number;
+  paymentMethod?: string;
+  bankAccountCode?: string;
+  notes?: string;
+}): Promise<ActionResult<{ supplier_invoice_id: string; payment_amount: number; payment_status: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("record_supplier_payment_to_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_supplier_invoice_id: input.supplierInvoiceId,
+      p_payment_amount: input.paymentAmount,
+      p_payment_method: input.paymentMethod || "BANK",
+      p_bank_acc_code: input.bankAccountCode || "1020",
+      p_notes: input.notes || null,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      data: data as { supplier_invoice_id: string; payment_amount: number; payment_status: string },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to record supplier payment to GL";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 17. Post Payroll Accrual to GL
+ */
+export async function postPayrollAccrualToGlAction(payrollRunId: string): Promise<ActionResult<{ payroll_run_id: string; total_gross: number; journal_entry_number: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("post_payroll_accrual_to_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_payroll_run_id: payrollRunId,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const payload = data as { payroll_run_id: string; total_gross: number; journal_entry: { entry_number: string } };
+    return {
+      success: true,
+      data: {
+        payroll_run_id: payload.payroll_run_id,
+        total_gross: payload.total_gross,
+        journal_entry_number: payload.journal_entry?.entry_number || "",
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to post payroll accrual to GL";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 18. Record Asset Maintenance to GL
+ */
+export async function recordAssetMaintenanceToGlAction(input: {
+  maintenanceLogId: string;
+  isCapitalized?: boolean;
+  paymentAccountCode?: string;
+}): Promise<ActionResult<{ maintenance_log_id: string; is_capitalized: boolean; cost: number }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("record_asset_maintenance_to_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_maintenance_log_id: input.maintenanceLogId,
+      p_is_capitalized: input.isCapitalized ?? false,
+      p_payment_account_code: input.paymentAccountCode || "1020",
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      data: data as { maintenance_log_id: string; is_capitalized: boolean; cost: number },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to record asset maintenance to GL";
+    return { success: false, error: msg };
+  }
+}
+

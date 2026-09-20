@@ -11,22 +11,29 @@ import {
   CheckCircle2,
   AlertCircle,
   FileSpreadsheet,
+  Calendar,
+  Undo2,
 } from "lucide-react";
 import {
   AccountRecord,
   JournalEntryRecord,
   TrialBalanceRow,
+  FiscalPeriodRecord,
   getChartOfAccountsAction,
   getJournalEntriesAction,
   postJournalEntryAction,
   getTrialBalanceAction,
   createAccountAction,
+  getFiscalPeriodsAction,
+  closeFiscalPeriodAction,
+  reopenFiscalPeriodAction,
+  reverseJournalEntryAction,
   AccountType,
 } from "@/lib/accounting/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
 
 export default function AccountingPage() {
-  const [activeTab, setActiveTab] = useState<"COA" | "ENTRIES" | "TRIAL_BALANCE">("COA");
+  const [activeTab, setActiveTab] = useState<"COA" | "ENTRIES" | "TRIAL_BALANCE" | "PERIODS">("COA");
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -35,6 +42,7 @@ export default function AccountingPage() {
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [entries, setEntries] = useState<JournalEntryRecord[]>([]);
   const [trialBalance, setTrialBalance] = useState<TrialBalanceRow[]>([]);
+  const [fiscalPeriods, setFiscalPeriods] = useState<FiscalPeriodRecord[]>([]);
   const [tbTotals, setTbTotals] = useState({ debits: 0, credits: 0, balanced: true });
 
   // Filters
@@ -62,10 +70,11 @@ export default function AccountingPage() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const [coaRes, entryRes, tbRes] = await Promise.all([
+      const [coaRes, entryRes, tbRes, periodRes] = await Promise.all([
         getChartOfAccountsAction(),
         getJournalEntriesAction({ limit: 50 }),
         getTrialBalanceAction(),
+        getFiscalPeriodsAction(),
       ]);
 
       if (!coaRes.success) throw new Error(coaRes.error || "Failed to load accounts");
@@ -81,6 +90,10 @@ export default function AccountingPage() {
         credits: tbRes.data?.totalCredits || 0,
         balanced: tbRes.data?.isBalanced ?? true,
       });
+
+      if (periodRes.success && periodRes.data) {
+        setFiscalPeriods(periodRes.data.periods);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error loading accounting data";
       setErrorMsg(msg);
@@ -93,10 +106,11 @@ export default function AccountingPage() {
     let isMounted = true;
     async function init() {
       try {
-        const [coaRes, entryRes, tbRes] = await Promise.all([
+        const [coaRes, entryRes, tbRes, periodRes] = await Promise.all([
           getChartOfAccountsAction(),
           getJournalEntriesAction({ limit: 50 }),
           getTrialBalanceAction(),
+          getFiscalPeriodsAction(),
         ]);
 
         if (isMounted) {
@@ -110,6 +124,9 @@ export default function AccountingPage() {
               balanced: tbRes.data.isBalanced,
             });
           }
+          if (periodRes.success && periodRes.data) {
+            setFiscalPeriods(periodRes.data.periods);
+          }
         }
       } catch (err: unknown) {
         if (isMounted) {
@@ -117,16 +134,57 @@ export default function AccountingPage() {
           setErrorMsg(msg);
         }
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     }
-    void init();
+    init();
     return () => {
       isMounted = false;
     };
   }, []);
+
+  const handleReverseJournal = async (entryId: string, entryNum: string) => {
+    const reason = window.prompt(`Enter mandatory reason for reversing journal entry ${entryNum}:`);
+    if (!reason || !reason.trim()) return;
+    setLoading(true);
+    try {
+      const res = await reverseJournalEntryAction({
+        originalEntryId: entryId,
+        reversalReason: reason.trim(),
+      });
+      if (!res.success) {
+        setErrorMsg(res.error || "Failed to reverse journal entry");
+      } else {
+        setSuccessMsg(`Journal entry ${entryNum} successfully reversed.`);
+        await loadData();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error reversing entry";
+      setErrorMsg(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTogglePeriod = async (period: FiscalPeriodRecord) => {
+    setLoading(true);
+    try {
+      const res = period.is_closed
+        ? await reopenFiscalPeriodAction(period.id)
+        : await closeFiscalPeriodAction(period.id);
+      if (!res.success) {
+        setErrorMsg(res.error || "Failed to update period status");
+      } else {
+        setSuccessMsg(`Fiscal period "${period.period_name}" ${period.is_closed ? "reopened" : "closed"} successfully.`);
+        await loadData();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error updating period";
+      setErrorMsg(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const totalDebitSum = lines.reduce((sum, l) => sum + (Number(l.debit) || 0), 0);
   const totalCreditSum = lines.reduce((sum, l) => sum + (Number(l.credit) || 0), 0);
@@ -298,6 +356,16 @@ export default function AccountingPage() {
         >
           <FileSpreadsheet className="h-4 w-4" /> Trial Balance
         </button>
+        <button
+          onClick={() => setActiveTab("PERIODS")}
+          className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition ${
+            activeTab === "PERIODS"
+              ? "border-sky-600 text-sky-600 dark:text-sky-400"
+              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+          }`}
+        >
+          <Calendar className="h-4 w-4" /> Fiscal Periods ({fiscalPeriods.length})
+        </button>
       </div>
 
       {loading ? (
@@ -419,9 +487,28 @@ export default function AccountingPage() {
                             {formatCurrencyBDT(entry.total_credit)}
                           </td>
                           <td className="px-6 py-4">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                              {entry.status}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                  entry.status === "POSTED"
+                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                    : entry.status === "REVERSED"
+                                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                    : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
+                                }`}
+                              >
+                                {entry.status}
+                              </span>
+                              {entry.status === "POSTED" && (
+                                <button
+                                  onClick={() => handleReverseJournal(entry.id, entry.entry_number)}
+                                  title="Reverse this journal entry"
+                                  className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 font-semibold"
+                                >
+                                  <Undo2 className="h-3 w-3" /> Reverse
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                         {entry.lines && entry.lines.length > 0 && (
@@ -532,6 +619,71 @@ export default function AccountingPage() {
                   </tfoot>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* TAB 4: FISCAL PERIODS */}
+          {activeTab === "PERIODS" && (
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Accounting Period Control</h3>
+                  <p className="text-xs text-slate-500">Prevent historical ledger postings and enforce audit period locking.</p>
+                </div>
+              </div>
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs">
+                  <tr>
+                    <th className="px-6 py-3 font-semibold">Period Name</th>
+                    <th className="px-6 py-3 font-semibold">Start Date</th>
+                    <th className="px-6 py-3 font-semibold">End Date</th>
+                    <th className="px-6 py-3 font-semibold">Status</th>
+                    <th className="px-6 py-3 font-semibold text-right">Control Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {fiscalPeriods.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
+                        No fiscal periods defined yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    fiscalPeriods.map((period) => (
+                      <tr key={period.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                        <td className="px-6 py-4 font-mono font-medium text-slate-900 dark:text-white">
+                          {period.period_name}
+                        </td>
+                        <td className="px-6 py-4 text-slate-500">{period.start_date}</td>
+                        <td className="px-6 py-4 text-slate-500">{period.end_date}</td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                              period.is_closed
+                                ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            }`}
+                          >
+                            {period.is_closed ? "CLOSED" : "OPEN"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => handleTogglePeriod(period)}
+                            className={`px-3 py-1 text-xs font-medium rounded-lg transition ${
+                              period.is_closed
+                                ? "bg-slate-200 text-slate-800 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200"
+                                : "bg-rose-600 text-white hover:bg-rose-700"
+                            }`}
+                          >
+                            {period.is_closed ? "Reopen Period" : "Close Period"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
         </>
