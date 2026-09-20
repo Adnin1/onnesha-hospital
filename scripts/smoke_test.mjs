@@ -20,7 +20,7 @@ const routes = [
 
 const base = 'https://onnesha-hospital.pages.dev';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iuhtzahuszdkdarhxobx.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_OPiG-7uhoIlnysXKrpErsw_rdXEJ4rs';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 async function runProductionSmokeTests() {
   console.log('============================================================');
@@ -80,8 +80,8 @@ async function runProductionSmokeTests() {
   let layerCPassed = 0;
 
   // 1. Private Patients table read attempt
-  const { data: pData } = await anonClient.from('patients').select('id, full_name').limit(5);
-  if (!pData || pData.length === 0) {
+  const { data: pData, error: pErr } = await anonClient.from('patients').select('id, full_name').limit(5);
+  if (!pErr && Array.isArray(pData) && pData.length === 0) {
     console.log('  [✓] Table Read: patients        Shielded (0 records accessible anonymously)');
     layerCPassed++;
   } else {
@@ -89,8 +89,8 @@ async function runProductionSmokeTests() {
   }
 
   // 2. Private Invoices table read attempt
-  const { data: iData } = await anonClient.from('invoices').select('id, invoice_number').limit(5);
-  if (!iData || iData.length === 0) {
+  const { data: iData, error: iErr } = await anonClient.from('invoices').select('id, invoice_number').limit(5);
+  if (!iErr && Array.isArray(iData) && iData.length === 0) {
     console.log('  [✓] Table Read: invoices        Shielded (0 records accessible anonymously)');
     layerCPassed++;
   } else {
@@ -98,30 +98,15 @@ async function runProductionSmokeTests() {
   }
 
   // 3. Organization Integrations credentials read attempt
-  const { data: intData } = await anonClient.from('organization_integrations').select('encrypted_credentials').limit(5);
-  if (!intData || intData.length === 0) {
+  const { data: intData, error: intErr } = await anonClient.from('organization_integrations').select('encrypted_credentials').limit(5);
+  if (!intErr && Array.isArray(intData) && intData.length === 0) {
     console.log('  [✓] Table Read: integrations    Shielded (0 secret credentials accessible)');
     layerCPassed++;
   } else {
     console.error('  [✗] Table Read: integrations    LEAK! Returned data to anonymous caller:', intData);
   }
 
-  // 4. Anonymous INSERT write shielding on patients table
-  const { error: insertErr } = await anonClient.from('patients').insert({
-    organization_id: 'a0000000-0000-0000-0000-000000000001',
-    patient_code: 'SMOKE-INTRUDER-001',
-    full_name: 'Unauthorized Insertion Attempt',
-    gender: 'MALE',
-    phone: '01700000000'
-  });
-  if (insertErr && /violates row-level security|permission denied/i.test(insertErr.message)) {
-    console.log('  [✓] Table Write: patients       Shielded (Anonymous write rejected by RLS)');
-    layerCPassed++;
-  } else {
-    console.error('  [✗] Table Write: patients       FAILED: Anonymous insertion was not rejected by RLS:', insertErr);
-  }
-
-  // LAYER D: PostgREST RPC Endpoint Access Control
+  // 4. Production mutation is intentionally not attempted.\n  // Authenticated INSERT/UPDATE/DELETE isolation is covered only by the disposable staging suite.\n  console.log('  [✓] Table Write: patients       NOT MUTATED (staging suite owns write-authorization testing)');\n\n  // LAYER D: PostgREST RPC Endpoint Access Control
   console.log('\n--- LAYER D: PostgREST RPC Endpoint Access Control ---');
   let layerDPassed = 0;
 
@@ -153,12 +138,12 @@ async function runProductionSmokeTests() {
   console.log(`FOUR-LAYER PRODUCTION VERIFICATION SUMMARY:`);
   console.log(`  • Layer A (Routes 200 OK):          ${layerAPassed}/${routes.length} PASSED`);
   console.log(`  • Layer B (Shell Data Safety):      ${layerBLeakChecks}/${privateRoutes.length} PASSED`);
-  console.log(`  • Layer C (Table Shielding Read/W): ${layerCPassed}/4 PASSED`);
+  console.log(`  • Layer C (Anonymous Read Shield):  ${layerCPassed}/3 PASSED`);
   console.log(`  • Layer D (RPC Endpoint Access):    ${layerDPassed}/2 PASSED`);
   console.log(`============================================================\n`);
 
-  if (layerAPassed === routes.length && layerBLeakChecks === privateRoutes.length && layerCPassed === 4 && layerDPassed === 2) {
-    console.log('🎉 ALL FOUR PRODUCTION QUALITY & SECURITY LAYERS PASSED.');
+  if (layerAPassed === routes.length && layerBLeakChecks === privateRoutes.length && layerCPassed === 3 && layerDPassed === 2) {
+    console.log('✓ ALL FOUR NON-MUTATING PRODUCTION QUALITY & SECURITY LAYERS PASSED.');
   } else {
     console.error('❌ SOME GATES FAILED.');
     process.exit(1);
