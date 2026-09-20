@@ -84,7 +84,6 @@ jobs:
         if: env.OHMS_TEST_SUPABASE_URL != '' && env.OHMS_TEST_SERVICE_ROLE_KEY != ''
         env:
           RUN_LIVE_SUPABASE_TESTS: "true"
-          ALLOW_MUTATING_REMOTE_TESTS: "true"
         run: node --test tests/live/authenticated-cross-tenant.live.test.mjs
 
       - name: Notice when staging credentials are not provided
