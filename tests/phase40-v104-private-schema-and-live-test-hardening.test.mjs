@@ -25,7 +25,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, "..");
 
-test("Phase 40: V1.0.4 Quality Gates & Forensic Certification", async (t) => {
+test("Phase 40: V1.0.x Quality Gates & Forensic Certification", async (t) => {
   const mig46Path = path.join(ROOT, "supabase/migrations/20260920090000_unexpose_tenant_resolver_to_private_schema.sql");
   const liveTestPath = path.join(ROOT, "tests/live/authenticated-cross-tenant.live.test.mjs");
   const ciWorkflowPath = path.join(ROOT, ".github/workflows/ci.yml");
@@ -114,7 +114,7 @@ test("Phase 40: V1.0.4 Quality Gates & Forensic Certification", async (t) => {
     assert.match(smokeCode, /RPC: get_current_org_id/);
   });
 
-  await t.test("10. Version 1.0.4 parity verified across all manifests, configs, and download page", () => {
+  await t.test("10. Version 1.0.x parity verified across all manifests, configs, and download page", () => {
     const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
     const lock = JSON.parse(fs.readFileSync(pkgLockPath, "utf8"));
     const tauri = JSON.parse(fs.readFileSync(tauriConfPath, "utf8"));
