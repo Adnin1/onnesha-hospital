@@ -1,0 +1,26 @@
+# Onnesha Hospital Management System — Final UI Functional Inventory
+
+This inventory documents every user interface control panel route, its user role, available interactive actions, underlying data sources, mutation methods, and downstream module integrations.
+
+---
+
+## 🖥️ UI Route Functional Audit
+
+| Route Path | Module Purpose | User Role(s) | Available Interactive Actions | Data Source | Mutation Method | Downstream Module Integration | Current Limitations |
+|---|---|---|---|---|---|---|---|
+| `/app/dashboard` | Main Executive & Staff Dashboard | All Authenticated Staff | View live KPIs, Queue Counters, Bed Occupancy | PostgreSQL (`appointments`, `beds`, `invoices`) | Server Component Query / Client Poll | All Modules | Visual metrics only (no direct mutation) |
+| `/app/patients` | Patient Registration & Directory | Reception, Nurse, Doctor, Admin | Add Patient, Edit Profile, Search, View 360° EMR, Start Visit | `patients`, `patient_contacts`, `patient_addresses` | `registerPatientAction`, `updatePatientAction` | OPD Queue, IPD Admissions, Emergency | Requires BD 11-digit mobile |
+| `/app/patients/[id]` | Patient 360° EMR History | Reception, Nurse, Doctor, Admin | View Timeline, Print Medical Record, Start Visit | `patients`, `clinical_encounters`, `prescriptions` | Client Navigation & Print Trigger | Clinical, Pharmacy, Lab, Billing | Read-only aggregation view |
+| `/app/appointments` | Appointment Scheduling Console | Reception, Doctor, Admin | Book Appointment, Confirm, Reschedule, Cancel, Token Check-in | `appointments`, `doctors`, `doctor_schedules` | `createAppointmentAction`, `updateAppointmentStatusAction` | OPD Token Queue, Doctor Roster | Prevents double-booking slots |
+| `/app/doctors` | Doctor Directory & Roster Management | Admin, Super Admin | Add Specialist Doctor, Edit Details, Activate/Deactivate, Publish Schedule | `profiles`, `doctors`, `doctor_schedules` | `createDoctorAction`, `createDoctorScheduleAction` | Public Booking Portal, Staff Appointments | Must set slot duration & max patients |
+| `/app/opd` | Outpatient Department Console | Doctor, Nurse, Reception | Call Patient, Record Vitals, Start Consultation, Prescribe, Order Lab | `clinical_encounters`, `prescriptions`, `lab_orders` | `createPrescriptionAction`, `createLabOrderAction` | Pharmacy Dispense, Lab Queue, Billing | Requires finalized status |
+| `/app/emergency` | 24/7 Casualty Emergency Triage | Emergency Nurse, Doctor, Admin | Emergency Intake, Triage (Red/Yellow/Green), Vitals, Admit, Discharge | `emergency_admissions`, `triage_records` | Server Actions / Client Handlers | IPD Bed Matrix, Emergency Billing | Red priority ranks top |
+| `/app/ipd` | Inpatient Department Admissions | Ward Nurse, Doctor, Admin | Admit Patient, Assign Bed, Daily Care, Order Lab/OT, Discharge | `ipd_admissions`, `beds`, `bed_assignments` | `admitPatientAction`, `dischargePatientAction` | Bed Matrix, IPD Billing Charges | Mandatory discharge diagnosis |
+| `/app/beds` | Bed & Cabin Occupancy Grid | Ward Nurse, Admin, Cashier | Create Bed, Edit Tariff, Set Availability, Transfer Bed, Maintenance | `beds`, `bed_categories` | `createBedAction`, `transferBedAction` | IPD Admissions, Billing Charges | Atomic release/occupy transfer |
+| `/app/ot` | Operation Theatre Management | Surgeon, Anesthetist, Admin | Schedule Surgery, Confirm Booking, Start Procedure, Complete, Cancel | `ot_bookings`, `ot_rooms` | `createOtBookingAction`, `updateOtBookingAction` | IPD Charges, Patient Timeline | Prevents room/time overlaps |
+| `/app/lab` | Diagnostic Laboratory Console | Lab Tech, Pathologist, Doctor | View Worklist, Collect Sample (Barcode), Input Results, Finalize & Publish | `lab_orders`, `lab_results` | `createLabOrderAction`, `publishLabResultAction` | Patient EMR, Doctor View, Billing | Immutable finalized results |
+| `/app/pharmacy` | Pharmacy Stock & POS Sales | Pharmacist, Cashier, Admin | Receive Stock, Batch Entry, FEFO Dispense, POS Direct Sale, Void Sale | `pharmacy_sales`, `stock_ledger`, `batches` | `createPharmacySaleAction`, `addMedicineStockAction` | Stock Inventory, Billing Due Ledger | FEFO batch enforcement |
+| `/app/billing` | Billing Desk & Invoice Master | Cashier, Accountant, Admin | Create Invoice, Add Charges, Apply Discount, Collect Payment, Refund, Void | `invoices`, `payments`, `invoice_items` | `createInvoiceAction`, `recordPaymentAction` | Financial Ledger, Due Reports, Audit | Server-authoritative totals |
+| `/app/hr` | Staff & Biometric Attendance | HR Manager, Admin | Add Employee, Assign Shift, Record Software Attendance, Payroll | `employees`, `attendance_records` | `createEmployeeAction`, `recordAttendanceAction` | HR Directory, Audit Vault | Software-side (Hardware note) |
+| `/app/reports` | Financial & Operational Reports | Executive, Management, Admin | Filter Daily Revenue, OPD, IPD, Lab, Pharmacy, Discounts, Refunds | Derived from `invoices`, `payments`, `pharmacy_sales` | Server Side SQL Aggregation | Financial Auditing | Derived from real DB rows |
+| `/app/settings` | System Settings & Forensic Audit | System Admin, Super Admin | Configure Hospital Profile, Master Tariffs, Discount Rules, View Audit Diffs | `hospital_settings`, `audit_logs` | `recordAuditLog`, Client Handlers | System-Wide Configuration | Forensic Before/After inspector |

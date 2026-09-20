@@ -1,0 +1,165 @@
+name: OHMS CI Quality, Security & Desktop Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Typecheck, Lint, Audit, Test & Build
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://mock-ci-project.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_mock_ci_anon_key_for_hermetic_build' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create CI environment file
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://mock-ci-project.supabase.co' }}" >> .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_mock_ci_anon_key_for_hermetic_build' }}" >> .env.local
+
+      - name: TypeScript strict typecheck
+        run: npm run typecheck
+
+      - name: ESLint zero-warning gate
+        run: npx eslint . --max-warnings 0
+
+      - name: Security audit for high/critical vulnerabilities
+        run: npm audit --audit-level=high
+
+      - name: Node unit & integration test suite
+        run: npm test
+
+      - name: Next.js static production export
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run Playwright E2E tests
+        run: npm run test:e2e
+
+  live-security-test:
+    name: Dedicated Staging Live Security Test
+    runs-on: ubuntu-latest
+    needs: validate
+    env:
+      OHMS_TEST_SUPABASE_URL: ${{ secrets.OHMS_TEST_SUPABASE_URL }}
+      OHMS_TEST_SERVICE_ROLE_KEY: ${{ secrets.OHMS_TEST_SERVICE_ROLE_KEY }}
+      OHMS_TEST_PUBLISHABLE_KEY: ${{ secrets.OHMS_TEST_PUBLISHABLE_KEY }}
+    steps:
+      - name: Checkout repository
+        if: env.OHMS_TEST_SUPABASE_URL != '' && env.OHMS_TEST_SERVICE_ROLE_KEY != ''
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        if: env.OHMS_TEST_SUPABASE_URL != '' && env.OHMS_TEST_SERVICE_ROLE_KEY != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: env.OHMS_TEST_SUPABASE_URL != '' && env.OHMS_TEST_SERVICE_ROLE_KEY != ''
+        run: npm ci
+
+      - name: Execute Authenticated Cross-Tenant Live Suite
+        if: env.OHMS_TEST_SUPABASE_URL != '' && env.OHMS_TEST_SERVICE_ROLE_KEY != ''
+        env:
+          RUN_LIVE_SUPABASE_TESTS: "true"
+        run: node --test tests/live/authenticated-cross-tenant.live.test.mjs
+
+      - name: Notice when staging credentials are not provided
+        if: env.OHMS_TEST_SUPABASE_URL == '' || env.OHMS_TEST_SERVICE_ROLE_KEY == ''
+        run: echo "Dedicated non-production staging secrets are not configured in GitHub repository. Live security suite skipped safely."
+
+  tauri-windows-build:
+    name: Tauri Windows Desktop Build
+    runs-on: windows-latest
+    needs: validate
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://mock-ci-project.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_mock_ci_anon_key_for_hermetic_build' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Next.js static production export
+        run: npm run build
+
+      - name: Install WiX Toolset & NSIS
+        shell: powershell
+        run: |
+          choco install wixtoolset nsis --allow-downgrade --no-progress
+          $wixPath = (Get-ChildItem "C:\Program Files (x86)\WiX Toolset*" -ErrorAction SilentlyContinue | Select-Object -Last 1).FullName
+          if ($wixPath) {
+            Write-Host "Adding $wixPath\bin to GITHUB_PATH"
+            "$wixPath\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            "WIX=$wixPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
+      - name: Build Tauri Desktop Executable and Installer Bundles
+        run: npx tauri build --ci
+
+      - name: Validate Generated Desktop and Installer Artifacts
+        shell: powershell
+        run: |
+          $exe = Get-Item "src-tauri/target/release/*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          $msi = Get-Item "src-tauri/target/release/bundle/msi/*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
+          $nsis = Get-Item "src-tauri/target/release/bundle/nsis/*-setup.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+
+          if (-not $exe -or $exe.Length -eq 0) {
+            Write-Error "CRITICAL: Release executable is missing or zero bytes!"
+            exit 1
+          }
+          if (-not $msi -or $msi.Length -eq 0) {
+            Write-Error "CRITICAL: MSI installer bundle is missing or zero bytes!"
+            exit 1
+          }
+          if (-not $nsis -or $nsis.Length -eq 0) {
+            Write-Error "CRITICAL: NSIS setup installer bundle is missing or zero bytes!"
+            exit 1
+          }
+
+          Write-Host "Artifact Validation Passed:"
+          Write-Host "  • Desktop Executable: $($exe.Name) ($($exe.Length) bytes)"
+          Write-Host "  • MSI Installer:      $($msi.Name) ($($msi.Length) bytes)"
+          Write-Host "  • NSIS Setup:         $($nsis.Name) ($($nsis.Length) bytes)"
+
+      - name: Upload Windows Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-windows-desktop
+          path: |
+            src-tauri/target/release/*.exe
+            src-tauri/target/release/bundle/
+          if-no-files-found: error
