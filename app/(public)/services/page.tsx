@@ -35,7 +35,7 @@ export default function ServicesPage() {
             Comprehensive Hospital & Laboratory Services
           </h1>
           <p className="text-sm text-slate-600 mt-2">
-            Modern high-resolution imaging, automated biochemistry testing, fully equipped ICUs, and 24-hour trauma care.
+            Modern diagnostic imaging, automated pathology investigations, inpatient wards, and round-the-clock emergency casualty triage.
           </p>
         </div>
 
@@ -49,34 +49,34 @@ export default function ServicesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                title: "24/7 Emergency & Critical Care",
-                desc: "Equipped with defibrillators, crash carts, cardiac monitors, and emergency medical officers on duty round the clock.",
-                points: ["Immediate Trauma Care", "Cardiac Emergency Stabilization", "Dedicated Emergency OT & Triage"],
+                title: "24/7 Emergency & Casualty Triage",
+                desc: "Equipped with cardiac monitors, emergency resuscitation equipment, and duty medical officers available for acute care.",
+                points: ["Immediate Trauma Triage", "Emergency Patient Stabilization", "24/7 Casualty Reception"],
               },
               {
-                title: "Intensive Care Unit (ICU & CCU)",
-                desc: "Advanced multipara monitors, invasive/non-invasive mechanical ventilators, central oxygen supply, and 1:1 nurse-to-patient ratio.",
-                points: ["Centralized Monitoring", "High-flow Nasal Cannula", "Post-Surgical Critical Support"],
+                title: "Inpatient Observation & Step-Down Care",
+                desc: "Multipara patient monitors, oxygen support facilities, and close nursing supervision for post-procedure recovery.",
+                points: ["Continuous Vitals Monitoring", "Oxygen Delivery Support", "Post-Procedure Recovery Care"],
               },
               {
-                title: "Maternity & Neonatal Care (NICU)",
-                desc: "Modern labor delivery recovery suites, painless normal delivery options, phototherapy units, and neonatal incubators.",
-                points: ["Experienced Female Obstetricians", "Advanced NICU Incubators", "24/7 Emergency Cesarean Section"],
+                title: "Maternity & Neonatal Health",
+                desc: "Dedicated labor and delivery suites, newborn phototherapy equipment, and post-natal maternal consultation.",
+                points: ["Obstetric Specialist Consultations", "Newborn Care Support", "Post-Delivery Patient Care"],
               },
               {
-                title: "Modern Modular Operation Theater (OT)",
-                desc: "Laminar air-flow system with HEPA filtration, state-of-the-art anesthesia workstations, and high-definition laparoscopy towers.",
-                points: ["Laparoscopic Cholecystectomy", "General & Orthopedic Trauma Surgery", "Sterile Infection-Controlled Zones"],
+                title: "Surgical Operation Theatres (OT)",
+                desc: "Equipped operating rooms with sterile infection control protocols and standard surgical monitoring systems.",
+                points: ["General Surgery Procedures", "Orthopedic Trauma Support", "Sterile Surgical Environment"],
               },
               {
-                title: "Cardiology & Non-Invasive Cardiac Lab",
-                desc: "Comprehensive diagnostic assessment for hypertension, ischemic heart disease, heart failure, and rhythm disorders.",
-                points: ["12-Lead Digital ECG", "2D Color Doppler Echo", "24/7 Acute Coronary Syndromes Care"],
+                title: "Cardiology & Non-Invasive Investigations",
+                desc: "Diagnostic assessment for hypertension, cardiac rhythm evaluation, and outpatient heart health consultation.",
+                points: ["12-Lead Digital ECG", "Echocardiography Services", "Hypertension Clinical Review"],
               },
               {
-                title: "Inpatient Wards, Cabins & Suite Rooms",
-                desc: "Hygienic general wards, AC/Non-AC semi-private cabins, and deluxe suites with dedicated nursing call systems.",
-                points: ["Central Medical Gas Pipeline", "Nutritious Inpatient Diet Plans", "Round-the-clock Resident Doctors"],
+                title: "Inpatient Wards & Cabins",
+                desc: "Hygienic general inpatient wards, AC and non-AC patient cabins with dedicated nursing attention.",
+                points: ["Piped Medical Gas Supply", "Dietary Planning Support", "Daily Inpatient Ward Rounds"],
               },
             ].map((srv, idx) => (
               <div key={idx} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
@@ -106,7 +106,7 @@ export default function ServicesPage() {
                 Laboratory & Diagnostic Investigation Rates
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Official DGHS-standard pathology and digital imaging tariff schedule.
+                Published diagnostic pathology and digital imaging investigation tariff schedule.
               </p>
             </div>
             <Link

@@ -4,11 +4,19 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.pages.dev https://onneshahospital.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.pages.dev https://onneshahospital.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 
 /app/*
-  Cache-Control: no-store, no-cache, must-revalidate
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate
   X-Robots-Tag: noindex, nofollow, noarchive
 
 /login
+  Cache-Control: no-store, no-cache, must-revalidate
   X-Robots-Tag: noindex, nofollow
+
+/mfa
+  Cache-Control: no-store, no-cache, must-revalidate
+  X-Robots-Tag: noindex, nofollow
+
+/downloads/desktop/latest.json
+  Cache-Control: no-cache, no-store, must-revalidate

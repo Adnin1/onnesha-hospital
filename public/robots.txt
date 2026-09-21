@@ -2,20 +2,24 @@ User-agent: *
 Allow: /
 Allow: /about
 Allow: /services
-Allow: /departments
 Allow: /doctors
 Allow: /appointment
-Allow: /diagnostic
 Allow: /check-token
 Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /consent
+Allow: /downloads/desktop
 Allow: /llms.txt
 
-# Protect internal hospital operating system from search engine indexing
+# Disallow internal hospital operating system and administrative auth paths from indexing
 Disallow: /app/
 Disallow: /login
-Disallow: /auth/
+Disallow: /mfa
+Disallow: /forgot-password
+Disallow: /reset-password
 
-# AI Search & RAG Crawlers
+# AI Search & Indexing Crawlers
 User-agent: GPTBot
 Allow: /
 Allow: /llms.txt

@@ -30,7 +30,7 @@ interface QueueItem {
   id: string;
   doctor_name: string;
   room_number: string;
-  patient_name: string;
+  patient_name?: string;
   token_number: string;
   status: "waiting" | "calling" | "serving" | "done" | "skipped";
 }
@@ -203,10 +203,10 @@ export default function HomePage() {
             </div>
             <div>
               <h2 className="font-bold text-sm sm:text-base tracking-wide">
-                24-Hour Emergency, Trauma & Cardiac Resuscitation Care
+                24-Hour Emergency & Casualty Triage Care
               </h2>
               <p className="text-xs text-white/95">
-                Specialist emergency medical officers, ICU support, and cardiac life support available right now.
+                Duty medical officers, acute patient stabilization, and casualty triage facilities available round the clock.
               </p>
             </div>
           </div>
@@ -453,7 +453,7 @@ export default function HomePage() {
                 রোগীর ব্যক্তিগত ও মেডিকেল তথ্যের নিরাপত্তা কীভাবে নিশ্চিত হয়?
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                রোগীদের প্রেসক্রিপশন ও ডায়াগনস্টিক রিপোর্ট এন্টারপ্রাইজ গ্রেড PostgreSQL Row-Level Security (RLS) এবং HTTPS/TLS ইন-ট্রানজিট এনক্রিপশনের মাধ্যমে সংরক্ষিত। অনুমোদিত ডাক্তার ও অনুমোদিত হাসপাতাল স্টাফ ব্যতীত তৃতীয় কোনো পক্ষ এই তথ্যে অ্যাক্সেস করতে পারে না।
+                রোগীদের প্রেসক্রিপশন ও ডায়াগনস্টিক রিপোর্ট PostgreSQL Row-Level Security (RLS) অ্যাক্সেস কন্ট্রোল এবং নিরাপদ HTTPS প্রোটোকলের মাধ্যমে পরিচালিত। অনুমোদিত ডাক্তার ও সংশ্লিষ্ট হাসপাতাল স্টাফ ব্যতীত তৃতীয় কোনো পক্ষ এই তথ্যে অ্যাক্সেস করতে পারে না।
               </p>
             </div>
 

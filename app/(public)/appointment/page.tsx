@@ -44,8 +44,8 @@ export default function AppointmentBookingPage() {
   // Patient Info Form
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [age, setAge] = useState("30");
-  const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER" | "">("");
   const [guardianName, setGuardianName] = useState("");
   const notes = "";
 
@@ -104,21 +104,22 @@ export default function AppointmentBookingPage() {
   const handleBookAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !phone.trim() || !selectedScheduleId) {
-      alert("Please select a published schedule slot, patient name, and contact phone number.");
+      setBookingError("Please select a published schedule slot, patient name, and contact phone number.");
       return;
     }
 
     setBookingLoading(true);
     setBookingError(null);
 
+    const parsedAge = age.trim() ? parseInt(age, 10) : undefined;
     const res = await bookOnlineAppointmentAction({
       doctorId: selectedDoctor?.id || selectedDoctorId,
       scheduleId: selectedScheduleId,
       appointmentDate,
       patientName: fullName.trim(),
       patientPhone: phone.trim(),
-      patientGender: gender,
-      patientAge: parseInt(age, 10) || undefined,
+      patientGender: (gender as "MALE" | "FEMALE" | "OTHER") || "OTHER",
+      patientAge: isNaN(parsedAge as number) ? undefined : parsedAge,
       notes: notes || (guardianName ? `Guardian: ${guardianName}` : undefined),
     });
 
@@ -392,7 +393,7 @@ export default function AppointmentBookingPage() {
                   className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
                 />
                 <p className="text-[10px] text-slate-500 mt-0.5">
-                  Your Token and chamber room SMS will be sent to this number.
+                  Used for hospital registration and queue identification.
                 </p>
               </div>
 
@@ -403,8 +404,9 @@ export default function AppointmentBookingPage() {
                 <input
                   type="number"
                   required
-                  min="1"
-                  max="120"
+                  min="0"
+                  max="125"
+                  placeholder="e.g. 28"
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
                   className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
@@ -416,13 +418,15 @@ export default function AppointmentBookingPage() {
                   Gender *
                 </label>
                 <select
+                  required
                   value={gender}
-                  onChange={(e) => setGender(e.target.value as "MALE" | "FEMALE" | "OTHER")}
+                  onChange={(e) => setGender(e.target.value as "MALE" | "FEMALE" | "OTHER" | "")}
                   className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
                 >
+                  <option value="">Select Gender</option>
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
-                  <option value="OTHER">Other</option>
+                  <option value="OTHER">Other / Prefer not to say</option>
                 </select>
               </div>
 
@@ -546,13 +550,13 @@ export default function AppointmentBookingPage() {
                 </div>
               </div>
 
-              {/* SMS Notification Banner */}
+              {/* Token Confirmation Notice */}
               <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg flex items-start space-x-2 text-xs text-sky-900 my-4 no-print">
                 <MessageSquare className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold">SMS Dispatched: </span>
+                  <span className="font-bold">Important Patient Notice: </span>
                   <span>
-                    &quot;Onnesha Hospital: Your appointment with {confirmedData.doctorName} is confirmed. Token: #{confirmedData.tokenNumber}. Chamber: {confirmedData.roomNumber}.&quot;
+                    Please arrive 15 minutes before your scheduled slot. Present this token number (#{confirmedData.tokenNumber}) at the reception counter or room {confirmedData.roomNumber}.
                   </span>
                 </div>
               </div>

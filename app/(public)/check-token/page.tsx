@@ -9,7 +9,7 @@ interface QueueItem {
   id: string;
   doctor_name: string;
   room_number: string;
-  patient_name: string;
+  patient_name?: string;
   token_number: string;
   status: "waiting" | "calling" | "serving" | "done" | "skipped";
   called_at?: string;
@@ -219,7 +219,7 @@ export default function CheckTokenPage() {
                     </div>
 
                     <div className="text-[11px] text-slate-400 flex justify-between items-center">
-                      <span>Patient: {item.patient_name}</span>
+                      <span className="text-emerald-400 font-medium">● Chamber Active</span>
                       {item.called_at && (
                         <span className="font-mono text-slate-500">{item.called_at}</span>
                       )}

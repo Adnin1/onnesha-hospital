@@ -106,22 +106,22 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800">Service Hours</h3>
-                  <p className="text-slate-600 mt-0.5">Emergency, ICU, Pharmacy, Diagnostics: 24/7</p>
+                  <p className="text-slate-600 mt-0.5">Emergency & Diagnostic Services: 24/7</p>
                   <p className="text-slate-500 text-[11px]">Specialist OPD: 09:00 AM – 10:00 PM Daily</p>
                 </div>
               </div>
             </div>
 
-            {/* Cloud & Digital Architecture Card */}
+            {/* Digital Platform Card */}
             <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-xs text-xs space-y-2.5 border border-slate-800">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-200">ক্লাউড অবকাঠামো ও নিরাপত্তা</span>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded">
-                  Dedicated Cloud
+                <span className="font-bold text-slate-200">ডিজিটাল সেবা ও সুরক্ষা</span>
+                <span className="text-[10px] bg-sky-500/20 text-sky-300 font-semibold px-2 py-0.5 rounded">
+                  Cloud Platform
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                অনলাইন ওপিডি ও ইএমআর প্ল্যাটফর্মটি উচ্চগতির সুরক্ষিত ক্লাউড আর্কিটেকচারে পরিচালিত। রোগীর ডেটা এনক্রিপশন ও ২৪/৭ সিস্টেম মনিটরিং নিশ্চিত করা হয়।
+                অনলাইন ওপিডি ও স্বাস্থ্য ইনকোয়ারি প্ল্যাটফর্মটি আধুনিক ওয়েব প্রযুক্তির মাধ্যমে পরিচালিত। রোগীর ডেটা সুরক্ষিত অ্যাক্সেস কন্ট্রোল ও অডিট লগিংয়ের মাধ্যমে সংরক্ষিত থাকে।
               </p>
             </div>
           </div>
@@ -133,7 +133,7 @@ export default function ContactPage() {
                 Send Us an Online Inquiry
               </h2>
               <p className="text-xs text-slate-500 mb-6">
-                Have questions about doctors, lab reports, or health packages? Leave a message.
+                Have questions about doctors, lab reports, or hospital services? Leave a message.
               </p>
 
               {submitted ? (
@@ -154,9 +154,9 @@ export default function ContactPage() {
                       setSubject("");
                       setMessage("");
                     }}
-                    className="mt-2 text-xs font-semibold text-emerald-700 hover:underline"
+                    className="mt-2 text-xs text-emerald-700 hover:text-emerald-900 font-semibold underline"
                   >
-                    Send another inquiry →
+                    Send Another Message
                   </button>
                 </div>
               ) : (
@@ -176,6 +176,7 @@ export default function ContactPage() {
                       <input
                         type="text"
                         required
+                        maxLength={120}
                         placeholder="e.g. Tariqul Islam"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -189,6 +190,7 @@ export default function ContactPage() {
                       <input
                         type="tel"
                         required
+                        maxLength={15}
                         placeholder="017XXXXXXXX"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
@@ -204,6 +206,7 @@ export default function ContactPage() {
                       </label>
                       <input
                         type="email"
+                        maxLength={150}
                         placeholder="user@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -217,6 +220,7 @@ export default function ContactPage() {
                       <input
                         type="text"
                         required
+                        maxLength={150}
                         placeholder="e.g. Doctor Availability / Lab Report Inquiry"
                         value={subject}
                         onChange={(e) => setSubject(e.target.value)}
@@ -226,13 +230,20 @@ export default function ContactPage() {
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Your Message / Inquiry *
-                    </label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block font-semibold text-slate-700">
+                        Your Message / Inquiry *
+                      </label>
+                      <span className="text-[10px] text-slate-400">
+                        {message.length} / 2000
+                      </span>
+                    </div>
                     <textarea
                       rows={4}
                       required
-                      placeholder="Write your detailed medical inquiry or feedback..."
+                      minLength={10}
+                      maxLength={2000}
+                      placeholder="Write your detailed medical inquiry or feedback (minimum 10 characters)..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"

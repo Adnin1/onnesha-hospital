@@ -5,7 +5,8 @@ export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = SITE_CONFIG.canonicalUrl;
-  const lastModified = new Date();
+  // Stable release audit timestamp to avoid false daily churn on build
+  const releaseLastModified = new Date("2026-09-21T00:00:00.000Z");
 
   // Strictly include only public, indexable marketing & patient-facing portals
   // NEVER include private internal clinical routes or administrative login endpoints
@@ -25,7 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return publicRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
-    lastModified,
+    lastModified: releaseLastModified,
     changeFrequency: route === "" || route === "/appointment" || route === "/check-token" ? "daily" : "weekly",
     priority: route === "" ? 1.0 : route === "/appointment" || route === "/doctors" ? 0.9 : 0.7,
   }));

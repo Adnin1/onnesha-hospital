@@ -283,8 +283,26 @@ export async function bookOnlineAppointmentAction(params: {
 }): Promise<PublicBookingResult> {
   const { doctorId, scheduleId, appointmentDate, patientName, patientPhone, patientGender, patientAge, notes } = params;
 
-  if (!doctorId || !scheduleId || !appointmentDate || !patientName || !patientPhone) {
+  if (!doctorId || !scheduleId || !appointmentDate || !patientName?.trim() || !patientPhone?.trim()) {
     return { success: false, error: "Doctor, published schedule slot, appointment date, patient name, and valid phone are required." };
+  }
+
+  const trimmedName = patientName.trim();
+  if (trimmedName.length < 2 || trimmedName.length > 120) {
+    return { success: false, error: "Patient name must be between 2 and 120 characters." };
+  }
+
+  if (patientAge !== undefined && (patientAge < 0 || patientAge > 125 || isNaN(patientAge))) {
+    return { success: false, error: "Please enter a valid age between 0 and 125 years." };
+  }
+
+  if (notes && notes.length > 500) {
+    return { success: false, error: "Notes cannot exceed 500 characters." };
+  }
+
+  const today = getDhakaDateString();
+  if (appointmentDate < today) {
+    return { success: false, error: "Cannot book appointments for past dates." };
   }
 
   const normalizedPhone = normalizeBDPhone(patientPhone);
@@ -301,10 +319,10 @@ export async function bookOnlineAppointmentAction(params: {
       p_doctor_id: doctorId,
       p_schedule_id: scheduleId,
       p_appointment_date: appointmentDate,
-      p_patient_name: patientName.trim(),
+      p_patient_name: trimmedName,
       p_patient_phone: normalizedPhone,
       p_patient_gender: patientGender || "OTHER",
-      p_patient_age: patientAge || null,
+      p_patient_age: patientAge ?? null,
       p_notes: notes || null,
     });
 
@@ -344,6 +362,7 @@ export async function bookOnlineAppointmentAction(params: {
 
 /**
  * 4. Submit Public Contact / Enquiry Inquiry
+ * Calls rate-limited and validated PostgreSQL RPC submit_public_contact_inquiry
  */
 export async function submitContactInquiryAction(params: {
   name: string;
@@ -354,29 +373,57 @@ export async function submitContactInquiryAction(params: {
 }): Promise<{ success: boolean; error?: string }> {
   const { name, phone, email, subject, message } = params;
 
-  if (!name.trim() || !phone.trim() || !message.trim()) {
+  const trimmedName = (name || "").trim();
+  const trimmedPhone = (phone || "").trim();
+  const trimmedSubject = (subject || "General Hospital Enquiry").trim();
+  const trimmedMessage = (message || "").trim();
+
+  if (!trimmedName || !trimmedPhone || !trimmedMessage) {
     return { success: false, error: "Name, contact phone, and message are required." };
   }
 
-  const cleanPhone = normalizeBDPhone(phone);
+  if (trimmedName.length < 2 || trimmedName.length > 120) {
+    return { success: false, error: "Name must be between 2 and 120 characters." };
+  }
+
+  const cleanPhone = normalizeBDPhone(trimmedPhone);
   if (!isValidNormalizedBDPhone(cleanPhone)) {
-    return { success: false, error: "Please provide a valid 11-digit Bangladeshi contact number." };
+    return { success: false, error: "Please provide a valid 11-digit Bangladeshi contact number (013-019)." };
+  }
+
+  if (email && email.trim()) {
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailRegex.test(email.trim()) || email.trim().length > 150) {
+      return { success: false, error: "Please enter a valid email address." };
+    }
+  }
+
+  if (trimmedMessage.length < 10) {
+    return { success: false, error: "Message must be at least 10 characters long." };
+  }
+
+  if (trimmedMessage.length > 2000) {
+    return { success: false, error: "Message cannot exceed 2,000 characters." };
   }
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase.from("public_contact_inquiries").insert({
-      organization_id: HOSPITAL_METADATA.id,
-      name: name.trim(),
-      phone: cleanPhone,
-      email: email?.trim() || null,
-      subject: subject.trim() || "General Hospital Enquiry",
-      message: message.trim(),
-      status: "NEW",
+    const { data, error } = await supabase.rpc("submit_public_contact_inquiry", {
+      p_org_id: HOSPITAL_METADATA.id,
+      p_name: trimmedName,
+      p_phone: cleanPhone,
+      p_email: email?.trim() || null,
+      p_subject: trimmedSubject.slice(0, 150),
+      p_message: trimmedMessage,
     });
 
     if (error) {
       return { success: false, error: error.message };
+    }
+
+    const res = typeof data === "string" ? JSON.parse(data) : data;
+    if (res && res.success === false) {
+      return { success: false, error: res.error || "Submission rejected." };
     }
 
     return { success: true };
@@ -388,6 +435,7 @@ export async function submitContactInquiryAction(params: {
 
 /**
  * 5. Fetch Live Waiting Queue Status for Display Boards & Token Verification
+ * Uses authoritative database RPC get_public_live_queue with zero PII exposure.
  */
 export async function getLiveWaitingQueueAction(): Promise<{
   success: boolean;
@@ -395,7 +443,7 @@ export async function getLiveWaitingQueueAction(): Promise<{
     id: string;
     doctor_name: string;
     room_number: string;
-    patient_name: string;
+    patient_name?: string;
     token_number: string;
     status: "waiting" | "calling" | "serving" | "done" | "skipped";
     called_at?: string;
@@ -404,74 +452,36 @@ export async function getLiveWaitingQueueAction(): Promise<{
 }> {
   try {
     const supabase = await createClient();
-    const today = getDhakaDateString();
 
-    const { data, error } = await supabase
-      .from("appointments")
-      .select(`
-        id,
-        serial_number,
-        token_number,
-        status,
-        patient_name,
-        created_at,
-        doctors(id, full_name, room_number)
-      `)
-      .eq("organization_id", HOSPITAL_METADATA.id)
-      .eq("appointment_date", today)
-      .in("status", ["WAITING", "SCHEDULED", "CONFIRMED", "IN_CONSULTATION", "IN_CHAMBER", "COMPLETED"])
-      .order("token_number", { ascending: true })
-      .limit(30);
+    // Call server-side secure projection RPC
+    const { data, error } = await supabase.rpc("get_public_live_queue", {
+      p_org_id: HOSPITAL_METADATA.id,
+    });
 
     if (error) {
       return { success: false, queue: [], error: error.message };
     }
 
-    interface AptRow {
+    interface QueueRow {
       id: string;
-      serial_number?: number;
-      token_number?: number;
-      status: string;
-      patient_name?: string;
-      created_at?: string;
-      doctors?: { id: string; full_name: string; room_number: string } | null;
+      doctor_name: string;
+      room_number: string;
+      token_number: string;
+      status: "waiting" | "calling" | "serving" | "done" | "skipped";
+      called_at?: string;
     }
 
-    const rows = (data || []) as unknown as AptRow[];
-    const queue = rows
-      .map((r) => {
-        const tkn = r.token_number || r.serial_number;
-        if (!tkn) return null;
+    const res = typeof data === "string" ? JSON.parse(data) : data;
+    const rawQueue = (res?.queue || []) as QueueRow[];
 
-        let qStatus: "waiting" | "calling" | "serving" | "done" | "skipped" = "waiting";
-        if (r.status === "IN_CONSULTATION" || r.status === "IN_CHAMBER") {
-          qStatus = "serving";
-        } else if (r.status === "CONFIRMED") {
-          qStatus = "calling";
-        } else if (r.status === "COMPLETED") {
-          qStatus = "done";
-        } else if (r.status === "WAITING" || r.status === "SCHEDULED") {
-          qStatus = "waiting";
-        }
-
-        // Mask patient name for public screen privacy: e.g. "Md. Tariqul" -> "Md. T***"
-        const nameParts = (r.patient_name || "Patient").trim().split(" ");
-        const maskedName =
-          nameParts.length > 1
-            ? `${nameParts[0]} ${nameParts[1][0]}***`
-            : `${nameParts[0].slice(0, 2)}***`;
-
-        return {
-          id: r.id,
-          doctor_name: r.doctors?.full_name || "",
-          room_number: r.doctors?.room_number || "",
-          patient_name: maskedName,
-          token_number: `#${tkn}`,
-          status: qStatus,
-          called_at: r.created_at ? new Date(r.created_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : undefined,
-        };
-      })
-      .filter((q): q is NonNullable<typeof q> => q !== null);
+    const queue = rawQueue.map((item) => ({
+      id: item.id,
+      doctor_name: item.doctor_name,
+      room_number: item.room_number,
+      token_number: item.token_number,
+      status: item.status,
+      called_at: item.called_at,
+    }));
 
     return { success: true, queue };
   } catch (err: unknown) {

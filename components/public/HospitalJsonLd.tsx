@@ -18,20 +18,22 @@ export function HospitalJsonLd() {
       "streetAddress": HOSPITAL_METADATA.address,
       "addressCountry": "BD"
     } : undefined,
-    "openingHoursSpecification": {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday"
-      ],
-      "opens": "00:00",
-      "closes": "23:59"
-    },
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ],
+        "opens": "08:00",
+        "closes": "22:00"
+      }
+    ],
     "hasOfferCatalog": {
       "@type": "OfferCatalog",
       "name": "Clinical Healthcare & Diagnostic Services",
@@ -47,21 +49,21 @@ export function HospitalJsonLd() {
           "@type": "Offer",
           "itemOffered": {
             "@type": "MedicalService",
-            "name": "24/7 Trauma Emergency Care & Casualty Triage"
+            "name": "Emergency Medical Triage & First Response"
           }
         },
         {
           "@type": "Offer",
           "itemOffered": {
             "@type": "MedicalService",
-            "name": "Intensive Care Unit (ICU / CCU / NICU)"
+            "name": "Diagnostic Pathology & Digital Imaging"
           }
         },
         {
           "@type": "Offer",
           "itemOffered": {
             "@type": "MedicalService",
-            "name": "Automated Pathology & Digital Radiology"
+            "name": "Inpatient Medical Care & General Wards"
           }
         }
       ]
