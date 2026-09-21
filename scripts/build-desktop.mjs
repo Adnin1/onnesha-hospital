@@ -121,7 +121,9 @@ buildProcess.on("close", (code) => {
   if (fs.existsSync(manifestPath)) {
     try {
       manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-    } catch (_) {}
+    } catch {
+      // ignore invalid json and reinitialize
+    }
   }
   manifest.version = version;
   manifest.pub_date = new Date().toISOString();
