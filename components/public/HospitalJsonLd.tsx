@@ -1,5 +1,6 @@
 import React from "react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
+import { SITE_CONFIG } from "@/config/site";
 
 export function HospitalJsonLd() {
   const structuredData = {
@@ -7,19 +8,16 @@ export function HospitalJsonLd() {
     "@type": "Hospital",
     "name": HOSPITAL_METADATA.name,
     "alternateName": HOSPITAL_METADATA.banglaName,
-    "url": "https://onneshahospital.com",
-    "logo": "https://onneshahospital.com/logo.png",
-    "telephone": HOSPITAL_METADATA.phone,
-    "emergencyTelephone": HOSPITAL_METADATA.emergencyHotline,
-    "email": HOSPITAL_METADATA.email,
-    "address": {
+    "url": SITE_CONFIG.canonicalUrl,
+    "logo": `${SITE_CONFIG.canonicalUrl}/logo.png`,
+    "telephone": HOSPITAL_METADATA.phone || undefined,
+    "emergencyTelephone": HOSPITAL_METADATA.emergencyHotline || undefined,
+    "email": HOSPITAL_METADATA.email || undefined,
+    "address": HOSPITAL_METADATA.address ? {
       "@type": "PostalAddress",
-      "streetAddress": "Hospital Road, Main Bazar",
-      "addressLocality": "Dhaka",
-      "addressRegion": "Dhaka Division",
-      "postalCode": "1200",
+      "streetAddress": HOSPITAL_METADATA.address,
       "addressCountry": "BD"
-    },
+    } : undefined,
     "openingHoursSpecification": {
       "@type": "OpeningHoursSpecification",
       "dayOfWeek": [

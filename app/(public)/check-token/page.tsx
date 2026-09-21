@@ -68,7 +68,7 @@ export default function CheckTokenPage() {
             Chamber Token Status & Display
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Realtime updates directly synced with doctor consultation rooms.
+            Auto-refreshing every 15s directly synced with doctor consultation rooms.
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export default function CheckTokenPage() {
           >
             <input
               type="text"
-              placeholder="Enter your token (e.g. A-012, B-007)..."
+              placeholder="Enter your token number (e.g. 101, A-01)..."
               value={searchToken}
               onChange={(e) => setSearchToken(e.target.value)}
               className="grow bg-transparent px-3 text-xs text-white placeholder-slate-400 focus:outline-hidden uppercase font-mono"

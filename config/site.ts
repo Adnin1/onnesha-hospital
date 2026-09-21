@@ -1,0 +1,39 @@
+/**
+ * Onnesha Hospital Management & Enterprise Resource Planning System (OHMS ERP)
+ * Unified Site & Canonical Domain Configuration
+ * Single source of truth for SEO, metadata, canonical URLs, sitemaps, and robots.
+ */
+
+export const SITE_CONFIG = {
+  name: "Onnesha Hospital & Diagnostic Complex",
+  banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক কমপ্লেক্স",
+  shortName: "Onnesha Hospital",
+  description:
+    "Onnesha Hospital & Diagnostic Complex — Complete Healthcare Excellence, Online OPD Specialist Appointments, 24/7 Emergency, and Accurate Digital Diagnostics in Dhaka, Bangladesh.",
+  canonicalUrl: (process.env.NEXT_PUBLIC_SITE_URL || "https://onneshahospital.com").replace(/\/$/, ""),
+  deploymentUrl: "https://onnesha-hospital.pages.dev",
+  locale: "en_US",
+  defaultCurrency: "BDT",
+  currencySymbol: "৳",
+  timezone: "Asia/Dhaka",
+  links: {
+    home: "/",
+    about: "/about",
+    services: "/services",
+    doctors: "/doctors",
+    appointment: "/appointment",
+    checkToken: "/check-token",
+    contact: "/contact",
+    privacy: "/privacy",
+    terms: "/terms",
+    consent: "/consent",
+    desktopDownload: "/downloads/desktop",
+    login: "/login",
+    dashboard: "/app/dashboard",
+  },
+} as const;
+
+export function getAbsoluteUrl(path: string): string {
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${SITE_CONFIG.canonicalUrl}${cleanPath}`;
+}

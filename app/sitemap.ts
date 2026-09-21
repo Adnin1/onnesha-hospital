@@ -1,9 +1,10 @@
 import { MetadataRoute } from "next";
+import { SITE_CONFIG } from "@/config/site";
 
 export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://onneshahospital.com";
+  const baseUrl = SITE_CONFIG.canonicalUrl;
   const lastModified = new Date();
 
   // Strictly include only public, indexable marketing & patient-facing portals

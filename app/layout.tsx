@@ -3,9 +3,10 @@ import "./globals.css";
 import SwRegister from "@/components/app/SwRegister";
 import NetworkStatus from "@/components/app/NetworkStatus";
 import InstallPrompt from "@/components/app/InstallPrompt";
+import { SITE_CONFIG } from "@/config/site";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://onneshahospital.com"),
+  metadataBase: new URL(SITE_CONFIG.canonicalUrl),
   title: {
     default: "Onnesha Hospital & Diagnostic Complex | অন্বেষা হাসপাতাল",
     template: "%s | Onnesha Hospital",
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Onnesha Hospital & Diagnostic Complex | Modern Patient Care",
     description: "24/7 Modern Healthcare & Online OPD Specialist Booking. High-reliability digital healthcare system in Dhaka, Bangladesh.",
-    url: "https://onneshahospital.com",
+    url: SITE_CONFIG.canonicalUrl,
     siteName: "Onnesha Hospital",
     locale: "en_US",
     type: "website",
@@ -49,7 +50,7 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "MedicalOrganization",
   name: "Onnesha Hospital & Diagnostic Complex",
-  url: "https://onneshahospital.com",
+  url: SITE_CONFIG.canonicalUrl,
   description: "Modern Patient Care & Diagnostic Services in Dhaka, Bangladesh",
   serviceArea: {
     "@type": "AdministrativeArea",

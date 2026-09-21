@@ -136,8 +136,8 @@ export default function HomePage() {
                       Live Doctor Token Queue
                     </h2>
                   </div>
-                  <span className="text-xs bg-sky-100 text-sky-800 font-semibold px-2 py-0.5 rounded">
-                    Realtime
+                  <span className="text-[11px] bg-sky-100 text-sky-800 font-semibold px-2 py-0.5 rounded">
+                    Auto-refresh (15s)
                   </span>
                 </div>
 
@@ -376,15 +376,15 @@ export default function HomePage() {
                 Why Patients Trust Onnesha Hospital
               </h2>
               <p className="text-sm text-slate-600 mt-3 leading-relaxed">
-                We combine experienced clinical governance, hygienic inpatient facilities, and 100% transparent billing without hidden costs.
+                We combine experienced clinical governance, hygienic inpatient facilities, and clear itemized billing without hidden surcharges.
               </p>
 
               <div className="space-y-4 mt-6">
                 {[
-                  { title: "Zero Paperwork Waiting", desc: "Automated digital tokens, SMS updates to patient phones, and realtime display screens." },
-                  { title: "Advanced Diagnostic Lab", desc: "Fully automated biochemistry and hematology analyzers with same-day verified reports." },
-                  { title: "Transparent Billing & Receipts", desc: "Computer-generated thermal slips, detailed breakdown for every test and medicine, no surprises." },
-                  { title: "Clean & Spacious Inpatient Cabins", desc: "Air-conditioned VIP cabins, Deluxe rooms, and sterile post-operative wards with 24/7 dedicated nursing." },
+                  { title: "Digital OPD Token Management", desc: "Automated digital tokens, live waiting queue display screens, and electronic serial confirmation." },
+                  { title: "Clinical Diagnostic Laboratory", desc: "Biochemistry, hematology, and clinical pathology tests with consultant-verified diagnostic reports." },
+                  { title: "Transparent Itemized Billing", desc: "Computer-generated receipts, detailed breakdown for every test and medicine, with zero hidden surcharges." },
+                  { title: "Clean & Spacious Inpatient Cabins", desc: "Air-conditioned cabins, general beds, and post-operative wards with 24/7 dedicated nursing staff." },
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-start space-x-3">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
@@ -444,7 +444,7 @@ export default function HomePage() {
                 অনলাইন পোর্টালের ডাটাবেজ ও ক্লাউড অবকাঠামো কেমন?
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                অন্বেষা হাসপাতালের সম্পূর্ণ ডিজিটাল ওপিডি, আইপিডি ও প্যাথলজি সিস্টেম উচ্চক্ষমতাসম্পন্ন ক্লাউড ডাটাবেজ আর্কিটেকচারে পরিচালিত। রিয়েল-টাইম এনক্রিপশন ও স্বয়ংক্রিয় ব্যাকআপ ব্যবস্থার মাধ্যমে ডেটা সর্বদা সুরক্ষিত থাকে।
+                অন্বেষা হাসপাতালের সম্পূর্ণ ডিজিটাল ওপিডি, আইপিডি ও প্যাথলজি সিস্টেম উচ্চক্ষমতাসম্পন্ন ক্লাউড ডাটাবেজ আর্কিটেকচারে পরিচালিত। উচ্চগতির ক্যাশিং, এনক্রিপশন ইন-ট্রানজিট ও রোল-বেসড এক্সেস কন্ট্রোলের মাধ্যমে ডেটা সর্বদা সুরক্ষিত থাকে।
               </p>
             </div>
 
@@ -453,7 +453,7 @@ export default function HomePage() {
                 রোগীর ব্যক্তিগত ও মেডিকেল তথ্যের নিরাপত্তা কীভাবে নিশ্চিত হয়?
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                রোগীদের প্রেসক্রিপশন ও ডায়াগনস্টিক রিপোর্ট এন্টারপ্রাইজ গ্রেড PostgreSQL Row-Level Security (RLS) এবং এন্ড-টু-এন্ড এনক্রিপশনে সংরক্ষিত। অনুমোদিত ডাক্তার ও প্যাথলজিস্ট ব্যতীত তৃতীয় কোনো পক্ষ এই তথ্যে অ্যাক্সেস করতে পারে না।
+                রোগীদের প্রেসক্রিপশন ও ডায়াগনস্টিক রিপোর্ট এন্টারপ্রাইজ গ্রেড PostgreSQL Row-Level Security (RLS) এবং HTTPS/TLS ইন-ট্রানজিট এনক্রিপশনের মাধ্যমে সংরক্ষিত। অনুমোদিত ডাক্তার ও অনুমোদিত হাসপাতাল স্টাফ ব্যতীত তৃতীয় কোনো পক্ষ এই তথ্যে অ্যাক্সেস করতে পারে না।
               </p>
             </div>
 
@@ -462,7 +462,7 @@ export default function HomePage() {
                 অনলাইনে সিরিয়াল নেওয়ার পর কীভাবে কনফার্মেশন পাওয়া যায়?
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                অনলাইনে অ্যাপয়েন্টমেন্ট সম্পন্ন হওয়ার সাথে সাথে ডিজিটাল টোকেন নম্বর প্রদান করা হয় এবং রোগীর মোবাইল নম্বরে স্বয়ংক্রিয় এসএমএস পাঠানো হয়। হাসপাতালে পৌঁছানোর পর আর কোনো আলাদা সিরিয়াল টোকেন নেওয়ার প্রয়োজন হয় না।
+                অনলাইনে অ্যাপয়েন্টমেন্ট সম্পন্ন হওয়ার সাথে সাথে ডিজিটাল টোকেন নম্বর প্রদান করা হয় এবং কনফার্মেশন স্লিপ প্রিন্ট বা সেভ করে রাখা যায়। নির্ধারিত সময়ে হাসপাতালে পৌঁছালে সরাসরি ওপিডি ডক্টরস চেম্বারে টোকেন সিরিয়াল ট্র্যাক করা যায়।
               </p>
             </div>
 
