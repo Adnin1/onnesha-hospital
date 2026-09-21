@@ -36,4 +36,4 @@ User-agent: ClaudeBot
 Allow: /
 Allow: /llms.txt
 
-Sitemap: https://onneshahospital.com/sitemap.xml
+Sitemap: https://onnesha-hospital.pages.dev/sitemap.xml

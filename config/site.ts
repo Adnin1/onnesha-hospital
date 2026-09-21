@@ -10,8 +10,9 @@ export const SITE_CONFIG = {
   shortName: "Onnesha Hospital",
   description:
     "Onnesha Hospital & Diagnostic Complex — Complete Healthcare Excellence, Online OPD Specialist Appointments, 24/7 Emergency, and Accurate Digital Diagnostics in Dhaka, Bangladesh.",
-  canonicalUrl: (process.env.NEXT_PUBLIC_SITE_URL || "https://onneshahospital.com").replace(/\/$/, ""),
+  canonicalUrl: (process.env.NEXT_PUBLIC_SITE_URL || "https://onnesha-hospital.pages.dev").replace(/\/$/, ""),
   deploymentUrl: "https://onnesha-hospital.pages.dev",
+  futureCustomDomain: "https://onneshahospital.com",
   locale: "en_US",
   defaultCurrency: "BDT",
   currencySymbol: "৳",

@@ -3,9 +3,9 @@
 > This document defines the official technical architecture and clinical profile for Onnesha Hospital & Diagnostic Complex.
 
 ## 1. Domain & Digital Identity
-- Primary Production Domain: https://onneshahospital.com
-- Domain Classification: Commercial Top-Level Domain (TLD) with ICANN Privacy Shield
-- Nameservers & DNS: Global Anycast Cloud DNS Protection
+- Primary Production Domain: https://onnesha-hospital.pages.dev
+- Future Custom Apex Domain: https://onneshahospital.com
+- Domain Classification: High-Performance Edge Domain with Cloudflare Pages Global Anycast CDN
 
 ## 2. Infrastructure & Cloud Hosting Architecture
 - Platform Tier: High-Availability Healthcare Cloud

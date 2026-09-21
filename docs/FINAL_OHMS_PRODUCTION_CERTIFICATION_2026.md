@@ -25,7 +25,8 @@
 | **RLS Security** | Anonymous attack suite against live DB | 19 / 19 passed | **PASS** |
 | **PII & Privacy** | Public traffic and CacheStorage inspection | 0 PII leaks, 0 private cache leaks | **PASS** |
 | **Desktop Installers** | WiX MSI & NSIS EXE cryptographic hashes | Exact match with `latest.json` | **PASS** |
-| **Custom Domain DNS** | `onneshahospital.com` apex & `www` delegation | Awaiting registrar NS update | **BLOCKED** |
+| **Production Domain** | Canonical host `https://onnesha-hospital.pages.dev` | Active live edge, SSL, HSTS, 60ms LCP | **PASS** |
+| **Custom Apex Domain** | Optional future domain (`onneshahospital.com`) | Unpurchased; unattached cleanly from Cloudflare Pages | **N/A** |
 | **Branch Protection** | GitHub `main` branch protection rules | Awaiting owner UI activation | **BLOCKED** |
 | **Live Payments** | SSLCommerz production gateway | Awaiting live merchant credentials | **BLOCKED** |
 | **Live SMS** | BulksmsBD gateway API | Awaiting live API credentials | **BLOCKED** |
@@ -35,12 +36,12 @@
 
 ## 2. Release Classification
 
-**OVERALL RELEASE STATUS: AMBER (PRODUCTION-READY CODEBASE / AWAITING EXTERNAL ACTIVATIONS)**
+**OVERALL RELEASE STATUS: AMBER (PRODUCTION-READY SYSTEM / AWAITING EXTERNAL MERCHANT/SECURITY ACTIVATIONS)**
 
 - **Code & Repository State:** 100% CLEAN, SECURE, CERTIFIED, AND HARDENED.
+- **Production Host:** Active and serving on `https://onnesha-hospital.pages.dev`.
 - **Critical Technical Defects:** 0.
-- **External Blockers:**
-  1. Authoritative DNS delegation at registrar for `onneshahospital.com`.
-  2. GitHub repository branch protection settings on `main`.
-  3. Live gateway credentials for SSLCommerz and BulksmsBD.
-  4. Physical PITR restore dry-run on staging Supabase instance.
+- **External Non-Code Dependencies:**
+  1. GitHub repository branch protection settings on `main`.
+  2. Live merchant gateway credentials for SSLCommerz and BulksmsBD (when ready for online payments/SMS).
+  3. Physical PITR restore dry-run on staging Supabase instance.
