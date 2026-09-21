@@ -113,15 +113,18 @@ export function PublicNavbar() {
           <div className="flex lg:hidden items-center space-x-2">
             <Link
               href="/appointment"
-              className="inline-flex items-center bg-sky-600 text-white font-semibold text-xs px-2.5 py-2 rounded-lg"
+              className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-3 py-2 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               <Calendar className="w-3.5 h-3.5 mr-1" />
               Book
             </Link>
             <button
+              type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="p-2 text-slate-600 hover:text-slate-900 focus:outline-hidden"
-              aria-label="Toggle menu"
+              className="p-2 text-slate-600 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-nav-menu"
             >
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -131,13 +134,18 @@ export function PublicNavbar() {
 
       {/* Mobile Menu Dropdown */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-slate-100 bg-white px-4 pt-2 pb-4 space-y-1">
+        <div
+          id="mobile-nav-menu"
+          role="region"
+          aria-label="Mobile Navigation Menu"
+          className="lg:hidden border-t border-slate-100 bg-white px-4 pt-2 pb-4 space-y-1"
+        >
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               onClick={() => setMobileOpen(false)}
-              className="block px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700"
+              className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-sky-50 hover:text-sky-700 min-h-[44px] flex items-center focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               {link.label}
             </Link>
@@ -146,7 +154,7 @@ export function PublicNavbar() {
             <Link
               href="/login"
               onClick={() => setMobileOpen(false)}
-              className="w-full text-center py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg"
+              className="w-full text-center py-2.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               Hospital Staff Login
             </Link>

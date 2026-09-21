@@ -80,14 +80,15 @@ export default function CheckTokenPage() {
           >
             <input
               type="text"
+              aria-label="Enter your token number"
               placeholder="Enter your token number (e.g. 101, A-01)..."
               value={searchToken}
               onChange={(e) => setSearchToken(e.target.value)}
-              className="grow bg-transparent px-3 text-xs text-white placeholder-slate-400 focus:outline-hidden uppercase font-mono"
+              className="grow bg-transparent px-3 min-h-[44px] text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 rounded-lg uppercase font-mono"
             />
             <button
               type="submit"
-              className="bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2 rounded-lg transition shrink-0"
+              className="bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2 min-h-[44px] rounded-lg transition shrink-0 focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               Check Status
             </button>

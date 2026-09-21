@@ -170,68 +170,72 @@ export default function ContactPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
+                      <label htmlFor="contact-name" className="block font-semibold text-slate-700 mb-1">
                         Your Full Name *
                       </label>
                       <input
+                        id="contact-name"
                         type="text"
                         required
                         maxLength={120}
                         placeholder="e.g. Tariqul Islam"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                        className="w-full p-2.5 min-h-[44px] border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
+                      <label htmlFor="contact-phone" className="block font-semibold text-slate-700 mb-1">
                         Contact Phone Number (BD) *
                       </label>
                       <input
+                        id="contact-phone"
                         type="tel"
                         required
                         maxLength={15}
                         placeholder="017XXXXXXXX"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                        className="w-full p-2.5 min-h-[44px] border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
+                      <label htmlFor="contact-email" className="block font-semibold text-slate-700 mb-1">
                         Email Address (Optional)
                       </label>
                       <input
+                        id="contact-email"
                         type="email"
                         maxLength={150}
                         placeholder="user@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                        className="w-full p-2.5 min-h-[44px] border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     </div>
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
+                      <label htmlFor="contact-subject" className="block font-semibold text-slate-700 mb-1">
                         Subject *
                       </label>
                       <input
+                        id="contact-subject"
                         type="text"
                         required
                         maxLength={150}
                         placeholder="e.g. Doctor Availability / Lab Report Inquiry"
                         value={subject}
                         onChange={(e) => setSubject(e.target.value)}
-                        className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                        className="w-full p-2.5 min-h-[44px] border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       />
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <label className="block font-semibold text-slate-700">
+                      <label htmlFor="contact-message" className="block font-semibold text-slate-700">
                         Your Message / Inquiry *
                       </label>
                       <span className="text-[10px] text-slate-400">
@@ -239,6 +243,7 @@ export default function ContactPage() {
                       </span>
                     </div>
                     <textarea
+                      id="contact-message"
                       rows={4}
                       required
                       minLength={10}
@@ -246,14 +251,14 @@ export default function ContactPage() {
                       placeholder="Write your detailed medical inquiry or feedback (minimum 10 characters)..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                      className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     ></textarea>
                   </div>
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="inline-flex items-center justify-center bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl shadow-xs transition"
+                    className="inline-flex items-center justify-center bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold px-6 py-3 min-h-[44px] rounded-xl shadow-xs transition focus:outline-none focus:ring-2 focus:ring-sky-500"
                   >
                     {loading ? (
                       <>

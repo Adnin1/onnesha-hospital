@@ -352,7 +352,7 @@ export default function HomePage() {
                 <div className="p-4 bg-slate-50 border-t border-slate-100">
                   <Link
                     href={`/appointment?doctor=${doc.id}`}
-                    className="w-full text-center block py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition"
+                    className="w-full text-center min-h-[44px] flex items-center justify-center py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition focus:outline-none focus:ring-2 focus:ring-sky-500"
                   >
                     Book Serial / Token
                   </Link>

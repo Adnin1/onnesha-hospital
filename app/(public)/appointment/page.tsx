@@ -203,8 +203,17 @@ export default function AppointmentBookingPage() {
                 {doctors.map((doc: PublicDoctor) => (
                   <div
                     key={doc.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={selectedDoctorId === doc.id}
                     onClick={() => setSelectedDoctorId(doc.id)}
-                    className={`p-4 rounded-xl border cursor-pointer transition flex items-start space-x-3 ${
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedDoctorId(doc.id);
+                      }
+                    }}
+                    className={`p-4 rounded-xl border cursor-pointer transition flex items-start space-x-3 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
                       selectedDoctorId === doc.id
                         ? "border-sky-600 bg-sky-50/60 ring-2 ring-sky-500/20"
                         : "border-slate-200 hover:border-slate-300"
@@ -239,9 +248,10 @@ export default function AppointmentBookingPage() {
 
             <div className="mt-8 flex justify-end">
               <button
+                type="button"
                 disabled={!selectedDoctor || loadingDoctors}
                 onClick={() => setStep(2)}
-                className="inline-flex items-center bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-semibold text-xs px-6 py-2.5 rounded-lg shadow-sm transition"
+                className="inline-flex items-center bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-semibold text-xs px-6 py-2.5 min-h-[44px] rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 Continue to Date & Time
                 <ArrowRight className="w-3.5 h-3.5 ml-2" />
@@ -273,15 +283,16 @@ export default function AppointmentBookingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-2">
+                <label htmlFor="appointment-date" className="block text-xs font-semibold text-slate-700 mb-2">
                   Select Consultation Date
                 </label>
                 <input
+                  id="appointment-date"
                   type="date"
                   value={appointmentDate}
                   min={getDhakaDateString()}
                   onChange={(e) => setAppointmentDate(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                  className="w-full p-2.5 min-h-[44px] text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
                 />
               </div>
 
@@ -291,16 +302,16 @@ export default function AppointmentBookingPage() {
                 </label>
                 <div className="space-y-2">
                   {loadingSchedules ? (
-                    <div className="p-3 text-xs text-slate-500 flex items-center">
+                    <div className="p-3 text-xs text-slate-500 flex items-center min-h-[44px]">
                       <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> Loading schedules...
                     </div>
                   ) : schedules.length > 0 ? (
                     schedules.map((sched) => (
                       <label
                         key={sched.id}
-                        className={`flex items-center p-2.5 rounded-lg border text-xs cursor-pointer transition ${
+                        className={`flex items-center p-2.5 min-h-[44px] rounded-lg border text-xs cursor-pointer transition ${
                           selectedScheduleId === sched.id
-                            ? "border-sky-600 bg-sky-50/50 font-semibold text-sky-900"
+                            ? "border-sky-600 bg-sky-50/50 font-semibold text-sky-900 ring-2 ring-sky-500/20"
                             : "border-slate-200 hover:bg-slate-50 text-slate-700"
                         }`}
                       >
@@ -312,9 +323,9 @@ export default function AppointmentBookingPage() {
                             setSelectedScheduleId(sched.id);
                             setTimeSlot(sched.slot_label);
                           }}
-                          className="mr-2 text-sky-600 focus:ring-sky-500"
+                          className="mr-2 text-sky-600 focus:ring-sky-500 w-4 h-4"
                         />
-                        <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                        <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400 shrink-0" />
                         {sched.slot_label}
                       </label>
                     ))
@@ -330,16 +341,18 @@ export default function AppointmentBookingPage() {
 
             <div className="mt-8 flex justify-between">
               <button
+                type="button"
                 onClick={() => setStep(1)}
-                className="inline-flex items-center text-slate-600 hover:text-slate-900 text-xs font-medium px-4 py-2"
+                className="inline-flex items-center text-slate-600 hover:text-slate-900 text-xs font-medium px-4 py-2 min-h-[44px] rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 <ArrowLeft className="w-3.5 h-3.5 mr-1" />
                 Back
               </button>
               <button
+                type="button"
                 disabled={!selectedScheduleId || loadingSchedules}
                 onClick={() => setStep(3)}
-                className="inline-flex items-center bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-semibold text-xs px-6 py-2.5 rounded-lg shadow-sm transition"
+                className="inline-flex items-center bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-semibold text-xs px-6 py-2.5 min-h-[44px] rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 Continue to Patient Info
                 <ArrowRight className="w-3.5 h-3.5 ml-2" />
@@ -359,7 +372,7 @@ export default function AppointmentBookingPage() {
             </h2>
 
             {bookingError && (
-              <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center space-x-2 mb-4">
+              <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center space-x-2 mb-4" role="alert">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{bookingError}</span>
               </div>
@@ -367,30 +380,32 @@ export default function AppointmentBookingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label htmlFor="patient-fullname" className="block text-xs font-semibold text-slate-700 mb-1">
                   Patient Full Name *
                 </label>
                 <input
+                  id="patient-fullname"
                   type="text"
                   required
                   placeholder="e.g. Md. Tariqul Islam"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                  className="w-full p-2.5 min-h-[44px] text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label htmlFor="patient-phone" className="block text-xs font-semibold text-slate-700 mb-1">
                   Contact Mobile Number (BD) *
                 </label>
                 <input
+                  id="patient-phone"
                   type="tel"
                   required
                   placeholder="017XXXXXXXX or 018XXXXXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                  className="w-full p-2.5 min-h-[44px] text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
                 />
                 <p className="text-[10px] text-slate-500 mt-0.5">
                   Used for hospital registration and queue identification.
@@ -398,10 +413,11 @@ export default function AppointmentBookingPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label htmlFor="patient-age" className="block text-xs font-semibold text-slate-700 mb-1">
                   Patient Age (Years) *
                 </label>
                 <input
+                  id="patient-age"
                   type="number"
                   required
                   min="0"
@@ -409,19 +425,20 @@ export default function AppointmentBookingPage() {
                   placeholder="e.g. 28"
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
-                  className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                  className="w-full p-2.5 min-h-[44px] text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label htmlFor="patient-gender" className="block text-xs font-semibold text-slate-700 mb-1">
                   Gender *
                 </label>
                 <select
+                  id="patient-gender"
                   required
                   value={gender}
                   onChange={(e) => setGender(e.target.value as "MALE" | "FEMALE" | "OTHER" | "")}
-                  className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                  className="w-full p-2.5 min-h-[44px] text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
                 >
                   <option value="">Select Gender</option>
                   <option value="MALE">Male</option>
@@ -431,15 +448,16 @@ export default function AppointmentBookingPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label htmlFor="patient-guardian" className="block text-xs font-semibold text-slate-700 mb-1">
                   Father / Husband / Guardian Name (Optional)
                 </label>
                 <input
+                  id="patient-guardian"
                   type="text"
                   placeholder="Guardian's Name"
                   value={guardianName}
                   onChange={(e) => setGuardianName(e.target.value)}
-                  className="w-full p-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 bg-slate-50"
+                  className="w-full p-2.5 min-h-[44px] text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
                 />
               </div>
             </div>
@@ -448,7 +466,7 @@ export default function AppointmentBookingPage() {
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="inline-flex items-center text-slate-600 hover:text-slate-900 text-xs font-medium px-4 py-2"
+                className="inline-flex items-center text-slate-600 hover:text-slate-900 text-xs font-medium px-4 py-2 min-h-[44px] rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 <ArrowLeft className="w-3.5 h-3.5 mr-1" />
                 Back
@@ -456,7 +474,7 @@ export default function AppointmentBookingPage() {
               <button
                 type="submit"
                 disabled={bookingLoading}
-                className="inline-flex items-center bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs px-6 py-2.5 rounded-lg shadow-sm transition"
+                className="inline-flex items-center bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs px-6 py-2.5 min-h-[44px] rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 {bookingLoading ? (
                   <>

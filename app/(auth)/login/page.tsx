@@ -118,7 +118,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@onneshahospital.com"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                  className="w-full pl-9 pr-4 py-2.5 min-h-[44px] bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 />
               </div>
             </div>
@@ -130,7 +130,7 @@ export default function LoginPage() {
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-[11px] text-sky-400 hover:text-sky-300 transition"
+                  className="text-[11px] text-sky-400 hover:text-sky-300 transition focus:outline-none focus:ring-2 focus:ring-sky-500 rounded"
                 >
                   পাসওয়ার্ড ভুলে গেছেন?
                 </Link>
@@ -145,7 +145,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                  className="w-full pl-9 pr-4 py-2.5 min-h-[44px] bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 />
               </div>
             </div>

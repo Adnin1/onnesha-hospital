@@ -32,9 +32,9 @@ export function PublicFooter() {
           {/* Col 2: Quick Links */}
           <div>
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
-              Quick Portals
+              Quick Portals & Legal
             </h3>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-2 text-xs text-slate-300">
               <li>
                 <Link href="/doctors" className="hover:text-sky-400 transition">
                   Specialist Doctor Directory
@@ -56,8 +56,28 @@ export function PublicFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="hover:text-sky-400 transition">
-                  Hospital Staff Portal Login
+                <Link href="/privacy" className="hover:text-sky-400 transition">
+                  Privacy Policy (PDPA 2026)
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-sky-400 transition">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link href="/consent" className="hover:text-sky-400 transition">
+                  Patient Consent Guide
+                </Link>
+              </li>
+              <li>
+                <Link href="/downloads/desktop" className="hover:text-sky-400 transition">
+                  Windows Desktop Application
+                </Link>
+              </li>
+              <li>
+                <Link href="/login" className="hover:text-sky-400 transition text-sky-400 font-medium">
+                  Hospital Staff Portal Login →
                 </Link>
               </li>
             </ul>
@@ -68,11 +88,11 @@ export function PublicFooter() {
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
               Clinical Care
             </h3>
-            <ul className="space-y-2 text-xs text-slate-400">
-              <li>24/7 Emergency & Trauma Center</li>
-              <li>Intensive Care Unit (ICU & CCU)</li>
+            <ul className="space-y-2 text-xs text-slate-300">
+              <li>24/7 Emergency & Trauma Triage</li>
+              <li>Inpatient General & Cabin Wards</li>
               <li>Modern Laparoscopic Surgery OT</li>
-              <li>Pediatrics & Neonatal Care (NICU)</li>
+              <li>Pediatric Care & Child Health</li>
               <li>Maternity & Normal Delivery Unit</li>
               <li>24 Hours In-house Pharmacy</li>
             </ul>

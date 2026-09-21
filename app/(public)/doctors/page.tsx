@@ -83,18 +83,20 @@ export default function DoctorsDirectoryPage() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
             <input
               type="text"
+              aria-label="Search doctor by name, specialty, or degree"
               placeholder="Search doctor by name, specialty, or degree..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+              className="w-full pl-9 pr-4 py-2.5 min-h-[44px] text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
             />
           </div>
 
           {/* Department Filter Pills */}
           <div className="flex flex-wrap gap-2 w-full md:w-auto">
             <button
+              type="button"
               onClick={() => setSelectedDept("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+              className={`px-3.5 py-2 rounded-lg text-xs font-medium transition min-h-[44px] flex items-center focus:outline-none focus:ring-2 focus:ring-sky-500 ${
                 selectedDept === "all"
                   ? "bg-sky-700 text-white shadow-2xs"
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -104,9 +106,10 @@ export default function DoctorsDirectoryPage() {
             </button>
             {departments.slice(0, 8).map((dept) => (
               <button
+                type="button"
                 key={dept.id}
                 onClick={() => setSelectedDept(dept.slug)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                className={`px-3.5 py-2 rounded-lg text-xs font-medium transition min-h-[44px] flex items-center focus:outline-none focus:ring-2 focus:ring-sky-500 ${
                   selectedDept === dept.slug
                     ? "bg-sky-700 text-white shadow-2xs"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -195,7 +198,7 @@ export default function DoctorsDirectoryPage() {
                   <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2">
                     <Link
                       href={`/appointment?doctor=${doc.id}`}
-                      className="grow flex items-center justify-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs py-2.5 rounded-lg shadow-2xs transition"
+                      className="grow flex items-center justify-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs py-2.5 min-h-[44px] rounded-lg shadow-2xs transition focus:outline-none focus:ring-2 focus:ring-sky-500"
                     >
                       <Calendar className="w-3.5 h-3.5 mr-1.5" />
                       Book Serial Online
