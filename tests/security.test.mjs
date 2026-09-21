@@ -80,10 +80,14 @@ describe("OHMS Phase 2 Security Test Suite (20 Scenarios)", () => {
     assert.match(fileStorage, /Cross-tenant document access is strictly prohibited/);
   });
 
-  // 12. service role never reaches browser
-  test("12. admin client throws runtime exception if imported in browser", () => {
+  // 12. service role / secret key never reaches browser
+  test("12. admin client uses server-only secret key and never exposes it to browser", () => {
     const adminClient = fs.readFileSync(path.join(rootDir, "lib", "supabase", "admin.ts"), "utf8");
-    assert.match(adminClient, /SUPABASE_SERVICE_ROLE_KEY/);
+    // Must reference either modern SUPABASE_SECRET_KEY or legacy SUPABASE_SERVICE_ROLE_KEY
+    const hasSecretKey = adminClient.includes("SUPABASE_SECRET_KEY") || adminClient.includes("SUPABASE_SERVICE_ROLE_KEY");
+    assert.ok(hasSecretKey, "admin.ts must reference SUPABASE_SECRET_KEY (or legacy SUPABASE_SERVICE_ROLE_KEY)");
+    // Must NEVER be exposed to browser via NEXT_PUBLIC_ prefix
+    assert.doesNotMatch(adminClient, /NEXT_PUBLIC_SUPABASE_SECRET_KEY/);
     assert.doesNotMatch(adminClient, /NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY/);
   });
 

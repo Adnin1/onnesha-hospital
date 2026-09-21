@@ -21,13 +21,14 @@ const routes = [
 const base = 'https://onnesha-hospital.pages.dev';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iuhtzahuszdkdarhxobx.supabase.co';
 
-// Load .env.local if available and key not set in process.env
-if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && typeof process.loadEnvFile === 'function') {
+// Load .env.local if available and neither key is set in process.env
+if (!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && typeof process.loadEnvFile === 'function') {
   try {
     process.loadEnvFile('.env.local');
   } catch {}
 }
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Prefer modern publishable key (Supabase 2026); fall back to legacy anon key
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 async function runProductionSmokeTests() {
   console.log('============================================================');

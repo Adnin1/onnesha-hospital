@@ -103,10 +103,15 @@ describe("Conversation 4: Infrastructure, Security Gates & Release Integrity", (
     assert.equal(cargoMatch[1], version, "Cargo.toml version must match package.json");
   });
 
+  const supabaseMiddlewarePath = path.join(ROOT, "lib/supabase/middleware.ts");
+  const supabaseAdminPath = path.join(ROOT, "lib/supabase/admin.ts");
+
   test("4. Supabase client adapters support both modern publishable/secret and legacy keys", () => {
     const clientCode = fs.readFileSync(supabaseClientPath, "utf8");
     const browserCode = fs.readFileSync(supabaseBrowserPath, "utf8");
     const serverCode = fs.readFileSync(supabaseServerPath, "utf8");
+    const middlewareCode = fs.readFileSync(supabaseMiddlewarePath, "utf8");
+    const adminCode = fs.readFileSync(supabaseAdminPath, "utf8");
 
     assert.ok(
       clientCode.includes("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
@@ -120,5 +125,14 @@ describe("Conversation 4: Infrastructure, Security Gates & Release Integrity", (
       serverCode.includes("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
       "server.ts must support NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
     );
+    assert.ok(
+      middlewareCode.includes("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
+      "middleware.ts must support NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+    );
+    // Admin client must use server-only secret key; never exposed to browser
+    const adminHasSecretKey = adminCode.includes("SUPABASE_SECRET_KEY") || adminCode.includes("SUPABASE_SERVICE_ROLE_KEY");
+    assert.ok(adminHasSecretKey, "admin.ts must use SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY");
+    assert.ok(!adminCode.includes("NEXT_PUBLIC_SUPABASE_SECRET_KEY"), "admin.ts must never expose secret key to browser via NEXT_PUBLIC_");
+    assert.ok(!adminCode.includes("NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY"), "admin.ts must never expose service role to browser via NEXT_PUBLIC_");
   });
 });

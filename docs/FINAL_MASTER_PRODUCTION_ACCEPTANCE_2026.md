@@ -1,4 +1,4 @@
-# Independent Black-Box Master Production Acceptance Audit (Conversation 8)
+﻿# Independent Black-Box Master Production Acceptance Audit (Conversation 8)
 
 **Audit Type:** Independent Principal Production Readiness & Forensic Verification  
 **Audited System:** Onnesha Hospital Management & Enterprise Resource Planning System (OHMS ERP)  
@@ -18,14 +18,14 @@ Treating all prior documentation and certification claims as untrusted assertion
 ================================================================================
                     ZERO-TRUST FORENSIC BASELINE EVIDENCE                       
 ================================================================================
- Git Remote Main SHA:          2c4ad40303da9dec84974d2585aa850e250d8807
+ Git Remote Main SHA:          c0b1d9a125c7b720ba4f1d5edc75383db13119a5
  Working Branch:               main (Tracking ssh-origin/main)
  Project Version (Manifests):  1.1.5 (Strict 4-Way Synchronization)
-   • package.json:             "version": "1.1.5"
-   • package-lock.json:        "version": "1.1.5"
-   • src-tauri/tauri.conf.json: "version": "1.1.5"
-   • src-tauri/Cargo.toml:     version = "1.1.5"
-   • latest.json:              "version": "1.1.5"
+   â€¢ package.json:             "version": "1.1.5"
+   â€¢ package-lock.json:        "version": "1.1.5"
+   â€¢ src-tauri/tauri.conf.json: "version": "1.1.5"
+   â€¢ src-tauri/Cargo.toml:     version = "1.1.5"
+   â€¢ latest.json:              "version": "1.1.5"
  Framework & Toolchain:        Next.js 16.3.5 (Turbopack), React 19.2.8,
                                Tauri 2.11.4, Rust 1.98.1, Node.js 22
  Live Staging URL:             https://onnesha-hospital.pages.dev
@@ -62,13 +62,13 @@ Executed 108 end-to-end tests across 4 real browser engines (Chromium, Firefox, 
 
 | Viewport Tested | Target Form Factor | Horizontal Overflow (`scrollWidth > clientWidth`) | Visual Controls Clipped | Navigation Usability | Result |
 |---|---|---|---|---|---|
-| **360 × 740** | Compact Mobile (Galaxy S8) | **NONE (0px)** | **NONE** | Mobile Drawer & Touch targets $\ge 44$px | **PASS** |
-| **390 × 844** | Standard Mobile (iPhone 14) | **NONE (0px)** | **NONE** | Full responsive fluid layout | **PASS** |
-| **430 × 932** | Large Mobile (iPhone 14 Pro Max) | **NONE (0px)** | **NONE** | Full responsive fluid layout | **PASS** |
-| **768 × 1024** | Tablet Portrait (iPad Mini) | **NONE (0px)** | **NONE** | Adaptive 2-column grids | **PASS** |
-| **1024 × 768** | Tablet Landscape | **NONE (0px)** | **NONE** | Desktop navigation bar active | **PASS** |
-| **1280 × 800** | Desktop Standard (Tauri window) | **NONE (0px)** | **NONE** | Full sidebar and clinical matrix | **PASS** |
-| **1440 × 900** | Desktop Widescreen | **NONE (0px)** | **NONE** | Max-w-7xl constrained layout | **PASS** |
+| **360 Ã— 740** | Compact Mobile (Galaxy S8) | **NONE (0px)** | **NONE** | Mobile Drawer & Touch targets $\ge 44$px | **PASS** |
+| **390 Ã— 844** | Standard Mobile (iPhone 14) | **NONE (0px)** | **NONE** | Full responsive fluid layout | **PASS** |
+| **430 Ã— 932** | Large Mobile (iPhone 14 Pro Max) | **NONE (0px)** | **NONE** | Full responsive fluid layout | **PASS** |
+| **768 Ã— 1024** | Tablet Portrait (iPad Mini) | **NONE (0px)** | **NONE** | Adaptive 2-column grids | **PASS** |
+| **1024 Ã— 768** | Tablet Landscape | **NONE (0px)** | **NONE** | Desktop navigation bar active | **PASS** |
+| **1280 Ã— 800** | Desktop Standard (Tauri window) | **NONE (0px)** | **NONE** | Full sidebar and clinical matrix | **PASS** |
+| **1440 Ã— 900** | Desktop Widescreen | **NONE (0px)** | **NONE** | Max-w-7xl constrained layout | **PASS** |
 
 ---
 
@@ -97,11 +97,11 @@ Executed 108 end-to-end tests across 4 real browser engines (Chromium, Firefox, 
  WiX Toolset:                  v3.11.2 (WiX Toolset Installer Engine)
  NSIS Toolset:                 v3.10 (Nullsoft Scriptable Install System)
  MSI Installer:                Onnesha-Hospital-1.1.5.msi
-   • Size:                     6,807,552 bytes
-   • SHA-256:                  211741E1F785FDA274E96B37B175CD7BD71B0F01B8C48E21BD29D349FC339A40
+   â€¢ Size:                     6,807,552 bytes
+   â€¢ SHA-256:                  211741E1F785FDA274E96B37B175CD7BD71B0F01B8C48E21BD29D349FC339A40
  Setup EXE:                    Onnesha-Hospital-Setup-1.1.5.exe
-   • Size:                     6,354,483 bytes
-   • SHA-256:                  E176C9BE47ADC9AC412C0B4C377069F7F2173BCC1347B44D76E0A64B90E01FAE
+   â€¢ Size:                     6,354,483 bytes
+   â€¢ SHA-256:                  E176C9BE47ADC9AC412C0B4C377069F7F2173BCC1347B44D76E0A64B90E01FAE
  Authenticode Signature:       UNSIGNED (Manual installer distribution)
  Latest Manifest Path:         public/downloads/desktop/latest.json
 ================================================================================
@@ -149,3 +149,4 @@ In accordance with strict independent audit protocol, every component is categor
 The software engineering, architectural integrity, database security, and responsive UI foundations of **Onnesha Hospital Management System (v1.1.5)** are fully verified and production-ready.
 
 No further code-level architectural refactors or conversation cycles are necessary. The remaining operational items are strictly external cloud credentials and DNS registrar delegation to be performed by the hospital owner.
+

@@ -1,10 +1,10 @@
-# Final Live Production Activation, Infrastructure & Release Hardening Audit (Conversation 6)
+﻿# Final Live Production Activation, Infrastructure & Release Hardening Audit (Conversation 6)
 
 **Hospital:** Onnesha Hospital & Diagnostic Complex, Dhaka, Bangladesh  
 **Release Version:** v1.1.5  
 **Date:** September 21, 2026  
 **Repository:** `Adnin1/onnesha-hospital`  
-**Current Remote Baseline Commit:** `2c4ad40303da9dec84974d2585aa850e250d8807`  
+**Superseded by release commit:** `c0b1d9a125c7b720ba4f1d5edc75383db13119a5`  
 **Certification Mode:** STRICT FAIL-CLOSED  
 **Status:** PRODUCTION HARDENING COMPLETE & AUDITED (Live External Secrets Declared Truthfully)  
 
@@ -156,3 +156,4 @@ According to [Cloudflare Pages Custom Domains Documentation](https://developers.
 | **Staging Live Security Gate** | **FAIL-CLOSED (BLOCKED)** | Requires GitHub Secrets: `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SECRET_KEY`. |
 | **Cloudflare Pages Deployment** | **FAIL-CLOSED (BLOCKED)** | Requires GitHub Secrets: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. |
 | **Apex Custom Domain** | **PENDING OWNER DNS** | Domain registrar delegation to Cloudflare nameservers required. |
+
