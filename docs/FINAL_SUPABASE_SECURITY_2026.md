@@ -1,20 +1,24 @@
 # OHMS ERP: Supabase Live Security & Database Audit (2026)
 
-**Target Project:** `iuhtzahuszdkdarhxobx` (`aaih.apon@gmail.com's Project`, Region: `ap-southeast-1`)  
-**Database Engine:** PostgreSQL 17.6.1.166 (Active Healthy)  
-**Verification Date:** September 22, 2026  
-**Auditor Mode:** Supabase Database Security Engineer & Forensic Auditor  
+**Target Project:** `iuhtzahuszdkdarhxobx` (`aaih.apon@gmail.com's Project`, Region: `ap-southeast-1`)
+**Database Engine:** PostgreSQL 17.6.1.166 (Active Healthy)
+**Verification Date:** September 22, 2026
+**Auditor Mode:** Supabase Database Security Engineer & Forensic Auditor
+**Authoritative Git SHA:** `c1bf49af9ed1e996ad17a46356dd796afcd486ee`
 
 ---
 
 ## 1. Migration Synchronization Status
 
-- **Total Local Migrations:** 54
-- **Total Remote Applied Migrations:** 54
+- **Total Local Migrations:** 55
+- **Total Remote Applied Migrations:** 55
 - **Sync Status:** **PASS (100% IN SYNC)**
-- **Latest Applied Migrations:**
-  - `20260921060000_erp_true_accounting_and_runtime_integrity.sql` (APPLIED)
-  - `20260921070000_secure_public_waiting_queue_and_contact_intake.sql` (APPLIED)
+- **Latest Applied Migration:**
+  - `20260922030000_harden_accounting_and_true_3way_match.sql` (APPLIED)
+    - Converted `get_trial_balance()` to strict subquery `INNER JOIN` on `journal_entries` filtered by `organization_id`, `status IN ('POSTED', 'REVERSED')`, and `entry_date <= p_as_of_date`.
+    - Enforced mandatory Purchase Order (`purchase_order_id` NOT NULL), GRN verification, and line item quantity matching in `post_supplier_invoice_to_gl_atomic()`.
+    - Hardened `post_payment_receipt_to_gl_atomic()` with mandatory invoice check, positive amount assertion, and overpayment guard.
+    - Hardened `void_invoice_and_reverse_gl_atomic()` with active payment block.
 
 ---
 

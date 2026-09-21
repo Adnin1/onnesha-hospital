@@ -1,8 +1,9 @@
 # OHMS ERP: Live Website Quality, PII & Browser Acceptance (2026)
 
-**Target Host:** [https://onnesha-hospital.pages.dev](https://onnesha-hospital.pages.dev)  
-**Verification Date:** September 22, 2026  
-**Auditor Mode:** QA Lead, SEO Engineer & Accessibility Auditor  
+**Target Host:** [https://onnesha-hospital.pages.dev](https://onnesha-hospital.pages.dev)
+**Verification Date:** September 22, 2026
+**Auditor Mode:** QA Lead, SEO Engineer & Accessibility Auditor
+**Authoritative Git SHA:** `c1bf49af9ed1e996ad17a46356dd796afcd486ee`
 
 ---
 
@@ -10,13 +11,13 @@
 
 | Route | HTTP Status | Title Tag Present | Canonical Tag | Description |
 |---|---|---|---|---|
-| `/` | 200 | YES | YES | Comprehensive medical services, OPD booking, emergency desk |
-| `/about` | 200 | YES | YES | Mission, medical leadership, clinical excellence |
-| `/services` | 200 | YES | YES | Diagnostic and surgical service directory |
-| `/doctors` | 200 | YES | YES | Specialist doctor roster and department filter |
-| `/appointment` | 200 | YES | YES | Online OPD token booking flow |
-| `/check-token` | 200 | YES | YES | Live OPD token queue monitor |
-| `/contact` | 200 | YES | YES | Emergency hotlines, hospital address, inquiries |
+| `/` | 200 | YES | YES (`https://onnesha-hospital.pages.dev`) | Comprehensive medical services, OPD booking, emergency desk |
+| `/about` | 200 | YES | YES (`https://onnesha-hospital.pages.dev/about`) | Mission, medical leadership, clinical excellence |
+| `/services` | 200 | YES | YES (`https://onnesha-hospital.pages.dev/services`) | Diagnostic and surgical service directory |
+| `/doctors` | 200 | YES | YES (`https://onnesha-hospital.pages.dev/doctors`) | Specialist doctor roster and department filter |
+| `/appointment` | 200 | YES | YES (`https://onnesha-hospital.pages.dev/appointment`) | Online OPD token booking flow |
+| `/check-token` | 200 | YES | YES (`https://onnesha-hospital.pages.dev/check-token`) | Live OPD token queue monitor |
+| `/contact` | 200 | YES | YES (`https://onnesha-hospital.pages.dev/contact`) | Emergency hotlines, hospital address, inquiries |
 | `/privacy` | 200 | YES | NO (noindex) | PDPA 2026 compliant patient privacy policy |
 | `/terms` | 200 | YES | NO (noindex) | Hospital admission and service terms |
 | `/consent` | 200 | YES | NO (noindex) | Medical procedure consent guidelines |

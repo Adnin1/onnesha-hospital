@@ -1,15 +1,16 @@
 # OHMS ERP: Cloudflare Pages Live Verification & Edge Telemetry (2026)
 
-**Project:** `onnesha-hospital`  
-**Production Host:** [https://onnesha-hospital.pages.dev](https://onnesha-hospital.pages.dev)  
-**Verification Date:** September 22, 2026  
-**Auditor Mode:** Cloudflare Pages & Edge Security Engineer  
+**Project:** `onnesha-hospital`
+**Production Host:** [https://onnesha-hospital.pages.dev](https://onnesha-hospital.pages.dev)
+**Verification Date:** September 22, 2026
+**Auditor Mode:** Cloudflare Pages & Edge Security Engineer
+**Authoritative Git SHA:** `c1bf49af9ed1e996ad17a46356dd796afcd486ee`
 
 ---
 
 ## 1. Live Deployment Details
 
-- **Deployment URL:** `https://0d0971bd.onnesha-hospital.pages.dev`
+- **Deployment URL:** `https://bd31383a.onnesha-hospital.pages.dev`
 - **Canonical Edge Alias:** `https://onnesha-hospital.pages.dev`
 - **Static Asset Count:** 285 total assets / 43 prerendered routes
 - **Deployment Status:** **PASS (Active Live Production)**
@@ -36,8 +37,7 @@ Measured on actual live URL using browser `PerformanceObserver` (zero derivation
 ## 3. Edge Routing, Custom Domains & DNS Status
 
 - `onnesha-hospital.pages.dev`: **LIVE (PASS)**
-- `onneshahospital.com`: **BLOCKED (Awaiting Registrar Nameserver Delegation)**
-  - Domain attached in Cloudflare Pages (ID: `fa212151-7111-4c73-b988-69671fbbfdac`)
-  - Target: `onnesha-hospital.pages.dev`
-- `www.onneshahospital.com`: **BLOCKED (Awaiting Registrar CNAME)**
-  - Domain attached in Cloudflare Pages (ID: `f0330788-4557-4bd6-a6d8-a176c22a0381`)
+- `onneshahospital.com`: **N/A (Unpurchased; Cleanly Decoupled)**
+  - Unpurchased custom domain aliases removed from Cloudflare Pages project.
+  - Zero pending domain errors on Cloudflare Pages project.
+  - Can be attached when apex domain is acquired by owner.
