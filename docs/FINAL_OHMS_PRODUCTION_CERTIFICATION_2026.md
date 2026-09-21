@@ -22,13 +22,13 @@
 | **Browser E2E** | Playwright Chromium (`tests/browser/*.spec.ts`) | 27 / 27 passed (22.6s) | **PASS** |
 | **Cloudflare Pages** | Live edge at `onnesha-hospital.pages.dev` | Active v1.1.5 deployed (`bd31383a`) | **PASS** |
 | **Edge Security Headers** | HSTS, CSP, X-Frame-Options, Cache-Control | Verified live HTTP 200 on all endpoints | **PASS** |
-| **Measured Performance** | True LCP, FCP, CLS, TTFB on live edge | LCP: 60ms, CLS: 0.0016, TTFB: 37ms | **PASS** |
+| **Measured Performance** | Real Chromium PerformanceObserver probe on live edge | FCP: 204ms, LCP: 204ms (H1), CLS: 0.0018, TTFB: 25ms | **PASS** |
 | **Database Migrations** | Supabase remote sync (`iuhtzahuszdkdarhxobx`) | 55 / 55 migrations applied | **PASS** |
 | **Database Integrity** | Migration 55: Trial Balance subquery & 3-way match | All 47 ERP tests passed | **PASS** |
 | **RLS Security** | Anonymous attack suite against live DB | 19 / 19 passed | **PASS** |
 | **PII & Privacy** | Public traffic and CacheStorage inspection | 0 PII leaks, 0 private cache leaks | **PASS** |
 | **Desktop Installers** | WiX MSI & NSIS EXE cryptographic hashes | Exact match with `latest.json` | **PASS** |
-| **Production Domain** | Canonical host `https://onnesha-hospital.pages.dev` | Active live edge, SSL, HSTS, 60ms LCP | **PASS** |
+| **Production Domain** | Canonical host `https://onnesha-hospital.pages.dev` | Active live edge, SSL, HSTS, 204ms LCP | **PASS** |
 | **Custom Apex Domain** | Optional future domain (`onneshahospital.com`) | Decoupled cleanly until domain is acquired | **N/A** |
 | **Branch Protection** | GitHub `main` branch protection rules | Awaiting owner UI activation | **BLOCKED** |
 | **Live Payments** | SSLCommerz production gateway | Awaiting live merchant credentials | **BLOCKED** |
