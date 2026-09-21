@@ -106,6 +106,8 @@ jobs:
     needs: [validate, live-security-test]
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://mock-ci-project.supabase.co' }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_mock_ci_anon_key_for_hermetic_build' }}
@@ -200,6 +202,14 @@ jobs:
             public/downloads/desktop/latest.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attest Desktop Binary Build Provenance
+        if: github.ref == 'refs/heads/main'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
 
   deploy-production:
     name: Deploy to Cloudflare Pages (Production Gate)
