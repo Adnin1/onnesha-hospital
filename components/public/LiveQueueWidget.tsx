@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowRight, AlertTriangle } from "lucide-react";
 import { getLiveWaitingQueueAction } from "@/lib/public/actions";
 
 interface QueueItem {
@@ -86,9 +86,16 @@ export function LiveQueueWidget() {
 
       <div className="space-y-3" aria-live="polite" aria-label="Live token queue">
         {loadState === "loading" && (
-          <div className="flex items-center justify-center py-6 text-slate-400">
-            <Loader2 className="w-5 h-5 animate-spin mr-2 text-sky-500" aria-hidden="true" />
-            <span className="text-xs">Loading queue...</span>
+          <div className="space-y-3 min-h-[220px]" aria-busy="true">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="p-3 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100 animate-pulse">
+                <div className="space-y-1.5 grow">
+                  <div className="h-3.5 bg-slate-200 rounded w-28" />
+                  <div className="h-3 bg-slate-200 rounded w-16" />
+                </div>
+                <div className="h-6 w-16 bg-slate-200 rounded shrink-0 ml-4" />
+              </div>
+            ))}
           </div>
         )}
 

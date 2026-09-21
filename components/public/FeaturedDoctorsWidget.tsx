@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowRight, AlertTriangle } from "lucide-react";
 import { getPublicDoctorsAction, PublicDoctor } from "@/lib/public/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
 
@@ -72,9 +72,29 @@ export function FeaturedDoctorsWidget() {
         </div>
 
         {loadState === "loading" && (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-400" aria-live="polite">
-            <Loader2 className="w-8 h-8 text-sky-600 animate-spin mb-2" aria-hidden="true" />
-            <p className="text-xs">Loading specialist doctors...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse" aria-busy="true" aria-label="Loading specialist doctors">
+            {[1, 2, 3, 4].map((n) => (
+              <div
+                key={n}
+                className="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 min-h-[320px] flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-14 h-14 rounded-full bg-slate-200 shrink-0" />
+                    <div className="space-y-1.5 grow">
+                      <div className="h-3 bg-slate-200 rounded w-16" />
+                      <div className="h-4 bg-slate-200 rounded w-28" />
+                    </div>
+                  </div>
+                  <div className="space-y-2 py-3 border-t border-slate-100">
+                    <div className="h-3 bg-slate-100 rounded w-24" />
+                    <div className="h-3 bg-slate-100 rounded w-full" />
+                    <div className="h-3 bg-slate-100 rounded w-2/3" />
+                  </div>
+                </div>
+                <div className="h-10 bg-slate-200 rounded-lg mt-4" />
+              </div>
+            ))}
           </div>
         )}
 

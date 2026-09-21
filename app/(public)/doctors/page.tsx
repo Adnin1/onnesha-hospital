@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Calendar, MapPin, Loader2, AlertCircle } from "lucide-react";
+import { Search, Calendar, MapPin, AlertCircle } from "lucide-react";
 import {
   getPublicDoctorsAction,
   getPublicDepartmentsAction,
@@ -101,7 +101,7 @@ export default function DoctorsDirectoryPage() {
           </div>
 
           {/* Department Filter Pills */}
-          <div className="flex flex-wrap gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap gap-2 w-full md:w-auto min-h-[44px]">
             <button
               type="button"
               onClick={() => setSelectedDept("all")}
@@ -113,6 +113,13 @@ export default function DoctorsDirectoryPage() {
             >
               All Departments
             </button>
+            {departments.length === 0 && loading && (
+              <>
+                <div className="h-[44px] w-28 bg-slate-100 rounded-lg animate-pulse" />
+                <div className="h-[44px] w-32 bg-slate-100 rounded-lg animate-pulse" />
+                <div className="h-[44px] w-24 bg-slate-100 rounded-lg animate-pulse" />
+              </>
+            )}
             {departments.slice(0, 8).map((dept) => (
               <button
                 type="button"
@@ -131,9 +138,30 @@ export default function DoctorsDirectoryPage() {
         </div>
 
         {loading && (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-500">
-            <Loader2 className="w-8 h-8 text-sky-600 animate-spin mb-2" />
-            <p className="text-xs">Loading specialist consultants...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse mb-8" aria-busy="true" aria-label="Loading specialist consultants">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div
+                key={n}
+                className="bg-white rounded-2xl border border-slate-200 p-6 min-h-[360px] flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-start space-x-4 mb-4">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-200 shrink-0" />
+                    <div className="space-y-2 grow">
+                      <div className="h-4 bg-slate-200 rounded w-20" />
+                      <div className="h-5 bg-slate-200 rounded w-36" />
+                      <div className="h-3.5 bg-slate-200 rounded w-28" />
+                    </div>
+                  </div>
+                  <div className="space-y-2 py-3 border-y border-slate-100">
+                    <div className="h-3 bg-slate-100 rounded w-full" />
+                    <div className="h-3 bg-slate-100 rounded w-4/5" />
+                    <div className="h-3 bg-slate-100 rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="h-10 bg-slate-200 rounded-lg mt-4" />
+              </div>
+            ))}
           </div>
         )}
 
