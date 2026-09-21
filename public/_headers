@@ -18,8 +18,17 @@
   Cache-Control: no-store, no-cache, must-revalidate
   X-Robots-Tag: noindex, nofollow
 
+/forgot-password*
+  Cache-Control: no-store, no-cache, must-revalidate
+  X-Robots-Tag: noindex, nofollow
+
+/reset-password*
+  Cache-Control: no-store, no-cache, must-revalidate
+  X-Robots-Tag: noindex, nofollow
+
 /downloads/desktop/latest.json
   Cache-Control: no-cache, no-store, must-revalidate
 
 /downloads/desktop/*
   Cache-Control: no-cache, no-store, must-revalidate
+

@@ -6,21 +6,11 @@ import {
   CheckCircle,
   Calendar,
   Clock,
+  Info,
 } from "lucide-react";
 import { formatCurrencyBDT } from "@/lib/utils";
+import { DIAGNOSTIC_TARIFF_CONFIG } from "@/config/tariffs";
 
-const PUBLIC_INVESTIGATIONS = [
-  { name: "Complete Blood Count (CBC) with ESR", category: "Hematology", fee: 400, turnaround: "2 Hours" },
-  { name: "Fasting Blood Sugar (FBS) & HbA1c", category: "Biochemistry", fee: 900, turnaround: "3 Hours" },
-  { name: "Lipid Profile (Cholesterol, Triglycerides, HDL/LDL)", category: "Biochemistry", fee: 1200, turnaround: "4 Hours" },
-  { name: "Serum Creatinine & Blood Urea Nitrogen", category: "Renal Panel", fee: 600, turnaround: "2 Hours" },
-  { name: "Liver Function Test (SGPT, SGOT, Bilirubin, Alk Phos)", category: "Hepatic Panel", fee: 1100, turnaround: "4 Hours" },
-  { name: "Digital Chest X-Ray (P/A View High-Res)", category: "Digital Radiology", fee: 650, turnaround: "1 Hour" },
-  { name: "Ultrasonography (Whole Abdomen 4D Doppler)", category: "Ultrasonography", fee: 1500, turnaround: "Same Day" },
-  { name: "12-Lead Electrocardiogram (ECG with Interpretation)", category: "Cardiology", fee: 450, turnaround: "30 Mins" },
-  { name: "2D Color Doppler Echocardiography", category: "Cardiology", fee: 2500, turnaround: "Same Day" },
-  { name: "Thyroid Stimulating Hormone (TSH / FT3 / FT4)", category: "Immunology", fee: 1600, turnaround: "Same Day" },
-];
 
 export default function ServicesPage() {
   return (
@@ -101,12 +91,20 @@ export default function ServicesPage() {
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-xs mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 px-2 py-0.5 rounded">
+                  {DIAGNOSTIC_TARIFF_CONFIG.tariffStatus.replace("_", " ")}
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  Last reviewed: {DIAGNOSTIC_TARIFF_CONFIG.lastAuditedDate}
+                </span>
+              </div>
               <h2 className="text-xl font-bold text-slate-900 flex items-center">
                 <Microscope className="w-5 h-5 mr-2 text-sky-600" />
-                Laboratory & Diagnostic Investigation Rates
+                Indicative Diagnostic & Laboratory Tariffs
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Indicative diagnostic pathology and imaging investigation tariff. Please contact our reception to confirm current rates before your visit.
+                Reference pricing schedule for patient orientation. Confirm current fees and schedule with the cash counter.
               </p>
             </div>
             <Link
@@ -118,11 +116,16 @@ export default function ServicesPage() {
             </Link>
           </div>
 
-          {/* Fee disclaimer */}
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-            <strong>Note:</strong> Listed fees are indicative reference tariffs. Actual charges may vary based on complexity, consumables, and concurrent investigations. Confirm current rates at reception.
+          {/* Bilingual Disclaimer */}
+          <div className="mb-6 p-4 bg-amber-50/80 border border-amber-200/80 rounded-xl space-y-2 text-xs text-amber-900">
+            <div className="flex items-start gap-2">
+              <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p><strong>Notice:</strong> {DIAGNOSTIC_TARIFF_CONFIG.disclaimerEn}</p>
+                <p className="text-[11px] text-amber-800">{DIAGNOSTIC_TARIFF_CONFIG.disclaimerBn}</p>
+              </div>
+            </div>
           </div>
-
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -130,29 +133,32 @@ export default function ServicesPage() {
                 <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4 font-bold">Investigation / Test Name</th>
                   <th className="py-3 px-4 font-bold">Category</th>
-                  <th className="py-3 px-4 font-bold">Turnaround Time</th>
-                  <th className="py-3 px-4 font-bold text-right">Standard Fee</th>
+                  <th className="py-3 px-4 font-bold">Turnaround Window*</th>
+                  <th className="py-3 px-4 font-bold text-right">Indicative Fee*</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {PUBLIC_INVESTIGATIONS.map((t, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/70 transition">
+                {DIAGNOSTIC_TARIFF_CONFIG.investigations.map((t) => (
+                  <tr key={t.id} className="hover:bg-slate-50/70 transition">
                     <td className="py-3 px-4 font-semibold text-slate-900">{t.name}</td>
                     <td className="py-3 px-4 text-slate-500">{t.category}</td>
                     <td className="py-3 px-4">
                       <span className="inline-flex items-center text-sky-800 bg-sky-50 px-2 py-0.5 rounded font-medium text-[11px]">
                         <Clock className="w-3 h-3 mr-1 text-sky-600" />
-                        {t.turnaround}
+                        {t.standardTurnaround}
                       </span>
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-right text-emerald-700 text-sm">
-                      {formatCurrencyBDT(t.fee)}
+                      {formatCurrencyBDT(t.indicativeFeeBDT)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <p className="text-[11px] text-slate-400 mt-4 italic">
+            * All fees and turnaround windows are reference indicators subject to clinician instructions and urgent processing options.
+          </p>
         </div>
       </div>
     </div>

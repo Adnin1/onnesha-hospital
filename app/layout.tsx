@@ -11,8 +11,7 @@ export const metadata: Metadata = {
     default: "Onnesha Hospital & Diagnostic Complex | অন্বেষা হাসপাতাল",
     template: "%s | Onnesha Hospital",
   },
-  description:
-    "Onnesha Hospital & Diagnostic Complex — Modern Healthcare, Online OPD Specialist Appointment Booking, 24/7 Emergency, and Digital Diagnostic Services in Dhaka, Bangladesh.",
+  description: SITE_CONFIG.description,
   keywords: [
     "Onnesha Hospital",
     "অন্বেষা হাসপাতাল",
@@ -31,16 +30,16 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Onnesha Hospital & Diagnostic Complex | Modern Patient Care",
-    description: "24/7 Modern Healthcare & Online OPD Specialist Booking. High-reliability digital healthcare system in Dhaka, Bangladesh.",
+    description: SITE_CONFIG.description,
     url: SITE_CONFIG.canonicalUrl,
-    siteName: "Onnesha Hospital",
+    siteName: SITE_CONFIG.shortName,
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Onnesha Hospital & Diagnostic Complex",
-    description: "Modern Patient Care, 24/7 Emergency & Specialist Doctor Appointment in Dhaka, Bangladesh.",
+    title: SITE_CONFIG.name,
+    description: SITE_CONFIG.description,
   },
   manifest: "/manifest.json",
   generator: "Onnesha Hospital HIS/EMR",

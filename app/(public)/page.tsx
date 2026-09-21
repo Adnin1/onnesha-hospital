@@ -51,7 +51,7 @@ export default function HomePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex items-center space-x-2 bg-sky-500/20 border border-sky-400/30 px-3.5 py-1.5 rounded-full text-xs font-medium text-sky-200 backdrop-blur-xs">
                   <Activity className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-                  <span>24/7 Critical Care &amp; Advanced Diagnostics in Dhaka</span>
+                  <span>Emergency Casualty Triage &amp; Clinical Diagnostics in Dhaka</span>
                 </div>
               </div>
 
@@ -91,8 +91,8 @@ export default function HomePage() {
                   <div className="text-xs text-sky-200">Beds &amp; Cabins</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-emerald-400">24/7</div>
-                  <div className="text-xs text-sky-200">Emergency &amp; Lab</div>
+                  <div className="text-2xl font-bold text-emerald-400">Emergency</div>
+                  <div className="text-xs text-sky-200">Triage &amp; Lab</div>
                 </div>
               </div>
             </div>
@@ -105,7 +105,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. 24/7 EMERGENCY TRIAGE BANNER — static */}
+      {/* 2. EMERGENCY TRIAGE BANNER — static */}
       <section className="bg-red-600 text-white py-4 px-4 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
           <div className="flex items-center space-x-3 text-center md:text-left">
@@ -114,10 +114,10 @@ export default function HomePage() {
             </div>
             <div>
               <h2 className="font-bold text-sm sm:text-base tracking-wide">
-                24-Hour Emergency &amp; Casualty Triage Care
+                Emergency &amp; Casualty Triage Care
               </h2>
               <p className="text-xs text-white/95">
-                Duty medical officers, acute patient stabilization, and casualty triage facilities available round the clock.
+                Duty medical officers, acute patient stabilization, and casualty triage facilities available.
               </p>
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function HomePage() {
                 জরুরি পরিস্থিতিতে সরাসরি যোগাযোগ করার মাধ্যম কী?
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                জরুরি প্রয়োজনে আমাদের ২৪/৭ ট্রমা ও ক্যাজুয়ালটি হটলাইন{HOSPITAL_METADATA.phone ? ` ${HOSPITAL_METADATA.phone}` : ""}{HOSPITAL_METADATA.ambulanceHotline ? ` অথবা জরুরি অ্যাম্বুলেন্স সেবা ${HOSPITAL_METADATA.ambulanceHotline}` : ""}-এ যেকোনো সময় সরাসরি কল করা যাবে অথবা <Link href="/contact" className="text-sky-600 underline">যোগাযোগ পাতায়</Link> আসুন।
+                জরুরি প্রয়োজনে আমাদের জরুরি হটলাইন{HOSPITAL_METADATA.emergencyHotline ? ` ${HOSPITAL_METADATA.emergencyHotline}` : (HOSPITAL_METADATA.phone ? ` ${HOSPITAL_METADATA.phone}` : "")}{HOSPITAL_METADATA.ambulanceHotline ? ` অথবা অ্যাম্বুলেন্স সেবা ${HOSPITAL_METADATA.ambulanceHotline}` : ""}-এ সরাসরি কল করা যাবে অথবা <Link href="/contact" className="text-sky-600 underline">যোগাযোগ পাতায়</Link> তথ্য পাওয়া যাবে।
               </p>
             </div>
           </div>

@@ -19,7 +19,7 @@ export function PublicFooter() {
               </span>
             </div>
             <p className="text-xs leading-relaxed text-slate-400 mb-4">
-              Dedicated to delivering compassionate, patient-first healthcare and state-of-the-art diagnostic testing with Bangladesh’s leading consultants and surgeons.
+              Dedicated to delivering compassionate, patient-first healthcare and reliable diagnostic services with experienced medical consultants and healthcare professionals.
             </p>
             {HOSPITAL_METADATA.regNo ? (
               <div className="flex items-center text-xs text-sky-400 font-medium">
@@ -89,19 +89,19 @@ export function PublicFooter() {
               Clinical Care
             </h3>
             <ul className="space-y-2 text-xs text-slate-300">
-              <li>24/7 Emergency & Trauma Triage</li>
+              <li>Emergency Triage & Acute Care</li>
               <li>Inpatient General & Cabin Wards</li>
-              <li>Modern Laparoscopic Surgery OT</li>
+              <li>Surgical Operation Theatres (OT)</li>
               <li>Pediatric Care & Child Health</li>
-              <li>Maternity & Normal Delivery Unit</li>
-              <li>24 Hours In-house Pharmacy</li>
+              <li>Maternity & Post-Natal Unit</li>
+              <li>In-House Hospital Pharmacy</li>
             </ul>
           </div>
 
           {/* Col 4: Contact & Hotlines */}
           <div>
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
-              24/7 Contact Lines
+              Hospital Contact Lines
             </h3>
             <ul className="space-y-3 text-xs">
               {HOSPITAL_METADATA.address && (
@@ -148,7 +148,7 @@ export function PublicFooter() {
             <div className="shrink-0 flex flex-col justify-center text-left md:text-right text-[11px] text-slate-300 space-y-1 bg-slate-900/60 p-3 rounded-lg border border-slate-750">
               <span className="text-emerald-400 font-semibold flex items-center md:justify-end gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                24/7 Digital Healthcare
+                Online Patient Services
               </span>
               <span className="text-slate-400">Role-based Access Control</span>
               <span className="text-slate-400">Encrypted Transport (HTTPS)</span>

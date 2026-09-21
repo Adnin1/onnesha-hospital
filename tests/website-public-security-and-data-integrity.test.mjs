@@ -172,6 +172,8 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
     const headers = fs.readFileSync(headersPath, "utf8");
     assert.ok(!headers.includes("'unsafe-eval'"), "CSP must eliminate unsafe-eval");
     assert.ok(headers.includes("/downloads/desktop/latest.json"), "Must provide specific cache headers for latest.json");
+    assert.ok(headers.includes("/forgot-password*"), "Must provide specific cache headers for /forgot-password*");
+    assert.ok(headers.includes("/reset-password*"), "Must provide specific cache headers for /reset-password*");
     assert.ok(headers.includes("Cache-Control: no-cache, no-store, must-revalidate"), "Sensitive routes must prevent caching");
   });
 
@@ -180,4 +182,31 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
     assert.ok(header.includes("Recent System Activity"), "Header must truthfully title menu as Recent System Activity");
     assert.ok(!header.includes("unread-badge"), "Header must not display fake unread notice badges");
   });
+
+  test("15. Diagnostic tariffs consume centralized versioned config and display indicative disclaimers", () => {
+    const tariffsConfigPath = path.join(ROOT, "config/tariffs.ts");
+    assert.ok(fs.existsSync(tariffsConfigPath), "config/tariffs.ts must exist as single source of truth");
+    const tariffsCode = fs.readFileSync(tariffsConfigPath, "utf8");
+    assert.ok(tariffsCode.includes("tariffStatus: \"INDICATIVE_REFERENCE\""), "Must mark status as INDICATIVE_REFERENCE");
+    assert.ok(tariffsCode.includes("isVerifiedRate: false"), "Must mark rates as unverified indicative tariffs");
+
+    const services = fs.readFileSync(servicesPagePath, "utf8");
+    assert.ok(services.includes("DIAGNOSTIC_TARIFF_CONFIG"), "Services page must import DIAGNOSTIC_TARIFF_CONFIG");
+    assert.ok(services.includes("Indicative Fee*"), "Table must explicitly label fees as Indicative Fee*");
+    assert.ok(!services.includes("Standard Fee"), "Table must not claim Standard Fee without proof");
+  });
+
+  test("16. PublicFooter and layout maintain truthful healthcare and organization claims without unverified 24/7 promises", () => {
+    const footerPath = path.join(ROOT, "components/public/PublicFooter.tsx");
+    const footer = fs.readFileSync(footerPath, "utf8");
+    assert.ok(!footer.includes("24/7 Digital Healthcare"), "Footer must not claim unverified 24/7 Digital Healthcare");
+    assert.ok(!footer.includes("24 Hours In-house Pharmacy"), "Footer must not claim unverified 24 Hours Pharmacy");
+    assert.ok(!footer.includes("state-of-the-art"), "Footer must not claim state-of-the-art");
+    assert.ok(footer.includes("Online Patient Services"), "Footer must use truthful Online Patient Services badge");
+
+    const layoutPath = path.join(ROOT, "app/layout.tsx");
+    const layout = fs.readFileSync(layoutPath, "utf8");
+    assert.ok(layout.includes("description: SITE_CONFIG.description"), "Layout metadata must use SITE_CONFIG.description");
+  });
 });
+
