@@ -96,6 +96,26 @@ function checkTargetExists(targetPath, sourceFile) {
     return true;
   }
 
+  // 4. Git-ignored desktop release installer fallback (validated against authoritative latest.json)
+  if (clean.startsWith("/downloads/desktop/") && (clean.endsWith(".exe") || clean.endsWith(".msi"))) {
+    const latestJsonPath = path.join(rootDir, "public", "downloads", "desktop", "latest.json");
+    if (fs.existsSync(latestJsonPath)) {
+      try {
+        const latest = JSON.parse(fs.readFileSync(latestJsonPath, "utf-8"));
+        const platforms = latest.platforms || {};
+        const win = platforms["windows-x86_64"] || {};
+        const targetFilename = path.basename(clean);
+        const matchesExe = win.installer_exe && win.installer_exe.endsWith(targetFilename);
+        const matchesMsi = win.installer_msi && win.installer_msi.endsWith(targetFilename);
+        if (matchesExe || matchesMsi) {
+          return true;
+        }
+      } catch {
+        // fallback to standard check
+      }
+    }
+  }
+
   return false;
 }
 
