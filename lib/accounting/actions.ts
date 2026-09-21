@@ -356,7 +356,52 @@ export async function getTrialBalanceAction(): Promise<ActionResult<{ trialBalan
 
   try {
     const supabase = await createClient();
-    // Fetch all accounts
+
+    // Prefer authoritative PostgreSQL RPC get_trial_balance
+    const { data: rpcRows, error: rpcError } = await supabase.rpc("get_trial_balance", {
+      p_org_id: session.organizationId,
+    });
+
+    if (!rpcError && rpcRows && Array.isArray(rpcRows) && rpcRows.length > 0) {
+      interface TrialBalanceRpcRow {
+        account_id: string;
+        account_code: string;
+        account_name: string;
+        account_type: AccountType;
+        total_debit?: number | string;
+        total_credit?: number | string;
+        net_balance?: number | string;
+      }
+      let totalDebits = 0;
+      let totalCredits = 0;
+      const trialBalance: TrialBalanceRow[] = (rpcRows as unknown as TrialBalanceRpcRow[]).map((r) => {
+        const d = Number(r.total_debit) || 0;
+        const c = Number(r.total_credit) || 0;
+        totalDebits += d;
+        totalCredits += c;
+        return {
+          account_id: r.account_id,
+          account_code: r.account_code,
+          account_name: r.account_name,
+          account_type: r.account_type,
+          total_debit: d,
+          total_credit: c,
+          net_balance: Number(r.net_balance) || (d - c),
+        };
+      });
+
+      return {
+        success: true,
+        data: {
+          trialBalance,
+          totalDebits,
+          totalCredits,
+          isBalanced: Math.abs(totalDebits - totalCredits) < 0.01,
+        },
+      };
+    }
+
+    // Fallback: Fetch all accounts
     const { data: accounts, error: accError } = await supabase
       .from("chart_of_accounts")
       .select("id, account_code, account_name, account_type")
@@ -926,6 +971,139 @@ export async function recordAssetMaintenanceToGlAction(input: {
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to record asset maintenance to GL";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 19. Post Payment Receipt to General Ledger (DR Cash/Bank, CR Accounts Receivable)
+ */
+export async function postPaymentReceiptToGlAction(
+  paymentId: string
+): Promise<ActionResult<{ payment_id: string; receipt_number: string; journal_entry: unknown }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("post_payment_receipt_to_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_payment_id: paymentId,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      data: data as { payment_id: string; receipt_number: string; journal_entry: unknown },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to post payment receipt to GL";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 20. Void Invoice and Reverse GL Atomically
+ */
+export async function voidInvoiceAndReverseGlAction(
+  invoiceId: string,
+  reason: string
+): Promise<ActionResult<{ invoice_id: string; invoice_number: string; is_voided: boolean; gl_reversal?: unknown }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.BILLING_VOID);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Forbidden: insufficient permissions to void invoices";
+    return { success: false, error: msg };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("void_invoice_and_reverse_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_invoice_id: invoiceId,
+      p_reason: reason.trim(),
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      data: data as { invoice_id: string; invoice_number: string; is_voided: boolean; gl_reversal?: unknown },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to void invoice and reverse GL";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 21. Get General Ledger Statement for an Account
+ */
+export async function getGeneralLedgerReportAction(
+  accountId: string,
+  startDate?: string,
+  endDate?: string
+): Promise<ActionResult<{ lines: Array<{
+  line_id: string;
+  journal_entry_id: string;
+  entry_number: string;
+  entry_date: string;
+  reference_type: string;
+  reference_id?: string;
+  line_description: string;
+  debit: number;
+  credit: number;
+  running_balance: number;
+}> }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("get_general_ledger_report", {
+      p_org_id: session.organizationId,
+      p_account_id: accountId,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    interface GeneralLedgerReportRow {
+      line_id: string;
+      journal_entry_id: string;
+      entry_number: string;
+      entry_date: string;
+      reference_type: string;
+      reference_id?: string;
+      line_description: string;
+      debit: number;
+      credit: number;
+      running_balance: number;
+    }
+
+    return {
+      success: true,
+      data: { lines: (data || []) as unknown as GeneralLedgerReportRow[] },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to fetch general ledger report";
     return { success: false, error: msg };
   }
 }
