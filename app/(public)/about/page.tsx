@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import React from "react";
 import { Award, ShieldCheck, Heart, CheckCircle2 } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "About Us | Onnesha Hospital & Diagnostic Complex",
+  description:
+    "Learn about Onnesha Hospital's mission, vision, clinical governance, and hospital infrastructure. Modern patient-centered healthcare in Dhaka, Bangladesh.",
+  alternates: { canonical: "/about" },
+};
 
 export default function AboutPage() {
   return (
@@ -13,7 +21,7 @@ export default function AboutPage() {
             Compassionate Care, Clinical Excellence
           </h1>
           <p className="text-xs text-slate-600 mt-2">
-            Established with a vision to provide world-class medical facilities and ethical medical treatment accessible to all citizens.
+            Established with a vision to provide accessible, high-quality medical care and ethical treatment to patients and families across Dhaka.
           </p>
         </div>
 
@@ -35,7 +43,7 @@ export default function AboutPage() {
             </div>
             <h3 className="font-bold text-base text-slate-900 mb-2">Our Vision</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              To become Bangladesh&apos;s leading benchmark in hospital care through technological digitization, automated clinical safety, and empathetic patient engagement.
+              To build a trusted, patient-first hospital through technological digitization, systematic clinical safety, and compassionate healthcare engagement.
             </p>
           </div>
 
@@ -45,7 +53,7 @@ export default function AboutPage() {
             </div>
             <h3 className="font-bold text-base text-slate-900 mb-2">Clinical Governance</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Strict compliance with the Directorate General of Health Services (DGHS) standards, infection control protocols, and continuous medical training.
+              Operating with adherence to infection control protocols, structured clinical documentation, and ongoing professional development for healthcare staff.
             </p>
           </div>
         </div>
@@ -53,18 +61,18 @@ export default function AboutPage() {
         {/* Facilities Highlights */}
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-xs mb-12">
           <h2 className="text-xl font-bold text-slate-900 mb-6">
-            Key Infrastructure Highlights
+            Hospital Infrastructure
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             {[
               "Central Oxygen Supply System",
-              "HEPA-Filtered Laminar OTs",
-              "Modern Blood Bank Integration",
-              "High-End 4D Color Doppler USG",
-              "Digital 500mA X-Ray Unit",
+              "Sterile Operating Theatre Environment",
               "Automated Biochemistry Analyzers",
-              "Dedicated Dialysis Unit",
+              "Digital Radiography Equipment",
+              "Hematology Laboratory",
+              "Ultrasonography Services",
               "24/7 Standby Generator Power",
+              "Dedicated Inpatient Nursing Care",
             ].map((fac, idx) => (
               <div key={idx} className="flex items-center space-x-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
                 <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0" />
@@ -73,6 +81,7 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
+
         {/* Digital Health & Cloud Infrastructure Section */}
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-xs mb-12">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">

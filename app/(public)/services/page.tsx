@@ -106,7 +106,7 @@ export default function ServicesPage() {
                 Laboratory & Diagnostic Investigation Rates
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Published diagnostic pathology and digital imaging investigation tariff schedule.
+                Indicative diagnostic pathology and imaging investigation tariff. Please contact our reception to confirm current rates before your visit.
               </p>
             </div>
             <Link
@@ -117,6 +117,12 @@ export default function ServicesPage() {
               Book Consultation First
             </Link>
           </div>
+
+          {/* Fee disclaimer */}
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+            <strong>Note:</strong> Listed fees are indicative reference tariffs. Actual charges may vary based on complexity, consumables, and concurrent investigations. Confirm current rates at reception.
+          </div>
+
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">

@@ -138,11 +138,11 @@ export function PublicFooter() {
             <div className="max-w-3xl">
               <span className="text-white font-semibold flex items-center gap-1.5 mb-1.5 text-sm">
                 <ShieldCheck className="w-4 h-4 text-sky-400" />
-                রোগীর তথ্যের সর্বোচ্চ নিরাপত্তা ও আধুনিক স্বাস্থ্যসেবা নিশ্চয়তা
+                রোগীর তথ্যের নিরাপত্তা ও আধুনিক স্বাস্থ্যসেবা
               </span>
               <p className="text-slate-300 text-xs leading-normal">
-                অন্বেষা হাসপাতাল ও ডায়াগনস্টিক কমপ্লেক্সের অনলাইন পোর্টাল এবং ডিজিটাল ইএমআর সিস্টেম এন্টারপ্রাইজ গ্রেড এনক্রিপশনে পরিচালিত। 
-                রোগীদের সমস্ত ডায়াগনস্টিক রিপোর্ট, প্রেসক্রিপশন ও ব্যক্তিগত তথ্য কঠোর সিকিউরিটি প্রোটোকলের মাধ্যমে সর্বদা সুরক্ষিত রাখা হয়।
+                অন্বেষা হাসপাতালের ডিজিটাল পোর্টাল ও ইএমআর সিস্টেম রোল-বেসড অ্যাক্সেস কন্ট্রোল (RBAC) এবং রো-লেভেল সিকিউরিটি (RLS) ব্যবহার করে পরিচালিত। 
+                শুধুমাত্র অনুমোদিত স্বাস্থ্যকর্মীরা রোগীর তথ্যে প্রবেশ করতে পারেন এবং সমস্ত যোগাযোগ এনক্রিপ্টেড সংযোগের মাধ্যমে পরিচালিত হয়।
               </p>
             </div>
             <div className="shrink-0 flex flex-col justify-center text-left md:text-right text-[11px] text-slate-300 space-y-1 bg-slate-900/60 p-3 rounded-lg border border-slate-750">
@@ -150,11 +150,12 @@ export function PublicFooter() {
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 24/7 Digital Healthcare
               </span>
-              <span className="text-slate-400">Strict Patient Privacy (RLS)</span>
-              <span className="text-slate-400">256-bit TLS Encrypted</span>
+              <span className="text-slate-400">Role-based Access Control</span>
+              <span className="text-slate-400">Encrypted Transport (HTTPS)</span>
             </div>
           </div>
         </div>
+
 
         {/* Bottom copyright */}
         <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-300 gap-2">

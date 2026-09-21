@@ -46,17 +46,8 @@ export const metadata: Metadata = {
   generator: "Onnesha Hospital HIS/EMR",
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "MedicalOrganization",
-  name: "Onnesha Hospital & Diagnostic Complex",
-  url: SITE_CONFIG.canonicalUrl,
-  description: "Modern Patient Care & Diagnostic Services in Dhaka, Bangladesh",
-  serviceArea: {
-    "@type": "AdministrativeArea",
-    name: "Dhaka, Bangladesh",
-  },
-};
+// NOTE: Structured data (JSON-LD) is rendered by HospitalJsonLd component
+// in the public layout — not here — to avoid duplicate schema signals.
 
 export default function RootLayout({
   children,
@@ -65,12 +56,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full antialiased">
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      </head>
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900">
         <a href="#main-content" className="skip-to-content">মূল বিষয়বস্তুতে যান</a>
         <NetworkStatus />
@@ -83,3 +68,4 @@ export default function RootLayout({
     </html>
   );
 }
+

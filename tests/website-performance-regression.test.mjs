@@ -13,34 +13,44 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 
 describe("Conversation 3: Website Performance & Visibility Awareness", () => {
   const homePath = path.join(ROOT, "app/(public)/page.tsx");
+  // Phase 12 architecture: polling logic extracted to isolated client islands
+  const liveQueueIslandPath = path.join(ROOT, "components/public/LiveQueueWidget.tsx");
   const checkTokenPath = path.join(ROOT, "app/(public)/check-token/page.tsx");
   const swPath = path.join(ROOT, "public/sw.js");
 
   test("1. Landing page queue polling respects document.hidden to prevent background drain", () => {
     assert.ok(fs.existsSync(homePath), "Landing page must exist");
-    const code = fs.readFileSync(homePath, "utf8");
+    // Phase 12: polling logic lives in LiveQueueWidget island component
+    const islandExists = fs.existsSync(liveQueueIslandPath);
+    const codeToCheck = islandExists
+      ? fs.readFileSync(liveQueueIslandPath, "utf8")
+      : fs.readFileSync(homePath, "utf8");
 
     assert.ok(
-      code.includes("document.hidden"),
+      codeToCheck.includes("document.hidden"),
       "Landing page polling must verify document.hidden before fetching"
     );
     assert.ok(
-      code.includes('addEventListener("visibilitychange"'),
+      codeToCheck.includes('addEventListener("visibilitychange"'),
       "Landing page must register visibilitychange listener"
     );
     assert.ok(
-      code.includes('removeEventListener("visibilitychange"'),
+      codeToCheck.includes('removeEventListener("visibilitychange"'),
       "Landing page must unregister visibilitychange listener on unmount"
     );
   });
 
   test("2. Landing page prevents overlapping in-flight fetch requests", () => {
-    const code = fs.readFileSync(homePath, "utf8");
+    const islandExists = fs.existsSync(liveQueueIslandPath);
+    const codeToCheck = islandExists
+      ? fs.readFileSync(liveQueueIslandPath, "utf8")
+      : fs.readFileSync(homePath, "utf8");
     assert.ok(
-      code.includes("inFlight"),
+      codeToCheck.includes("inFlight"),
       "Landing page must maintain inFlight lock to avoid parallel interval requests"
     );
   });
+
 
   test("3. Check Token page queue polling respects document.hidden and handles reactivation", () => {
     assert.ok(fs.existsSync(checkTokenPath), "Check Token page must exist");

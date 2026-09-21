@@ -1,6 +1,15 @@
-"use client";
+/**
+ * Public Homepage — Server-Rendered Static Shell
+ *
+ * Architecture: No "use client" at page level.
+ * - All static marketing content is server-rendered (no hydration cost)
+ * - Live data islands (FeaturedDoctorsWidget, LiveQueueWidget) are isolated client components
+ * - Page Visibility API / polling lives only inside those islands
+ */
 
-import React, { useState, useEffect } from "react";
+import type { Metadata } from "next";
+import React from "react";
+
 import Link from "next/link";
 import {
   Calendar,
@@ -8,101 +17,41 @@ import {
   Phone,
   ShieldAlert,
   Activity,
-  Users,
   CheckCircle2,
   Stethoscope,
   HeartPulse,
+  Users,
   Baby,
   Bone,
   Microscope,
-  ArrowRight,
-  Loader2,
 } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
-import {
-  getPublicDoctorsAction,
-  getLiveWaitingQueueAction,
-  PublicDoctor,
-} from "@/lib/public/actions";
-import { formatCurrencyBDT } from "@/lib/utils";
+import { LiveQueueWidget } from "@/components/public/LiveQueueWidget";
+import { FeaturedDoctorsWidget } from "@/components/public/FeaturedDoctorsWidget";
 
-interface QueueItem {
-  id: string;
-  doctor_name: string;
-  room_number: string;
-  patient_name?: string;
-  token_number: string;
-  status: "waiting" | "calling" | "serving" | "done" | "skipped";
-}
+export const metadata: Metadata = {
+  title: "Onnesha Hospital & Diagnostic Complex | Modern Healthcare Dhaka",
+  description:
+    "Book specialist doctor appointments, track live OPD token queues, 24/7 emergency care, pathology & diagnostic services at Onnesha Hospital, Dhaka, Bangladesh.",
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export default function HomePage() {
-  const [doctors, setDoctors] = useState<PublicDoctor[]>([]);
-  const [queue, setQueue] = useState<QueueItem[]>([]);
-  const [loadingDoctors, setLoadingDoctors] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    let inFlight = false;
-
-    async function loadLandingData() {
-      if (typeof document !== "undefined" && document.hidden) {
-        return;
-      }
-      if (inFlight) return;
-      inFlight = true;
-
-      try {
-        const [docRes, queueRes] = await Promise.all([
-          getPublicDoctorsAction(),
-          getLiveWaitingQueueAction(),
-        ]);
-
-        if (isMounted) {
-          if (docRes.success) {
-            setDoctors(docRes.doctors);
-          }
-          if (queueRes.success) {
-            setQueue(queueRes.queue);
-          }
-          setLoadingDoctors(false);
-        }
-      } finally {
-        inFlight = false;
-      }
-    }
-
-    void loadLandingData();
-    const timer = window.setInterval(() => {
-      void loadLandingData();
-    }, 15000);
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        void loadLandingData();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      isMounted = false;
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
   return (
     <div>
-      {/* 1. HERO SECTION */}
+      {/* 1. HERO SECTION — static server-rendered */}
       <section className="relative bg-gradient-to-br from-sky-900 via-sky-800 to-slate-900 text-white overflow-hidden py-16 lg:py-24">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]" aria-hidden="true"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-6">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex items-center space-x-2 bg-sky-500/20 border border-sky-400/30 px-3.5 py-1.5 rounded-full text-xs font-medium text-sky-200 backdrop-blur-xs">
-                  <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>24/7 Critical Care & Advanced Diagnostics in Dhaka</span>
+                  <Activity className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                  <span>24/7 Critical Care &amp; Advanced Diagnostics in Dhaka</span>
                 </div>
               </div>
 
@@ -117,16 +66,16 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-4 pt-2">
                 <Link
                   href="/appointment"
-                  className="inline-flex items-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-lg transition"
+                  className="inline-flex items-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-lg transition focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 >
-                  <Calendar className="w-4 h-4 mr-2" />
+                  <Calendar className="w-4 h-4 mr-2" aria-hidden="true" />
                   Book Doctor Appointment
                 </Link>
                 <Link
                   href="/check-token"
-                  className="inline-flex items-center bg-white/10 hover:bg-white/20 text-white font-medium text-sm px-5 py-3.5 rounded-xl border border-white/20 backdrop-blur-xs transition"
+                  className="inline-flex items-center bg-white/10 hover:bg-white/20 text-white font-medium text-sm px-5 py-3.5 rounded-xl border border-white/20 backdrop-blur-xs transition focus:outline-none focus:ring-2 focus:ring-sky-400"
                 >
-                  <Clock className="w-4 h-4 mr-2 text-sky-300" />
+                  <Clock className="w-4 h-4 mr-2 text-sky-300" aria-hidden="true" />
                   Check Live Token Status
                 </Link>
               </div>
@@ -134,98 +83,38 @@ export default function HomePage() {
               {/* Quick stats strip */}
               <div className="grid grid-cols-3 gap-4 pt-6 border-t border-sky-700/60 max-w-lg">
                 <div>
-                  <div className="text-2xl font-bold text-white">OPD & IPD</div>
+                  <div className="text-2xl font-bold text-white">OPD &amp; IPD</div>
                   <div className="text-xs text-sky-200">Consultant Care</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-white">Modern</div>
-                  <div className="text-xs text-sky-200">Beds & Cabins</div>
+                  <div className="text-xs text-sky-200">Beds &amp; Cabins</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-emerald-400">24/7</div>
-                  <div className="text-xs text-sky-200">Emergency & Lab</div>
+                  <div className="text-xs text-sky-200">Emergency &amp; Lab</div>
                 </div>
               </div>
             </div>
 
-            {/* Right Card: Live Token Queue Highlight */}
+            {/* Right Card: Live Token Queue — Client Island */}
             <div className="lg:col-span-5">
-              <div className="bg-white rounded-2xl shadow-2xl p-6 text-slate-900 border border-slate-100">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <h2 className="font-bold text-base text-slate-800">
-                      Live Doctor Token Queue
-                    </h2>
-                  </div>
-                  <span className="text-[11px] bg-sky-100 text-sky-800 font-semibold px-2 py-0.5 rounded">
-                    Auto-refresh (15s)
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-500 mb-4">
-                  Currently serving tokens inside outpatient chambers.
-                </p>
-
-                <div className="space-y-3">
-                  {queue.length > 0 ? (
-                    queue.slice(0, 4).map((q) => (
-                      <div
-                        key={q.id}
-                        className="p-3 bg-slate-50 rounded-xl flex items-center justify-between border border-slate-100"
-                      >
-                        <div>
-                          <div className="text-xs font-semibold text-slate-900">
-                            {q.doctor_name}
-                          </div>
-                          <div className="text-[11px] text-slate-500 flex items-center mt-0.5">
-                            <span className="font-medium text-sky-700 mr-2">
-                              {q.room_number}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="inline-block px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-md">
-                            Token: {q.token_number}
-                          </span>
-                          <span className="block text-[10px] text-slate-400 capitalize mt-0.5">
-                            {q.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-100">
-                      Doctor chambers active for today. Online bookings open.
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-5 pt-4 border-t border-slate-100">
-                  <Link
-                    href="/check-token"
-                    className="flex items-center justify-center text-xs font-semibold text-sky-700 hover:text-sky-800 w-full py-2 bg-sky-50 rounded-lg hover:bg-sky-100 transition"
-                  >
-                    View All Doctor Chambers & Queues
-                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                  </Link>
-                </div>
-              </div>
+              <LiveQueueWidget />
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. 24/7 EMERGENCY TRIAGE BANNER */}
+      {/* 2. 24/7 EMERGENCY TRIAGE BANNER — static */}
       <section className="bg-red-600 text-white py-4 px-4 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
           <div className="flex items-center space-x-3 text-center md:text-left">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <ShieldAlert className="w-6 h-6 text-white animate-bounce" />
+            <div className="p-2 bg-white/20 rounded-lg" aria-hidden="true">
+              <ShieldAlert className="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 className="font-bold text-sm sm:text-base tracking-wide">
-                24-Hour Emergency & Casualty Triage Care
+                24-Hour Emergency &amp; Casualty Triage Care
               </h2>
               <p className="text-xs text-white/95">
                 Duty medical officers, acute patient stabilization, and casualty triage facilities available round the clock.
@@ -236,17 +125,17 @@ export default function HomePage() {
             {HOSPITAL_METADATA.emergencyHotline ? (
               <a
                 href={`tel:${HOSPITAL_METADATA.emergencyHotline}`}
-                className="inline-flex items-center bg-white text-red-700 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition"
+                className="inline-flex items-center bg-white text-red-700 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-white"
               >
-                <Phone className="w-3.5 h-3.5 mr-1.5 text-red-600" />
+                <Phone className="w-3.5 h-3.5 mr-1.5 text-red-600" aria-hidden="true" />
                 Call {HOSPITAL_METADATA.emergencyHotline}
               </a>
             ) : (
               <Link
                 href="/contact"
-                className="inline-flex items-center bg-white text-red-700 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition"
+                className="inline-flex items-center bg-white text-red-700 hover:bg-red-50 font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-white"
               >
-                <Phone className="w-3.5 h-3.5 mr-1.5 text-red-600" />
+                <Phone className="w-3.5 h-3.5 mr-1.5 text-red-600" aria-hidden="true" />
                 Contact Reception
               </Link>
             )}
@@ -254,7 +143,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. KEY CLINICAL SPECIALTIES */}
+      {/* 3. KEY CLINICAL SPECIALTIES — static */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
@@ -282,12 +171,12 @@ export default function HomePage() {
               return (
                 <div
                   key={i}
-                  className="p-5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md hover:border-sky-200 transition text-center group cursor-pointer"
+                  className="p-5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md hover:border-sky-200 transition text-center"
                 >
-                  <div className={`w-12 h-12 rounded-xl mx-auto flex items-center justify-center mb-3 ${spec.color}`}>
+                  <div className={`w-12 h-12 rounded-xl mx-auto flex items-center justify-center mb-3 ${spec.color}`} aria-hidden="true">
                     <Icon className="w-6 h-6" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-800 group-hover:text-sky-600 transition">
+                  <h3 className="font-bold text-sm text-slate-800">
                     {spec.title}
                   </h3>
                   <p className="text-[11px] text-slate-500 mt-1">{spec.desc}</p>
@@ -298,95 +187,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. FEATURED DOCTORS & SPECIALISTS */}
-      <section className="py-16 bg-slate-50 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
-            <div>
-              <span className="text-xs font-bold text-sky-600 tracking-wider uppercase">
-                Experienced Consultants
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">
-                Meet Our Senior Doctors
-              </h2>
-            </div>
-            <Link
-              href="/doctors"
-              className="inline-flex items-center text-xs font-semibold text-sky-700 hover:text-sky-800 bg-white border border-slate-200 px-4 py-2 rounded-lg hover:border-sky-300 transition shadow-2xs"
-            >
-              View All Doctors & Visiting Hours
-              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-            </Link>
-          </div>
+      {/* 4. FEATURED DOCTORS — Client Island */}
+      <FeaturedDoctorsWidget />
 
-          {loadingDoctors && (
-            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-              <Loader2 className="w-8 h-8 text-sky-600 animate-spin mb-2" />
-              <p className="text-xs">Loading specialist doctors...</p>
-            </div>
-          )}
-
-          {!loadingDoctors && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {doctors.slice(0, 4).map((doc) => (
-                <div
-                  key={doc.id}
-                  className="bg-white rounded-2xl border border-slate-100 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between"
-                >
-                  <div className="p-5">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-14 h-14 rounded-full bg-sky-100 border-2 border-sky-200 flex items-center justify-center font-bold text-sky-800 text-lg shrink-0">
-                        {doc.full_name.split(" ").slice(1, 3).map(n => n[0]).join("")}
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded">
-                          {doc.department_name}
-                        </span>
-                        <h3 className="font-bold text-slate-900 text-sm mt-1 leading-snug">
-                          {doc.full_name}
-                        </h3>
-                      </div>
-                    </div>
-
-                    <p className="text-xs font-medium text-slate-700 mb-1">
-                      {doc.designation}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mb-3 line-clamp-2">
-                      {doc.degrees}
-                    </p>
-
-                  <div className="text-[11px] space-y-1 py-2 border-t border-slate-100 text-slate-600">
-                    <div className="flex justify-between">
-                      <span>BMDC Reg:</span>
-                      <span className="font-medium text-slate-800">{doc.bmdc_reg_number}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Chamber:</span>
-                      <span className="font-medium text-slate-800">{doc.room_number}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Consultation Fee:</span>
-                      <span className="font-bold text-emerald-700">{formatCurrencyBDT(doc.opd_fee)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-slate-50 border-t border-slate-100">
-                  <Link
-                    href={`/appointment?doctor=${doc.id}`}
-                    className="w-full text-center min-h-[44px] flex items-center justify-center py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  >
-                    Book Serial / Token
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        </div>
-      </section>
-
-      {/* 5. WHY ONNESHA HOSPITAL */}
+      {/* 5. WHY ONNESHA HOSPITAL — static */}
       <section className="py-16 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -409,7 +213,7 @@ export default function HomePage() {
                   { title: "Clean & Spacious Inpatient Cabins", desc: "Air-conditioned cabins, general beds, and post-operative wards with 24/7 dedicated nursing staff." },
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-start space-x-3">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
                     <div>
                       <h3 className="text-sm font-bold text-slate-800">{item.title}</h3>
                       <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
@@ -428,14 +232,14 @@ export default function HomePage() {
                   Need a Doctor Appointment Today?
                 </h3>
                 <p className="text-xs text-sky-100 leading-relaxed">
-                  Book your serial online in 60 seconds. You will receive an instant Token number and SMS reminder on your phone.
+                  Book your serial online in 60 seconds. You will receive an instant Token number and confirmation on screen.
                 </p>
                 <div className="pt-2">
                   <Link
                     href="/appointment"
-                    className="inline-flex items-center bg-white text-sky-900 hover:bg-sky-50 font-bold text-xs px-5 py-3 rounded-xl shadow-md transition"
+                    className="inline-flex items-center bg-white text-sky-900 hover:bg-sky-50 font-bold text-xs px-5 py-3 rounded-xl shadow-md transition focus:outline-none focus:ring-2 focus:ring-sky-300"
                   >
-                    <Calendar className="w-4 h-4 mr-2 text-sky-700" />
+                    <Calendar className="w-4 h-4 mr-2 text-sky-700" aria-hidden="true" />
                     Start Appointment Booking
                   </Link>
                 </div>
@@ -445,18 +249,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Infrastructure & Hospital FAQ Section for Visitors & AI Crawlers */}
+      {/* 6. FAQ Section for Visitors — static */}
       <section className="py-14 bg-slate-50 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <span className="text-xs uppercase tracking-wider font-semibold text-sky-700 bg-sky-100 px-3 py-1 rounded-full">
-              Hospital Information & Infrastructure
+              Hospital Information
             </span>
             <h2 className="text-2xl font-bold text-slate-900 mt-3">
               সচরাচর জিজ্ঞাসিত প্রশ্ন ও ডিজিটাল সেবা তথ্য
             </h2>
             <p className="text-xs text-slate-600 mt-2">
-              অন্বেষা হাসপাতালের ডিজিটাল ওপিডি পোর্টাল, ডাটাবেজ সিকিউরিটি ও ক্লাউড অবকাঠামো সম্পর্কিত প্রশ্নাবলী
+              অন্বেষা হাসপাতালের ডিজিটাল ওপিডি পোর্টাল ও অনলাইন পরিষেবা সম্পর্কিত সাধারণ প্রশ্নাবলী
             </p>
           </div>
 
@@ -466,25 +270,25 @@ export default function HomePage() {
                 অনলাইন পোর্টালের ডাটাবেজ ও ক্লাউড অবকাঠামো কেমন?
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                অন্বেষা হাসপাতালের সম্পূর্ণ ডিজিটাল ওপিডি, আইপিডি ও প্যাথলজি সিস্টেম উচ্চক্ষমতাসম্পন্ন ক্লাউড ডাটাবেজ আর্কিটেকচারে পরিচালিত। উচ্চগতির ক্যাশিং, এনক্রিপশন ইন-ট্রানজিট ও রোল-বেসড এক্সেস কন্ট্রোলের মাধ্যমে ডেটা সর্বদা সুরক্ষিত থাকে।
+                অন্বেষা হাসপাতালের ডিজিটাল ওপিডি, আইপিডি ও প্যাথলজি সিস্টেম ক্লাউড ডাটাবেজ আর্কিটেকচারে পরিচালিত। রোল-বেসড অ্যাক্সেস কন্ট্রোল এবং এনক্রিপ্টেড ট্রান্সপোর্টের মাধ্যমে ডেটা সুরক্ষিত থাকে।
               </p>
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 mb-2">
-                রোগীর ব্যক্তিগত ও মেডিকেল তথ্যের নিরাপত্তা কীভাবে নিশ্চিত হয়?
+                রোগীর ব্যক্তিগত ও মেডিকেল তথ্যের নিরাপত্তা কীভাবে নিশ্চিত হয়?
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                রোগীদের প্রেসক্রিপশন ও ডায়াগনস্টিক রিপোর্ট PostgreSQL Row-Level Security (RLS) অ্যাক্সেস কন্ট্রোল এবং নিরাপদ HTTPS প্রোটোকলের মাধ্যমে পরিচালিত। অনুমোদিত ডাক্তার ও সংশ্লিষ্ট হাসপাতাল স্টাফ ব্যতীত তৃতীয় কোনো পক্ষ এই তথ্যে অ্যাক্সেস করতে পারে না।
+                রোগীদের প্রেসক্রিপশন ও ডায়াগনস্টিক রিপোর্ট Row-Level Security (RLS) অ্যাক্সেস কন্ট্রোল এবং নিরাপদ HTTPS প্রোটোকলের মাধ্যমে পরিচালিত। অনুমোদিত ডাক্তার ও হাসপাতাল স্টাফ ব্যতীত তৃতীয় কোনো পক্ষ এই তথ্যে অ্যাক্সেস করতে পারে না।
               </p>
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 mb-2">
-                অনলাইনে সিরিয়াল নেওয়ার পর কীভাবে কনফার্মেশন পাওয়া যায়?
+                অনলাইনে সিরিয়াল নেওয়ার পর কীভাবে কনফার্মেশন পাওয়া যায়?
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                অনলাইনে অ্যাপয়েন্টমেন্ট সম্পন্ন হওয়ার সাথে সাথে ডিজিটাল টোকেন নম্বর প্রদান করা হয় এবং কনফার্মেশন স্লিপ প্রিন্ট বা সেভ করে রাখা যায়। নির্ধারিত সময়ে হাসপাতালে পৌঁছালে সরাসরি ওপিডি ডক্টরস চেম্বারে টোকেন সিরিয়াল ট্র্যাক করা যায়।
+                অনলাইনে অ্যাপয়েন্টমেন্ট সম্পন্ন হওয়ার সাথে সাথে ডিজিটাল টোকেন নম্বর প্রদান করা হয় এবং কনফার্মেশন স্লিপ প্রিন্ট বা সেভ করে রাখা যায়। নির্ধারিত সময়ে হাসপাতালে পৌঁছালে সরাসরি ওপিডি ডক্টরস চেম্বারে টোকেন সিরিয়াল ট্র্যাক করা যায়।
               </p>
             </div>
 
@@ -493,7 +297,7 @@ export default function HomePage() {
                 জরুরি পরিস্থিতিতে সরাসরি যোগাযোগ করার মাধ্যম কী?
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                জরুরি প্রয়োজনে আমাদের ২৪/৭ ট্রমা ও ক্যাজুয়ালটি হটলাইন {HOSPITAL_METADATA.phone} অথবা জরুরি অ্যাম্বুলেন্স সেবা {HOSPITAL_METADATA.ambulanceHotline}-এ যেকোনো সময় সরাসরি কল করা যাবে।
+                জরুরি প্রয়োজনে আমাদের ২৪/৭ ট্রমা ও ক্যাজুয়ালটি হটলাইন{HOSPITAL_METADATA.phone ? ` ${HOSPITAL_METADATA.phone}` : ""}{HOSPITAL_METADATA.ambulanceHotline ? ` অথবা জরুরি অ্যাম্বুলেন্স সেবা ${HOSPITAL_METADATA.ambulanceHotline}` : ""}-এ যেকোনো সময় সরাসরি কল করা যাবে অথবা <Link href="/contact" className="text-sky-600 underline">যোগাযোগ পাতায়</Link> আসুন।
               </p>
             </div>
           </div>

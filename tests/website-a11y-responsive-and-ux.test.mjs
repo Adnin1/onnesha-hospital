@@ -117,10 +117,16 @@ describe("Conversation 3: Accessibility (WCAG 2.2), Touch Targets & Responsive U
 
   test("8. HomePage doctor card booking action complies with touch target sizes", () => {
     assert.ok(fs.existsSync(homePath), "homepage must exist");
-    const code = fs.readFileSync(homePath, "utf8");
+    // Phase 12: doctor cards moved to FeaturedDoctorsWidget island component
+    const doctorsIslandPath = path.join(ROOT, "components/public/FeaturedDoctorsWidget.tsx");
+    const islandExists = fs.existsSync(doctorsIslandPath);
+    const code = islandExists
+      ? fs.readFileSync(doctorsIslandPath, "utf8")
+      : fs.readFileSync(homePath, "utf8");
 
     assert.ok(code.includes("min-h-[44px] flex items-center justify-center"), "Doctor card booking link must have min-h-[44px]");
   });
+
 
   test("9. Global stylesheet declares WCAG 2.2 accessibility foundations", () => {
     assert.ok(fs.existsSync(globalsCssPath), "globals.css must exist");

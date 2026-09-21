@@ -29,10 +29,17 @@ describe("OHMS Phase 35 Website, UI/UX, Role Security & Design System Forensics 
   });
 
   test("4. Public HomePage accurately labels 15-second polling queue as Auto-refresh instead of Realtime", () => {
-    const homeCode = fs.readFileSync(path.join(ROOT, "app/(public)/page.tsx"), "utf8");
+    // Phase 12: polling and badge live in LiveQueueWidget island, not page.tsx
+    const islandPath = path.join(ROOT, "components/public/LiveQueueWidget.tsx");
+    const pagePath = path.join(ROOT, "app/(public)/page.tsx");
+    const islandExists = fs.existsSync(islandPath);
+    const homeCode = islandExists
+      ? fs.readFileSync(islandPath, "utf8")
+      : fs.readFileSync(pagePath, "utf8");
     assert.ok(homeCode.includes("Auto-refresh (15s)"), "Queue badge must honestly declare Auto-refresh (15s)");
     assert.doesNotMatch(homeCode, />\s*Realtime\s*</, "Misleading standalone Realtime badge must be removed from queue highlight");
   });
+
 
   test("5. Public HomePage eliminates unverified compliance and absolute marketing claims", () => {
     const homeCode = fs.readFileSync(path.join(ROOT, "app/(public)/page.tsx"), "utf8");

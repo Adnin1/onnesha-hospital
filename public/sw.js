@@ -1,11 +1,20 @@
 /// <reference lib="webworker" />
 
-const CACHE_VERSION = 'ohms-static-v2';
+const CACHE_VERSION = 'ohms-static-v3';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/favicon.ico',
 ];
+
+// Explicit auth/private page paths — network-only, NEVER cached
+// These are checked first before pattern matching to prevent any accidental caching
+const NEVER_CACHE_EXACT_PATHS = new Set([
+  '/login',
+  '/mfa',
+  '/forgot-password',
+  '/reset-password',
+]);
 
 // Paths that must NEVER be cached (clinical, financial, private, and all authenticated app routes)
 const NEVER_CACHE_PATTERNS = [
@@ -13,7 +22,7 @@ const NEVER_CACHE_PATTERNS = [
   /\/api\//,
   /supabase\.co/,
   /\.supabase\./,
-  /auth/,
+  /\/auth\//,
   /patient/i,
   /prescription/i,
   /diagnosis/i,
@@ -21,17 +30,24 @@ const NEVER_CACHE_PATTERNS = [
   /payment/i,
   /billing/i,
   /clinical/i,
-  /lab/i,
+  /\/lab\//,
   /pharmacy/i,
   /payroll/i,
-  /audit/i,
-  /hr/i,
+  /\/audit/i,
+  /\/hr\//,
   /notification/i,
 ];
 
 function shouldNeverCache(url) {
-  const urlStr = url.toString();
-  return NEVER_CACHE_PATTERNS.some(pattern => pattern.test(urlStr));
+  try {
+    const parsed = new URL(url);
+    // Check exact auth paths first
+    if (NEVER_CACHE_EXACT_PATHS.has(parsed.pathname)) return true;
+    const urlStr = url.toString();
+    return NEVER_CACHE_PATTERNS.some(pattern => pattern.test(urlStr));
+  } catch {
+    return true; // If URL parsing fails, default to network-only
+  }
 }
 
 function isStaticAsset(url) {
