@@ -14,8 +14,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, "..");
 
-const WIX_DIR = "C:\\Users\\mahin khan\\wix311";
-const NSIS_DIR = "C:\\Users\\mahin khan\\nsis310\\nsis-3.10";
+const userProfile = process.env.USERPROFILE || process.env.HOME || "";
+const WIX_DIR = process.env.WIX_DIR || path.join(userProfile, "wix311");
+const NSIS_DIR = process.env.NSIS_DIR || path.join(userProfile, "nsis310", "nsis-3.10");
 
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
 const version = pkg.version;

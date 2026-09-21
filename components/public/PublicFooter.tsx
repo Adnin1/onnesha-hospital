@@ -36,47 +36,47 @@ export function PublicFooter() {
             </h3>
             <ul className="space-y-2 text-xs text-slate-300">
               <li>
-                <Link href="/doctors" className="hover:text-sky-400 transition">
+                <Link href="/doctors" prefetch={false} className="hover:text-sky-400 transition">
                   Specialist Doctor Directory
                 </Link>
               </li>
               <li>
-                <Link href="/appointment" className="hover:text-sky-400 transition">
+                <Link href="/appointment" prefetch={false} className="hover:text-sky-400 transition">
                   Book OPD Appointment Online
                 </Link>
               </li>
               <li>
-                <Link href="/check-token" className="hover:text-sky-400 transition">
+                <Link href="/check-token" prefetch={false} className="hover:text-sky-400 transition">
                   Check Live Token Status
                 </Link>
               </li>
               <li>
-                <Link href="/services" className="hover:text-sky-400 transition">
+                <Link href="/services" prefetch={false} className="hover:text-sky-400 transition">
                   Pathology & Digital Radiology
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-sky-400 transition">
+                <Link href="/privacy" prefetch={false} className="hover:text-sky-400 transition">
                   Privacy Policy (PDPA 2026)
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="hover:text-sky-400 transition">
+                <Link href="/terms" prefetch={false} className="hover:text-sky-400 transition">
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/consent" className="hover:text-sky-400 transition">
+                <Link href="/consent" prefetch={false} className="hover:text-sky-400 transition">
                   Patient Consent Guide
                 </Link>
               </li>
               <li>
-                <Link href="/downloads/desktop" className="hover:text-sky-400 transition">
+                <Link href="/downloads/desktop" prefetch={false} className="hover:text-sky-400 transition">
                   Windows Desktop Application
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="hover:text-sky-400 transition text-sky-400 font-medium">
+                <Link href="/login" prefetch={false} className="hover:text-sky-400 transition text-sky-400 font-medium">
                   Hospital Staff Portal Login →
                 </Link>
               </li>
