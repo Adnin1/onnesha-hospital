@@ -24,13 +24,25 @@ export default function CheckTokenPage() {
 
   useEffect(() => {
     let isMounted = true;
+    let inFlight = false;
+
     const loadQueue = async () => {
-      const res = await getLiveWaitingQueueAction();
-      if (isMounted) {
-        if (res.success) {
-          setQueue(res.queue);
+      if (typeof document !== "undefined" && document.hidden) {
+        return;
+      }
+      if (inFlight) return;
+      inFlight = true;
+
+      try {
+        const res = await getLiveWaitingQueueAction();
+        if (isMounted) {
+          if (res.success) {
+            setQueue(res.queue);
+          }
+          setLoading(false);
         }
-        setLoading(false);
+      } finally {
+        inFlight = false;
       }
     };
 
@@ -39,9 +51,18 @@ export default function CheckTokenPage() {
       void loadQueue();
     }, 15000); // 15s live refresh
 
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        void loadQueue();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       isMounted = false;
       clearInterval(timer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 

@@ -31,7 +31,7 @@ import { createClient } from "@supabase/supabase-js";
 // Read strictly from dedicated non-production test environment variables
 const TEST_SUPABASE_URL = process.env.OHMS_TEST_SUPABASE_URL || "";
 const TEST_ANON_KEY = process.env.OHMS_TEST_PUBLISHABLE_KEY || process.env.OHMS_TEST_ANON_KEY || "";
-const TEST_SERVICE_ROLE_KEY = process.env.OHMS_TEST_SERVICE_ROLE_KEY || "";
+const TEST_SERVICE_ROLE_KEY = process.env.OHMS_TEST_SECRET_KEY || process.env.OHMS_TEST_SERVICE_ROLE_KEY || "";
 
 // Two dynamically generated disposable test tenants (Never touches production canonical org)
 const DISPOSABLE_ORG_A = crypto.randomUUID();

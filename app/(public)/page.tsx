@@ -42,30 +42,52 @@ export default function HomePage() {
 
   useEffect(() => {
     let isMounted = true;
-    async function loadLandingData() {
-      const [docRes, queueRes] = await Promise.all([
-        getPublicDoctorsAction(),
-        getLiveWaitingQueueAction(),
-      ]);
+    let inFlight = false;
 
-      if (isMounted) {
-        if (docRes.success) {
-          setDoctors(docRes.doctors);
+    async function loadLandingData() {
+      if (typeof document !== "undefined" && document.hidden) {
+        return;
+      }
+      if (inFlight) return;
+      inFlight = true;
+
+      try {
+        const [docRes, queueRes] = await Promise.all([
+          getPublicDoctorsAction(),
+          getLiveWaitingQueueAction(),
+        ]);
+
+        if (isMounted) {
+          if (docRes.success) {
+            setDoctors(docRes.doctors);
+          }
+          if (queueRes.success) {
+            setQueue(queueRes.queue);
+          }
+          setLoadingDoctors(false);
         }
-        if (queueRes.success) {
-          setQueue(queueRes.queue);
-        }
-        setLoadingDoctors(false);
+      } finally {
+        inFlight = false;
       }
     }
+
     void loadLandingData();
     const timer = window.setInterval(() => {
       void loadLandingData();
     }, 15000);
 
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        void loadLandingData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       isMounted = false;
       window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
   return (

@@ -14,6 +14,7 @@
     "test:security": "node --test tests/security.test.mjs",
     "test:live-security": "node --test tests/live/*.live.test.mjs",
     "test:e2e": "playwright test",
+    "audit:assets": "node scripts/website-link-asset-forensics.mjs",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
     "desktop:check": "tsc --noEmit && eslint . --quiet"
