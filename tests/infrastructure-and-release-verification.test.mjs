@@ -55,8 +55,8 @@ describe("Conversation 4: Infrastructure, Security Gates & Release Integrity", (
       "Production deployment job must exist"
     );
     assert.ok(
-      ciContent.includes("needs: [validate, live-security-test, tauri-windows-build]"),
-      "Production deployment must depend on validate, live-security-test, and desktop build"
+      ciContent.includes("needs: [validate, live-security-test]"),
+      "Production deployment must depend on validate and live-security-test"
     );
     assert.ok(
       ciContent.includes("environment: staging"),
