@@ -11,6 +11,15 @@ import {
 } from "@/lib/public/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
 
+function getDoctorInitials(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "DR";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  const meaningful = parts[0].toLowerCase().replace(/\./g, "").startsWith("dr") ? parts.slice(1) : parts;
+  if (meaningful.length === 0) return parts[0].slice(0, 2).toUpperCase();
+  return meaningful.slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "DR";
+}
+
 export default function DoctorsDirectoryPage() {
   const [doctors, setDoctors] = useState<PublicDoctor[]>([]);
   const [departments, setDepartments] = useState<PublicDepartment[]>([]);
@@ -147,11 +156,7 @@ export default function DoctorsDirectoryPage() {
                   <div className="p-6">
                     <div className="flex items-start space-x-4 mb-4">
                       <div className="w-16 h-16 rounded-2xl bg-sky-100 border-2 border-sky-200 flex items-center justify-center font-bold text-sky-800 text-xl shrink-0 shadow-2xs">
-                        {doc.full_name
-                          .split(" ")
-                          .slice(1, 3)
-                          .map((n) => n[0])
-                          .join("")}
+                        {getDoctorInitials(doc.full_name)}
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded border border-sky-100">

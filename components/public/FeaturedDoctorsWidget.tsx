@@ -13,6 +13,15 @@ import { formatCurrencyBDT } from "@/lib/utils";
 
 type LoadState = "loading" | "success" | "error" | "empty";
 
+function getDoctorInitials(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "DR";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  const meaningful = parts[0].toLowerCase().replace(/\./g, "").startsWith("dr") ? parts.slice(1) : parts;
+  if (meaningful.length === 0) return parts[0].slice(0, 2).toUpperCase();
+  return meaningful.slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "DR";
+}
+
 export function FeaturedDoctorsWidget() {
   const [doctors, setDoctors] = useState<PublicDoctor[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
@@ -95,7 +104,7 @@ export function FeaturedDoctorsWidget() {
                       className="w-14 h-14 rounded-full bg-sky-100 border-2 border-sky-200 flex items-center justify-center font-bold text-sky-800 text-lg shrink-0"
                       aria-hidden="true"
                     >
-                      {doc.full_name.split(" ").slice(1, 3).map((n) => n[0]).join("")}
+                      {getDoctorInitials(doc.full_name)}
                     </div>
                     <div>
                       <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded">

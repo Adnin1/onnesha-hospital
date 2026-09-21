@@ -14,6 +14,7 @@ const NEVER_CACHE_EXACT_PATHS = new Set([
   '/mfa',
   '/forgot-password',
   '/reset-password',
+  '/auth',
 ]);
 
 // Paths that must NEVER be cached (clinical, financial, private, and all authenticated app routes)
@@ -22,7 +23,7 @@ const NEVER_CACHE_PATTERNS = [
   /\/api\//,
   /supabase\.co/,
   /\.supabase\./,
-  /\/auth\//,
+  /\/auth(\/|$)/,
   /patient/i,
   /prescription/i,
   /diagnosis/i,
@@ -30,19 +31,20 @@ const NEVER_CACHE_PATTERNS = [
   /payment/i,
   /billing/i,
   /clinical/i,
-  /\/lab\//,
+  /\/lab(\/|$)/,
   /pharmacy/i,
   /payroll/i,
-  /\/audit/i,
-  /\/hr\//,
+  /\/audit(\/|$)/,
+  /\/hr(\/|$)/,
   /notification/i,
 ];
 
 function shouldNeverCache(url) {
   try {
     const parsed = new URL(url);
+    const cleanPath = parsed.pathname.replace(/\/$/, '') || '/';
     // Check exact auth paths first
-    if (NEVER_CACHE_EXACT_PATHS.has(parsed.pathname)) return true;
+    if (NEVER_CACHE_EXACT_PATHS.has(cleanPath)) return true;
     const urlStr = url.toString();
     return NEVER_CACHE_PATTERNS.some(pattern => pattern.test(urlStr));
   } catch {
