@@ -41,14 +41,30 @@ describe("Conversation 4: Infrastructure, Security Gates & Release Integrity", (
       "Workflow must not cancel in-progress production release deployments"
     );
 
-    // Elevated job-level permissions
+    // Elevated job-level permissions and strict dependency order
     assert.ok(
       ciContent.includes("tauri-windows-build:"),
       "Tauri desktop job must exist"
     );
     assert.ok(
+      ciContent.includes("needs: [validate, live-security-test]"),
+      "Tauri desktop release must depend on both validate and live-security-test"
+    );
+    assert.ok(
       ciContent.includes("deploy-production:"),
       "Production deployment job must exist"
+    );
+    assert.ok(
+      ciContent.includes("needs: [validate, live-security-test, tauri-windows-build]"),
+      "Production deployment must depend on validate, live-security-test, and desktop build"
+    );
+    assert.ok(
+      ciContent.includes("environment: staging"),
+      "Live security test must declare staging environment"
+    );
+    assert.ok(
+      ciContent.includes("environment: production"),
+      "Production deployment must declare production environment"
     );
 
     // Asset forensics crawl step in validate
@@ -69,7 +85,7 @@ describe("Conversation 4: Infrastructure, Security Gates & Release Integrity", (
     assert.ok(!headers.includes("'unsafe-eval'"), "Content-Security-Policy must not allow unsafe-eval");
     assert.ok(headers.includes("connect-src 'self' https://*.supabase.co"));
     assert.ok(headers.includes("/app/*\n  Cache-Control: no-store, no-cache, must-revalidate"));
-    assert.ok(headers.includes("/downloads/desktop/latest.json\n  Cache-Control: no-cache, no-store"));
+    assert.ok(headers.includes("/downloads/desktop/*\n  Cache-Control: no-cache, no-store"));
   });
 
   test("3. Version synchronization is strictly preserved across all 4 project manifests", () => {
