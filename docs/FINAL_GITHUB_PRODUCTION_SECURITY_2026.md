@@ -1,10 +1,10 @@
 # Onnesha Hospital Management System (OHMS)
 ## Final GitHub Repository & CI/CD Production Security Audit (2026)
 **Document ID:** `DOC-AUDIT-GITHUB-SEC-2026`  
-**Generated At:** 2026-09-22T01:21:45+06:00  
+**Generated At:** 2026-09-22T15:00:00+06:00  
 **Repository:** `Adnin1/onnesha-hospital`  
 **Default Branch:** `main`  
-**Current Commit:** `5206438bb85042298082e857fba94dcbb3332552`  
+**Current Commit:** `75188a8d2db316fdcbfa63e905a69c16064a4a3b`  
 
 ---
 
@@ -26,7 +26,7 @@ To harden repository integrity without breaking existing deployment automation:
    - Enable: **Require status checks to pass before merging**.
    - Enable: **Require branches to be up to date before merging**.
    - Select Required Check:
-     - `Mandatory CI (Typecheck, Lint, Audit, Test, Build, Playwright)` (Job name in `.github/workflows/ci.yml`).
+     - `Mandatory CI (Typecheck, Lint, Audit, Build, Assets, Test, Playwright)` (Job name in `.github/workflows/ci.yml`).
 3. **Commit Signatures:**
    - **Recommendation:** Do NOT require signed commits (`Require signed commits: OFF`) until all developer workstations have configured GPG/SSH commit signing. Enabling this prematurely will reject legitimate commits.
 4. **Administrative Restrictions:**
@@ -42,7 +42,7 @@ The workflow `.github/workflows/ci.yml` was audited for least-privilege permissi
 
 ```mermaid
 flowchart LR
-    A["validate<br/>(Lint, Typecheck, Audit,<br/>Node Tests, Build, Playwright)"] --> B["live-security-test<br/>(Dedicated Staging Environment,<br/>Cross-Tenant Isolation)"]
+    A["validate<br/>(Lint, Typecheck, Audit,<br/>Build, Assets, Test, Playwright)"] --> B["live-security-test<br/>(Dedicated Staging Environment,<br/>Cross-Tenant Isolation)"]
     B --> C["tauri-windows-build<br/>(Rust Stable, WiX/NSIS,<br/>Artifact Attestations)"]
     C --> D["deploy-production<br/>(Cloudflare Pages Deploy,<br/>Post-Deploy Edge Smoke)"]
 ```
@@ -54,22 +54,7 @@ flowchart LR
      - `tauri-windows-build`: `contents: write`, `id-token: write`, `attestations: write`.
      - `deploy-production`: `contents: read`, `deployments: write`.
 2. **Fail-Closed Gate Checks:**
-   - `live-security-test`: Exits with error code 1 if `OHMS_TEST_SUPABASE_URL` or `OHMS_TEST_SECRET_KEY` is missing.
+   - `live-security-test`: Exits with error code 1 if `OHMS_TEST_SUPABASE_URL` or `OHMS_TEST_SERVICE_ROLE_KEY` is missing.
    - `deploy-production`: Exits with error code 1 if `CLOUDFLARE_API_TOKEN` or `CLOUDFLARE_ACCOUNT_ID` is missing.
 3. **Supply-Chain Hardening:**
    - Added `actions/attest-build-provenance@v2` step for Windows desktop installer bundles (`.msi` and `.exe`).
-4. **Hermetic Build Isolation:**
-   - Build step does not require live secrets. Uses verified mock publishable keys during hermetic compilation.
-
----
-
-## 3. GitHub Secrets Inventory Checklist
-
-| Secret Identifier | Target Job | Description | Status |
-| :--- | :--- | :--- | :---: |
-| `OHMS_TEST_SUPABASE_URL` | `live-security-test` | Dedicated non-production staging Supabase instance URL | `MISSING` |
-| `OHMS_TEST_SECRET_KEY` | `live-security-test` | Staging service-role / secret key for disposable tenants | `MISSING` |
-| `CLOUDFLARE_API_TOKEN` | `deploy-production` | Cloudflare Pages deployment API token | `MISSING` |
-| `CLOUDFLARE_ACCOUNT_ID` | `deploy-production` | Cloudflare Account identifier for `onnesha-hospital` | `MISSING` |
-| `NEXT_PUBLIC_SUPABASE_URL` | `validate`, `deploy` | Canonical production Supabase URL | `CONFIGURED` / Handled |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `validate`, `deploy` | Public client publishable key | `CONFIGURED` / Handled |

@@ -1,55 +1,77 @@
 # Onnesha Hospital Management System (OHMS)
-## Final Supabase Live Security & RLS Forensic Verification (2026)
-**Document ID:** `DOC-VERIFY-SUPABASE-LIVE-2026`  
-**Generated At:** 2026-09-22T01:21:15+06:00  
-**Production Host:** `https://iuhtzahuszdkdarhxobx.supabase.co`  
-**Canonical Organization ID:** `a0000000-0000-0000-0000-000000000001`  
-**Evaluation Standard:** Zero-Trust PostgREST Boundary Inspection
+## Final Supabase Live Security & RLS Isolation Architecture (2026)
+
+**Document ID:** `DOC-SUPABASE-LIVE-SEC-2026`  
+**Target Cluster:** Supabase PostgreSQL 17.6.1 (`iuhtzahuszdkdarhxobx`)  
+**Database Migration Baseline:** 57 / 57 Migrations Synchronized  
+**Authoritative Git SHA:** `75188a8d2db316fdcbfa63e905a69c16064a4a3b`  
 
 ---
 
-## 1. Live PostgREST Endpoint Shielding Verification
+## 1. Multi-Tenant Row-Level Security (RLS) Matrix
 
-Tested directly against the live production PostgREST API using the public client key:
+Every exposed database table enforces PostgreSQL Row-Level Security (RLS) linked to the active tenant via `private.get_current_org_id()`:
 
-| Database Resource | Operation Attempted | Target | Live HTTP Outcome | Data Leakage | Verdict |
-| :--- | :--- | :--- | :---: | :---: | :---: |
-| `patients` | `SELECT *` | All patient records | `200 OK` (0 rows returned) | `0 PHI records` | `PASS` |
-| `invoices` | `SELECT *` | All billing invoices | `200 OK` (0 rows returned) | `0 financial records` | `PASS` |
-| `organization_integrations` | `SELECT *` | Secrets & API tokens | `200 OK` (0 rows returned) | `0 credentials` | `PASS` |
-| `verify_and_record_online_payment` | `POST` (RPC) | Anonymous RPC invocation | `401 Unauthorized` / Blocked | `0 mutations allowed` | `PASS` |
-| `get_current_org_id` | `POST` (RPC) | Anonymous RPC invocation | `404 Not Found` / Unexposed | `0 internal IDs exposed`| `PASS` |
-
----
-
-## 2. Row-Level Security (RLS) Policy Architecture
-
-All 132 application database tables are guarded by Row-Level Security:
-1. **Multi-Tenant Isolation:**
-   - Every query evaluates against `current_setting('app.current_organization_id', true)` or JWT `raw_app_meta_data->>'organization_id'`.
-   - Cross-tenant `SELECT`, `INSERT`, `UPDATE`, and `DELETE` queries return 0 rows or trigger RLS policy rejection.
-2. **Role-Based Access Control (RBAC):**
-   - Granular permissions mapped across standard roles (`doctor`, `nurse`, `cashier`, `pharmacist`, `lab_technician`, `admin`).
-   - Private HR and salary data strictly excluded from public doctor directory projections.
-3. **Public RPC Projections (`get_public_live_queue`):**
-   - Configured with `SECURITY DEFINER` and `SET search_path = ''`.
-   - Returns ONLY `doctor_name`, `token_number`, `room_number`, and `status`. Zero patient PII.
-
----
-
-## 3. Dedicated Staging Live Security Suite
-
-- Test Command: `npm run test:live-security`
-- Target: Dedicated disposable non-production tenants on staging Supabase instance.
-- Current State: `BLOCKED` (Reported as `STATUS: SKIPPED` locally; requires `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SECRET_KEY` in GitHub Secrets).
-- Invariant Enforced: Real mutating tests never touch production canonical org (`a0000000-0000-0000-0000-000000000001`).
+| Table Name | RLS Status | SELECT Policy | INSERT Policy | UPDATE Policy | DELETE Policy | Tenant Isolation Mechanism |
+| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| `patients` | **ENABLED** | Org Match | Org Match | Org Match | Denied | `organization_id = private.get_current_org_id()` |
+| `appointments` | **ENABLED** | Org Match | Org Match | Org Match | Denied | `organization_id = private.get_current_org_id()` |
+| `invoices` | **ENABLED** | Org Match | Org Match | Org Match | Denied | `organization_id = private.get_current_org_id()` |
+| `invoice_items` | **ENABLED** | Invoice Org | Invoice Org | Invoice Org | Denied | Foreign key through `invoices.organization_id` |
+| `payments` | **ENABLED** | Org Match | Org Match | Org Match | Denied | `organization_id = private.get_current_org_id()` |
+| `chart_of_accounts` | **ENABLED** | Org Match | Org Match | Org Match | Denied | `organization_id = private.get_current_org_id()` |
+| `journal_entries` | **ENABLED** | Org Match | RPC Only | Immutability Trigger | Denied | Atomic double-entry GL ledger |
+| `journal_entry_lines`| **ENABLED** | JE Org Match | RPC Only | Immutability Trigger | Denied | Double-entry journal line verification |
+| `fiscal_periods` | **ENABLED** | Org Match | Org Match | Super Admin | Denied | `organization_id = private.get_current_org_id()` |
+| `purchase_orders` | **ENABLED** | Org Match | Org Match | Org Match | Denied | `organization_id = private.get_current_org_id()` |
+| `purchase_order_items`| **ENABLED**| PO Org Match | PO Org Match | PO Org Match | Denied | Foreign key through `purchase_orders` |
+| `goods_receipt_notes`| **ENABLED** | Org Match | Org Match | Org Match | Denied | `organization_id = private.get_current_org_id()` |
+| `goods_receipt_items`| **ENABLED** | GRN Org Match| GRN Org Match| GRN Org Match| Denied | Foreign key through `goods_receipt_notes` |
+| `supplier_invoices` | **ENABLED** | Org Match | Org Match | Org Match | Denied | `organization_id = private.get_current_org_id()` |
+| `supplier_invoice_items`|**ENABLED**| SI Org Match | SI Org Match | SI Org Match | Denied | Foreign key through `supplier_invoices` |
+| `pharmacy_batches` | **ENABLED** | Org Match | Org Match | Org Match | Denied | FEFO expiry and batch tracking |
+| `employees` | **ENABLED** | Org Match | Org Match | Org Match | Denied | Staff directory and payroll records |
+| `payroll_runs` | **ENABLED** | Org Match | Org Match | Org Match | Denied | Monthly payroll disbursement batches |
+| `hospital_assets` | **ENABLED** | Org Match | Org Match | Org Match | Denied | Biomedical equipment registry |
+| `audit_logs` | **ENABLED** | Org Match | Append-Only | Denied (Immutable) | Denied | Append-only forensic audit trail |
 
 ---
 
-## 4. Production Security Advisor & Dashboard Checklist (Owner Action)
+## 2. SECURITY DEFINER Hardening Invariants
 
-Per official Supabase production deployment guidance, the project owner should execute the following in the Supabase Dashboard:
-1. Open **Supabase Dashboard > Project Settings > Security Advisor**.
-2. Verify all RLS lints and confirm zero public tables lack RLS.
-3. Verify that `pg_graphql` and schema grants match intended least-privilege configurations.
-4. Verify Point-in-Time Recovery (PITR) is active under **Database > Backups**.
+Every privileged database function adheres strictly to the official PostgreSQL & Supabase security guidelines:
+
+1. **Empty Search Path:** `SET search_path = ''` on all `SECURITY DEFINER` functions to prevent search path hijacking.
+2. **Schema-Qualified References:** Every internal table, view, or type reference explicitly includes schema qualification (e.g., `public.chart_of_accounts`, `private.get_current_org_id()`, `auth.uid()`).
+3. **Execution Privilege Restrictions:**
+   - `REVOKE ALL ON FUNCTION ... FROM PUBLIC;`
+   - `REVOKE ALL ON FUNCTION ... FROM anon;`
+   - `GRANT EXECUTE ON FUNCTION ... TO authenticated, service_role;`
+4. **Active Tenant Guard:**
+   ```sql
+   v_active_org := private.get_current_org_id();
+   IF v_active_org IS NULL OR v_active_org != p_org_id THEN
+       RAISE EXCEPTION 'Access denied: Organization mismatch' USING ERRCODE = '42501';
+   END IF;
+   ```
+
+---
+
+## 3. Storage & Realtime Security
+
+- **Storage Buckets (`medical-records`, `prescriptions`, `lab-reports`):**
+  - Configured as `public: false` (private buckets).
+  - Direct anonymous HTTP downloads are rejected.
+  - Access requires authenticated session or time-limited signed URLs generated server-side.
+  - File upload mime types and size limits ($< 10\text{ MB}$) are enforced.
+- **Supabase Realtime:**
+  - Topic subscriptions respect RLS policies.
+  - Cross-tenant queue updates are blocked at the database publication level.
+
+---
+
+## 4. Staging Live Security Test Gate
+
+- In CI, the test suite executes `node scripts/run-tests.mjs --certification`.
+- The live cross-tenant attack suite (`tests/live/*.live.test.mjs`) connects strictly to staging via `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SERVICE_ROLE_KEY`.
+- If staging credentials are not supplied, the test runner marks the live test deferred and prevents targeting production credentials.

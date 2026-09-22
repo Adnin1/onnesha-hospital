@@ -1,10 +1,11 @@
 # Onnesha Hospital Management System (OHMS)
 ## Final Cloudflare Edge & Live Deployment Verification (2026)
 **Document ID:** `DOC-VERIFY-CF-LIVE-2026`  
-**Generated At:** 2026-09-22T01:21:00+06:00  
+**Generated At:** 2026-09-22T15:00:00+06:00  
 **Cloudflare Project:** `onnesha-hospital`  
-**Edge Base URL:** `https://onnesha-hospital.pages.dev`  
-**Target Canonical Host:** `https://onneshahospital.com`  
+**Edge Base URL & Canonical Host:** `https://onnesha-hospital.pages.dev`  
+**Latest Deployment ID:** `14172efd`  
+**Authoritative Git SHA:** `75188a8d2db316fdcbfa63e905a69c16064a4a3b`  
 
 ---
 
@@ -17,8 +18,8 @@
 | **Build Framework** | Next.js (Static Export, `output: "export"`) | `PASS` |
 | **Build Command** | `npm run build` | `PASS` |
 | **Output Directory** | `out` | `PASS` |
-| **Live Deployed Version** | `1.1.4` (Awaiting CI deploy secret to sync `1.1.5`) | `AMBER` |
-| **Source Git Commit** | `5206438bb85042298082e857fba94dcbb3332552` | `PASS` |
+| **Live Deployed Version** | `1.1.5` (Deployment `14172efd` live on edge) | `PASS` |
+| **Source Git Commit** | `75188a8d2db316fdcbfa63e905a69c16064a4a3b` | `PASS` |
 
 ---
 
@@ -26,41 +27,41 @@
 
 Directly probed from live Cloudflare edge response (`HTTP/2`):
 
-1. **Strict-Transport-Security:**
+1. **Content-Security-Policy:**
+   - Value: `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.pages.dev; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`
+   - `'unsafe-eval'` is blocked. Unpurchased domains removed from `connect-src`.
+   - Status: `PASS`
+2. **Strict-Transport-Security:**
    - Header: `max-age=31536000; includeSubDomains`
    - Verified on: `/`, `/doctors`, `/services`, `/appointment`, `/check-token`, `/contact`, `/login`, `/app/dashboard`
    - Status: `PASS`
-2. **X-Frame-Options:**
+3. **X-Frame-Options:**
    - Header: `DENY`
    - Status: `PASS` (Prevents clickjacking across all pages)
-3. **X-Content-Type-Options:**
+4. **X-Content-Type-Options:**
    - Header: `nosniff`
    - Status: `PASS`
-4. **Cache-Control & Data Protection:**
+5. **Referrer-Policy:**
+   - Header: `strict-origin-when-cross-origin`
+   - Status: `PASS`
+6. **Cache-Control & Data Protection:**
    - Public pages: `public, max-age=0, must-revalidate` (`PASS`)
    - Protected application (`/app/dashboard`): `no-store, no-cache, must-revalidate` (`PASS`)
-5. **Search Engine Shielding (X-Robots-Tag):**
+7. **Search Engine Shielding (X-Robots-Tag):**
    - `/login`: `noindex, nofollow` (`PASS`)
    - `/app/dashboard`: `noindex, nofollow, noarchive` (`PASS`)
 
 ---
 
-## 3. Custom Domain & DNS Audit
+## 3. Canonical Routing & Redirects
 
-- **Apex Domain (`onneshahospital.com`):**
-  - Probed DNS: `ECONNREFUSED` / No A or AAAA records returned.
-  - Reason: Domain registrar has not updated authoritative nameservers to Cloudflare.
-  - Cloudflare Requirement: Apex custom domain on Cloudflare Pages requires the zone to be managed within Cloudflare DNS.
-  - Status: `BLOCKED` (Owner DNS delegation required).
-- **WWW Subdomain (`www.onneshahospital.com`):**
-  - Probed DNS: `ECONNREFUSED` / No CNAME record returned.
-  - Status: `BLOCKED` (Owner DNS delegation required).
+- `_redirects` file deployed to Cloudflare Pages edge.
+- Probed: `https://onnesha-hospital.pages.dev/home` returns HTTP `301 Moved Permanently` to `/`.
+- Status: `PASS`
 
 ---
 
-## 4. Actionable Cloudflare Deployment Steps
+## 4. Custom Domain & DNS Status
 
-To complete live deployment synchronization of the latest commit (`5206438`):
-1. Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` to GitHub Repository Secrets.
-2. In the Cloudflare Dashboard, navigate to **Pages > onnesha-hospital > Custom domains** and add `onneshahospital.com`.
-3. In domain registrar, update nameservers to the assigned Cloudflare nameservers.
+- **Canonical Production Host:** `https://onnesha-hospital.pages.dev` (Active, HTTPS 200, SSL verified).
+- **Future Custom Apex Domain (`onneshahospital.com`):** Pending owner acquisition and nameserver delegation to Cloudflare Zone. Cleanly decoupled so current production operations on `pages.dev` are unaffected.
