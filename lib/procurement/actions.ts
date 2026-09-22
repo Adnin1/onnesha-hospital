@@ -363,3 +363,349 @@ export async function getWarehousesAction(): Promise<ActionResult<{ warehouses: 
     return { success: false, error: msg };
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Supplier Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SupplierRecord {
+  id: string;
+  organization_id: string;
+  supplier_code: string;
+  company_name: string;
+  contact_person?: string | null;
+  phone: string;
+  email?: string | null;
+  address?: string | null;
+  trade_license?: string | null;
+  tin_vat?: string | null;
+  payment_terms_days: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface PurchaseOrderItem {
+  id?: string;
+  po_id?: string;
+  item_name: string;
+  item_category: string;
+  quantity_ordered: number;
+  unit_price: number;
+  total_price: number;
+}
+
+export interface PurchaseOrderRecord {
+  id: string;
+  organization_id: string;
+  po_number: string;
+  supplier_id: string;
+  requisition_id?: string | null;
+  status: "DRAFT" | "SENT" | "PARTIALLY_RECEIVED" | "FULLY_RECEIVED" | "CANCELLED";
+  order_date: string;
+  expected_delivery_date?: string | null;
+  total_amount: number;
+  notes?: string | null;
+  created_at: string;
+  items?: PurchaseOrderItem[];
+}
+
+export interface SupplierInvoiceRecord {
+  id: string;
+  organization_id: string;
+  supplier_invoice_number: string;
+  supplier_id: string;
+  purchase_order_id?: string | null;
+  invoice_date: string;
+  due_date: string;
+  subtotal: number;
+  tax_amount: number;
+  total_amount: number;
+  status: "PENDING" | "POSTED" | "PAID" | "DISPUTED" | "CANCELLED";
+  created_at: string;
+}
+
+/**
+ * 6. Fetch Suppliers Register
+ */
+export async function getSuppliersAction(params?: {
+  isActive?: boolean;
+}): Promise<ActionResult<{ suppliers: SupplierRecord[] }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.PROCUREMENT_VIEW);
+  } catch {
+    return { success: false, error: "403 Forbidden" };
+  }
+
+  const supabase = await createClient();
+  let query = supabase
+    .from("suppliers")
+    .select("*")
+    .eq("organization_id", session.organizationId)
+    .order("supplier_code", { ascending: true });
+
+  if (params?.isActive !== undefined) {
+    query = query.eq("is_active", params.isActive);
+  }
+
+  const { data, error } = await query;
+  if (error) return { success: false, error: error.message };
+
+  return { success: true, data: { suppliers: (data as SupplierRecord[]) || [] } };
+}
+
+/**
+ * 7. Register New Supplier
+ */
+export async function createSupplierAction(input: {
+  companyName: string;
+  phone: string;
+  email?: string;
+  contactPerson?: string;
+  address?: string;
+  tradeLicense?: string;
+  tinVat?: string;
+  paymentTermsDays?: number;
+}): Promise<ActionResult<{ supplier: SupplierRecord }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  try {
+    await requirePermission(PERMISSIONS.PROCUREMENT_MANAGE);
+  } catch {
+    return { success: false, error: "403 Forbidden: procurement.manage required" };
+  }
+
+  if (!input.companyName?.trim() || !input.phone?.trim()) {
+    return { success: false, error: "companyName and phone are required" };
+  }
+
+  const supabase = await createClient();
+
+  // Generate sequential supplier code
+  const { count } = await supabase
+    .from("suppliers")
+    .select("*", { count: "exact", head: true })
+    .eq("organization_id", session.organizationId);
+
+  const supplierCode = `SUP-${String((count ?? 0) + 1).padStart(4, "0")}`;
+
+  const { data, error } = await supabase
+    .from("suppliers")
+    .insert({
+      organization_id: session.organizationId,
+      supplier_code: supplierCode,
+      company_name: input.companyName.trim(),
+      contact_person: input.contactPerson ?? null,
+      phone: input.phone.trim(),
+      email: input.email ?? null,
+      address: input.address ?? null,
+      trade_license: input.tradeLicense ?? null,
+      tin_vat: input.tinVat ?? null,
+      payment_terms_days: input.paymentTermsDays ?? 30,
+      is_active: true,
+    })
+    .select()
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  await recordAuditLog({
+    organizationId: session.organizationId,
+    userId: session.userId || undefined,
+    action: "CREATE",
+    module: "PROCUREMENT",
+    entityType: "supplier",
+    entityId: data.id,
+    newValues: { supplier_code: supplierCode, company_name: input.companyName },
+  });
+
+  return { success: true, data: { supplier: data as SupplierRecord } };
+}
+
+/**
+ * 8. Create Purchase Order with line items
+ */
+export async function createPurchaseOrderAction(input: {
+  supplierId: string;
+  requisitionId?: string;
+  orderDate?: string;
+  expectedDeliveryDate?: string;
+  notes?: string;
+  items: Array<{
+    itemName: string;
+    itemCategory: string;
+    quantityOrdered: number;
+    unitPrice: number;
+  }>;
+}): Promise<ActionResult<{ purchaseOrder: PurchaseOrderRecord }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  try {
+    await requirePermission(PERMISSIONS.PROCUREMENT_MANAGE);
+  } catch {
+    return { success: false, error: "403 Forbidden: procurement.manage required" };
+  }
+
+  if (!input.supplierId) return { success: false, error: "supplierId is required" };
+  if (!input.items?.length) return { success: false, error: "At least one item is required" };
+
+  for (const item of input.items) {
+    if (!item.itemName?.trim()) return { success: false, error: "Each item must have itemName" };
+    if (item.quantityOrdered <= 0) return { success: false, error: "quantityOrdered must be > 0" };
+    if (item.unitPrice < 0) return { success: false, error: "unitPrice must be >= 0" };
+  }
+
+  const supabase = await createClient();
+
+  // Verify supplier belongs to this org
+  const { data: supplier } = await supabase
+    .from("suppliers")
+    .select("id")
+    .eq("id", input.supplierId)
+    .eq("organization_id", session.organizationId)
+    .single();
+
+  if (!supplier) return { success: false, error: "Supplier not found in this organization" };
+
+  // Generate sequential PO number
+  const { count } = await supabase
+    .from("erp_purchase_orders")
+    .select("*", { count: "exact", head: true })
+    .eq("organization_id", session.organizationId);
+
+  const poNumber = `PO-${new Date().getFullYear()}-${String((count ?? 0) + 1).padStart(5, "0")}`;
+  const totalAmount = input.items.reduce(
+    (sum, item) => sum + item.quantityOrdered * item.unitPrice,
+    0
+  );
+
+  const { data: header, error: poErr } = await supabase
+    .from("erp_purchase_orders")
+    .insert({
+      organization_id: session.organizationId,
+      po_number: poNumber,
+      supplier_id: input.supplierId,
+      requisition_id: input.requisitionId ?? null,
+      status: "DRAFT",
+      order_date: input.orderDate ?? new Date().toISOString().split("T")[0],
+      expected_delivery_date: input.expectedDeliveryDate ?? null,
+      total_amount: totalAmount,
+      notes: input.notes ?? null,
+    })
+    .select()
+    .single();
+
+  if (poErr) return { success: false, error: poErr.message };
+
+  const lineInserts = input.items.map((item) => ({
+    organization_id: session.organizationId as string,
+    po_id: header.id,
+    item_name: item.itemName.trim(),
+    item_category: item.itemCategory,
+    quantity_ordered: item.quantityOrdered,
+    unit_price: item.unitPrice,
+    total_price: Number((item.quantityOrdered * item.unitPrice).toFixed(2)),
+    quantity_received: 0,
+  }));
+
+  const { error: lineErr } = await supabase.from("erp_purchase_order_items").insert(lineInserts);
+  if (lineErr) {
+    await supabase.from("erp_purchase_orders").delete().eq("id", header.id);
+    return { success: false, error: `PO line insert failed: ${lineErr.message}` };
+  }
+
+  await recordAuditLog({
+    organizationId: session.organizationId,
+    userId: session.userId || undefined,
+    action: "CREATE",
+    module: "PROCUREMENT",
+    entityType: "purchase_order",
+    entityId: header.id,
+    newValues: { po_number: poNumber, supplier_id: input.supplierId, total_amount: totalAmount },
+  });
+
+  return {
+    success: true,
+    data: { purchaseOrder: { ...header, items: lineInserts } as unknown as PurchaseOrderRecord },
+  };
+}
+
+/**
+ * 9. Fetch Purchase Orders
+ */
+export async function getPurchaseOrdersAction(params?: {
+  status?: string;
+  supplierId?: string;
+  limit?: number;
+}): Promise<ActionResult<{ purchaseOrders: PurchaseOrderRecord[] }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  try {
+    await requirePermission(PERMISSIONS.PROCUREMENT_VIEW);
+  } catch {
+    return { success: false, error: "403 Forbidden" };
+  }
+
+  const supabase = await createClient();
+  let query = supabase
+    .from("erp_purchase_orders")
+    .select("*, purchase_order_items(*)")
+    .eq("organization_id", session.organizationId)
+    .order("created_at", { ascending: false })
+    .limit(params?.limit ?? 50);
+
+  if (params?.status) query = query.eq("status", params.status);
+  if (params?.supplierId) query = query.eq("supplier_id", params.supplierId);
+
+  const { data, error } = await query;
+  if (error) return { success: false, error: error.message };
+
+  return { success: true, data: { purchaseOrders: (data as unknown as PurchaseOrderRecord[]) || [] } };
+}
+
+/**
+ * 10. Fetch Supplier Invoices (AP Aging source)
+ */
+export async function getSupplierInvoicesAction(params?: {
+  status?: string;
+  supplierId?: string;
+  limit?: number;
+}): Promise<ActionResult<{ invoices: SupplierInvoiceRecord[] }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  try {
+    await requirePermission(PERMISSIONS.PROCUREMENT_VIEW);
+  } catch {
+    return { success: false, error: "403 Forbidden" };
+  }
+
+  const supabase = await createClient();
+  let query = supabase
+    .from("supplier_invoices")
+    .select("*")
+    .eq("organization_id", session.organizationId)
+    .order("invoice_date", { ascending: false })
+    .limit(params?.limit ?? 100);
+
+  if (params?.status) query = query.eq("status", params.status);
+  if (params?.supplierId) query = query.eq("supplier_id", params.supplierId);
+
+  const { data, error } = await query;
+  if (error) return { success: false, error: error.message };
+
+  return { success: true, data: { invoices: (data as SupplierInvoiceRecord[]) || [] } };
+}
+
+

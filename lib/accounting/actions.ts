@@ -1108,3 +1108,221 @@ export async function getGeneralLedgerReportAction(
   }
 }
 
+/**
+ * 22. Accounts Payable Aging Report
+ * Groups unpaid supplier invoices into aging buckets: current, 1-30, 31-60, 61-90, 90+ days past due.
+ */
+export async function getAPAgingReportAction(): Promise<
+  ActionResult<{
+    asOfDate: string;
+    totalOutstanding: number;
+    buckets: {
+      current: number;
+      days_1_30: number;
+      days_31_60: number;
+      days_61_90: number;
+      days_90_plus: number;
+    };
+    invoices: Array<{
+      id: string;
+      supplier_invoice_number: string;
+      invoice_date: string;
+      due_date: string;
+      total_amount: number;
+      days_overdue: number;
+      bucket: "CURRENT" | "1-30" | "31-60" | "61-90" | "90+";
+    }>;
+  }>
+> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  try {
+    await requirePermission("accounting.view");
+  } catch {
+    return { success: false, error: "403 Forbidden: accounting.view required" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+
+    const { data, error } = await supabase
+      .from("supplier_invoices")
+      .select("id, supplier_invoice_number, invoice_date, due_date, total_amount, status")
+      .eq("organization_id", session.organizationId)
+      .in("status", ["PENDING", "POSTED"])
+      .order("due_date", { ascending: true });
+
+    if (error) return { success: false, error: error.message };
+
+    const buckets = { current: 0, days_1_30: 0, days_31_60: 0, days_61_90: 0, days_90_plus: 0 };
+    let totalOutstanding = 0;
+
+    const invoices = (data || []).map((inv) => {
+      const dueDate = new Date(inv.due_date);
+      const diffMs = today.getTime() - dueDate.getTime();
+      const daysOverdue = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+      const amount = Number(inv.total_amount);
+      totalOutstanding += amount;
+
+      let bucket: "CURRENT" | "1-30" | "31-60" | "61-90" | "90+" = "CURRENT";
+      if (daysOverdue === 0) {
+        buckets.current += amount;
+      } else if (daysOverdue <= 30) {
+        buckets.days_1_30 += amount;
+        bucket = "1-30";
+      } else if (daysOverdue <= 60) {
+        buckets.days_31_60 += amount;
+        bucket = "31-60";
+      } else if (daysOverdue <= 90) {
+        buckets.days_61_90 += amount;
+        bucket = "61-90";
+      } else {
+        buckets.days_90_plus += amount;
+        bucket = "90+";
+      }
+
+      return {
+        id: inv.id,
+        supplier_invoice_number: inv.supplier_invoice_number as string,
+        invoice_date: inv.invoice_date as string,
+        due_date: inv.due_date as string,
+        total_amount: amount,
+        days_overdue: daysOverdue,
+        bucket,
+      };
+    });
+
+    return {
+      success: true,
+      data: {
+        asOfDate: todayStr,
+        totalOutstanding: Number(totalOutstanding.toFixed(2)),
+        buckets: {
+          current: Number(buckets.current.toFixed(2)),
+          days_1_30: Number(buckets.days_1_30.toFixed(2)),
+          days_31_60: Number(buckets.days_31_60.toFixed(2)),
+          days_61_90: Number(buckets.days_61_90.toFixed(2)),
+          days_90_plus: Number(buckets.days_90_plus.toFixed(2)),
+        },
+        invoices,
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to generate AP aging report";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 23. Income Summary (Profit & Loss) Report
+ * Aggregates GL journal lines by account type for Revenue and Expense.
+ */
+export async function getIncomeSummaryAction(params: {
+  periodStart: string;
+  periodEnd: string;
+}): Promise<
+  ActionResult<{
+    periodStart: string;
+    periodEnd: string;
+    totalRevenue: number;
+    totalExpenses: number;
+    netIncome: number;
+    revenueAccounts: Array<{ accountName: string; accountCode: string; total: number }>;
+    expenseAccounts: Array<{ accountName: string; accountCode: string; total: number }>;
+  }>
+> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  try {
+    await requirePermission("accounting.view");
+  } catch {
+    return { success: false, error: "403 Forbidden: accounting.view required" };
+  }
+
+  if (!params.periodStart || !params.periodEnd) {
+    return { success: false, error: "periodStart and periodEnd are required" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from("journal_entry_lines")
+      .select(`
+        debit_amount,
+        credit_amount,
+        chart_of_accounts!inner (
+          id,
+          account_code,
+          account_name,
+          account_type
+        )
+      `)
+      .eq("organization_id", session.organizationId)
+      .gte("created_at", params.periodStart)
+      .lte("created_at", params.periodEnd + "T23:59:59Z")
+      .in("chart_of_accounts.account_type", ["REVENUE", "EXPENSE"]);
+
+    if (error) return { success: false, error: error.message };
+
+    const revenueMap = new Map<string, { accountName: string; accountCode: string; total: number }>();
+    const expenseMap = new Map<string, { accountName: string; accountCode: string; total: number }>();
+
+    interface GlLineRow {
+      debit_amount: number;
+      credit_amount: number;
+      chart_of_accounts: {
+        id: string;
+        account_code: string;
+        account_name: string;
+        account_type: "REVENUE" | "EXPENSE";
+      };
+    }
+
+    for (const line of (data || []) as unknown as GlLineRow[]) {
+      const acct = line.chart_of_accounts;
+      if (!acct) continue;
+      if (acct.account_type === "REVENUE") {
+        const existing = revenueMap.get(acct.id) ?? { accountName: acct.account_name, accountCode: acct.account_code, total: 0 };
+        existing.total += Number(line.credit_amount || 0) - Number(line.debit_amount || 0);
+        revenueMap.set(acct.id, existing);
+      } else if (acct.account_type === "EXPENSE") {
+        const existing = expenseMap.get(acct.id) ?? { accountName: acct.account_name, accountCode: acct.account_code, total: 0 };
+        existing.total += Number(line.debit_amount || 0) - Number(line.credit_amount || 0);
+        expenseMap.set(acct.id, existing);
+      }
+    }
+
+    const revenueAccounts = Array.from(revenueMap.values())
+      .map((a) => ({ ...a, total: Number(a.total.toFixed(2)) }))
+      .sort((a, b) => b.total - a.total);
+    const expenseAccounts = Array.from(expenseMap.values())
+      .map((a) => ({ ...a, total: Number(a.total.toFixed(2)) }))
+      .sort((a, b) => b.total - a.total);
+
+    const totalRevenue = revenueAccounts.reduce((s, a) => s + a.total, 0);
+    const totalExpenses = expenseAccounts.reduce((s, a) => s + a.total, 0);
+
+    return {
+      success: true,
+      data: {
+        periodStart: params.periodStart,
+        periodEnd: params.periodEnd,
+        totalRevenue: Number(totalRevenue.toFixed(2)),
+        totalExpenses: Number(totalExpenses.toFixed(2)),
+        netIncome: Number((totalRevenue - totalExpenses).toFixed(2)),
+        revenueAccounts,
+        expenseAccounts,
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to generate income summary";
+    return { success: false, error: msg };
+  }
+}

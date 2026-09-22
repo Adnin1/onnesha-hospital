@@ -300,6 +300,277 @@ export async function getTodayAttendanceAction(): Promise<
 }
 
 /**
+ * 5a. Create Payroll Run — calculates gross, deductions, and net per employee
+ */
+export async function createPayrollRunAction(params: {
+  monthYear: string; // e.g. "2026-09"
+}): Promise<ActionResult<{ payrollRun: PayrollRunRecord }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("hr.manage");
+  } catch {
+    return { success: false, error: "403 Forbidden: hr.manage required" };
+  }
+
+  const supabase = await createClient();
+
+  // Guard: prevent duplicate run for same month
+  const { data: existing } = await supabase
+    .from("payroll_runs")
+    .select("id")
+    .eq("organization_id", session.organizationId)
+    .eq("month_year", params.monthYear)
+    .single();
+
+  if (existing) {
+    return { success: false, error: `Payroll run for ${params.monthYear} already exists` };
+  }
+
+  const { data: emps, error: empErr } = await supabase
+    .from("employees")
+    .select("id, basic_salary, house_rent, medical_allowance")
+    .eq("organization_id", session.organizationId)
+    .eq("status", "ACTIVE");
+
+  if (empErr) return { success: false, error: empErr.message };
+
+  let totalGross = 0;
+  let totalDeductions = 0;
+
+  const lineItems = (emps || []).map((e) => {
+    const gross =
+      Number(e.basic_salary || 0) +
+      Number(e.house_rent || 0) +
+      Number(e.medical_allowance || 0);
+    // Standard 5% provident fund deduction — adjust per policy
+    const deduction = Number((gross * 0.05).toFixed(2));
+    totalGross += gross;
+    totalDeductions += deduction;
+    return {
+      organization_id: session.organizationId as string,
+      employee_id: e.id,
+      month_year: params.monthYear,
+      gross_salary: gross,
+      deductions: deduction,
+      net_salary: Number((gross - deduction).toFixed(2)),
+    };
+  });
+
+  const totalNet = Number((totalGross - totalDeductions).toFixed(2));
+
+  const { data: run, error: runErr } = await supabase
+    .from("payroll_runs")
+    .insert({
+      organization_id: session.organizationId,
+      month_year: params.monthYear,
+      total_gross: totalGross,
+      total_deductions: totalDeductions,
+      total_net: totalNet,
+      status: "DRAFT",
+    })
+    .select()
+    .single();
+
+  if (runErr) return { success: false, error: runErr.message };
+
+  // Insert per-employee payslip lines
+  const payslipLines = lineItems.map((li) => ({
+    ...li,
+    payroll_run_id: run.id,
+  }));
+
+  const { error: lineErr } = await supabase
+    .from("payroll_line_items")
+    .insert(payslipLines);
+
+  if (lineErr) {
+    // Rollback run on line failure
+    await supabase.from("payroll_runs").delete().eq("id", run.id);
+    return { success: false, error: `Payroll line insert failed: ${lineErr.message}` };
+  }
+
+  await recordAuditLog({
+    organizationId: session.organizationId,
+    userId: session.userId || undefined,
+    action: "CREATE",
+    module: "HR",
+    entityType: "payroll_run",
+    entityId: run.id,
+    newValues: { month_year: params.monthYear, total_gross: totalGross, total_net: totalNet },
+  });
+
+  return { success: true, data: { payrollRun: run as PayrollRunRecord } };
+}
+
+/**
+ * 5b. Get individual employee payslip for a given month
+ */
+export async function getPayslipAction(params: {
+  employeeId: string;
+  monthYear: string;
+}): Promise<
+  ActionResult<{
+    employee: { id: string; full_name: string; employee_code: string };
+    monthYear: string;
+    grossSalary: number;
+    deductions: number;
+    netSalary: number;
+    payrollRunStatus: string | null;
+  }>
+> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  try {
+    await requirePermission("hr.view");
+  } catch {
+    return { success: false, error: "403 Forbidden" };
+  }
+
+  const supabase = await createClient();
+
+  const { data: emp, error: empErr } = await supabase
+    .from("employees")
+    .select("id, full_name, employee_code")
+    .eq("id", params.employeeId)
+    .eq("organization_id", session.organizationId)
+    .single();
+
+  if (empErr || !emp) return { success: false, error: "Employee not found" };
+
+  const { data: line, error: lineErr } = await supabase
+    .from("payroll_line_items")
+    .select("*, payroll_runs(status)")
+    .eq("employee_id", params.employeeId)
+    .eq("month_year", params.monthYear)
+    .eq("organization_id", session.organizationId)
+    .single();
+
+  if (lineErr || !line) {
+    return { success: false, error: `No payslip found for ${params.monthYear}` };
+  }
+
+  return {
+    success: true,
+    data: {
+      employee: emp,
+      monthYear: params.monthYear,
+      grossSalary: Number(line.gross_salary),
+      deductions: Number(line.deductions),
+      netSalary: Number(line.net_salary),
+      payrollRunStatus: (line.payroll_runs as { status: string } | null)?.status ?? null,
+    },
+  };
+}
+
+/**
+ * 5c. Get employee leave applications
+ */
+export async function getEmployeeLeaveAction(params?: {
+  employeeId?: string;
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+}): Promise<ActionResult<{ leaves: Array<{
+  id: string;
+  employee_id: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  total_days: number;
+  reason: string;
+  status: string;
+  approved_by?: string | null;
+}> }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  try {
+    await requirePermission("hr.view");
+  } catch {
+    return { success: false, error: "403 Forbidden" };
+  }
+
+  const supabase = await createClient();
+  let query = supabase
+    .from("employee_leaves")
+    .select("*")
+    .eq("organization_id", session.organizationId);
+
+  if (params?.employeeId) query = query.eq("employee_id", params.employeeId);
+  if (params?.status) query = query.eq("status", params.status);
+
+  const { data, error } = await query.order("start_date", { ascending: false }).limit(100);
+  if (error) return { success: false, error: error.message };
+
+  return { success: true, data: { leaves: (data || []) as typeof data & Array<{ id: string; employee_id: string; leave_type: string; start_date: string; end_date: string; total_days: number; reason: string; status: string; approved_by?: string | null }> } };
+}
+
+/**
+ * 5d. Apply for Employee Leave
+ */
+export async function applyLeaveAction(params: {
+  employeeId: string;
+  leaveType: "ANNUAL" | "SICK" | "CASUAL" | "MATERNITY" | "UNPAID";
+  startDate: string;
+  endDate: string;
+  reason: string;
+}): Promise<ActionResult<{ leaveId: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  try {
+    await requirePermission("hr.view");
+  } catch {
+    return { success: false, error: "403 Forbidden" };
+  }
+
+  const start = new Date(params.startDate);
+  const end = new Date(params.endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) {
+    return { success: false, error: "Invalid date range" };
+  }
+
+  const totalDays =
+    Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("employee_leaves")
+    .insert({
+      organization_id: session.organizationId,
+      employee_id: params.employeeId,
+      leave_type: params.leaveType,
+      start_date: params.startDate,
+      end_date: params.endDate,
+      total_days: totalDays,
+      reason: params.reason,
+      status: "PENDING",
+    })
+    .select("id")
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  await recordAuditLog({
+    organizationId: session.organizationId,
+    userId: session.userId || undefined,
+    action: "CREATE",
+    module: "HR",
+    entityType: "employee_leave",
+    entityId: data.id,
+    newValues: { employee_id: params.employeeId, leave_type: params.leaveType, total_days: totalDays },
+  });
+
+  return { success: true, data: { leaveId: data.id } };
+}
+
+/**
  * 5. Get Monthly Payroll Summary
  */
 export async function getPayrollSummaryAction(): Promise<
