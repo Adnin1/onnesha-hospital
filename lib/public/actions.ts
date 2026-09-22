@@ -86,8 +86,58 @@ export async function getPublicDoctorsAction(): Promise<{
 }> {
   try {
     const supabase = await createClient();
+    // Use secure RPC get_public_doctors_directory to retrieve sanitized public projection
+    const { data: rpcData, error: rpcError } = await supabase.rpc(
+      "get_public_doctors_directory",
+      { p_org_id: HOSPITAL_METADATA.id }
+    );
+
+    if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
+      interface RpcDocItem {
+        id: string;
+        full_name: string;
+        degrees: string;
+        designation: string;
+        specialization: string;
+        bmdc_reg_number: string;
+        room_number: string;
+        opd_fee: number;
+        followup_fee: number;
+        avatar_url?: string | null;
+        bio?: string | null;
+        public_bio?: string | null;
+        experience_years?: number;
+        department_name: string;
+        department_slug: string;
+        schedules?: Array<{ id: string; day_of_week: string; start_time: string; end_time: string; is_active?: boolean }>;
+      }
+
+      const doctors: PublicDoctor[] = (rpcData as RpcDocItem[]).map((d) => ({
+        id: d.id,
+        full_name: d.full_name,
+        degrees: d.degrees,
+        designation: d.designation,
+        specialization: d.specialization,
+        bmdc_reg_number: d.bmdc_reg_number,
+        room_number: d.room_number,
+        opd_fee: Number(d.opd_fee),
+        followup_fee: Number(d.followup_fee),
+        avatar_url: d.avatar_url,
+        bio: d.bio,
+        public_bio: d.public_bio,
+        experience_years: d.experience_years,
+        department_name: d.department_name,
+        department_slug: d.department_slug,
+        schedules: d.schedules || [],
+        visiting_hours_text: formatVisitingHoursSummary(d.schedules || []),
+      }));
+
+      return { success: true, doctors };
+    }
+
+    // Fallback: Query sanitized public_doctors_view
     const { data, error } = await supabase
-      .from("doctors")
+      .from("public_doctors_view")
       .select(`
         id,
         full_name,
@@ -100,64 +150,25 @@ export async function getPublicDoctorsAction(): Promise<{
         followup_fee,
         avatar_url,
         bio,
-        departments(id, name),
+        public_bio,
+        experience_years,
+        department_name,
+        department_slug,
         doctor_schedules(id, day_of_week, start_time, end_time, is_active)
       `)
       .eq("organization_id", HOSPITAL_METADATA.id)
       .eq("is_active", true)
-      .eq("is_public", true)
       .order("full_name", { ascending: true });
 
     if (error) {
       return { success: false, doctors: [], error: error.message };
     }
 
-    interface SchedItem {
-      id: string;
-      day_of_week: string;
-      start_time: string;
-      end_time: string;
-      is_active?: boolean;
-    }
-
-    interface DoctorWithDeptAndSched {
-      id: string;
-      full_name: string;
-      degrees: string;
-      designation: string;
-      specialization: string;
-      bmdc_reg_number: string;
-      room_number: string;
-      opd_fee: number;
-      followup_fee: number;
-      avatar_url?: string | null;
-      bio?: string | null;
-      departments?: { id: string; name: string } | null;
-      doctor_schedules?: SchedItem[] | null;
-    }
-
-    const doctors: PublicDoctor[] = ((data || []) as unknown as DoctorWithDeptAndSched[]).map((d) => {
-      const schedules = (d.doctor_schedules || []).filter((s) => s.is_active !== false);
-      const visiting_hours_text = formatVisitingHoursSummary(schedules);
-
-      return {
-        id: d.id,
-        full_name: d.full_name,
-        degrees: d.degrees,
-        designation: d.designation,
-        specialization: d.specialization,
-        bmdc_reg_number: d.bmdc_reg_number,
-        room_number: d.room_number,
-        opd_fee: Number(d.opd_fee) || 0,
-        followup_fee: Number(d.followup_fee) || 0,
-        avatar_url: d.avatar_url,
-        bio: d.bio,
-        department_name: d.departments?.name || "",
-        department_slug: d.departments?.name ? d.departments.name.toLowerCase().replace(/\s+/g, "-") : "",
-        schedules,
-        visiting_hours_text,
-      };
-    });
+    const doctors: PublicDoctor[] = ((data || []) as unknown as PublicDoctor[]).map((d) => ({
+      ...d,
+      schedules: [],
+      visiting_hours_text: "Schedule on request",
+    }));
 
     return { success: true, doctors };
   } catch (err: unknown) {

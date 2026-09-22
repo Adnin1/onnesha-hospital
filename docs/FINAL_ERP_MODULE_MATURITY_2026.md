@@ -73,7 +73,18 @@ $$\text{Overall System Maturity} = \mathbf{90.5\%}$$
 
 ---
 
-## 5. Remaining 5 External Gates (Unchanged — Require Owner Action)
+## 5. What Changed in Migration 59 (Public Data Projection & ERP Integrity Hardening)
+
+### Database Level Protections
+- **`public_doctors_view` + `get_public_doctors_directory(UUID)`**: Enforced `SECURITY DEFINER` RPC with empty `search_path`, returning exclusively sanitized public doctor attributes. Completely shields internal salary, commission tier, and internal notes from public callers.
+- **Revoked Anonymous Access**: Explicitly revoked direct `anon` `SELECT` privileges on `doctor_commission_rules` and `doctor_commissions`.
+- **Payroll Check Constraint**: Added `chk_payroll_net_equals_gross_minus_deductions` on `payroll_line_items` to guarantee math integrity ($Net = Gross - Deductions$) at the database layer.
+- **PO Item Total Price Constraint**: Added `chk_erp_po_item_total_price` on `erp_purchase_order_items` guaranteeing $Total == Quantity \times UnitPrice$.
+- **Atomic Sequence PO Numbering**: Created `seq_erp_po_number` and thread-safe generator RPC `generate_next_po_number(UUID)`.
+
+---
+
+## 6. Remaining 5 External Gates (Unchanged — Require Owner Action)
 
 | Gate | Status | Blocking Factor |
 |---|---|---|
@@ -82,3 +93,4 @@ $$\text{Overall System Maturity} = \mathbf{90.5\%}$$
 | SSLCommerz production credentials | **BLOCKED** | Merchant activation pending `SSLC_STORE_ID` + `SSLC_STORE_PASSWORD` in Edge Function env |
 | SMS provider API key | **BLOCKED** | `SMS_API_ENDPOINT` + `SMS_API_KEY` + `SMS_SENDER_ID` must be set from telecom aggregator |
 | Physical DR restore drill | **BLOCKED** | Owner must execute Point-in-Time restore test via Supabase Dashboard > Database > Backups |
+

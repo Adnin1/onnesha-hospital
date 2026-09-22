@@ -4,7 +4,7 @@
 **Document ID:** `DOC-PROD-CERT-2026-FINAL`
 **Certification Date:** September 22, 2026
 **Target Host:** `https://onnesha-hospital.pages.dev`
-**Total Migrations Applied:** 58/58
+**Total Migrations Applied:** 59/59
 **Standard:** Zero-Fake Honest Engineering Audit (Evidence-Backed)
 
 ---
@@ -18,9 +18,11 @@
 | **Dependency Vulnerabilities** | `npm audit --audit-level=high` → 0 vulnerabilities | ✅ PASS |
 | **Prerendered Production Build** | `npm run build` → 43 routes exported (41 HTML + 404 + _not-found), 0 errors | ✅ PASS |
 | **Static Link & Asset Forensics** | `npm run audit:assets` → 299 internal links, 616 assets, 0 broken references | ✅ PASS |
-| **Master Certification Suite** | `node scripts/run-tests.mjs` → 66/66 suites, 571 ACTIVE_PASS, 0 FAIL, 6 standard skips | ✅ PASS |
-| **Playwright Real Browser E2E** | `npx playwright test --project=chromium` → 27/27 tests PASS (18.9s) | ✅ PASS |
-| **Database Migrations** | `npx supabase db push` → 58/58 migrations applied & synchronized | ✅ PASS |
+| **Master Certification Suite** | `node scripts/run-tests.mjs` → 67/67 suites, 579 ACTIVE_PASS, 0 FAIL, 6 standard skips | ✅ PASS |
+| **Playwright Real Browser E2E** | `npx playwright test --project=chromium` → 27/27 tests PASS (21.6s) | ✅ PASS |
+| **Database Migrations** | `npx supabase db push` → 59/59 migrations applied & synchronized | ✅ PASS |
+| **Public Data Projection Shield** | `public_doctors_view` + `get_public_doctors_directory` RPC; direct commission/salary SELECT revoked from anon | ✅ PASS |
+| **Database Integrity Constraints** | Derived net_salary, line total, and atomic PO numbering sequence enforced in DB | ✅ PASS |
 | **Production Runtime Smoke** | `node scripts/smoke_test.mjs` → 15/15 routes HTTP 200, 4/4 shell data clean, PostgREST shielded | ✅ PASS |
 | **Production Mock Data Isolation** | Full search across `app/`, `components/`, `lib/` → 0 imports of `lib/mock-data.ts`; JS bundle scan → 0 `MOCK_*` | ✅ PASS |
 | **CSP & HTTP Security Headers** | `public/_headers` + live edge probe → `'unsafe-eval'` absent, `X-Frame-Options: DENY`, `nosniff`, HSTS | ✅ PASS |

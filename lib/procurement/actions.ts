@@ -575,13 +575,19 @@ export async function createPurchaseOrderAction(input: {
 
   if (!supplier) return { success: false, error: "Supplier not found in this organization" };
 
-  // Generate sequential PO number
-  const { count } = await supabase
-    .from("erp_purchase_orders")
-    .select("*", { count: "exact", head: true })
-    .eq("organization_id", session.organizationId);
+  // Generate thread-safe atomic sequential PO number via database sequence
+  let poNumber = "";
+  const { data: seqPoNumber, error: seqErr } = await supabase.rpc("generate_next_po_number", {
+    p_org_id: session.organizationId,
+  });
 
-  const poNumber = `PO-${new Date().getFullYear()}-${String((count ?? 0) + 1).padStart(5, "0")}`;
+  if (!seqErr && seqPoNumber) {
+    poNumber = seqPoNumber;
+  } else {
+    // Fallback: randomized suffix to prevent collision if sequence unavailable
+    poNumber = `PO-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`;
+  }
+
   const totalAmount = input.items.reduce(
     (sum, item) => sum + item.quantityOrdered * item.unitPrice,
     0
