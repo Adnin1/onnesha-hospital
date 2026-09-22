@@ -18,7 +18,7 @@ Hospital systems must survive catastrophic database corruption, regional cloud p
 | **Auth & User Accounts** | Supabase Auth (`auth.users` & identities) | Managed Auth cluster | Point-in-Time with DB | Restored automatically alongside physical database snapshot. |
 | **Edge Functions & API** | TypeScript Deno Edge Functions | Git repository (`supabase/functions`) | Git commit history | Redeployed via `npx supabase functions deploy`. |
 | **Frontend & Edge Hosting** | Next.js Static Export on Cloudflare Pages | Cloudflare Global Anycast Edge | Immutable deployment history | Instant rollback via Cloudflare Pages deployment rollbacks. |
-| **Database Migrations** | 57 declarative SQL migrations | Git repository (`supabase/migrations`) | Git commit history | Applied via `npx supabase db push`. |
+| **Database Migrations** | 58 declarative SQL migrations | Git repository (`supabase/migrations`) | Git commit history | Applied via `npx supabase db push`. |
 
 ---
 

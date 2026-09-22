@@ -13,14 +13,17 @@
 | :--- | :--- | :---: | :---: | :--- |
 | **Finance** | Double-Entry General Ledger | **PASS** | Implemented & Verified | Balanced debits and credits enforced by PostgreSQL RPC `post_journal_entry_atomic`. |
 | **Finance** | Trial Balance Generation | **PASS** | Implemented & Verified | Real-time calculation via RPC `get_trial_balance`. |
+| **Finance** | AP Aging Report & P&L Summary | **PASS** | Implemented & Verified | `getAPAgingReportAction` (5 buckets: current/1-30/31-60/61-90/90+) & `getIncomeSummaryAction` (revenue vs expense). |
 | **Finance** | Fiscal Period Closing & Locks | **PASS** | Implemented & Verified | Immutable period protection via Migration 50 & 55. |
 | **Finance** | Multi-Currency Forex Revaluation | **NOT IN SCOPE** | Single Currency (BDT) | OHMS is localized exclusively to Bangladeshi Taka (BDT). Multi-currency is not in scope. |
 | **Procurement** | Strict 3-Way Matching | **PASS** | Implemented & Verified | Migration 57 enforces line-level unit price, PO ordered/received quantity, and header reconciliation. |
+| **Procurement** | Supplier Register & ERP POs | **PASS** | Implemented & Verified | Migration 58 adds `suppliers`, `erp_purchase_orders`, `erp_purchase_order_items` with full line item workflow. |
 | **Procurement** | Cumulative PO/GRN Tracking | **PASS** | Implemented & Verified | Historical multi-invoice quantity accumulation check prevents over-invoicing. |
 | **Procurement** | Multi-Level Board Approval Matrix | **PARTIAL** | Baseline Single Approval | Supports status transition `PENDING` $\rightarrow$ `APPROVED`; multi-level board approval hierarchy is baseline. |
 | **Inventory** | Batch & Expiry FEFO Tracking | **PASS** | Implemented & Verified | Advisory-locked inventory deduction sorted by earliest expiration date. |
 | **Inventory** | Automated RFID/Robotic Dispensing | **NOT IN SCOPE** | Manual / Barcode Scan | Warehouse operations use standard web interface inputs. Robotic hardware integration not in scope. |
 | **HR/Payroll** | Employee Master & Attendance | **PASS** | Implemented & Verified | Staff roster, shift assignment, and manual/web attendance tracking. |
+| **HR/Payroll** | Payroll Runs, Payslips & Leaves | **PASS** | Implemented & Verified | Migration 58 adds `payroll_line_items` (gross/deductions/net) and `employee_leaves` with approval workflow. |
 | **HR/Payroll** | Biometric Hardware Bridge | **PARTIAL** | Database PIN Ready | Field `biometric_device_pin` exists on `employees`; physical network daemon for ZKTeco/Hikvision is external. |
 | **Assets** | Biomedical Equipment Register | **PASS** | Implemented & Verified | Serial tracking, department assignment, and service log history. |
 | **Assets** | IoT Realtime Sensor Telemetry | **NOT IN SCOPE** | Scheduled Service Logs | Asset monitoring relies on scheduled physical engineer inspections. |
