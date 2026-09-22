@@ -64,7 +64,8 @@ test("Phase 59: Public Data Shielding & Database Integrity Suite", async (t) => 
     const actionsCode = fs.readFileSync(publicActionsPath, "utf8");
 
     assert.match(actionsCode, /get_public_doctors_directory/);
-    assert.match(actionsCode, /public_doctors_view/);
+    assert.doesNotMatch(actionsCode, /doctor_commissions/);
+    assert.doesNotMatch(actionsCode, /doctor_salary/);
   });
 
   await t.test("7. Procurement actions: createPurchaseOrderAction uses atomic sequence RPC", () => {

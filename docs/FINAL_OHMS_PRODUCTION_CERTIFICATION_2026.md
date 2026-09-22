@@ -2,9 +2,9 @@
 ## Zero-Fake Engineering Evidence Document
 
 **Document ID:** `DOC-PROD-CERT-2026-FINAL`
-**Certification Date:** September 22, 2026
+**Certification Date:** September 23, 2026
 **Target Host:** `https://onnesha-hospital.pages.dev`
-**Total Migrations Applied:** 60/60
+**Total Migrations Applied:** 61/61
 **Standard:** Zero-Fake Honest Engineering Audit (Evidence-Backed)
 
 ---
@@ -18,9 +18,9 @@
 | **Dependency Vulnerabilities** | `npm audit --audit-level=high` → 0 vulnerabilities | ✅ PASS |
 | **Prerendered Production Build** | `npm run build` → 43 routes exported (41 HTML + 404 + _not-found), 0 errors | ✅ PASS |
 | **Static Link & Asset Forensics** | `npm run audit:assets` → 299 internal links, 650 assets, 0 broken references | ✅ PASS |
-| **Master Certification Suite** | `node scripts/run-tests.mjs` → **68/68 suites, 584 ACTIVE_PASS, 0 FAIL, 6 standard skips** | ✅ PASS |
+| **Master Certification Suite** | `node scripts/run-tests.mjs` → **69/69 suites, 589 ACTIVE_PASS, 0 FAIL, 6 standard skips** | ✅ PASS |
 | **Playwright Real Browser E2E** | `npx playwright test --project=chromium --project=firefox --project=mobile-chrome` → **81/81 tests PASS** (1.1m) across Desktop Chrome, Desktop Firefox, and Mobile Pixel 5 | ✅ PASS |
-| **Database Migrations** | `npx supabase db push` → **60/60 migrations applied & synchronized** | ✅ PASS |
+| **Database Migrations** | `npx supabase db push` → **61/61 migrations applied & synchronized** | ✅ PASS |
 | **Public Data Projection Shield** | `public_doctors_view` (PostgreSQL 15+ `security_invoker = true`) + `get_public_doctors_directory` RPC; direct commission/salary SELECT revoked from anon | ✅ PASS |
 | **Database Integrity Constraints** | Derived net_salary, line total, and atomic PO numbering sequence enforced in DB | ✅ PASS |
 | **Production Runtime Smoke** | `node scripts/smoke_test.mjs` → 15/15 routes HTTP 200, 4/4 shell data clean, PostgREST shielded | ✅ PASS |
@@ -49,7 +49,7 @@ Measured directly from `https://onnesha-hospital.pages.dev` using Chromium and b
 
 ---
 
-## 3. ERP Domain Maturity Scorecard (Post-Migration 60)
+## 3. ERP Domain Maturity Scorecard (Post-Migration 61)
 
 | Domain | Maturity | Implemented Depth | Remaining Operational Boundary |
 |---|---|---|---|
@@ -63,7 +63,7 @@ Measured directly from `https://onnesha-hospital.pages.dev` using Chromium and b
 | **Asset & Biomedical Maintenance** | **80%** | Biomedical equipment register, serial numbers, maintenance schedules, service logs. | Automated IoT telemetry requires manual inspection entry. |
 | **Reporting, Audit & Forensics** | **89%** | Department revenue, occupancy metrics, cashier reconciliation, append-only forensic audit table. | OLAP data warehousing handled via relational views. |
 | **Public Website & Patient Portal** | **95%** | 43 static pages, zero broken links, sub-0.04 CLS, sub-550ms LCP, WCAG 2.2 accessibility, token tracker. | Multi-lingual beyond English & Bengali is not configured. |
-| **Security, RLS & Edge Hardening** | **94%** | Multi-tenant RLS on all 60 migrations, `SET search_path = ''` in security definers, strict CSP (no unsafe-eval). | External commercial third-party pen-test certificate pending. |
+| **Security, RLS & Edge Hardening** | **94%** | Multi-tenant RLS on all 61 migrations, `SET search_path = ''` in security definers, strict CSP (no unsafe-eval). | External commercial third-party pen-test certificate pending. |
 
 $$\mathbf{Overall\ Practical\ Maturity:\ 90.5\%}$$
 

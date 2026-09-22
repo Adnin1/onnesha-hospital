@@ -86,88 +86,57 @@ export async function getPublicDoctorsAction(): Promise<{
 }> {
   try {
     const supabase = await createClient();
-    // Use secure RPC get_public_doctors_directory to retrieve sanitized public projection
+    // Use authoritative secure RPC get_public_doctors_directory (enforces is_public, is_active, and canonical org boundary)
     const { data: rpcData, error: rpcError } = await supabase.rpc(
       "get_public_doctors_directory",
       { p_org_id: HOSPITAL_METADATA.id }
     );
 
-    if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
-      interface RpcDocItem {
-        id: string;
-        full_name: string;
-        degrees: string;
-        designation: string;
-        specialization: string;
-        bmdc_reg_number: string;
-        room_number: string;
-        opd_fee: number;
-        followup_fee: number;
-        avatar_url?: string | null;
-        bio?: string | null;
-        public_bio?: string | null;
-        experience_years?: number;
-        department_name: string;
-        department_slug: string;
-        schedules?: Array<{ id: string; day_of_week: string; start_time: string; end_time: string; is_active?: boolean }>;
-      }
-
-      const doctors: PublicDoctor[] = (rpcData as RpcDocItem[]).map((d) => ({
-        id: d.id,
-        full_name: d.full_name,
-        degrees: d.degrees,
-        designation: d.designation,
-        specialization: d.specialization,
-        bmdc_reg_number: d.bmdc_reg_number,
-        room_number: d.room_number,
-        opd_fee: Number(d.opd_fee),
-        followup_fee: Number(d.followup_fee),
-        avatar_url: d.avatar_url,
-        bio: d.bio,
-        public_bio: d.public_bio,
-        experience_years: d.experience_years,
-        department_name: d.department_name,
-        department_slug: d.department_slug,
-        schedules: d.schedules || [],
-        visiting_hours_text: formatVisitingHoursSummary(d.schedules || []),
-      }));
-
-      return { success: true, doctors };
+    if (rpcError) {
+      return { success: false, doctors: [], error: rpcError.message };
     }
 
-    // Fallback: Query sanitized public_doctors_view
-    const { data, error } = await supabase
-      .from("public_doctors_view")
-      .select(`
-        id,
-        full_name,
-        degrees,
-        designation,
-        specialization,
-        bmdc_reg_number,
-        room_number,
-        opd_fee,
-        followup_fee,
-        avatar_url,
-        bio,
-        public_bio,
-        experience_years,
-        department_name,
-        department_slug,
-        doctor_schedules(id, day_of_week, start_time, end_time, is_active)
-      `)
-      .eq("organization_id", HOSPITAL_METADATA.id)
-      .eq("is_active", true)
-      .order("full_name", { ascending: true });
-
-    if (error) {
-      return { success: false, doctors: [], error: error.message };
+    if (!Array.isArray(rpcData)) {
+      return { success: true, doctors: [] };
     }
 
-    const doctors: PublicDoctor[] = ((data || []) as unknown as PublicDoctor[]).map((d) => ({
-      ...d,
-      schedules: [],
-      visiting_hours_text: "Schedule on request",
+    interface RpcDocItem {
+      id: string;
+      full_name: string;
+      degrees: string;
+      designation: string;
+      specialization: string;
+      bmdc_reg_number: string;
+      room_number: string;
+      opd_fee: number;
+      followup_fee: number;
+      avatar_url?: string | null;
+      bio?: string | null;
+      public_bio?: string | null;
+      experience_years?: number;
+      department_name: string;
+      department_slug: string;
+      schedules?: Array<{ id: string; day_of_week: string; start_time: string; end_time: string; is_active?: boolean }>;
+    }
+
+    const doctors: PublicDoctor[] = (rpcData as RpcDocItem[]).map((d) => ({
+      id: d.id,
+      full_name: d.full_name,
+      degrees: d.degrees,
+      designation: d.designation,
+      specialization: d.specialization,
+      bmdc_reg_number: d.bmdc_reg_number,
+      room_number: d.room_number,
+      opd_fee: Number(d.opd_fee),
+      followup_fee: Number(d.followup_fee),
+      avatar_url: d.avatar_url,
+      bio: d.bio,
+      public_bio: d.public_bio,
+      experience_years: d.experience_years,
+      department_name: d.department_name,
+      department_slug: d.department_slug,
+      schedules: d.schedules || [],
+      visiting_hours_text: formatVisitingHoursSummary(d.schedules || []),
     }));
 
     return { success: true, doctors };
@@ -197,17 +166,18 @@ export async function getPublicDoctorSchedulesAction(doctorId: string): Promise<
 }> {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("doctor_schedules")
-      .select("id, day_of_week, start_time, end_time, max_tokens, room_number, doctors!inner(is_active, is_public)")
-      .eq("organization_id", HOSPITAL_METADATA.id)
-      .eq("doctor_id", doctorId)
-      .eq("is_active", true)
-      .eq("doctors.is_active", true)
-      .eq("doctors.is_public", true);
+    // Authoritative RPC: get_public_doctor_schedules (joins doctors and enforces doctors.is_public & is_active)
+    const { data, error } = await supabase.rpc("get_public_doctor_schedules", {
+      p_org_id: HOSPITAL_METADATA.id,
+      p_doctor_id: doctorId,
+    });
 
     if (error) {
       return { success: false, schedules: [], error: error.message };
+    }
+
+    if (!Array.isArray(data)) {
+      return { success: true, schedules: [] };
     }
 
     interface SchedRow {
@@ -219,7 +189,7 @@ export async function getPublicDoctorSchedulesAction(doctorId: string): Promise<
       room_number: string;
     }
 
-    const schedules: PublicDoctorSchedule[] = ((data || []) as unknown as SchedRow[]).map((s) => ({
+    const schedules: PublicDoctorSchedule[] = (data as SchedRow[]).map((s) => ({
       id: s.id,
       day_of_week: s.day_of_week,
       start_time: s.start_time,

@@ -43,8 +43,8 @@ test("Phase 41 - v1.0.7 Public Schedules, Content Hardening & Release Governance
   const cargoToml = fs.readFileSync(cargoTomlPath, "utf8");
   const latestJson = JSON.parse(fs.readFileSync(latestJsonPath, "utf8"));
 
-  await t.test("1. lib/public/actions.ts queries doctor_schedules and formats visiting hours dynamically", () => {
-    assert.match(actionsCode, /doctor_schedules\(id, day_of_week, start_time, end_time, is_active\)/);
+  await t.test("1. lib/public/actions.ts queries doctor schedules and formats visiting hours dynamically", () => {
+    assert.match(actionsCode, /get_public_doctor_schedules|get_public_doctors_directory/);
     assert.match(actionsCode, /export function formatVisitingHoursSummary/);
     assert.match(actionsCode, /Schedule on request/);
     assert.match(actionsCode, /PublicDoctorScheduleSummary/);
