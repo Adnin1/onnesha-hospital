@@ -121,6 +121,13 @@ export default function AppointmentBookingPage() {
       patientGender: (gender as "MALE" | "FEMALE" | "OTHER") || "OTHER",
       patientAge: isNaN(parsedAge as number) ? undefined : parsedAge,
       notes: notes || (guardianName ? `Guardian: ${guardianName}` : undefined),
+      doctorMetadata: selectedDoctor
+        ? {
+            fullName: selectedDoctor.full_name,
+            roomNumber: selectedDoctor.room_number,
+            opdFee: selectedDoctor.opd_fee,
+          }
+        : undefined,
     });
 
     setBookingLoading(false);

@@ -82,7 +82,7 @@ export default function AboutPage() {
               "Digital Radiography Equipment",
               "Hematology Laboratory",
               "Ultrasonography Services",
-              "24/7 Standby Generator Power",
+              "Standby Generator Power Backup",
               "Dedicated Inpatient Nursing Care",
             ].map((fac, idx) => (
               <div key={idx} className="flex items-center space-x-2 p-3 bg-slate-50 rounded-lg border border-slate-100">

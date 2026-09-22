@@ -48,10 +48,45 @@ export function formatVisitingHoursSummary(
     return `${hour12.toString().padStart(2, "0")}:${m} ${ampm}`;
   };
 
-  const first = active[0];
-  const timeRange = `${formatTime12h(first.start_time)} - ${formatTime12h(first.end_time)}`;
-  const days = active.map((s) => s.day_of_week.slice(0, 3)).join(", ");
-  return `${days} (${timeRange})`;
+  const dayOrder: Record<string, number> = {
+    saturday: 1,
+    sunday: 2,
+    monday: 3,
+    tuesday: 4,
+    wednesday: 5,
+    thursday: 6,
+    friday: 7,
+  };
+
+  // Group schedules by time range
+  const groups = new Map<string, string[]>();
+
+  for (const s of active) {
+    const start = s.start_time ? s.start_time.trim().slice(0, 5) : "";
+    const end = s.end_time ? s.end_time.trim().slice(0, 5) : "";
+    const timeKey = start && end ? `${formatTime12h(start)} - ${formatTime12h(end)}` : "TBD";
+    const day = s.day_of_week.trim();
+    const shortDay = day.slice(0, 3);
+    if (!groups.has(timeKey)) {
+      groups.set(timeKey, []);
+    }
+    const list = groups.get(timeKey)!;
+    if (!list.includes(shortDay)) {
+      list.push(shortDay);
+    }
+  }
+
+  const parts: string[] = [];
+  for (const [timeRange, days] of groups.entries()) {
+    days.sort((a, b) => {
+      const orderA = dayOrder[a.toLowerCase()] || 99;
+      const orderB = dayOrder[b.toLowerCase()] || 99;
+      return orderA - orderB;
+    });
+    parts.push(`${days.join(", ")} (${timeRange})`);
+  }
+
+  return parts.join("; ");
 }
 
 export interface PublicDepartment {
@@ -261,8 +296,13 @@ export async function bookOnlineAppointmentAction(params: {
   patientGender?: "MALE" | "FEMALE" | "OTHER";
   patientAge?: number;
   notes?: string;
+  doctorMetadata?: {
+    fullName?: string;
+    roomNumber?: string;
+    opdFee?: number;
+  };
 }): Promise<PublicBookingResult> {
-  const { doctorId, scheduleId, appointmentDate, patientName, patientPhone, patientGender, patientAge, notes } = params;
+  const { doctorId, scheduleId, appointmentDate, patientName, patientPhone, patientGender, patientAge, notes, doctorMetadata } = params;
 
   if (!doctorId || !scheduleId || !appointmentDate || !patientName?.trim() || !patientPhone?.trim()) {
     return { success: false, error: "Doctor, published schedule slot, appointment date, patient name, and valid phone are required." };
@@ -316,9 +356,21 @@ export async function bookOnlineAppointmentAction(params: {
       return { success: false, error: resObj.error || "Online booking slot unavailable." };
     }
 
-    // Fetch doctor name and room via authoritative getPublicDoctorsAction
-    const docListRes = await getPublicDoctorsAction();
-    const docData = docListRes.success ? docListRes.doctors.find((d) => d.id === doctorId) : null;
+    // Use passed client doctor metadata if available, avoiding an extra full directory fetch
+    let docFullName = doctorMetadata?.fullName || "";
+    let docRoom = resObj.room_number || doctorMetadata?.roomNumber || "";
+    let docFee = Number(doctorMetadata?.opdFee) || 0;
+
+    // Only fallback if client doctor metadata was not provided
+    if (!docFullName && !docFee) {
+      const docListRes = await getPublicDoctorsAction();
+      const docData = docListRes.success ? docListRes.doctors.find((d) => d.id === doctorId) : null;
+      if (docData) {
+        docFullName = docData.full_name;
+        docRoom = resObj.room_number || docData.room_number || "";
+        docFee = Number(docData.opd_fee) || 0;
+      }
+    }
 
     return {
       success: true,
@@ -327,9 +379,9 @@ export async function bookOnlineAppointmentAction(params: {
         tokenNumber: resObj.token_number,
         patientCode: resObj.patient_code,
         appointmentDate: resObj.appointment_date,
-        doctorName: docData?.full_name || "",
-        roomNumber: resObj.room_number || docData?.room_number || "",
-        opdFee: Number(docData?.opd_fee) || 0,
+        doctorName: docFullName,
+        roomNumber: docRoom,
+        opdFee: docFee,
       },
     };
   } catch (err: unknown) {
@@ -421,7 +473,6 @@ export async function getLiveWaitingQueueAction(): Promise<{
     id: string;
     doctor_name: string;
     room_number: string;
-    patient_name?: string;
     token_number: string;
     status: "waiting" | "calling" | "serving" | "done" | "skipped";
     called_at?: string;

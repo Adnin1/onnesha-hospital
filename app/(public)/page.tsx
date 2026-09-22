@@ -32,7 +32,7 @@ import { FeaturedDoctorsWidget } from "@/components/public/FeaturedDoctorsWidget
 export const metadata: Metadata = {
   title: "Onnesha Hospital & Diagnostic Complex | Modern Healthcare Dhaka",
   description:
-    "Book specialist doctor appointments, track live OPD token queues, 24/7 emergency care, pathology & diagnostic services at Onnesha Hospital, Dhaka, Bangladesh.",
+    "Book specialist doctor appointments, track live OPD token queues, emergency casualty care, pathology & diagnostic services at Onnesha Hospital, Dhaka, Bangladesh.",
   alternates: {
     canonical: "/",
   },
@@ -210,7 +210,7 @@ export default function HomePage() {
                   { title: "Digital OPD Token Management", desc: "Automated digital tokens, live waiting queue display screens, and electronic serial confirmation." },
                   { title: "Clinical Diagnostic Laboratory", desc: "Biochemistry, hematology, and clinical pathology tests with consultant-verified diagnostic reports." },
                   { title: "Transparent Itemized Billing", desc: "Computer-generated receipts, detailed breakdown for every test and medicine, with zero hidden surcharges." },
-                  { title: "Clean & Spacious Inpatient Cabins", desc: "Air-conditioned cabins, general beds, and post-operative wards with 24/7 dedicated nursing staff." },
+                  { title: "Clean & Spacious Inpatient Cabins", desc: "Air-conditioned cabins, general beds, and post-operative wards with dedicated inpatient nursing staff." },
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-start space-x-3">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />

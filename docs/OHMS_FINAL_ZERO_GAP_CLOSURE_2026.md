@@ -12,18 +12,18 @@
 
 ## 1. Executive Summary
 
-All accessible software engineering, public portal metadata, PWA caching safeguards, database schemas, and edge configurations have been hardened and verified with 590 active automated test cases passed across 69 test suites and live multi-browser execution.
+All accessible software engineering, public portal metadata, PWA caching safeguards, database schemas, and edge configurations have been hardened and verified with 593 active automated test cases passed across 69 test suites and live multi-browser execution.
 
 | Dimension | Verification Method | Status |
 |---|---|---|
 | **Health Endpoint Truthfulness** | `public/api/health.json` + Test 17 | **100% Truthful Static Metadata** |
 | **Database Parity (61/61)** | `npx supabase migration list` | **100% Synchronized (0 drift)** |
-| **Test Suites (69/69)** | `node scripts/run-tests.mjs` | **590 Active PASS, 0 Failures** |
+| **Test Suites (69/69)** | `node scripts/run-tests.mjs` | **593 Active PASS, 0 Failures** |
 | **Real Browser E2E (4 Engines)** | Playwright (Chromium, Firefox, Mobile Chrome, WebKit) | **108 / 108 Tests PASSED** |
 | **Static Export (43 Routes)** | `npm run build` (Turbopack) | **43 / 43 Routes OK** |
 | **Link & Asset Forensics** | `scripts/website-link-asset-forensics.mjs` | **0 Broken References (299 links, 650 assets)** |
-| **Service Worker Security** | `public/sw.js` (ohms-static-v4) | **Authorization Header + Query Params Bypass** |
-| **Accessibility Standard** | WCAG 2.2 Level AA | **Semantic Landmark, Escape Key, Focus Visible** |
+| **Service Worker Security** | `public/sw.js` (ohms-static-v5) | **Cache-Control Header Check + Auth & Sensitive Query Bypass** |
+| **Accessibility Standard** | WCAG 2.2 Level AA Hardening | **Unique Main Landmark, Skip Link, Escape Key, Focus Visible** |
 | **Edge Hosting & TLS** | Cloudflare Pages Global Anycast CDN | **Live with TLS 1.2+ Modern Ciphers** |
 
 ---

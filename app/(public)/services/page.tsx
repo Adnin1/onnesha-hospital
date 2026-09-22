@@ -39,9 +39,9 @@ export default function ServicesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                title: "24/7 Emergency & Casualty Triage",
+                title: "Emergency Casualty Triage & Acute Care",
                 desc: "Equipped with cardiac monitors, emergency resuscitation equipment, and duty medical officers available for acute care.",
-                points: ["Immediate Trauma Triage", "Emergency Patient Stabilization", "24/7 Casualty Reception"],
+                points: ["Immediate Trauma Triage", "Emergency Patient Stabilization", "Emergency Casualty Reception"],
               },
               {
                 title: "Inpatient Observation & Step-Down Care",

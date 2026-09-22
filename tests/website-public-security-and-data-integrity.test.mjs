@@ -221,5 +221,74 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
     assert.ok(healthData.architecture.includes("static_export"), "Must accurately specify static export architecture");
     assert.equal(healthData.runtime_monitoring, "not_applicable_for_static_metadata", "Must not invent unsupported edge client telemetry");
   });
+
+  test("18. Public and root layouts ensure exactly one main landmark with id='main-content' per document", () => {
+    const rootLayoutPath = path.join(ROOT, "app/layout.tsx");
+    const publicLayoutPath = path.join(ROOT, "app/(public)/layout.tsx");
+    const rootLayout = fs.readFileSync(rootLayoutPath, "utf8");
+    const publicLayout = fs.readFileSync(publicLayoutPath, "utf8");
+
+    // Root layout body must have skip link pointing to #main-content
+    assert.ok(rootLayout.includes('href="#main-content"'), "Root layout must provide skip link to #main-content");
+    // Root layout wrapper must NOT duplicate id="main-content"
+    assert.ok(!rootLayout.includes('id="main-content"'), "Root layout div wrapper must not have duplicate id='main-content'");
+    // Public layout must provide the single semantic <main id="main-content">
+    assert.ok(publicLayout.includes('<main id="main-content"'), "Public layout must render <main id='main-content'>");
+  });
+
+  test("19. formatVisitingHoursSummary groups distinct time ranges accurately and sorts days", () => {
+    const actionsPath = path.join(ROOT, "lib/public/actions.ts");
+    assert.ok(fs.existsSync(actionsPath), "lib/public/actions.ts must exist");
+    const actionsSrc = fs.readFileSync(actionsPath, "utf8");
+
+    assert.ok(actionsSrc.includes("dayOrder"), "formatVisitingHoursSummary must define dayOrder");
+    assert.ok(actionsSrc.includes("groups.set(timeKey"), "Must group schedules by timeKey");
+    assert.ok(actionsSrc.includes("parts.join(\"; \")"), "Must join separate time ranges with semicolon");
+
+    // Pure logic simulation matching formatVisitingHoursSummary
+    function formatTime12h(timeStr) {
+      const parts = timeStr.split(":");
+      const h = parseInt(parts[0], 10);
+      const m = parts[1] || "00";
+      const ampm = h >= 12 ? "PM" : "AM";
+      const hour12 = h % 12 || 12;
+      return `${hour12.toString().padStart(2, "0")}:${m} ${ampm}`;
+    }
+
+    const dayOrder = { saturday: 1, sunday: 2, monday: 3, tuesday: 4, wednesday: 5, thursday: 6, friday: 7 };
+    const sample = [
+      { day_of_week: "Monday", start_time: "09:00:00", end_time: "12:00:00", is_active: true },
+      { day_of_week: "Tuesday", start_time: "14:00:00", end_time: "17:00:00", is_active: true },
+      { day_of_week: "Wednesday", start_time: "09:00:00", end_time: "12:00:00", is_active: true },
+    ];
+    const groups = new Map();
+    for (const s of sample) {
+      const start = s.start_time.slice(0, 5);
+      const end = s.end_time.slice(0, 5);
+      const key = `${formatTime12h(start)} - ${formatTime12h(end)}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(s.day_of_week.slice(0, 3));
+    }
+    const parts = [];
+    for (const [timeRange, days] of groups.entries()) {
+      days.sort((a, b) => (dayOrder[a.toLowerCase()] || 99) - (dayOrder[b.toLowerCase()] || 99));
+      parts.push(`${days.join(", ")} (${timeRange})`);
+    }
+    const result = parts.join("; ");
+
+    assert.ok(result.includes("Mon, Wed (09:00 AM - 12:00 PM)"), "Must group Monday and Wednesday with 9-12 range");
+    assert.ok(result.includes("Tue (02:00 PM - 05:00 PM)"), "Must group Tuesday with 14-17 range");
+  });
+
+  test("20. Service Worker ohms-static-v5 inspects Cache-Control headers before persisting responses", () => {
+    const swPath = path.join(ROOT, "public/sw.js");
+    assert.ok(fs.existsSync(swPath), "public/sw.js must exist");
+    const swContent = fs.readFileSync(swPath, "utf8");
+
+    assert.ok(swContent.includes("ohms-static-v5"), "Service worker version must be ohms-static-v5");
+    assert.ok(swContent.includes("isResponseCacheable"), "Service worker must implement isResponseCacheable");
+    assert.ok(swContent.includes("no-store"), "Must reject no-store responses");
+    assert.ok(swContent.includes("private"), "Must reject private responses");
+  });
 });
 

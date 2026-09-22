@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   validate:
-    name: Mandatory CI (Typecheck, Lint, Audit, Build, Assets, Test, Playwright)
+    name: Mandatory CI
     runs-on: ubuntu-latest
     permissions:
       contents: read

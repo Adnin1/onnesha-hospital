@@ -9,7 +9,6 @@ interface QueueItem {
   id: string;
   doctor_name: string;
   room_number: string;
-  patient_name?: string;
   token_number: string;
   status: "waiting" | "calling" | "serving" | "done" | "skipped";
   called_at?: string;
@@ -139,7 +138,7 @@ export default function CheckTokenPage() {
                       ? "Your token is currently being attended by the doctor inside the chamber."
                       : searchResult.status === "calling"
                       ? "Attention! Your token is being called right now. Please proceed to the room immediately."
-                      : "Please wait in the comfortable patient lobby. You will be notified via SMS and audio announce."}
+                      : "Please wait in the patient lobby and monitor the display screen for your token call."}
                   </p>
                 </div>
               ) : (
@@ -160,7 +159,7 @@ export default function CheckTokenPage() {
                 NOW SERVING IN CHAMBERS
               </h2>
               <p className="text-xs text-slate-400">
-                Hospital Hall Screen • Audio chime sounds on token call
+                Hospital Hall Screen • Real-Time Digital Token Display
               </p>
             </div>
             <div className="flex items-center space-x-2 text-xs text-emerald-400 font-mono">

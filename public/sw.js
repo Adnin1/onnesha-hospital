@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_VERSION = 'ohms-static-v4';
+const CACHE_VERSION = 'ohms-static-v5';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -78,6 +78,18 @@ function shouldNeverCache(requestOrUrl) {
   }
 }
 
+function isResponseCacheable(response) {
+  if (!response || !response.ok) return false;
+  const cc = response.headers ? response.headers.get('Cache-Control') : null;
+  if (cc) {
+    const lower = cc.toLowerCase();
+    if (lower.includes('no-store') || lower.includes('private') || lower.includes('no-cache')) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function isStaticAsset(url) {
   const path = new URL(url).pathname;
   return (
@@ -134,7 +146,7 @@ self.addEventListener('fetch', (event) => {
       caches.match(request).then(cached => {
         if (cached) return cached;
         return fetch(request).then(response => {
-          if (response.ok) {
+          if (response.ok && isResponseCacheable(response)) {
             const clone = response.clone();
             caches.open(CACHE_VERSION).then(cache => cache.put(request, clone));
           }
@@ -149,7 +161,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then(response => {
-        if (response.ok && !shouldNeverCache(request)) {
+        if (response.ok && !shouldNeverCache(request) && isResponseCacheable(response)) {
           const clone = response.clone();
           caches.open(CACHE_VERSION).then(cache => cache.put(request, clone));
         }

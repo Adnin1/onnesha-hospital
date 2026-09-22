@@ -61,7 +61,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900">
         <a href="#main-content" className="skip-to-content">মূল বিষয়বস্তুতে যান</a>
         <NetworkStatus />
-        <div id="main-content" className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col">
           {children}
         </div>
         <SwRegister />

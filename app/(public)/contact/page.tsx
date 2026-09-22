@@ -47,7 +47,7 @@ export default function ContactPage() {
             Contact & Emergency Lines
           </h1>
           <p className="text-xs text-slate-600 mt-2">
-            Our hospital reception and 24/7 trauma emergency desks are open round the clock.
+            Our hospital reception and emergency casualty desks are available to assist.
           </p>
         </div>
 
@@ -124,7 +124,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800">Service Hours</h3>
-                  <p className="text-slate-600 mt-0.5">Emergency & Diagnostic Services: 24/7</p>
+                  <p className="text-slate-600 mt-0.5">Emergency & Diagnostic Services: Available for Acute Care</p>
                   <p className="text-slate-500 text-[11px]">Specialist OPD: 09:00 AM – 10:00 PM Daily</p>
                 </div>
               </div>

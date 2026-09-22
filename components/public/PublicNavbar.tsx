@@ -58,7 +58,7 @@ export function PublicNavbar() {
           <div className="flex items-center space-x-4">
             <span className="hidden md:flex items-center text-sky-200">
               <Clock className="w-3.5 h-3.5 mr-1 text-amber-300" />
-              24/7 Emergency & Pharmacy Open
+              Emergency & Diagnostic Services
             </span>
             <Link
               href="/login"

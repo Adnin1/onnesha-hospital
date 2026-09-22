@@ -133,7 +133,7 @@ export default function PrivacyPage() {
               For any questions regarding personal data records, consent revocation, or privacy choices, please reach out to our hospital administration desk:
             </p>
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1">
-              <p><strong>Hospital Data Protection Officer (DPO) & Patient Relations Desk</strong> — {HOSPITAL_METADATA.name}</p>
+              <p><strong>Privacy & Patient Relations Contact Desk (Data Protection Officer)</strong> — {HOSPITAL_METADATA.name}</p>
               {HOSPITAL_METADATA.email && (
                 <p>Email: <a href={`mailto:${HOSPITAL_METADATA.email}`} className="text-sky-600 underline">{HOSPITAL_METADATA.email}</a></p>
               )}
