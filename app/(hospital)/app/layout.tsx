@@ -14,7 +14,7 @@ export default function HospitalAppLayout({
         <HospitalSidebar />
         <div className="lg:pl-64 flex flex-col grow min-w-0 transition-all duration-300">
           <HospitalHeader />
-          <main className="grow p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          <main id="main-content" className="grow p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
             {children}
           </main>
         </div>

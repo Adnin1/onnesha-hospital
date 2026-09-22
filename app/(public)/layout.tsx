@@ -12,7 +12,7 @@ export default function PublicLayout({
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       <HospitalJsonLd />
       <PublicNavbar />
-      <main className="grow">{children}</main>
+      <main id="main-content" className="grow">{children}</main>
       <PublicFooter />
     </div>
   );

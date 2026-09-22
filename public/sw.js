@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_VERSION = 'ohms-static-v3';
+const CACHE_VERSION = 'ohms-static-v4';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -15,6 +15,19 @@ const NEVER_CACHE_EXACT_PATHS = new Set([
   '/forgot-password',
   '/reset-password',
   '/auth',
+]);
+
+// Sensitive query parameter keys that MUST bypass cache completely
+const SENSITIVE_QUERY_PARAMS = new Set([
+  'token',
+  'access_token',
+  'refresh_token',
+  'code',
+  'state',
+  'session',
+  'auth',
+  'api_key',
+  'key',
 ]);
 
 // Paths that must NEVER be cached (clinical, financial, private, and all authenticated app routes)
@@ -35,7 +48,6 @@ const NEVER_CACHE_PATTERNS = [
   /pharmacy/i,
   /payroll/i,
   /\/audit(\/|$)/,
-  /\/hr(\/|$)/,
   /notification/i,
 ];
 
@@ -45,6 +57,12 @@ function shouldNeverCache(url) {
     const cleanPath = parsed.pathname.replace(/\/$/, '') || '/';
     // Check exact auth paths first
     if (NEVER_CACHE_EXACT_PATHS.has(cleanPath)) return true;
+
+    // Check for sensitive query parameters
+    for (const param of parsed.searchParams.keys()) {
+      if (SENSITIVE_QUERY_PARAMS.has(param.toLowerCase())) return true;
+    }
+
     const urlStr = url.toString();
     return NEVER_CACHE_PATTERNS.some(pattern => pattern.test(urlStr));
   } catch {

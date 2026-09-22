@@ -8,16 +8,16 @@
 - Domain Classification: High-Performance Edge Domain with Cloudflare Pages Global Anycast CDN
 
 ## 2. Infrastructure & Cloud Hosting Architecture
-- Platform Tier: High-Availability Healthcare Cloud
-- Database Architecture: Enterprise PostgreSQL Relational Database Cluster (Private VPC, multi-region replication, automated daily snapshots)
-- Storage & CDN: Enterprise Edge Content Distribution Network with Encrypted Object Storage
-- Security & Compliance: Strict Row-Level Security (RLS), Encrypted TLS 1.3 at rest and in transit, Role-Based Access Control (RBAC)
-- Operational SLA: 99.9% High Availability Production Uptime
+- Platform Tier: Modern Cloud Healthcare Architecture
+- Database Architecture: Managed PostgreSQL Relational Database (Supabase Platform with automated daily backups)
+- Storage & CDN: Cloudflare Pages Global Anycast CDN with Encrypted Object Storage
+- Security & Compliance: Strict Row-Level Security (RLS), TLS 1.3 encryption in transit, AES-256 storage encryption at rest, Role-Based Access Control (RBAC)
+- Operational Model: Continuous Monitoring and Automated Resiliency Controls
 
 ## 3. Application Profile
-- Application Type: Enterprise Hospital Information System (HIS / EMR), 24/7 Outpatient & Inpatient Clinical Suite
+- Application Type: Enterprise Hospital Information System (HIS / EMR), Outpatient & Inpatient Clinical Suite
 - Client Subsystems: Cross-Platform Progressive Web App (PWA) & Tauri 2 Native Desktop Client
-- Status: Commercial Production Live
+- Status: Active Production Deployment
 
 ## 4. Clinical Capabilities
 - Outpatient Department (OPD): Specialist Doctor Consultation, Digital Token Queue, Online Appointments
