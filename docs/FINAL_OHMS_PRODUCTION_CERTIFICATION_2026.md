@@ -19,7 +19,7 @@
 | **Prerendered Production Build** | `npm run build` → 43 routes exported (41 HTML + 404 + _not-found), 0 errors | ✅ PASS |
 | **Static Link & Asset Forensics** | `npm run audit:assets` → 299 internal links, 616 assets, 0 broken references | ✅ PASS |
 | **Master Certification Suite** | `node scripts/run-tests.mjs` → 67/67 suites, 579 ACTIVE_PASS, 0 FAIL, 6 standard skips | ✅ PASS |
-| **Playwright Real Browser E2E** | `npx playwright test --project=chromium` → 27/27 tests PASS (21.6s) | ✅ PASS |
+| **Playwright Real Browser E2E** | `npx playwright test --project=chromium --project=firefox --project=mobile-chrome` → **81/81 tests PASS** (1.1m) across Desktop Chrome, Desktop Firefox, and Mobile Pixel 5 | ✅ PASS |
 | **Database Migrations** | `npx supabase db push` → 59/59 migrations applied & synchronized | ✅ PASS |
 | **Public Data Projection Shield** | `public_doctors_view` + `get_public_doctors_directory` RPC; direct commission/salary SELECT revoked from anon | ✅ PASS |
 | **Database Integrity Constraints** | Derived net_salary, line total, and atomic PO numbering sequence enforced in DB | ✅ PASS |
