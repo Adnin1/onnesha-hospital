@@ -18,10 +18,10 @@ All accessible software engineering, public portal metadata, PWA caching safegua
 |---|---|---|
 | **Health Endpoint Truthfulness** | `public/api/health.json` + Test 17 | **100% Truthful Static Metadata** |
 | **Database Parity (61/61)** | `npx supabase migration list` | **100% Synchronized (0 drift)** |
-| **Test Suites (69/69)** | `node scripts/run-tests.mjs` | **593 Active PASS, 0 Failures** |
-| **Real Browser E2E (4 Engines)** | Playwright (Chromium, Firefox, Mobile Chrome, WebKit) | **108 / 108 Tests PASSED** |
+| **Test Suites (69/69)** | `node scripts/run-tests.mjs` | **594 Active PASS, 0 Failures** |
+| **Real Browser E2E (4 Engines)** | Playwright (Chromium, Firefox, Mobile Chrome, WebKit) | **120 / 120 Tests PASSED** |
 | **Static Export (43 Routes)** | `npm run build` (Turbopack) | **43 / 43 Routes OK** |
-| **Link & Asset Forensics** | `scripts/website-link-asset-forensics.mjs` | **0 Broken References (299 links, 650 assets)** |
+| **Link & Asset Forensics** | `scripts/website-link-asset-forensics.mjs` | **0 Broken References (298 links, 650 assets)** |
 | **Service Worker Security** | `public/sw.js` (ohms-static-v5) | **Cache-Control Header Check + Auth & Sensitive Query Bypass** |
 | **Accessibility Standard** | WCAG 2.2 Level AA Hardening | **Unique Main Landmark, Skip Link, Escape Key, Focus Visible** |
 | **Edge Hosting & TLS** | Cloudflare Pages Global Anycast CDN | **Live with TLS 1.2+ Modern Ciphers** |

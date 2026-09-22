@@ -105,7 +105,7 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
     assert.ok(robots.includes("Disallow: /app/"), "robots.txt must disallow internal /app/ routes");
 
     const sitemap = fs.readFileSync(sitemapPath, "utf8");
-    assert.ok(sitemap.includes("2026-09-21T00:00:00.000Z"), "sitemap.ts must use stable release timestamp");
+    assert.ok(sitemap.includes("2026-09-23T02:00:00.000Z"), "sitemap.ts must use stable release timestamp");
   });
 
   test("6. HospitalJsonLd structured data links valid logo and accurate capabilities", () => {
@@ -289,6 +289,24 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
     assert.ok(swContent.includes("isResponseCacheable"), "Service worker must implement isResponseCacheable");
     assert.ok(swContent.includes("no-store"), "Must reject no-store responses");
     assert.ok(swContent.includes("private"), "Must reject private responses");
+  });
+
+  test("21. Public actions enforce database authority for booking and department views", () => {
+    const actionsPath = path.join(ROOT, "lib/public/actions.ts");
+    assert.ok(fs.existsSync(actionsPath), "lib/public/actions.ts must exist");
+    const actionsCode = fs.readFileSync(actionsPath, "utf8");
+
+    // Must query authoritative doctors record by ID in bookOnlineAppointmentAction
+    assert.ok(
+      actionsCode.includes('from("doctors")') && actionsCode.includes('.eq("id", doctorId)'),
+      "bookOnlineAppointmentAction must query authoritative doctor row from doctors table directly"
+    );
+
+    // Must query public_departments_view in getPublicDepartmentsAction
+    assert.ok(
+      actionsCode.includes('from("public_departments_view")'),
+      "getPublicDepartmentsAction must query public_departments_view"
+    );
   });
 });
 

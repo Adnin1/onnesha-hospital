@@ -13,7 +13,7 @@ test.describe("Real Browser E2E: Billing & Cashier Desk", () => {
     await page.goto("/app/billing/reconciliation");
     await page.waitForLoadState("domcontentloaded");
 
-    const container = page.locator("#main-content, main, form").first();
+    const container = page.locator("#main-content, main, h1, div:has-text('Reconciliation')").first();
     await expect(container).toBeVisible();
   });
 });

@@ -131,4 +131,39 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
       }
     }
   });
+
+  test("7. Route-by-Route DOM Accessibility: exactly one main landmark with id='main-content' and valid skip link", async ({ page }) => {
+    const verifiedRoutes = [
+      "/",
+      "/about",
+      "/doctors",
+      "/services",
+      "/appointment",
+      "/check-token",
+      "/contact",
+      "/privacy",
+      "/terms",
+      "/login",
+    ];
+
+    for (const route of verifiedRoutes) {
+      await page.goto(route);
+      await page.waitForLoadState("domcontentloaded");
+
+      const a11yLandmarks = await page.evaluate(() => {
+        const mains = document.querySelectorAll("main");
+        const mainContentIds = document.querySelectorAll("#main-content");
+        const skipLinks = document.querySelectorAll('a[href="#main-content"]');
+        return {
+          mainCount: mains.length,
+          mainContentIdCount: mainContentIds.length,
+          hasSkipLink: skipLinks.length >= 1,
+        };
+      });
+
+      expect(a11yLandmarks.mainCount, `Route ${route} must have exactly 1 <main> element`).toBe(1);
+      expect(a11yLandmarks.mainContentIdCount, `Route ${route} must have exactly 1 element with id='main-content'`).toBe(1);
+      expect(a11yLandmarks.hasSkipLink, `Route ${route} must provide skip-to-content anchor`).toBe(true);
+    }
+  });
 });

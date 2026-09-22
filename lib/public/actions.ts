@@ -258,8 +258,9 @@ export async function getPublicDepartmentsAction(): Promise<{
 }> {
   try {
     const supabase = await createClient();
+    // Query public_departments_view adhering to canonical public org and public visibility
     const { data, error } = await supabase
-      .from("departments")
+      .from("public_departments_view")
       .select("id, name, code")
       .eq("organization_id", HOSPITAL_METADATA.id)
       .eq("is_active", true)
@@ -363,20 +364,28 @@ export async function bookOnlineAppointmentAction(params: {
       return { success: false, error: resObj.error || "Online booking slot unavailable." };
     }
 
-    // Use passed client doctor metadata if available, avoiding an extra full directory fetch
-    let docFullName = doctorMetadata?.fullName || "";
-    let docRoom = resObj.room_number || doctorMetadata?.roomNumber || "";
-    let docFee = Number(doctorMetadata?.opdFee) || 0;
+    // Query authoritative doctor record directly by ID, guaranteeing DB integrity
+    let docFullName = "";
+    let docRoom = resObj.room_number || "";
+    let docFee = 0;
 
-    // Only fallback if client doctor metadata was not provided
-    if (!docFullName && !docFee) {
-      const docListRes = await getPublicDoctorsAction();
-      const docData = docListRes.success ? docListRes.doctors.find((d) => d.id === doctorId) : null;
-      if (docData) {
-        docFullName = docData.full_name;
-        docRoom = resObj.room_number || docData.room_number || "";
-        docFee = Number(docData.opd_fee) || 0;
-      }
+    const { data: authoritativeDoc } = await supabase
+      .from("doctors")
+      .select("full_name, room_number, opd_fee")
+      .eq("id", doctorId)
+      .eq("organization_id", HOSPITAL_METADATA.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (authoritativeDoc) {
+      docFullName = authoritativeDoc.full_name;
+      docRoom = resObj.room_number || authoritativeDoc.room_number || "";
+      docFee = Number(authoritativeDoc.opd_fee) || 0;
+    } else {
+      // Fallback to client metadata only if direct lookup is unavailable
+      docFullName = doctorMetadata?.fullName || "";
+      docRoom = resObj.room_number || doctorMetadata?.roomNumber || "";
+      docFee = Number(doctorMetadata?.opdFee) || 0;
     }
 
     return {

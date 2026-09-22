@@ -18,9 +18,9 @@ The Onnesha Hospital Management System (OHMS) has achieved complete software eng
 |---|---|---|---|
 | **Health Endpoint Truthfulness** | Static Deployment Metadata | **100% Truthful** | `public/api/health.json` classified as `static_deployment_metadata`; `runtime_monitoring: not_applicable_for_static_metadata`; zero false live DB/auth claims; verified via regression test 17 |
 | **Database Migrations** | PostgreSQL / Supabase | **61 / 61 Applied** | 100% parity verified via `npx supabase migration list` against linked project `iuhtzahuszdkdarhxobx` |
-| **Test Suite** | Unit, Schema, A11y, Security | **69 / 69 Suites PASS** | 593 active tests passing, 0 failures, 6 standard deferred items |
-| **Browser Matrix E2E** | Playwright Cross-Browser | **108 / 108 PASS (4 Browsers)** | Chromium (27/27), Firefox (27/27), Mobile Chrome (27/27), WebKit (27/27) executed on Windows |
-| **Static Build** | Next.js 16 Static Export | **43 / 43 Routes OK** | Zero broken links (299 internal, 650 assets verified) |
+| **Test Suite** | Unit, Schema, A11y, Security | **69 / 69 Suites PASS** | 594 active tests passing, 0 failures, 6 standard deferred items |
+| **Browser Matrix E2E** | Playwright Cross-Browser | **120 / 120 PASS (4 Browsers)** | Chromium (30/30), Firefox (30/30), Mobile Chrome (30/30), WebKit (30/30) executed on Windows |
+| **Static Build** | Next.js 16 Static Export | **43 / 43 Routes OK** | Zero broken links (298 internal, 650 assets verified) |
 | **PWA & Offline** | Service Worker v5 | **Cache v5 Active** | Sensitive query parameter bypass (`token`, `auth`, `session`), Authorization header bypass, `Cache-Control: no-store/private/no-cache` header inspection |
 | **Accessibility** | WCAG 2.2 AA Hardening | **Semantics Enforced** | Single unique `<main id="main-content">`, skip-to-content anchor, focus-visible ring, touch targets >= 44px, Escape key closes mobile menu |
 | **Public Metadata & SEO** | OpenGraph, Canonical, Robots | **100% Enforced** | Canonical tags, openGraph, Twitter cards, and robots indexing across all public routes; `/check-token` set to noindex |
