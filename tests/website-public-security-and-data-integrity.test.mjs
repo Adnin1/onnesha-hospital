@@ -219,6 +219,7 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
     assert.ok(!("security" in healthData), "Static JSON must not claim live runtime security enforcement");
     assert.ok(!("multi_tenant" in healthData), "Static JSON must not claim live multi-tenant state");
     assert.ok(healthData.architecture.includes("static_export"), "Must accurately specify static export architecture");
+    assert.equal(healthData.runtime_monitoring, "not_applicable_for_static_metadata", "Must not invent unsupported edge client telemetry");
   });
 });
 
