@@ -84,7 +84,15 @@ $$\text{Overall System Maturity} = \mathbf{90.5\%}$$
 
 ---
 
-## 6. Remaining 5 External Gates (Unchanged — Require Owner Action)
+## 6. What Changed in Migration 60 (PostgreSQL 15+ Security Invoker & Tenant Hardening)
+
+### Database Level Protections
+- **`WITH (security_invoker = true)` on `public_doctors_view`**: Ensures that PostgreSQL 15+ evaluates underlying table RLS policies with the calling user's permissions, preventing view-based RLS bypass vulnerabilities.
+- **Canonical Public Org Boundary**: Bound view rows strictly to the canonical organization UUID (`a0000000-0000-0000-0000-000000000001`), completely mitigating cross-tenant doctor leakage to anonymous public consumers.
+
+---
+
+## 7. Remaining 5 External Gates (Unchanged — Require Owner Action)
 
 | Gate | Status | Blocking Factor |
 |---|---|---|
@@ -93,4 +101,5 @@ $$\text{Overall System Maturity} = \mathbf{90.5\%}$$
 | SSLCommerz production credentials | **BLOCKED** | Merchant activation pending `SSLC_STORE_ID` + `SSLC_STORE_PASSWORD` in Edge Function env |
 | SMS provider API key | **BLOCKED** | `SMS_API_ENDPOINT` + `SMS_API_KEY` + `SMS_SENDER_ID` must be set from telecom aggregator |
 | Physical DR restore drill | **BLOCKED** | Owner must execute Point-in-Time restore test via Supabase Dashboard > Database > Backups |
+
 
