@@ -208,5 +208,17 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
     const layout = fs.readFileSync(layoutPath, "utf8");
     assert.ok(layout.includes("description: SITE_CONFIG.description"), "Layout metadata must use SITE_CONFIG.description");
   });
+
+  test("17. public/api/health.json acts truthfully as static deployment metadata and never claims fake live database connectivity", () => {
+    const healthJsonPath = path.join(ROOT, "public/api/health.json");
+    assert.ok(fs.existsSync(healthJsonPath), "public/api/health.json must exist");
+    const healthData = JSON.parse(fs.readFileSync(healthJsonPath, "utf8"));
+
+    assert.equal(healthData.type, "static_deployment_metadata", "Must declare type as static_deployment_metadata");
+    assert.ok(!("database" in healthData), "Static JSON must not claim live database connectivity");
+    assert.ok(!("security" in healthData), "Static JSON must not claim live runtime security enforcement");
+    assert.ok(!("multi_tenant" in healthData), "Static JSON must not claim live multi-tenant state");
+    assert.ok(healthData.architecture.includes("static_export"), "Must accurately specify static export architecture");
+  });
 });
 
