@@ -45,7 +45,7 @@ export function PublicNavbar() {
             ) : (
               <Link href="/contact" prefetch={false} className="flex items-center text-sky-200 hover:text-white transition">
                 <Phone className="w-3.5 h-3.5 mr-1 text-emerald-400" />
-                Emergency: <strong className="ml-1 text-white underline">24/7 Desk</strong>
+                Emergency: <strong className="ml-1 text-white underline">Emergency Desk</strong>
               </Link>
             )}
             {HOSPITAL_METADATA.ambulanceHotline ? (

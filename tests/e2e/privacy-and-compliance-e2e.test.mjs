@@ -13,7 +13,7 @@ describe("OHMS Data Privacy BD 2026 & OWASP ASVS Security Compliance E2E Suite (
     assert.ok(fs.existsSync(privacyPath), "Privacy page file must exist");
     const content = fs.readFileSync(privacyPath, "utf8");
     assert.ok(content.includes("Bangladesh Personal Data Protection Act"), "Must reference BD PDP Act");
-    assert.ok(content.includes("Data Protection Officer"), "Must specify DPO contact");
+    assert.ok(content.includes("Privacy & Patient Relations Contact Desk"), "Must specify privacy contact desk");
   });
 
   test("2. Public terms of service page exists and contains emergency medical disclaimer", () => {

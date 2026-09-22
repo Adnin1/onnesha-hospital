@@ -49,12 +49,19 @@ export function formatVisitingHoursSummary(
   };
 
   const dayOrder: Record<string, number> = {
+    sat: 1,
     saturday: 1,
+    sun: 2,
     sunday: 2,
+    mon: 3,
     monday: 3,
+    tue: 4,
     tuesday: 4,
+    wed: 5,
     wednesday: 5,
+    thu: 6,
     thursday: 6,
+    fri: 7,
     friday: 7,
   };
 

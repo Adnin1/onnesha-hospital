@@ -2,9 +2,9 @@
 ## Execution Checkpoint & Audit Certification (2026)
 
 **Document Reference:** `OHMS-EXEC-CHECKPOINT-2026-09-23`  
-**Timestamp:** 2026-09-23T02:30:00+06:00  
+**Timestamp:** 2026-09-23T02:55:00+06:00  
 **Repository:** `Adnin1/onnesha-hospital`  
-**Base Commit in Conversation:** `b75a67fa4d43afb2c80dedeeda3b80323b925fb3`  
+**Base Commit in Conversation:** `1d807a3bd1a47dc1397118d5da703d70795bf36f`  
 **Target Production Domain:** `https://onnesha-hospital.pages.dev`  
 **Audit Standard:** Zero-Fake / Zero-Bypass / Live-Evidence Verification Standard
 
@@ -31,7 +31,7 @@ The Onnesha Hospital Management System (OHMS) has achieved complete software eng
 
 ## 2. Distinction: Software Engineering vs. External Owner Gates
 
-Under our strict truthfulness standard, **100% of software engineering, code hardening, database schemas, and client functionality are complete**. Five external administrative gates require explicit human owner action or vendor registration:
+Under our strict truthfulness standard, **100% of software engineering, code hardening, database schemas, and client functionality are complete**. Six external administrative and operational gates require explicit human owner action, vendor registration, or standby hardware:
 
 1. **GitHub Branch Protection (`main` branch):**
    - **Current State:** `protected: false` (independently verified via GitHub REST API).
@@ -53,6 +53,10 @@ Under our strict truthfulness standard, **100% of software engineering, code har
 5. **Physical Biometric Attendance Hardware Pairing (ZKTeco / Anviz):**
    - **Current State:** Web-based attendance ledger, roster, and audit logging active.
    - **Required Owner Action:** On-premise network pairing with physical biometric scanner terminals.
+
+6. **Real Staging Database DR Restoration Drill:**
+   - **Current State:** Full disaster recovery runbook, automated backup script, and verification queries documented in `docs/HMS_DAILY_OPERATION_RUNBOOK.md`.
+   - **Required Owner Action:** Periodic execution of physical dump restoration onto an isolated standby PostgreSQL cluster.
 
 ---
 

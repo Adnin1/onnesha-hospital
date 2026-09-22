@@ -1,4 +1,4 @@
-﻿import test from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -111,14 +111,14 @@ test("OHMS Phase 13 Public Website, Online Appointment & SEO Suite", async (t) =
   });
 
   // Scenario 9: SEO sitemap exists and excludes private /app routes
-  await t.test("9. Sitemap is implemented and strictly restricts indexing of internal /app routes", () => {
+  await t.test("9. Sitemap is implemented and strictly restricts indexing of internal /app routes and noindexed queue routes", () => {
     const sitemapContent = fs.readFileSync(
       path.join(rootDir, "app", "sitemap.ts"),
       "utf8"
     );
     assert.match(sitemapContent, /\/doctors/);
     assert.match(sitemapContent, /\/appointment/);
-    assert.match(sitemapContent, /\/check-token/);
+    assert.doesNotMatch(sitemapContent, /\/check-token/, "check-token has robots noindex and must not appear in sitemap");
     assert.doesNotMatch(sitemapContent, /\/app\//);
     assert.doesNotMatch(sitemapContent, /\/login/);
   });

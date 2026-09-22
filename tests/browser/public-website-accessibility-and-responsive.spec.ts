@@ -99,4 +99,36 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
     const submitBtn = page.locator('button[type="submit"]:has-text("Inquiry"), button[type="submit"]:has-text("Send"), button:has-text("Send")').first();
     await expect(submitBtn).toBeVisible();
   });
+
+  test("6. Real Browser Cache Storage: PWA caches only static assets and never caches /app/, /api/, or auth routes", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
+
+    // Evaluate window.caches directly inside the real browser environment
+    const cacheReport = await page.evaluate(async () => {
+      if (!("caches" in window)) {
+        return { supported: false, cachedUrls: [] };
+      }
+      const keys = await window.caches.keys();
+      const allUrls: string[] = [];
+      for (const key of keys) {
+        const cache = await window.caches.open(key);
+        const requests = await cache.keys();
+        for (const req of requests) {
+          allUrls.push(req.url);
+        }
+      }
+      return { supported: true, cachedUrls: allUrls };
+    });
+
+    if (cacheReport.supported) {
+      // Assert that no sensitive, private app, or clinical endpoint is in Cache Storage
+      const forbiddenPatterns = [/\/app(\/|$)/, /\/api\//, /\/login/, /\/mfa/, /patient/i, /billing/i, /invoice/i];
+      for (const url of cacheReport.cachedUrls) {
+        for (const pattern of forbiddenPatterns) {
+          expect(pattern.test(url), `Cache Storage must never contain matching URL: ${url}`).toBe(false);
+        }
+      }
+    }
+  });
 });

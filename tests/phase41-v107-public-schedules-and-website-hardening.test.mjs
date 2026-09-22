@@ -66,17 +66,52 @@ test("Phase 41 - v1.0.7 Public Schedules, Content Hardening & Release Governance
         return `${hour12.toString().padStart(2, "0")}:${m} ${ampm}`;
       };
 
-      const first = active[0];
-      const timeRange = `${formatTime12h(first.start_time)} - ${formatTime12h(first.end_time)}`;
-      const days = active.map((s) => s.day_of_week.slice(0, 3)).join(", ");
-      return `${days} (${timeRange})`;
+      const dayOrder = {
+        sat: 1, saturday: 1,
+        sun: 2, sunday: 2,
+        mon: 3, monday: 3,
+        tue: 4, tuesday: 4,
+        wed: 5, wednesday: 5,
+        thu: 6, thursday: 6,
+        fri: 7, friday: 7,
+      };
+
+      const groups = new Map();
+      for (const s of active) {
+        const start = s.start_time ? s.start_time.trim().slice(0, 5) : "";
+        const end = s.end_time ? s.end_time.trim().slice(0, 5) : "";
+        const timeKey = start && end ? `${formatTime12h(start)} - ${formatTime12h(end)}` : "TBD";
+        const day = s.day_of_week.trim();
+        const shortDay = day.slice(0, 3);
+        if (!groups.has(timeKey)) {
+          groups.set(timeKey, []);
+        }
+        const list = groups.get(timeKey);
+        if (!list.includes(shortDay)) {
+          list.push(shortDay);
+        }
+      }
+
+      const parts = [];
+      for (const [timeRange, days] of groups.entries()) {
+        days.sort((a, b) => {
+          const orderA = dayOrder[a.toLowerCase()] || 99;
+          const orderB = dayOrder[b.toLowerCase()] || 99;
+          return orderA - orderB;
+        });
+        parts.push(`${days.join(", ")} (${timeRange})`);
+      }
+
+      return parts.join("; ");
     }
 
+    // Unordered input: WED, MON, SAT -> must sort to SAT, MON, WED
     const testSchedules = [
-      { day_of_week: "MONDAY", start_time: "09:00:00", end_time: "13:00:00", is_active: true },
       { day_of_week: "WEDNESDAY", start_time: "09:00:00", end_time: "13:00:00", is_active: true },
+      { day_of_week: "MONDAY", start_time: "09:00:00", end_time: "13:00:00", is_active: true },
+      { day_of_week: "SATURDAY", start_time: "09:00:00", end_time: "13:00:00", is_active: true },
     ];
-    assert.equal(formatVisitingHoursSummary(testSchedules), "MON, WED (09:00 AM - 01:00 PM)");
+    assert.equal(formatVisitingHoursSummary(testSchedules), "SAT, MON, WED (09:00 AM - 01:00 PM)");
     assert.equal(formatVisitingHoursSummary([]), "Schedule on request");
     assert.equal(formatVisitingHoursSummary(null), "Schedule on request");
     assert.equal(
@@ -112,7 +147,7 @@ test("Phase 41 - v1.0.7 Public Schedules, Content Hardening & Release Governance
 
   await t.test("5. Emergency & ambulance hotline gracefully handles missing values in PublicNavbar", () => {
     assert.match(navbarCode, /HOSPITAL_METADATA\.emergencyHotline \?/);
-    assert.match(navbarCode, /24\/7 Desk/);
+    assert.match(navbarCode, /Emergency Desk|24\/7 Desk/);
     assert.match(navbarCode, /HOSPITAL_METADATA\.ambulanceHotline \?/);
   });
 

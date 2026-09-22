@@ -1,7 +1,7 @@
 # Onnesha Hospital Management System (OHMS v1.1.5)
 Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
-[![Tests](https://img.shields.io/badge/tests-590%20active%20passing-brightgreen)](#automated-testing)
+[![Tests](https://img.shields.io/badge/tests-593%20active%20passing-brightgreen)](#automated-testing)
 [![Suites](https://img.shields.io/badge/test%20suites-69%20passed-brightgreen)](#automated-testing)
 [![TypeScript](https://img.shields.io/badge/typescript-strict%200%20errors-blue)](#quality-gates)
 [![ESLint](https://img.shields.io/badge/eslint-0%20errors-brightgreen)](#quality-gates)
@@ -31,7 +31,7 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
 ---
 
-## 🏥 Enterprise Modules Overview (14 Core Modules)
+## 🏥 Enterprise Modules Overview (14 Core Modules Verified)
 - **Deterministic Identifiers:** PostgreSQL sequences generating `P-YYYYMM-XXXXX` and visit identifiers (`OPD-`, `IPD-`, `EMG-`).
 - **Windows PC Desktop Client:** Tauri 2 powered Windows desktop app connected to production host (`https://onnesha-hospital.pages.dev`), reusing shared PostgreSQL database, RBAC, and RLS security.
 - **Operational Health & DR Runbook:** Database connectivity telemetry, PHI-redacted error sanitizer, automated backup protocols, and emergency disaster recovery runbooks.
@@ -51,7 +51,7 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
 ## 🧪 Automated Testing Breakdown (Current Verified Metrics)
 - **Total Test Suites:** 69 / 69 Passed (0 failures)
-- **Active Automated Test Cases:** 590 Passed
+- **Active Automated Test Cases:** 593 Passed
 - **Standard Deferred:** 6 (explicit external vendor / optional staging dependencies)
 - **Cross-Browser Playwright Matrix:** 108 / 108 Passed (Chromium: 27/27, Firefox: 27/27, Mobile Chrome: 27/27, WebKit: 27/27)
 

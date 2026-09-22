@@ -16,7 +16,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/doctors",
     "/services",
     "/appointment",
-    "/check-token",
     "/contact",
     "/privacy",
     "/terms",
@@ -27,7 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return publicRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: releaseLastModified,
-    changeFrequency: route === "" || route === "/appointment" || route === "/check-token" ? "daily" : "weekly",
+    changeFrequency: route === "" || route === "/appointment" ? "daily" : "weekly",
     priority: route === "" ? 1.0 : route === "/appointment" || route === "/doctors" ? 0.9 : 0.7,
   }));
 }

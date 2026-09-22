@@ -28,7 +28,7 @@ All accessible software engineering, public portal metadata, PWA caching safegua
 
 ---
 
-## 2. Core Modules Operational Classification (14/14 Real Working)
+## 2. Core Modules Operational Classification (14/14 Software Implementations Verified)
 
 1. **Patient Management & EMR:** Real-time registration, Bangladesh NID / phone validation, patient 360 profile, multi-encounter medical timeline.
 2. **Specialist Appointments & Public Booking:** Public portal and staff calendar, real-time doctor availability slots, token booking.
@@ -47,9 +47,9 @@ All accessible software engineering, public portal metadata, PWA caching safegua
 
 ---
 
-## 3. The 5 External Owner Gates (Action Required by Hospital Owner / Vendors)
+## 3. The 6 External / Operational Gates (Action Required by Hospital Owner / Vendors)
 
-Under the Zero-Fake Standard, no accessible software tasks remain incomplete. The following 5 administrative gates depend on external human actions:
+Under the Zero-Fake Standard, 100% of accessible software engineering tasks are complete. The following 6 operational and administrative gates depend on external human action or external vendor credentials:
 
 1. **GitHub `main` Branch Ruleset / Protection:**
    - *Current State:* `protected: false` (independently verified via GitHub REST API).
@@ -69,9 +69,12 @@ Under the Zero-Fake Standard, no accessible software tasks remain incomplete. Th
 5. **Physical Biometric Hardware Pairing:**
    - *Current State:* Web attendance ledger active.
    - *Owner Action:* Pair physical ZKTeco/Anviz scanner on hospital local area network.
+6. **Real Staging Database DR Restoration Drill:**
+   - *Current State:* Full disaster recovery runbook, automated backup script, and verification queries documented in `docs/HMS_DAILY_OPERATION_RUNBOOK.md`.
+   - *Owner Action:* Periodic execution of physical dump restoration onto an isolated standby PostgreSQL cluster.
 
 ---
 
 ## 4. Final Engineering Status
 
-**ENGINEERING COMPLETE — EXTERNAL OWNER GATES REMAIN**
+**ENGINEERING COMPLETE — OPERATIONAL COMMISSIONING GATES REMAIN**
