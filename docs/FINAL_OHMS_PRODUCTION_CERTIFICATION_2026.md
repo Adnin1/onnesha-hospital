@@ -49,7 +49,7 @@ Measured directly from `https://onnesha-hospital.pages.dev` using Chromium and b
 
 ---
 
-## 3. ERP Domain Maturity Scorecard (Post-Migration 58)
+## 3. ERP Domain Maturity Scorecard (Post-Migration 59)
 
 | Domain | Maturity | Implemented Depth | Remaining Operational Boundary |
 |---|---|---|---|
@@ -63,7 +63,7 @@ Measured directly from `https://onnesha-hospital.pages.dev` using Chromium and b
 | **Asset & Biomedical Maintenance** | **80%** | Biomedical equipment register, serial numbers, maintenance schedules, service logs. | Automated IoT telemetry requires manual inspection entry. |
 | **Reporting, Audit & Forensics** | **89%** | Department revenue, occupancy metrics, cashier reconciliation, append-only forensic audit table. | OLAP data warehousing handled via relational views. |
 | **Public Website & Patient Portal** | **95%** | 43 static pages, zero broken links, sub-0.04 CLS, sub-550ms LCP, WCAG 2.2 accessibility, token tracker. | Multi-lingual beyond English & Bengali is not configured. |
-| **Security, RLS & Edge Hardening** | **94%** | Multi-tenant RLS on all 58 migrations, `SET search_path = ''` in security definers, strict CSP (no unsafe-eval). | External commercial third-party pen-test certificate pending. |
+| **Security, RLS & Edge Hardening** | **94%** | Multi-tenant RLS on all 59 migrations, `SET search_path = ''` in security definers, strict CSP (no unsafe-eval). | External commercial third-party pen-test certificate pending. |
 
 $$\mathbf{Overall\ Practical\ Maturity:\ 90.5\%}$$
 

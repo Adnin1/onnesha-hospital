@@ -31,7 +31,7 @@ It implements genuine, verified transactional accounting, supply chain procureme
 | 8 | **Asset & Biomedical Maintenance** | **80%** | **Operational Baseline** | Biomedical equipment register, serial numbers, maintenance schedules, service logs, downtime tracking. | Automated equipment telemetry IoT sensors are recorded via scheduled manual inspections. |
 | 9 | **Reporting, Audit & Forensics** | **89%** | **Production-Ready** | Department revenue reports, bed occupancy metrics, cashier reconciliation, append-only forensic audit trail table. | Advanced OLAP data warehousing cubes are handled through standard relational queries. |
 | 10 | **Public Website & Patient Portal** | **95%** | **Production-Ready** | 43 static pages, zero broken links/assets, sub-0.04 CLS, under-550ms LCP, WCAG 2.2 compliant, SEO canonical tags, live token tracker. | Multi-lingual beyond English & Bengali is not configured. |
-| 11 | **Security, RLS & Edge Hardening** | **94%** | **Production-Ready** | Multi-tenant RLS isolation on all tables (58 migrations), secure definer functions, row locking, strict CSP (no unsafe-eval), fail-closed payment/SMS stubs. | Full external penetration testing certificate requires external security firm signoff. |
+| 11 | **Security, RLS & Edge Hardening** | **94%** | **Production-Ready** | Multi-tenant RLS isolation on all tables (59 migrations), secure definer functions, row locking, strict CSP (no unsafe-eval), fail-closed payment/SMS stubs. | Full external penetration testing certificate requires external security firm signoff. |
 
 ---
 

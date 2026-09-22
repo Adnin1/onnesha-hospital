@@ -43,6 +43,9 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   generator: "Onnesha Hospital HIS/EMR",
+  alternates: {
+    canonical: "./",
+  },
 };
 
 // NOTE: Structured data (JSON-LD) is rendered by HospitalJsonLd component
