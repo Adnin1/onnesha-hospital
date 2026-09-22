@@ -5,6 +5,17 @@ import { HOSPITAL_METADATA } from "@/config/hospital";
 export const metadata: Metadata = {
   title: "Consent & Privacy Choices | Onnesha Hospital",
   description: "Patient Consent & Privacy Choices Guide referencing the Bangladesh Personal Data Protection Act 2026.",
+  alternates: { canonical: "/consent" },
+  openGraph: {
+    title: "Consent & Privacy Choices | Onnesha Hospital",
+    description: "Patient Consent & Privacy Choices Guide referencing the Bangladesh Personal Data Protection Act 2026.",
+    url: "/consent",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function ConsentPage() {

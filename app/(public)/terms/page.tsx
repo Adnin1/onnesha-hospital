@@ -4,6 +4,17 @@ import { FileText, AlertCircle, Scale, ShieldAlert, CheckSquare } from "lucide-r
 export const metadata: Metadata = {
   title: "Terms of Service | Onnesha Hospital",
   description: "Terms of Service and Operational Conditions for Onnesha Hospital & Diagnostic Complex.",
+  alternates: { canonical: "/terms" },
+  openGraph: {
+    title: "Terms of Service | Onnesha Hospital",
+    description: "Terms of Service and Operational Conditions for Onnesha Hospital & Diagnostic Complex.",
+    url: "/terms",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function TermsPage() {
@@ -63,7 +74,7 @@ export default function TermsPage() {
               <h2 className="text-lg font-bold text-slate-900">4. Intellectual Property & System Integrity</h2>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              All digital software interfaces, prescription templates, diagnostic reporting algorithms, trademarks, and logos associated with Onnesha HMS are the intellectual property of Onnesha Hospital & Diagnostic Complex. Unauthorized reverse engineering, scraping, or automated disruption of system APIs is illegal.
+              All digital software interfaces, prescription layouts, diagnostic reporting templates, trademarks, and logos associated with Onnesha HMS are the intellectual property of Onnesha Hospital & Diagnostic Complex. Unauthorized reverse engineering, automated scraping, or unauthorized interference with system APIs is prohibited under applicable laws and hospital policy.
             </p>
           </section>
 

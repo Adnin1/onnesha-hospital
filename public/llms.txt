@@ -11,7 +11,7 @@
 - Platform Tier: Modern Cloud Healthcare Architecture
 - Database Architecture: Managed PostgreSQL Relational Database (Supabase Platform with automated daily backups)
 - Storage & CDN: Cloudflare Pages Global Anycast CDN with Encrypted Object Storage
-- Security & Compliance: Strict Row-Level Security (RLS), TLS 1.3 encryption in transit, AES-256 storage encryption at rest, Role-Based Access Control (RBAC)
+- Security & Compliance: Strict Row-Level Security (RLS), TLS 1.2+ encryption in transit with modern cipher suites, AES-256 platform storage encryption at rest, Role-Based Access Control (RBAC)
 - Operational Model: Continuous Monitoring and Automated Resiliency Controls
 
 ## 3. Application Profile

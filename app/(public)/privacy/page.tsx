@@ -5,6 +5,17 @@ import { HOSPITAL_METADATA } from "@/config/hospital";
 export const metadata: Metadata = {
   title: "Privacy Policy | Onnesha Hospital",
   description: "Personal Data Protection and Patient Privacy Policy referencing Bangladesh Personal Data Protection Act 2026 standards.",
+  alternates: { canonical: "/privacy" },
+  openGraph: {
+    title: "Privacy Policy | Onnesha Hospital",
+    description: "Personal Data Protection and Patient Privacy Policy referencing Bangladesh Personal Data Protection Act 2026 standards.",
+    url: "/privacy",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function PrivacyPage() {
@@ -129,7 +140,11 @@ export default function PrivacyPage() {
               {HOSPITAL_METADATA.phone && (
                 <p>Telephone: {HOSPITAL_METADATA.phone}</p>
               )}
-              <p>Physical Address: {HOSPITAL_METADATA.address || "Main Reception Desk, Hospital Campus, Dhaka, Bangladesh"}</p>
+              {HOSPITAL_METADATA.address ? (
+                <p>Physical Address: {HOSPITAL_METADATA.address}</p>
+              ) : (
+                <p>Physical Inquiries: Hospital Main Reception & Information Counter, Dhaka, Bangladesh</p>
+              )}
             </div>
           </section>
         </div>

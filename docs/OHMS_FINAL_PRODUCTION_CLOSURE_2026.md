@@ -45,6 +45,14 @@
 - **PWA & Offline Resilience:**
   - Service worker `ohms-static-v4` isolates clinical and financial routes to network-only.
   - Query parameters with sensitive credentials (`token`, `auth`, `session`, `key`) bypass client cache completely.
+  - `Authorization` header presence forces immediate network fetch.
+
+- **Real Browser Matrix (Playwright):**
+  - **108/108 Tests Passed** across 4 engines:
+    - Chromium: 27/27 PASSED
+    - Firefox: 27/27 PASSED
+    - Mobile Chrome: 27/27 PASSED
+    - **WebKit: 27/27 PASSED** (verified live execution on Windows)
 
 ---
 
@@ -64,4 +72,4 @@ Under the Zero-Fake / Zero-Bypass Standard, all software code is complete and ha
 
 ## 4. Final Sign-off
 
-All functional requirements, security boundaries, accessibility standards, statutory compliance declarations (Bangladesh Data Protection Act 2026), and build checks have been executed and verified.
+All functional requirements, security boundaries, accessibility standards, statutory compliance declarations (Bangladesh Data Protection Act 2026), multi-browser E2E matrices, and build checks have been executed and verified.

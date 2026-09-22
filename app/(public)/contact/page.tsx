@@ -59,46 +59,64 @@ export default function ContactPage() {
                 Hospital Contact Desk
               </h2>
 
-              <div className="flex items-start space-x-3 text-xs">
-                <div className="p-2.5 bg-sky-50 text-sky-700 rounded-xl shrink-0">
-                  <MapPin className="w-5 h-5" />
+              {HOSPITAL_METADATA.address && (
+                <div className="flex items-start space-x-3 text-xs">
+                  <div className="p-2.5 bg-sky-50 text-sky-700 rounded-xl shrink-0">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800">Physical Address</h3>
+                    <p className="text-slate-600 mt-0.5">{HOSPITAL_METADATA.address}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-800">Physical Address</h3>
-                  <p className="text-slate-600 mt-0.5">{HOSPITAL_METADATA.address}</p>
-                </div>
-              </div>
+              )}
 
-              <div className="flex items-start space-x-3 text-xs">
-                <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl shrink-0">
-                  <Phone className="w-5 h-5" />
+              {HOSPITAL_METADATA.phone && (
+                <div className="flex items-start space-x-3 text-xs">
+                  <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl shrink-0">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800">Reception & Information</h3>
+                    <p className="text-slate-600 mt-0.5">{HOSPITAL_METADATA.phone}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-800">Reception & Information</h3>
-                  <p className="text-slate-600 mt-0.5">{HOSPITAL_METADATA.phone}</p>
-                </div>
-              </div>
+              )}
 
-              <div className="flex items-start space-x-3 text-xs">
-                <div className="p-2.5 bg-red-50 text-red-600 rounded-xl shrink-0">
-                  <ShieldAlert className="w-5 h-5" />
+              {(HOSPITAL_METADATA.emergencyHotline || HOSPITAL_METADATA.ambulanceHotline) && (
+                <div className="flex items-start space-x-3 text-xs">
+                  <div className="p-2.5 bg-red-50 text-red-600 rounded-xl shrink-0">
+                    <ShieldAlert className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800">Emergency & Ambulance Hotline</h3>
+                    {HOSPITAL_METADATA.emergencyHotline && (
+                      <p className="text-red-700 font-bold mt-0.5">{HOSPITAL_METADATA.emergencyHotline}</p>
+                    )}
+                    {HOSPITAL_METADATA.ambulanceHotline && (
+                      <p className="text-slate-500 text-[11px]">Ambulance: {HOSPITAL_METADATA.ambulanceHotline}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-800">Emergency & Ambulance Hotline</h3>
-                  <p className="text-red-700 font-bold mt-0.5">{HOSPITAL_METADATA.emergencyHotline}</p>
-                  <p className="text-slate-500 text-[11px]">Ambulance: {HOSPITAL_METADATA.ambulanceHotline}</p>
-                </div>
-              </div>
+              )}
 
-              <div className="flex items-start space-x-3 text-xs">
-                <div className="p-2.5 bg-purple-50 text-purple-700 rounded-xl shrink-0">
-                  <Mail className="w-5 h-5" />
+              {HOSPITAL_METADATA.email && (
+                <div className="flex items-start space-x-3 text-xs">
+                  <div className="p-2.5 bg-purple-50 text-purple-700 rounded-xl shrink-0">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800">Official Inquiries</h3>
+                    <p className="text-slate-600 mt-0.5">{HOSPITAL_METADATA.email}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-800">Official Inquiries</h3>
-                  <p className="text-slate-600 mt-0.5">{HOSPITAL_METADATA.email}</p>
-                </div>
-              </div>
+              )}
+
+              {!HOSPITAL_METADATA.address && !HOSPITAL_METADATA.phone && !HOSPITAL_METADATA.emergencyHotline && !HOSPITAL_METADATA.email && (
+                <p className="text-xs text-slate-500 italic">
+                  Direct helpline numbers are temporarily updating. Please submit your inquiry through the form.
+                </p>
+              )}
 
               <div className="flex items-start space-x-3 text-xs">
                 <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl shrink-0">

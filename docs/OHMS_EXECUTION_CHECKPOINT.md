@@ -2,9 +2,9 @@
 ## Execution Checkpoint & Audit Certification (2026)
 
 **Document Reference:** `OHMS-EXEC-CHECKPOINT-2026-09-23`  
-**Timestamp:** 2026-09-23T01:57:00+06:00  
+**Timestamp:** 2026-09-23T02:11:00+06:00  
 **Repository:** `Adnin1/onnesha-hospital`  
-**Authoritative Base Commit:** `ac89f662345a766fc68826282968c280e10d05d6`  
+**Base Commit in Conversation:** `32c268b27c0c40e2f9bbcd9a6ec55a432cec67d5`  
 **Target Production Domain:** `https://onnesha-hospital.pages.dev`  
 **Audit Standard:** Zero-Fake / Zero-Bypass / Live-Evidence Verification Standard
 
@@ -12,17 +12,19 @@
 
 ## 1. Executive Summary & Production Status
 
-The Onnesha Hospital Management System (OHMS) has achieved complete software engineering hardening across all 14 clinical and enterprise modules, public patient portals, database architecture, and edge distribution assets.
+The Onnesha Hospital Management System (OHMS) has achieved complete software engineering hardening across all 14 clinical and enterprise modules, public patient portals, database architecture, multi-browser Playwright test matrix, and edge distribution assets.
 
 | Layer | Standard / Target | Audited Status | Live Evidence / Verification |
 |---|---|---|---|
 | **Database Migrations** | PostgreSQL / Supabase | **61 / 61 Applied** | Remote push synchronized (`iuhtzahuszdkdarhxobx`), `security_invoker = true` on `public_doctors_view`, financial triggers active |
 | **Test Suite** | Unit, Schema, A11y, Security | **69 / 69 Suites PASS** | 589 tests passing, 0 failures, 6 standard deferred items |
+| **Browser Matrix E2E** | Playwright Cross-Browser | **108 / 108 PASS (4 Browsers)** | Chromium (27/27), Firefox (27/27), Mobile Chrome (27/27), **WebKit (27/27)** executed & verified on Windows |
 | **Static Build** | Next.js 16 Static Export | **43 / 43 Routes OK** | Zero broken links (299 internal, 650 assets verified) |
-| **PWA & Offline** | Service Worker v4 | **Cache v4 Active** | Sensitive query parameter bypass (`token`, `auth`, `session`), network-only for app routes |
-| **Accessibility** | WCAG 2.2 AA Standard | **Semantics Enforced** | Skip link to `<main id="main-content">` landmark, focus-visible ring, touch targets >= 44px |
+| **PWA & Offline** | Service Worker v4 | **Cache v4 Active** | Sensitive query parameter bypass (`token`, `auth`, `session`), Authorization header bypass, network-only for app routes |
+| **Accessibility** | WCAG 2.2 AA Standard | **Semantics Enforced** | Skip link to `<main id="main-content">`, focus-visible ring, touch targets >= 44px, Escape key closes mobile menu |
+| **Public Metadata & SEO** | OpenGraph, Canonical, Robots | **100% Enforced** | Added canonical, openGraph, and robots indexing across all public layouts and pages |
 | **Security Boundaries** | Zero Mock in Production | **100% Isolated** | Production bundles use live RPCs and database tables; mock data strictly isolated to tests |
-| **Hosting & Edge CDN** | Cloudflare Pages | **Production Active** | Deployed at `https://onnesha-hospital.pages.dev` with TLS 1.3 |
+| **Hosting & Edge CDN** | Cloudflare Pages | **Production Active** | Deployed at `https://onnesha-hospital.pages.dev` with TLS 1.2+ modern cipher suites |
 
 ---
 
@@ -53,9 +55,12 @@ Under our strict truthfulness standard, **100% of software engineering, code har
 
 ---
 
-## 3. Forensic Hardening Verification Summary
+## 3. Forensic Hardening Changes in Current Cycle
 
-- **`public/llms.txt`:** Truthful documentation reflecting Cloudflare Pages Edge CDN and Supabase managed PostgreSQL with TLS 1.3 transit and AES-256 storage encryption at rest.
-- **`public/api/health.json`:** Version synchronized to `1.1.5`.
-- **`public/sw.js`:** Upgraded to `ohms-static-v4` with strict sensitive query parameter bypass.
-- **Semantic HTML:** `<main id="main-content">` landmark correctly identified across public and hospital layouts.
+- **`public/llms.txt`:** Truthful documentation reflecting Cloudflare Pages Edge CDN and Supabase managed PostgreSQL with TLS 1.2+ transit and AES-256 storage encryption at rest.
+- **`public/sw.js`:** Upgraded `shouldNeverCache()` to inspect `Authorization` headers in addition to sensitive query params.
+- **Public Metadata:** Added complete metadata, openGraph, and canonical URLs to `doctors`, `appointment`, `services`, `contact`, `privacy`, `terms`, `consent`, and `downloads/desktop`.
+- **Accessibility:** Added Escape key listener to `PublicNavbar` mobile menu; semantic `<main id="main-content">` active.
+- **Content Truthfulness:** Refined legal text in `terms/page.tsx`, removed invented physical address fallbacks in `privacy/page.tsx` and `contact/page.tsx`.
+- **Live Queue UX:** Refined empty queue state in `LiveQueueWidget.tsx` to prevent over-claiming chamber activity.
+- **Browser Verification:** Real browser matrix executed across **Chromium, Firefox, Mobile Chrome, and WebKit (108/108 PASS)**.

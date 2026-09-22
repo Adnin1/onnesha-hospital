@@ -5,6 +5,17 @@ import pkg from "@/package.json";
 export const metadata: Metadata = {
   title: "Windows Desktop App Download | Onnesha Hospital",
   description: "Download Onnesha Hospital & Diagnostic Complex Windows PC Software Client.",
+  alternates: { canonical: "/downloads/desktop" },
+  openGraph: {
+    title: "Windows Desktop App Download | Onnesha Hospital",
+    description: "Download Onnesha Hospital & Diagnostic Complex Windows PC Software Client.",
+    url: "/downloads/desktop",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function DesktopDownloadPage() {

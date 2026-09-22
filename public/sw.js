@@ -51,8 +51,16 @@ const NEVER_CACHE_PATTERNS = [
   /notification/i,
 ];
 
-function shouldNeverCache(url) {
+function shouldNeverCache(requestOrUrl) {
   try {
+    const url = typeof requestOrUrl === 'string' ? requestOrUrl : requestOrUrl.url;
+    // Check Authorization header if request object is supplied
+    if (typeof requestOrUrl === 'object' && requestOrUrl.headers) {
+      if (requestOrUrl.headers.has('authorization') || requestOrUrl.headers.get('authorization')) {
+        return true;
+      }
+    }
+
     const parsed = new URL(url);
     const cleanPath = parsed.pathname.replace(/\/$/, '') || '/';
     // Check exact auth paths first
@@ -115,7 +123,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   // NEVER cache sensitive data
-  if (shouldNeverCache(request.url)) {
+  if (shouldNeverCache(request)) {
     event.respondWith(fetch(request));
     return;
   }
@@ -141,7 +149,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then(response => {
-        if (response.ok && !shouldNeverCache(request.url)) {
+        if (response.ok && !shouldNeverCache(request)) {
           const clone = response.clone();
           caches.open(CACHE_VERSION).then(cache => cache.put(request, clone));
         }

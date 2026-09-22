@@ -316,12 +316,9 @@ export async function bookOnlineAppointmentAction(params: {
       return { success: false, error: resObj.error || "Online booking slot unavailable." };
     }
 
-    // Fetch doctor name and room
-    const { data: docData } = await supabase
-      .from("doctors")
-      .select("full_name, room_number, opd_fee")
-      .eq("id", doctorId)
-      .single();
+    // Fetch doctor name and room via authoritative getPublicDoctorsAction
+    const docListRes = await getPublicDoctorsAction();
+    const docData = docListRes.success ? docListRes.doctors.find((d) => d.id === doctorId) : null;
 
     return {
       success: true,

@@ -108,7 +108,7 @@ export function LiveQueueWidget() {
 
         {loadState === "empty" && (
           <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 border border-slate-100">
-            Doctor chambers active for today. Online bookings open.
+            No patients currently in consultation queue. Online appointments are open.
           </div>
         )}
 

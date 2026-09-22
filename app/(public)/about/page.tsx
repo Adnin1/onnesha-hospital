@@ -7,6 +7,17 @@ export const metadata: Metadata = {
   description:
     "Learn about Onnesha Hospital's mission, vision, clinical governance, and hospital infrastructure. Modern patient-centered healthcare in Dhaka, Bangladesh.",
   alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About Us | Onnesha Hospital & Diagnostic Complex",
+    description:
+      "Learn about Onnesha Hospital's mission, vision, clinical governance, and hospital infrastructure in Dhaka, Bangladesh.",
+    url: "/about",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function AboutPage() {
