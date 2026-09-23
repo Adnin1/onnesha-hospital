@@ -144,10 +144,12 @@ export function FeaturedDoctorsWidget() {
                   </p>
 
                   <div className="text-[11px] space-y-1 py-2 border-t border-slate-100 text-slate-600">
-                    <div className="flex justify-between">
-                      <span>BMDC Reg:</span>
-                      <span className="font-medium text-slate-800">{doc.bmdc_reg_number}</span>
-                    </div>
+                    {doc.bmdc_reg_number ? (
+                      <div className="flex justify-between">
+                        <span>BMDC Reg:</span>
+                        <span className="font-medium text-slate-800">{doc.bmdc_reg_number}</span>
+                      </div>
+                    ) : null}
                     <div className="flex justify-between">
                       <span>Chamber:</span>
                       <span className="font-medium text-slate-800">{doc.room_number}</span>

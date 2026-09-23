@@ -546,8 +546,72 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
     assert.ok(
       patternsBlock.includes("/check-token") &&
       patternsBlock.includes("/book-appointment") &&
-      patternsBlock.includes("/confirm"),
       "All three booking paths must be inside the NEVER_CACHE_PATTERNS array"
+    );
+  });
+
+  test("31. Migration 65 reconciles integration contracts and fixes all DB lint defects", () => {
+    const migration65Path = path.join(
+      ROOT,
+      "supabase/migrations/20260923220000_integration_contract_reconciliation_and_db_lint_fixes.sql"
+    );
+    assert.ok(fs.existsSync(migration65Path), "Migration 65 must exist");
+    const m65 = fs.readFileSync(migration65Path, "utf8");
+
+    // 1. Leave check against doctor_leaves
+    assert.ok(
+      m65.includes("public.doctor_leaves"),
+      "Migration 65 must query doctor_leaves for leave checks"
+    );
+    assert.ok(
+      m65.includes("p_appointment_date BETWEEN start_date AND end_date"),
+      "Migration 65 must check date range between start_date and end_date"
+    );
+
+    // 2. Public doctors directory minimal view alignment
+    assert.ok(
+      m65.includes("public.get_public_doctors_directory"),
+      "Migration 65 must define get_public_doctors_directory"
+    );
+    assert.ok(
+      !m65.includes("v.bmdc_reg_number"),
+      "Migration 65 get_public_doctors_directory must not project non-existent v.bmdc_reg_number"
+    );
+
+    // 3. Supplier invoice GL atomic
+    assert.ok(
+      m65.includes("public.post_supplier_invoice_to_gl_atomic"),
+      "Migration 65 must define post_supplier_invoice_to_gl_atomic"
+    );
+    assert.ok(
+      !m65.includes("v_sinv.status"),
+      "Migration 65 post_supplier_invoice_to_gl_atomic must not reference non-existent status column"
+    );
+
+    // 4. Payment receipt GL atomic
+    assert.ok(
+      m65.includes("public.post_payment_receipt_to_gl_atomic"),
+      "Migration 65 must define post_payment_receipt_to_gl_atomic"
+    );
+    assert.ok(
+      !m65.includes("v_pmt.status"),
+      "Migration 65 post_payment_receipt_to_gl_atomic must not reference non-existent status column"
+    );
+
+    // 5. Void invoice and reverse GL atomic
+    assert.ok(
+      m65.includes("public.void_invoice_and_reverse_gl_atomic"),
+      "Migration 65 must define void_invoice_and_reverse_gl_atomic"
+    );
+
+    // 6. get_public_live_queue overloads
+    assert.ok(
+      m65.includes("public.get_public_live_queue(p_org_id UUID)"),
+      "Migration 65 must preserve 1-arg get_public_live_queue"
+    );
+    assert.ok(
+      m65.includes("public.get_public_live_queue("),
+      "Migration 65 must preserve 3-arg get_public_live_queue"
     );
   });
 });

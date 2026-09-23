@@ -17,10 +17,10 @@ export interface PublicDoctor {
   degrees: string;
   designation: string;
   specialization: string;
-  bmdc_reg_number: string;
+  bmdc_reg_number?: string;
   room_number: string;
   opd_fee: number;
-  followup_fee: number;
+  followup_fee?: number;
   avatar_url?: string | null;
   bio?: string | null;
   public_bio?: string | null;
@@ -148,10 +148,10 @@ export async function getPublicDoctorsAction(): Promise<{
       degrees: string;
       designation: string;
       specialization: string;
-      bmdc_reg_number: string;
+      bmdc_reg_number?: string;
       room_number: string;
       opd_fee: number;
-      followup_fee: number;
+      followup_fee?: number;
       avatar_url?: string | null;
       bio?: string | null;
       public_bio?: string | null;
@@ -170,7 +170,7 @@ export async function getPublicDoctorsAction(): Promise<{
       bmdc_reg_number: d.bmdc_reg_number,
       room_number: d.room_number,
       opd_fee: Number(d.opd_fee),
-      followup_fee: Number(d.followup_fee),
+      followup_fee: d.followup_fee !== undefined ? Number(d.followup_fee) : undefined,
       avatar_url: d.avatar_url,
       bio: d.bio,
       public_bio: d.public_bio,
@@ -258,12 +258,10 @@ export async function getPublicDepartmentsAction(): Promise<{
 }> {
   try {
     const supabase = await createClient();
-    // Query public_departments_view adhering to canonical public org and public visibility
+    // Query public_departments_view adhering to canonical public org minimal projection (id, name, slug, description)
     const { data, error } = await supabase
       .from("public_departments_view")
-      .select("id, name, code")
-      .eq("organization_id", HOSPITAL_METADATA.id)
-      .eq("is_active", true)
+      .select("id, name, slug, description")
       .order("name", { ascending: true });
 
     if (error) {
@@ -273,15 +271,16 @@ export async function getPublicDepartmentsAction(): Promise<{
     interface DeptRow {
       id: string;
       name: string;
-      code: string;
+      slug: string;
+      description?: string | null;
     }
 
     const departments: PublicDepartment[] = ((data || []) as unknown as DeptRow[]).map((d) => ({
       id: d.id,
       name: d.name,
-      code: d.code,
-      slug: d.name.toLowerCase().replace(/\s+/g, "-"),
-      description: `Comprehensive diagnostic and outpatient consultation under ${d.name}.`,
+      code: d.slug.toUpperCase().replace(/-/g, "_").slice(0, 10),
+      slug: d.slug || d.name.toLowerCase().replace(/\s+/g, "-"),
+      description: d.description || `Comprehensive diagnostic and outpatient consultation under ${d.name}.`,
     }));
 
     return { success: true, departments };

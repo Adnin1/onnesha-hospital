@@ -203,9 +203,11 @@ export default function DoctorsDirectoryPage() {
                       <p className="text-[11px] text-slate-500 font-normal">
                         <strong className="text-slate-700">Degrees:</strong> {doc.degrees}
                       </p>
-                      <p className="text-[11px] text-slate-500 font-normal">
-                        <strong className="text-slate-700">BMDC Reg No:</strong> {doc.bmdc_reg_number}
-                      </p>
+                      {doc.bmdc_reg_number && (
+                        <p className="text-[11px] text-slate-500 font-normal">
+                          <strong className="text-slate-700">BMDC Reg No:</strong> {doc.bmdc_reg_number}
+                        </p>
+                      )}
                       <p className="flex items-center text-[11px] text-slate-700 font-medium mt-1">
                         <MapPin className="w-3.5 h-3.5 mr-1 text-sky-600" />
                         Chamber: {doc.room_number}
