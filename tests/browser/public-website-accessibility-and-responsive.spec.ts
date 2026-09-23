@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Responsive Viewports", () => {
 

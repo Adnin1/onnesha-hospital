@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: Pharmacy Inventory & POS", () => {
   test("1. Pharmacy console loads stock inventory and POS sales interface", async ({ page }) => {

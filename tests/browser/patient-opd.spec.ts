@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: Patient & OPD Workflows", () => {
   test("1. Patient directory allows search, triggers patient creation form, and accepts input data", async ({ page }) => {

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: Enterprise Accounting & ERP Ledger", () => {
   test("1. Accounting console loads with Chart of Accounts, Journal Entries, and Trial Balance", async ({ page }) => {

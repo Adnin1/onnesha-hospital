@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: Operation Theatre (OT)", () => {
   test("1. OT management console loads surgery schedule and room booking controls", async ({ page }) => {

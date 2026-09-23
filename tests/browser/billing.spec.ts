@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: Billing & Cashier Desk", () => {
   test("1. Billing console loads invoice directory, handles search input, and opens payment modal", async ({ page }) => {

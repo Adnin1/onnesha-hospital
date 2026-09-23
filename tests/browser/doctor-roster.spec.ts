@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: Doctor Roster & Schedule Control", () => {
   test("1. Admin doctors page renders doctor directory, accepts search filter, and fills creation modal", async ({ page }) => {

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: Authentication & Navigation", () => {
   test("1. Login page loads cleanly, accepts email/password input, and validates submission", async ({ page }) => {

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: Public & Staff Appointments", () => {
   test("1. Public appointment booking portal steps through booking wizard and handles schedule availability", async ({ page }) => {

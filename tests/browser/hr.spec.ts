@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: HR & Employee Management", () => {
   test("1. HR console loads staff directory, supports search, and provides attendance roster controls", async ({ page }) => {

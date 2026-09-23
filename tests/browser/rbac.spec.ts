@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: RBAC Security & Navigation Guards", () => {
   test("1. Direct navigation to protected hospital paths enforces authentication or AuthGuard protection", async ({ page }) => {

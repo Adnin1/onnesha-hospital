@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: 24/7 Emergency Casualty Triage", () => {
   test("1. Emergency triage console renders Red/Yellow/Green prioritization board and triage intake controls", async ({ page }) => {

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: Financial Reports & Audit Log", () => {
   test("1. Reports console loads operational summaries and filters", async ({ page }) => {

@@ -90,8 +90,17 @@ async function installMutationGuard(page: Page, baseURL: string): Promise<void> 
     const isMutationMethod = MUTATION_METHODS.has(method);
 
     // Check if it targets Supabase REST/Functions with a mutation method
+    // Note: Supabase JS client issues HTTP POST for RPC functions.
+    // Read-only public RPCs (idempotent data fetches) should NOT be blocked:
+    const READ_ONLY_RPCS = [
+      "/rest/v1/rpc/get_public_live_queue",
+      "/rest/v1/rpc/get_public_doctors_directory",
+    ];
+    const isReadOnlyRpc = READ_ONLY_RPCS.some((rpc) => url.includes(rpc));
+
     const isSupabaseMutation =
       isMutationMethod &&
+      !isReadOnlyRpc &&
       SUPABASE_MUTATION_PATH_PATTERNS.some((pattern) => pattern.test(url));
 
     // Block any mutation method against any production host
@@ -99,6 +108,12 @@ async function installMutationGuard(page: Page, baseURL: string): Promise<void> 
       const targetHost = (() => {
         try { return new URL(url).hostname; } catch { return url; }
       })();
+
+      // If it's a read-only RPC against Supabase, allow it
+      if (isReadOnlyRpc) {
+        await route.continue();
+        return;
+      }
 
       // Block mutations targeting production or Supabase
       if (

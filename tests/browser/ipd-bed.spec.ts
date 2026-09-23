@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Real Browser E2E: IPD Admission & Bed Matrix", () => {
   test("1. IPD admissions page loads active admissions list and provides admission trigger", async ({ page }) => {
