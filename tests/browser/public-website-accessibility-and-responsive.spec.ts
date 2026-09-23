@@ -29,20 +29,29 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
     await page.waitForTimeout(300);
   });
 
-  test("2. Responsive horizontal overflow check on 360px mobile across core public pages", async ({ page }) => {
-    await page.setViewportSize({ width: 360, height: 740 });
+  test("2. Responsive horizontal overflow check across multiple mobile viewports", async ({ page }) => {
+    const viewports = [
+      { width: 320, height: 640 },
+      { width: 360, height: 740 },
+      { width: 375, height: 812 },
+      { width: 390, height: 844 },
+      { width: 412, height: 915 },
+    ];
 
     const routes = ["/", "/doctors", "/appointment", "/check-token", "/contact", "/privacy", "/terms"];
 
-    for (const route of routes) {
-      await page.goto(route);
-      await page.waitForLoadState("domcontentloaded");
+    for (const vp of viewports) {
+      await page.setViewportSize(vp);
+      for (const route of routes) {
+        await page.goto(route);
+        await page.waitForLoadState("domcontentloaded");
 
-      // Verify no horizontal document overflow: scrollWidth should match clientWidth
-      const hasHorizontalScroll = await page.evaluate(() => {
-        return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
-      });
-      expect(hasHorizontalScroll, `Route ${route} should not have horizontal overflow on 360px`).toBe(false);
+        // Verify no horizontal document overflow: scrollWidth should match clientWidth
+        const hasHorizontalScroll = await page.evaluate(() => {
+          return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
+        });
+        expect(hasHorizontalScroll, `Route ${route} should not have horizontal overflow on ${vp.width}x${vp.height}`).toBe(false);
+      }
     }
   });
 
@@ -143,12 +152,16 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
       "/contact",
       "/privacy",
       "/terms",
+      "/consent",
+      "/downloads/desktop",
       "/login",
+      "/mfa",
+      "/forgot-password",
+      "/reset-password",
     ];
 
     for (const route of verifiedRoutes) {
-      await page.goto(route);
-      await page.waitForLoadState("domcontentloaded");
+      await page.goto(route, { waitUntil: "domcontentloaded" });
 
       const a11yLandmarks = await page.evaluate(() => {
         const mains = document.querySelectorAll("main");

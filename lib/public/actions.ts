@@ -304,13 +304,8 @@ export async function bookOnlineAppointmentAction(params: {
   patientGender?: "MALE" | "FEMALE" | "OTHER";
   patientAge?: number;
   notes?: string;
-  doctorMetadata?: {
-    fullName?: string;
-    roomNumber?: string;
-    opdFee?: number;
-  };
 }): Promise<PublicBookingResult> {
-  const { doctorId, scheduleId, appointmentDate, patientName, patientPhone, patientGender, patientAge, notes, doctorMetadata } = params;
+  const { doctorId, scheduleId, appointmentDate, patientName, patientPhone, patientGender, patientAge, notes } = params;
 
   if (!doctorId || !scheduleId || !appointmentDate || !patientName?.trim() || !patientPhone?.trim()) {
     return { success: false, error: "Doctor, published schedule slot, appointment date, patient name, and valid phone are required." };
@@ -364,11 +359,7 @@ export async function bookOnlineAppointmentAction(params: {
       return { success: false, error: resObj.error || "Online booking slot unavailable." };
     }
 
-    // Query authoritative doctor record directly by ID, guaranteeing DB integrity
-    let docFullName = "";
-    let docRoom = resObj.room_number || "";
-    let docFee = 0;
-
+    // Query authoritative doctor record directly by ID, guaranteeing 100% DB integrity
     const { data: authoritativeDoc } = await supabase
       .from("doctors")
       .select("full_name, room_number, opd_fee")
@@ -377,16 +368,16 @@ export async function bookOnlineAppointmentAction(params: {
       .eq("is_active", true)
       .maybeSingle();
 
-    if (authoritativeDoc) {
-      docFullName = authoritativeDoc.full_name;
-      docRoom = resObj.room_number || authoritativeDoc.room_number || "";
-      docFee = Number(authoritativeDoc.opd_fee) || 0;
-    } else {
-      // Fallback to client metadata only if direct lookup is unavailable
-      docFullName = doctorMetadata?.fullName || "";
-      docRoom = resObj.room_number || doctorMetadata?.roomNumber || "";
-      docFee = Number(doctorMetadata?.opdFee) || 0;
+    if (!authoritativeDoc) {
+      return {
+        success: false,
+        error: "Doctor verification failed. Appointment could not be confirmed with authoritative records.",
+      };
     }
+
+    const docFullName = authoritativeDoc.full_name;
+    const docRoom = resObj.room_number || authoritativeDoc.room_number || "";
+    const docFee = Number(authoritativeDoc.opd_fee) || 0;
 
     return {
       success: true,

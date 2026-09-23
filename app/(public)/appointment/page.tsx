@@ -121,13 +121,6 @@ export default function AppointmentBookingPage() {
       patientGender: (gender as "MALE" | "FEMALE" | "OTHER") || "OTHER",
       patientAge: isNaN(parsedAge as number) ? undefined : parsedAge,
       notes: notes || (guardianName ? `Guardian: ${guardianName}` : undefined),
-      doctorMetadata: selectedDoctor
-        ? {
-            fullName: selectedDoctor.full_name,
-            roomNumber: selectedDoctor.room_number,
-            opdFee: selectedDoctor.opd_fee,
-          }
-        : undefined,
     });
 
     setBookingLoading(false);
@@ -160,7 +153,7 @@ export default function AppointmentBookingPage() {
           </p>
 
           {/* Stepper indicator */}
-          <div className="flex justify-center items-center space-x-2 mt-6">
+          <div className="flex justify-center items-center gap-1 sm:gap-2 mt-6 overflow-x-auto max-w-full py-1 px-1">
             {[
               { num: 1, label: "Doctor" },
               { num: 2, label: "Date & Time" },
@@ -169,7 +162,7 @@ export default function AppointmentBookingPage() {
             ].map((s) => (
               <React.Fragment key={s.num}>
                 <div
-                  className={`flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                  className={`flex items-center space-x-1 px-2 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold shrink-0 ${
                     step >= s.num
                       ? "bg-sky-600 text-white shadow-2xs"
                       : "bg-slate-200 text-slate-500"
@@ -178,7 +171,7 @@ export default function AppointmentBookingPage() {
                   <span>{s.num}.</span>
                   <span>{s.label}</span>
                 </div>
-                {s.num < 4 && <div className="w-4 h-0.5 bg-slate-300"></div>}
+                {s.num < 4 && <div className="w-2 sm:w-4 h-0.5 bg-slate-300 shrink-0"></div>}
               </React.Fragment>
             ))}
           </div>

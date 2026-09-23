@@ -33,18 +33,29 @@ test.describe("Real Browser E2E: Authentication & Navigation", () => {
   });
 
   test("3. Browser session transition & PWA cache isolation: auth/private routes are never persisted in Cache Storage", async ({ page }) => {
-    // Navigate from public portal to login attempt
+    // 1. Navigate from public portal
     await page.goto("/");
     await page.waitForLoadState("domcontentloaded");
 
+    // 2. Navigate to login
     await page.goto("/login");
     await page.waitForLoadState("domcontentloaded");
 
-    // Attempt access to private administrative dashboard
+    // 3. Attempt access to private administrative dashboard
     await page.goto("/app/dashboard");
     await page.waitForTimeout(400);
 
-    // Inspect real browser Cache Storage to verify zero leakage of /app/, /api/, /login, or /mfa
+    // 4. Test browser back/forward and reload history resilience
+    await page.goBack();
+    await page.waitForLoadState("domcontentloaded");
+
+    await page.goForward();
+    await page.waitForTimeout(400);
+
+    await page.reload();
+    await page.waitForLoadState("domcontentloaded");
+
+    // 5. Inspect real browser Cache Storage to verify zero leakage of /app/, /api/, /login, or /mfa
     const cacheReport = await page.evaluate(async () => {
       if (!("caches" in window)) {
         return { supported: false, entries: [] };

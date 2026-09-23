@@ -302,6 +302,18 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
       "bookOnlineAppointmentAction must query authoritative doctor row from doctors table directly"
     );
 
+    // Must NOT accept or fallback to doctorMetadata from client parameters
+    assert.ok(
+      !actionsCode.includes("doctorMetadata"),
+      "bookOnlineAppointmentAction must not accept or fallback to client-supplied doctorMetadata"
+    );
+
+    // Must fail safely if authoritative doctor lookup returns null/empty
+    assert.ok(
+      actionsCode.includes("Doctor verification failed. Appointment could not be confirmed with authoritative records."),
+      "Must fail safe if authoritative doctor record is missing in database"
+    );
+
     // Must query public_departments_view in getPublicDepartmentsAction
     assert.ok(
       actionsCode.includes('from("public_departments_view")'),

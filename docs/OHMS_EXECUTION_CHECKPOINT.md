@@ -2,9 +2,9 @@
 ## Execution Checkpoint & Audit Certification (2026)
 
 **Document Reference:** `OHMS-EXEC-CHECKPOINT-2026-09-23`  
-**Timestamp:** 2026-09-23T02:55:00+06:00  
+**Timestamp:** 2026-09-23T14:50:00+06:00  
 **Repository:** `Adnin1/onnesha-hospital`  
-**Base Commit in Conversation:** `1d807a3bd1a47dc1397118d5da703d70795bf36f`  
+**Base Commit in Conversation:** `8bc217ccdb75466c974d72e2db897327d077b41a`  
 **Target Production Domain:** `https://onnesha-hospital.pages.dev`  
 **Audit Standard:** Zero-Fake / Zero-Bypass / Live-Evidence Verification Standard
 
@@ -21,7 +21,7 @@ The Onnesha Hospital Management System (OHMS) has achieved complete software eng
 | **Test Suite** | Unit, Schema, A11y, Security | **69 / 69 Suites PASS** | 594 active tests passing, 0 failures, 6 standard deferred items |
 | **Browser Matrix E2E** | Playwright Cross-Browser | **120 / 120 PASS (4 Browsers)** | Chromium (30/30), Firefox (30/30), Mobile Chrome (30/30), WebKit (30/30) executed on Windows |
 | **Static Build** | Next.js 16 Static Export | **43 / 43 Routes OK** | Zero broken links (298 internal, 650 assets verified) |
-| **PWA & Offline** | Service Worker v5 | **Cache v5 Active** | Sensitive query parameter bypass (`token`, `auth`, `session`), Authorization header bypass, `Cache-Control: no-store/private/no-cache` header inspection |
+| **PWA & Offline** | Service Worker v5 | **Cache v5 Active** | Stripped extension/basePath bypass for auth/RSC prefetches, sensitive query param bypass, Authorization header bypass, `Cache-Control: no-store/private/no-cache` header inspection |
 | **Accessibility** | WCAG 2.2 AA Hardening | **Semantics Enforced** | Single unique `<main id="main-content">`, skip-to-content anchor, focus-visible ring, touch targets >= 44px, Escape key closes mobile menu |
 | **Public Metadata & SEO** | OpenGraph, Canonical, Robots | **100% Enforced** | Canonical tags, openGraph, Twitter cards, and robots indexing across all public routes; `/check-token` set to noindex |
 | **Security Boundaries** | Zero Mock in Production | **100% Isolated** | Production bundles use live RPCs and database tables; mock data strictly isolated to tests |

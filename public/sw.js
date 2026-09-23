@@ -63,8 +63,10 @@ function shouldNeverCache(requestOrUrl) {
 
     const parsed = new URL(url);
     const cleanPath = parsed.pathname.replace(/\/$/, '') || '/';
-    // Check exact auth paths first
-    if (NEVER_CACHE_EXACT_PATHS.has(cleanPath)) return true;
+    // Strip extensions like .txt, .json, .html (used by Next.js RSC prefetches)
+    const basePath = cleanPath.replace(/\.(txt|json|html|rsc)$/, '') || '/';
+    // Check exact auth paths and base paths first
+    if (NEVER_CACHE_EXACT_PATHS.has(cleanPath) || NEVER_CACHE_EXACT_PATHS.has(basePath)) return true;
 
     // Check for sensitive query parameters
     for (const param of parsed.searchParams.keys()) {
