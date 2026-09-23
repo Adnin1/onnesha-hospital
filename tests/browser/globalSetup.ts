@@ -1,23 +1,33 @@
 /**
- * Playwright Global Setup — Production Mutation Guard
+ * Playwright Global Setup — Pre-flight Production Host Check (Layer 1 of 2)
  *
- * This guard runs BEFORE any test file is executed.
- * It inspects the configured baseURL and halts the test run with an explicit
- * error if:
- *   1. The baseURL resolves to the production Cloudflare Pages URL, AND
- *   2. The test suite includes files that can perform mutations (write/modify
- *      data) against the target, AND
- *   3. The environment variable ALLOW_E2E_MUTATION is not set to "true".
+ * GUARD ARCHITECTURE (two complementary layers):
  *
- * WHY: Developer discipline alone is insufficient. The Playwright default
- * falls back to the production URL if E2E_BASE_URL is unset, meaning a
- * developer who runs `npx playwright test` from a fresh shell would hit
- * production silently. This guard makes that failure loud and immediate.
+ *   Layer 1 — THIS FILE (globalSetup.ts):
+ *     Runs BEFORE any test file is loaded or executed.
+ *     Performs a pre-flight check: if the configured baseURL points to a
+ *     production hostname AND mutation-capable spec files are detected via
+ *     static source scan, the entire test run is ABORTED immediately.
+ *     This catches the most common mistake (developer running `npx playwright
+ *     test` without setting E2E_BASE_URL on a fresh shell).
  *
- * HOW TO ALLOW MUTATIONS IN STAGING:
- *   E2E_BASE_URL=https://staging.example.com ALLOW_E2E_MUTATION=true npx playwright test
+ *   Layer 2 — tests/browser/fixtures.ts (runtime network intercept):
+ *     Runs DURING each test via page.route() interception.
+ *     Intercepts actual HTTP requests at the browser network layer.
+ *     Blocks POST, PUT, PATCH, DELETE targeting production hostnames or
+ *     Supabase REST/RPC/Edge Function endpoints — REGARDLESS of what the
+ *     source scan found. This is the authoritative safety mechanism.
  *
- * PRODUCTION IS NEVER SAFE FOR MUTATIONS regardless of ALLOW_E2E_MUTATION.
+ * WHY BOTH LAYERS:
+ *   - Layer 1 (source scan) is fast and gives an early, human-readable error.
+ *   - Layer 2 (network intercept) is the true runtime safety net.
+ *   - Neither layer alone is sufficient:
+ *     * Layer 1 can have false negatives (runtime-computed fetch methods).
+ *     * Layer 2 only covers tests that import from fixtures.ts.
+ *   - Together they provide defense-in-depth.
+ *
+ * IMPORTANT: ALLOW_E2E_MUTATION=true NEVER overrides the production block
+ * in EITHER layer. Use a staging URL (E2E_BASE_URL=https://staging.example.com).
  */
 
 import * as path from "path";
@@ -32,14 +42,16 @@ const PRODUCTION_HOSTNAMES = new Set([
 
 /**
  * Regex patterns that, when found in a spec file's content, classify it as
- * mutation-capable (it performs writes, POST/PUT/DELETE, or booking RPCs).
+ * potentially mutation-capable (conservative: prefers false positives).
+ * This is a STATIC SCAN and is only Layer 1. The runtime network intercept
+ * in fixtures.ts is the authoritative Layer 2 guard.
  */
 const MUTATION_PATTERNS = [
-  /page\.fill\(/,           // form input
-  /page\.click\(/,          // button press (may submit forms)
-  /page\.selectOption\(/,   // select form fields
-  /book_online_appointment/, // booking RPC
-  /fetch.*POST/i,           // raw POST fetch
+  /page\.fill\(/,           // form input fill (may trigger form submission)
+  /page\.click\(/,          // button click (may submit forms)
+  /page\.selectOption\(/,   // select input (may change state)
+  /book_online_appointment/, // booking RPC (explicit mutation)
+  /fetch.*POST/i,
   /fetch.*PUT/i,
   /fetch.*DELETE/i,
   /method.*POST/i,
@@ -56,7 +68,7 @@ function isMutationCapable(filePath: string): boolean {
     const content = fs.readFileSync(filePath, "utf8");
     return MUTATION_PATTERNS.some((p) => p.test(content));
   } catch {
-    return false; // If unreadable, assume safe
+    return false;
   }
 }
 
@@ -83,70 +95,77 @@ export default async function globalSetup() {
     hostname = new URL(baseURL).hostname;
   } catch {
     throw new Error(
-      `[E2E Guard] Invalid E2E_BASE_URL: "${baseURL}" — must be a valid URL.`
+      `[E2E Guard Layer 1] Invalid E2E_BASE_URL: "${baseURL}" — must be a valid URL.`
     );
   }
 
   const isProduction = PRODUCTION_HOSTNAMES.has(hostname);
 
   if (isProduction) {
-    // Scan browser test directory for mutation-capable specs
-    const browserDir = path.resolve(process.cwd(), "tests", "browser");
-    const specFiles = findSpecFiles(browserDir);
-    const mutationSpecs = specFiles.filter(isMutationCapable);
-
-    if (mutationSpecs.length > 0) {
-      const allowMutation = process.env.ALLOW_E2E_MUTATION === "true";
-      if (!allowMutation) {
-        const names = mutationSpecs
-          .map((f) => path.relative(process.cwd(), f))
-          .join("\n  - ");
-        throw new Error(
-          [
-            "",
-            "╔══════════════════════════════════════════════════════════════╗",
-            "║  🛑  PRODUCTION MUTATION GUARD — E2E TEST RUN BLOCKED        ║",
-            "╠══════════════════════════════════════════════════════════════╣",
-            `║  Target URL: ${baseURL.padEnd(48)}║`,
-            "║                                                              ║",
-            "║  Mutation-capable spec files detected:                       ║",
-            `║    - ${names.split("\n").join("\n║    - ").padEnd(56)}║`,
-            "║                                                              ║",
-            "║  Running mutation tests against production is FORBIDDEN.     ║",
-            "║                                                              ║",
-            "║  To run against staging (safe):                              ║",
-            "║    E2E_BASE_URL=https://staging.example.com \\               ║",
-            "║    ALLOW_E2E_MUTATION=true npx playwright test               ║",
-            "║                                                              ║",
-            "║  To run READ-ONLY tests against production:                  ║",
-            "║    npx playwright test --grep '@readonly'                    ║",
-            "╚══════════════════════════════════════════════════════════════╝",
-            "",
-          ].join("\n")
-        );
-      }
-
-      // ALLOW_E2E_MUTATION=true AND production → still block (safety absolute)
+    // --- ABSOLUTE RULE: ALLOW_E2E_MUTATION=true NEVER permits production writes ---
+    // Check this first so we never even scan files before rejecting the override attempt.
+    if (process.env.ALLOW_E2E_MUTATION === "true") {
       throw new Error(
         [
           "",
           "╔══════════════════════════════════════════════════════════════╗",
-          "║  🛑  ABSOLUTE PRODUCTION BLOCK — MUTATIONS ALWAYS FORBIDDEN  ║",
+          "║  🛑  ABSOLUTE PRODUCTION BLOCK — OVERRIDE REJECTED           ║",
           "╠══════════════════════════════════════════════════════════════╣",
-          "║  ALLOW_E2E_MUTATION=true is set but the target is PRODUCTION.║",
+          "║  ALLOW_E2E_MUTATION=true is set but target is PRODUCTION.    ║",
           `║  Target: ${baseURL.padEnd(52)}║`,
-          "║  Mutations against production are PERMANENTLY forbidden       ║",
-          "║  regardless of ALLOW_E2E_MUTATION. Use a staging URL.        ║",
+          "║                                                              ║",
+          "║  This flag NEVER overrides the production mutation block.    ║",
+          "║  Use a staging URL:                                          ║",
+          "║    E2E_BASE_URL=https://staging.example.com \\               ║",
+          "║    ALLOW_E2E_MUTATION=true npx playwright test               ║",
           "╚══════════════════════════════════════════════════════════════╝",
           "",
         ].join("\n")
       );
     }
-  }
 
-  // Log confirmation (visible in CI output)
-  const target = isProduction ? "PRODUCTION (read-only tests only)" : hostname;
-  console.log(
-    `[E2E Guard] ✅ Safe to proceed. Target: ${target}`
-  );
+    // Layer 1: Static scan for mutation-capable spec files
+    const browserDir = path.resolve(process.cwd(), "tests", "browser");
+    const specFiles = findSpecFiles(browserDir);
+    const mutationSpecs = specFiles.filter(isMutationCapable);
+
+    if (mutationSpecs.length > 0) {
+      const names = mutationSpecs
+        .map((f) => `  - ${path.relative(process.cwd(), f)}`)
+        .join("\n");
+      throw new Error(
+        [
+          "",
+          "╔══════════════════════════════════════════════════════════════╗",
+          "║  🛑  PRODUCTION MUTATION GUARD — E2E TEST RUN BLOCKED        ║",
+          "║  (Layer 1: Static source scan)                               ║",
+          "╠══════════════════════════════════════════════════════════════╣",
+          `║  Target: ${baseURL.padEnd(52)}║`,
+          "║                                                              ║",
+          "║  Mutation-capable spec files detected (static scan):         ║",
+          names,
+          "║                                                              ║",
+          "║  Layer 2 (runtime network intercept) is also active for      ║",
+          "║  specs that import from tests/browser/fixtures.ts.           ║",
+          "║                                                              ║",
+          "║  To run against staging only:                                ║",
+          "║    E2E_BASE_URL=https://staging.example.com \\               ║",
+          "║    ALLOW_E2E_MUTATION=true npx playwright test               ║",
+          "╚══════════════════════════════════════════════════════════════╝",
+          "",
+        ].join("\n")
+      );
+    }
+
+    console.log(
+      `[E2E Guard Layer 1] ✅ Pre-flight PASS. Target is production (${hostname}) — only read-only spec files detected by static scan.`
+    );
+    console.log(
+      `[E2E Guard Layer 2] ℹ️  Runtime network intercept is active for specs importing from tests/browser/fixtures.ts.`
+    );
+  } else {
+    console.log(
+      `[E2E Guard Layer 1] ✅ Pre-flight PASS. Target is non-production: ${hostname}`
+    );
+  }
 }

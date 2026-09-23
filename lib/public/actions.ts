@@ -99,7 +99,8 @@ export function formatVisitingHoursSummary(
 export interface PublicDepartment {
   id: string;
   name: string;
-  code: string;
+  /** Not exposed by public_departments_view — omitted from public UI to avoid slug collision risk. */
+  code?: string;
   slug: string;
   description?: string | null;
 }
@@ -278,7 +279,9 @@ export async function getPublicDepartmentsAction(): Promise<{
     const departments: PublicDepartment[] = ((data || []) as unknown as DeptRow[]).map((d) => ({
       id: d.id,
       name: d.name,
-      code: d.slug.toUpperCase().replace(/-/g, "_").slice(0, 10),
+      // `code` intentionally omitted: public_departments_view does not expose a `code` column,
+      // and the slug-derived code (slug.toUpperCase().slice(0,10)) has slug-collision risk.
+      // The ERP internal `departments.code` is not needed for public directory presentation.
       slug: d.slug || d.name.toLowerCase().replace(/\s+/g, "-"),
       description: d.description || `Comprehensive diagnostic and outpatient consultation under ${d.name}.`,
     }));
