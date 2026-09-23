@@ -17,8 +17,8 @@ The Onnesha Hospital Management System (OHMS) has achieved complete software eng
 | Layer | Standard / Target | Audited Status | Live Evidence / Verification |
 |---|---|---|---|
 | **Health Endpoint Truthfulness** | Static Deployment Metadata | **100% Truthful** | `public/api/health.json` classified as `static_deployment_metadata`; `runtime_monitoring: not_applicable_for_static_metadata`; zero false live DB/auth claims; verified via regression test 17 |
-| **Database Migrations** | PostgreSQL / Supabase | **62 / 62 Applied** | 100% parity verified via `npx supabase migration list` against linked project `iuhtzahuszdkdarhxobx` |
-| **Test Suite** | Unit, Schema, A11y, Security | **69 / 69 Suites PASS** | 594 active tests passing, 0 failures, 6 standard deferred items |
+| **Database Migrations** | PostgreSQL / Supabase | **63 / 63 Applied** | 100% parity verified via `npx supabase migration list` against linked project `iuhtzahuszdkdarhxobx` |
+| **Test Suite** | Unit, Schema, A11y, Security | **69 / 69 Suites PASS** | 598 active tests passing, 0 failures, 6 standard deferred items |
 | **Browser Matrix E2E** | Playwright Cross-Browser | **120 / 120 PASS (4 Browsers)** | Chromium (30/30), Firefox (30/30), Mobile Chrome (30/30), WebKit (30/30) executed on Windows |
 | **Static Build** | Next.js 16 Static Export | **43 / 43 Routes OK** | Zero broken links (298 internal, 650 assets verified) |
 | **PWA & Offline** | Service Worker v5 | **Cache v5 Active** | Stripped extension/basePath bypass for auth/RSC prefetches, sensitive query param bypass, Authorization header bypass, `Cache-Control: no-store/private/no-cache` header inspection |

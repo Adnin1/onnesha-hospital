@@ -12,16 +12,17 @@
 
 ## 1. Executive Summary
 
-All accessible software engineering, public portal metadata, PWA caching safeguards, database schemas, and edge configurations have been hardened and verified with 593 active automated test cases passed across 69 test suites and live multi-browser execution.
+All accessible software engineering, public portal metadata, PWA caching safeguards, database schemas, and edge configurations have been hardened and verified with 598 active automated test cases passed across 69 test suites and live multi-browser execution.
 
 | Dimension | Verification Method | Status |
 |---|---|---|
 | **Health Endpoint Truthfulness** | `public/api/health.json` + Test 17 | **100% Truthful Static Metadata** |
-| **Database Parity (62/62)** | `npx supabase migration list` | **100% Synchronized (0 drift)** |
-| **Test Suites (69/69)** | `node scripts/run-tests.mjs` | **594 Active PASS, 0 Failures** |
+| **Database Parity (63/63)** | `npx supabase migration list` | **100% Synchronized (0 drift)** |
+| **Test Suites (69/69)** | `node scripts/run-tests.mjs` | **598 Active PASS, 0 Failures** |
 | **Real Browser E2E (4 Engines)** | Playwright (Chromium, Firefox, Mobile Chrome, WebKit) | **120 / 120 Tests PASSED** |
 | **Static Export (43 Routes)** | `npm run build` (Turbopack) | **43 / 43 Routes OK** |
 | **Link & Asset Forensics** | `scripts/website-link-asset-forensics.mjs` | **0 Broken References (298 links, 650 assets)** |
+| **Booking & Queue Hardening** | Migration 63 (`book_online_appointment`, `get_public_live_queue`) | **Server-side validation, Fail-Closed Dept & Visibility, Doctor/Day Serialization** |
 | **Service Worker Security** | `public/sw.js` (ohms-static-v5) | **Cache-Control Header Check + Auth & Sensitive Query Bypass** |
 | **Accessibility Standard** | WCAG 2.2 Level AA Hardening | **Unique Main Landmark, Skip Link, Escape Key, Focus Visible** |
 | **Edge Hosting & TLS** | Cloudflare Pages Global Anycast CDN | **Live with TLS 1.2+ Modern Ciphers** |

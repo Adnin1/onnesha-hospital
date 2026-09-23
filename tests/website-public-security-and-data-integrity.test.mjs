@@ -322,5 +322,91 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
       "getPublicDepartmentsAction must query public_departments_view"
     );
   });
+
+  test("22. Migration 63 enforces server-side input validations in book_online_appointment", () => {
+    const migration63Path = path.join(
+      ROOT,
+      "supabase/migrations/20260923180000_strict_booking_validation_concurrency_and_fail_closed_visibility.sql"
+    );
+    assert.ok(fs.existsSync(migration63Path), "Migration 63 SQL must exist");
+    const sql = fs.readFileSync(migration63Path, "utf8");
+
+    // Validation checks
+    assert.ok(sql.includes("length(v_trimmed_name) < 2"), "Must check patient name min length");
+    assert.ok(sql.includes("length(v_trimmed_name) > 120"), "Must check patient name max length");
+    assert.ok(sql.includes("^01[3-9][0-9]{8}$"), "Must check Bangladeshi phone regex");
+    assert.ok(sql.includes("p_patient_age < 0 OR p_patient_age > 125"), "Must validate patient age bounds (0-125)");
+    assert.ok(sql.includes("NOT IN ('MALE', 'FEMALE', 'OTHER')"), "Must validate patient gender");
+    assert.ok(sql.includes("length(p_notes) > 500"), "Must validate notes length max 500");
+  });
+
+  test("23. Migration 63 guarantees fail-closed department resolution with zero arbitrary fallback", () => {
+    const migration63Path = path.join(
+      ROOT,
+      "supabase/migrations/20260923180000_strict_booking_validation_concurrency_and_fail_closed_visibility.sql"
+    );
+    const sql = fs.readFileSync(migration63Path, "utf8");
+
+    // Must NOT contain arbitrary fallback like LIMIT 1 from public.departments
+    assert.ok(
+      !sql.includes("SELECT id INTO v_department_id FROM public.departments WHERE organization_id = p_org_id LIMIT 1"),
+      "Must not fall back to arbitrary hospital department"
+    );
+    assert.ok(
+      sql.includes("Doctor department mapping is unavailable or inactive"),
+      "Must fail closed when department mapping is unavailable"
+    );
+  });
+
+  test("24. Migration 63 serializes doctor/day concurrency and guarantees race-safe patient upsert", () => {
+    const migration63Path = path.join(
+      ROOT,
+      "supabase/migrations/20260923180000_strict_booking_validation_concurrency_and_fail_closed_visibility.sql"
+    );
+    const sql = fs.readFileSync(migration63Path, "utf8");
+
+    // Advisory lock must cover doctor + date
+    assert.ok(
+      sql.includes("hashtext(p_org_id::text || ':' || p_doctor_id::text || ':' || p_appointment_date::text)"),
+      "Advisory lock must serialize doctor and appointment date across all schedules"
+    );
+
+    // Unique index & ON CONFLICT
+    assert.ok(
+      sql.includes("idx_patients_org_normalized_phone_unique"),
+      "Must create unique index on normalized_phone"
+    );
+    assert.ok(
+      sql.includes("ON CONFLICT (organization_id, normalized_phone)"),
+      "Must handle concurrent patient creation via ON CONFLICT"
+    );
+  });
+
+  test("25. Public views and live queue strictly enforce canonical public organization and active public doctors", () => {
+    const migration63Path = path.join(
+      ROOT,
+      "supabase/migrations/20260923180000_strict_booking_validation_concurrency_and_fail_closed_visibility.sql"
+    );
+    const sql = fs.readFileSync(migration63Path, "utf8");
+
+    // Public doctors view strict is_public = TRUE
+    assert.ok(
+      sql.includes("d.is_active = TRUE \n  AND d.is_public = TRUE;"),
+      "public_doctors_view must require d.is_public = TRUE with no IS NULL fallback"
+    );
+
+    // Public departments view strict dept.is_public = TRUE
+    assert.ok(
+      sql.includes("dept.is_active = TRUE \n  AND dept.is_public = TRUE;"),
+      "public_departments_view must require dept.is_public = TRUE with no IS NULL fallback"
+    );
+
+    // Live queue canonical org check
+    assert.ok(
+      sql.includes("is_canonical_public = TRUE") && sql.includes("403 Forbidden: Invalid or unauthorized hospital organization"),
+      "get_public_live_queue must reject non-canonical organizations"
+    );
+  });
 });
+
 
