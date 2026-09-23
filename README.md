@@ -1,7 +1,7 @@
-﻿# Onnesha Hospital Management System (OHMS v1.1.5)
+# Onnesha Hospital Management System (OHMS v1.1.5)
 Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
-[![Tests](https://img.shields.io/badge/tests-603%20active%20passing-brightgreen)](#automated-testing)
+[![Tests](https://img.shields.io/badge/tests-604%20active%20passing-brightgreen)](#automated-testing)
 [![Suites](https://img.shields.io/badge/test%20suites-69%20passed-brightgreen)](#automated-testing)
 [![TypeScript](https://img.shields.io/badge/typescript-strict%200%20errors-blue)](#quality-gates)
 [![ESLint](https://img.shields.io/badge/eslint-0%20errors-brightgreen)](#quality-gates)
@@ -10,7 +10,7 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
 - **Live Production URL:** [https://onnesha-hospital.pages.dev](https://onnesha-hospital.pages.dev)
 - **GitHub Repository:** [Adnin1/onnesha-hospital](https://github.com/Adnin1/onnesha-hospital)
-- **Database Engine:** Supabase PostgreSQL with Multi-Tenant Row Level Security (RLS) (63/63 Migrations Synchronized)
+- **Database Engine:** Supabase PostgreSQL with Multi-Tenant Row Level Security (RLS) (65/65 Migrations Synchronized)
 
 ---
 
@@ -61,6 +61,6 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ```bash
 npm run typecheck    # 0 errors
 npx eslint . --quiet # 0 errors
-npm test             # 603 active tests pass across 69 suites
+npm test             # 604 active tests pass across 69 suites
 npm run build        # 43/43 routes statically exported for Cloudflare Pages
 ```
