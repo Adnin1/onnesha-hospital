@@ -10,7 +10,7 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
 - **Live Production URL:** [https://onnesha-hospital.pages.dev](https://onnesha-hospital.pages.dev)
 - **GitHub Repository:** [Adnin1/onnesha-hospital](https://github.com/Adnin1/onnesha-hospital)
-- **Database Engine:** Supabase PostgreSQL with Multi-Tenant Row Level Security (RLS) (61/61 Migrations Synchronized)
+- **Database Engine:** Supabase PostgreSQL with Multi-Tenant Row Level Security (RLS) (62/62 Migrations Synchronized)
 
 ---
 

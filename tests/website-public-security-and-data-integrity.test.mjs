@@ -291,27 +291,29 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
     assert.ok(swContent.includes("private"), "Must reject private responses");
   });
 
-  test("21. Public actions enforce database authority for booking and department views", () => {
+  test("21. Public actions enforce single atomic RPC database authority for booking and department views", () => {
     const actionsPath = path.join(ROOT, "lib/public/actions.ts");
     assert.ok(fs.existsSync(actionsPath), "lib/public/actions.ts must exist");
     const actionsCode = fs.readFileSync(actionsPath, "utf8");
 
-    // Must query authoritative doctors record by ID in bookOnlineAppointmentAction
+    // Must call authoritative RPC book_online_appointment
     assert.ok(
-      actionsCode.includes('from("doctors")') && actionsCode.includes('.eq("id", doctorId)'),
-      "bookOnlineAppointmentAction must query authoritative doctor row from doctors table directly"
+      actionsCode.includes('rpc("book_online_appointment"'),
+      "bookOnlineAppointmentAction must call atomic book_online_appointment RPC"
+    );
+
+    // Must consume doctorName, roomNumber, opdFee directly from RPC response (Zero secondary query!)
+    assert.ok(
+      actionsCode.includes("doctorName: resObj.doctor_name") &&
+      actionsCode.includes("roomNumber: resObj.room_number") &&
+      actionsCode.includes("opdFee: Number(resObj.opd_fee)"),
+      "bookOnlineAppointmentAction must map doctorName, roomNumber, and opdFee directly from atomic RPC result"
     );
 
     // Must NOT accept or fallback to doctorMetadata from client parameters
     assert.ok(
       !actionsCode.includes("doctorMetadata"),
       "bookOnlineAppointmentAction must not accept or fallback to client-supplied doctorMetadata"
-    );
-
-    // Must fail safely if authoritative doctor lookup returns null/empty
-    assert.ok(
-      actionsCode.includes("Doctor verification failed. Appointment could not be confirmed with authoritative records."),
-      "Must fail safe if authoritative doctor record is missing in database"
     );
 
     // Must query public_departments_view in getPublicDepartmentsAction

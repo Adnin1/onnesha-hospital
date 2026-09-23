@@ -359,26 +359,7 @@ export async function bookOnlineAppointmentAction(params: {
       return { success: false, error: resObj.error || "Online booking slot unavailable." };
     }
 
-    // Query authoritative doctor record directly by ID, guaranteeing 100% DB integrity
-    const { data: authoritativeDoc } = await supabase
-      .from("doctors")
-      .select("full_name, room_number, opd_fee")
-      .eq("id", doctorId)
-      .eq("organization_id", HOSPITAL_METADATA.id)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (!authoritativeDoc) {
-      return {
-        success: false,
-        error: "Doctor verification failed. Appointment could not be confirmed with authoritative records.",
-      };
-    }
-
-    const docFullName = authoritativeDoc.full_name;
-    const docRoom = resObj.room_number || authoritativeDoc.room_number || "";
-    const docFee = Number(authoritativeDoc.opd_fee) || 0;
-
+    // Map authoritative data directly from atomic RPC response (100% atomic DB authority, zero secondary query)
     return {
       success: true,
       data: {
@@ -386,9 +367,9 @@ export async function bookOnlineAppointmentAction(params: {
         tokenNumber: resObj.token_number,
         patientCode: resObj.patient_code,
         appointmentDate: resObj.appointment_date,
-        doctorName: docFullName,
-        roomNumber: docRoom,
-        opdFee: docFee,
+        doctorName: resObj.doctor_name,
+        roomNumber: resObj.room_number || "",
+        opdFee: Number(resObj.opd_fee) || 0,
       },
     };
   } catch (err: unknown) {
