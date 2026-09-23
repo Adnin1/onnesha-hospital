@@ -1,4 +1,4 @@
-# Onnesha Hospital Management System (OHMS v1.1.5)
+﻿# Onnesha Hospital Management System (OHMS v1.1.5)
 ## Final Zero-Gap Production Closure Report (2026)
 
 **Document Reference:** `OHMS-FINAL-ZERO-GAP-CLOSURE-2026`  
@@ -12,13 +12,13 @@
 
 ## 1. Executive Summary
 
-All accessible software engineering, public portal metadata, PWA caching safeguards, database schemas, and edge configurations have been hardened and verified with 598 active automated test cases passed across 69 test suites and live multi-browser execution.
+All accessible software engineering, public portal metadata, PWA caching safeguards, database schemas, and edge configurations have been hardened and verified with 603 tests automated test cases passed across 69 test suites and live multi-browser execution.
 
 | Dimension | Verification Method | Status |
 |---|---|---|
 | **Health Endpoint Truthfulness** | `public/api/health.json` + Test 17 | **100% Truthful Static Metadata** |
-| **Database Parity (63/63)** | `npx supabase migration list` | **100% Synchronized (0 drift)** |
-| **Test Suites (69/69)** | `node scripts/run-tests.mjs` | **598 Active PASS, 0 Failures** |
+| **Database Parity (64/64)** | `npx supabase migration list` | **100% Synchronized (0 drift)** |
+| **Test Suites (69/69)** | `node scripts/run-tests.mjs` | **603 tests PASS, 0 Failures** |
 | **Real Browser E2E (4 Engines)** | Playwright (Chromium, Firefox, Mobile Chrome, WebKit) | **120 / 120 Tests PASSED** |
 | **Static Export (43 Routes)** | `npm run build` (Turbopack) | **43 / 43 Routes OK** |
 | **Link & Asset Forensics** | `scripts/website-link-asset-forensics.mjs` | **0 Broken References (298 links, 650 assets)** |
@@ -78,4 +78,4 @@ Under the Zero-Fake Standard, 100% of accessible software engineering tasks are 
 
 ## 4. Final Engineering Status
 
-**ENGINEERING COMPLETE — OPERATIONAL COMMISSIONING GATES REMAIN**
+**ENGINEERING COMPLETE â€” OPERATIONAL COMMISSIONING GATES REMAIN**

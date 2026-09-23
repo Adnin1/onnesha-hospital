@@ -407,6 +407,150 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
       "get_public_live_queue must reject non-canonical organizations"
     );
   });
+
+  // ── Migration 64 Forensic Tests ──────────────────────────────────────────
+
+  test("26. Migration 64: Phone format validated BEFORE stripping (strict format-before-strip)", () => {
+    const migration64Path = path.join(
+      ROOT,
+      "supabase/migrations/20260923200000_strict_phone_format_dhaka_date_dept_boundary_view_projection.sql"
+    );
+    const sql = fs.readFileSync(migration64Path, "utf8");
+
+    // Must validate raw format BEFORE any normalization (no regexp_replace before regex check)
+    assert.ok(
+      sql.includes("v_raw_phone := TRIM(COALESCE(p_patient_phone, ''));"),
+      "Migration 64 must capture raw phone before any normalization"
+    );
+    assert.ok(
+      sql.includes("v_raw_phone !~ '^(01[3-9][0-9]{8}|8801[3-9][0-9]{8}|\\+8801[3-9][0-9]{8})$'"),
+      "Migration 64 must reject invalid phone formats before stripping using strict regex"
+    );
+    assert.ok(
+      sql.includes("Invalid phone format. Accepted formats:"),
+      "Migration 64 must return a descriptive error for invalid phone formats"
+    );
+    // Final belt-and-suspenders guard after normalization
+    assert.ok(
+      sql.includes("v_clean_phone !~ '^01[3-9][0-9]{8}$'"),
+      "Migration 64 must still validate normalized phone as 11-digit Bangladeshi format"
+    );
+  });
+
+  test("27. Migration 64: Past-date gate uses Asia/Dhaka local date not UTC CURRENT_DATE", () => {
+    const migration64Path = path.join(
+      ROOT,
+      "supabase/migrations/20260923200000_strict_phone_format_dhaka_date_dept_boundary_view_projection.sql"
+    );
+    const sql = fs.readFileSync(migration64Path, "utf8");
+
+    assert.ok(
+      sql.includes("timezone('Asia/Dhaka', NOW()))::DATE"),
+      "Migration 64 past-date gate must use Asia/Dhaka timezone, not UTC CURRENT_DATE"
+    );
+    assert.ok(
+      sql.includes("v_today_dhaka"),
+      "Migration 64 must declare a v_today_dhaka variable for Dhaka-local date"
+    );
+    assert.ok(
+      sql.includes("p_appointment_date < v_today_dhaka"),
+      "Migration 64 past-date comparison must use v_today_dhaka"
+    );
+    // Verify old CURRENT_DATE pattern is NOT used as the date gate
+    const gate2Block = sql.substring(sql.indexOf("Gate 2"), sql.indexOf("Gate 2") + 400);
+    assert.ok(
+      !gate2Block.includes("p_appointment_date < CURRENT_DATE"),
+      "Migration 64 Gate 2 must NOT use CURRENT_DATE directly (must use Dhaka timezone)"
+    );
+  });
+
+  test("28. Migration 64: Department resolution includes organization_id tenant-boundary (d.organization_id = p_org_id)", () => {
+    const migration64Path = path.join(
+      ROOT,
+      "supabase/migrations/20260923200000_strict_phone_format_dhaka_date_dept_boundary_view_projection.sql"
+    );
+    const sql = fs.readFileSync(migration64Path, "utf8");
+
+    // Department query must include org boundary
+    assert.ok(
+      sql.includes("d.organization_id = p_org_id"),
+      "Migration 64 department resolution must include d.organization_id = p_org_id tenant-boundary check"
+    );
+    assert.ok(
+      sql.includes("Doctor department mapping is unavailable or inactive within this organization"),
+      "Migration 64 must return org-scoped error message when department is not found"
+    );
+  });
+
+  test("29. Migration 64: public_doctors_view strips internal identifiers (no org_id, bmdc_reg_number, is_public, is_active)", () => {
+    const migration64Path = path.join(
+      ROOT,
+      "supabase/migrations/20260923200000_strict_phone_format_dhaka_date_dept_boundary_view_projection.sql"
+    );
+    const sql = fs.readFileSync(migration64Path, "utf8");
+
+    // Extract the public_doctors_view SELECT block
+    const viewStart = sql.indexOf("CREATE OR REPLACE VIEW public.public_doctors_view");
+    const viewEnd = sql.indexOf("COMMENT ON VIEW public.public_doctors_view");
+    const viewSql = sql.substring(viewStart, viewEnd);
+
+    // Stripped fields must NOT appear in the SELECT projection
+    assert.ok(
+      !viewSql.includes("d.organization_id,"),
+      "public_doctors_view must NOT expose d.organization_id in SELECT projection"
+    );
+    assert.ok(
+      !viewSql.includes("d.bmdc_reg_number,"),
+      "public_doctors_view must NOT expose d.bmdc_reg_number (internal credential)"
+    );
+    assert.ok(
+      !viewSql.includes("d.is_active,"),
+      "public_doctors_view must NOT expose d.is_active (internal flag)"
+    );
+    assert.ok(
+      !viewSql.includes("d.is_public,"),
+      "public_doctors_view must NOT expose d.is_public (internal flag)"
+    );
+    assert.ok(
+      !viewSql.includes("d.followup_fee,"),
+      "public_doctors_view must NOT expose d.followup_fee (private pricing)"
+    );
+    // Required fields must be present
+    assert.ok(
+      viewSql.includes("d.full_name,") && viewSql.includes("d.opd_fee,") && viewSql.includes("d.public_bio,"),
+      "public_doctors_view must include full_name, opd_fee, and public_bio"
+    );
+  });
+
+  test("30. Service worker NEVER_CACHE_PATTERNS includes /check-token, /book-appointment, /confirm booking paths", () => {
+    const swPath = path.join(ROOT, "public/sw.js");
+    const swContent = fs.readFileSync(swPath, "utf8");
+
+    assert.ok(
+      swContent.includes("/check-token"),
+      "Service worker NEVER_CACHE_PATTERNS must include /check-token to prevent personalized session data caching"
+    );
+    assert.ok(
+      swContent.includes("/book-appointment"),
+      "Service worker NEVER_CACHE_PATTERNS must include /book-appointment to prevent booking form caching"
+    );
+    assert.ok(
+      swContent.includes("/confirm"),
+      "Service worker NEVER_CACHE_PATTERNS must include /confirm to prevent booking confirmation token caching"
+    );
+    // Verify these are inside the NEVER_CACHE_PATTERNS array (before the closing bracket)
+    const patternsBlock = swContent.substring(
+      swContent.indexOf("const NEVER_CACHE_PATTERNS"),
+      swContent.indexOf("];", swContent.indexOf("const NEVER_CACHE_PATTERNS"))
+    );
+    assert.ok(
+      patternsBlock.includes("/check-token") &&
+      patternsBlock.includes("/book-appointment") &&
+      patternsBlock.includes("/confirm"),
+      "All three booking paths must be inside the NEVER_CACHE_PATTERNS array"
+    );
+  });
 });
+
 
 

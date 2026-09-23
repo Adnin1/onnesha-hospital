@@ -49,6 +49,9 @@ const NEVER_CACHE_PATTERNS = [
   /payroll/i,
   /\/audit(\/|$)/,
   /notification/i,
+  /\/check-token(\/|$)/,       // personalized session/token lookup — must never cache
+  /\/book-appointment(\/|$)/,  // online booking form — contains patient personal data
+  /\/confirm(\/|$)/,           // booking confirmation — contains appointment token
 ];
 
 function shouldNeverCache(requestOrUrl) {

@@ -9,6 +9,7 @@ import { defineConfig, devices } from "@playwright/test";
  */
 
 export default defineConfig({
+  globalSetup: "./tests/browser/globalSetup.ts",
   testDir: "./tests/browser",
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
