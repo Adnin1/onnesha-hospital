@@ -95,10 +95,18 @@ export const PERMISSIONS = {
   SETTINGS_VIEW: "settings.view",
   SETTINGS_MANAGE_ROLES: "settings.manage_roles",
   SETTINGS_AUDIT: "settings.audit",
+
+  // Staff IAM (Identity & Access Management)
+  STAFF_VIEW: "staff.view",
+  STAFF_CREATE: "staff.create",
+  STAFF_MANAGE: "staff.manage",
+  STAFF_RESET_PASSWORD: "staff.reset_password",
+  DEPARTMENTS_MANAGE: "departments.manage",
 } as const;
 
 export const DEFAULT_ROLE_PERMISSIONS: Record<RoleType, string[]> = {
   super_admin: Object.values(PERMISSIONS),
+  hospital_administrator: Object.values(PERMISSIONS).filter((p) => p !== PERMISSIONS.SETTINGS_MANAGE_ROLES),
   admin: Object.values(PERMISSIONS).filter((p) => p !== PERMISSIONS.SETTINGS_MANAGE_ROLES),
   doctor: [
     PERMISSIONS.DASHBOARD_VIEW,
@@ -144,8 +152,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleType, string[]> = {
     PERMISSIONS.PAYMENTS_RECONCILE,
     PERMISSIONS.REFUNDS_PROCESS,
     PERMISSIONS.REPORTS_VIEW,
-    PERMISSIONS.HR_VIEW,
-    PERMISSIONS.HR_PAYROLL,
+  ],
+  lab_technologist: [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.LAB_VIEW,
+    PERMISSIONS.LAB_SAMPLE_COLLECT,
+    PERMISSIONS.LAB_ENTER_RESULT,
+    PERMISSIONS.LAB_VERIFY,
   ],
   lab_technician: [
     PERMISSIONS.DASHBOARD_VIEW,
@@ -161,7 +174,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleType, string[]> = {
     PERMISSIONS.PHARMACY_PURCHASE,
     PERMISSIONS.PHARMACY_STOCK_ADJUST,
     PERMISSIONS.PROCUREMENT_VIEW,
-    PERMISSIONS.PROCUREMENT_MANAGE,
   ],
   nurse: [
     PERMISSIONS.DASHBOARD_VIEW,
@@ -172,6 +184,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleType, string[]> = {
     PERMISSIONS.BEDS_ALLOCATE,
     PERMISSIONS.NURSING_VIEW,
     PERMISSIONS.NURSING_MANAGE,
+  ],
+  hr_payroll: [
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.HR_VIEW,
+    PERMISSIONS.HR_ATTENDANCE,
+    PERMISSIONS.HR_PAYROLL,
+    PERMISSIONS.STAFF_VIEW,
+    PERMISSIONS.REPORTS_VIEW,
   ],
   hr: [
     PERMISSIONS.DASHBOARD_VIEW,

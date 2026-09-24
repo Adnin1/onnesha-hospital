@@ -32,17 +32,21 @@ export interface OrganizationSettings {
 // User Profile & Roles
 export type RoleType =
   | "super_admin"
+  | "hospital_administrator"
   | "admin"
-  | "finance_admin"
   | "accountant"
-  | "receptionist"
   | "doctor"
   | "nurse"
+  | "lab_technologist"
   | "lab_technician"
   | "pathologist"
   | "pharmacist"
-  | "pharmacy_manager"
+  | "hr_payroll"
   | "hr_manager"
+  | "hr"
+  | "receptionist"
+  | "finance_admin"
+  | "pharmacy_manager"
   | "diagnostic_staff"
   | "ot_staff"
   | "viewer";
@@ -54,6 +58,10 @@ export interface UserProfile {
   email?: string;
   avatar_url?: string;
   is_active: boolean;
+  must_change_password?: boolean;
+  account_status?: "INVITED" | "ACTIVE" | "SUSPENDED" | "DISABLED";
+  employee_id?: string;
+  organization_id?: UUID;
   created_at: string;
   updated_at: string;
   active_organization_id?: UUID;

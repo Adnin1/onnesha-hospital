@@ -1,15 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Lock, ArrowRight, CheckCircle2, ShieldAlert } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { mapSafeAuthError } from "@/lib/auth/safe-errors";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isForced = searchParams.get("forced") === "true";
+
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +37,7 @@ export default function ResetPasswordPage() {
 
     try {
       const supabase = createBrowserClient();
-      const { error } = await supabase.auth.updateUser({
+      const { data: userData, error } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
@@ -42,6 +45,17 @@ export default function ResetPasswordPage() {
         setErrorMessage(mapSafeAuthError(error.message));
         setIsLoading(false);
         return;
+      }
+
+      // If user was forced to change temporary password, update profiles table
+      if (userData.user) {
+        await supabase
+          .from("profiles")
+          .update({
+            must_change_password: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", userData.user.id);
       }
 
       setCompleted(true);
@@ -91,6 +105,18 @@ export default function ResetPasswordPage() {
             </div>
           ) : (
             <form onSubmit={handleResetPassword} className="space-y-4">
+              {isForced && (
+                <div className="p-3.5 bg-amber-950/80 border border-amber-600/70 rounded-xl text-xs text-amber-200 flex items-start gap-2.5">
+                  <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block text-amber-300">প্রাথমিক পাসওয়ার্ড পরিবর্তন বাধ্যতামূলক</span>
+                    <p className="text-[11px] text-amber-200/90 mt-0.5 leading-relaxed">
+                      নিরাপত্তার স্বার্থে অ্যাডমিনের দেয়া অস্থায়ী পাসওয়ার্ড পরিবর্তন করে আপনার নিজের গোপন পাসওয়ার্ড সেট করুন। এরপর আপনি সরাসরি ড্যাশবোর্ডে প্রবেশ করতে পারবেন।
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {errorMessage && (
                 <div role="alert" className="p-3.5 bg-red-950/80 border border-red-700/60 rounded-xl text-xs text-red-200 flex items-start gap-2">
                   <span className="text-base leading-none">⚠️</span>

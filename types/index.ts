@@ -34,14 +34,17 @@ export interface Department {
 
 export type RoleType = 
   | "super_admin"
+  | "hospital_administrator"
   | "admin"
-  | "doctor"
-  | "receptionist"
-  | "nurse"
-  | "pharmacist"
-  | "lab_technician"
   | "accountant"
-  | "hr";
+  | "doctor"
+  | "nurse"
+  | "lab_technologist"
+  | "lab_technician"
+  | "pharmacist"
+  | "hr_payroll"
+  | "hr"
+  | "receptionist";
 
 export interface Role {
   id: UUID;

@@ -39,24 +39,27 @@ export function HospitalSidebar() {
             const rawRole = normalizeRole(session.roles[0]) as RoleType;
             const validRoles: RoleType[] = [
               "super_admin",
+              "hospital_administrator",
               "admin",
               "doctor",
               "receptionist",
               "nurse",
               "pharmacist",
+              "lab_technologist",
               "lab_technician",
               "accountant",
+              "hr_payroll",
               "hr",
             ];
-            const primaryRole: RoleType = validRoles.includes(rawRole)
+            const primaryRole: RoleType | null = validRoles.includes(rawRole)
               ? rawRole
-              : "receptionist";
+              : null;
 
             setActiveRole(primaryRole);
             setUserPermissions(
               session.permissions.length > 0
                 ? session.permissions
-                : DEFAULT_ROLE_PERMISSIONS[primaryRole] || []
+                : (primaryRole ? DEFAULT_ROLE_PERMISSIONS[primaryRole] : []) || []
             );
             setUserName(session.profile?.full_name || session.email?.split("@")[0] || "Hospital Staff");
             setUserEmail(session.email);

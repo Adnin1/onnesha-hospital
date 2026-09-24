@@ -33,8 +33,36 @@ export function AuthGuard({ children }: AuthGuardProps) {
           return;
         }
 
-        // Retrieve user roles
+        // Retrieve user profile for active and must_change_password check
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_active, account_status, must_change_password")
+          .eq("id", user.id)
+          .maybeSingle();
 
+        // 1. Account Status Enforcement (Fail-closed)
+        if (profile) {
+          const status = profile.account_status || (profile.is_active ? "ACTIVE" : "DISABLED");
+          if (status === "SUSPENDED" || status === "DISABLED" || profile.is_active === false) {
+            await supabase.auth.signOut();
+            if (isMounted) {
+              setIsAuthenticated(false);
+              router.push(`/login?error=account_deactivated`);
+            }
+            return;
+          }
+
+          // 2. Forced First-Login Password Change Enforcement
+          if (profile.must_change_password && !pathname.startsWith("/reset-password")) {
+            if (isMounted) {
+              setIsAuthenticated(false);
+              router.push(`/reset-password?forced=true`);
+            }
+            return;
+          }
+        }
+
+        // Retrieve user roles
         const { data: userRoleRecords } = await supabase
           .from("user_roles")
           .select("roles(name)")
@@ -50,7 +78,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           });
         }
 
-        const isAdmin = roles.includes("super_admin") || roles.includes("admin");
+        const isAdmin = roles.includes("super_admin") || roles.includes("hospital_administrator") || roles.includes("admin");
 
         // Check MFA Assurance Level
         if (isAdmin) {
@@ -71,7 +99,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
 
         if (isMounted) {
-          // Profile check ok, user ok, MFA ok
           setIsAuthenticated(true);
         }
       } catch {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   ShieldCheck,
   History,
@@ -11,6 +12,7 @@ import {
   RefreshCw,
   Search,
   Eye,
+  Users,
 } from "lucide-react";
 import { PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 import { RoleType } from "@/types";
@@ -130,7 +132,14 @@ export default function SettingsAndAuditPage() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+        <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+          <Link
+            href="/app/settings/staff"
+            className="px-3 py-1.5 rounded-lg transition bg-sky-600 hover:bg-sky-500 text-white font-bold flex items-center gap-1.5 shadow-2xs"
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Staff Directory & Access</span>
+          </Link>
           <button
             onClick={() => setActiveTab("rbac")}
             className={`px-3 py-1.5 rounded-lg transition ${
@@ -195,15 +204,15 @@ export default function SettingsAndAuditPage() {
                 onChange={(e) => setSelectedRoleForEdit(e.target.value as RoleType)}
                 className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 font-bold text-slate-800"
               >
-                <option value="super_admin">Super Admin (Full Access)</option>
-                <option value="admin">Hospital Administrator</option>
+                <option value="super_admin">Super Admin (Full System Access)</option>
+                <option value="hospital_administrator">Hospital Administrator</option>
                 <option value="accountant">Accountant / Cashier (e.g. Jewel)</option>
-                <option value="receptionist">Reception / Front Desk (e.g. Apon)</option>
+                <option value="receptionist">Receptionist / Front Desk (e.g. Apon)</option>
                 <option value="doctor">Doctor / Consultant</option>
-                <option value="nurse">Nurse / Ward In-Charge</option>
-                <option value="lab_technician">Lab Technologist</option>
+                <option value="nurse">Nurse / In-Charge</option>
+                <option value="lab_technologist">Lab Technologist / Pathologist</option>
                 <option value="pharmacist">Pharmacist</option>
-                <option value="hr">HR & Payroll Manager</option>
+                <option value="hr_payroll">HR & Payroll Manager</option>
               </select>
             </div>
           </div>

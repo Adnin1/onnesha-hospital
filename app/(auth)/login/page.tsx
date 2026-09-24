@@ -12,12 +12,17 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/app/dashboard";
+  const urlError = searchParams.get("error");
 
   // Initial fields MUST be blank — zero pre-filled demo emails or passwords
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    urlError === "account_deactivated"
+      ? "আপনার অ্যাকাউন্টটি সাময়িকভাবে স্থগিত বা নিষ্ক্রিয় করা হয়েছে। অনুগ্রহ করে হাসপাতাল কর্তৃপক্ষের সাথে যোগাযোগ করুন।"
+      : null
+  );
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +46,28 @@ export default function LoginPage() {
         setErrorMessage("অ্যালার্ট: ইউজার ভেরিফিকেশন পাওয়া যায়নি।");
         setIsLoading(false);
         return;
+      }
+
+      // Check account status and mandatory password reset from profiles
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_active, account_status, must_change_password")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      if (profile) {
+        const status = profile.account_status || (profile.is_active ? "ACTIVE" : "DISABLED");
+        if (status === "SUSPENDED" || status === "DISABLED" || profile.is_active === false) {
+          await supabase.auth.signOut();
+          setErrorMessage("আপনার অ্যাকাউন্টটি নিষ্ক্রিয় বা স্থগিত করা হয়েছে। লগইন সম্ভব নয়।");
+          setIsLoading(false);
+          return;
+        }
+
+        if (profile.must_change_password) {
+          window.location.href = `/reset-password?forced=true`;
+          return;
+        }
       }
 
       // Check MFA Assurance Level

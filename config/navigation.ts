@@ -17,6 +17,7 @@ import {
   Scale,
   ShoppingCart,
   Wrench,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -165,6 +166,12 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         label: "Financial Reports",
         icon: BarChart3,
         perm: PERMISSIONS.REPORTS_VIEW,
+      },
+      {
+        href: "/app/settings/staff",
+        label: "Staff Directory & Access",
+        icon: ShieldCheck,
+        perm: PERMISSIONS.STAFF_VIEW,
       },
       {
         href: "/app/settings",
