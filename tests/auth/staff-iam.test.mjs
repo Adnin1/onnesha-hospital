@@ -91,7 +91,7 @@ describe("OHMS Staff Identity & Access Management (IAM) Test Suite", () => {
   });
 
   // Test 9: Permission definitions and default roles
-  test("9. lib/permissions.ts defines STAFF permissions and maps all 8 canonical roles", () => {
+  test("9. lib/permissions.ts defines STAFF permissions and maps all 9 canonical roles", () => {
     const permContent = fs.readFileSync(path.join(ROOT, "lib/permissions.ts"), "utf8");
     assert.ok(permContent.includes("STAFF_VIEW"), "STAFF_VIEW required");
     assert.ok(permContent.includes("STAFF_CREATE"), "STAFF_CREATE required");
@@ -101,6 +101,7 @@ describe("OHMS Staff Identity & Access Management (IAM) Test Suite", () => {
     assert.ok(permContent.includes("hospital_administrator:"), "hospital_administrator in DEFAULT_ROLE_PERMISSIONS required");
     assert.ok(permContent.includes("lab_technologist:"), "lab_technologist in DEFAULT_ROLE_PERMISSIONS required");
     assert.ok(permContent.includes("hr_payroll:"), "hr_payroll in DEFAULT_ROLE_PERMISSIONS required");
+    assert.ok(permContent.includes("receptionist:"), "receptionist in DEFAULT_ROLE_PERMISSIONS required");
   });
 
   // Test 10: Zero plaintext passwords logged or stored in client files

@@ -44,16 +44,16 @@ export function sanitizePostgrestSearch(input: string): string {
 }
 
 /**
- * Canonical 8 Roles in OHMS:
- * - super_admin (Super Admin)
- * - hospital_administrator (Hospital Administrator / Admin)
- * - accountant (Accountant / Cashier)
- * - doctor (Doctor / Consultant)
- * - nurse (Nurse / Ward In-Charge)
- * - lab_technologist (Lab Technologist / Technician)
- * - pharmacist (Pharmacist)
- * - hr_payroll (HR & Payroll Manager)
- * - receptionist (Front Desk)
+ * Canonical 9 Hospital Roles in OHMS:
+ * 1. super_admin (Super Admin - Full System Authority)
+ * 2. hospital_administrator (Hospital Administrator / Executive Admin)
+ * 3. accountant (Accountant / Cashier)
+ * 4. doctor (Doctor / Clinical Consultant)
+ * 5. nurse (Nurse / Ward In-Charge)
+ * 6. lab_technologist (Lab Technologist / Pathologist)
+ * 7. pharmacist (Pharmacist / Dispensary)
+ * 8. hr_payroll (HR & Payroll Manager)
+ * 9. receptionist (Front Desk / Patient Registration)
  */
 export const CANONICAL_ROLES = [
   "super_admin",
