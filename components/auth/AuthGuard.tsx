@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase/client";
+import { normalizeRole } from "@/lib/utils";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -44,7 +45,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           userRoleRecords.forEach((ur: Record<string, unknown>) => {
             const roleObj = ur.roles as { name: string } | null;
             if (roleObj?.name) {
-              roles.push(roleObj.name.toLowerCase());
+              roles.push(normalizeRole(roleObj.name));
             }
           });
         }

@@ -15,6 +15,7 @@ import { HOSPITAL_NAV_SECTIONS } from "@/config/navigation";
 import { RoleType } from "@/types";
 import { DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 import { getCurrentUserSession } from "@/lib/auth/session";
+import { normalizeRole } from "@/lib/utils";
 
 export function HospitalSidebar() {
   const pathname = usePathname();
@@ -35,7 +36,7 @@ export function HospitalSidebar() {
         const session = await getCurrentUserSession();
         if (isMounted) {
           if (session.userId) {
-            const rawRole = session.roles[0] as string | undefined;
+            const rawRole = normalizeRole(session.roles[0]) as RoleType;
             const validRoles: RoleType[] = [
               "super_admin",
               "admin",
@@ -47,8 +48,8 @@ export function HospitalSidebar() {
               "accountant",
               "hr",
             ];
-            const primaryRole: RoleType = validRoles.includes(rawRole as RoleType)
-              ? (rawRole as RoleType)
+            const primaryRole: RoleType = validRoles.includes(rawRole)
+              ? rawRole
               : "receptionist";
 
             setActiveRole(primaryRole);

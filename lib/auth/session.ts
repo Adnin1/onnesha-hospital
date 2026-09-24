@@ -1,5 +1,6 @@
 import { createBrowserClient } from "../supabase/client";
 import { UserProfile, RoleType } from "../../types/database";
+import { normalizeRole } from "../utils";
 
 export interface UserSessionState {
   userId: string | null;
@@ -95,7 +96,7 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
     if (userRoleRecords && userRoleRecords.length > 0) {
       (userRoleRecords as unknown as UserRoleRecord[]).forEach((ur) => {
         if (ur.roles?.name) {
-          roles.push(ur.roles.name.toLowerCase() as RoleType);
+          roles.push(normalizeRole(ur.roles.name) as RoleType);
         }
         if (!organizationId && ur.organization_id) {
           organizationId = ur.organization_id;

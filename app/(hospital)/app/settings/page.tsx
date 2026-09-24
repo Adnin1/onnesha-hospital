@@ -200,8 +200,10 @@ export default function SettingsAndAuditPage() {
                 <option value="accountant">Accountant / Cashier (e.g. Jewel)</option>
                 <option value="receptionist">Reception / Front Desk (e.g. Apon)</option>
                 <option value="doctor">Doctor / Consultant</option>
+                <option value="nurse">Nurse / Ward In-Charge</option>
                 <option value="lab_technician">Lab Technologist</option>
                 <option value="pharmacist">Pharmacist</option>
+                <option value="hr">HR & Payroll Manager</option>
               </select>
             </div>
           </div>

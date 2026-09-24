@@ -43,3 +43,15 @@ export function sanitizePostgrestSearch(input: string): string {
   return input.replace(/[,().%"']/g, "").trim();
 }
 
+/**
+ * Normalizes role names from database (e.g., "Super Admin", "Lab Technician", "Cashier")
+ * to standard lowercase snake_case RoleType identifiers (e.g., "super_admin", "lab_technician", "accountant").
+ */
+export function normalizeRole(roleName: string | null | undefined): string {
+  if (!roleName) return "";
+  const cleaned = roleName.toLowerCase().trim().replace(/[\s-]+/g, "_");
+  if (cleaned === "cashier") return "accountant";
+  if (cleaned === "pathologist") return "lab_technician";
+  return cleaned;
+}
+
