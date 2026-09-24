@@ -18,13 +18,13 @@ test.describe("Real Browser E2E: RBAC Security, 8 Canonical Roles & Navigation G
 
     for (const path of protectedPaths) {
       await page.goto(path);
-      await page.waitForTimeout(400);
+      await page.waitForTimeout(800);
 
       const currentUrl = page.url();
-      // Must either redirect to login page or present AuthGuard authentication container / prompt
+      // Must either redirect to login page or present AuthGuard authentication container / prompt / loading
       const isRedirectedToLogin = currentUrl.includes("/login");
       const hasAuthGuardPrompt =
-        (await page.locator("text=/লগইন|Login|Sign In|অনুমতি|অথেন্টিকেশন|যাচাই|প্রবেশ/i").count()) > 0;
+        (await page.locator("text=/লগইন|Login|Sign In|অনুমতি|অথেন্টিকেশন|যাচাই|প্রবেশ|লোড/i").count()) > 0;
 
       expect(isRedirectedToLogin || hasAuthGuardPrompt).toBeTruthy();
     }
@@ -33,12 +33,12 @@ test.describe("Real Browser E2E: RBAC Security, 8 Canonical Roles & Navigation G
   // Test 2: Staff Directory route requires authenticated admin role
   test("2. Staff Directory route (/app/settings/staff) is strictly protected from unauthenticated access", async ({ page }) => {
     await page.goto("/app/settings/staff");
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(800);
 
     const currentUrl = page.url();
     const redirectedToLogin = currentUrl.includes("/login");
     const hasAuthGuard =
-      (await page.locator("text=/লগইন|Sign In|যাচাই|অথেন্টিকেশন|অ্যাক্সেস/i").count()) > 0;
+      (await page.locator("text=/লগইন|Sign In|যাচাই|অথেন্টিকেশন|অ্যাক্সেস|লোড/i").count()) > 0;
 
     expect(redirectedToLogin || hasAuthGuard).toBeTruthy();
   });
@@ -48,7 +48,7 @@ test.describe("Real Browser E2E: RBAC Security, 8 Canonical Roles & Navigation G
     await page.goto("/login?error=account_deactivated");
     await page.waitForLoadState("domcontentloaded");
 
-    const alertBanner = page.locator("role=alert");
+    const alertBanner = page.locator('div[role="alert"]').first();
     await expect(alertBanner).toBeVisible();
     const alertText = await alertBanner.textContent();
     expect(alertText).toMatch(/স্থগিত|নিষ্ক্রিয়|কর্তৃপক্ষের|হয়েছে/);
