@@ -152,7 +152,11 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
  */
 export async function hasPermission(permissionKey: string): Promise<boolean> {
   const session = await getCurrentUserSession();
-  if (session.roles.includes("super_admin") || session.roles.includes("admin")) {
+  if (
+    session.roles.includes("super_admin") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("hospital_administrator")
+  ) {
     return true;
   }
   return session.permissions.includes(permissionKey);
