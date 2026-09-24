@@ -52,13 +52,13 @@ export default function LoginPage() {
       );
 
       if (hasVerifiedFactors && aalData?.currentLevel === "aal1") {
-        // MFA challenge required -> Redirect to /auth/mfa
-        router.push(`/auth/mfa?redirectTo=${encodeURIComponent(redirectTo)}`);
+        // MFA challenge required -> Redirect to /mfa
+        window.location.href = `/mfa?redirectTo=${encodeURIComponent(redirectTo)}`;
         return;
       }
 
       // Direct access allowed -> Redirect to target route
-      router.push(redirectTo);
+      window.location.href = redirectTo;
     } catch (err: unknown) {
       const msg = err instanceof Error ? mapSafeAuthError(err.message) : "লগইন করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।";
       setErrorMessage(msg);
