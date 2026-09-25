@@ -114,4 +114,24 @@ describe("OHMS Security & Penetration Testing: Privilege Escalation & Cross-Tena
       "profiles update policy required"
     );
   });
+
+  // Scenario 11: Atomic Sequence Generator Schema Qualification
+  test("11. SQL Defense: Atomic sequence generators schema-qualify sequences with public.<seq>::regclass", () => {
+    const seqMigrationPath = path.join(ROOT, "supabase/migrations/20260926033000_schema_qualify_atomic_sequences.sql");
+    assert.ok(fs.existsSync(seqMigrationPath), "Migration 20260926033000 must exist");
+    const seqContent = fs.readFileSync(seqMigrationPath, "utf8");
+    assert.ok(
+      seqContent.includes("nextval('public.employee_code_seq'::regclass)"),
+      "employee_code_seq must be schema-qualified"
+    );
+    assert.ok(
+      seqContent.includes("nextval('public.receipt_code_seq'::regclass)"),
+      "receipt_code_seq must be schema-qualified"
+    );
+    assert.ok(
+      seqContent.includes("nextval('public.pharmacy_sale_seq'::regclass)"),
+      "pharmacy_sale_seq must be schema-qualified"
+    );
+  });
 });
+
