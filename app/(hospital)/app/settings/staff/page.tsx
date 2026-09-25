@@ -9,18 +9,14 @@ import {
   Filter,
   RefreshCw,
   KeyRound,
-  UserCheck,
-  UserX,
   AlertTriangle,
   Copy,
   Check,
-  Building,
   Mail,
   Phone,
   BadgeAlert,
   Lock,
   ArrowLeft,
-  ChevronRight,
 } from "lucide-react";
 import {
   StaffMemberRecord,
@@ -84,6 +80,36 @@ export default function StaffManagementPage() {
   // Password Reset Form State
   const [submittingReset, setSubmittingReset] = useState(false);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function load() {
+      setLoading(true);
+      setErrorMsg(null);
+      try {
+        const res = await getStaffDirectoryAction({
+          search: searchQuery.trim() || undefined,
+          role: roleFilter !== "ALL" ? roleFilter : undefined,
+          status: statusFilter !== "ALL" ? statusFilter : undefined,
+        });
+
+        if (!isMounted) return;
+        if (res.success && res.data) {
+          setStaffList(res.data);
+        } else {
+          setErrorMsg(res.error || "স্টাফ তালিকা লোড করতে সমস্যা হয়েছে।");
+        }
+      } catch {
+        if (isMounted) setErrorMsg("সার্ভারে সংযোগ ব্যর্থ হয়েছে।");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      isMounted = false;
+    };
+  }, [searchQuery, roleFilter, statusFilter]);
+
   const fetchDirectory = useCallback(async () => {
     setLoading(true);
     setErrorMsg(null);
@@ -105,10 +131,6 @@ export default function StaffManagementPage() {
       setLoading(false);
     }
   }, [searchQuery, roleFilter, statusFilter]);
-
-  useEffect(() => {
-    fetchDirectory();
-  }, [fetchDirectory]);
 
   const triggerToast = (msg: string) => {
     setSuccessToast(msg);

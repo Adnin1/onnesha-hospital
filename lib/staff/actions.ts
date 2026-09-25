@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
-import { PERMISSIONS } from "@/lib/permissions";
+import { getCurrentUserSession } from "@/lib/auth/session";
 import { RoleType } from "@/types";
 
 export interface StaffMemberRecord {
@@ -174,7 +173,7 @@ export async function resetStaffPasswordAction(
     const tempPassword = newTempPassword?.trim() || generateSecureTemporaryPassword();
 
     const supabase = createClient();
-    const { data, error } = await supabase.rpc("admin_reset_staff_password", {
+    const { error } = await supabase.rpc("admin_reset_staff_password", {
       p_org_id: session.organizationId,
       p_target_user_id: targetUserId,
       p_temp_password: tempPassword,
@@ -205,7 +204,7 @@ export async function setStaffStatusAction(
     }
 
     const supabase = createClient();
-    const { data, error } = await supabase.rpc("admin_set_staff_status", {
+    const { error } = await supabase.rpc("admin_set_staff_status", {
       p_org_id: session.organizationId,
       p_target_user_id: targetUserId,
       p_status: status,
@@ -236,7 +235,7 @@ export async function changeStaffRoleAction(
     }
 
     const supabase = createClient();
-    const { data, error } = await supabase.rpc("admin_change_staff_role", {
+    const { error } = await supabase.rpc("admin_change_staff_role", {
       p_org_id: session.organizationId,
       p_target_user_id: targetUserId,
       p_new_role_name: newRoleName,
