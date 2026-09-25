@@ -1,10 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
-import { Scan, Plus, CheckCircle, FileText } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Scan, Plus, Loader2 } from "lucide-react";
+import {
+  getRadiologyStudiesAction,
+  RadiologyStudy,
+} from "@/lib/radiology/actions";
 
 export default function RadiologyPage() {
   const [selectedModality, setSelectedModality] = useState<string>("ALL");
+  const [studies, setStudies] = useState<RadiologyStudy[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      setLoading(true);
+      setErrorMsg(null);
+      const res = await getRadiologyStudiesAction(selectedModality);
+      if (!isMounted) return;
+      if (res.success && res.data) {
+        setStudies(res.data);
+      } else {
+        setErrorMsg(res.error || "Failed to load radiology studies.");
+      }
+      setLoading(false);
+    }
+    void loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedModality]);
 
   return (
     <div className="space-y-6">
@@ -20,7 +47,7 @@ export default function RadiologyPage() {
         </div>
         <button
           type="button"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           Order Imaging Study
@@ -34,7 +61,7 @@ export default function RadiologyPage() {
             key={m}
             type="button"
             onClick={() => setSelectedModality(m)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
               selectedModality === m
                 ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
                 : "text-slate-600 hover:bg-slate-100"
@@ -53,46 +80,61 @@ export default function RadiologyPage() {
           </h2>
           <span className="text-xs font-medium text-slate-500">Modality Worklist Active</span>
         </div>
+
+        {errorMsg && (
+          <div className="p-4 bg-red-50 border-b border-red-200 text-xs text-red-700">
+            {errorMsg}
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3">Study ID</th>
-                <th className="px-4 py-3">Patient</th>
-                <th className="px-4 py-3">Modality</th>
                 <th className="px-4 py-3">Study Name</th>
+                <th className="px-4 py-3">Patient Code</th>
+                <th className="px-4 py-3">Modality</th>
+                <th className="px-4 py-3">Clinical Indication</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Report</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">Scheduled Time</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              <tr className="hover:bg-slate-50/50">
-                <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-900">RAD-2026-0041</td>
-                <td className="px-4 py-3">P-202609-00108</td>
-                <td className="px-4 py-3"><span className="px-2 py-0.5 text-xs bg-indigo-100 text-indigo-800 rounded font-bold">XRAY</span></td>
-                <td className="px-4 py-3">Chest PA View (Digital)</td>
-                <td className="px-4 py-3"><span className="px-2 py-0.5 text-xs bg-emerald-100 text-emerald-800 rounded">Approved</span></td>
-                <td className="px-4 py-3 flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                  <CheckCircle className="h-3.5 w-3.5" /> Ready
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button type="button" className="text-xs text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center gap-1">
-                    <FileText className="h-3.5 w-3.5" /> View Report
-                  </button>
-                </td>
-              </tr>
-              <tr className="hover:bg-slate-50/50">
-                <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-900">RAD-2026-0042</td>
-                <td className="px-4 py-3">P-202609-00115</td>
-                <td className="px-4 py-3"><span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-800 rounded font-bold">USG</span></td>
-                <td className="px-4 py-3">Whole Abdomen Ultra-Sonogram</td>
-                <td className="px-4 py-3"><span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded">In Progress</span></td>
-                <td className="px-4 py-3 text-xs text-slate-400 font-medium">Pending Review</td>
-                <td className="px-4 py-3 text-right">
-                  <button type="button" className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Enter Findings</button>
-                </td>
-              </tr>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-indigo-500" />
+                    <p className="mt-2 text-xs">Loading modality studies...</p>
+                  </td>
+                </tr>
+              ) : studies.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                    <Scan className="h-8 w-8 mx-auto text-slate-300" />
+                    <p className="mt-2 text-sm font-medium text-slate-600">No imaging studies scheduled for {selectedModality}.</p>
+                    <p className="text-xs text-slate-400">New imaging study requisitions from OPD or IPD will display here in real time.</p>
+                  </td>
+                </tr>
+              ) : (
+                studies.map((std) => (
+                  <tr key={std.id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-3 font-semibold text-slate-900">{std.study_name}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{std.patients?.patient_code || "N/A"}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 text-xs bg-indigo-100 text-indigo-800 rounded font-bold">
+                        {std.radiology_modalities?.modality_code || "IMAGE"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs">{std.clinical_indication || "Routine evaluation"}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded capitalize">
+                        {std.status.replace("_", " ")}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{new Date(std.created_at).toLocaleString()}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

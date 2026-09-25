@@ -1,10 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
-import { Droplet, Plus, ShieldCheck } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Droplet, Plus, ShieldCheck, Loader2 } from "lucide-react";
+import {
+  getBloodInventoryAction,
+  BloodBagItem,
+} from "@/lib/blood-bank/actions";
 
 export default function BloodBankPage() {
   const [selectedGroup, setSelectedGroup] = useState<string>("ALL");
+  const [bloodBags, setBloodBags] = useState<BloodBagItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      setLoading(true);
+      setErrorMsg(null);
+      const res = await getBloodInventoryAction(selectedGroup);
+      if (!isMounted) return;
+      if (res.success && res.data) {
+        setBloodBags(res.data);
+      } else {
+        setErrorMsg(res.error || "Failed to load blood inventory.");
+      }
+      setLoading(false);
+    }
+    void loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedGroup]);
+
+  // Group counts calculation
+  const groupCounts = bloodBags.reduce((acc, bag) => {
+    acc[bag.blood_group] = (acc[bag.blood_group] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <div className="space-y-6">
@@ -21,14 +54,14 @@ export default function BloodBankPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium rounded-lg shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             Register Donor
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
           >
             <ShieldCheck className="h-4 w-4" />
             Cross-Match & Issue
@@ -43,7 +76,7 @@ export default function BloodBankPage() {
             key={grp}
             type="button"
             onClick={() => setSelectedGroup(grp === selectedGroup ? "ALL" : grp)}
-            className={`p-3.5 rounded-xl border text-center transition-all ${
+            className={`p-3.5 rounded-xl border text-center transition-all cursor-pointer ${
               selectedGroup === grp
                 ? "bg-red-50 border-red-300 ring-2 ring-red-500/20"
                 : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
@@ -51,7 +84,9 @@ export default function BloodBankPage() {
           >
             <span className="text-xs font-bold text-slate-500 block">GROUP</span>
             <span className="text-xl font-black text-red-600 block my-0.5">{grp}</span>
-            <span className="text-xs font-medium text-slate-600 block">4 Units</span>
+            <span className="text-xs font-medium text-slate-600 block">
+              {groupCounts[grp] || 0} Units
+            </span>
           </button>
         ))}
       </div>
@@ -66,6 +101,13 @@ export default function BloodBankPage() {
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> Server-Enforced Compatibility
           </span>
         </div>
+
+        {errorMsg && (
+          <div className="p-4 bg-red-50 border-b border-red-200 text-xs text-red-700">
+            {errorMsg}
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
@@ -75,36 +117,41 @@ export default function BloodBankPage() {
                 <th className="px-4 py-3">Component</th>
                 <th className="px-4 py-3">Collected Date</th>
                 <th className="px-4 py-3">Expiry Date</th>
-                <th className="px-4 py-3">Storage Location</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              <tr className="hover:bg-slate-50/50">
-                <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-900">BLD-2026-B-1001</td>
-                <td className="px-4 py-3 font-bold text-red-600">B+</td>
-                <td className="px-4 py-3">Packed Red Blood Cells (PRBC)</td>
-                <td className="px-4 py-3">2026-09-20</td>
-                <td className="px-4 py-3">2026-10-25</td>
-                <td className="px-4 py-3 text-xs text-slate-500">Ref A - Shelf 2</td>
-                <td className="px-4 py-3"><span className="px-2 py-0.5 text-xs bg-emerald-100 text-emerald-800 rounded font-medium">Available</span></td>
-                <td className="px-4 py-3 text-right">
-                  <button type="button" className="text-xs text-red-600 hover:text-red-800 font-medium">Crossmatch</button>
-                </td>
-              </tr>
-              <tr className="hover:bg-slate-50/50">
-                <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-900">BLD-2026-O-1002</td>
-                <td className="px-4 py-3 font-bold text-red-600">O+</td>
-                <td className="px-4 py-3">Fresh Frozen Plasma (FFP)</td>
-                <td className="px-4 py-3">2026-09-22</td>
-                <td className="px-4 py-3">2027-09-22</td>
-                <td className="px-4 py-3 text-xs text-slate-500">Deep Freezer B</td>
-                <td className="px-4 py-3"><span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded font-medium">Reserved</span></td>
-                <td className="px-4 py-3 text-right">
-                  <button type="button" className="text-xs text-slate-600 hover:text-slate-800 font-medium">View Details</button>
-                </td>
-              </tr>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-red-500" />
+                    <p className="mt-2 text-xs">Loading blood inventory...</p>
+                  </td>
+                </tr>
+              ) : bloodBags.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-8 text-slate-400">
+                    <Droplet className="h-8 w-8 mx-auto text-slate-300" />
+                    <p className="mt-2 text-sm font-medium text-slate-600">No blood bags in storage for {selectedGroup}.</p>
+                    <p className="text-xs text-slate-400">Register new donor blood bags or component collections to populate stock.</p>
+                  </td>
+                </tr>
+              ) : (
+                bloodBags.map((bag) => (
+                  <tr key={bag.id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-900">{bag.bag_number}</td>
+                    <td className="px-4 py-3 font-bold text-red-600">{bag.blood_group}</td>
+                    <td className="px-4 py-3 capitalize">{bag.component_type.replace("_", " ")}</td>
+                    <td className="px-4 py-3 text-xs">{bag.collection_date}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{bag.expiry_date}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 text-xs bg-emerald-100 text-emerald-800 rounded font-medium capitalize">
+                        {bag.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
