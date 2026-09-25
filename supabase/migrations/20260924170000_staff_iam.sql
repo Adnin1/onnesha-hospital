@@ -433,8 +433,7 @@ BEGIN
         provider_id,
         last_sign_in_at,
         created_at,
-        updated_at,
-        email
+        updated_at
     ) VALUES (
         gen_random_uuid(),
         v_new_user_id,
@@ -443,8 +442,7 @@ BEGIN
         v_new_user_id::text,
         v_now,
         v_now,
-        v_now,
-        v_clean_email
+        v_now
     );
 
     -- 8. Insert into public.profiles (with must_change_password = true)
