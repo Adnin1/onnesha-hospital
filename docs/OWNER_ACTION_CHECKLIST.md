@@ -28,12 +28,16 @@ All application code, database schema, security policies, and user interfaces ar
 - [ ] **Connect USB Scanners:** Plug USB barcode / QR code scanners into reception and pharmacy checkout PCs.
 - [ ] **Install Windows Desktop Client:** Download and run `Onnesha-Hospital-Setup-1.0.0.msi` from `https://onneshahospital.com/downloads/desktop` on hospital Windows PCs.
 
-### 🔐 4. Desktop Updater Signing Key Setup
+### 🔐 4. GitHub Actions CI/CD Secrets (Staging & Production Gates)
+- [ ] **Staging Security Gate Secrets:** In GitHub Repo Settings -> Secrets and variables -> Actions (Environment: `staging`), set `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SERVICE_ROLE_KEY` to allow the automated fail-closed staging security gate to verify live cross-tenant RLS isolation.
+- [ ] **Production Deployment Secrets:** In GitHub Repo Settings -> Secrets and variables -> Actions (Environment: `production`), set `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for automated deployment to Cloudflare Pages.
+
+### 🔐 5. Desktop Updater Signing Key Setup
 - [ ] **Generate Tauri Private Signing Key:** Run `npx tauri signer generate` on a secure offline machine.
 - [ ] **Configure Public Key:** Add public signing key string to `src-tauri/tauri.conf.json` under `plugins.updater.pubkey`.
 - [ ] **Store Private Key Securely:** Store private key string in private build server environment variable `TAURI_SIGNING_PRIVATE_KEY` (NEVER commit to git repository).
 
-### 🗄️ 5. Supabase Production Project Setup
+### 🗄️ 6. Supabase Production Project Setup
 - [ ] **Upgrade Supabase Project Tier:** Ensure production Supabase project is on Pro/Enterprise plan for managed daily backups.
 - [ ] **Execute Disaster Recovery Restore Drill:** Perform a test database restore drill on a staging/non-production database instance to record RTO/RPO metrics.
 
@@ -41,3 +45,4 @@ All application code, database schema, security policies, and user interfaces ar
 
 ## 🎯 Launch Status Statement
 Upon completion of the above owner actions, the system status upgrades from **`PRODUCTION READY AFTER OWNER ACTIONS`** to **`PRODUCTION READY & GO-LIVE APPROVED`**.
+
