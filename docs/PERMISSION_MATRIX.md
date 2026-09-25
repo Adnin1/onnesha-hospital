@@ -84,3 +84,10 @@ In OHMS, the system recognizes exactly **9 Canonical Hospital Roles**:
 1. **Super Admin Creation**: Only an existing active Super Admin can create another Super Admin account. Hospital Administrator attempts are blocked with PostgreSQL exception.
 2. **Role Elevation Guard**: Role changing RPC `admin_change_staff_role` prevents elevating any user to `super_admin` unless the invoker possesses `super_admin`.
 3. **Session Revocation**: Password reset and account suspension automatically delete all corresponding rows in `auth.sessions`, rendering any stale browser tokens immediately non-functional.
+
+---
+
+## 4. External Auditor / Viewer Read-Only Policy
+
+For read-only compliance and regulatory oversight, any assigned external `viewer` role possesses strictly READ permissions and cannot mutate clinical, financial, or administrative records.
+
