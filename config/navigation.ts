@@ -18,6 +18,11 @@ import {
   ShoppingCart,
   Wrench,
   ShieldCheck,
+  HeartPulse,
+  Scan,
+  Droplet,
+  Award,
+  Truck,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -98,6 +103,18 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         perm: PERMISSIONS.LAB_VIEW,
       },
       {
+        href: "/app/radiology",
+        label: "Radiology & Imaging",
+        icon: Scan,
+        perm: PERMISSIONS.RADIOLOGY_VIEW,
+      },
+      {
+        href: "/app/blood-bank",
+        label: "Blood Bank & Transfusion",
+        icon: Droplet,
+        perm: PERMISSIONS.BLOOD_BANK_VIEW,
+      },
+      {
         href: "/app/pharmacy",
         label: "Pharmacy & Stock POS",
         icon: Pill,
@@ -106,13 +123,19 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: "Ward, OT & Rx",
+    title: "Ward, ICU & Services",
     items: [
       {
         href: "/app/beds",
         label: "Bed & Cabin Matrix",
         icon: Bed,
         perm: PERMISSIONS.BEDS_VIEW,
+      },
+      {
+        href: "/app/critical-care",
+        label: "Critical Care (ICU/CCU)",
+        icon: HeartPulse,
+        perm: PERMISSIONS.CRITICAL_CARE_VIEW,
       },
       {
         href: "/app/ot",
@@ -125,6 +148,18 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         label: "Digital Prescriptions",
         icon: FileText,
         perm: PERMISSIONS.PRESCRIPTIONS_VIEW,
+      },
+      {
+        href: "/app/registrar",
+        label: "Medical Certificates",
+        icon: Award,
+        perm: PERMISSIONS.REGISTRAR_VIEW,
+      },
+      {
+        href: "/app/ambulance",
+        label: "Ambulance Transport",
+        icon: Truck,
+        perm: PERMISSIONS.AMBULANCE_VIEW,
       },
     ],
   },

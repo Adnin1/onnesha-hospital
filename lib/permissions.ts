@@ -102,6 +102,18 @@ export const PERMISSIONS = {
   STAFF_MANAGE: "staff.manage",
   STAFF_RESET_PASSWORD: "staff.reset_password",
   DEPARTMENTS_MANAGE: "departments.manage",
+
+  // Clinical Domain Extensions
+  CRITICAL_CARE_VIEW: "critical_care.view",
+  CRITICAL_CARE_MANAGE: "critical_care.manage",
+  RADIOLOGY_VIEW: "radiology.view",
+  RADIOLOGY_MANAGE: "radiology.manage",
+  BLOOD_BANK_VIEW: "blood_bank.view",
+  BLOOD_BANK_MANAGE: "blood_bank.manage",
+  REGISTRAR_VIEW: "registrar.view",
+  REGISTRAR_MANAGE: "registrar.manage",
+  AMBULANCE_VIEW: "ambulance.view",
+  AMBULANCE_MANAGE: "ambulance.manage",
 } as const;
 
 export const DEFAULT_ROLE_PERMISSIONS: Record<RoleType, string[]> = {
