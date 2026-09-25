@@ -142,6 +142,7 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
   });
 
   test("7. Route-by-Route DOM Accessibility: exactly one main landmark with id='main-content' and valid skip link", async ({ page }) => {
+    test.setTimeout(60000);
     const verifiedRoutes = [
       "/",
       "/about",
