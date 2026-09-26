@@ -3,11 +3,19 @@ import { LucideIcon } from "lucide-react";
 
 export interface StatCardProps {
   title: string;
+  bengaliTitle?: string;
   value: string | number;
   subtitle?: string;
+  bengaliSubtitle?: string;
+  badge?: string;
   icon: LucideIcon;
   iconColor?: string;
   bgColor?: string;
+  cardTheme?: "sky" | "teal" | "blue" | "indigo" | "default";
+  progress?: {
+    current: number;
+    total: number;
+  };
   trend?: {
     value: string;
     isPositive: boolean;
@@ -17,11 +25,16 @@ export interface StatCardProps {
 
 export function StatCard({
   title,
+  bengaliTitle,
   value,
   subtitle,
+  bengaliSubtitle,
+  badge,
   icon: Icon,
   iconColor = "text-sky-600",
   bgColor = "bg-sky-50",
+  cardTheme = "default",
+  progress,
   trend,
   isLoading = false,
 }: StatCardProps) {
@@ -35,25 +48,75 @@ export function StatCard({
     );
   }
 
+  const themeStyles = {
+    sky: "bg-gradient-to-br from-sky-50/70 to-white border-sky-100/90",
+    teal: "bg-gradient-to-br from-emerald-50/70 to-white border-emerald-100/90",
+    blue: "bg-gradient-to-br from-blue-50/70 to-white border-blue-100/90",
+    indigo: "bg-gradient-to-br from-indigo-50/70 to-white border-indigo-100/90",
+    default: "bg-white border-slate-200/90",
+  }[cardTheme];
+
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:border-slate-300 transition">
-      <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{title}</p>
-        <h3 className="text-2xl font-black text-slate-900 mt-1 tracking-tight">{value}</h3>
-        {subtitle && <p className="text-[11px] text-slate-400 mt-0.5">{subtitle}</p>}
-        {trend && (
-          <p
-            className={`text-[11px] font-semibold mt-1 flex items-center ${
-              trend.isPositive ? "text-emerald-600" : "text-rose-600"
+    <div
+      className={`p-5 rounded-2xl border shadow-xs hover:border-slate-300 transition duration-200 flex flex-col justify-between ${themeStyles}`}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center space-x-1.5">
+            <p className="text-xs font-bold text-slate-700 tracking-tight">{title}</p>
+            {bengaliTitle && (
+              <span className="text-[11px] text-slate-500 font-medium">/ {bengaliTitle}</span>
+            )}
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1.5 tracking-tight font-mono">
+            {value}
+          </h3>
+          {(bengaliSubtitle || subtitle) && (
+            <p className="text-xs text-slate-600 font-medium mt-0.5">
+              {bengaliSubtitle || subtitle}
+            </p>
+          )}
+        </div>
+        <div
+          className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-black/5 shadow-2xs ${bgColor}`}
+        >
+          <Icon className={`w-5 h-5 ${iconColor}`} />
+        </div>
+      </div>
+
+      {/* Progress Bar (if provided, e.g. for bed occupancy) */}
+      {progress && progress.total > 0 && (
+        <div className="mt-3">
+          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div
+              className="bg-sky-600 h-1.5 rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.min(100, Math.max(0, (progress.current / progress.total) * 100))}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Badges or Trend footer */}
+      <div className="mt-3 pt-2.5 border-t border-slate-100/80 flex items-center justify-between text-[11px]">
+        {trend ? (
+          <span
+            className={`font-semibold inline-flex items-center ${
+              trend.isPositive ? "text-emerald-700" : "text-rose-700"
             }`}
           >
-            <span>{trend.isPositive ? "↑" : "↓"}</span>
-            <span className="ml-1">{trend.value} vs yesterday</span>
-          </p>
+            <span className="mr-1">{trend.isPositive ? "↑" : "↓"}</span>
+            <span>{trend.value}</span>
+            <span className="text-slate-400 font-normal ml-1">vs yesterday</span>
+          </span>
+        ) : badge ? (
+          <span className="font-medium text-slate-600 inline-flex items-center">
+            {badge}
+          </span>
+        ) : (
+          <span className="text-slate-400 font-normal">রিয়েল-টাইম পরিসংখ্যান</span>
         )}
-      </div>
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${bgColor}`}>
-        <Icon className={`w-6 h-6 ${iconColor}`} />
       </div>
     </div>
   );
