@@ -23,6 +23,13 @@ import {
   Droplet,
   Award,
   Truck,
+  Clock,
+  Shield,
+  Share2,
+  Cpu,
+  Coffee,
+  HeartHandshake,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -161,6 +168,12 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         icon: Truck,
         perm: PERMISSIONS.AMBULANCE_VIEW,
       },
+      {
+        href: "/app/daycare",
+        label: "Day Care Unit",
+        icon: Clock,
+        perm: PERMISSIONS.DAYCARE_VIEW,
+      },
     ],
   },
   {
@@ -171,6 +184,18 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         label: "Billing & Cashier",
         icon: Receipt,
         perm: PERMISSIONS.BILLING_VIEW,
+      },
+      {
+        href: "/app/insurance",
+        label: "Insurance & TPA Claims",
+        icon: Shield,
+        perm: PERMISSIONS.INSURANCE_VIEW,
+      },
+      {
+        href: "/app/referrals",
+        label: "Referral & Commission",
+        icon: Share2,
+        perm: PERMISSIONS.REFERRAL_VIEW,
       },
       {
         href: "/app/accounting",
@@ -189,6 +214,30 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         label: "Fixed Assets & Equipment",
         icon: Wrench,
         perm: PERMISSIONS.ASSETS_VIEW,
+      },
+      {
+        href: "/app/biomedical",
+        label: "Biomedical & Radiation Safety",
+        icon: Cpu,
+        perm: PERMISSIONS.BIOMEDICAL_VIEW,
+      },
+      {
+        href: "/app/canteen",
+        label: "Canteen & Cafeteria POS",
+        icon: Coffee,
+        perm: PERMISSIONS.CANTEEN_VIEW,
+      },
+      {
+        href: "/app/scholarship",
+        label: "Welfare & Scholarships",
+        icon: HeartHandshake,
+        perm: PERMISSIONS.SCHOLARSHIP_VIEW,
+      },
+      {
+        href: "/app/feedback",
+        label: "Patient Feedback & Complaints",
+        icon: MessageSquare,
+        perm: PERMISSIONS.FEEDBACK_VIEW,
       },
       {
         href: "/app/hr",
