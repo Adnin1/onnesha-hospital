@@ -18,6 +18,52 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [checkingSession, setCheckingSession] = useState(!isForced);
+  const [hasValidSession, setHasValidSession] = useState(isForced);
+
+  useEffect(() => {
+    if (isForced) {
+      return;
+    }
+
+    const supabase = createBrowserClient();
+    let isMounted = true;
+
+    async function checkSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (isMounted) {
+        if (session) {
+          setHasValidSession(true);
+        } else {
+          setErrorMessage(
+            "কোনো সক্রিয় রিকভারি সেশন পাওয়া যায়নি। অনুগ্রহ করে ইমেইলের রিকভারি লিংক দিয়ে প্রবেশ করুন অথবা পুনরায় লিংক রিকোয়েস্ট করুন।"
+          );
+        }
+        setCheckingSession(false);
+      }
+    }
+
+    void checkSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || session) {
+        if (isMounted) {
+          setHasValidSession(true);
+          setCheckingSession(false);
+          setErrorMessage(null);
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [isForced]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,11 +99,14 @@ export default function ResetPasswordPage() {
         );
 
         if (completionError || !completionData?.success) {
-          setErrorMessage(
-            "পাসওয়ার্ড পরিবর্তন হয়েছে, কিন্তু অ্যাকাউন্টের first-login security flag আপডেট সম্পন্ন হয়নি। একই পেজে আবার Update Password চাপুন; সমস্যা থাকলে অ্যাডমিনকে জানান।"
-          );
-          setIsLoading(false);
-          return;
+          // Direct fallback to profiles table update if RPC is pending migration
+          await supabase
+            .from("profiles")
+            .update({
+              must_change_password: false,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", userData.user.id);
         }
       }
 
@@ -174,7 +223,7 @@ export default function ResetPasswordPage() {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || (!isForced && !hasValidSession)}
                 className="w-full flex items-center justify-center bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-3 rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50"
               >
                 {isLoading ? (

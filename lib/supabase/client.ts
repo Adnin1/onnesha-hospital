@@ -12,7 +12,12 @@ export function createClient() {
     );
   }
 
-  return createSsrBrowserClient(supabaseUrl, supabaseKey, {\n    auth: {\n      flowType: "pkce",\n      detectSessionInUrl: true,\n    },\n  });
+  return createSsrBrowserClient(supabaseUrl, supabaseKey, {
+    auth: {
+      flowType: "pkce",
+      detectSessionInUrl: true,
+    },
+  });
 }
 
 export { createClient as createBrowserClient };
