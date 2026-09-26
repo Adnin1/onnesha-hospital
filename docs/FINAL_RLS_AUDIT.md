@@ -1,6 +1,6 @@
 # FINAL DATABASE & ROW LEVEL SECURITY (RLS) AUDIT REPORT
 **Project:** Onnesha Hospital Management System (OHMS)  
-**Database:** PostgreSQL 15+ (Supabase Singapore Cluster)  
+**Database:** PostgreSQL 17 (Supabase Managed Cluster)  
 **Audit Scope:** Multi-Tenant Isolation, RLS Policies, Indexes, and Constraints  
 
 ---

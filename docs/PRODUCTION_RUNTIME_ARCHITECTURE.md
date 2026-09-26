@@ -56,7 +56,7 @@
   - Fast global static asset delivery with zero cold starts.
 
 ### C. Server-Side Managed Backend (Supabase Managed Cloud)
-- **Location:** Supabase Cloud Infrastructure (PostgreSQL 15+).
+- **Location:** Supabase Cloud Infrastructure (PostgreSQL 17 Managed).
 - **Responsibilities:**
   - **Authentication:** Password validation, JWT token issuance, refresh token rotation, TOTP factor enrollment, TOTP challenge verification, AAL assurance level management (`aal1` → `aal2`).
   - **Authorization:** Enforcement of Row Level Security (RLS) policies on all tables (`organization_id` matching, RBAC role permission matching).

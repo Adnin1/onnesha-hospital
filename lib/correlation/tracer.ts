@@ -5,7 +5,9 @@
 
 export function generateCorrelationId(prefix: string = "req"): string {
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 8);
+  const random = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID().replace(/-/g, "").substring(0, 8)
+    : timestamp.split("").reverse().join("");
   return `${prefix}_${timestamp}_${random}`;
 }
 

@@ -97,9 +97,9 @@ export default function DesktopDownloadPage() {
           </p>
         </div>
         <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
-          <h3 className="font-semibold text-slate-800 mb-2">🖨️ লোকাল প্রিন্টার সাপোর্ট</h3>
+          <h3 className="font-semibold text-slate-800 mb-2">🖨️ প্রিন্টিং ও রসিদ সাপোর্ট</h3>
           <p className="text-xs text-slate-600">
-            A4 প্রেসক্রিপশন ও ৮০ মিমি POS থার্মাল রিসিপ্ট লোকাল USB প্রিন্টারে সরাসরি প্রিন্ট করার সুবিধা।
+            স্ট্যান্ডার্ড সিস্টেম ও ব্রাউজার প্রিন্টিং ডায়ালগের মাধ্যমে A4 প্রেসক্রিপশন ও ৮০ মিমি POS থার্মাল রিসিপ্ট প্রিন্ট করার সুবিধা।
           </p>
         </div>
         <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">

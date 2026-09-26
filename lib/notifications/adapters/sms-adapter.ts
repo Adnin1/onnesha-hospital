@@ -97,7 +97,7 @@ export class BangladeshSmsAdapter implements SmsProviderAdapter {
             sid: sender,
             msisdn: internationalNumber,
             sms: options.message,
-            csms_id: `csms_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            csms_id: `csms_${Date.now()}_${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "").substring(0, 8) : Date.now().toString(36)}`,
           }),
         });
 

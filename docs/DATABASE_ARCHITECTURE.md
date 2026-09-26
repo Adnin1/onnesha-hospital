@@ -1,6 +1,6 @@
 # DATABASE ARCHITECTURE & RELATIONAL DESIGN SPECIFICATION
 **Project:** Onnesha Hospital Management System (OHMS)  
-**Database Platform:** Supabase PostgreSQL 15+  
+**Database Platform:** Supabase PostgreSQL 17 (Managed)  
 **Architecture Type:** Multi-Tenant SaaS (Row Level Security Driven)  
 **Date:** September 13, 2026  
 
