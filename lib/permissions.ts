@@ -156,6 +156,10 @@ export const PERMISSIONS = {
   CANTEEN_MANAGE: "canteen.manage",
   BIOMEDICAL_VIEW: "biomedical.view",
   BIOMEDICAL_MANAGE: "biomedical.manage",
+
+  // Clinical Specialties (Dental, Eye, Physiotherapy)
+  SPECIALTIES_VIEW: "specialties.view",
+  SPECIALTIES_MANAGE: "specialties.manage",
 } as const;
 
 export const DEFAULT_ROLE_PERMISSIONS: Record<RoleType, string[]> = {
@@ -176,6 +180,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleType, string[]> = {
     PERMISSIONS.PRESCRIPTIONS_CREATE,
     PERMISSIONS.LAB_VIEW,
     PERMISSIONS.LAB_ORDER,
+    PERMISSIONS.SPECIALTIES_VIEW,
+    PERMISSIONS.SPECIALTIES_MANAGE,
   ],
   receptionist: [
     PERMISSIONS.DASHBOARD_VIEW,

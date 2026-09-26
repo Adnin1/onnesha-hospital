@@ -14,6 +14,7 @@
 - [x] **04. Online Appointment Booking:** `AUTOMATED-TESTED` & `DEPLOYED`
 - [x] **05. Token Queue Lookup:** `AUTOMATED-TESTED` & `DEPLOYED`
 - [x] **06. Outpatient Department (OPD):** `AUTOMATED-TESTED` & `IMPLEMENTED`
+- [x] **06b. Specialty Clinical Workflows (Dental, Eye, Physio):** `AUTOMATED-TESTED` & `IMPLEMENTED`
 - [x] **07. Inpatient Admission (IPD):** `AUTOMATED-TESTED` & `IMPLEMENTED`
 - [x] **08. Bed Assignment & Transfer:** `AUTOMATED-TESTED` & `IMPLEMENTED`
 - [x] **09. Emergency Casualty Triage:** `AUTOMATED-TESTED` & `IMPLEMENTED`

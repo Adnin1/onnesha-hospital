@@ -1,7 +1,7 @@
 # OHMS ARCH SPECIFICATION MASTER SUBFEATURE TRUTH & GAP MATRIX
 **Authoritative Source of Truth:** Live Git Repository, Linked Supabase Schema & Production Edge  
-**Audit Date:** 2026-09-26  
-**Total Canonical Arch Requirement Modules Analyzed:** 34 Individual Modules  
+**Audit Date:** 2026-09-27  
+**Total Canonical Arch Requirement Modules Analyzed:** 35 Individual Modules (including Specialty Clinical: Dental, Ophthalmology, Physiotherapy)  
 
 ---
 
@@ -60,6 +60,9 @@
 | **32 CANTEEN**  | Menu Catalog & Cafeteria POS | `lib/canteen` | `canteen_menu_items`, `canteen_sales_orders` | 072 | ✅ | ✅ | `getCanteenMenuItemsAction` | Meal price check, order settlement | ✅ | Cashier Desk | `tests/conversation35-enterprise-modules.test.mjs` | `COMPLETE` |
 | **33 MIS**      | Executive Analytics & Forensics | `/app/reports` | Multi-table live aggregations | 001-072 | ✅ | ✅ | Real queries | Authoritative queries, no fake charts | ✅ | All Revenue & Ops | `tests/reports-audit.spec.ts` | `COMPLETE` |
 | **34 BIOMEDICAL**| Equipment Registry & Calibration | `lib/biomedical` | `biomedical_devices` | 072 | ✅ | ✅ | `getBiomedicalDevicesAction` | Maintenance reminder, calibration expiry | ✅ | Fixed Asset Management | `tests/conversation35-enterprise-modules.test.mjs` | `COMPLETE` |
+| **35 SPECIALTIES**| Dental Examinations & FDI Chart | `/app/specialties` | `dental_examinations` | 075 | ✅ | ✅ | `createDentalExaminationAction` | FDI tooth number & pocket depth validation | ✅ | Patient 360, OPD Billing | `tests/phase23-specialty-clinical-workflows.test.mjs` | `COMPLETE` |
+| **35 SPECIALTIES**| Ophthalmology / Eye Refraction & IOP | `/app/specialties` | `eye_examinations` | 075 | ✅ | ✅ | `createEyeExaminationAction` | Visual acuity & IOP mmHg validation | ✅ | Patient 360, OPD Billing | `tests/phase23-specialty-clinical-workflows.test.mjs` | `COMPLETE` |
+| **35 SPECIALTIES**| Physiotherapy & VAS Pain Tracking | `/app/specialties` | `physiotherapy_sessions` | 075 | ✅ | ✅ | `createPhysiotherapySessionAction` | VAS score 0-10 & modality validation | ✅ | Patient 360, OPD Billing | `tests/phase23-specialty-clinical-workflows.test.mjs` | `COMPLETE` |
 
 ---
 

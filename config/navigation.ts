@@ -30,6 +30,7 @@ import {
   Coffee,
   HeartHandshake,
   MessageSquare,
+  Eye,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -97,6 +98,12 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         label: "24/7 Emergency Triage",
         icon: Radio,
         perm: PERMISSIONS.EMERGENCY_VIEW,
+      },
+      {
+        href: "/app/specialties",
+        label: "Specialty Clinics",
+        icon: Eye,
+        perm: PERMISSIONS.SPECIALTIES_VIEW,
       },
     ],
   },
