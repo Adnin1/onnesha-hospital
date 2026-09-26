@@ -143,7 +143,7 @@ export default function PrivacyPage() {
               {HOSPITAL_METADATA.address ? (
                 <p>Physical Address: {HOSPITAL_METADATA.address}</p>
               ) : (
-                <p>Physical Inquiries: Hospital Main Reception & Information Counter, Dhaka, Bangladesh</p>
+                <p>Physical Inquiries: Hospital Main Reception & Information Counter, Bangladesh</p>
               )}
             </div>
           </section>

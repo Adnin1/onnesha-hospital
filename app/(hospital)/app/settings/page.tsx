@@ -21,9 +21,9 @@ import { getAuditLogsAction, AuditLogRecord } from "@/lib/audit/logger";
 const DEFAULT_HOSPITAL_PROFILE = {
   name: "Onnesha Hospital & Diagnostic Complex",
   banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক কমপ্লেক্স",
-  emergencyHotline: "+880 1700-000000",
-  ambulanceHotline: "+880 1800-000000",
-  address: "House 12, Road 5, Dhanmondi, Dhaka-1205, Bangladesh",
+  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "",
+  ambulanceHotline: process.env.NEXT_PUBLIC_AMBULANCE_HOTLINE || "",
+  address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "",
 };
 
 export default function SettingsAndAuditPage() {

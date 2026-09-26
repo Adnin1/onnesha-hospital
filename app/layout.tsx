@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   keywords: [
     "Onnesha Hospital",
     "অন্বেষা হাসপাতাল",
-    "Doctor Appointment Dhaka",
-    "Diagnostic Complex Dhaka",
+    "Doctor Appointment Bangladesh",
+    "Diagnostic Complex Bangladesh",
     "Emergency Care Bangladesh",
     "OPD Specialist Doctors",
     "Digital Hospital Bangladesh",

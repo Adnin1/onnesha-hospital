@@ -30,9 +30,9 @@ import { LiveQueueWidget } from "@/components/public/LiveQueueWidget";
 import { FeaturedDoctorsWidget } from "@/components/public/FeaturedDoctorsWidget";
 
 export const metadata: Metadata = {
-  title: "Onnesha Hospital & Diagnostic Complex | Modern Healthcare Dhaka",
+  title: "Onnesha Hospital & Diagnostic Complex | Modern Healthcare & Diagnostics",
   description:
-    "Book specialist doctor appointments, track live OPD token queues, emergency casualty care, pathology & diagnostic services at Onnesha Hospital, Dhaka, Bangladesh.",
+    "Book specialist doctor appointments, track live OPD token queues, emergency casualty care, pathology & diagnostic services at Onnesha Hospital, Bangladesh.",
   alternates: {
     canonical: "/",
   },
@@ -51,7 +51,7 @@ export default function HomePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex items-center space-x-2 bg-sky-500/20 border border-sky-400/30 px-3.5 py-1.5 rounded-full text-xs font-medium text-sky-200 backdrop-blur-xs">
                   <Activity className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-                  <span>Emergency Casualty Triage &amp; Clinical Diagnostics in Dhaka</span>
+                  <span>Emergency Casualty Triage &amp; Clinical Diagnostics</span>
                 </div>
               </div>
 

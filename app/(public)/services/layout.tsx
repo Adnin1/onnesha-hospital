@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Hospital Services & Laboratory Test Rates",
   description:
-    "Comprehensive list of clinical departments, diagnostic pathology tests, and indicative investigation fees at Onnesha Hospital & Diagnostic Complex, Dhaka.",
+    "Comprehensive list of clinical departments, diagnostic pathology tests, and indicative investigation fees at Onnesha Hospital & Diagnostic Complex.",
   alternates: { canonical: "/services" },
   openGraph: {
     title: "Hospital Services & Laboratory Test Rates | Onnesha Hospital",
     description:
-      "Comprehensive list of clinical departments, diagnostic pathology tests, and indicative investigation fees at Onnesha Hospital & Diagnostic Complex, Dhaka.",
+      "Comprehensive list of clinical departments, diagnostic pathology tests, and indicative investigation fees at Onnesha Hospital & Diagnostic Complex.",
     url: "/services",
     type: "website",
   },

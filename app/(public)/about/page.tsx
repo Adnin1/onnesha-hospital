@@ -5,12 +5,12 @@ import { Award, ShieldCheck, Heart, CheckCircle2 } from "lucide-react";
 export const metadata: Metadata = {
   title: "About Us | Onnesha Hospital & Diagnostic Complex",
   description:
-    "Learn about Onnesha Hospital's mission, vision, clinical governance, and hospital infrastructure. Modern patient-centered healthcare in Dhaka, Bangladesh.",
+    "Learn about Onnesha Hospital's mission, vision, clinical governance, and hospital infrastructure. Modern patient-centered healthcare in Bangladesh.",
   alternates: { canonical: "/about" },
   openGraph: {
     title: "About Us | Onnesha Hospital & Diagnostic Complex",
     description:
-      "Learn about Onnesha Hospital's mission, vision, clinical governance, and hospital infrastructure in Dhaka, Bangladesh.",
+      "Learn about Onnesha Hospital's mission, vision, clinical governance, and hospital infrastructure in Bangladesh.",
     url: "/about",
     type: "website",
   },
@@ -32,7 +32,7 @@ export default function AboutPage() {
             Compassionate Care, Clinical Excellence
           </h1>
           <p className="text-xs text-slate-600 mt-2">
-            Established with a vision to provide accessible, high-quality medical care and ethical treatment to patients and families across Dhaka.
+            Established with a vision to provide accessible, high-quality medical care and ethical treatment to patients and families.
           </p>
         </div>
 

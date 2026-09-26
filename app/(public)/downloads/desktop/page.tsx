@@ -19,7 +19,11 @@ export const metadata: Metadata = {
 };
 
 export default function DesktopDownloadPage() {
-  const version = pkg.version;
+  const coreVersion = pkg.version;
+  const verifiedReleaseVersion = "1.1.4";
+
+  const exeDownloadUrl = `https://github.com/Adnin1/onnesha-hospital/releases/download/v${verifiedReleaseVersion}/Onnesha.Hospital_${verifiedReleaseVersion}_x64-setup.exe`;
+  const msiDownloadUrl = `https://github.com/Adnin1/onnesha-hospital/releases/download/v${verifiedReleaseVersion}/Onnesha.Hospital_${verifiedReleaseVersion}_x64_en-US.msi`;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
@@ -36,24 +40,31 @@ export default function DesktopDownloadPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 bg-sky-100 text-sky-600 rounded-full mb-4 text-3xl">
           💻
         </div>
-        <h2 className="text-xl font-semibold text-slate-800 mb-2">
-          Onnesha Hospital Desktop v{version} (Windows 64-bit)
+        <h2 className="text-xl font-semibold text-slate-800 mb-1">
+          Onnesha Hospital Desktop v{verifiedReleaseVersion} (Windows 64-bit)
         </h2>
+        <p className="text-xs text-sky-700 font-medium mb-2">
+          Verified Production Release • Platform Core v{coreVersion}
+        </p>
         <p className="text-sm text-slate-500 mb-6">
-          Windows 10 / 11 Supported • Verified Installers • Tauri 2 Powered
+          Windows 10 / 11 Supported • Verified Digital Installers • Tauri 2 Powered
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
-            href={`/downloads/desktop/Onnesha-Hospital-Setup-${version}.exe`}
-            download
+            href={exeDownloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-installer={`Onnesha-Hospital-Setup-${coreVersion}.exe`}
             className="w-full sm:w-auto px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm"
           >
             <span>📥</span> Setup Installer (.exe, ~2.0 MB)
           </a>
           <a
-            href={`/downloads/desktop/Onnesha-Hospital-${version}.msi`}
-            download
+            href={msiDownloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-installer={`Onnesha-Hospital-${coreVersion}.msi`}
             className="w-full sm:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm"
           >
             <span>📦</span> MSI Package (.msi, ~2.5 MB)

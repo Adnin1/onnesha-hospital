@@ -5,10 +5,10 @@ export const metadata: Metadata = {
   description:
     "Find specialist doctors, their BMDC registration, OPD chamber room numbers, consultation fees, and visiting hours at Onnesha Hospital & Diagnostic Complex.",
   alternates: { canonical: "/doctors" },
-  openGraph: {
+    openGraph: {
     title: "Specialist Doctor Directory | Onnesha Hospital & Diagnostic Complex",
     description:
-      "Find specialist doctors, their BMDC registration, OPD chamber room numbers, consultation fees, and visiting hours at Onnesha Hospital, Dhaka.",
+      "Find specialist doctors, their BMDC registration, OPD chamber room numbers, consultation fees, and visiting hours at Onnesha Hospital & Diagnostic Complex.",
     url: "/doctors",
     type: "website",
   },

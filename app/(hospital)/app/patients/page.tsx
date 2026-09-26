@@ -301,7 +301,7 @@ export default function PatientsManagementPage() {
                     <h2 className="text-lg font-black text-slate-900">{selectedPatient.full_name}</h2>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    Phone: {selectedPatient.phone} • Address: {selectedPatient.address || "Dhaka, Bangladesh"}
+                    Phone: {selectedPatient.phone} • Address: {selectedPatient.address || "N/A"}
                   </p>
                 </div>
 

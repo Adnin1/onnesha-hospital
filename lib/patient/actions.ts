@@ -142,8 +142,8 @@ export async function registerPatientAction(formData: {
         patient_id: newPatient.id,
         address_type: "PRESENT",
         street_address: formData.address.trim(),
-        district: "Dhaka",
-        division: "Dhaka",
+        district: null,
+        division: null,
       });
     }
 

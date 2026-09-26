@@ -136,7 +136,8 @@ export async function getPublicDoctorsAction(): Promise<{
     );
 
     if (rpcError) {
-      return { success: false, doctors: [], error: rpcError.message };
+      console.error("[getPublicDoctorsAction]", rpcError.message);
+      return { success: false, doctors: [], error: "Unable to load doctor directory. Please try again later." };
     }
 
     if (!Array.isArray(rpcData)) {
@@ -184,8 +185,8 @@ export async function getPublicDoctorsAction(): Promise<{
 
     return { success: true, doctors };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Failed to load public doctor directory";
-    return { success: false, doctors: [], error: msg };
+    console.error("[getPublicDoctorsAction exception]", err);
+    return { success: false, doctors: [], error: "Unable to load doctor directory. Please try again later." };
   }
 }
 
@@ -216,7 +217,8 @@ export async function getPublicDoctorSchedulesAction(doctorId: string): Promise<
     });
 
     if (error) {
-      return { success: false, schedules: [], error: error.message };
+      console.error("[getPublicDoctorSchedulesAction]", error.message);
+      return { success: false, schedules: [], error: "Unable to load doctor schedules. Please try again later." };
     }
 
     if (!Array.isArray(data)) {
@@ -244,8 +246,8 @@ export async function getPublicDoctorSchedulesAction(doctorId: string): Promise<
 
     return { success: true, schedules };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Failed to load doctor schedules";
-    return { success: false, schedules: [], error: msg };
+    console.error("[getPublicDoctorSchedulesAction exception]", err);
+    return { success: false, schedules: [], error: "Unable to load doctor schedules. Please try again later." };
   }
 }
 
@@ -266,7 +268,8 @@ export async function getPublicDepartmentsAction(): Promise<{
       .order("name", { ascending: true });
 
     if (error) {
-      return { success: false, departments: [], error: error.message };
+      console.error("[getPublicDepartmentsAction]", error.message);
+      return { success: false, departments: [], error: "Unable to load departments. Please try again later." };
     }
 
     interface DeptRow {
@@ -279,17 +282,14 @@ export async function getPublicDepartmentsAction(): Promise<{
     const departments: PublicDepartment[] = ((data || []) as unknown as DeptRow[]).map((d) => ({
       id: d.id,
       name: d.name,
-      // `code` intentionally omitted: public_departments_view does not expose a `code` column,
-      // and the slug-derived code (slug.toUpperCase().slice(0,10)) has slug-collision risk.
-      // The ERP internal `departments.code` is not needed for public directory presentation.
       slug: d.slug || d.name.toLowerCase().replace(/\s+/g, "-"),
-      description: d.description || `Comprehensive diagnostic and outpatient consultation under ${d.name}.`,
+      description: d.description || null,
     }));
 
     return { success: true, departments };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Failed to load departments";
-    return { success: false, departments: [], error: msg };
+    console.error("[getPublicDepartmentsAction exception]", err);
+    return { success: false, departments: [], error: "Unable to load departments. Please try again later." };
   }
 }
 
@@ -375,8 +375,8 @@ export async function bookOnlineAppointmentAction(params: {
       },
     };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Appointment booking failed";
-    return { success: false, error: msg };
+    console.error("[bookOnlineAppointmentAction exception]", err);
+    return { success: false, error: "Appointment booking could not be processed at this time. Please try again or contact hospital reception." };
   }
 }
 
@@ -438,7 +438,8 @@ export async function submitContactInquiryAction(params: {
     });
 
     if (error) {
-      return { success: false, error: error.message };
+      console.error("[submitContactInquiryAction error]", error.message);
+      return { success: false, error: "Unable to submit inquiry at this time. Please try again later." };
     }
 
     const res = typeof data === "string" ? JSON.parse(data) : data;
@@ -448,8 +449,8 @@ export async function submitContactInquiryAction(params: {
 
     return { success: true };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Submission failed";
-    return { success: false, error: msg };
+    console.error("[submitContactInquiryAction exception]", err);
+    return { success: false, error: "Submission could not be completed at this time. Please try again later." };
   }
 }
 
@@ -478,7 +479,8 @@ export async function getLiveWaitingQueueAction(): Promise<{
     });
 
     if (error) {
-      return { success: false, queue: [], error: error.message };
+      console.error("[getLiveWaitingQueueAction error]", error.message);
+      return { success: false, queue: [], error: "Unable to load live queue status. Please try again later." };
     }
 
     interface QueueRow {
@@ -504,8 +506,8 @@ export async function getLiveWaitingQueueAction(): Promise<{
 
     return { success: true, queue };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Failed to load queue";
-    return { success: false, queue: [], error: msg };
+    console.error("[getLiveWaitingQueueAction exception]", err);
+    return { success: false, queue: [], error: "Unable to load live queue status. Please try again later." };
   }
 }
 
