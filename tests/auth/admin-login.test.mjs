@@ -62,21 +62,32 @@ describe("OHMS Priority-1 Admin Authentication Test Suite (10 Scenarios)", async
     assert.ok(content.includes("supabase.auth.getUser()"), "getUser() call required");
   });
 
-  test("8. Forgot password page exists and provides self-service reset request", () => {
+  test("8. Forgot password page uses the PKCE-safe auth callback route", () => {
     const forgotPath = path.join(ROOT, "app/(auth)/forgot-password/page.tsx");
     assert.ok(fs.existsSync(forgotPath), "forgot-password page must exist");
     const content = fs.readFileSync(forgotPath, "utf8");
-    assert.ok(content.includes("requestPasswordResetAction"), "Reset action required");
+    assert.ok(content.includes("resetPasswordForEmail"), "Supabase resetPasswordForEmail required");
+    assert.ok(content.includes("/auth/confirm?next=/reset-password"), "PKCE recovery callback route required");
   });
 
-  test("9. Reset password page exists and enforces minimum length verification", () => {
+  test("9. Reset password page validates a recovery session and completes the application password-change flag", () => {
     const resetPath = path.join(ROOT, "app/(auth)/reset-password/page.tsx");
     assert.ok(fs.existsSync(resetPath), "reset-password page must exist");
     const content = fs.readFileSync(resetPath, "utf8");
     assert.ok(content.includes("updateUser"), "updateUser call required");
+    assert.ok(content.includes("PASSWORD_RECOVERY"), "PASSWORD_RECOVERY event handling required");
+    assert.ok(content.includes("complete_current_user_password_change"), "Application password-change completion RPC required");
   });
 
-  test("10. Public marketing pages remain accessible without proxy redirect", () => {
+  test("10. Recovery callback exists and rejects unsafe redirect targets", () => {
+    const callbackPath = path.join(ROOT, "app/auth/confirm/page.tsx");
+    assert.ok(fs.existsSync(callbackPath), "Auth recovery callback route must exist");
+    const content = fs.readFileSync(callbackPath, "utf8");
+    assert.ok(content.includes("exchangeCodeForSession"), "PKCE code exchange required");
+    assert.ok(content.includes("startsWith(\"//\")"), "Open redirect guard required");
+  });
+
+  test("11. Public marketing pages remain accessible without proxy redirect", () => {
     const proxyPath = path.join(ROOT, "proxy.ts");
     const content = fs.readFileSync(proxyPath, "utf8");
     assert.ok(content.includes('path.startsWith("/app")'), "Protection scoped strictly to /app prefix");

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, ArrowRight, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Lock, ArrowRight, CheckCircle2, ShieldAlert, RefreshCw } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { mapSafeAuthError } from "@/lib/auth/safe-errors";
@@ -18,6 +18,52 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [checkingSession, setCheckingSession] = useState(!isForced);
+  const [hasValidSession, setHasValidSession] = useState(isForced);
+
+  useEffect(() => {
+    if (isForced) {
+      return;
+    }
+
+    const supabase = createBrowserClient();
+    let isMounted = true;
+
+    async function checkSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (isMounted) {
+        if (session) {
+          setHasValidSession(true);
+        } else {
+          setErrorMessage(
+            "কোনো সক্রিয় রিকভারি সেশন পাওয়া যায়নি। অনুগ্রহ করে ইমেইলের রিকভারি লিংক দিয়ে প্রবেশ করুন অথবা পুনরায় লিংক রিকোয়েস্ট করুন।"
+          );
+        }
+        setCheckingSession(false);
+      }
+    }
+
+    void checkSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || session) {
+        if (isMounted) {
+          setHasValidSession(true);
+          setCheckingSession(false);
+          setErrorMessage(null);
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [isForced]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,15 +93,21 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      // If user was forced to change temporary password, update profiles table
       if (userData.user) {
-        await supabase
-          .from("profiles")
-          .update({
-            must_change_password: false,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", userData.user.id);
+        const { data: completionData, error: completionError } = await supabase.rpc(
+          "complete_current_user_password_change"
+        );
+
+        if (completionError || !completionData?.success) {
+          // Direct fallback to profiles table update if RPC is pending migration
+          await supabase
+            .from("profiles")
+            .update({
+              must_change_password: false,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", userData.user.id);
+        }
       }
 
       setCompleted(true);
@@ -85,7 +137,12 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-2xl">
-          {completed ? (
+          {checkingSession ? (
+            <div className="text-center space-y-3 py-8">
+              <RefreshCw className="w-7 h-7 animate-spin text-sky-400 mx-auto" />
+              <p className="text-xs text-slate-300">সিকিউর password recovery session যাচাই করা হচ্ছে...</p>
+            </div>
+          ) : completed ? (
             <div className="text-center space-y-4 py-4">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/40">
                 <CheckCircle2 className="w-6 h-6" />
@@ -166,7 +223,7 @@ export default function ResetPasswordPage() {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || (!isForced && !hasValidSession)}
                 className="w-full flex items-center justify-center bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-3 rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50"
               >
                 {isLoading ? (

@@ -27,7 +27,7 @@ export default function ForgotPasswordPage() {
       const supabase = createBrowserClient();
       const siteUrl = typeof window !== "undefined" ? window.location.origin : SITE_CONFIG.canonicalUrl;
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${siteUrl}/reset-password`,
+        redirectTo: `${siteUrl}/auth/confirm?next=/reset-password`,
       });
 
       if (error) {
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex items-center gap-2 p-3 bg-slate-900/60 rounded-xl border border-slate-700 text-xs text-slate-300">
                 <ShieldAlert className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <span>আপনার অফিশিয়াল ইমেইল অ্যাড্রেস লিখুন। রিসেট লিংক পাঠানো হবে।</span>
+                <span>আপনার Supabase Auth-এ নিবন্ধিত login/recovery email লিখুন। রিসেট লিংক পাঠানো হবে।</span>
               </div>
 
               {errorMessage && (
