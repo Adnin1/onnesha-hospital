@@ -114,6 +114,18 @@ export const PERMISSIONS = {
   REGISTRAR_MANAGE: "registrar.manage",
   AMBULANCE_VIEW: "ambulance.view",
   AMBULANCE_MANAGE: "ambulance.manage",
+
+  // Arch Core Extensions (Conversation 34)
+  DIET_CHART_VIEW: "diet_chart.view",
+  DIET_CHART_MANAGE: "diet_chart.manage",
+  HEALTH_PACKAGE_VIEW: "health_package.view",
+  HEALTH_PACKAGE_MANAGE: "health_package.manage",
+  REAGENTS_VIEW: "reagents.view",
+  REAGENTS_MANAGE: "reagents.manage",
+  DOCTOR_ACCOUNTS_VIEW: "doctor_accounts.view",
+  DOCTOR_ACCOUNTS_SETTLE: "doctor_accounts.settle",
+  CORPORATE_CRM_VIEW: "corporate_crm.view",
+  CORPORATE_CRM_MANAGE: "corporate_crm.manage",
 } as const;
 
 export const DEFAULT_ROLE_PERMISSIONS: Record<RoleType, string[]> = {
