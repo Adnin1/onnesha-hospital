@@ -194,11 +194,16 @@ export default function LoginPage() {
           </form>
         </div>
 
-        {/* Back to website */}
-        <div className="text-center text-xs text-slate-500">
-          <Link href="/" className="hover:text-sky-400 transition">
-            ← মূল পাবলিক ওয়েবসাইটে ফিরে যান
-          </Link>
+        {/* Notice & Back to website */}
+        <div className="text-center space-y-2">
+          <p className="text-[11px] text-slate-400">
+            হাসপাতাল কর্মীদের অ্যাকাউন্ট অ্যাডমিনিস্ট্রেটর কর্তৃক তৈরি করা হয়। সাধারণ ইউজারদের জন্য সেলফ-রেজিস্ট্রেশন উন্মুক্ত নয়।
+          </p>
+          <div>
+            <Link href="/" className="text-xs text-slate-500 hover:text-sky-400 transition">
+              ← মূল পাবলিক ওয়েবসাইটে ফিরে যান
+            </Link>
+          </div>
         </div>
       </div>
     </div>
