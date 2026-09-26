@@ -163,6 +163,7 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
 
     for (const route of verifiedRoutes) {
       await page.goto(route, { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(100);
 
       const a11yLandmarks = await page.evaluate(() => {
         const mains = document.querySelectorAll("main");
