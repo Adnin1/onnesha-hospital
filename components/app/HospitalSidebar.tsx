@@ -82,8 +82,20 @@ export function HospitalSidebar() {
     }
 
     void initSession();
+
+    const handleToggle = () => setMobileOpen((prev) => !prev);
+    const handleOpen = () => setMobileOpen(true);
+    const handleClose = () => setMobileOpen(false);
+
+    window.addEventListener("ohms:toggle-sidebar", handleToggle);
+    window.addEventListener("ohms:open-sidebar", handleOpen);
+    window.addEventListener("ohms:close-sidebar", handleClose);
+
     return () => {
       isMounted = false;
+      window.removeEventListener("ohms:toggle-sidebar", handleToggle);
+      window.removeEventListener("ohms:open-sidebar", handleOpen);
+      window.removeEventListener("ohms:close-sidebar", handleClose);
     };
   }, []);
 
@@ -121,6 +133,15 @@ export function HospitalSidebar() {
         </button>
       </div>
 
+      {/* Mobile Backdrop Overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-30 lg:hidden animate-in fade-in duration-200"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Sidebar Container */}
       <aside
         className={`fixed top-0 bottom-0 left-0 z-40 bg-slate-900 text-slate-200 border-r border-slate-800 flex flex-col transition-all duration-300 no-print ${
@@ -144,6 +165,15 @@ export function HospitalSidebar() {
               </div>
             )}
           </Link>
+          {/* Close button for mobile drawer */}
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            className="lg:hidden text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close navigation menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="hidden lg:flex text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[32px] min-w-[32px] items-center justify-center"

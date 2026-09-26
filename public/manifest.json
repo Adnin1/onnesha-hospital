@@ -34,5 +34,35 @@
       "sizes": "48x48 32x32 16x16",
       "type": "image/x-icon"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Hospital Staff ERP Portal",
+      "short_name": "Staff ERP",
+      "description": "Log in to the hospital management and clinical ERP system",
+      "url": "/login",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Book Doctor Appointment",
+      "short_name": "Appointment",
+      "description": "Book a doctor appointment online",
+      "url": "/appointment",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Doctor Directory",
+      "short_name": "Doctors",
+      "description": "Browse hospital specialist doctor directory",
+      "url": "/doctors",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Live Token Status",
+      "short_name": "Token Queue",
+      "description": "Check live outpatient queue token number",
+      "url": "/check-token",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

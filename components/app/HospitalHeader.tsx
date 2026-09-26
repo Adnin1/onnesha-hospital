@@ -8,6 +8,7 @@ import {
   Clock,
   CheckCircle2,
   X,
+  Menu,
 } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 
@@ -112,7 +113,21 @@ export function HospitalHeader() {
   return (
     <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between no-print">
       {/* Left: Organization Code & Dhaka Time */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-2 sm:space-x-3">
+        {/* Mobile Hamburger Button */}
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("ohms:toggle-sidebar"));
+            }
+          }}
+          className="lg:hidden p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
+          aria-label="Open Hospital Navigation Menu"
+        >
+          <Menu className="w-5 h-5 text-slate-700" />
+        </button>
+
         <div className="flex items-center space-x-2 text-xs font-semibold text-slate-700">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
           <span className="hidden sm:inline font-mono uppercase bg-slate-100 px-2 py-0.5 rounded text-[11px] text-slate-600">

@@ -173,14 +173,15 @@ export function PublicNavbar() {
               </Link>
             );
           })}
-          <div className="pt-2 border-t border-slate-100 flex flex-col space-y-2">
+          <div className="pt-3 border-t border-slate-100 flex flex-col space-y-2">
             <Link
               href="/login"
               prefetch={false}
               onClick={() => setMobileOpen(false)}
-              className="w-full text-center py-2.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="w-full text-center py-3 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl min-h-[48px] flex items-center justify-center shadow-xs focus:outline-none focus:ring-2 focus:ring-sky-500 gap-2"
             >
-              Hospital Staff Login
+              <LogIn className="w-4 h-4 text-sky-400" />
+              <span>Hospital Staff &amp; Doctor ERP Login</span>
             </Link>
           </div>
         </div>

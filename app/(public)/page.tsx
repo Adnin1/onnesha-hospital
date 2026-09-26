@@ -24,6 +24,7 @@ import {
   Baby,
   Bone,
   Microscope,
+  LogIn,
 } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { LiveQueueWidget } from "@/components/public/LiveQueueWidget";
@@ -93,6 +94,27 @@ export default function HomePage() {
                 <div>
                   <div className="text-2xl font-bold text-emerald-400">Emergency</div>
                   <div className="text-xs text-sky-200">Triage &amp; Lab</div>
+                </div>
+              </div>
+
+              {/* Hospital Staff & ERP Portal Quick Access Banner */}
+              <div className="pt-2 max-w-lg">
+                <div className="p-3.5 bg-sky-950/60 border border-sky-400/30 rounded-xl backdrop-blur-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-sky-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-300 shrink-0">
+                      <LogIn className="w-4 h-4 text-sky-300" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-white block">হাসপাতাল স্টাফ ও ডাক্তার পোর্টাল</span>
+                      <span className="text-[11px] text-sky-200">OPD, IPD, জরুরি বিভাগ, ল্যাব, ফার্মাসি ও বিলিং ERP</span>
+                    </div>
+                  </div>
+                  <Link
+                    href="/login"
+                    className="shrink-0 inline-flex items-center px-3.5 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-lg transition min-h-[36px]"
+                  >
+                    ERP লগইন &rarr;
+                  </Link>
                 </div>
               </div>
             </div>
