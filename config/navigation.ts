@@ -147,7 +147,7 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
       },
       {
         href: "/app/critical-care",
-        label: "Critical Care (ICU/CCU)",
+        label: "Critical Care (ICU/ICCU/CCU/SICU/MICU/PICU)",
         icon: HeartPulse,
         perm: PERMISSIONS.CRITICAL_CARE_VIEW,
       },
