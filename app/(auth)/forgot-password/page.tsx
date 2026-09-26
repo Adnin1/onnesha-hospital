@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Mail, ArrowRight, CheckCircle2, ShieldAlert } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
+import { SITE_CONFIG } from "@/config/site";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { mapSafeAuthError } from "@/lib/auth/safe-errors";
 
@@ -24,7 +25,7 @@ export default function ForgotPasswordPage() {
 
     try {
       const supabase = createBrowserClient();
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://onneshahospital.com";
+      const siteUrl = typeof window !== "undefined" ? window.location.origin : SITE_CONFIG.canonicalUrl;
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${siteUrl}/reset-password`,
       });

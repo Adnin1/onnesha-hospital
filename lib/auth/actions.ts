@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SITE_CONFIG } from "@/config/site";
 
 export interface AuthActionResult {
   success: boolean;
@@ -98,7 +99,8 @@ export async function requestPasswordResetAction(
 
   try {
     const supabase = await getServerSupabase();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://onneshahospital.com";
+    // Use configured site URL, defaulting to SITE_CONFIG or production domain https://onneshahospital.com
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || SITE_CONFIG.canonicalUrl || "https://onneshahospital.com";
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${siteUrl}/reset-password`,
     });

@@ -1,3 +1,7 @@
 # Cloudflare Pages Redirects for Onnesha Hospital
-/home    /    301
-/auth/mfa    /mfa    302
+/home            /               301
+/appointments    /appointment    301
+/doctor          /doctors        301
+/auth/mfa        /mfa            302
+/portal          /app/dashboard  302
+/staff           /login          302

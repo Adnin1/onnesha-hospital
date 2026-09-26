@@ -149,7 +149,7 @@ export default function AppointmentBookingPage() {
             Book Doctor Appointment
           </h1>
           <p className="text-xs text-slate-600 mt-1">
-            Get your OPD consultation serial token instantly with SMS confirmation.
+            Get your OPD consultation serial token and printable slip instantly on screen.
           </p>
 
           {/* Stepper indicator */}
