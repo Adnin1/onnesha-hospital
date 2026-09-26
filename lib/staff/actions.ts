@@ -62,12 +62,22 @@ export function generateSecureTemporaryPassword(): string {
     for (let i = 4; i < 14; i++) {
       pwd += allChars[array[i] % allChars.length];
     }
-    // Shuffle the result
-    return pwd.split("").sort(() => 0.5 - Math.random()).join("");
+    // Crypto-safe Fisher-Yates shuffle
+    const chars = pwd.split("");
+    for (let i = chars.length - 1; i > 0; i--) {
+      const randBuf = new Uint8Array(1);
+      window.crypto.getRandomValues(randBuf);
+      const j = randBuf[0] % (i + 1);
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join("");
   }
 
-  // Fallback for non-browser/test runtimes
-  return "Onnesha#" + Math.random().toString(36).substring(2, 10) + "9!";
+  // Fallback for non-browser/test runtimes — use crypto module if available
+  if (typeof globalThis.crypto !== "undefined" && globalThis.crypto.randomUUID) {
+    return "Onnesha#" + globalThis.crypto.randomUUID().replace(/-/g, "").substring(0, 10) + "9!";
+  }
+  return "Onnesha#" + Date.now().toString(36).substring(0, 10) + "9!";
 }
 
 /**

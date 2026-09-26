@@ -52,7 +52,10 @@ export async function registerComplaintAction(params: {
     if (!params.details.trim()) return { success: false, error: "Details are required" };
 
     const supabase = createClient();
-    const complaintNum = `CMP-${Date.now().toString().slice(-6)}`;
+
+    // Server-authoritative complaint number from DB sequence
+    const { data: seqData } = await supabase.rpc("generate_complaint_number");
+    const complaintNum = (seqData as string) || `CMP-${crypto.randomUUID().slice(0, 8)}`;
 
     const { data, error } = await supabase
       .from("patient_complaints")
