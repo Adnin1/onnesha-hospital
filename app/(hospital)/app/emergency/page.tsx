@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Radio,
   AlertOctagon,
@@ -10,6 +11,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { registerEmergencyEncounterAction, getEmergencyCasesAction } from "@/lib/patient/actions";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 
 interface EmergencyCaseItem {
   id: string;
@@ -151,7 +153,7 @@ export default function EmergencyTriagePage() {
           </button>
           <div className="bg-red-700/80 text-white font-bold text-xs px-3 py-2 rounded-xl flex items-center shadow-xs">
             <Radio className="w-4 h-4 mr-1.5 animate-ping text-red-300" />
-            Hotline: +880 1700-000000
+            Hotline: {HOSPITAL_METADATA.emergencyHotline || "+880 1700-000000"}
           </div>
         </div>
       </div>
@@ -253,19 +255,19 @@ export default function EmergencyTriagePage() {
                 </p>
               </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => alert(`Transferred ${c.name} directly to ICU Complex.`)}
-                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition"
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={`/app/ipd?patientCode=${c.code}&target=ICU`}
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center"
                 >
-                  Transfer to ICU
-                </button>
-                <button
-                  onClick={() => alert(`Emergency surgical alert dispatched to OT Team.`)}
-                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition"
+                  Transfer to ICU →
+                </Link>
+                <Link
+                  href={`/app/ot?patientCode=${c.code}&emergency=true`}
+                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition flex items-center"
                 >
-                  Rush to OT
-                </button>
+                  Rush to OT →
+                </Link>
               </div>
             </div>
           ))}

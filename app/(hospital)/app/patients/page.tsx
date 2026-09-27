@@ -23,7 +23,7 @@ import {
 import { getInvoicesAction } from "@/lib/billing/actions";
 import { getPrescriptionsAction } from "@/lib/prescriptions/actions";
 import { getDiagnosticOrdersAction } from "@/lib/lab/actions";
-import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
+import { formatCurrencyBDT, formatDateBDT, calculateAgeFromDOB } from "@/lib/utils";
 
 export default function PatientsManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -42,14 +42,15 @@ export default function PatientsManagementPage() {
 
   // New Patient Form State
   const [newFullName, setNewFullName] = useState("");
-  const newRelation = "Father";
+  const [newDob, setNewDob] = useState("");
   const [newGender, setNewGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
   const [newBloodGroup, setNewBloodGroup] = useState("O+");
   const [newPhone, setNewPhone] = useState("");
   const [newNid, setNewNid] = useState("");
   const [newAddress, setNewAddress] = useState("");
-  const newEmergencyName = "";
-  const newEmergencyPhone = "";
+  const [newEmergencyName, setNewEmergencyName] = useState("");
+  const [newEmergencyPhone, setNewEmergencyPhone] = useState("");
+  const [newRelation, setNewRelation] = useState("Father");
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [registerLoading, setRegisterLoading] = useState(false);
 
@@ -150,6 +151,7 @@ export default function PatientsManagementPage() {
         fullName: newFullName,
         phone: newPhone,
         gender: newGender,
+        dob: newDob || undefined,
         bloodGroup: newBloodGroup,
         nid: newNid || undefined,
         address: newAddress,
@@ -178,9 +180,12 @@ export default function PatientsManagementPage() {
         selectPatient(created);
         setIsRegisterModalOpen(false);
         setNewFullName("");
+        setNewDob("");
         setNewPhone("");
         setNewAddress("");
         setNewNid("");
+        setNewEmergencyName("");
+        setNewEmergencyPhone("");
       }
     } catch {
       alert("Error saving patient registration");
@@ -567,7 +572,32 @@ export default function PatientsManagementPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Date of Birth {newDob && <span className="text-sky-600 font-bold ml-1">({calculateAgeFromDOB(newDob)} Yrs)</span>}
+                  </label>
+                  <input
+                    type="date"
+                    value={newDob}
+                    onChange={(e) => setNewDob(e.target.value)}
+                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">NID / Birth Cert No.</label>
+                  <input
+                    type="text"
+                    placeholder="10, 13 or 17 digit NID / BRN"
+                    value={newNid}
+                    onChange={(e) => setNewNid(e.target.value)}
+                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Gender *</label>
                   <select
@@ -598,14 +628,43 @@ export default function PatientsManagementPage() {
                     <option value="AB-">AB-</option>
                   </select>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">NID / Birth Cert</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Emergency Contact Name</label>
                   <input
                     type="text"
-                    placeholder="Optional"
-                    value={newNid}
-                    onChange={(e) => setNewNid(e.target.value)}
+                    placeholder="Guardian / Spouse"
+                    value={newEmergencyName}
+                    onChange={(e) => setNewEmergencyName(e.target.value)}
+                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Relationship</label>
+                  <select
+                    value={newRelation}
+                    onChange={(e) => setNewRelation(e.target.value)}
+                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
+                  >
+                    <option value="Father">Father</option>
+                    <option value="Mother">Mother</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Son">Son</option>
+                    <option value="Daughter">Daughter</option>
+                    <option value="Brother">Brother</option>
+                    <option value="Sister">Sister</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Emergency Phone</label>
+                  <input
+                    type="tel"
+                    placeholder="01XXXXXXXXX"
+                    value={newEmergencyPhone}
+                    onChange={(e) => setNewEmergencyPhone(e.target.value)}
                     className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
                   />
                 </div>

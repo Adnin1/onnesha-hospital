@@ -20,6 +20,7 @@ export default function OPDConsultationPage() {
   // Vitals State
   const [bp, setBp] = useState("120/80");
   const [pulse, setPulse] = useState("76");
+  const [spo2, setSpo2] = useState("98");
   const [temp, setTemp] = useState("98.4");
   const [weight, setWeight] = useState("70");
   const [notes, setNotes] = useState("Patient presented for routine outpatient clinical evaluation.");
@@ -88,12 +89,15 @@ export default function OPDConsultationPage() {
       const tempC = tempVal ? (tempVal > 50 ? Math.round(((tempVal - 32) * 5) / 9 * 10) / 10 : tempVal) : undefined;
       const weightVal = parseFloat(weight) || undefined;
 
+      const spo2Val = parseInt(spo2) || undefined;
+
       const res = await recordVitalsAction({
         visitId: activeQueueItem.visit_id || activeQueueItem.id,
         systolicBp: sys || undefined,
         diastolicBp: dia || undefined,
         pulseRate: pulseVal,
         temperatureC: tempC,
+        spo2Pct: spo2Val,
         weightKg: weightVal,
       });
 
@@ -124,6 +128,19 @@ export default function OPDConsultationPage() {
       await updateQueueStatusAction({
         queueId: item.id,
         status: "IN_ROOM",
+      });
+      await loadQueue();
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCompleteConsultation = async () => {
+    if (!activeQueueItem) return;
+    try {
+      await updateQueueStatusAction({
+        queueId: activeQueueItem.id,
+        status: "COMPLETED",
       });
       await loadQueue();
     } catch {
@@ -276,7 +293,7 @@ export default function OPDConsultationPage() {
                 )}
 
                 <form onSubmit={handleSaveVitals} className="space-y-4 text-xs">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                       <span className="text-slate-500 block text-[10px] font-bold uppercase mb-1">
                         Blood Pressure
@@ -303,6 +320,20 @@ export default function OPDConsultationPage() {
                         className="w-full font-mono font-bold text-slate-900 bg-transparent focus:outline-hidden"
                       />
                       <span className="text-[10px] text-slate-400">bpm</span>
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <span className="text-slate-500 block text-[10px] font-bold uppercase mb-1">
+                        SpO2 Saturation
+                      </span>
+                      <input
+                        type="text"
+                        value={spo2}
+                        onChange={(e) => setSpo2(e.target.value)}
+                        placeholder="98"
+                        className="w-full font-mono font-bold text-slate-900 bg-transparent focus:outline-hidden"
+                      />
+                      <span className="text-[10px] text-slate-400">%</span>
                     </div>
 
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -357,6 +388,38 @@ export default function OPDConsultationPage() {
                     </button>
                   </div>
                 </form>
+
+                <div className="pt-4 mt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/app/prescriptions?patientId=${activeQueueItem.patient?.id || ""}`}
+                      className="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold rounded-lg text-xs transition"
+                    >
+                      Prescribe Rx →
+                    </Link>
+                    <Link
+                      href={`/app/lab?patientId=${activeQueueItem.patient?.id || ""}`}
+                      className="px-3 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 font-bold rounded-lg text-xs transition"
+                    >
+                      Order Lab Test →
+                    </Link>
+                    <Link
+                      href={`/app/ipd?patientId=${activeQueueItem.patient?.id || ""}`}
+                      className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-lg text-xs transition"
+                    >
+                      Admit to IPD →
+                    </Link>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCompleteConsultation}
+                    className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-xs transition flex items-center"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+                    Complete Consultation
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="p-12 text-center text-slate-400 text-xs">
