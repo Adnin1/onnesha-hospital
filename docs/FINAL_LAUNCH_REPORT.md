@@ -2,9 +2,9 @@
 
 ## Executive System Status
 - **Overall Operational Status**: `PRODUCTION READY AFTER OWNER ACTIONS` (Category YELLOW)
-- **Software Baseline**: Version **1.1.5** (Git HEAD: `63f3cc94bb2776c5b96a988d8b6da4ca29432f9a`)
+- **Software Baseline**: Version **1.1.5** (Git HEAD: `dc131128349b6c2528e4a85592affd44a3d3552e`)
 - **Authoritative Provenance**: Synchronized with `origin/main` & `ssh-origin/main`
-- **Active Edge Deployment**: `https://03acdf35.onnesha-hospital.pages.dev` (Production Alias: `https://onnesha-hospital.pages.dev`)
+- **Active Edge Deployment**: `https://73c44873.onnesha-hospital.pages.dev` (Production Alias: `https://onnesha-hospital.pages.dev`)
 - **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (84 Migrations Applied)
 - **Official Super Admin**: `aaih.apon@gmail.com`
 
