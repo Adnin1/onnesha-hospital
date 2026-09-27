@@ -26,7 +26,7 @@ All application code, database schema, security policies, and user interfaces ar
 - [ ] **Connect POS Thermal Printer:** Plug 80mm roll POS thermal receipt printer into hospital reception/billing PC via USB.
 - [ ] **Connect A4 Printer:** Connect standard A4 laser printer for prescriptions, lab reports, and formal invoices.
 - [ ] **Connect USB Scanners:** Plug USB barcode / QR code scanners into reception and pharmacy checkout PCs.
-- [ ] **Install Windows Desktop Client:** Download and run `Onnesha-Hospital-Setup-1.0.0.msi` from `https://onneshahospital.com/downloads/desktop` on hospital Windows PCs.
+- [ ] **Install Windows Desktop Client:** Download and run `Onnesha-Hospital-1.1.5.msi` from `https://onneshahospital.com/downloads/desktop` on hospital Windows PCs.
 
 ### 🔐 4. GitHub Actions CI/CD Secrets (Staging & Production Gates)
 - [ ] **Staging Security Gate Secrets:** In GitHub Repo Settings -> Secrets and variables -> Actions (Environment: `staging`), set `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SERVICE_ROLE_KEY` to allow the automated fail-closed staging security gate to verify live cross-tenant RLS isolation.
