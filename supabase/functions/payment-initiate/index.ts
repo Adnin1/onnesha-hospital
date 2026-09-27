@@ -236,7 +236,101 @@ serve(async (req: Request) => {
       );
     }
 
-    // 6. Production Safety Invariant: Real gateway transactions are intentionally deferred.
+    // 6. SSLCommerz Live / Sandbox Gateway Execution
+    if (normalizedProvider === "SSLCOMMERZ") {
+      const creds = (integ.encrypted_credentials || {}) as Record<string, string>;
+      const storeId = creds.store_id || Deno.env.get("SSLCOMMERZ_STORE_ID") || "testbox";
+      const storePassword = creds.store_passwd || creds.store_password || Deno.env.get("SSLCOMMERZ_STORE_PASSWD") || "qwerty";
+      const isSandbox = integ.environment === "sandbox" || Deno.env.get("SSLCOMMERZ_IS_SANDBOX") === "true" || storeId === "testbox";
+      const baseUrl = isSandbox ? "https://sandbox.sslcommerz.com" : "https://securepay.sslcommerz.com";
+      const siteUrl = (Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://onnesha-hospital.pages.dev").replace(/\/$/, "");
+      const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "https://iuhtzahuszdkdarhxobx.supabase.co").replace(/\/$/, "");
+
+      const intentReference = `INT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+
+      const form = new URLSearchParams({
+        store_id: storeId,
+        store_passwd: storePassword,
+        total_amount: payableAmount.toFixed(2),
+        currency: "BDT",
+        tran_id: intentReference,
+        success_url: `${siteUrl}/app/billing?payment_status=success&tran_id=${intentReference}`,
+        fail_url: `${siteUrl}/app/billing?payment_status=fail&tran_id=${intentReference}`,
+        cancel_url: `${siteUrl}/app/billing?payment_status=cancel&tran_id=${intentReference}`,
+        ipn_url: `${supabaseUrl}/functions/v1/payment-callback`,
+        cus_name: "Patient",
+        cus_email: "billing@onnesha-hospital.pages.dev",
+        cus_add1: "Hospital Reception",
+        cus_city: "Dhaka",
+        cus_country: "Bangladesh",
+        cus_phone: "01700000000",
+        shipping_method: "NO",
+        product_name: `Invoice #${invoice.invoice_number}`,
+        product_category: "Healthcare",
+        product_profile: "general",
+      });
+
+      const sslRes = await fetch(`${baseUrl}/gwprocess/v4/api.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: form,
+      });
+
+      const sslData = await sslRes.json();
+
+      if (sslData.status === "SUCCESS" && sslData.GatewayPageURL) {
+        const { data: newIntent, error: insertError } = await supabaseClient
+          .from("payment_intents")
+          .insert({
+            organization_id: organizationId,
+            intent_reference: intentReference,
+            invoice_id: invoiceId,
+            patient_id: invoice.patient_id,
+            payable_amount: payableAmount,
+            currency: "BDT",
+            provider: "SSLCOMMERZ",
+            status: "PENDING",
+            idempotency_key: idempotencyKey,
+            provider_session_id: sslData.sessionkey || null,
+            checkout_url: sslData.GatewayPageURL,
+            created_by: user.id,
+          })
+          .select("id")
+          .single();
+
+        if (insertError) {
+          return new Response(
+            JSON.stringify({ success: false, error: "Failed to persist payment intent in ledger." }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            paymentIntentId: newIntent.id,
+            intentReference,
+            checkoutUrl: sslData.GatewayPageURL,
+            payableAmount,
+            currency: "BDT",
+            provider: "SSLCOMMERZ",
+            status: "PENDING",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } else {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            status: "GATEWAY_ERROR",
+            error: sslData.failedreason || "SSLCommerz payment gateway initialization failed.",
+          }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // 7. Production Safety Invariant: Real gateway transactions are intentionally deferred.
     // Fake simulated checkout URLs are strictly prohibited. The system fails closed.
     return new Response(
       JSON.stringify({
