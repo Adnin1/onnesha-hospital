@@ -112,6 +112,12 @@ jobs:
       OHMS_TEST_SERVICE_ROLE_KEY: ${{ secrets.OHMS_TEST_SECRET_KEY || secrets.OHMS_TEST_SERVICE_ROLE_KEY }}
       OHMS_TEST_PUBLISHABLE_KEY: ${{ secrets.OHMS_TEST_PUBLISHABLE_KEY || secrets.OHMS_TEST_ANON_KEY }}
     steps:
+      - name: Fail-Closed Check for Required Staging Secrets
+        if: env.OHMS_TEST_SUPABASE_URL == '' || env.OHMS_TEST_SERVICE_ROLE_KEY == ''
+        run: |
+          echo "::error title=Staging Gate Blocked::OHMS_TEST_SUPABASE_URL and OHMS_TEST_SERVICE_ROLE_KEY are required for staging security certification. Fail-closed gate triggered. Production deployment is strictly BLOCKED until real isolated staging credentials are configured in GitHub secrets."
+          exit 1
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -124,15 +130,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Execute Dedicated Security Certification Gate
-        run: |
-          if [ -n "$OHMS_TEST_SUPABASE_URL" ] && [ -n "$OHMS_TEST_SERVICE_ROLE_KEY" ]; then
-            echo "Remote staging secrets detected. Executing live cross-tenant isolation suite..."
-            RUN_LIVE_SUPABASE_TESTS="true" node --test tests/live/authenticated-cross-tenant.live.test.mjs
-          else
-            echo "Staging secrets not configured in repository settings. Executing comprehensive multi-tenant and RLS security certification suite..."
-            node --test tests/security.test.mjs tests/integration/multi-tenant-rbac.test.mjs
-          fi
+      - name: Execute Authenticated Cross-Tenant Live Suite
+        env:
+          RUN_LIVE_SUPABASE_TESTS: "true"
+        run: node --test tests/live/authenticated-cross-tenant.live.test.mjs
 
   deploy-production:
     name: Deploy to Cloudflare Pages (Production Gate)

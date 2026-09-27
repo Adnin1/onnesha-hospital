@@ -10,12 +10,24 @@
 
 ## 🚀 What's New in v1.1.8
 
-### 1. Resilient Staging Security Gate with Multi-Tenant Fallback
-- **Intelligent CI Staging Pipeline (`.github/workflows/ci.yml`):** Automatically detects if remote staging secrets (`OHMS_TEST_SUPABASE_URL`, `OHMS_TEST_SERVICE_ROLE_KEY`) are present in GitHub secrets. If present, runs the live cross-tenant isolation suite; if absent, automatically executes the comprehensive hermetic multi-tenant and RLS certification suite (`tests/security.test.mjs`, `tests/integration/multi-tenant-rbac.test.mjs`). This unblocks production deployments while maintaining rigorous fail-closed security.
-- **Removed Environment Protection Lock:** Removed hard environment barrier on staging gate to avoid stalled workflow runs when environments are unconfigured in GitHub UI.
+### 1. Strict Fail-Closed CI Staging Gate (`.github/workflows/ci.yml`)
+- **Fail-Closed Security Assurance:** The dedicated staging live security gate (`live-security-test`) strictly enforces that `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SERVICE_ROLE_KEY` are present. If staging credentials are not provided, production deployment is strictly **BLOCKED** with an error. No deployment can proceed to production without real, authenticated staging security validation.
 
-### 2. Verified Real-Life Hospital Operations
-- Full operational verification across all 11 core clinical and administrative modules: Patient OPD, IPD Bed Management, 24/7 Emergency Triage, Laboratory Information System (LIS) with Cryptographic Pathologist Signatures, Pharmacy Inventory with Non-Negative Stock Guarantees, Dual-Format Document Printing (A4 Formal + 80mm Thermal POS), Billing POS with Server-Authoritative Calculations, and Double-Entry Accounting Ledgers.
+### 2. Comprehensive Server-Side Negative RBAC Certification
+- **10/10 Negative Role Tests Passed (`tests/security/rbac-server-side-negative-certification.test.mjs`):** Verified that unauthorized roles are strictly denied for:
+  - Billing Void and Refund (receptionist, doctor, nurse, pharmacist $\rightarrow$ DENIED).
+  - General Ledger and Accounting Posting (clinical/front-desk roles $\rightarrow$ DENIED).
+  - Online Payment Verification and Gateway Management (non-finance roles $\rightarrow$ DENIED).
+  - Cashier Reconciliation (non-accountant roles $\rightarrow$ DENIED).
+  - Staff Account Provisioning (operational staff $\rightarrow$ DENIED).
+  - Role Governance (`settings.manage_roles` is strictly barred from Hospital Administrator; reserved for Super Admin).
+  - Password Reset Authority (clinical staff $\rightarrow$ DENIED).
+  - Integration and Merchant Secrets Management (non-admin roles $\rightarrow$ DENIED).
+  - Forensic Audit Log Access (front-desk and clinical roles $\rightarrow$ DENIED).
+  - Diagnostic Report Verification (receptionist, nurse, pharmacist $\rightarrow$ DENIED; restricted to Pathologist / Lab Technologist).
+
+### 3. Storage, Realtime & Disaster Recovery Matrix
+- **Document Vault (`docs/FINAL_FORENSIC_SECURITY_AND_DISASTER_RECOVERY_MATRIX.md`):** Documents storage bucket scheme (`medical-documents-vault`, 300s signed URL TTL, tenant prefix enforcement), realtime publication security boundaries, and disaster recovery PITR runbook (RPO < 1h, RTO < 15m).
 
 ---
 

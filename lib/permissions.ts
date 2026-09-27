@@ -1,4 +1,4 @@
-import { RoleType } from "@/types";
+import type { RoleType } from "../types/index";
 
 export type ExtendedRoleType =
   | RoleType
