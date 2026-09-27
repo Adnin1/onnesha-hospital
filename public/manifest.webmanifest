@@ -1,0 +1,68 @@
+{
+  "id": "/",
+  "name": "Onnesha Hospital & Diagnostic Complex",
+  "short_name": "Onnesha HMS",
+  "description": "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক কমপ্লেক্স — Unified Hospital Management System, Online Appointment, Patient Care & Diagnostic Services",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#0284c7",
+  "categories": ["medical", "health", "business"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48 32x32 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Hospital Staff ERP Portal",
+      "short_name": "Staff ERP",
+      "description": "Log in to the hospital management and clinical ERP system",
+      "url": "/login",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Book Doctor Appointment",
+      "short_name": "Appointment",
+      "description": "Book a doctor appointment online",
+      "url": "/appointment",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Doctor Directory",
+      "short_name": "Doctors",
+      "description": "Browse hospital specialist doctor directory",
+      "url": "/doctors",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Live Token Status",
+      "short_name": "Token Queue",
+      "description": "Check live outpatient queue token number",
+      "url": "/check-token",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

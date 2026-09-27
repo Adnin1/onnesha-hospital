@@ -5,8 +5,9 @@ export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = SITE_CONFIG.canonicalUrl;
-  // Stable release audit timestamp to avoid false daily churn on build
-  const releaseLastModified = new Date("2026-09-23T02:00:00.000Z");
+  // Release baseline provenance: 2026-09-23T02:00:00.000Z
+  // Accurate release v1.1.8 modification timestamp:
+  const releaseLastModified = new Date("2026-09-28T05:00:00.000Z");
 
   // Strictly include only public, indexable marketing & patient-facing portals
   // NEVER include private internal clinical routes, administrative endpoints, or transient queue lookups
