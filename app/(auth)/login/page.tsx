@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Lock, Mail, ArrowRight, ShieldCheck } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
-import { mapSafeAuthError } from "@/lib/auth/safe-errors";
+import { mapSafeAuthError, sanitizeRedirectPath } from "@/lib/auth/safe-errors";
 import { createBrowserClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/app/dashboard";
+  const rawRedirect = searchParams.get("redirectTo");
+  const redirectTo = sanitizeRedirectPath(rawRedirect, "/app/dashboard");
   const urlError = searchParams.get("error");
 
   // Initial fields MUST be blank — zero pre-filled demo emails or passwords

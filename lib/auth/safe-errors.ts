@@ -20,3 +20,23 @@ export function mapSafeAuthError(rawMessage: string): string {
 
   return "অ্যালার্ট: লগইন সম্পন্ন করা সম্ভব হয়নি। আপনার ইমেইল ও পাসওয়ার্ড চেক করুন।";
 }
+
+/**
+ * Strict internal URL sanitizer to prevent open redirect vulnerabilities (CWE-601).
+ * Rejects absolute URLs, external protocol prefixes, double slashes, and backslashes.
+ */
+export function sanitizeRedirectPath(path: string | null | undefined, fallback: string = "/app/dashboard"): string {
+  if (!path) return fallback;
+  const trimmed = path.trim();
+  if (
+    !trimmed.startsWith("/") ||
+    trimmed.startsWith("//") ||
+    trimmed.includes("\\") ||
+    trimmed.includes("://") ||
+    trimmed.includes("%2f%2f") ||
+    trimmed.includes("%5c")
+  ) {
+    return fallback;
+  }
+  return trimmed;
+}

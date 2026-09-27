@@ -6,11 +6,13 @@ import Link from "next/link";
 import { ShieldCheck, KeyRound, ArrowRight, RefreshCw, LogOut } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { createBrowserClient } from "@/lib/supabase/client";
+import { sanitizeRedirectPath } from "@/lib/auth/safe-errors";
 
 export default function MfaChallengePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") || "/app/dashboard";
+  const rawRedirect = searchParams.get("redirectTo");
+  const redirectTo = sanitizeRedirectPath(rawRedirect, "/app/dashboard");
 
   const [otpCode, setOtpCode] = useState("");
   const [factorId, setFactorId] = useState<string | null>(null);
