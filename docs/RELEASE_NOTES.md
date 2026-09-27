@@ -29,6 +29,11 @@
 ### 3. Storage, Realtime & Disaster Recovery Matrix
 - **Document Vault (`docs/FINAL_FORENSIC_SECURITY_AND_DISASTER_RECOVERY_MATRIX.md`):** Documents storage bucket scheme (`medical-documents-vault`, 300s signed URL TTL, tenant prefix enforcement), realtime publication security boundaries, and disaster recovery PITR runbook (RPO < 1h, RTO < 15m).
 
+### 4. Website Metadata, Dual Manifest & CSP Hardening
+- **Dual Manifest Support:** Added `public/manifest.webmanifest` alongside `public/manifest.json` ensuring both Next.js metadata and PWA browser requests resolve with HTTP 200.
+- **Sitemap Release Freshness:** Updated `app/sitemap.ts` to output exact release timestamp (`2026-09-28T05:00:00.000Z`) across all 10 public marketing & patient-facing URLs.
+- **Content-Security-Policy Tightening:** Eliminated overly broad wildcards in `public/_headers` (such as `https://*.pages.dev` and open `https:` for images), locking down to exact canonical hosts and whitelisted Supabase/SSLCommerz endpoints.
+
 ---
 
 ## 🚀 What's New in v1.1.7

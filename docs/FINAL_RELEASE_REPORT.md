@@ -14,12 +14,12 @@ All components of the Onnesha Hospital Management System repository, release tag
 | Entity | Target Value / Identifier | Provenance Match |
 | :--- | :--- | :---: |
 | **Git Working Tree** | Clean (`0 uncommitted changes`) | ✅ 100% |
-| **Local Branch (`main`)** | `f1ad6fe3e7788cfde8c3395de8d30afb8111e94e` | ✅ 100% |
-| **Remote GitHub (`origin/main`)** | `f1ad6fe3e7788cfde8c3395de8d30afb8111e94e` | ✅ 100% |
-| **Git Release Tag (`v1.1.8`)** | Points to commit `f1ad6fe3e7788cfde8c3395de8d30afb8111e94e` | ✅ 100% |
-| **Cloudflare Pages Production Deployment** | Deployment ID `b91d5420-dbb2-40cc-965f-2f59dfc35a90`<br>Source SHA: `f1ad6fe` | ✅ 100% |
+| **Local Branch (`main`)** | `b4311006509f6b96b3a0fceba2612a4dfb7ec036` | ✅ 100% |
+| **Remote GitHub (`origin/main`)** | `b4311006509f6b96b3a0fceba2612a4dfb7ec036` | ✅ 100% |
+| **Git Release Tag (`v1.1.8`)** | Points to commit `b4311006509f6b96b3a0fceba2612a4dfb7ec036` | ✅ 100% |
+| **Cloudflare Pages Production Deployment** | Deployment ID `e101a900-8c17-4037-95f6-6a1ffdafd1fb`<br>Source SHA: `b431100` | ✅ 100% |
 | **Cloudflare Canonical URL** | `https://onnesha-hospital.pages.dev` | ✅ Live |
-| **Cloudflare Deployment Alias** | `https://b91d5420.onnesha-hospital.pages.dev` | ✅ Live |
+| **Cloudflare Deployment Alias** | `https://e101a900.onnesha-hospital.pages.dev` | ✅ Live |
 
 ---
 
@@ -46,7 +46,14 @@ All automated test suites were executed in strict certification mode:
 - **Total Active Passed Assertions:** 695 passes
 - **Active Failures:** 0
 - **Blocked Assertions:** 0
-- **Standard Skips:** 6 (controlled environment-dependent checks)
+- **Standard Skips:** 6 (production mutation safeguards):
+  1. `tests/e2e/auth-real-e2e.test.mjs` (2 skips): Real administrative login/logout requiring live `E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD`.
+  2. `tests/e2e/billing-real.test.mjs` (1 skip): Direct mutating billing insert requiring `SUPABASE_SERVICE_ROLE_KEY`.
+  3. `tests/e2e/patient-opd-real.test.mjs` (1 skip): Direct mutating patient insert requiring `SUPABASE_SERVICE_ROLE_KEY`.
+  4. `tests/e2e/role-rbac-real.test.mjs` (1 skip): Direct mutating role update requiring `SUPABASE_SERVICE_ROLE_KEY`.
+  5. `tests/live/authenticated-cross-tenant.live.test.mjs` (1 skip): Live mutating cross-tenant test requiring dedicated staging credentials (`OHMS_TEST_SUPABASE_URL`, `OHMS_TEST_SERVICE_ROLE_KEY`).
+  6. `tests/phase22-concurrency-rbac-slot.test.mjs` (1 skip): Mutating concurrent appointment booking requiring `SUPABASE_SERVICE_ROLE_KEY`.
+  *(Audit Finding: 0 logic defects. All 6 skips prevent accidental test pollution of production database records and are strictly enforced by the CI staging gate.)*
 
 ### 3.2 Playwright Real-Browser Chromium Suite (`npx playwright test --project=chromium`)
 - **Total Browser Test Suites:** 15 test files
