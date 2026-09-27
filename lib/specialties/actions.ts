@@ -153,9 +153,10 @@ export async function createDentalExaminationAction(params: {
 
     const supabase = createClient();
     const session = await getCurrentUserSession();
-    const orgId = session.organizationId || "00000000-0000-0000-0000-000000000001";
+    if (!session.organizationId) return { success: false, error: "401 Unauthorized" };
+    const orgId = session.organizationId;
 
-    const examCode = `DENT-${Date.now().toString().slice(-6)}`;
+    const examCode = `DENT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
     const { data, error } = await supabase
       .from("dental_examinations")
@@ -243,9 +244,10 @@ export async function createEyeExaminationAction(params: {
 
     const supabase = createClient();
     const session = await getCurrentUserSession();
-    const orgId = session.organizationId || "00000000-0000-0000-0000-000000000001";
+    if (!session.organizationId) return { success: false, error: "401 Unauthorized" };
+    const orgId = session.organizationId;
 
-    const examCode = `EYE-${Date.now().toString().slice(-6)}`;
+    const examCode = `EYE-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
     const { data, error } = await supabase
       .from("eye_examinations")
@@ -337,9 +339,10 @@ export async function createPhysiotherapySessionAction(params: {
 
     const supabase = createClient();
     const session = await getCurrentUserSession();
-    const orgId = session.organizationId || "00000000-0000-0000-0000-000000000001";
+    if (!session.organizationId) return { success: false, error: "401 Unauthorized" };
+    const orgId = session.organizationId;
 
-    const sessionCode = `PT-${Date.now().toString().slice(-6)}`;
+    const sessionCode = `PT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const sessionNum = params.session_number && params.session_number > 0 ? params.session_number : 1;
     const totalPrescribed = params.total_sessions_prescribed && params.total_sessions_prescribed >= sessionNum ? params.total_sessions_prescribed : sessionNum;
 

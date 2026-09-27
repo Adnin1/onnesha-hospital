@@ -157,5 +157,24 @@ describe("OHMS Conversation 2: Full Clinical & Hospital ERP Functional Certifica
     assert.ok(labPageContent.includes("urlParamPatientId"), "Lab page must inspect URL search param for patient pre-selection");
     assert.ok(labPageContent.includes("setIsOrderModalOpen(true)"), "Lab order modal must automatically open when patientId provided");
   });
+
+  // 13. Atomic Diagnostic Order Creation & Cryptographic Verification
+  test("13. Diagnostic action uses atomic database RPCs and cryptographic SHA-256 signatures", () => {
+    const labActionsContent = fs.readFileSync(path.join(rootDir, "lib/lab/actions.ts"), "utf8");
+    assert.ok(labActionsContent.includes("create_diagnostic_order_atomic"), "Must call atomic order creation RPC");
+    assert.ok(labActionsContent.includes("verify_diagnostic_order_atomic"), "Must call atomic verification RPC");
+    assert.ok(labActionsContent.includes("createHash(\"sha256\")"), "Must compute SHA-256 cryptographic signature");
+    assert.ok(!labActionsContent.includes("ORD-${Date.now()"), "Date.now fallback for order numbers must be eliminated");
+  });
+
+  // 14. Gender/Age-Specific Reference Intervals & Truthful Clinical Barcodes
+  test("14. Lab page dynamically calculates gender/age biological reference intervals and avoids fake barcodes", () => {
+    const labPageContent = fs.readFileSync(path.join(rootDir, "app/(hospital)/app/lab/page.tsx"), "utf8");
+    assert.ok(labPageContent.includes("getReferenceInterval"), "Must have age and gender interval selector function");
+    assert.ok(labPageContent.includes("getDiagnosticMethod"), "Must have modality-specific method mapping");
+    assert.ok(labPageContent.includes("Sample Collection Pending"), "Must state collection pending when barcode absent");
+    assert.ok(!labPageContent.includes("alert("), "Native alert must be eliminated in favor of Toast");
+  });
 });
+
 

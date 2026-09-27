@@ -64,6 +64,9 @@ export interface DiagnosticOrderRecord {
   visit_id?: string;
   referred_by_doctor_id?: string;
   status: "ORDERED" | "PAID" | "SAMPLE_COLLECTED" | "PROCESSING" | "VERIFIED" | "DELIVERED" | "CANCELLED";
+  clinical_notes?: string;
+  verified_by_profile_id?: string;
+  verified_at?: string;
   created_at: string;
   updated_at: string;
   barcode?: string;
@@ -74,8 +77,14 @@ export interface DiagnosticOrderRecord {
     full_name: string;
     gender: string;
     phone: string;
+    age?: number;
+    date_of_birth?: string;
   };
   doctor?: {
+    id: string;
+    full_name: string;
+  };
+  verified_by_doctor?: {
     id: string;
     full_name: string;
   };

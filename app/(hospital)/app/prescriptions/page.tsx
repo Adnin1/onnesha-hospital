@@ -15,6 +15,7 @@ import { getPrescriptionsAction, createPrescriptionAction } from "@/lib/prescrip
 import { getDoctorsAction } from "@/lib/appointments/actions";
 import { searchPatientsAction } from "@/lib/patient/actions";
 import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
+import { Toast } from "@/components/ui/Toast";
 
 export default function PrescriptionsPage() {
   const [prescriptions, setPrescriptions] = useState<PrescriptionRecord[]>([]);
@@ -24,6 +25,10 @@ export default function PrescriptionsPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message, type });
+  };
 
   // New Rx form state
   const [doctorId, setDoctorId] = useState("");
@@ -59,14 +64,25 @@ export default function PrescriptionsPage() {
           if (docRes.data.doctors.length > 0) setDoctorId(docRes.data.doctors[0].id);
         }
         if (patRes.success && patRes.data?.patients) {
-          setPatients(patRes.data.patients);
+          let patList = patRes.data.patients;
           const urlParamPatientId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("patientId") : null;
-          if (urlParamPatientId && patRes.data.patients.some((p) => p.id === urlParamPatientId)) {
-            setPatientId(urlParamPatientId);
-            setIsModalOpen(true);
-          } else if (patRes.data.patients.length > 0) {
-            setPatientId(patRes.data.patients[0].id);
+          if (urlParamPatientId) {
+            let matched = patList.find((p) => p.id === urlParamPatientId);
+            if (!matched) {
+              const singlePatRes = await searchPatientsAction({ query: urlParamPatientId });
+              if (singlePatRes.success && singlePatRes.data?.patients && singlePatRes.data.patients.length > 0) {
+                matched = singlePatRes.data.patients[0];
+                patList = [matched, ...patList];
+              }
+            }
+            if (matched) {
+              setPatientId(matched.id);
+              setIsModalOpen(true);
+            }
+          } else if (patList.length > 0) {
+            setPatientId(patList[0].id);
           }
+          setPatients(patList);
         }
         setLoading(false);
       }
@@ -90,7 +106,7 @@ export default function PrescriptionsPage() {
   const handleCreatePrescription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!doctorId || !patientId || !diagnosis.trim()) {
-      alert("Please fill in doctor, patient, and clinical diagnosis.");
+      showToast("Please fill in doctor, patient, and clinical diagnosis.", "error");
       return;
     }
 
@@ -104,7 +120,7 @@ export default function PrescriptionsPage() {
       }));
 
     if (validItems.length === 0) {
-      alert("Please enter at least one medicine.");
+      showToast("Please enter at least one medicine.", "error");
       return;
     }
 
@@ -123,6 +139,7 @@ export default function PrescriptionsPage() {
     setSubmitting(false);
 
     if (res.success && res.data?.prescription) {
+      showToast("Prescription generated successfully.", "success");
       const newRx = res.data.prescription;
       setPrescriptions([newRx, ...prescriptions]);
       setSelectedRx(newRx);
@@ -134,7 +151,7 @@ export default function PrescriptionsPage() {
       setFollowupDate("");
       setMeds([{ name: "", dosage: "1+0+1", duration: "7 days", instruction: "After meal" }]);
     } else {
-      alert(res.error || "Failed to create prescription");
+      showToast(res.error || "Failed to create prescription", "error");
     }
   };
 
@@ -525,6 +542,15 @@ export default function PrescriptionsPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Production Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );
