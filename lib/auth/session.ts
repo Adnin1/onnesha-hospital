@@ -14,10 +14,25 @@ export interface UserSessionState {
   mfaFactorsCount: number;
 }
 
+const EMPTY_SESSION: UserSessionState = {
+  userId: null,
+  email: null,
+  profile: null,
+  organizationId: null,
+  roles: [],
+  permissions: [],
+  aalLevel: null,
+  nextAalLevel: null,
+  mfaFactorsCount: 0,
+};
+
 /**
- * Universal helper to retrieve the authenticated user session, database profile,
- * organization roles, permissions, and MFA assurance level (AAL1 vs AAL2).
- * Universal across Client Components, Server Components, and Server Actions.
+ * Retrieve the authenticated user's profile, active-organization roles,
+ * permissions and MFA assurance level.
+ *
+ * Authorization is always scoped to the user's active organization. A role
+ * granted in another organization must never elevate the current session.
+ * If no active organization can be resolved, role/permission access fails closed.
  */
 export async function getCurrentUserSession(): Promise<UserSessionState> {
   try {
@@ -29,63 +44,82 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return {
-        userId: null,
-        email: null,
-        profile: null,
-        organizationId: null,
-        roles: [],
-        permissions: [],
-        aalLevel: null,
-        nextAalLevel: null,
-        mfaFactorsCount: 0,
-      };
+      return EMPTY_SESSION;
     }
 
-    // Retrieve MFA Assurance Level
     let aalLevel: "aal1" | "aal2" | null = "aal1";
     let nextAalLevel: "aal1" | "aal2" | null = "aal1";
     let mfaFactorsCount = 0;
 
     try {
-      const { data: aalData, error: aalErr } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      const {
+        data: aalData,
+        error: aalErr,
+      } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
       if (aalData && !aalErr) {
         aalLevel = aalData.currentLevel as "aal1" | "aal2";
         nextAalLevel = aalData.nextLevel as "aal1" | "aal2";
       } else {
         aalLevel = null;
+        nextAalLevel = null;
       }
 
-      const { data: factorData, error: factorErr } = await supabase.auth.mfa.listFactors();
+      const {
+        data: factorData,
+        error: factorErr,
+      } = await supabase.auth.mfa.listFactors();
+
       if (factorData && factorData.all && !factorErr) {
         mfaFactorsCount = factorData.all.filter((f) => f.status === "verified").length;
-      } else {
-        mfaFactorsCount = 0;
       }
     } catch {
       aalLevel = null;
+      nextAalLevel = null;
       mfaFactorsCount = 0;
     }
 
-    // Retrieve profile from database
     const { data: profile } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    // Retrieve user roles for active organization
-    const { data: userRoleRecords } = await supabase
-      .from("user_roles")
-      .select("role_id, organization_id, roles(name)")
-      .eq("user_id", user.id);
+    if (!profile) {
+      return {
+        userId: user.id,
+        email: user.email || null,
+        profile: null,
+        organizationId: null,
+        roles: [],
+        permissions: [],
+        aalLevel,
+        nextAalLevel,
+        mfaFactorsCount,
+      };
+    }
 
-    const roles: RoleType[] = [];
-    let organizationId = profile?.active_organization_id || null;
+    // Active organization is authoritative for authorization scope.
+    const organizationId =
+      profile.active_organization_id || profile.organization_id || null;
+
+    if (!organizationId || profile.is_active === false) {
+      return {
+        userId: user.id,
+        email: user.email || null,
+        profile,
+        organizationId: null,
+        roles: [],
+        permissions: [],
+        aalLevel,
+        nextAalLevel,
+        mfaFactorsCount,
+      };
+    }
 
     interface UserRoleRecord {
       role_id: string;
-      organization_id?: string;
+      organization_id: string;
       roles: { name: string } | null;
     }
 
@@ -93,73 +127,100 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
       permission_key: string;
     }
 
-    if (userRoleRecords && userRoleRecords.length > 0) {
-      (userRoleRecords as unknown as UserRoleRecord[]).forEach((ur) => {
-        if (ur.roles?.name) {
-          roles.push(normalizeRole(ur.roles.name) as RoleType);
-        }
-        if (!organizationId && ur.organization_id) {
-          organizationId = ur.organization_id;
-        }
-      });
+    // IMPORTANT: Only roles belonging to the active organization are loaded.
+    const { data: userRoleRecords, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("role_id, organization_id, roles(name)")
+      .eq("user_id", user.id)
+      .eq("organization_id", organizationId);
+
+    if (rolesError) {
+      // Fail closed on an authorization-data read failure.
+      return {
+        userId: user.id,
+        email: user.email || null,
+        profile,
+        organizationId,
+        roles: [],
+        permissions: [],
+        aalLevel,
+        nextAalLevel,
+        mfaFactorsCount,
+      };
     }
 
-    // Retrieve permissions
-    const roleIds = (userRoleRecords as unknown as UserRoleRecord[])?.map((r) => r.role_id) || [];
-    const permissions: string[] = [];
+    const normalizedRoles = new Set<RoleType>();
+
+    for (const record of (userRoleRecords || []) as unknown as UserRoleRecord[]) {
+      if (record.organization_id !== organizationId || !record.roles?.name) {
+        continue;
+      }
+
+      const normalized = normalizeRole(record.roles.name);
+      if (normalized) {
+        normalizedRoles.add(normalized as RoleType);
+      }
+    }
+
+    const roles = Array.from(normalizedRoles);
+    const permissions = new Set<string>();
+
+    const roleIds = (
+      (userRoleRecords || []) as unknown as UserRoleRecord[]
+    )
+      .filter((record) => record.organization_id === organizationId)
+      .map((record) => record.role_id)
+      .filter(Boolean);
 
     if (roleIds.length > 0) {
-      const { data: permRecords } = await supabase
+      const { data: permRecords, error: permError } = await supabase
         .from("role_permissions")
         .select("permission_key")
         .in("role_id", roleIds);
 
-      if (permRecords) {
-        (permRecords as unknown as RolePermissionRecord[]).forEach((p) => {
-          permissions.push(p.permission_key);
-        });
+      if (!permError && permRecords) {
+        for (const record of permRecords as unknown as RolePermissionRecord[]) {
+          if (record.permission_key) {
+            permissions.add(record.permission_key);
+          }
+        }
       }
     }
 
     return {
       userId: user.id,
       email: user.email || null,
-      profile: profile || null,
+      profile,
       organizationId,
       roles,
-      permissions,
+      permissions: Array.from(permissions),
       aalLevel,
       nextAalLevel,
       mfaFactorsCount,
     };
   } catch {
-    return {
-      userId: null,
-      email: null,
-      profile: null,
-      organizationId: null,
-      roles: [],
-      permissions: [],
-      aalLevel: null,
-      nextAalLevel: null,
-      mfaFactorsCount: 0,
-    };
+    return EMPTY_SESSION;
   }
 }
 
 /**
- * Check for specific permission.
+ * Check a permission against the active organization's authorization context.
  */
 export async function hasPermission(permissionKey: string): Promise<boolean> {
   const session = await getCurrentUserSession();
-  if (
-    session.roles.includes("super_admin") ||
-    session.roles.includes("admin") ||
-    session.roles.includes("hospital_administrator")
-  ) {
+
+  if (!session.userId || !session.organizationId || session.roles.length === 0) {
+    return false;
+  }
+
+  if (session.roles.includes("super_admin") || session.roles.includes("hospital_administrator")) {
     return true;
   }
-  return session.permissions.includes(permissionKey);
+
+  return (
+    session.permissions.includes("*") ||
+    session.permissions.includes(permissionKey)
+  );
 }
 
 /**
@@ -168,7 +229,9 @@ export async function hasPermission(permissionKey: string): Promise<boolean> {
 export async function requirePermission(permissionKey: string): Promise<void> {
   const permitted = await hasPermission(permissionKey);
   if (!permitted) {
-    throw new Error(`403 Forbidden: Missing required permission [${permissionKey}]`);
+    throw new Error(
+      `403 Forbidden: Missing required permission [${permissionKey}]`
+    );
   }
 }
 
@@ -178,19 +241,23 @@ export async function requirePermission(permissionKey: string): Promise<void> {
  * - Requires authenticated user
  * - Requires verified MFA factor count > 0
  * - Requires current AAL level === "aal2"
- * If any condition is missing or unverified, denies access immediately.
  */
 export async function requireAAL2(): Promise<void> {
   const session = await getCurrentUserSession();
+
   if (!session.userId) {
     throw new Error("401 Unauthorized: Valid authenticated user session required.");
   }
 
   if (session.mfaFactorsCount <= 0) {
-    throw new Error("403 Forbidden: MFA factor registration required for high-risk action.");
+    throw new Error(
+      "403 Forbidden: MFA factor registration required for high-risk action."
+    );
   }
 
   if (session.aalLevel !== "aal2") {
-    throw new Error("401 Unauthorized: Verified AAL2 Multi-Factor Authentication session required for high-risk action.");
+    throw new Error(
+      "401 Unauthorized: Verified AAL2 Multi-Factor Authentication session required for high-risk action."
+    );
   }
 }
