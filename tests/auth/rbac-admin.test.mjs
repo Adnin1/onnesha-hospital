@@ -74,7 +74,6 @@ describe("OHMS Database RBAC, Admin Roles & Permission Control Test Suite (10 Sc
     const content = fs.readFileSync(sessionPath, "utf8");
     assert.ok(!content.includes("password123"), "No hardcoded passwords in session helpers");
   });
-});
 
 
   test("11. AuthGuard scopes admin detection to the active organization", () => {
@@ -83,7 +82,7 @@ describe("OHMS Database RBAC, Admin Roles & Permission Control Test Suite (10 Sc
       "utf8"
     );
     assert.ok(
-      authGuard.includes(".eq("organization_id", organizationId)"),
+      authGuard.includes('.eq("organization_id", organizationId)'),
       "AuthGuard must scope user_roles to the active organization"
     );
     assert.ok(
@@ -96,11 +95,11 @@ describe("OHMS Database RBAC, Admin Roles & Permission Control Test Suite (10 Sc
     );
   });
 
-  test("12. Session authorization scopes roles and permissions to active organization", async () => {
+  test("12. Session authorization scopes roles and permissions to active organization", () => {
     const sessionPath = path.join(ROOT, "lib/auth/session.ts");
     const content = fs.readFileSync(sessionPath, "utf8");
     assert.ok(
-      content.includes(".eq("organization_id", organizationId)"),
+      content.includes('.eq("organization_id", organizationId)'),
       "Session role lookup must use active organization scope"
     );
     assert.ok(
@@ -112,3 +111,5 @@ describe("OHMS Database RBAC, Admin Roles & Permission Control Test Suite (10 Sc
       "Permission checks must fail closed without authenticated tenant scope"
     );
   });
+
+});
