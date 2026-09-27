@@ -23,20 +23,49 @@ export function mapSafeAuthError(rawMessage: string): string {
 
 /**
  * Strict internal URL sanitizer to prevent open redirect vulnerabilities (CWE-601).
- * Rejects absolute URLs, external protocol prefixes, double slashes, and backslashes.
+ * Rejects absolute URLs, external protocol prefixes, double slashes, backslashes,
+ * URL-encoded evasion vectors (%2f%2f, %5c), control characters, and non-http schemes.
  */
 export function sanitizeRedirectPath(path: string | null | undefined, fallback: string = "/app/dashboard"): string {
-  if (!path) return fallback;
+  if (!path || typeof path !== "string") return fallback;
   const trimmed = path.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.includes("\\")) {
+    return fallback;
+  }
+  // Check for ASCII control characters and DEL
+  if (/[\x00-\x1F\x7F]/.test(trimmed)) {
+    return fallback;
+  }
+  // Check for external protocol specifiers
+  if (trimmed.includes("://")) {
+    return fallback;
+  }
+
+  // Iteratively decode to catch nested percent-encoding (up to 3 levels)
+  let decoded = trimmed;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const nextDecoded = decodeURIComponent(decoded);
+      if (nextDecoded === decoded) break;
+      decoded = nextDecoded;
+    } catch {
+      return fallback;
+    }
+  }
+
+  const decodedLower = decoded.toLowerCase();
   if (
-    !trimmed.startsWith("/") ||
-    trimmed.startsWith("//") ||
-    trimmed.includes("\\") ||
-    trimmed.includes("://") ||
-    trimmed.includes("%2f%2f") ||
-    trimmed.includes("%5c")
+    !decoded.startsWith("/") ||
+    decoded.startsWith("//") ||
+    decoded.includes("\\") ||
+    decodedLower.includes("://") ||
+    decodedLower.includes("javascript:") ||
+    decodedLower.includes("data:") ||
+    decodedLower.includes("vbscript:") ||
+    /[\x00-\x1F\x7F]/.test(decoded)
   ) {
     return fallback;
   }
+
   return trimmed;
 }
