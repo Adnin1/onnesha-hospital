@@ -44,8 +44,7 @@ BEGIN
     )
     ON CONFLICT (id) DO UPDATE SET
         is_active = TRUE,
-        status = 'ACTIVE',
-        updated_at = v_now;
+        status = 'ACTIVE';
 
     -- 2. Ensure Super Admin Role Exists
     SELECT id INTO v_role_id

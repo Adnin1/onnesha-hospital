@@ -73,6 +73,7 @@ BEGIN
 END;
 $$;
 
--- Revoke from public, grant strictly to authenticated users
-REVOKE ALL ON FUNCTION public.complete_current_user_password_change() FROM PUBLIC;
+-- Revoke from public and anon, grant strictly to authenticated users
+REVOKE ALL ON FUNCTION public.complete_current_user_password_change() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.complete_current_user_password_change() TO authenticated;
+
