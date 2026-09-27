@@ -98,6 +98,10 @@ export default function PrivacyPage() {
                 <p className="text-[11px] text-slate-600">Withdraw consent for optional non-essential communications while ensuring active clinical treatment continuity.</p>
               </div>
               <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100">
+                <h3 className="font-semibold text-slate-900 text-xs mb-1">System-Wide Propagation (Section 14)</h3>
+                <p className="text-[11px] text-slate-600">Propagate patient record corrections and consent updates across all clinical, laboratory, and billing modules.</p>
+              </div>
+              <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100">
                 <h3 className="font-semibold text-slate-900 text-xs mb-1">Security Obligations (Section 17)</h3>
                 <p className="text-[11px] text-slate-600">Technical and operational measures applied to prevent unauthorized access, tampering, or loss of medical records.</p>
               </div>

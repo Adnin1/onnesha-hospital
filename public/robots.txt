@@ -18,21 +18,46 @@ Disallow: /login
 Disallow: /mfa
 Disallow: /forgot-password
 Disallow: /reset-password
+Disallow: /auth/
 
-# AI Search & Indexing Crawlers
+# AI Search & Indexing Crawlers (Must explicitly block private and administrative routes)
 User-agent: GPTBot
+Disallow: /app/
+Disallow: /login
+Disallow: /mfa
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /auth/
 Allow: /
 Allow: /llms.txt
 
 User-agent: Google-Extended
+Disallow: /app/
+Disallow: /login
+Disallow: /mfa
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /auth/
 Allow: /
 Allow: /llms.txt
 
 User-agent: PerplexityBot
+Disallow: /app/
+Disallow: /login
+Disallow: /mfa
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /auth/
 Allow: /
 Allow: /llms.txt
 
 User-agent: ClaudeBot
+Disallow: /app/
+Disallow: /login
+Disallow: /mfa
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /auth/
 Allow: /
 Allow: /llms.txt
 

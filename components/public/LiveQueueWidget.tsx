@@ -5,7 +5,7 @@
  */
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, AlertTriangle } from "lucide-react";
 import { getLiveWaitingQueueAction } from "@/lib/public/actions";
@@ -24,38 +24,41 @@ export function LiveQueueWidget() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("loading");
 
-  const fetchQueue = useCallback(async () => {
-    if (typeof document !== "undefined" && document.hidden) return;
-
-    try {
-      const res = await getLiveWaitingQueueAction();
-      if (res.success) {
-        setQueue(res.queue ?? []);
-        setLoadState(res.queue && res.queue.length > 0 ? "success" : "empty");
-      } else {
-        setLoadState("error");
-      }
-    } catch {
-      setLoadState("error");
-    }
-  }, []);
-
   useEffect(() => {
     let mounted = true;
     let inFlight = false;
 
-    const run = async () => {
+    const runFetch = async () => {
       if (!mounted || inFlight) return;
+      if (typeof document !== "undefined" && document.hidden) return;
+
       inFlight = true;
-      await fetchQueue();
-      inFlight = false;
+      try {
+        const res = await getLiveWaitingQueueAction();
+        if (!mounted) return;
+
+        if (res.success) {
+          setQueue(res.queue ?? []);
+          setLoadState(res.queue && res.queue.length > 0 ? "success" : "empty");
+        } else {
+          setLoadState("error");
+        }
+      } catch {
+        if (mounted) {
+          setLoadState("error");
+        }
+      } finally {
+        inFlight = false;
+      }
     };
 
-    void run();
-    const timer = window.setInterval(() => void run(), 15000);
+    void runFetch();
+    const timer = window.setInterval(() => void runFetch(), 15000);
 
     const handleVisibility = () => {
-      if (!document.hidden) void run();
+      if (typeof document !== "undefined" && !document.hidden) {
+        void runFetch();
+      }
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
@@ -64,7 +67,7 @@ export function LiveQueueWidget() {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [fetchQueue]);
+  }, []);
 
   return (
     <div className="bg-white rounded-2xl shadow-2xl p-6 text-slate-900 border border-slate-100">

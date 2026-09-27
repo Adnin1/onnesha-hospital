@@ -9,7 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const releaseLastModified = new Date("2026-09-23T02:00:00.000Z");
 
   // Strictly include only public, indexable marketing & patient-facing portals
-  // NEVER include private internal clinical routes or administrative login endpoints
+  // NEVER include private internal clinical routes, administrative endpoints, or transient queue lookups
   const publicRoutes = [
     "",
     "/about",
