@@ -132,5 +132,20 @@ describe("OHMS Priority-1 Admin Authentication Test Suite (10 Scenarios)", async
     assert.ok(!content.includes("const [hasValidSession, setHasValidSession] = useState(isForced)"), "forced query parameter must not establish a session");
     assert.ok(!content.includes('from("profiles")'), "Client must not use a direct profile-table fallback to mark completion");
   });
+
+  test("16. Password completion RPC migration enforces SECURITY DEFINER, search_path='', and authenticated grant", () => {
+    const migrationPath = path.join(
+      ROOT,
+      "supabase/migrations/20260927050000_complete_password_change_rpc.sql"
+    );
+    assert.ok(fs.existsSync(migrationPath), "Password completion migration must exist");
+    const content = fs.readFileSync(migrationPath, "utf8");
+    assert.ok(content.includes("CREATE OR REPLACE FUNCTION public.complete_current_user_password_change()"), "Function definition required");
+    assert.ok(content.includes("SECURITY DEFINER"), "Must be SECURITY DEFINER");
+    assert.ok(content.includes("SET search_path = ''"), "Must set search_path = ''");
+    assert.ok(content.includes("auth.uid()"), "Must bind caller to auth.uid()");
+    assert.ok(content.includes("REVOKE ALL ON FUNCTION public.complete_current_user_password_change() FROM PUBLIC"), "Must revoke from PUBLIC");
+    assert.ok(content.includes("GRANT EXECUTE ON FUNCTION public.complete_current_user_password_change() TO authenticated"), "Must grant to authenticated");
+  });
 });
 
