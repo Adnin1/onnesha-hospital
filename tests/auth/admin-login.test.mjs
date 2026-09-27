@@ -92,4 +92,23 @@ describe("OHMS Priority-1 Admin Authentication Test Suite (10 Scenarios)", async
     const content = fs.readFileSync(proxyPath, "utf8");
     assert.ok(content.includes('path.startsWith("/app")'), "Protection scoped strictly to /app prefix");
   });
+
+  test("12. Super Admin bootstrap migration exists and targets adnansadatmahin2@gmail.com with phone 01629286887", () => {
+    const migrationPath = path.join(ROOT, "supabase/migrations/20260927030000_bootstrap_super_admin_adnansadatmahin.sql");
+    assert.ok(fs.existsSync(migrationPath), "Super Admin bootstrap migration must exist");
+    const content = fs.readFileSync(migrationPath, "utf8");
+    assert.ok(content.includes("adnansadatmahin2@gmail.com"), "Target email must be present");
+    assert.ok(content.includes("01629286887"), "Target phone must be present");
+    assert.ok(content.includes("bootstrap_super_admin_account"), "bootstrap RPC must be declared");
+    assert.ok(content.includes("super_admin"), "super_admin role must be assigned");
+  });
+
+  test("13. Recovery callback supports PKCE, OTP token hash, and hash fragment flows", () => {
+    const callbackPath = path.join(ROOT, "app/auth/confirm/page.tsx");
+    const content = fs.readFileSync(callbackPath, "utf8");
+    assert.ok(content.includes("exchangeCodeForSession"), "PKCE exchange must be supported");
+    assert.ok(content.includes("verifyOtp"), "OTP token hash must be supported");
+    assert.ok(content.includes("setSession"), "Implicit hash session must be supported");
+  });
 });
+

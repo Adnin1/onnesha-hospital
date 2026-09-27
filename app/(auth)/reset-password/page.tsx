@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Lock, ArrowRight, CheckCircle2, ShieldAlert, RefreshCw } from "lucide-react";
@@ -8,7 +8,7 @@ import { HOSPITAL_METADATA } from "@/config/hospital";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { mapSafeAuthError } from "@/lib/auth/safe-errors";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isForced = searchParams.get("forced") === "true";
@@ -242,3 +242,18 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-sky-400" />
+        </div>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+

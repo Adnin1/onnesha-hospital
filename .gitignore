@@ -50,4 +50,9 @@ src-tauri/gen/
 # desktop installer binaries (release assets, not git tracked)
 public/downloads/desktop/*.msi
 public/downloads/desktop/*.exe
+
+# local assistant configs
+.cline/
+.clinerules
+
 public/downloads/desktop/*.zip
