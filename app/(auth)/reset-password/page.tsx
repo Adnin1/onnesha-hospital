@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Lock, ArrowRight, CheckCircle2, ShieldAlert, RefreshCw } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
-import { createBrowserClient } from "@/lib/supabase/client";
+import { createRecoveryBrowserClient } from "@/lib/supabase/client";
 import { mapSafeAuthError } from "@/lib/auth/safe-errors";
 
 function ResetPasswordContent() {
@@ -18,31 +18,34 @@ function ResetPasswordContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [checkingSession, setCheckingSession] = useState(!isForced);
-  const [hasValidSession, setHasValidSession] = useState(isForced);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [hasValidSession, setHasValidSession] = useState(false);
 
   useEffect(() => {
-    if (isForced) {
-      return;
-    }
-
-    const supabase = createBrowserClient();
+    const supabase = createRecoveryBrowserClient();
     let isMounted = true;
 
     async function checkSession() {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (isMounted) {
-        if (session) {
-          setHasValidSession(true);
-        } else {
-          setErrorMessage(
-            "কোনো সক্রিয় রিকভারি সেশন পাওয়া যায়নি। অনুগ্রহ করে ইমেইলের রিকভারি লিংক দিয়ে প্রবেশ করুন অথবা পুনরায় লিংক রিকোয়েস্ট করুন।"
-          );
-        }
-        setCheckingSession(false);
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (!isMounted) return;
+
+      if (error || !user) {
+        setHasValidSession(false);
+        setErrorMessage(
+          isForced
+            ? "আপনার account session পাওয়া যায়নি। আগে বৈধভাবে লগইন করে temporary password পরিবর্তন করুন।"
+            : "কোনো সক্রিয় password-recovery session পাওয়া যায়নি। ইমেইলের নতুন রিকভারি লিংক ব্যবহার করুন।"
+        );
+      } else {
+        setHasValidSession(true);
+        setErrorMessage(null);
       }
+
+      setCheckingSession(false);
     }
 
     void checkSession();
@@ -50,12 +53,16 @@ function ResetPasswordContent() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
       if (event === "PASSWORD_RECOVERY" || session) {
-        if (isMounted) {
-          setHasValidSession(true);
-          setCheckingSession(false);
-          setErrorMessage(null);
-        }
+        setHasValidSession(true);
+        setCheckingSession(false);
+        setErrorMessage(null);
+      }
+
+      if (event === "SIGNED_OUT") {
+        setHasValidSession(false);
       }
     });
 
@@ -67,6 +74,11 @@ function ResetPasswordContent() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!hasValidSession) {
+      setErrorMessage("সক্রিয় authentication session ছাড়া password পরিবর্তন করা যাবে না।");
+      return;
+    }
 
     if (newPassword.length < 8) {
       setErrorMessage("পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।");
@@ -82,38 +94,57 @@ function ResetPasswordContent() {
     setErrorMessage(null);
 
     try {
-      const supabase = createBrowserClient();
-      const { data: userData, error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
+      const supabase = createRecoveryBrowserClient();
 
-      if (error) {
-        setErrorMessage(mapSafeAuthError(error.message));
+      const {
+        data: { user },
+        error: sessionError,
+      } = await supabase.auth.getUser();
+
+      if (sessionError || !user) {
+        setErrorMessage("আপনার authentication session আর বৈধ নেই। নতুন রিকভারি লিংক বা login session ব্যবহার করুন।");
         setIsLoading(false);
         return;
       }
 
-      if (userData.user) {
-        const { data: completionData, error: completionError } = await supabase.rpc(
-          "complete_current_user_password_change"
-        );
+      const { error: passwordError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
 
-        if (completionError || !completionData?.success) {
-          // Direct fallback to profiles table update if RPC is pending migration
-          await supabase
-            .from("profiles")
-            .update({
-              must_change_password: false,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", userData.user.id);
-        }
+      if (passwordError) {
+        setErrorMessage(mapSafeAuthError(passwordError.message));
+        setIsLoading(false);
+        return;
+      }
+
+      // Password update and application-level must_change_password completion are
+      // intentionally treated as separate checkpoints. Never report success if
+      // the database completion RPC failed.
+      const { data: completionData, error: completionError } = await supabase.rpc(
+        "complete_current_user_password_change"
+      );
+
+      if (
+        completionError ||
+        !completionData ||
+        completionData.success !== true ||
+        completionData.must_change_password !== false
+      ) {
+        setCompleted(false);
+        setErrorMessage(
+          "পাসওয়ার্ড পরিবর্তন হয়েছে, কিন্তু account-security completion database update সফল হয়নি। একই পেজ থেকে আবার চেষ্টা করুন; login access নিশ্চিত না হওয়া পর্যন্ত এই ধাপটি complete হিসেবে দেখানো হবে না।"
+        );
+        setIsLoading(false);
+        return;
       }
 
       setCompleted(true);
       setIsLoading(false);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? mapSafeAuthError(err.message) : "পাসওয়ার্ড পরিবর্তন করতে সমস্যা হয়েছে।";
+      const msg =
+        err instanceof Error
+          ? mapSafeAuthError(err.message)
+          : "পাসওয়ার্ড পরিবর্তন করতে সমস্যা হয়েছে।";
       setErrorMessage(msg);
       setIsLoading(false);
     }
@@ -140,23 +171,27 @@ function ResetPasswordContent() {
           {checkingSession ? (
             <div className="text-center space-y-3 py-8">
               <RefreshCw className="w-7 h-7 animate-spin text-sky-400 mx-auto" />
-              <p className="text-xs text-slate-300">সিকিউর password recovery session যাচাই করা হচ্ছে...</p>
+              <p className="text-xs text-slate-300">
+                সিকিউর password session যাচাই করা হচ্ছে...
+              </p>
             </div>
           ) : completed ? (
             <div className="text-center space-y-4 py-4">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/40">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h2 className="text-base font-bold text-white">পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে</h2>
+              <h2 className="text-base font-bold text-white">
+                পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে
+              </h2>
               <p className="text-xs text-slate-300">
-                আপনার নতুন পাসওয়ার্ড দিয়ে হাসপাতালে লগইন করুন। অ্যাডমিন অ্যাকাউন্টের ক্ষেত্রে ২-ফ্যাক্টর TOTP সুরক্ষা সক্রিয় থাকবে।
+                নতুন পাসওয়ার্ড কার্যকর হয়েছে এবং account-level temporary-password flag clear হয়েছে।
               </p>
               <div className="pt-4 border-t border-slate-700">
                 <button
-                  onClick={() => router.push("/login")}
+                  onClick={() => router.push("/app/dashboard")}
                   className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-3 rounded-xl shadow-lg transition cursor-pointer"
                 >
-                  লগইন পেজে যান
+                  সিস্টেমে প্রবেশ করুন
                 </button>
               </div>
             </div>
@@ -166,16 +201,21 @@ function ResetPasswordContent() {
                 <div className="p-3.5 bg-amber-950/80 border border-amber-600/70 rounded-xl text-xs text-amber-200 flex items-start gap-2.5">
                   <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold block text-amber-300">প্রাথমিক পাসওয়ার্ড পরিবর্তন বাধ্যতামূলক</span>
+                    <span className="font-bold block text-amber-300">
+                      প্রাথমিক পাসওয়ার্ড পরিবর্তন বাধ্যতামূলক
+                    </span>
                     <p className="text-[11px] text-amber-200/90 mt-0.5 leading-relaxed">
-                      নিরাপত্তার স্বার্থে অ্যাডমিনের দেয়া অস্থায়ী পাসওয়ার্ড পরিবর্তন করে আপনার নিজের গোপন পাসওয়ার্ড সেট করুন। এরপর আপনি সরাসরি ড্যাশবোর্ডে প্রবেশ করতে পারবেন।
+                      temporary password দিয়ে প্রবেশ করার পরে নিজের গোপন পাসওয়ার্ড সেট করতে হবে।
                     </p>
                   </div>
                 </div>
               )}
 
               {errorMessage && (
-                <div role="alert" className="p-3.5 bg-red-950/80 border border-red-700/60 rounded-xl text-xs text-red-200 flex items-start gap-2">
+                <div
+                  role="alert"
+                  className="p-3.5 bg-red-950/80 border border-red-700/60 rounded-xl text-xs text-red-200 flex items-start gap-2"
+                >
                   <span className="text-base leading-none">⚠️</span>
                   <span>{errorMessage}</span>
                 </div>
@@ -223,7 +263,7 @@ function ResetPasswordContent() {
 
               <button
                 type="submit"
-                disabled={isLoading || (!isForced && !hasValidSession)}
+                disabled={isLoading || checkingSession || !hasValidSession}
                 className="w-full flex items-center justify-center bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-3 rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50"
               >
                 {isLoading ? (
@@ -256,4 +296,3 @@ export default function ResetPasswordPage() {
     </Suspense>
   );
 }
-
