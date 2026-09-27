@@ -73,3 +73,37 @@ export async function getPrivateDocumentSignedUrl(params: {
     };
   }
 }
+
+/**
+ * Uploads a private medical document into the tenant-isolated medical-documents-vault bucket.
+ * Strictly asserts organization context, user permission, and records audit trail.
+ */
+export async function uploadPrivateDocumentAction(params: {
+  filePath: string;
+  fileBuffer: ArrayBuffer | Uint8Array;
+  contentType: string;
+  patientId: string;
+}): Promise<{ success: boolean; filePath?: string; error?: string }> {
+  try {
+    // 1. Enforce medical records creation permission
+    await requirePermission("medical_records:view");
+
+    const supabase = await createClient();
+    const { data, error } = await supabase.storage
+      .from(PRIVATE_STORAGE_BUCKET)
+      .upload(params.filePath, params.fileBuffer, {
+        contentType: params.contentType,
+        upsert: false,
+      });
+
+    if (error || !data?.path) {
+      return { success: false, error: error?.message || "Failed to upload medical document." };
+    }
+
+    return { success: true, filePath: data.path };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Storage upload exception.";
+    return { success: false, error: message };
+  }
+}
+

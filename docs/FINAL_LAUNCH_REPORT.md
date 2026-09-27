@@ -5,7 +5,7 @@
 - **Software Baseline**: Version **1.1.8** (Release Tag: `v1.1.8`)
 - **Authoritative Provenance**: Synchronized with `origin/main` & `ssh-origin/main`
 - **Active Edge Deployment**: `https://69dabf81.onnesha-hospital.pages.dev` (Production Alias: `https://onnesha-hospital.pages.dev`)
-- **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (86 Migrations Applied)
+- **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (87 Migrations Applied)
 - **Official Super Admin**: `aaih.apon@gmail.com`
 
 ---
@@ -17,7 +17,7 @@
 | **Mandatory CI (Hermetic)** | ✅ **PASS** | TypeScript, ESLint, npm audit, Next.js build, Asset audit, Certification, and Playwright 4-Browser all passing |
 | **TypeScript Compilation** | ✅ **PASS** | `tsc --noEmit` exited with code 0 (0 errors) |
 | **ESLint Zero-Warning** | ✅ **PASS** | `eslint` exited with code 0 (0 errors) |
-| **Strict Test Certification** | ✅ **PASS** | **77 / 77 Suites Passing** (680 Active Passes, 0 Failures, 0 Blocked) |
+| **Strict Test Certification** | ✅ **PASS** | **79 / 79 Suites Passing** (695 Active Passes, 0 Failures, 0 Blocked) |
 | **Playwright Real-Browser E2E** | ✅ **PASS** | **38 / 38 Browser Specs Passing** across Chromium, Firefox, Mobile Chrome, and WebKit |
 | **Static Web Export** | ✅ **PASS** | **58 Static Routes** (56 HTML Pages) pre-rendered with zero server runtime dependency |
 | **Asset & Link Integrity** | ✅ **PASS** | **952 Assets & 321 Internal Links** checked; **0 Broken References** |

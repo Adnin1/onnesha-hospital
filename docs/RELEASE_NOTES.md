@@ -4,7 +4,7 @@
 **Version:** v1.1.8  
 **Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.8`)  
 **Deployment Target:** Cloudflare Pages (`https://onnesha-hospital.pages.dev`)  
-**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, 86 Applied Migrations)  
+**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, 87 Applied Migrations)  
 
 ---
 
