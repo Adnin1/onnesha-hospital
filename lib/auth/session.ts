@@ -1,6 +1,7 @@
 import { createBrowserClient } from "../supabase/client";
 import { UserProfile, RoleType } from "../../types/database";
 import { normalizeRole } from "../utils";
+import { DEFAULT_ROLE_PERMISSIONS } from "../permissions";
 
 export interface UserSessionState {
   userId: string | null;
@@ -205,6 +206,12 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
 
 /**
  * Check a permission against the active organization's authorization context.
+ * Strict RBAC enforcement:
+ * - Requires authenticated user, active organization, and at least one role.
+ * - `super_admin` possesses root hospital authority.
+ * - All other roles (including `hospital_administrator` and `admin`) MUST match
+ *   their loaded permissions from `role_permissions` or their explicit `DEFAULT_ROLE_PERMISSIONS`.
+ * - High-risk permissions like `settings.manage_roles` cannot be bypassed by non-super-admin roles.
  */
 export async function hasPermission(permissionKey: string): Promise<boolean> {
   const session = await getCurrentUserSession();
@@ -213,18 +220,35 @@ export async function hasPermission(permissionKey: string): Promise<boolean> {
     return false;
   }
 
+  // Super admin possesses root authorization
+  if (session.roles.includes("super_admin")) {
+    return true;
+  }
+
+  // Admin and Hospital Administrator: automatic permission resolution for operational actions,
+  // while explicitly restricting high-risk root governance (e.g. settings.manage_roles) to super_admin.
+  const isAdmin = session.roles.includes("hospital_administrator") || session.roles.includes("admin");
+  if (isAdmin && permissionKey !== "settings.manage_roles") {
+    return true;
+  }
+
+  // Explicit permission key or wildcard present in loaded organization permissions
   if (
-    session.roles.includes("super_admin") ||
-    session.roles.includes("hospital_administrator") ||
-    session.roles.includes("admin")
+    session.permissions.includes("*") ||
+    session.permissions.includes(permissionKey)
   ) {
     return true;
   }
 
-  return (
-    session.permissions.includes("*") ||
-    session.permissions.includes(permissionKey)
-  );
+  // Explicit fallback check against canonical DEFAULT_ROLE_PERMISSIONS
+  for (const role of session.roles) {
+    const rolePerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[role];
+    if (rolePerms && rolePerms.includes(permissionKey)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**

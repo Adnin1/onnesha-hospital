@@ -166,10 +166,7 @@ additional_redirect_urls = [
   "http://localhost:3000/reset-password",
   "https://onnesha-hospital.pages.dev",
   "https://onnesha-hospital.pages.dev/auth/confirm",
-  "https://onnesha-hospital.pages.dev/reset-password",
-  "https://onneshahospital.com",
-  "https://onneshahospital.com/auth/confirm",
-  "https://onneshahospital.com/reset-password"
+  "https://onnesha-hospital.pages.dev/reset-password"
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -182,8 +179,8 @@ enable_refresh_token_rotation = true
 # Allows refresh tokens to be reused after expiry, up to the specified interval in seconds.
 # Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
-# Allow/disallow new user signups to your project.
-enable_signup = true
+# Allow/disallow new user signups to your project (hospital ERP is staff-provisioned; public signup disabled).
+enable_signup = false
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts

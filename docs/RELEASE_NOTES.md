@@ -1,30 +1,29 @@
-# Onnesha Hospital Management System — Release Notes v1.1.6
+# Onnesha Hospital Management System — Release Notes v1.1.7
 
 **Release Date:** 2026-09-28  
-**Version:** v1.1.6  
-**Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.6`)  
+**Version:** v1.1.7  
+**Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.7`)  
 **Deployment Target:** Cloudflare Pages (`https://onnesha-hospital.pages.dev`)  
-**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, 85 Applied Migrations)  
+**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, 86 Applied Migrations)  
 
 ---
 
-## 🚀 What's New in v1.1.6
+## 🚀 What's New in v1.1.7
 
-### 1. Atomic Diagnostic Order Processing & Pathologist Verification
-- **PostgreSQL Atomic RPC (`create_diagnostic_order_atomic`):** Guarantees zero-orphan diagnostic orders by atomically validating multi-tenant catalog pricing, generating sequence-backed order numbers, and inserting order items in a single transaction.
-- **Pathologist Verification RPC (`verify_diagnostic_order_atomic`):** Cryptographic SHA-256 HMAC digital signatures generated and stamped across `diagnostic_report_verifications` and `diagnostic_orders`.
-- **Dynamic Biological Reference Intervals:** Calibrated dynamically based on patient gender and chronological pediatric vs adult age.
-- **Truthful Phlebotomy Barcodes:** Eliminates phantom barcodes by dynamically detecting phlebotomy sample collection status.
+### 1. SSLCommerz Payment Gateway Live Execution on Running Domain
+- **Running Domain Execution (`https://onnesha-hospital.pages.dev`):** Successfully executed SSLCommerz payment gateway on running domain without requiring custom domain setup.
+- **CSP Hardening (`public/_headers`):** Allowed `https://sandbox.sslcommerz.com` and `https://securepay.sslcommerz.com` in `connect-src` and `form-action`.
+- **Edge Functions Deployed:** `payment-initiate` and `payment-callback` active on Supabase instance `iuhtzahuszdkdarhxobx`.
+- **Database Migration 86 (`20260928093000_configure_sslcommerz_running_domain.sql`):** Configured organization integration and validated 100% remote database parity.
 
-### 2. Clinical UI Hardening & Production Toast System
-- **Accessible Toast Notifications (`components/ui/Toast.tsx`):** Replaced all browser `alert(...)` calls with non-blocking, accessible toast notifications.
-- **Patient Search & Deep Link Preselection:** Deep-linking with `?patientId=` dynamically queries the patient index to ensure seamless preselection.
-- **Strict Specialty Tenant Isolation:** Hardened Dental, Eye, and Physiotherapy server actions with fail-closed tenant validation and collision-safe identifiers.
+### 2. Security Architecture & IAM Hardening
+- **Public Signup Explicitly Disabled (`supabase/config.toml`):** Staff-provisioned hospital system policy hardened with `enable_signup = false`.
+- **Fail-Closed CSPRNG Credentials (`lib/staff/actions.ts`):** Eliminated `Date.now()` and pseudo-random fallbacks; temporary password generator strictly throws if CSPRNG is unavailable.
+- **High-Risk RBAC Hardening (`lib/auth/session.ts`):** Removed blind permission bypass for administrator roles; root governance permissions (e.g. `settings.manage_roles`) are strictly confined to `super_admin`.
+- **Environment-Driven Test Infrastructure (`tests/e2e/auth-real-e2e.test.mjs`):** Removed all hardcoded real-looking Supabase credentials and placeholder admin emails.
 
-### 3. CI/CD & Production Infrastructure
-- **Strict 77/77 Test Certification Suite:** 680 active automated test passes with zero failures.
-- **Playwright 4-Browser Matrix:** Passing end-to-end tests across Chromium, Firefox, Mobile Chrome, and WebKit.
-- **Fail-Closed Security Gates:** Staging security gate and production deploy gates maintain strict fail-closed enforcement.
+### 3. Release Provenance Reconciled
+- Synchronized all version manifests across Web, Desktop (Tauri 2/Cargo), Download Metadata, and Documentation to single authoritative SHA.
 
 ### 1. Unified Hospital Platform (Web + PWA + Desktop)
 - **Public Website & Patient Portal:** Homepage, doctor directory, online OPD appointment booking, and token queue lookup.

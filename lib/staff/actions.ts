@@ -40,6 +40,7 @@ export interface CreateStaffResult {
 /**
  * Cryptographically secure random password generator.
  * Generates an 14-character alphanumeric string with symbols, satisfying all hospital security policies.
+ * Strictly FAIL-CLOSED: throws an error if a secure CSPRNG (crypto.getRandomValues) is unavailable.
  */
 export function generateSecureTemporaryPassword(): string {
   const lowercase = "abcdefghjkmnpqrstuvwxyz";
@@ -49,35 +50,38 @@ export function generateSecureTemporaryPassword(): string {
 
   const allChars = lowercase + uppercase + numbers + symbols;
 
-  if (typeof window !== "undefined" && window.crypto) {
-    const array = new Uint8Array(14);
-    window.crypto.getRandomValues(array);
-    let pwd = "";
-    // Guarantee at least one of each category
-    pwd += uppercase[array[0] % uppercase.length];
-    pwd += lowercase[array[1] % lowercase.length];
-    pwd += numbers[array[2] % numbers.length];
-    pwd += symbols[array[3] % symbols.length];
+  const cryptoObj =
+    typeof globalThis !== "undefined" && globalThis.crypto && typeof globalThis.crypto.getRandomValues === "function"
+      ? globalThis.crypto
+      : typeof window !== "undefined" && window.crypto && typeof window.crypto.getRandomValues === "function"
+      ? window.crypto
+      : null;
 
-    for (let i = 4; i < 14; i++) {
-      pwd += allChars[array[i] % allChars.length];
-    }
-    // Crypto-safe Fisher-Yates shuffle
-    const chars = pwd.split("");
-    for (let i = chars.length - 1; i > 0; i--) {
-      const randBuf = new Uint8Array(1);
-      window.crypto.getRandomValues(randBuf);
-      const j = randBuf[0] % (i + 1);
-      [chars[i], chars[j]] = [chars[j], chars[i]];
-    }
-    return chars.join("");
+  if (!cryptoObj) {
+    throw new Error("SECURITY INVARIANT VIOLATION: Secure cryptographic random number generator (CSPRNG) unavailable. Refusing to generate predictable password.");
   }
 
-  // Fallback for non-browser/test runtimes — use crypto module if available
-  if (typeof globalThis.crypto !== "undefined" && globalThis.crypto.randomUUID) {
-    return "Onnesha#" + globalThis.crypto.randomUUID().replace(/-/g, "").substring(0, 10) + "9!";
+  const array = new Uint8Array(14);
+  cryptoObj.getRandomValues(array);
+  let pwd = "";
+  // Guarantee at least one of each category
+  pwd += uppercase[array[0] % uppercase.length];
+  pwd += lowercase[array[1] % lowercase.length];
+  pwd += numbers[array[2] % numbers.length];
+  pwd += symbols[array[3] % symbols.length];
+
+  for (let i = 4; i < 14; i++) {
+    pwd += allChars[array[i] % allChars.length];
   }
-  return "Onnesha#" + Date.now().toString(36).substring(0, 10) + "9!";
+  // Crypto-safe Fisher-Yates shuffle
+  const chars = pwd.split("");
+  for (let i = chars.length - 1; i > 0; i--) {
+    const randBuf = new Uint8Array(1);
+    cryptoObj.getRandomValues(randBuf);
+    const j = randBuf[0] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
 }
 
 /**

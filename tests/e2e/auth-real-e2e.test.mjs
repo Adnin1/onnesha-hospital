@@ -5,27 +5,27 @@ import fs from "fs";
 import path from "path";
 
 const envPath = path.resolve(process.cwd(), ".env.local");
-let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://iuhtzahuszdkdarhxobx.supabase.co";
-let anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_OPiG-7uhoIlnysXKrpErsw_rdXEJ4rs";
+let supabaseUrl = process.env.E2E_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+let anonKey = process.env.E2E_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 if (fs.existsSync(envPath)) {
   const content = fs.readFileSync(envPath, "utf8");
   for (const line of content.split("\n")) {
-    if (line.startsWith("NEXT_PUBLIC_SUPABASE_URL=")) {
+    if (!supabaseUrl && line.startsWith("NEXT_PUBLIC_SUPABASE_URL=")) {
       supabaseUrl = line.split("=")[1].trim().replace(/^["']|["']$/g, "");
     }
-    if (line.startsWith("NEXT_PUBLIC_SUPABASE_ANON_KEY=")) {
+    if (!anonKey && line.startsWith("NEXT_PUBLIC_SUPABASE_ANON_KEY=")) {
       anonKey = line.split("=")[1].trim().replace(/^["']|["']$/g, "");
     }
   }
 }
 
-const siteUrl = process.env.E2E_BASE_URL || "https://onnesha-hospital.pages.dev";
-const testEmail = process.env.E2E_ADMIN_EMAIL || "admin@onneshahospital.com";
+const siteUrl = process.env.E2E_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://onnesha-hospital.pages.dev";
+const testEmail = process.env.E2E_ADMIN_EMAIL || "";
 const testPassword = process.env.E2E_ADMIN_PASSWORD || "";
 
 describe("OHMS Authentication & Session API Integration Suite", async () => {
-  const anonClient = createClient(supabaseUrl, anonKey);
+  const anonClient = supabaseUrl && anonKey ? createClient(supabaseUrl, anonKey) : null;
 
   test("1. Production login portal HTTP GET returns 200 OK with clean blank form inputs", async (t) => {
     try {
@@ -42,9 +42,13 @@ describe("OHMS Authentication & Session API Integration Suite", async () => {
   });
 
   test("2. Invalid login credentials return sanitized error message without account enumeration", async (t) => {
+    if (!anonClient) {
+      t.skip("Skipped: E2E Supabase credentials not configured in environment");
+      return;
+    }
     try {
       const { data, error } = await anonClient.auth.signInWithPassword({
-        email: "nonexistent.user@onneshahospital.com",
+        email: "nonexistent.user@example.invalid",
         password: "WrongPassword123!",
       });
       assert.ok(error, "Invalid login must return auth error");
@@ -59,8 +63,8 @@ describe("OHMS Authentication & Session API Integration Suite", async () => {
   });
 
   test("3. Valid admin account authenticates and initiates AAL1 session state", async (t) => {
-    if (!testPassword) {
-      t.skip("Skipping admin login check when E2E_ADMIN_PASSWORD environment variable is not set");
+    if (!testPassword || !testEmail || !anonClient) {
+      t.skip("Skipping admin login check when E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD, or Supabase credentials are not set");
       return;
     }
     const { data, error } = await anonClient.auth.signInWithPassword({
@@ -92,8 +96,8 @@ describe("OHMS Authentication & Session API Integration Suite", async () => {
   });
 
   test("5. Logout invalidates active authentication session", async (t) => {
-    if (!testPassword) {
-      t.skip("Skipping logout check when E2E_ADMIN_PASSWORD environment variable is not set");
+    if (!testPassword || !testEmail || !anonClient) {
+      t.skip("Skipping logout check when E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD, or Supabase credentials are not set");
       return;
     }
     const { data } = await anonClient.auth.signInWithPassword({

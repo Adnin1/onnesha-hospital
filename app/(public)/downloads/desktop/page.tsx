@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function DesktopDownloadPage() {
   const coreVersion = pkg.version;
-  const verifiedReleaseVersion = "1.1.6";
+  const verifiedReleaseVersion = "1.1.7";
 
   const exeDownloadUrl = `https://github.com/Adnin1/onnesha-hospital/releases/download/v${verifiedReleaseVersion}/Onnesha.Hospital_${verifiedReleaseVersion}_x64-setup.exe`;
   const msiDownloadUrl = `https://github.com/Adnin1/onnesha-hospital/releases/download/v${verifiedReleaseVersion}/Onnesha.Hospital_${verifiedReleaseVersion}_x64_en-US.msi`;
