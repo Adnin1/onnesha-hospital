@@ -5,7 +5,7 @@
 - **Software Baseline**: Version **1.1.5** (Git HEAD: `63f3cc94bb2776c5b96a988d8b6da4ca29432f9a`)
 - **Authoritative Provenance**: Synchronized with `origin/main` & `ssh-origin/main`
 - **Active Edge Deployment**: `https://03acdf35.onnesha-hospital.pages.dev` (Production Alias: `https://onnesha-hospital.pages.dev`)
-- **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (83 Migrations Applied)
+- **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (84 Migrations Applied)
 - **Official Super Admin**: `aaih.apon@gmail.com`
 
 ---
@@ -17,10 +17,10 @@
 | **Mandatory CI (Hermetic)** | ✅ **PASS** | TypeScript, ESLint, npm audit, Next.js build all passing |
 | **TypeScript Compilation** | ✅ **PASS** | `tsc --noEmit` exited with code 0 (0 errors) |
 | **ESLint Zero-Warning** | ✅ **PASS** | `eslint` exited with code 0 (0 errors) |
-| **Strict Test Certification** | ✅ **PASS** | **77 / 77 Suites Passing** (676 Active Passes, 0 Failures, 0 Blocked) |
+| **Strict Test Certification** | ✅ **PASS** | **77 / 77 Suites Passing** (678 Active Passes, 0 Failures, 0 Blocked) |
 | **Playwright Real-Browser E2E** | ✅ **PASS** | **76 / 76 Tests Passing** across Chromium & Firefox matrix |
 | **Static Web Export** | ✅ **PASS** | **58 Static Routes** (56 HTML Pages) pre-rendered with zero server runtime dependency |
-| **Asset & Link Integrity** | ✅ **PASS** | **948 Assets & 321 Internal Links** checked; **0 Broken References** |
+| **Asset & Link Integrity** | ✅ **PASS** | **950 Assets & 321 Internal Links** checked; **0 Broken References** |
 | **Edge Smoke Verification** | ✅ **PASS** | 15/15 Routes HTTP 200 OK, Zero PHI Leak, PostgREST Anonymous Write Shielded |
 | **Crawler & Robot Directives** | ✅ **PASS** | RFC 9309 / Google compliant (`GPTBot`, `Google-Extended`, `PerplexityBot`, `ClaudeBot` explicitly disallowed from `/app/`, `/login`, `/auth/`, `/mfa`) |
 | **Bangladesh PDPA 2026 Privacy** | ✅ **PASS** | Sections 11, 12, 13, 14, 17, 18, 20 fully mapped and verified in `/privacy` |
@@ -36,7 +36,7 @@
 | **24/7 Emergency Casualty Triage** | `/app/emergency` | Red/Yellow/Green trauma zones, instant encounter generator (`TEMP-EMG-...`), direct ICU/OT dispatch |
 | **Inpatient (IPD) Admissions** | `/app/ipd` & `/app/beds` | Bed occupancy matrix, transfers, 5 discharge dispositions (NORMAL, DOR, LAMA, REFERRED, DECEASED) |
 | **Operation Theatre (OT)** | `/app/ot` | Surgery schedules, room bookings, surgeon assignment, emergency trauma slot reservation |
-| **Diagnostic Pathology Lab** | `/app/lab` | Specimen barcoding, abnormal range indicators, consultant pathologist verification & locking |
+| **Diagnostic Pathology Lab** | `/app/lab` | 11-test master catalog & reference ranges, new order modal with live price calculator, specimen barcoding, abnormal range indicators, consultant pathologist verification & locking |
 | **Pharmacy & Central Store POS** | `/app/pharmacy` | Batch tracking, expiry enforcement, FIFO dispensing, zero negative inventory rule |
 | **Billing & Cashier Desk** | `/app/billing` | Aggregated invoices, partial payments, 80mm POS thermal receipt slips & A4 formal tax invoices |
 | **Double-Entry Accounting & ERP** | `/app/accounting` | Chart of accounts, journal entries with balanced debits/credits, trial balance, immutable fiscal periods |

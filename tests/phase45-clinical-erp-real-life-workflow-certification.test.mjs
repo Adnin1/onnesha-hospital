@@ -134,4 +134,28 @@ describe("OHMS Conversation 2: Full Clinical & Hospital ERP Functional Certifica
     assert.equal(normalizeRole(null), "");
     assert.equal(normalizeRole(undefined), "");
   });
+
+  // 11. Diagnostic Lab Order Creation & Catalog Master
+  test("11. Diagnostic lab module provides master catalog query and order creation action with UI modal", () => {
+    const labActionsContent = fs.readFileSync(path.join(rootDir, "lib/lab/actions.ts"), "utf8");
+    assert.ok(labActionsContent.includes("createDiagnosticOrderAction"), "createDiagnosticOrderAction must exist");
+    assert.ok(labActionsContent.includes("getDiagnosticTestsCatalogAction"), "getDiagnosticTestsCatalogAction must exist");
+
+    const labPageContent = fs.readFileSync(path.join(rootDir, "app/(hospital)/app/lab/page.tsx"), "utf8");
+    assert.ok(labPageContent.includes("New Diagnostic Order"), "New Diagnostic Order button must exist in Lab page");
+    assert.ok(labPageContent.includes("createDiagnosticOrderAction"), "Lab page must wire createDiagnosticOrderAction");
+    assert.ok(labPageContent.includes("getDiagnosticTestsCatalogAction"), "Lab page must load test catalog");
+  });
+
+  // 12. Cross-Module Clinical Flow: Patient Preselection via URL Query Param
+  test("12. Prescription and Lab pages support instant patient pre-selection via query parameter", () => {
+    const rxPageContent = fs.readFileSync(path.join(rootDir, "app/(hospital)/app/prescriptions/page.tsx"), "utf8");
+    assert.ok(rxPageContent.includes("urlParamPatientId"), "Prescription page must inspect URL search param for patient pre-selection");
+    assert.ok(rxPageContent.includes("setIsModalOpen(true)"), "Prescription modal must automatically open when patientId provided");
+
+    const labPageContent = fs.readFileSync(path.join(rootDir, "app/(hospital)/app/lab/page.tsx"), "utf8");
+    assert.ok(labPageContent.includes("urlParamPatientId"), "Lab page must inspect URL search param for patient pre-selection");
+    assert.ok(labPageContent.includes("setIsOrderModalOpen(true)"), "Lab order modal must automatically open when patientId provided");
+  });
 });
+

@@ -60,7 +60,13 @@ export default function PrescriptionsPage() {
         }
         if (patRes.success && patRes.data?.patients) {
           setPatients(patRes.data.patients);
-          if (patRes.data.patients.length > 0) setPatientId(patRes.data.patients[0].id);
+          const urlParamPatientId = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("patientId") : null;
+          if (urlParamPatientId && patRes.data.patients.some((p) => p.id === urlParamPatientId)) {
+            setPatientId(urlParamPatientId);
+            setIsModalOpen(true);
+          } else if (patRes.data.patients.length > 0) {
+            setPatientId(patRes.data.patients[0].id);
+          }
         }
         setLoading(false);
       }

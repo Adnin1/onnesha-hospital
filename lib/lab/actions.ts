@@ -227,4 +227,146 @@ export async function verifyDiagnosticReportAction(params: {
   }
 }
 
+/**
+ * 3. Create Diagnostic Order Server Action
+ */
+export async function createDiagnosticOrderAction(params: {
+  patientId: string;
+  testIds: string[];
+  referredByDoctorId?: string;
+  visitId?: string;
+  clinicalNotes?: string;
+}): Promise<ActionResult<{ orderId: string; orderNumber: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("lab.manage");
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
+  if (!params.patientId || !params.testIds || params.testIds.length === 0) {
+    return { success: false, error: "Patient ID and at least one test are required." };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // 1. Generate Order Number
+    const { data: orderNoData } = await supabase.rpc("generate_diagnostic_order_number", {
+      p_org_id: session.organizationId,
+    });
+
+    const orderNumber = (orderNoData as string) || `ORD-${Date.now().toString().slice(-6)}`;
+
+    // 2. Fetch test details for prices
+    const { data: testData, error: testErr } = await supabase
+      .from("diagnostic_tests")
+      .select("id, price")
+      .in("id", params.testIds);
+
+    if (testErr || !testData || testData.length === 0) {
+      return { success: false, error: testErr?.message || "Failed to fetch test pricing." };
+    }
+
+    // 3. Create diagnostic order
+    const { data: orderRow, error: orderInsertErr } = await supabase
+      .from("diagnostic_orders")
+      .insert({
+        organization_id: session.organizationId,
+        patient_id: params.patientId,
+        visit_id: params.visitId || null,
+        referred_by_doctor_id: params.referredByDoctorId || null,
+        order_number: orderNumber,
+        status: "ORDERED",
+      })
+      .select("id")
+      .single();
+
+    if (orderInsertErr || !orderRow) {
+      return { success: false, error: orderInsertErr?.message || "Failed to create diagnostic order." };
+    }
+
+    // 4. Create diagnostic order items
+    const itemsToInsert = testData.map((t) => ({
+      order_id: orderRow.id,
+      test_id: t.id,
+      price: t.price,
+      status: "PENDING",
+    }));
+
+    const { error: itemsInsertErr } = await supabase
+      .from("diagnostic_order_items")
+      .insert(itemsToInsert);
+
+    if (itemsInsertErr) {
+      return { success: false, error: itemsInsertErr.message };
+    }
+
+    // 5. Audit Log
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "CREATE",
+      module: "LAB",
+      entityType: "diagnostic_order",
+      entityId: orderRow.id,
+      newValues: {
+        orderNumber,
+        patientId: params.patientId,
+        testCount: params.testIds.length,
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        orderId: orderRow.id,
+        orderNumber,
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to create diagnostic order";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 4. Get Diagnostic Tests Catalog
+ */
+export async function getDiagnosticTestsCatalogAction(): Promise<
+  ActionResult<{ tests: Array<{ id: string; test_name: string; test_code: string; price: number; specimen_type: string }> }>
+> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("diagnostic_tests")
+      .select("id, test_name, test_code, price, specimen_type")
+      .eq("organization_id", session.organizationId)
+      .eq("is_active", true)
+      .order("test_name", { ascending: true });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      data: { tests: data || [] },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load test catalog";
+    return { success: false, error: msg };
+  }
+}
+
 
