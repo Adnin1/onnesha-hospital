@@ -11,8 +11,11 @@ export function mapSafeAuthError(rawMessage: string): string {
   if (lower.includes("email not confirmed")) {
     return "আপনার অ্যাকাউন্টটি এখনো ইমেইল এর মাধ্যমে নিশ্চিত করা হয়নি।";
   }
+  if (lower.includes("email") && (lower.includes("rate limit") || lower.includes("rate_limit"))) {
+    return "অতিরিক্ত রিকোয়েস্টের কারণে সাময়িকভাবে রিকভারি ইমেইল প্রেরণ স্থগিত আছে। কিছুক্ষণ পর চেষ্টা করুন, অথবা আপনার পাসওয়ার্ড দিয়ে সরাসরি লগইন করুন।";
+  }
   if (lower.includes("too many requests") || lower.includes("rate limit") || lower.includes("rate_limit")) {
-    return "অতিরিক্ত চেষ্টার কারণে সাময়িকভাবে লগইন ব্লক করা হয়েছে। কয়েক মিনিট পর চেষ্টা করুন।";
+    return "অতিরিক্ত চেষ্টার কারণে সাময়িকভাবে অনুরোধটি স্থগিত করা হয়েছে। কয়েক মিনিট পর আবার চেষ্টা করুন।";
   }
   if (lower.includes("user disabled") || lower.includes("user_disabled")) {
     return "আপনার অ্যাকাউন্টটি সাময়িকভাবে নিষ্ক্রিয় আছে। সিস্টেম অ্যাডমিনের সাথে যোগাযোগ করুন।";
