@@ -64,15 +64,38 @@ export default function ForgotPasswordPage() {
 
         <div className="bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-2xl">
           {submitted ? (
-            <div className="text-center space-y-4 py-4">
+            <div className="text-center space-y-4 py-2">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/40">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h2 className="text-base font-bold text-white">পাসওয়ার্ড রিসেট রিকোয়েস্ট গৃহীত হয়েছে</h2>
+              <h2 className="text-base font-bold text-white">পাসওয়ার্ড রিসেট লিংক পাঠানো হয়েছে</h2>
               <p className="text-xs text-slate-300 leading-relaxed">
-                যদি প্রদানকৃত ইমেইলটি অন্বেষা হাসপাতাল সিস্টেমে রেজিস্টার্ড থাকে, তবে পাসওয়ার্ড রিসেটের সিকিউর লিংক পাঠানো হয়েছে। ইমেইল ইনবক্স বা স্প্যাম ফোল্ডার চেক করুন।
+                আপনার রেজিস্টার্ড ইমেইল <span className="font-semibold text-sky-400">{email}</span>-এ সিকিউর পাসওয়ার্ড রিকভারি লিংক পাঠানো হয়েছে।
               </p>
-              <div className="pt-4 border-t border-slate-700">
+
+              <div className="p-3.5 bg-amber-950/60 border border-amber-600/70 rounded-xl text-left text-xs text-amber-200 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-amber-300">
+                  <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
+                  <span>জরুরি নির্দেশনা: ইনবক্সে না পেলে Spam চেক করুন</span>
+                </div>
+                <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                  গুগল/জিমেইল স্বয়ংক্রিয় সিকিউরিটি মেইলগুলোকে অনেক সময় প্রাইমারি ইনবক্সের বদলে <strong>Spam (স্প্যাম) ফোল্ডারে</strong> রেখে দেয়। আপনার জিমেইল অ্যাপের বাম পাশের মেনু থেকে <strong>Spam</strong> ফোল্ডারটি ওপেন করুন।
+                </p>
+                <div className="pt-1 flex flex-col gap-1 text-[11px] text-slate-300">
+                  <span>১. স্প্যাম ফোল্ডার থেকে ইমেইলটি খুলুন।</span>
+                  <span>২. <strong>Reset Password</strong> লিংকে ক্লিক করুন।</span>
+                  <span>৩. লিংকে প্রবেশ করে ফেসবুক বা জিমেইলের মতোই <strong>নিজের ইচ্ছামতো যেকোনো নতুন পাসওয়ার্ড</strong> টাইপ করে সাবমিট করুন।</span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSubmitted(false)}
+                  className="text-xs text-slate-400 hover:text-slate-200 transition"
+                >
+                  আবার ইমেইল পাঠাতে চান?
+                </button>
                 <Link
                   href="/login"
                   className="inline-flex items-center text-xs text-sky-400 hover:text-sky-300 font-semibold"

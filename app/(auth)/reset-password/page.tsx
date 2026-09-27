@@ -3,7 +3,7 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, ArrowRight, CheckCircle2, ShieldAlert, RefreshCw } from "lucide-react";
+import { Lock, ArrowRight, CheckCircle2, ShieldAlert, RefreshCw, Eye, EyeOff, Check, X, ShieldCheck } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { createRecoveryBrowserClient } from "@/lib/supabase/client";
 import { mapSafeAuthError } from "@/lib/auth/safe-errors";
@@ -15,11 +15,35 @@ function ResetPasswordContent() {
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
   const [hasValidSession, setHasValidSession] = useState(false);
+
+  const getPasswordStrength = (pwd: string) => {
+    let score = 0;
+    if (!pwd) return { score: 0, label: "খালি", percent: 0, color: "bg-slate-700", text: "text-slate-400" };
+    if (pwd.length >= 8) score++;
+    if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
+    if (/\d/.test(pwd)) score++;
+    if (/[^a-zA-Z0-9]/.test(pwd)) score++;
+
+    if (score <= 1) return { score: 1, label: "দুর্বল (Weak)", percent: 25, color: "bg-red-500", text: "text-red-400" };
+    if (score === 2) return { score: 2, label: "মোটামুটি (Fair)", percent: 50, color: "bg-amber-500", text: "text-amber-400" };
+    if (score === 3) return { score: 3, label: "ভালো (Good)", percent: 75, color: "bg-sky-500", text: "text-sky-400" };
+    return { score: 4, label: "শক্তিশালী (Strong)", percent: 100, color: "bg-emerald-500", text: "text-emerald-400" };
+  };
+
+  const strength = getPasswordStrength(newPassword);
+  const hasMinLength = newPassword.length >= 8;
+  const hasUpperLower = /[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword);
+  const hasNumber = /\d/.test(newPassword);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(newPassword);
+  const passwordsMatch = confirmPassword.length > 0 && newPassword === confirmPassword;
+  const passwordsMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
 
   useEffect(() => {
     const supabase = createRecoveryBrowserClient();
@@ -221,24 +245,78 @@ function ResetPasswordContent() {
                 </div>
               )}
 
+              <div className="p-3 bg-sky-950/40 border border-sky-800/50 rounded-xl text-xs text-sky-200 flex items-start gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
+                <div className="text-[11px] leading-relaxed">
+                  <span className="font-bold block text-sky-300">
+                    স্বাধীনভাবে পাসওয়ার্ড নির্বাচনের সুবিধা
+                  </span>
+                  ফেসবুক বা জিমেইলের মতোই আপনি সম্পূর্ণ স্বাধীনভাবে নিজের পছন্দমতো যেকোনো গোপন পাসওয়ার্ড এখানে সেট করতে পারবেন।
+                </div>
+              </div>
+
               <div>
-                <label htmlFor="new-password" className="block text-xs font-semibold text-slate-300 mb-1">
-                  নতুন পাসওয়ার্ড (New Password)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="new-password" className="block text-xs font-semibold text-slate-300">
+                    নতুন পাসওয়ার্ড (New Password)
+                  </label>
+                  {newPassword && (
+                    <span className={`text-[11px] font-medium ${strength.text}`}>
+                      {strength.label}
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     id="new-password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     minLength={8}
                     autoComplete="new-password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-9 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                    placeholder="আপনার পছন্দের পাসওয়ার্ড লিখুন"
+                    className="w-full pl-9 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 transition"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
+
+                {newPassword && (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="w-full bg-slate-700/60 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${strength.color}`}
+                        style={{ width: `${strength.percent}%` }}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 text-[10px] text-slate-400 pt-1">
+                      <span className={`flex items-center gap-1 ${hasMinLength ? "text-emerald-400" : "text-slate-400"}`}>
+                        {hasMinLength ? <Check className="w-3 h-3" /> : <span className="w-3 h-3 text-center">•</span>}
+                        ন্যূনতম ৮ অক্ষর
+                      </span>
+                      <span className={`flex items-center gap-1 ${hasUpperLower ? "text-emerald-400" : "text-slate-400"}`}>
+                        {hasUpperLower ? <Check className="w-3 h-3" /> : <span className="w-3 h-3 text-center">•</span>}
+                        ছোট ও বড় হাতের অক্ষর
+                      </span>
+                      <span className={`flex items-center gap-1 ${hasNumber ? "text-emerald-400" : "text-slate-400"}`}>
+                        {hasNumber ? <Check className="w-3 h-3" /> : <span className="w-3 h-3 text-center">•</span>}
+                        কমপক্ষে একটি সংখ্যা (0-9)
+                      </span>
+                      <span className={`flex items-center gap-1 ${hasSpecial ? "text-emerald-400" : "text-slate-400"}`}>
+                        {hasSpecial ? <Check className="w-3 h-3" /> : <span className="w-3 h-3 text-center">•</span>}
+                        বিশেষ চিহ্ন (@, #, $ ইত্যাদি)
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -249,28 +327,47 @@ function ResetPasswordContent() {
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     id="confirm-password"
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     required
                     minLength={8}
                     autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-9 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                    placeholder="একই পাসওয়ার্ড পুনরায় লিখুন"
+                    className="w-full pl-9 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 transition"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
+
+                {passwordsMatch && (
+                  <p className="text-[11px] text-emerald-400 flex items-center gap-1 mt-1.5">
+                    <Check className="w-3.5 h-3.5" /> পাসওয়ার্ড মিলেছে (Passwords match)
+                  </p>
+                )}
+                {passwordsMismatch && (
+                  <p className="text-[11px] text-rose-400 flex items-center gap-1 mt-1.5">
+                    <X className="w-3.5 h-3.5" /> পাসওয়ার্ড দুটি এক নয়
+                  </p>
+                )}
               </div>
 
               <button
                 type="submit"
-                disabled={isLoading || checkingSession || !hasValidSession}
+                disabled={isLoading || checkingSession || !hasValidSession || (confirmPassword.length > 0 && !passwordsMatch)}
                 className="w-full flex items-center justify-center bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs py-3 rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50"
               >
                 {isLoading ? (
                   <span>পাসওয়ার্ড আপডেট করা হচ্ছে...</span>
                 ) : (
                   <>
-                    <span>পাসওয়ার্ড আপডেট করুন</span>
+                    <span>পাসওয়ার্ড আপডেট করুন ও লগইন করুন</span>
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </>
                 )}
