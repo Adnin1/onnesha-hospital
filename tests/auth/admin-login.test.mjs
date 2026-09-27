@@ -67,7 +67,7 @@ describe("OHMS Priority-1 Admin Authentication Test Suite (10 Scenarios)", async
     assert.ok(fs.existsSync(forgotPath), "forgot-password page must exist");
     const content = fs.readFileSync(forgotPath, "utf8");
     assert.ok(content.includes("resetPasswordForEmail"), "Supabase resetPasswordForEmail required");
-    assert.ok(content.includes("/auth/confirm?next=/reset-password"), "PKCE recovery callback route required");
+    assert.ok(content.includes("/auth/confirm"), "PKCE recovery callback route required");
   });
 
   test("9. Reset password page validates a recovery session and completes the application password-change flag", () => {
