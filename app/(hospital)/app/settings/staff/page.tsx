@@ -17,6 +17,8 @@ import {
   BadgeAlert,
   Lock,
   ArrowLeft,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   StaffMemberRecord,
@@ -77,8 +79,11 @@ export default function StaffManagementPage() {
   const [selectedNewRole, setSelectedNewRole] = useState<RoleType>("doctor");
   const [submittingRoleChange, setSubmittingRoleChange] = useState(false);
 
-  // Password Reset Form State
+  // Password Reset Form State (Super Admin Control)
   const [submittingReset, setSubmittingReset] = useState(false);
+  const [resetMode, setResetMode] = useState<"auto" | "custom">("auto");
+  const [customResetPassword, setCustomResetPassword] = useState("");
+  const [showCustomResetPassword, setShowCustomResetPassword] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -242,15 +247,24 @@ export default function StaffManagementPage() {
     }
   };
 
-  // 4. Reset Password
+  // 4. Reset Password (Super Admin Exclusive)
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!showResetModal) return;
 
+    if (resetMode === "custom" && customResetPassword.trim().length < 8) {
+      alert("সুপার অ্যাডমিন নির্ধারিত পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।");
+      return;
+    }
+
     setSubmittingReset(true);
     try {
-      const newTempPassword = generateSecureTemporaryPassword();
-      const res = await resetStaffPasswordAction(showResetModal.id, newTempPassword);
+      const passwordToSet =
+        resetMode === "custom" && customResetPassword.trim()
+          ? customResetPassword.trim()
+          : generateSecureTemporaryPassword();
+
+      const res = await resetStaffPasswordAction(showResetModal.id, passwordToSet);
 
       if (res.success) {
         const staff = showResetModal;
@@ -261,11 +275,13 @@ export default function StaffManagementPage() {
           email: staff.email || "No email",
           employeeId: staff.employee_code || "N/A",
           role: String(staff.role_name || "Staff"),
-          tempPassword: res.tempPassword || newTempPassword,
+          tempPassword: res.tempPassword || passwordToSet,
         });
 
+        setCustomResetPassword("");
+        setResetMode("auto");
         fetchDirectory();
-        triggerToast("পাসওয়ার্ড সফলভাবে রিসেট করা হয়েছে এবং পূর্বের সকল সেশন বাতিল করা হয়েছে।");
+        triggerToast("পাসওয়ার্ড সফলভাবে আপডেট করা হয়েছে এবং নিরাপত্তা অডিট লগে রেকর্ড করা হয়েছে।");
       } else {
         alert("পাসওয়ার্ড রিসেট ব্যর্থ: " + (res.error || "Unknown error"));
       }
@@ -828,33 +844,98 @@ export default function StaffManagementPage() {
                 <KeyRound className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-slate-900">Reset Staff Password</h2>
-                <p className="text-xs text-slate-500">{showResetModal.full_name}</p>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 block">
+                  Super Admin Password Control
+                </span>
+                <h2 className="text-base font-bold text-slate-900">পাসওয়ার্ড পরিবর্তন ও রিসেট</h2>
+                <p className="text-xs text-slate-500">{showResetModal.full_name} ({showResetModal.email || "No Email"})</p>
               </div>
             </div>
 
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-1 my-3">
-              <p className="font-semibold">Attention:</p>
-              <p>
-                Resetting will immediately revoke all current active sessions for this staff member. A new secure temporary password will be generated for one-time copy, and they will be forced to change it upon login.
+              <p className="font-semibold text-amber-900">নিরাপত্তা সতর্কতা:</p>
+              <p className="text-[11px] leading-relaxed">
+                পাসওয়ার্ড পরিবর্তন করলে এই কর্মীর বর্তমান সকল সক্রিয় সেশন (Active Sessions) সাথে সাথে বাতিল হবে এবং অডিট ট্রেইলে ইভেন্টটি স্থায়ীভাবে রেকর্ড থাকবে।
               </p>
             </div>
 
-            <form onSubmit={handleResetPassword} className="pt-2 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowResetModal(null)}
-                className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submittingReset}
-                className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 flex items-center gap-2"
-              >
-                {submittingReset ? "Resetting..." : "Confirm & Reset Password"}
-              </button>
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  পাসওয়ার্ড নির্ধারণ পদ্ধতি বেছে নিন:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setResetMode("auto")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition text-center ${
+                      resetMode === "auto"
+                        ? "bg-sky-50 border-sky-500 text-sky-700 shadow-2xs"
+                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    ⚡ অটো জেনারেট
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setResetMode("custom")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition text-center ${
+                      resetMode === "custom"
+                        ? "bg-sky-50 border-sky-500 text-sky-700 shadow-2xs"
+                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    ✏️ কাস্টম পাসওয়ার্ড
+                  </button>
+                </div>
+              </div>
+
+              {resetMode === "custom" && (
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    নতুন গোপন পাসওয়ার্ড (ন্যূনতম ৮ অক্ষর):
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showCustomResetPassword ? "text" : "password"}
+                      required
+                      minLength={8}
+                      value={customResetPassword}
+                      onChange={(e) => setCustomResetPassword(e.target.value)}
+                      placeholder="পছন্দের নতুন পাসওয়ার্ড লিখুন"
+                      className="w-full pl-3 pr-10 py-2 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomResetPassword(!showCustomResetPassword)}
+                      className="absolute right-3 top-2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showCustomResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetModal(null);
+                    setCustomResetPassword("");
+                    setResetMode("auto");
+                  }}
+                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingReset || (resetMode === "custom" && customResetPassword.length < 8)}
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {submittingReset ? "আপডেট হচ্ছে..." : "পাসওয়ার্ড প্রয়োগ করুন"}
+                </button>
+              </div>
             </form>
           </div>
         </div>

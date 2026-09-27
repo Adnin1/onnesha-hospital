@@ -306,6 +306,7 @@ export default function SettingsAndAuditPage() {
                 className="w-full p-1.5 bg-white border border-slate-200 rounded-lg font-medium text-slate-700"
               >
                 <option value="ALL">All Modules</option>
+                <option value="SECURITY_IAM">Security & Passwords (পাসওয়ার্ড অডিট)</option>
                 <option value="BILLING">Billing & Invoices</option>
                 <option value="CLINICAL">Clinical & Rx</option>
                 <option value="PATIENT">Patient Records</option>
@@ -376,8 +377,14 @@ export default function SettingsAndAuditPage() {
                       >
                         {log.action}
                       </span>
-                      <span className="font-semibold text-slate-900 bg-slate-200/60 px-1.5 py-0.5 rounded text-[10px]">
-                        {log.module}
+                      <span
+                        className={`font-semibold px-1.5 py-0.5 rounded text-[10px] ${
+                          log.module === "SECURITY_IAM"
+                            ? "bg-purple-100 text-purple-900 border border-purple-300 font-bold"
+                            : "bg-slate-200/60 text-slate-900"
+                        }`}
+                      >
+                        {log.module === "SECURITY_IAM" ? "🔐 SECURITY & AUTH" : log.module}
                       </span>
                       <strong className="text-slate-800 font-mono text-[11px]">{log.entity_type}</strong>
                     </div>
