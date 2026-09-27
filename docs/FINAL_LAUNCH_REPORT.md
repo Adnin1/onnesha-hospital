@@ -1,11 +1,11 @@
-# Final System Launch & Verification Report (OHMS v1.1.5)
+# Final System Launch & Verification Report (OHMS v1.1.6)
 
 ## Executive System Status
 - **Overall Operational Status**: `PRODUCTION READY AFTER OWNER ACTIONS` (Category YELLOW)
-- **Software Baseline**: Version **1.1.5** (Git HEAD: `dc131128349b6c2528e4a85592affd44a3d3552e`)
+- **Software Baseline**: Version **1.1.6** (Release Tag: `v1.1.6`)
 - **Authoritative Provenance**: Synchronized with `origin/main` & `ssh-origin/main`
-- **Active Edge Deployment**: `https://73c44873.onnesha-hospital.pages.dev` (Production Alias: `https://onnesha-hospital.pages.dev`)
-- **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (84 Migrations Applied)
+- **Active Edge Deployment**: `https://b86654ad.onnesha-hospital.pages.dev` (Production Alias: `https://onnesha-hospital.pages.dev`)
+- **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (85 Migrations Applied)
 - **Official Super Admin**: `aaih.apon@gmail.com`
 
 ---
@@ -14,13 +14,13 @@
 
 | Verification Gate | Result | Evidence / Details |
 | :--- | :---: | :--- |
-| **Mandatory CI (Hermetic)** | ✅ **PASS** | TypeScript, ESLint, npm audit, Next.js build all passing |
+| **Mandatory CI (Hermetic)** | ✅ **PASS** | TypeScript, ESLint, npm audit, Next.js build, Asset audit, Certification, and Playwright 4-Browser all passing |
 | **TypeScript Compilation** | ✅ **PASS** | `tsc --noEmit` exited with code 0 (0 errors) |
 | **ESLint Zero-Warning** | ✅ **PASS** | `eslint` exited with code 0 (0 errors) |
-| **Strict Test Certification** | ✅ **PASS** | **77 / 77 Suites Passing** (678 Active Passes, 0 Failures, 0 Blocked) |
-| **Playwright Real-Browser E2E** | ✅ **PASS** | **76 / 76 Tests Passing** across Chromium & Firefox matrix |
+| **Strict Test Certification** | ✅ **PASS** | **77 / 77 Suites Passing** (680 Active Passes, 0 Failures, 0 Blocked) |
+| **Playwright Real-Browser E2E** | ✅ **PASS** | **38 / 38 Browser Specs Passing** across Chromium, Firefox, Mobile Chrome, and WebKit |
 | **Static Web Export** | ✅ **PASS** | **58 Static Routes** (56 HTML Pages) pre-rendered with zero server runtime dependency |
-| **Asset & Link Integrity** | ✅ **PASS** | **950 Assets & 321 Internal Links** checked; **0 Broken References** |
+| **Asset & Link Integrity** | ✅ **PASS** | **952 Assets & 321 Internal Links** checked; **0 Broken References** |
 | **Edge Smoke Verification** | ✅ **PASS** | 15/15 Routes HTTP 200 OK, Zero PHI Leak, PostgREST Anonymous Write Shielded |
 | **Crawler & Robot Directives** | ✅ **PASS** | RFC 9309 / Google compliant (`GPTBot`, `Google-Extended`, `PerplexityBot`, `ClaudeBot` explicitly disallowed from `/app/`, `/login`, `/auth/`, `/mfa`) |
 | **Bangladesh PDPA 2026 Privacy** | ✅ **PASS** | Sections 11, 12, 13, 14, 17, 18, 20 fully mapped and verified in `/privacy` |
