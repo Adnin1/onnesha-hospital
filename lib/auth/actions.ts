@@ -102,7 +102,7 @@ export async function requestPasswordResetAction(
     // Use configured site URL, defaulting to SITE_CONFIG or production domain https://onneshahospital.com
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || SITE_CONFIG.canonicalUrl || "https://onneshahospital.com";
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/auth/confirm?next=/reset-password`,
+      redirectTo: `${siteUrl}/auth/confirm`,
     });
 
     if (error) {
