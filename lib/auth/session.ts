@@ -213,7 +213,11 @@ export async function hasPermission(permissionKey: string): Promise<boolean> {
     return false;
   }
 
-  if (session.roles.includes("super_admin") || session.roles.includes("hospital_administrator")) {
+  if (
+    session.roles.includes("super_admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("admin")
+  ) {
     return true;
   }
 

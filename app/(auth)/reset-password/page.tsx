@@ -119,7 +119,7 @@ function ResetPasswordContent() {
 
       // Password update and application-level must_change_password completion are
       // intentionally treated as separate checkpoints. Never report success if
-      // the database completion RPC failed.
+      // the database completion RPC failed (must_change_password: false invariant).
       const { data: completionData, error: completionError } = await supabase.rpc(
         "complete_current_user_password_change"
       );
