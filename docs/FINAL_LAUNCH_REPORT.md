@@ -1,8 +1,8 @@
-# Final System Launch & Verification Report (OHMS v1.1.7)
+# Final System Launch & Verification Report (OHMS v1.1.8)
 
 ## Executive System Status
 - **Overall Operational Status**: `PRODUCTION READY AFTER OWNER ACTIONS` (Category YELLOW)
-- **Software Baseline**: Version **1.1.7** (Release Tag: `v1.1.7`)
+- **Software Baseline**: Version **1.1.8** (Release Tag: `v1.1.8`)
 - **Authoritative Provenance**: Synchronized with `origin/main` & `ssh-origin/main`
 - **Active Edge Deployment**: `https://69dabf81.onnesha-hospital.pages.dev` (Production Alias: `https://onnesha-hospital.pages.dev`)
 - **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (86 Migrations Applied)
