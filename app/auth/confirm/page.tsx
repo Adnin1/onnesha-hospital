@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RefreshCw, AlertCircle } from "lucide-react";
-import { createBrowserClient } from "@/lib/supabase/client";
+import { createRecoveryBrowserClient } from "@/lib/supabase/client";
 
 function sanitizeNextPath(value: string | null): string {
   if (!value) return "/reset-password";
@@ -23,135 +23,141 @@ function AuthConfirmContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string>(
+  const [statusMessage, setStatusMessage] = useState(
     "আপনার পাসওয়ার্ড রিকভারি টোকেন যাচাই করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন..."
   );
 
   useEffect(() => {
     let isMounted = true;
 
-    async function handleExchange() {
+    async function handleRecovery() {
       const code = searchParams.get("code");
+      const flowId = searchParams.get("sb_flow_id");
       const tokenHash = searchParams.get("token_hash");
       const type = searchParams.get("type");
-      const nextParam = searchParams.get("next");
+      const next = sanitizeNextPath(searchParams.get("next"));
       const queryError = searchParams.get("error");
       const queryErrorDesc = searchParams.get("error_description");
-      const next = sanitizeNextPath(nextParam);
 
-      // Handle query errors emitted directly by Supabase Auth server
       if (queryError || queryErrorDesc) {
         if (isMounted) {
           setErrorMessage(
-            queryErrorDesc
-              ? decodeURIComponent(queryErrorDesc)
-              : "রিকভারি লিংকটি মেয়াদোত্তীর্ণ অথবা অকার্যকর হয়ে গেছে। অনুগ্রহ করে পুনরায় রিসেট লিংক পাঠান।"
+            queryErrorDesc ||
+              "রিকভারি লিংকটি মেয়াদোত্তীর্ণ অথবা অকার্যকর হয়ে গেছে। অনুগ্রহ করে নতুন রিসেট লিংক পাঠান।"
           );
         }
         return;
       }
 
-      const supabase = createBrowserClient();
+      const supabase = createRecoveryBrowserClient();
 
       try {
-        // 1. Direct PKCE code exchange flow
+        // This dedicated recovery client disables automatic URL-session detection.
+        // Therefore this page owns the single-use PKCE code exchange.
         if (code) {
-          if (isMounted) setStatusMessage("PKCE রিকভারি কোড এক্সচেঞ্জ করা হচ্ছে...");
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) {
+          if (isMounted) setStatusMessage("সিকিউর PKCE রিকভারি কোড এক্সচেঞ্জ করা হচ্ছে...");
+          const { error } = await supabase.auth.exchangeCodeForSession(
+            code,
+            flowId ? { flowId } : undefined
+          );
+
+          if (error) {
             if (isMounted) {
               setErrorMessage(
-                exchangeError.message.includes("expired")
-                  ? "রিকভারি কোডের মেয়াদ শেষ হয়ে গেছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।"
-                  : `রিকভারি কোড যাচাই ব্যর্থ হয়েছে: ${exchangeError.message}`
+                error.message.toLowerCase().includes("expired") ||
+                  error.message.toLowerCase().includes("invalid")
+                  ? "রিকভারি লিংকটি মেয়াদোত্তীর্ণ, ইতিমধ্যে ব্যবহার করা, অথবা অবৈধ। নতুন রিসেট লিংক পাঠান।"
+                  : "রিকভারি সেশন তৈরি করা যায়নি। নতুন রিসেট লিংক পাঠান।"
               );
             }
             return;
           }
-          if (isMounted) {
-            router.replace(next);
-          }
+
+          if (isMounted) router.replace(next);
           return;
         }
 
-        // 2. Email OTP / Token Hash flow (verifyOtp)
+        // Supabase email templates may provide the recovery token hash directly.
         if (tokenHash) {
-          if (isMounted) setStatusMessage("ইমেইল ওটিপি টোকেন ভেরিফাই করা হচ্ছে...");
-          const otpType = (type || "recovery") as "recovery" | "email" | "invite";
-          const { error: otpError } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: otpType,
-          });
-
-          if (otpError) {
-            if (isMounted) {
-              setErrorMessage(`ওটিপি টোকেন যাচাই ব্যর্থ হয়েছে: ${otpError.message}`);
-            }
+          if (type !== "recovery") {
+            if (isMounted) setErrorMessage("অবৈধ password-recovery token type।");
             return;
           }
 
-          if (isMounted) {
-            router.replace(next);
+          if (isMounted) setStatusMessage("রিকভারি টোকেন যাচাই করা হচ্ছে...");
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "recovery",
+          });
+
+          if (error) {
+            if (isMounted) setErrorMessage("রিকভারি টোকেনটি মেয়াদোত্তীর্ণ বা অবৈধ। নতুন রিসেট লিংক পাঠান।");
+            return;
           }
+
+          if (isMounted) router.replace(next);
           return;
         }
 
-        // 3. Implicit Hash flow: Check if URL hash contains access_token
+        // Legacy implicit/recovery links can place the tokens in the URL fragment.
         if (typeof window !== "undefined" && window.location.hash) {
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const hashParams = new URLSearchParams(window.location.hash.slice(1));
           const accessToken = hashParams.get("access_token");
           const refreshToken = hashParams.get("refresh_token");
           const hashError = hashParams.get("error_description") || hashParams.get("error");
 
           if (hashError) {
-            if (isMounted) {
-              setErrorMessage(decodeURIComponent(hashError));
-            }
+            if (isMounted) setErrorMessage("রিকভারি লিংকটি অকার্যকর হয়েছে। নতুন রিসেট লিংক পাঠান।");
             return;
           }
 
           if (accessToken && refreshToken) {
-            if (isMounted) setStatusMessage("হ্যাশ সেশন রেজিস্টার করা হচ্ছে...");
-            const { error: setSessionErr } = await supabase.auth.setSession({
+            if (isMounted) setStatusMessage("রিকভারি সেশন নিরাপদভাবে সক্রিয় করা হচ্ছে...");
+            const { error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
 
-            if (!setSessionErr && isMounted) {
-              router.replace(next);
+            if (error) {
+              if (isMounted) setErrorMessage("রিকভারি সেশন সক্রিয় করা যায়নি। নতুন রিসেট লিংক পাঠান।");
               return;
             }
+
+            window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+            if (isMounted) router.replace(next);
+            return;
           }
         }
 
-        // 4. Pre-existing active session check
+        // A pre-existing authenticated session is valid for the password-change page.
         const {
           data: { session },
+          error: sessionError,
         } = await supabase.auth.getSession();
 
-        if (session) {
-          if (isMounted) {
-            router.replace(next);
-          }
+        if (sessionError) {
+          if (isMounted) setErrorMessage("অথেন্টিকেশন সেশন যাচাই করা যায়নি। আবার চেষ্টা করুন।");
           return;
         }
 
-        // 5. No credentials found in URL query or hash
+        if (session) {
+          if (isMounted) router.replace(next);
+          return;
+        }
+
         if (isMounted) {
           setErrorMessage(
-            "কোনো বৈধ রিকভারি কোড বা টোকেন পাওয়া যায়নি। অনুগ্রহ করে আপনার ইমেইলের রিসেট লিংকে ক্লিক করুন অথবা নতুন করে রিসেট রিকোয়েস্ট পাঠান।"
+            "কোনো বৈধ password-recovery credential পাওয়া যায়নি। আপনার ইমেইলের নতুন রিসেট লিংক ব্যবহার করুন।"
           );
         }
-      } catch (err: unknown) {
+      } catch {
         if (isMounted) {
-          const msg =
-            err instanceof Error ? err.message : "অথেন্টিকেশন ভেরিফিকেশনে অপ্রত্যাশিত সমস্যা হয়েছে।";
-          setErrorMessage(msg);
+          setErrorMessage("রিকভারি প্রক্রিয়ায় অপ্রত্যাশিত সমস্যা হয়েছে। নতুন রিসেট লিংক পাঠান।");
         }
       }
     }
 
-    void handleExchange();
+    void handleRecovery();
 
     return () => {
       isMounted = false;
