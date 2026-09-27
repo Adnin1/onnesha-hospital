@@ -36,7 +36,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         // Retrieve user profile for active and must_change_password check
         const { data: profile } = await supabase
           .from("profiles")
-          .select("is_active, account_status, must_change_password")
+          .select("is_active, account_status, must_change_password, organization_id, active_organization_id")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -62,11 +62,32 @@ export function AuthGuard({ children }: AuthGuardProps) {
           }
         }
 
-        // Retrieve user roles
-        const { data: userRoleRecords } = await supabase
+        // Authorization is scoped to the profile's active organization.
+        // A role from another organization must never elevate this session.
+        const organizationId =
+          profile?.active_organization_id || profile?.organization_id || null;
+
+        if (!organizationId) {
+          if (isMounted) {
+            setIsAuthenticated(false);
+            router.push("/login?error=organization_required");
+          }
+          return;
+        }
+
+        const { data: userRoleRecords, error: rolesError } = await supabase
           .from("user_roles")
-          .select("roles(name)")
-          .eq("user_id", user.id);
+          .select("organization_id, roles(name)")
+          .eq("user_id", user.id)
+          .eq("organization_id", organizationId);
+
+        if (rolesError) {
+          if (isMounted) {
+            setIsAuthenticated(false);
+            router.push("/login?error=authorization_unavailable");
+          }
+          return;
+        }
 
         const roles: string[] = [];
         if (userRoleRecords) {
@@ -78,7 +99,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
           });
         }
 
-        const isAdmin = roles.includes("super_admin") || roles.includes("hospital_administrator") || roles.includes("admin");
+        const isAdmin =
+          roles.includes("super_admin") ||
+          roles.includes("hospital_administrator");
 
         // Check MFA Assurance Level
         if (isAdmin) {
