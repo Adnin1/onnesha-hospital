@@ -97,4 +97,32 @@ describe("OHMS Medical Storage Authorization & RLS Verification (8 Scenarios)", 
     assert.ok(rlsMigration.includes("CREATE POLICY \"medical_vault_tenant_isolation_select\""), "Must define select RLS policy on storage.objects");
     assert.ok(rlsMigration.includes("CREATE POLICY \"medical_vault_tenant_isolation_insert\""), "Must define insert RLS policy on storage.objects");
   });
+
+  test("9. Migration 94 hardens storage.objects DELETE policy with strict admin role verification", () => {
+    const rlsAdminMigration = fs.readFileSync(
+      path.join(ROOT, "supabase/migrations/20260929020000_storage_admin_delete_and_cash_disbursements.sql"),
+      "utf8"
+    );
+    assert.ok(
+      rlsAdminMigration.includes("CREATE POLICY \"medical_vault_tenant_isolation_delete\""),
+      "Must define delete policy on storage.objects"
+    );
+    assert.ok(
+      rlsAdminMigration.includes("LOWER(r.name) IN ('admin', 'super_admin', 'hospital_administrator', 'super admin')"),
+      "Must enforce admin role authorization for document deletion"
+    );
+  });
+
+  test("10. lib/storage/files.ts compensates upload if audit log recording fails", () => {
+    const filesCode = fs.readFileSync(path.join(ROOT, "lib/storage/files.ts"), "utf8");
+    assert.ok(
+      filesCode.includes(".remove([canonicalPath])"),
+      "Must compensate and delete uploaded file if audit log fails"
+    );
+    assert.ok(
+      !filesCode.includes('params.permissionKey === "medical_records:view"'),
+      "Must not use literal permissionKey comparison bypass"
+    );
+  });
 });
+

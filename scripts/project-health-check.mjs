@@ -322,6 +322,21 @@ try {
   } else {
     critical('Docker compose does not mount executable init-postgres.sh in /docker-entrypoint-initdb.d/');
   }
+
+  // 15.4 Storage Admin Delete RLS & Cash Basis Disbursements (Migration 94)
+  const m94 = fs.readFileSync(
+    path.join(ROOT, 'supabase', 'migrations', '20260929020000_storage_admin_delete_and_cash_disbursements.sql'),
+    'utf8'
+  );
+  if (
+    m94.includes('medical_vault_tenant_isolation_delete') &&
+    m94.includes("LOWER(r.name) IN ('admin', 'super_admin', 'hospital_administrator', 'super admin')") &&
+    m94.includes("coa.account_code LIKE '10%'")
+  ) {
+    pass('Storage admin DELETE policy and GL cash-basis disbursements verified in Migration 94');
+  } else {
+    critical('Migration 94 missing admin DELETE check or cash-basis account filtering');
+  }
 } catch (e) {
   warn(`Storage & Accounting invariant check skipped: ${e.message}`);
 }

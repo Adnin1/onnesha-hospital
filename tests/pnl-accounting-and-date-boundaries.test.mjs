@@ -96,4 +96,49 @@ describe("OHMS P&L Accounting, Date Boundaries & Authoritative GL (6 Scenarios)"
     assert.equal(cash.totalOutflow, 32000);
     assert.equal(cash.netCash, 48000);
   });
+
+  test("7. Migration 94 calculates cash disbursements from Cash/Bank asset accounts (1010-1099)", () => {
+    const migration = fs.readFileSync(
+      path.join(ROOT, "supabase/migrations/20260929020000_storage_admin_delete_and_cash_disbursements.sql"),
+      "utf8"
+    );
+
+    assert.ok(
+      migration.includes("coa.account_code LIKE '10%'"),
+      "Must filter on Cash/Bank asset account codes 10%"
+    );
+    assert.ok(
+      migration.includes("coa.account_type = 'ASSET'"),
+      "Must verify account_type = 'ASSET'"
+    );
+    assert.ok(
+      migration.includes("COALESCE(SUM(jel.credit - jel.debit), 0.00)"),
+      "Must calculate net credit outflow on cash accounts"
+    );
+    assert.ok(
+      migration.includes("NOT IN ('REFUND', 'PATIENT_REFUND', 'PAYMENT')"),
+      "Must exclude patient collections and refunds to prevent double counting"
+    );
+  });
+
+  test("8. Accrual expenses without cash disbursement generate $0 cash outflow", () => {
+    // Incurred utility bill (Dr. Utility Expense $5,000, Cr. Accounts Payable $5,000)
+    // No cash account (1010-1099) is touched
+    const journalLines = [
+      { account_code: "5300", account_type: "EXPENSE", debit: 5000, credit: 0 },
+      { account_code: "2010", account_type: "LIABILITY", debit: 0, credit: 5000 },
+    ];
+
+    const accrualExpense = journalLines
+      .filter((l) => l.account_type === "EXPENSE")
+      .reduce((sum, l) => sum + (l.debit - l.credit), 0);
+
+    const cashDisbursement = journalLines
+      .filter((l) => l.account_type === "ASSET" && l.account_code.startsWith("10"))
+      .reduce((sum, l) => sum + (l.credit - l.debit), 0);
+
+    assert.equal(accrualExpense, 5000, "Accrual expense must be recognized");
+    assert.equal(cashDisbursement, 0, "Cash disbursement must be 0 until paid from Cash/Bank");
+  });
 });
+

@@ -56,11 +56,9 @@ export async function requireStorageAccessAuthorization(params: {
     session.roles.includes("diagnostic_staff");
 
   const hasExplicitPermission =
-    params.permissionKey === "medical_records:view" ||
-    params.permissionKey === "medical_records:edit" ||
     session.permissions.includes(params.permissionKey) ||
-    session.permissions.includes(PERMISSIONS.PATIENTS_VIEW) ||
-    session.permissions.includes(PERMISSIONS.PATIENTS_EDIT);
+    (params.permissionKey.includes("view") && session.permissions.includes(PERMISSIONS.PATIENTS_VIEW)) ||
+    (params.permissionKey.includes("edit") && session.permissions.includes(PERMISSIONS.PATIENTS_EDIT));
 
   if (!isPrivilegedRole && !hasExplicitPermission) {
     throw new Error(
@@ -235,20 +233,30 @@ export async function uploadPrivateDocumentAction(params: {
       return { success: false, error: error?.message || "Failed to upload medical document." };
     }
 
-    // Record forensic upload audit
-    await recordAuditLog({
-      userId: session.userId || "system",
-      organizationId: params.organizationId,
-      action: "CREATE",
-      module: "DOCUMENT",
-      entityType: "medical_document",
-      entityId: canonicalPath,
-      newValues: {
-        patient_id: params.patientId,
-        content_type: normalizedMime,
-        byte_size: byteLength,
-      },
-    });
+    // Record forensic upload audit with rollback compensation
+    try {
+      await recordAuditLog({
+        userId: session.userId || "system",
+        organizationId: params.organizationId,
+        action: "CREATE",
+        module: "DOCUMENT",
+        entityType: "medical_document",
+        entityId: canonicalPath,
+        newValues: {
+          patient_id: params.patientId,
+          content_type: normalizedMime,
+          byte_size: byteLength,
+        },
+      });
+    } catch (auditErr: unknown) {
+      // Compensate: remove uploaded file to prevent orphan untracked medical documents
+      await supabase.storage.from(PRIVATE_STORAGE_BUCKET).remove([canonicalPath]);
+      const auditMsg = auditErr instanceof Error ? auditErr.message : "Audit service failure";
+      return {
+        success: false,
+        error: `500 Internal Error: Forensic audit registration failed (${auditMsg}). Document upload was compensated and rolled back.`,
+      };
+    }
 
     return { success: true, filePath: data.path };
   } catch (err: unknown) {
