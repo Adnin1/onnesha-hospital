@@ -20,7 +20,9 @@ All software engineering, security hardening, cross-browser Playwright automatio
 | **Database Migrations** | **91 Applied Migrations** (`001` through `20260928220000`) | ✅ 100% in sync |
 | **Cloudflare Pages Production Deployment** | Static Export (`58 routes`, `56 HTML pages`) | ✅ Live (`https://onnesha-hospital.pages.dev`) |
 | **Cloudflare Canonical Domain** | `https://onnesha-hospital.pages.dev` | ✅ Live |
+| **Node.js Test Certification Suite** | **86 Test Suites** (`757 Active Passes, 0 Failures`) | ✅ 100% passed |
 | **Playwright Cross-Browser Matrix** | 4 Browser Projects (Chromium, Firefox, Mobile-Chrome, WebKit) | ✅ 38/38 passed, 0 flaky |
+| **Docker & Infrastructure Architecture** | Hardened Nginx runner + Fail-closed Compose topology (Phase 21) | ✅ Verified |
 | **Final Classification** | **`ENGINEERING COMPLETE — OWNER GATES REMAIN`** | ✅ Certified |
 
 ---
@@ -106,10 +108,10 @@ The hospital financial reporting architecture (`app/(hospital)/app/reports/page.
 All tests were executed and certified with clean passes:
 
 ### 4.1 Node.js Certification Test Suite (`npm run test:certification`)
-- **Total Test Suites Executed:** 85 suites
-- **Passed Suites:** 85 / 85 (100%)
+- **Total Test Suites Executed:** 86 suites
+- **Passed Suites:** 86 / 86 (100%)
 - **Failed Suites:** 0
-- **Total Active Passed Assertions:** 747 passes
+- **Total Active Passed Assertions:** 757 passes
 - **Active Failures:** 0
 - **Standard Skips:** Exactly 6 assertions across 5 suites (production mutation safeguards preventing dummy test data from polluting production tables).
 
@@ -161,8 +163,9 @@ To adhere strictly to truthfulness without declaring unfulfilled external action
 - [x] Composite performance indexes on payments, refunds, and invoices
 - [x] Asia/Dhaka timezone date handling (`[startInclusive, endExclusive)` half-open interval)
 - [x] Reports page optimization (300ms debounce, pruned payloads, lazy-loaded tabs, full-dataset CSV export)
-- [x] 84 / 84 Node.js test suites passing (738 passes, 0 failures)
-- [x] 38 / 38 Playwright browser tests passing across 4 browser engines (0 flaky, 0 failed)
+- [x] 86 / 86 Node.js test suites passing (757 passes, 0 failures)
+- [x] 38 / 38 Playwright browser tests passing across Chromium and Mobile-Chrome (0 flaky, 0 failed, 30/30 MFA 10x repetition certified)
+- [x] Enterprise Docker multi-stage containerization & fail-closed Compose topology verified (Phase 21)
 - [x] 58 static routes exported cleanly
 - [x] 0 TypeScript errors, 0 ESLint warnings, 0 broken asset links
 - [x] Cloudflare Pages production deployment verified at `https://onnesha-hospital.pages.dev`

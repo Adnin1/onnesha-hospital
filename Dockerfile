@@ -20,10 +20,20 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Pass build-time environment arguments (with safe defaults)
-ARG NEXT_PUBLIC_SUPABASE_URL=https://onnesha-hospital.supabase.co
-ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_placeholder
+# Pass build-time environment arguments (Strict fail-closed: NO fake production fallbacks)
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ARG NEXT_PUBLIC_SITE_URL=https://onnesha-hospital.pages.dev
+
+# Enforce fail-closed verification: build will abort if required Supabase configuration is absent or malformed
+RUN if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || ! echo "$NEXT_PUBLIC_SUPABASE_URL" | grep -qE '^https?://'; then \
+      echo "FATAL [OHMS-DOCKER]: NEXT_PUBLIC_SUPABASE_URL must be provided as a valid HTTP(S) endpoint. Rejecting build with fake or missing defaults." >&2; \
+      exit 1; \
+    fi && \
+    if [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]; then \
+      echo "FATAL [OHMS-DOCKER]: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be provided. Rejecting build with missing key." >&2; \
+      exit 1; \
+    fi
 
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY

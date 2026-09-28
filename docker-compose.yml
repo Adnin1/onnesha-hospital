@@ -1,18 +1,21 @@
 # ==============================================================================
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS) — ENTERPRISE DOCKER COMPOSE
-# Self-Hosted On-Premise / Edge Hospital Topology
+# Edge On-Premise LAN Web Delivery & Auxiliary Database Replica Topology
+# NOTE: The authoritative backend is Supabase Cloud (iuhtzahuszdkdarhxobx.supabase.co).
+# This auxiliary Compose stack provides containerized local web delivery and an optional
+# internal PostgreSQL/Redis replica network. It does NOT replace Supabase Auth/Storage.
 # ==============================================================================
 
 services:
-  # 1. Front-Facing Hospital Web Client & PWA
+  # 1. Front-Facing Hospital Web Client & PWA (Hardened Nginx)
   ohms-web:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
-        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-sb_publishable_default}
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?Error: NEXT_PUBLIC_SUPABASE_URL must be provided}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:?Error: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be provided}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://onnesha-hospital.pages.dev}
     container_name: ohms-web-server
     restart: unless-stopped
     ports:
@@ -27,16 +30,17 @@ services:
     networks:
       - ohms-internal-network
 
-  # 2. Local Edge PostgreSQL Database (Optional for On-Premise Replica / Archival)
+  # 2. Local Edge PostgreSQL Database (Auxiliary Read Replica / Reporting Staging)
+  # Isolated to internal network only — NO public host port exposure in production.
   ohms-postgres:
     image: postgres:16-alpine
     container_name: ohms-edge-db
     restart: unless-stopped
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-ohms_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMeInProduction_SecurePwd_2026!}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Error: POSTGRES_PASSWORD must be provided via environment or secret file}
       POSTGRES_DB: ${POSTGRES_DB:-onnesha_hospital_db}
       TZ: Asia/Dhaka
     volumes:
@@ -51,17 +55,21 @@ services:
       - ohms-internal-network
 
   # 3. High-Speed Cache & In-Memory Coordination (Redis)
+  # Isolated to internal network only — NO public host port exposure in production.
   ohms-redis:
     image: redis:7-alpine
     container_name: ohms-edge-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-RedisSecureToken_2026!}
+    expose:
+      - "6379"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Error: REDIS_PASSWORD must be provided via environment or secret file}
+    command: >
+      sh -c 'exec redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}"'
     volumes:
       - ohms_redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-RedisSecureToken_2026!}", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -71,6 +79,7 @@ services:
 networks:
   ohms-internal-network:
     driver: bridge
+    internal: false
 
 volumes:
   ohms_postgres_data:

@@ -83,9 +83,9 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler pages deploy out --project-name=onnesha-hospital --branch=main --commit-dirty=false
 
-  # 3. Docker Container Build (GitHub Packages / GHCR)
+  # 3. Docker Container Verification Build (Local verification - push disabled)
   build-container:
-    name: Docker Container Build & Package
+    name: Docker Container Verification Build
     needs: preflight-gate
     if: github.event.inputs.target == 'all' || github.event.inputs.target == 'docker-image'
     runs-on: ubuntu-latest
@@ -96,13 +96,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Local Container Image
+      - name: Build Local Container Image (Verification Only - No Remote Push)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: false
-          tags: onnesha-hospital:latest
+          tags: onnesha-hospital:${{ github.sha }}
           build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=https://onnesha-hospital.pages.dev
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://iuhtzahuszdkdarhxobx.supabase.co' }}
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_verification_token' }}
             NEXT_PUBLIC_SITE_URL=https://onnesha-hospital.pages.dev

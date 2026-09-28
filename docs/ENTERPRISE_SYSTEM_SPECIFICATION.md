@@ -89,10 +89,11 @@ The system provides 32 functional departments and modules operating across a sin
 - Strict security headers configured in `public/_headers` (HSTS, CSP, X-Frame-Options, Cache-Control).
 - Fail-closed Service Worker v5 allowlisting public routes and enforcing network-only execution on private routes.
 
-### B. Self-Hosted On-Premise Docker Compose (Edge LAN Hospital Server)
+### B. Self-Hosted On-Premise Docker Compose (Edge LAN Hospital Web Server & Auxiliary Replica)
 - Production multi-stage `Dockerfile` (Node 22 Alpine builder -> unprivileged Nginx runner).
-- `docker-compose.yml` orchestrating `ohms-web`, `ohms-postgres` (PostgreSQL 16), and `ohms-redis` (Redis 7).
-- Enables completely offline local hospital intranet operation when public internet fails.
+- `docker-compose.yml` orchestrating `ohms-web` with fail-closed configuration and internal-only network isolation.
+- Delivers ultra-fast edge LAN static web serving. The authoritative data, authentication, and storage backend is Supabase Cloud (`iuhtzahuszdkdarhxobx.supabase.co`).
+- During cloud internet outages, hospital staff fall back to manual paper continuity protocols (as specified in `docs/PHASE_19_BUSINESS_CONTINUITY.md`), ensuring continuous patient care without false claims of local offline auth/storage parity.
 
 ### C. Windows Desktop ERP Client (Tauri 2 + Rust)
 - Native Windows 10/11 client application (`src-tauri/`) connecting to the canonical backend.
