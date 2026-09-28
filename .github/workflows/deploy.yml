@@ -1,0 +1,108 @@
+name: OHMS Enterprise Multi-Target Production Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Deployment Target'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - cloudflare-pages
+          - docker-image
+          - tauri-desktop
+
+permissions:
+  contents: write
+  packages: write
+  deployments: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # 1. Validation & Strict Quality Gate Pre-flight
+  preflight-gate:
+    name: Pre-Flight Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Strict TypeScript Verification
+        run: npm run typecheck
+
+      - name: Zero-Warning ESLint Gate
+        run: npx eslint . --max-warnings 0
+
+      - name: Automated Unit & Invariants Test Suite
+        run: npm run test:certification
+
+  # 2. Cloudflare Pages Production Edge Release
+  deploy-cloudflare:
+    name: Cloudflare Pages Edge Deployment
+    needs: preflight-gate
+    if: github.event.inputs.target == 'all' || github.event.inputs.target == 'cloudflare-pages'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Compile Next.js Static Export
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SITE_URL: "https://onnesha-hospital.pages.dev"
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler pages deploy out --project-name=onnesha-hospital --branch=main --commit-dirty=false
+
+  # 3. Docker Container Build (GitHub Packages / GHCR)
+  build-container:
+    name: Docker Container Build & Package
+    needs: preflight-gate
+    if: github.event.inputs.target == 'all' || github.event.inputs.target == 'docker-image'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Local Container Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: onnesha-hospital:latest
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=https://onnesha-hospital.pages.dev
+            NEXT_PUBLIC_SITE_URL=https://onnesha-hospital.pages.dev

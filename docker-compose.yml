@@ -1,0 +1,79 @@
+# ==============================================================================
+# ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS) — ENTERPRISE DOCKER COMPOSE
+# Self-Hosted On-Premise / Edge Hospital Topology
+# ==============================================================================
+
+services:
+  # 1. Front-Facing Hospital Web Client & PWA
+  ohms-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:8000}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-sb_publishable_default}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    container_name: ohms-web-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:80"
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ohms-internal-network
+
+  # 2. Local Edge PostgreSQL Database (Optional for On-Premise Replica / Archival)
+  ohms-postgres:
+    image: postgres:16-alpine
+    container_name: ohms-edge-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ohms_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMeInProduction_SecurePwd_2026!}
+      POSTGRES_DB: ${POSTGRES_DB:-onnesha_hospital_db}
+      TZ: Asia/Dhaka
+    volumes:
+      - ohms_postgres_data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ohms_admin} -d ${POSTGRES_DB:-onnesha_hospital_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ohms-internal-network
+
+  # 3. High-Speed Cache & In-Memory Coordination (Redis)
+  ohms-redis:
+    image: redis:7-alpine
+    container_name: ohms-edge-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-RedisSecureToken_2026!}
+    volumes:
+      - ohms_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-RedisSecureToken_2026!}", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ohms-internal-network
+
+networks:
+  ohms-internal-network:
+    driver: bridge
+
+volumes:
+  ohms_postgres_data:
+    driver: local
+  ohms_redis_data:
+    driver: local

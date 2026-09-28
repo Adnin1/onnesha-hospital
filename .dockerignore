@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.git
+.github
+.vscode
+.agent
+.cline
+.cursor
+playwright-report
+test-results
+*.log
+.env*.local
+src-tauri/target
