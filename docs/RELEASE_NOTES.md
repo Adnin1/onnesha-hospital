@@ -1,10 +1,32 @@
-# Onnesha Hospital Management System — Release Notes v1.1.8
+# Onnesha Hospital Management System — Release Notes v1.1.9
 
 **Release Date:** 2026-09-28  
-**Version:** v1.1.8  
-**Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.8`)  
+**Version:** v1.1.9  
+**Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.9`)  
 **Deployment Target:** Cloudflare Pages (`https://onnesha-hospital.pages.dev`)  
-**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, 87 Applied Migrations)  
+**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, 88 Applied Migrations)  
+
+---
+
+## 🚀 What's New in v1.1.9
+
+### 1. Server-Authoritative Storage & Session Hardening
+- **Server Session Architecture (`lib/auth/server-session.ts`):** Created clear separation between client UX session helpers and server-authoritative authorization. Server modules now derive user identity and permissions directly from server cookies/headers rather than trusting client-supplied parameters.
+- **Storage Vault Path Canonicalization (`lib/storage/validation.ts` & `lib/storage/files.ts`):** Enforces strict path normalization and blocks path traversal attempts (`../`, `..\`, `%2e%2e`, null bytes). Strict patient ID matching and tenant isolation enforced on all document operations.
+- **MIME & Quota Boundaries:** Enforces strict clinical MIME type whitelist (`application/pdf`, `image/jpeg`, `image/png`, `application/dicom`) and 50MB file size ceiling.
+
+### 2. Authoritative Public Token Status RPC (`Migration 88`)
+- **Deterministic Token Lookup (`public.get_public_token_status`):** Migration `20260928190000_authoritative_public_token_status_lookup.sql` implements an authoritative PostgreSQL RPC for chamber token search. Replaces client-side array search over partial queues.
+- **Queue Position & Cross-Date Scheduling:** Returns exact queue position ahead, consultation chamber room, and doctor without exposing patient PII. Accurately informs patients if a token is scheduled for another date.
+- **Zero-PHI Guarantee:** Never exposes patient names, phone numbers, addresses, or diagnosis.
+
+### 3. Supabase Auth Configuration Drift Alignment
+- **Strict Staff-Provisioned Policy (`supabase/config.toml`):** Aligned `[auth.email] enable_signup = false` with global `[auth] enable_signup = false`, locking down the hospital ERP to administrator-provisioned staff accounts.
+- **Automated Drift Suite (`tests/auth-config-drift.test.mjs`):** Regression test preventing inadvertent enablement of public signups, wildcard redirects, or anonymous sessions.
+
+### 4. 82/82 Test Suites Passing (713 Active Passes)
+- 3 new regression suites added: `tests/storage-vault-hardening.test.mjs`, `tests/auth-config-drift.test.mjs`, and `tests/public-token-status.test.mjs`.
+- All 82 test suites passing with 713 active passes, 0 failures, and exactly 6 standard skips.
 
 ---
 

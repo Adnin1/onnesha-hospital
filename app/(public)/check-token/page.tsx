@@ -2,8 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { RefreshCw, AlertCircle, Loader2 } from "lucide-react";
-import { getLiveWaitingQueueAction } from "@/lib/public/actions";
+import { RefreshCw, AlertCircle, Clock, Loader2 } from "lucide-react";
+import {
+  getLiveWaitingQueueAction,
+  getPublicTokenStatusAction,
+  PublicTokenStatusResult,
+} from "@/lib/public/actions";
 
 interface QueueItem {
   id: string;
@@ -18,8 +22,9 @@ export default function CheckTokenPage() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchToken, setSearchToken] = useState("");
-  const [searchResult, setSearchResult] = useState<QueueItem | null>(null);
+  const [searchResult, setSearchResult] = useState<PublicTokenStatusResult | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -65,14 +70,54 @@ export default function CheckTokenPage() {
     };
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    setHasSearched(true);
     const cleaned = searchToken.trim().replace(/^#/, "").toUpperCase();
-    const found = queue.find(
-      (q) => q.token_number.replace(/^#/, "").toUpperCase() === cleaned
-    );
-    setSearchResult(found || null);
+    if (!cleaned) return;
+
+    setHasSearched(true);
+    setIsSearching(true);
+
+    try {
+      // 1. Authoritative backend RPC lookup
+      const authRes = await getPublicTokenStatusAction(cleaned);
+
+      if (authRes.success && authRes.found) {
+        setSearchResult(authRes);
+      } else {
+        // 2. Check local loaded queue fallback
+        const localFound = queue.find(
+          (q) => q.token_number.replace(/^#/, "").toUpperCase() === cleaned.toUpperCase()
+        );
+
+        if (localFound) {
+          setSearchResult({
+            success: true,
+            found: true,
+            token_number: localFound.token_number,
+            status: localFound.status,
+            status_label:
+              localFound.status === "serving"
+                ? "In Consultation Room"
+                : localFound.status === "calling"
+                ? "Now Calling"
+                : "Waiting in Queue",
+            doctor_name: localFound.doctor_name,
+            room_number: localFound.room_number,
+          });
+        } else {
+          setSearchResult(authRes);
+        }
+      }
+    } catch {
+      setSearchResult({
+        success: false,
+        found: false,
+        message: "Failed to check token status. Please check connection and try again.",
+      });
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -108,43 +153,93 @@ export default function CheckTokenPage() {
             />
             <button
               type="submit"
-              className="bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2 min-h-[44px] rounded-lg transition shrink-0 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              disabled={isSearching}
+              className="bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2 min-h-[44px] rounded-lg transition shrink-0 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-50"
             >
-              Check Status
+              {isSearching ? "Checking..." : "Check Status"}
             </button>
           </form>
 
           {/* Search Result Feedback */}
           {hasSearched && (
             <div className="mt-4 p-4 rounded-xl border transition">
-              {searchResult ? (
-                <div className="bg-emerald-950/80 border border-emerald-500/50 p-4 rounded-xl text-emerald-200 text-xs">
+              {isSearching ? (
+                <div className="bg-slate-800 border border-slate-700 p-4 rounded-xl text-slate-300 text-xs flex items-center justify-center space-x-2">
+                  <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
+                  <span>Querying chamber status for token #{searchToken}...</span>
+                </div>
+              ) : searchResult && searchResult.found ? (
+                <div
+                  className={`p-4 rounded-xl text-xs border ${
+                    searchResult.status === "serving"
+                      ? "bg-emerald-950/80 border-emerald-500/50 text-emerald-200"
+                      : searchResult.status === "calling"
+                      ? "bg-amber-950/80 border-amber-500/50 text-amber-200"
+                      : searchResult.status === "done"
+                      ? "bg-slate-800 border-slate-700 text-slate-300"
+                      : "bg-sky-950/80 border-sky-500/50 text-sky-200"
+                  }`}
+                >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-sm text-white">
                       Token: {searchResult.token_number}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold uppercase text-[10px]">
-                      {searchResult.status}
+                    <span
+                      className={`px-2.5 py-0.5 rounded font-bold uppercase text-[10px] ${
+                        searchResult.status === "serving"
+                          ? "bg-emerald-500 text-slate-950"
+                          : searchResult.status === "calling"
+                          ? "bg-amber-500 text-slate-950 animate-pulse"
+                          : searchResult.status === "done"
+                          ? "bg-slate-700 text-slate-300"
+                          : "bg-sky-500 text-slate-950"
+                      }`}
+                    >
+                      {searchResult.status_label || searchResult.status}
                     </span>
                   </div>
-                  <p>
-                    <strong>Doctor:</strong> {searchResult.doctor_name}
-                  </p>
-                  <p>
-                    <strong>Chamber Room:</strong> {searchResult.room_number}
-                  </p>
-                  <p className="mt-2 text-[11px] text-emerald-300">
+                  {searchResult.doctor_name && (
+                    <p>
+                      <strong>Doctor:</strong> {searchResult.doctor_name}
+                    </p>
+                  )}
+                  {searchResult.room_number && (
+                    <p>
+                      <strong>Chamber Room:</strong> {searchResult.room_number}
+                    </p>
+                  )}
+                  {searchResult.queue_ahead !== undefined && searchResult.status === "waiting" && (
+                    <p className="mt-1 flex items-center gap-1 text-[11px] text-sky-300">
+                      <Clock className="w-3 h-3" />
+                      <span>{searchResult.queue_ahead} patient(s) waiting ahead in this chamber.</span>
+                    </p>
+                  )}
+                  <p className="mt-2 text-[11px]">
                     {searchResult.status === "serving"
                       ? "Your token is currently being attended by the doctor inside the chamber."
                       : searchResult.status === "calling"
                       ? "Attention! Your token is being called right now. Please proceed to the room immediately."
+                      : searchResult.status === "done"
+                      ? "Consultation Completed: Your consultation has concluded for today."
+                      : searchResult.status === "skipped"
+                      ? "This token was marked as skipped or cancelled. Please speak with the reception desk."
                       : "Please wait in the patient lobby and monitor the display screen for your token call."}
                   </p>
+                </div>
+              ) : searchResult?.has_other_date ? (
+                <div className="bg-slate-800 border border-amber-600/40 p-4 rounded-xl text-amber-300 text-xs flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>
+                    Token &quot;{searchToken}&quot; is scheduled for a different date:{" "}
+                    <strong>{searchResult.scheduled_date}</strong>.
+                  </span>
                 </div>
               ) : (
                 <div className="bg-slate-800 border border-slate-700 p-4 rounded-xl text-slate-400 text-xs flex items-center space-x-2">
                   <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Token &quot;{searchToken}&quot; was not found in the active waiting queue for today.</span>
+                  <span>
+                    Token &quot;{searchToken}&quot; was not found in the active waiting queue for today.
+                  </span>
                 </div>
               )}
             </div>

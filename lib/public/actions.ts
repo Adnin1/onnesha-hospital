@@ -511,3 +511,55 @@ export async function getLiveWaitingQueueAction(): Promise<{
   }
 }
 
+export interface PublicTokenStatusResult {
+  success: boolean;
+  found: boolean;
+  token_number?: string;
+  status?: "waiting" | "calling" | "serving" | "done" | "skipped";
+  status_label?: string;
+  doctor_name?: string;
+  room_number?: string;
+  appointment_date?: string;
+  queue_ahead?: number;
+  called_at?: string;
+  has_other_date?: boolean;
+  scheduled_date?: string;
+  message?: string;
+  error?: string;
+}
+
+/**
+ * Authoritative single token status lookup.
+ * Calls backend RPC `get_public_token_status` directly instead of searching client arrays.
+ * Zero PHI: never returns patient name, phone, or clinical notes.
+ */
+export async function getPublicTokenStatusAction(
+  tokenNumber: string,
+  date?: string
+): Promise<PublicTokenStatusResult> {
+  const normalized = tokenNumber.trim().replace(/^#/, "");
+  if (!normalized) {
+    return { success: false, found: false, error: "Please enter a valid token number." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("get_public_token_status", {
+      p_org_id: HOSPITAL_METADATA.id,
+      p_token_query: normalized,
+      p_date: date || null,
+    });
+
+    if (error) {
+      console.error("[getPublicTokenStatusAction error]", error.message);
+      return { success: false, found: false, error: "Unable to query token status. Please try again." };
+    }
+
+    const res = typeof data === "string" ? JSON.parse(data) : data;
+    return res as PublicTokenStatusResult;
+  } catch (err: unknown) {
+    console.error("[getPublicTokenStatusAction exception]", err);
+    return { success: false, found: false, error: "Unable to query token status. Please try again." };
+  }
+}
+

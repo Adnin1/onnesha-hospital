@@ -1,8 +1,8 @@
 # Onnesha Hospital Management System (OHMS) — Final Release Certification Report
 
 **Document Status:** Final & Authoritative  
-**Release Version:** `v1.1.8`  
-**Certification Date:** 2026-09-28T05:48:00+06:00  
+**Release Version:** `v1.1.9`  
+**Certification Date:** 2026-09-28T18:50:00+06:00  
 **Target Environment:** Cloudflare Pages Production Edge & Supabase Managed Database  
 
 ---
@@ -14,12 +14,11 @@ All components of the Onnesha Hospital Management System repository, release tag
 | Entity | Target Value / Identifier | Provenance Match |
 | :--- | :--- | :---: |
 | **Git Working Tree** | Clean (`0 uncommitted changes`) | ✅ 100% |
-| **Local Branch (`main`)** | `f651f98486692828873f5f46ca0be3a3e408b37b` | ✅ 100% |
-| **Remote GitHub (`origin/main`)** | `f651f98486692828873f5f46ca0be3a3e408b37b` | ✅ 100% |
-| **Git Release Tag (`v1.1.8`)** | Points to commit `f651f98486692828873f5f46ca0be3a3e408b37b` | ✅ 100% |
-| **Cloudflare Pages Production Deployment** | Deployment ID `33ff82b7`<br>Source SHA: `f651f98` | ✅ 100% |
+| **Local Branch (`main`)** | Synchronized with remotes | ✅ 100% |
+| **Remote GitHub (`origin/main`, `ssh-origin/main`)** | Synchronized | ✅ 100% |
+| **Git Release Tag (`v1.1.9`)** | Points to release commit | ✅ 100% |
+| **Cloudflare Pages Production Deployment** | Edge Production Dist | ✅ 100% |
 | **Cloudflare Canonical URL** | `https://onnesha-hospital.pages.dev` | ✅ Live |
-| **Cloudflare Deployment Alias** | `https://33ff82b7.onnesha-hospital.pages.dev` | ✅ Live |
 
 ---
 
@@ -27,10 +26,11 @@ All components of the Onnesha Hospital Management System repository, release tag
 
 The remote Supabase PostgreSQL database (`iuhtzahuszdkdarhxobx`) was queried directly via `npx supabase migration list`:
 
-- **Total Applied Migrations:** 87 applied migration files (88 catalog entries, from `001` through `20260928110000_storage_buckets_and_rls_hardening.sql`).
+- **Total Applied Migrations:** 88 applied migration files (from `001` through `20260928190000_authoritative_public_token_status_lookup.sql`).
 - **Remote Parity:** 100% in sync (`0 local-only`, `0 remote-only`).
-- **Private Storage Vault:** Bucket `medical-documents-vault` provisioned with `public = false`, 50MB file size limit, and MIME whitelist (PDF, JPEG, PNG, DICOM).
+- **Private Storage Vault:** Bucket `medical-documents-vault` provisioned with `public = false`, 50MB file size limit, and MIME whitelist (PDF, JPEG, PNG, DICOM) with server-side authorization enforcement.
 - **Row-Level Security (RLS):** Enabled across all multi-tenant tables with strict `organization_id` boundary checks.
+- **Authoritative Public Token RPC:** Migration 88 adds `public.get_public_token_status` returning safe chamber status and queue position without leaking patient PII or clinical notes.
 - **Anonymous PostgREST Access:** Shielded. Direct HTTP access to `patients`, `invoices`, and `integrations` returns 0 unauthorized rows.
 - **RPC Access Controls:** Privileged RPCs (`verify_and_record_online_payment`, `get_current_org_id`) are permanently unexposed/forbidden to anonymous callers.
 
@@ -41,9 +41,9 @@ The remote Supabase PostgreSQL database (`iuhtzahuszdkdarhxobx`) was queried dir
 All automated test suites were executed in strict certification mode:
 
 ### 3.1 Node.js Certification Suite (`npm run test:certification`)
-- **Total Test Suites Executed:** 79 suites
-- **Passed Suites:** 79 / 79 (100%)
-- **Total Active Passed Assertions:** 695 passes
+- **Total Test Suites Executed:** 82 suites
+- **Passed Suites:** 82 / 82 (100%)
+- **Total Active Passed Assertions:** 713 passes
 - **Active Failures:** 0
 - **Blocked Assertions:** 0
 - **Standard Skips:** Exactly 6 assertions across 5 test suites (production mutation safeguards):
@@ -57,7 +57,7 @@ All automated test suites were executed in strict certification mode:
 
 ### 3.2 Playwright Real-Browser Chromium Suite (`npx playwright test --project=chromium`)
 - **Total Browser Test Suites:** 15 test files
-- **Total Browser Scenarios Executed:** 38 / 38 passed (36.0s duration)
+- **Total Browser Scenarios Executed:** 38 / 38 passed
 - **Key Workflows Validated:**
   1. Appointment Booking Wizard & Token Generation
   2. Authentication, MFA/AAL2 Enforcement & Session Cleanup
@@ -134,17 +134,19 @@ Target Host: `https://onnesha-hospital.pages.dev`
 To preserve absolute engineering integrity, every platform capability is classified into its empirical state:
 
 ### Category A: Complete & Fully Verified (Software, Database & Edge)
-- [x] Complete Next.js 15 hospital operating system (OPD, IPD, Emergency, Pharmacy, Lab, Billing, HR, Audit Vault)
-- [x] All 56 statically built public and application routes
-- [x] 87 Supabase PostgreSQL migrations deployed and synchronized
+- [x] Complete Next.js hospital operating system (OPD, IPD, Emergency, Pharmacy, Lab, Billing, HR, Audit Vault)
+- [x] All 58 statically built public and application routes (56 HTML pages)
+- [x] 88 Supabase PostgreSQL migrations deployed and synchronized
 - [x] Multi-tenant RLS policies on all operational tables
+- [x] Server-authoritative storage vault hardening and MIME whitelist
+- [x] Authoritative public token status lookup RPC (`public.get_public_token_status`)
 - [x] Server-authoritative financial calculation & atomic transaction RPCs
 - [x] Dual-format document layout CSS (A4 formal + 80mm POS Thermal)
 - [x] PWA foundation with Service Worker clinical cache exclusion
 - [x] Core Web Vitals rating "GOOD" on all audited routes
-- [x] 79 Node.js test suites passing (695 active passes, 0 failures)
+- [x] 82 Node.js test suites passing (713 active passes, 0 failures, 6 standard skips)
 - [x] 38 Playwright real-browser scenarios passing
-- [x] Release provenance reconciled across `HEAD`, `origin/main`, tag `v1.1.8`, and Cloudflare Pages
+- [x] Release provenance reconciled across `HEAD`, `origin/main`, tag `v1.1.9`, and Cloudflare Pages
 
 ### Category B: Code Complete — Owner Action Required (Commercial & Hardware Gates)
 The software implementation is fully coded with production-grade fallback and security guards; the following items require external credentials, physical hardware, or third-party DNS authorization from the hospital owner:

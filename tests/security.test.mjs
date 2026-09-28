@@ -76,8 +76,8 @@ describe("OHMS Phase 2 Security Test Suite (20 Scenarios)", () => {
   // 11. private file access denied without medical_records:view
   test("11. private file access enforces medical_records:view and tenant prefix", () => {
     const fileStorage = fs.readFileSync(path.join(rootDir, "lib", "storage", "files.ts"), "utf8");
-    assert.match(fileStorage, /requirePermission\("medical_records:view"\)/);
-    assert.match(fileStorage, /Cross-tenant document access is strictly prohibited/);
+    assert.match(fileStorage, /require(Server)?Permission\("medical_records:view"/);
+    assert.match(fileStorage, /Cross-tenant.*prohibited/i);
   });
 
   // 12. service role / secret key never reaches browser

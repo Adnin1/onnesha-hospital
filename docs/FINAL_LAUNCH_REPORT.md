@@ -1,11 +1,11 @@
-# Final System Launch & Verification Report (OHMS v1.1.8)
+# Final System Launch & Verification Report (OHMS v1.1.9)
 
 ## Executive System Status
 - **Overall Operational Status**: `STATUS: GO WITH EXTERNAL OWNER GATES` (Category YELLOW: `PRODUCTION READY AFTER OWNER ACTIONS`)
-- **Software Baseline**: Version **1.1.8** (Release Tag: `v1.1.8`)
+- **Software Baseline**: Version **1.1.9** (Release Tag: `v1.1.9`)
 - **Authoritative Provenance**: Synchronized with `origin/main` & `ssh-origin/main`
-- **Active Edge Deployment**: `https://33ff82b7.onnesha-hospital.pages.dev` (Production Alias: `https://onnesha-hospital.pages.dev`)
-- **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (87 Migrations Applied)
+- **Active Edge Deployment**: `https://onnesha-hospital.pages.dev`
+- **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (88 Migrations Applied)
 - **Official Super Admin**: `aaih.apon@gmail.com`
 
 ---
@@ -17,7 +17,7 @@
 | **Mandatory CI (Hermetic)** | ✅ **PASS** | TypeScript, ESLint, npm audit, Next.js build, Asset audit, Certification, and Playwright 4-Browser all passing |
 | **TypeScript Compilation** | ✅ **PASS** | `tsc --noEmit` exited with code 0 (0 errors) |
 | **ESLint Zero-Warning** | ✅ **PASS** | `eslint` exited with code 0 (0 errors) |
-| **Strict Test Certification** | ✅ **PASS** | **79 / 79 Suites Passing** (695 Active Passes, 0 Failures, 0 Blocked) |
+| **Strict Test Certification** | ✅ **PASS** | **82 / 82 Suites Passing** (713 Active Passes, 0 Failures, 0 Blocked, 6 Standard Skips) |
 | **Playwright Real-Browser E2E** | ✅ **PASS** | **38 / 38 Browser Specs Passing** across Chromium, Firefox, Mobile Chrome, and WebKit |
 | **Static Web Export** | ✅ **PASS** | **58 Static Routes** (56 HTML Pages) pre-rendered with zero server runtime dependency |
 | **Asset & Link Integrity** | ✅ **PASS** | **952 Assets & 321 Internal Links** checked; **0 Broken References** |
@@ -59,4 +59,4 @@ To maintain 100% architectural honesty and fail-closed security, all external un
 ---
 
 ## 🎯 Final Launch Sign-off
-The Onnesha Hospital Management System (OHMS v1.1.7) software is **100% Code-Complete, Automated-Tested, Edge-Deployed, and Verified for Production Operations**.
+The Onnesha Hospital Management System (OHMS v1.1.9) software is **100% Code-Complete, Automated-Tested, Edge-Deployed, and Verified for Production Operations**.
