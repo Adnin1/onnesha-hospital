@@ -14,12 +14,12 @@ All components of the Onnesha Hospital Management System repository, release tag
 | Entity | Target Value / Identifier | Provenance Match |
 | :--- | :--- | :---: |
 | **Git Working Tree** | Clean (`0 uncommitted changes`) | ✅ 100% |
-| **Local Branch (`main`)** | `b4311006509f6b96b3a0fceba2612a4dfb7ec036` | ✅ 100% |
-| **Remote GitHub (`origin/main`)** | `b4311006509f6b96b3a0fceba2612a4dfb7ec036` | ✅ 100% |
-| **Git Release Tag (`v1.1.8`)** | Points to commit `b4311006509f6b96b3a0fceba2612a4dfb7ec036` | ✅ 100% |
-| **Cloudflare Pages Production Deployment** | Deployment ID `e101a900-8c17-4037-95f6-6a1ffdafd1fb`<br>Source SHA: `b431100` | ✅ 100% |
+| **Local Branch (`main`)** | `f651f98486692828873f5f46ca0be3a3e408b37b` | ✅ 100% |
+| **Remote GitHub (`origin/main`)** | `f651f98486692828873f5f46ca0be3a3e408b37b` | ✅ 100% |
+| **Git Release Tag (`v1.1.8`)** | Points to commit `f651f98486692828873f5f46ca0be3a3e408b37b` | ✅ 100% |
+| **Cloudflare Pages Production Deployment** | Deployment ID `33ff82b7`<br>Source SHA: `f651f98` | ✅ 100% |
 | **Cloudflare Canonical URL** | `https://onnesha-hospital.pages.dev` | ✅ Live |
-| **Cloudflare Deployment Alias** | `https://e101a900.onnesha-hospital.pages.dev` | ✅ Live |
+| **Cloudflare Deployment Alias** | `https://33ff82b7.onnesha-hospital.pages.dev` | ✅ Live |
 
 ---
 
@@ -173,6 +173,6 @@ The software implementation is fully coded with production-grade fallback and se
 
 ## 7. Final Certification Verdict
 
-**GO / PRODUCTION APPROVED**
+**STATUS: GO WITH EXTERNAL OWNER GATES**
 
-The software platform, database migrations, security controls, and edge deployment are completely sealed, tested, and live. The application is ready for immediate commercial commissioning upon owner provision of external credentials and physical hardware.
+The software platform, database migrations, security controls, and edge deployment are completely verified, tested, and live on the edge. The application is ready for commercial commissioning upon the owner completing the Category B external operational gates (DNS pointing, live merchant keys, physical USB printers/scanners, Super Admin MFA, and non-production isolated restore drill).

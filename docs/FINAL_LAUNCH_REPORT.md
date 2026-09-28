@@ -1,10 +1,10 @@
 # Final System Launch & Verification Report (OHMS v1.1.8)
 
 ## Executive System Status
-- **Overall Operational Status**: `PRODUCTION READY AFTER OWNER ACTIONS` (Category YELLOW)
+- **Overall Operational Status**: `STATUS: GO WITH EXTERNAL OWNER GATES` (Category YELLOW: `PRODUCTION READY AFTER OWNER ACTIONS`)
 - **Software Baseline**: Version **1.1.8** (Release Tag: `v1.1.8`)
 - **Authoritative Provenance**: Synchronized with `origin/main` & `ssh-origin/main`
-- **Active Edge Deployment**: `https://69dabf81.onnesha-hospital.pages.dev` (Production Alias: `https://onnesha-hospital.pages.dev`)
+- **Active Edge Deployment**: `https://33ff82b7.onnesha-hospital.pages.dev` (Production Alias: `https://onnesha-hospital.pages.dev`)
 - **Remote Database**: `https://iuhtzahuszdkdarhxobx.supabase.co` (87 Migrations Applied)
 - **Official Super Admin**: `aaih.apon@gmail.com`
 
