@@ -95,6 +95,8 @@ async function installMutationGuard(page: Page, baseURL: string): Promise<void> 
     const READ_ONLY_RPCS = [
       "/rest/v1/rpc/get_public_live_queue",
       "/rest/v1/rpc/get_public_doctors_directory",
+      "/rest/v1/rpc/get_public_token_status",
+      "/rest/v1/rpc/get_public_doctor_schedules",
     ];
     const isReadOnlyRpc = READ_ONLY_RPCS.some((rpc) => url.includes(rpc));
 

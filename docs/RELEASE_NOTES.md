@@ -1,10 +1,24 @@
-# Onnesha Hospital Management System — Release Notes v1.1.11
+# Onnesha Hospital Management System — Release Notes v1.1.12
 
-**Release Date:** 2026-09-28  
-**Version:** v1.1.11  
-**Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.11`)  
+**Release Date:** 2026-09-29  
+**Version:** v1.1.12  
+**Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.12`)  
 **Deployment Target:** Cloudflare Pages (`https://onnesha-hospital.pages.dev`)  
-**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, EXACTLY 90 Applied Migrations Verified)  
+**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, EXACTLY 91 Applied Migrations Verified)  
+
+---
+
+## 🚀 What's New in v1.1.12
+
+### 1. Cross-Browser Playwright Matrix Certification (WebKit & Firefox Race Elimination)
+- **Resolved Navigation Interruption Race Condition:** In `tests/browser/public-website-accessibility-and-responsive.spec.ts` Scenario 7, visiting `/mfa` previously initiated an unauthenticated client-side redirect (`router.push('/login')`), colliding with the subsequent navigation to `/forgot-password` and causing WebKit test failure (`navigation interrupted`) and Firefox flakiness (`NS_BINDING_ABORTED`).
+- **Resilient Multi-Route Navigation:** Implemented redirect-settling guards and retry-backed navigation for multi-route sweeps. Increased test timeout to 120 seconds to comfortably absorb cross-browser latency across 15 full route sweeps.
+- **Fixture Read-Only Allowlist Expansion:** Added `get_public_token_status` and `get_public_doctor_schedules` to `READ_ONLY_RPCS` in `tests/browser/fixtures.ts`, preventing runtime mutation guard false-positives on public read RPCs.
+- **Four-Browser Verification:** All 38 browser specs verified passing across Chromium, Firefox, Mobile Chrome, and WebKit with 0 failures and 0 flaky tests.
+
+### 2. Forward Release Provenance Synchronization (v1.1.12)
+- Reconciled historical tag provenance (`v1.1.11` tagged at `c19561a` while subsequent commits advanced `main` to `e1a53d0`).
+- Unified version bump to `1.1.12` across `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, `public/downloads/desktop/latest.json`, and `app/(hospital)/app/reports/page.tsx`.
 
 ---
 

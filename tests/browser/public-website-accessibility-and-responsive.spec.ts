@@ -142,7 +142,7 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
   });
 
   test("7. Route-by-Route DOM Accessibility: exactly one main landmark with id='main-content' and valid skip link", async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(120000);
     const verifiedRoutes = [
       "/",
       "/about",
@@ -162,8 +162,35 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
     ];
 
     for (const route of verifiedRoutes) {
-      await page.goto(route, { waitUntil: "domcontentloaded" });
-      await page.waitForTimeout(100);
+      let navigated = false;
+      for (let attempt = 0; attempt < 3 && !navigated; attempt++) {
+        try {
+          await page.goto(route, { waitUntil: "domcontentloaded", timeout: 20000 });
+          await page.waitForLoadState("domcontentloaded");
+          navigated = true;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (
+            attempt < 2 &&
+            (msg.includes("NS_BINDING_ABORTED") ||
+              msg.includes("interrupted") ||
+              msg.includes("navigation"))
+          ) {
+            await page.waitForTimeout(400);
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      // If on /mfa, wait for any unauthenticated redirect to /login to settle
+      // so it does not collide with subsequent route navigations
+      if (route === "/mfa") {
+        await page.waitForTimeout(500);
+        await page.waitForLoadState("domcontentloaded");
+      } else {
+        await page.waitForTimeout(100);
+      }
 
       const a11yLandmarks = await page.evaluate(() => {
         const mains = document.querySelectorAll("main");
