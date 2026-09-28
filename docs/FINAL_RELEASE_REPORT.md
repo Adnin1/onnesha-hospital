@@ -14,15 +14,16 @@ All software engineering, security hardening, cross-browser Playwright automatio
 
 | Entity | Target Value / Identifier | Provenance Match |
 | :--- | :--- | :---: |
-| **Package Version** | `1.1.13` (`package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `latest.json`) | ✅ Synchronized |
-| **Git Working Tree** | Clean (`0 uncommitted changes` prior to release commit `eb3a4af4b8f550112c14e4cbd46a96a4938c417b`) | ✅ 100% |
+| **Package Version** | `1.1.13` (`package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `latest.json`, `Dockerfile`) | ✅ Synchronized |
+| **Git Working Tree** | Clean (`0 uncommitted changes` prior to release commit) | ✅ 100% |
 | **Remote Database** | Supabase PostgreSQL (`iuhtzahuszdkdarhxobx`) | ✅ Connected & Linked |
 | **Database Migrations** | **91 Applied Migrations** (`001` through `20260928220000`) | ✅ 100% in sync |
 | **Cloudflare Pages Production Deployment** | Static Export (`58 routes`, `56 HTML pages`) | ✅ Live (`https://onnesha-hospital.pages.dev`) |
 | **Cloudflare Canonical Domain** | `https://onnesha-hospital.pages.dev` | ✅ Live |
-| **Node.js Test Certification Suite** | **86 Test Suites** (`757 Active Passes, 0 Failures`) | ✅ 100% passed |
-| **Playwright Cross-Browser Matrix** | 4 Browser Projects (Chromium, Firefox, Mobile-Chrome, WebKit) | ✅ 38/38 passed, 0 flaky |
-| **Docker & Infrastructure Architecture** | Hardened Nginx runner + Fail-closed Compose topology (Phase 21) | ✅ Verified |
+| **Node.js Test Certification Suite** | **87 Test Suites** (`764 Active Passes, 0 Failures`) | ✅ 100% passed |
+| **Playwright Cross-Browser Matrix** | 4 Browser Projects (Chromium, Firefox, Mobile-Chrome, WebKit) | ✅ 38/38 passed, 0 flaky (30/30 MFA 10x certified) |
+| **Docker & Infrastructure Architecture** | Hardened Nginx runner + PostgreSQL boot shim + CSP sync (Section 82) | ✅ Verified |
+| **Static Export Architecture Guard** | 0 `"use server"`, 0 UI `next/headers`, pure client storage | ✅ 7/7 Scenarios Passed |
 | **Final Classification** | **`ENGINEERING COMPLETE — OWNER GATES REMAIN`** | ✅ Certified |
 
 ---
@@ -163,9 +164,14 @@ To adhere strictly to truthfulness without declaring unfulfilled external action
 - [x] Composite performance indexes on payments, refunds, and invoices
 - [x] Asia/Dhaka timezone date handling (`[startInclusive, endExclusive)` half-open interval)
 - [x] Reports page optimization (300ms debounce, pruned payloads, lazy-loaded tabs, full-dataset CSV export)
-- [x] 86 / 86 Node.js test suites passing (757 passes, 0 failures)
+- [x] 87 / 87 Node.js test suites passing (764 passes, 0 failures, 0 regressions)
 - [x] 38 / 38 Playwright browser tests passing across Chromium and Mobile-Chrome (0 flaky, 0 failed, 30/30 MFA 10x repetition certified)
-- [x] Enterprise Docker multi-stage containerization & fail-closed Compose topology verified (Phase 21)
+- [x] Enterprise Docker multi-stage containerization, vanilla PostgreSQL compatibility shim & fail-closed Compose topology (Phase 21 & Section 82)
+- [x] Docker Nginx CSP synchronized with `public/_headers` (sandbox removed, securepay preserved)
+- [x] GitHub deploy workflow hardened (zero fake Supabase fallback URLs, full preflight certification, deploy-scoped permissions, commit-hash tracking)
+- [x] Storage client migrated to pure client-side `@/lib/supabase/client` with tenant and session security
+- [x] Static Export Architecture Guard test suite passing (7/7 scenarios)
+- [x] Development seeder protected with hard anti-production domain guard
 - [x] 58 static routes exported cleanly
 - [x] 0 TypeScript errors, 0 ESLint warnings, 0 broken asset links
 - [x] Cloudflare Pages production deployment verified at `https://onnesha-hospital.pages.dev`

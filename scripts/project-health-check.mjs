@@ -156,28 +156,34 @@ if (todoCount === 0) pass('No TODO/FIXME markers in production source');
 // ─── 6. TypeScript ───
 console.log('\n📋 6. TypeScript Compilation');
 try {
-  execSync('npx tsc --noEmit', { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
+  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+  execSync(`${npxCmd} tsc --noEmit`, { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
   pass('TypeScript compiles with 0 errors');
 } catch (e) {
-  critical(`TypeScript compilation failed: ${e.stderr?.split('\n')[0] || 'unknown error'}`);
+  const errOutput = (e.stdout || '') + (e.stderr || '');
+  critical(`TypeScript compilation failed: ${errOutput.split('\n')[0] || 'unknown error'}`);
 }
 
 // ─── 7. ESLint ───
 console.log('\n📋 7. ESLint');
 try {
-  execSync('npx eslint . --max-warnings 0', { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
+  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+  execSync(`${npxCmd} eslint . --max-warnings 0`, { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
   pass('ESLint passes with 0 warnings');
 } catch (e) {
-  critical(`ESLint failed: ${e.stderr?.split('\n')[0] || 'see output'}`);
+  const errOutput = (e.stdout || '') + (e.stderr || '');
+  critical(`ESLint failed: ${errOutput.split('\n')[0] || 'see output'}`);
 }
 
 // ─── 8. Build ───
 console.log('\n📋 8. Build Verification');
 try {
-  execSync('npm run build', { cwd: ROOT, encoding: 'utf8', stdio: 'pipe', timeout: 120000 });
+  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  execSync(`${npmCmd} run build`, { cwd: ROOT, encoding: 'utf8', stdio: 'pipe', timeout: 120000 });
   pass('Build succeeds');
-} catch {
-  critical('Build failed');
+} catch (e) {
+  const errOutput = (e.stdout || '') + (e.stderr || '');
+  critical(`Build failed: ${errOutput.split('\n')[0] || 'see output'}`);
 }
 
 // ─── 9. Migration Count ───
@@ -234,11 +240,65 @@ try {
   }
 }
 
+// ─── 13. Static Export Invariants ───
+console.log('\n📋 13. Static Export Compatibility');
+try {
+  let staticExportViolations = 0;
+  for (const file of prodFiles) {
+    if (!file.endsWith('.ts') && !file.endsWith('.tsx') && !file.endsWith('.js') && !file.endsWith('.mjs')) continue;
+    const content = fs.readFileSync(file, 'utf8');
+    const rel = path.relative(ROOT, file).replace(/\\/g, '/');
+    if (content.includes('"use server"') || content.includes("'use server'")) {
+      critical(`Unsupported "use server" directive in static export codebase: ${rel}`);
+      staticExportViolations++;
+    }
+    // Check UI routes and components for next/headers and server client imports
+    if (rel.startsWith('app/') || rel.startsWith('components/')) {
+      if (content.includes("from 'next/headers'") || content.includes('from "next/headers"')) {
+        critical(`Unsupported next/headers import in UI codebase: ${rel}`);
+        staticExportViolations++;
+      }
+      if (content.includes('lib/supabase/server') || content.includes('@/lib/supabase/server')) {
+        critical(`UI file imports server-runtime client @/lib/supabase/server: ${rel}`);
+        staticExportViolations++;
+      }
+    }
+  }
+  if (staticExportViolations === 0) pass('Static export invariants verified: 0 server-only directives or headers imports in UI');
+} catch (e) {
+  warn(`Static export check encountered error: ${e.message}`);
+}
+
+// ─── 14. Docker & Infrastructure Consistency ───
+console.log('\n📋 14. Docker & Infrastructure Consistency');
+try {
+  const dockerfile = fs.readFileSync(path.join(ROOT, 'Dockerfile'), 'utf8');
+  if (dockerfile.includes(`LABEL version="${pkg.version}"`)) {
+    pass(`Dockerfile version label synchronized (${pkg.version})`);
+  } else {
+    critical(`Dockerfile version label is out of sync with package.json (${pkg.version})`);
+  }
+
+  const nginxConf = fs.readFileSync(path.join(ROOT, 'docker', 'nginx.conf'), 'utf8');
+  if (nginxConf.includes('sandbox.sslcommerz.com')) {
+    critical('docker/nginx.conf contains development sandbox.sslcommerz.com in production policy');
+  } else {
+    pass('docker/nginx.conf CSP free of development sandbox origins');
+  }
+} catch (e) {
+  warn(`Docker consistency check skipped: ${e.message}`);
+}
+
 // ─── Summary ───
+const isStrictMode = process.argv.includes('--strict') || process.argv.includes('--release');
 console.log('\n' + '='.repeat(50));
-console.log(`Results: ${criticalCount} critical, ${warningCount} warnings`);
+console.log(`Results: ${criticalCount} critical, ${warningCount} warnings (Strict Mode: ${isStrictMode ? 'ENABLED' : 'DISABLED'})`);
+
 if (criticalCount > 0) {
   console.error('\n🚫 HEALTH CHECK FAILED — Fix critical issues before release.');
+  process.exit(1);
+} else if (warningCount > 0 && isStrictMode) {
+  console.error('\n🚫 RELEASE CERTIFICATION FAILED — Warnings are prohibited in strict release certification.');
   process.exit(1);
 } else if (warningCount > 0) {
   console.log('\n⚠️  HEALTH CHECK PASSED WITH WARNINGS — Review before release.');

@@ -45,7 +45,8 @@ services:
       TZ: Asia/Dhaka
     volumes:
       - ohms_postgres_data:/var/lib/postgresql/data
-      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
+      - ./docker/init-db:/docker-entrypoint-initdb.d/00_init:ro
+      - ./supabase/migrations:/docker-entrypoint-initdb.d/01_migrations:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ohms_admin} -d ${POSTGRES_DB:-onnesha_hospital_db}"]
       interval: 10s

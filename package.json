@@ -15,7 +15,7 @@
     "test:live-security": "node --test tests/live/*.live.test.mjs",
     "test:e2e": "playwright test",
     "audit:assets": "node scripts/website-link-asset-forensics.mjs",
-    "health:check": "node scripts/project-health-check.mjs",
+    "health:check": "node scripts/project-health-check.mjs --strict",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
     "desktop:check": "tsc --noEmit && eslint . --quiet"

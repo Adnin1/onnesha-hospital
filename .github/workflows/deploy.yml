@@ -14,20 +14,21 @@ on:
           - docker-image
           - tauri-desktop
 
+# Top-level least privilege: Read-only access by default
 permissions:
-  contents: write
-  packages: write
-  deployments: write
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  # 1. Validation & Strict Quality Gate Pre-flight
+  # 1. Full Release Certification Pre-flight Gate (Strictly Aligned with Mandatory CI)
   preflight-gate:
-    name: Pre-Flight Verification
+    name: Full Release Pre-Flight Verification Gate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout Codebase
         uses: actions/checkout@v4
@@ -47,8 +48,24 @@ jobs:
       - name: Zero-Warning ESLint Gate
         run: npx eslint . --max-warnings 0
 
-      - name: Automated Unit & Invariants Test Suite
+      - name: Dependency Security Audit
+        run: npm audit --audit-level=high
+
+      - name: Next.js Production Static Export
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SITE_URL: "https://onnesha-hospital.pages.dev"
+        run: npm run build
+
+      - name: Static Link and Asset Crawl
+        run: npm run audit:assets
+
+      - name: Automated Unit & Invariants Test Suite (86 Suites)
         run: npm run test:certification
+
+      - name: Automated Project Governance Health Check (Strict Mode)
+        run: node scripts/project-health-check.mjs --strict
 
   # 2. Cloudflare Pages Production Edge Release
   deploy-cloudflare:
@@ -57,6 +74,9 @@ jobs:
     if: github.event.inputs.target == 'all' || github.event.inputs.target == 'cloudflare-pages'
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - name: Checkout Codebase
         uses: actions/checkout@v4
@@ -77,11 +97,11 @@ jobs:
           NEXT_PUBLIC_SITE_URL: "https://onnesha-hospital.pages.dev"
         run: npm run build
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Pages (Exact Commit Provenance)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler pages deploy out --project-name=onnesha-hospital --branch=main --commit-dirty=false
+        run: npx wrangler pages deploy out --project-name=onnesha-hospital --branch=main --commit-hash=${{ github.sha }} --commit-dirty=false
 
   # 3. Docker Container Verification Build (Local verification - push disabled)
   build-container:
@@ -89,6 +109,8 @@ jobs:
     needs: preflight-gate
     if: github.event.inputs.target == 'all' || github.event.inputs.target == 'docker-image'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout Codebase
         uses: actions/checkout@v4
@@ -96,7 +118,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Local Container Image (Verification Only - No Remote Push)
+      - name: Build Local Container Image (Fail-closed: No fake production fallbacks)
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -104,6 +126,6 @@ jobs:
           push: false
           tags: onnesha-hospital:${{ github.sha }}
           build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://iuhtzahuszdkdarhxobx.supabase.co' }}
-            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_verification_token' }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
             NEXT_PUBLIC_SITE_URL=https://onnesha-hospital.pages.dev
