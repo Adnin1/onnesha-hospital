@@ -1,6 +1,6 @@
--- Migration 90: Financial Intelligence Reporting, Exact Numeric Aggregation & AR Aging
+-- Migration 90: Financial Intelligence Reporting, Exact Numeric Aggregation, True Historical AR Aging & P&L
 -- Provides server-authoritative financial calculation RPCs with exact numeric arithmetic,
--- tenant isolation, Asia/Dhaka date bounds, and strict double-entry cross-reconciliation.
+-- tenant isolation, Asia/Dhaka date bounds, true historical balance reconstruction, and strict double-entry cross-reconciliation.
 
 -- 1. High-Level Financial Dashboard Aggregates RPC
 CREATE OR REPLACE FUNCTION public.get_financial_dashboard_aggregates(
@@ -72,8 +72,8 @@ BEGIN
     INTO v_cash_collections
     FROM public.payments
     WHERE organization_id = p_org_id
-      AND payment_date >= p_start_date
-      AND payment_date < p_end_date;
+      AND COALESCE(payment_date, created_at) >= p_start_date
+      AND COALESCE(payment_date, created_at) < p_end_date;
 
     -- Aggregate actual refunds in period
     SELECT COALESCE(SUM(amount), 0.00)
@@ -85,13 +85,16 @@ BEGIN
 
     v_net_collections := v_cash_collections - v_cash_refunds;
 
-    -- Total AR Outstanding as-of period end
-    SELECT COALESCE(SUM(due_amount), 0.00)
+    -- Total AR Outstanding as-of period end (True historical reconstruction)
+    SELECT COALESCE(SUM(GREATEST(0.00, inv.grand_total - 
+        COALESCE((SELECT SUM(p.amount) FROM public.payments p WHERE p.invoice_id = inv.id AND COALESCE(p.payment_date, p.created_at) <= p_end_date), 0.00) +
+        COALESCE((SELECT SUM(r.amount) FROM public.refunds r WHERE r.invoice_id = inv.id AND r.refunded_at <= p_end_date), 0.00)
+    )), 0.00)
     INTO v_total_ar_outstanding
-    FROM public.invoices
-    WHERE organization_id = p_org_id
-      AND is_voided = FALSE
-      AND created_at <= p_end_date;
+    FROM public.invoices inv
+    WHERE inv.organization_id = p_org_id
+      AND (inv.is_voided = FALSE OR inv.updated_at > p_end_date)
+      AND inv.created_at <= p_end_date;
 
     -- Safe percentage calculation
     IF v_total_billed > 0 THEN
@@ -146,14 +149,14 @@ BEGIN
     INTO v_total_collected
     FROM public.payments
     WHERE organization_id = p_org_id
-      AND payment_date >= p_start_date
-      AND payment_date < p_end_date;
+      AND COALESCE(payment_date, created_at) >= p_start_date
+      AND COALESCE(payment_date, created_at) < p_end_date;
 
     SELECT COALESCE(jsonb_agg(row_data), '[]'::JSONB)
     INTO v_channels
     FROM (
         SELECT jsonb_build_object(
-            'payment_method', p.payment_method,
+            'payment_method', UPPER(p.payment_method),
             'transaction_count', COUNT(*),
             'total_amount', COALESCE(SUM(p.amount), 0.00),
             'percentage', CASE 
@@ -163,9 +166,9 @@ BEGIN
         ) AS row_data
         FROM public.payments p
         WHERE p.organization_id = p_org_id
-          AND p.payment_date >= p_start_date
-          AND p.payment_date < p_end_date
-        GROUP BY p.payment_method
+          AND COALESCE(p.payment_date, p.created_at) >= p_start_date
+          AND COALESCE(p.payment_date, p.created_at) < p_end_date
+        GROUP BY UPPER(p.payment_method)
         ORDER BY SUM(p.amount) DESC
     ) sub;
 
@@ -211,7 +214,7 @@ BEGIN
     INTO v_departments
     FROM (
         SELECT jsonb_build_object(
-            'service_category', ii.service_category,
+            'service_category', UPPER(ii.service_category),
             'item_count', COUNT(*),
             'total_revenue', COALESCE(SUM(ii.total_price), 0.00),
             'percentage', CASE 
@@ -225,7 +228,7 @@ BEGIN
           AND inv.is_voided = FALSE
           AND inv.created_at >= p_start_date
           AND inv.created_at < p_end_date
-        GROUP BY ii.service_category
+        GROUP BY UPPER(ii.service_category)
         ORDER BY SUM(ii.total_price) DESC
     ) sub;
 
@@ -237,7 +240,7 @@ BEGIN
 END;
 $$;
 
--- 4. Accounts Receivable (AR) Aging Summary RPC
+-- 4. Accounts Receivable (AR) Aging Summary RPC (True Historical Reconstructed As-Of Date)
 CREATE OR REPLACE FUNCTION public.get_accounts_receivable_aging(
     p_org_id UUID,
     p_as_of_date TIMESTAMPTZ DEFAULT NOW()
@@ -256,20 +259,55 @@ DECLARE
     v_days_120_plus NUMERIC(14, 2) := 0.00;
     v_total_ar NUMERIC(14, 2) := 0.00;
     v_count INT := 0;
+    v_reconciliation_diff NUMERIC(14, 2) := 0.00;
+    v_is_reconciled BOOLEAN := FALSE;
 BEGIN
     v_active_org := COALESCE(NULLIF(current_setting('app.current_organization_id', true), '')::uuid, private.get_current_org_id());
     IF v_active_org IS NOT NULL AND v_active_org != p_org_id THEN
         RAISE EXCEPTION 'Access denied: Organization mismatch' USING ERRCODE = '42501';
     END IF;
 
+    -- Reconstruct historical outstanding balances as of p_as_of_date
+    WITH invoice_historical AS (
+        SELECT 
+            inv.id,
+            inv.created_at,
+            inv.grand_total,
+            COALESCE(
+                (SELECT SUM(p.amount) 
+                 FROM public.payments p 
+                 WHERE p.invoice_id = inv.id 
+                   AND COALESCE(p.payment_date, p.created_at) <= p_as_of_date), 
+                0.00
+            ) AS payments_up_to_date,
+            COALESCE(
+                (SELECT SUM(r.amount) 
+                 FROM public.refunds r 
+                 WHERE r.invoice_id = inv.id 
+                   AND r.refunded_at <= p_as_of_date), 
+                0.00
+            ) AS refunds_up_to_date
+        FROM public.invoices inv
+        WHERE inv.organization_id = p_org_id
+          AND inv.created_at <= p_as_of_date
+          AND (inv.is_voided = FALSE OR inv.updated_at > p_as_of_date)
+    ),
+    invoice_balances AS (
+        SELECT
+            id,
+            created_at,
+            GREATEST(0.00, grand_total - payments_up_to_date + refunds_up_to_date) AS historical_due_amount,
+            EXTRACT(EPOCH FROM (p_as_of_date - created_at)) / 86400.0 AS days_old
+        FROM invoice_historical
+    )
     SELECT
-        COUNT(*),
-        COALESCE(SUM(due_amount), 0.00),
-        COALESCE(SUM(CASE WHEN (p_as_of_date - created_at) <= INTERVAL '30 days' THEN due_amount ELSE 0.00 END), 0.00),
-        COALESCE(SUM(CASE WHEN (p_as_of_date - created_at) > INTERVAL '30 days' AND (p_as_of_date - created_at) <= INTERVAL '60 days' THEN due_amount ELSE 0.00 END), 0.00),
-        COALESCE(SUM(CASE WHEN (p_as_of_date - created_at) > INTERVAL '60 days' AND (p_as_of_date - created_at) <= INTERVAL '90 days' THEN due_amount ELSE 0.00 END), 0.00),
-        COALESCE(SUM(CASE WHEN (p_as_of_date - created_at) > INTERVAL '90 days' AND (p_as_of_date - created_at) <= INTERVAL '120 days' THEN due_amount ELSE 0.00 END), 0.00),
-        COALESCE(SUM(CASE WHEN (p_as_of_date - created_at) > INTERVAL '120 days' THEN due_amount ELSE 0.00 END), 0.00)
+        COUNT(*) FILTER (WHERE historical_due_amount > 0.00),
+        COALESCE(SUM(historical_due_amount) FILTER (WHERE historical_due_amount > 0.00), 0.00),
+        COALESCE(SUM(historical_due_amount) FILTER (WHERE historical_due_amount > 0.00 AND days_old <= 30.0), 0.00),
+        COALESCE(SUM(historical_due_amount) FILTER (WHERE historical_due_amount > 0.00 AND days_old > 30.0 AND days_old <= 60.0), 0.00),
+        COALESCE(SUM(historical_due_amount) FILTER (WHERE historical_due_amount > 0.00 AND days_old > 60.0 AND days_old <= 90.0), 0.00),
+        COALESCE(SUM(historical_due_amount) FILTER (WHERE historical_due_amount > 0.00 AND days_old > 90.0 AND days_old <= 120.0), 0.00),
+        COALESCE(SUM(historical_due_amount) FILTER (WHERE historical_due_amount > 0.00 AND days_old > 120.0), 0.00)
     INTO
         v_count,
         v_total_ar,
@@ -278,11 +316,10 @@ BEGIN
         v_days_61_90,
         v_days_91_120,
         v_days_120_plus
-    FROM public.invoices
-    WHERE organization_id = p_org_id
-      AND is_voided = FALSE
-      AND due_amount > 0
-      AND created_at <= p_as_of_date;
+    FROM invoice_balances;
+
+    v_reconciliation_diff := v_total_ar - (v_current + v_days_31_60 + v_days_61_90 + v_days_91_120 + v_days_120_plus);
+    v_is_reconciled := (ABS(v_reconciliation_diff) < 0.01);
 
     RETURN jsonb_build_object(
         'success', true,
@@ -294,12 +331,13 @@ BEGIN
         'days_61_90', v_days_61_90,
         'days_91_120', v_days_91_120,
         'days_120_plus', v_days_120_plus,
-        'is_reconciled', (v_total_ar = (v_current + v_days_31_60 + v_days_61_90 + v_days_91_120 + v_days_120_plus))
+        'reconciliation_difference', v_reconciliation_diff,
+        'is_reconciled', v_is_reconciled
     );
 END;
 $$;
 
--- 5. Profit & Loss Statement Summary RPC (True Accrual vs Cash Basis)
+-- 5. Profit & Loss Statement Summary RPC (True Accrual P&L and Cash Movement)
 CREATE OR REPLACE FUNCTION public.get_profit_and_loss_summary(
     p_org_id UUID,
     p_start_date TIMESTAMPTZ,
@@ -317,9 +355,12 @@ DECLARE
     v_net_revenue NUMERIC(14, 2) := 0.00;
     v_operating_expenses NUMERIC(14, 2) := 0.00;
     v_operating_surplus NUMERIC(14, 2) := 0.00;
-    v_cash_inflow NUMERIC(14, 2) := 0.00;
-    v_cash_outflow NUMERIC(14, 2) := 0.00;
-    v_net_cash_flow NUMERIC(14, 2) := 0.00;
+    v_patient_collections NUMERIC(14, 2) := 0.00;
+    v_cash_refunds NUMERIC(14, 2) := 0.00;
+    v_operating_disbursements NUMERIC(14, 2) := 0.00;
+    v_total_cash_inflow NUMERIC(14, 2) := 0.00;
+    v_total_cash_outflow NUMERIC(14, 2) := 0.00;
+    v_net_cash_movement NUMERIC(14, 2) := 0.00;
     v_expense_breakdown JSONB := '[]'::JSONB;
 BEGIN
     v_active_org := COALESCE(NULLIF(current_setting('app.current_organization_id', true), '')::uuid, private.get_current_org_id());
@@ -355,7 +396,17 @@ BEGIN
       AND je.entry_date >= p_start_date::DATE
       AND je.entry_date <= p_end_date::DATE;
 
-    -- Expense breakdown by account
+    -- If no journal entries exist, check public.expenses
+    IF v_operating_expenses = 0.00 THEN
+        SELECT COALESCE(SUM(amount), 0.00)
+        INTO v_operating_expenses
+        FROM public.expenses
+        WHERE organization_id = p_org_id
+          AND expense_date >= p_start_date::DATE
+          AND expense_date <= p_end_date::DATE;
+    END IF;
+
+    -- Expense breakdown by account/category
     SELECT COALESCE(jsonb_agg(row_data), '[]'::JSONB)
     INTO v_expense_breakdown
     FROM (
@@ -378,23 +429,33 @@ BEGIN
 
     v_operating_surplus := v_net_revenue - v_operating_expenses;
 
-    -- Cash Basis comparison:
+    -- Cash Movement: Inflows
     SELECT COALESCE(SUM(amount), 0.00)
-    INTO v_cash_inflow
+    INTO v_patient_collections
     FROM public.payments
     WHERE organization_id = p_org_id
-      AND payment_date >= p_start_date
-      AND payment_date < p_end_date;
+      AND COALESCE(payment_date, created_at) >= p_start_date
+      AND COALESCE(payment_date, created_at) < p_end_date;
 
-    -- Cash Outflow (Refunds + Cash expenses)
+    v_total_cash_inflow := v_patient_collections;
+
+    -- Cash Movement: Outflows (Refunds + Operating Cash Disbursements)
     SELECT COALESCE(SUM(amount), 0.00)
-    INTO v_cash_outflow
+    INTO v_cash_refunds
     FROM public.refunds
     WHERE organization_id = p_org_id
       AND refunded_at >= p_start_date
       AND refunded_at < p_end_date;
 
-    v_net_cash_flow := v_cash_inflow - v_cash_outflow;
+    SELECT COALESCE(SUM(amount), 0.00)
+    INTO v_operating_disbursements
+    FROM public.expenses
+    WHERE organization_id = p_org_id
+      AND expense_date >= p_start_date::DATE
+      AND expense_date <= p_end_date::DATE;
+
+    v_total_cash_outflow := v_cash_refunds + v_operating_disbursements;
+    v_net_cash_movement := v_total_cash_inflow - v_total_cash_outflow;
 
     RETURN jsonb_build_object(
         'success', true,
@@ -405,13 +466,16 @@ BEGIN
             'discounts', v_discounts,
             'net_recognized_revenue', v_net_revenue,
             'operating_expenses', v_operating_expenses,
-            'operating_surplus', v_operating_surplus,
+            'net_operating_surplus', v_operating_surplus,
             'expense_breakdown', v_expense_breakdown
         ),
-        'cash_basis', jsonb_build_object(
-            'cash_inflow', v_cash_inflow,
-            'cash_outflow', v_cash_outflow,
-            'net_cash_flow', v_net_cash_flow
+        'cash_movement', jsonb_build_object(
+            'patient_collections', v_patient_collections,
+            'total_cash_inflow', v_total_cash_inflow,
+            'refunds', v_cash_refunds,
+            'operating_disbursements', v_operating_disbursements,
+            'total_cash_outflow', v_total_cash_outflow,
+            'net_cash_movement', v_net_cash_movement
         )
     );
 END;

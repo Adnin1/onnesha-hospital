@@ -325,4 +325,58 @@ describe("OHMS Financial Accounting Invariants & Reporting Hardening (10 Scenari
     // Feb 2024 has 29 days
     assert.equal(febEnd.getUTCDate(), 29); // In UTC it's 29th 17:59:59
   });
+
+  test("11. True Historical AR Aging reconstructs historical due balance based on asOfDate payments and refunds", () => {
+    const t0 = new Date("2026-09-01T10:00:00.000Z"); // Invoice created
+    const t1 = new Date("2026-09-10T10:00:00.000Z"); // As-of date 1 (Before payment)
+    const t2 = new Date("2026-09-15T10:00:00.000Z"); // Payment made
+    const t3 = new Date("2026-09-20T10:00:00.000Z"); // As-of date 2 (After payment)
+
+    const invoices = [
+      {
+        id: "inv-hist-1",
+        created_at: t0.toISOString(),
+        grand_total: 10000,
+        due_amount: 0, // Currently paid off
+        is_voided: false,
+        payments: [
+          {
+            id: "pmt-h1",
+            amount: 10000,
+            payment_date: t2.toISOString(),
+          },
+        ],
+      },
+    ];
+
+    // As of t1 (Sept 10), payment on Sept 15 had NOT occurred yet -> due must be reconstructed as 10,000!
+    const agingT1 = computeAccountsReceivableAging(invoices, t1);
+    assert.equal(agingT1.totalAR, 10000);
+    assert.equal(agingT1.totalInvoicesDue, 1);
+    assert.equal(agingT1.current_0_30, 10000);
+
+    // As of t3 (Sept 20), payment on Sept 15 HAS occurred -> due is 0!
+    const agingT3 = computeAccountsReceivableAging(invoices, t3);
+    assert.equal(agingT3.totalAR, 0);
+    assert.equal(agingT3.totalInvoicesDue, 0);
+  });
+
+  test("12. Server-authoritative report actions exist and Reports UI consumes them without 5000-row client in-memory bottleneck", () => {
+    const actionsPath = path.join(ROOT, "lib/reports/actions.ts");
+    assert.ok(fs.existsSync(actionsPath), "lib/reports/actions.ts must exist");
+    const actionsContent = fs.readFileSync(actionsPath, "utf8");
+
+    assert.ok(actionsContent.includes("getFinancialDashboardAggregatesAction"), "Must export aggregates action");
+    assert.ok(actionsContent.includes("getPaymentChannelBreakdownAction"), "Must export channels action");
+    assert.ok(actionsContent.includes("getDepartmentRevenueBreakdownAction"), "Must export departments action");
+    assert.ok(actionsContent.includes("getAccountsReceivableAgingAction"), "Must export AR aging action");
+    assert.ok(actionsContent.includes("getProfitAndLossSummaryAction"), "Must export P&L summary action");
+    assert.ok(actionsContent.includes("getPaginatedReportInvoicesAction"), "Must export paginated invoices action");
+
+    const pagePath = path.join(ROOT, "app/(hospital)/app/reports/page.tsx");
+    const pageContent = fs.readFileSync(pagePath, "utf8");
+    assert.ok(!pageContent.includes("limit: 5000"), "Must not load 5000 invoices into memory");
+    assert.ok(pageContent.includes("getFinancialDashboardAggregatesAction"), "Reports UI must call getFinancialDashboardAggregatesAction");
+    assert.ok(pageContent.includes("getPaginatedReportInvoicesAction"), "Reports UI must call getPaginatedReportInvoicesAction");
+  });
 });

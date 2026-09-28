@@ -440,11 +440,24 @@ export function computeAccountsReceivableAging(
 
   for (const inv of invoices) {
     if (inv.is_voided) continue;
-    const due = Number(inv.due_amount || 0);
-    if (due <= 0) continue;
 
     const invTime = new Date(inv.created_at).getTime();
     if (invTime > asOfTime) continue; // Skip future invoices
+
+    let due = 0;
+    if (inv.payments !== undefined || inv.refunds !== undefined) {
+      const paymentsUpToDate = (inv.payments || [])
+        .filter((p) => new Date(p.payment_date || p.created_at || "").getTime() <= asOfTime)
+        .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+      const refundsUpToDate = (inv.refunds || [])
+        .filter((r) => new Date(r.refunded_at || (r as { created_at?: string }).created_at || "").getTime() <= asOfTime)
+        .reduce((sum, r) => sum + Number(r.amount || 0), 0);
+      due = Math.max(0, Number(inv.grand_total || 0) - paymentsUpToDate + refundsUpToDate);
+    } else {
+      due = Number(inv.due_amount || 0);
+    }
+
+    if (due <= 0) continue;
 
     dueInvoicesCount++;
     totalAR += due;

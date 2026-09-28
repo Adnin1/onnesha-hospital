@@ -1,14 +1,42 @@
-# Onnesha Hospital Management System — Release Notes v1.1.10
+# Onnesha Hospital Management System — Release Notes v1.1.11
 
 **Release Date:** 2026-09-28  
-**Version:** v1.1.10  
-**Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.10`)  
+**Version:** v1.1.11  
+**Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.11`)  
 **Deployment Target:** Cloudflare Pages (`https://onnesha-hospital.pages.dev`)  
-**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, 90 Applied Migrations)  
+**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, EXACTLY 90 Applied Migrations Verified)  
 
 ---
 
-## 🚀 What's New in v1.1.10
+## 🚀 What's New in v1.1.11
+
+### 1. Reconciled & Verified Supabase Migration Count (Exactly 90 Migrations)
+- **Empirical CLI Grounding:** Reconciled historical documentation contradictions (88 vs 89 vs 90). `npx supabase migration list` now shows **exactly 90 applied migrations** both locally in `supabase/migrations/` and remotely on Supabase Cloud.
+- **Migration Repair & Re-run:** Cleanly resolved database lint warnings and re-executed `20260928190000` and `20260928200000` with `npx supabase db push`.
+- **0 Database Lint Errors:** `npx supabase db lint --linked` returns **0 errors** across all schemas (`extensions`, `private`, `public`).
+
+### 2. True Historical "As-Of" Balance Reconstruction in AR Aging
+- **Dynamic Balance Reconstruction (`Migration 90` & `lib/reports/financial.ts`):** Instead of relying on current `due_amount`, the AR aging engine reconstructs the exact historical balance as of `p_as_of_date`:
+  $$\text{Historical Due} = \max\left(0, \text{grand\_total} - \sum_{\text{date} \le \text{as\_of}} \text{payments} + \sum_{\text{date} \le \text{as\_of}} \text{refunds}\right)$$
+- Subsequent payments or refunds after `p_as_of_date` do not mutate historical aging buckets.
+
+### 3. Separation of True Accrual P&L from Cash Movement
+- **Accrual P&L:** Net Recognized Revenue (Gross Invoiced minus Approved Discounts) minus Operating Expenses (General Ledger posted expenses or `public.expenses`).
+- **Cash Movement:** Total Cash Inflows (Patient Collections) minus Total Cash Outflows (Cash Refunds + Operating Cash Disbursements from `public.expenses`).
+
+### 4. Direct UI Connection to Server-Authoritative RPCs (`lib/reports/actions.ts`)
+- **Server Actions for Financial Reports (`lib/reports/actions.ts`):** Created type-safe server actions directly invoking database RPCs:
+  - `getFinancialDashboardAggregatesAction`
+  - `getPaymentChannelBreakdownAction`
+  - `getDepartmentRevenueBreakdownAction`
+  - `getAccountsReceivableAgingAction`
+  - `getProfitAndLossSummaryAction`
+  - `getPaginatedReportInvoicesAction`
+- **Eliminated 5,000-Row Client-Side Reduction:** The Financial Reports UI (`app/(hospital)/app/reports/page.tsx`) now directly consumes pre-aggregated metrics from PostgreSQL and utilizes server-side pagination (limit/offset) for invoice ledgers, preventing browser memory exhaustion.
+
+---
+
+## 🚀 Release v1.1.10 Historical Archive
 
 ### 1. Server-Authoritative Financial Intelligence & Reporting RPCs (`Migration 90`)
 - **Authoritative SQL RPCs (`supabase/migrations/20260928200000_financial_intelligence_reporting_and_ar_aging.sql`):** Added 5 `SECURITY DEFINER` PostgreSQL functions with strict tenant org boundaries and `SET search_path = ''`:

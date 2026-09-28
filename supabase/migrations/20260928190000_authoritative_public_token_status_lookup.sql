@@ -73,8 +73,8 @@ BEGIN
     WHERE a.organization_id = p_org_id
       AND a.appointment_date = v_target_date
       AND (
-          (v_clean_num IS NOT NULL AND a.token_number = v_clean_num)
-          OR a.token_number::text = v_clean_str
+          (v_clean_num IS NOT NULL AND a.token_number = v_clean_num::text)
+          OR a.token_number = v_clean_str
       )
     LIMIT 1;
 
@@ -131,8 +131,8 @@ BEGIN
     FROM public.appointments a
     WHERE a.organization_id = p_org_id
       AND (
-          (v_clean_num IS NOT NULL AND a.token_number = v_clean_num)
-          OR a.token_number::text = v_clean_str
+          (v_clean_num IS NOT NULL AND a.token_number = v_clean_num::text)
+          OR a.token_number = v_clean_str
       )
       AND a.appointment_date >= v_today
     ORDER BY a.appointment_date ASC
