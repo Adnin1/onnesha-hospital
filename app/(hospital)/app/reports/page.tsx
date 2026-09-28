@@ -174,7 +174,8 @@ export default function ReportsManagementPage() {
             status: statusFilter,
             searchQuery: debouncedSearchQuery,
             startDate: period === "all" ? undefined : dateBounds.startIso,
-            endDate: period === "all" ? undefined : dateBounds.endIso,
+            endDate: period === "all" ? undefined : dateBounds.endExclusiveIso,
+            endExclusiveDate: period === "all" ? undefined : dateBounds.endExclusiveIso,
           }),
         ]);
 
@@ -293,7 +294,8 @@ export default function ReportsManagementPage() {
         status: statusFilter,
         searchQuery: debouncedSearchQuery,
         startDate: period === "all" ? undefined : dateBounds.startIso,
-        endDate: period === "all" ? undefined : dateBounds.endIso,
+        endDate: period === "all" ? undefined : dateBounds.endExclusiveIso,
+        endExclusiveDate: period === "all" ? undefined : dateBounds.endExclusiveIso,
       });
 
       const exportInvoices = res.success && res.data?.invoices ? res.data.invoices : invoices;

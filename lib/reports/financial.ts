@@ -669,3 +669,16 @@ export function generateFinancialReportCSV(
 
   return bom + [...metadataLines, headers.join(","), ...rows].join("\r\n");
 }
+
+/**
+ * Sanitize search query input for PostgREST filter expressions to prevent syntax breakage
+ * and wildcard injection (strips delimiters: commas, parens, dots, quotes, backslashes, percent, underscore).
+ */
+export function sanitizePostgrestSearchTerm(raw?: string): string {
+  if (!raw) return "";
+  return raw
+    .trim()
+    .slice(0, 60)
+    .replace(/[(),."'\\]/g, "")
+    .replace(/[%_]/g, "");
+}

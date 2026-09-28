@@ -162,16 +162,42 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML pages: network-first with cache fallback
-  event.respondWith(
-    fetch(request)
-      .then(response => {
-        if (response.ok && !shouldNeverCache(request) && isResponseCacheable(response)) {
-          const clone = response.clone();
-          caches.open(CACHE_VERSION).then(cache => cache.put(request, clone));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request).then(cached => cached || caches.match('/')))
-  );
+// Explicitly allowlisted public marketing routes that may use offline cache fallback
+const PUBLIC_CACHE_ALLOWLIST = new Set([
+  '/',
+  '/about',
+  '/appointment',
+  '/contact',
+  '/consent',
+  '/doctors',
+  '/privacy',
+  '/services',
+  '/terms',
+  '/downloads/desktop',
+]);
+
+  // Only explicitly allowlisted public marketing pages use network-first caching with offline fallback
+  try {
+    const urlObj = new URL(request.url);
+    const cleanPath = urlObj.pathname.replace(/\/$/, '') || '/';
+    if (PUBLIC_CACHE_ALLOWLIST.has(cleanPath)) {
+      event.respondWith(
+        fetch(request)
+          .then(response => {
+            if (response.ok && !shouldNeverCache(request) && isResponseCacheable(response)) {
+              const clone = response.clone();
+              caches.open(CACHE_VERSION).then(cache => cache.put(request, clone));
+            }
+            return response;
+          })
+          .catch(() => caches.match(request).then(cached => cached || caches.match('/')))
+      );
+      return;
+    }
+  } catch {
+    // If URL parsing fails, fall through to network-only
+  }
+
+  // Any other route: network-only, NEVER cached, NEVER fall back to '/'
+  event.respondWith(fetch(request));
 });

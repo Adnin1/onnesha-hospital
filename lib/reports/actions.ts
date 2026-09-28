@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
 import { InvoiceRecord } from "@/types/billing";
+import { sanitizePostgrestSearchTerm } from "./financial";
+
+export { sanitizePostgrestSearchTerm } from "./financial";
 
 export interface ActionResult<T = unknown> {
   success: boolean;
@@ -408,6 +411,7 @@ export async function getProfitAndLossSummaryAction(params: {
   }
 }
 
+
 /**
  * 6. Server-Side Paginated Invoices for Reporting Detail View
  */
@@ -418,6 +422,7 @@ export async function getPaginatedReportInvoicesAction(params: {
   searchQuery?: string;
   startDate?: string;
   endDate?: string;
+  endExclusiveDate?: string;
 }): Promise<ActionResult<PaginatedInvoicesResult>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
@@ -470,8 +475,9 @@ export async function getPaginatedReportInvoicesAction(params: {
     if (params.startDate) {
       query = query.gte("created_at", params.startDate);
     }
-    if (params.endDate) {
-      query = query.lte("created_at", params.endDate);
+    const endBoundary = params.endExclusiveDate || params.endDate;
+    if (endBoundary) {
+      query = query.lt("created_at", endBoundary);
     }
 
     if (params.status && params.status !== "all" && params.status !== "ALL") {
@@ -486,9 +492,9 @@ export async function getPaginatedReportInvoicesAction(params: {
       }
     }
 
-    if (params.searchQuery && params.searchQuery.trim().length > 0) {
-      const q = params.searchQuery.trim();
-      query = query.or(`invoice_number.ilike.%${q}%`);
+    const sanitizedSearch = sanitizePostgrestSearchTerm(params.searchQuery);
+    if (sanitizedSearch.length > 0) {
+      query = query.ilike("invoice_number", `%${sanitizedSearch}%`);
     }
 
     query = query.range(from, to);
@@ -585,6 +591,7 @@ export async function getExportReportInvoicesAction(params: {
   searchQuery?: string;
   startDate?: string;
   endDate?: string;
+  endExclusiveDate?: string;
 }): Promise<ActionResult<{ invoices: InvoiceRecord[] }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
@@ -628,8 +635,9 @@ export async function getExportReportInvoicesAction(params: {
     if (params.startDate) {
       query = query.gte("created_at", params.startDate);
     }
-    if (params.endDate) {
-      query = query.lte("created_at", params.endDate);
+    const endBoundary = params.endExclusiveDate || params.endDate;
+    if (endBoundary) {
+      query = query.lt("created_at", endBoundary);
     }
 
     if (params.status && params.status !== "all" && params.status !== "ALL") {
@@ -644,9 +652,9 @@ export async function getExportReportInvoicesAction(params: {
       }
     }
 
-    if (params.searchQuery && params.searchQuery.trim().length > 0) {
-      const q = params.searchQuery.trim();
-      query = query.or(`invoice_number.ilike.%${q}%`);
+    const sanitizedSearch = sanitizePostgrestSearchTerm(params.searchQuery);
+    if (sanitizedSearch.length > 0) {
+      query = query.ilike("invoice_number", `%${sanitizedSearch}%`);
     }
 
     const { data, error } = await query;

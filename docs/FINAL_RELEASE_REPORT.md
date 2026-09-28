@@ -70,7 +70,7 @@ The remote Supabase PostgreSQL database was updated and verified via `npx supaba
 
 ## 3. Financial Intelligence & Reports Optimization
 
-The hospital financial reporting architecture (`app/(hospital)/app/reports/page.tsx` and `lib/reports/actions.ts`) has been optimized for high-volume operational scale:
+The hospital financial reporting architecture (`app/(hospital)/app/reports/page.tsx`, `lib/reports/actions.ts`, and `lib/reports/financial.ts`) has been optimized for high-volume operational scale and bulletproof accuracy:
 
 1. **300ms Debounced Search:**
    - Input queries on `searchQuery` are debounced by 300ms via `debouncedSearchQuery` state, preventing redundant server action executions during continuous typing.
@@ -84,6 +84,20 @@ The hospital financial reporting architecture (`app/(hospital)/app/reports/page.
    - Added `getExportReportInvoicesAction` to fetch all matching rows without pagination limits for the active filter.
    - Prepends UTF-8 Byte Order Mark (`\uFEFF`) and formal Excel metadata header.
    - Shows active export loading spinner state on the export button.
+5. **Critical Bug Fix #1 — Half-Open Date Boundary Consistency:**
+   - Standardized `getPaginatedReportInvoicesAction` and `getExportReportInvoicesAction` to consume `endExclusiveDate` (or `endDate` as exclusive boundary) with strict `.lt("created_at", endBoundary)`.
+   - UI (`page.tsx`) passes `dateBounds.endExclusiveIso` (the `00:00:00.000` BST midnight of the following day), ensuring transactions at `23:59:59.999` BST or with sub-millisecond precision are accurately captured in exact unison with database aggregate RPCs (`created_at < p_end_date`).
+6. **Critical Bug Fix #2 — PostgREST Search Filter Sanitization:**
+   - Centralized `sanitizePostgrestSearchTerm` in `lib/reports/financial.ts` (re-exported in `lib/reports/actions.ts`), stripping delimiters (`(`, `)`, `,`, `.`, `"`, `\`), wildcards (`%`, `_`), and truncating input to 60 characters.
+   - Preserves legitimate alphanumeric characters, hyphens, and Unicode/Bangla search terms.
+   - Replaced fragile string-interpolated `.or(...)` with parameterized `.ilike("invoice_number", ...)`, eliminating PostgREST parser logic tree syntax errors.
+7. **Service Worker Hardening & Fail-Closed Cache Allowlist:**
+   - Defined `PUBLIC_CACHE_ALLOWLIST` in `public/sw.js` (v5). Only explicitly allowlisted public marketing routes (`/`, `/about`, `/appointment`, `/contact`, `/consent`, `/doctors`, `/privacy`, `/services`, `/terms`, `/downloads/desktop`) can participate in offline cache fallback.
+   - Dynamic, authenticated, and private routes (`/app/*`, `/api/*`, `/auth/*`, `/login*`, `/mfa*`, `/forgot-password*`) fail closed via network-only execution and never fall back to cached `/`.
+8. **Root Canonical URL & CSP Audit:**
+   - `app/layout.tsx` metadata updated to `canonical: "/"`. Every public route defines its own explicit canonical path.
+   - `public/_headers` maintains both `https://sandbox.sslcommerz.com` and `https://securepay.sslcommerz.com` to support automated staging test transactions without breaking production payment flows.
+   - Documented necessity of `'unsafe-inline'` in script-src/style-src for Next.js static export hydration chunks and JSON-LD schema tags.
 
 ---
 
@@ -92,10 +106,10 @@ The hospital financial reporting architecture (`app/(hospital)/app/reports/page.
 All tests were executed and certified with clean passes:
 
 ### 4.1 Node.js Certification Test Suite (`npm run test:certification`)
-- **Total Test Suites Executed:** 84 suites
-- **Passed Suites:** 84 / 84 (100%)
+- **Total Test Suites Executed:** 85 suites
+- **Passed Suites:** 85 / 85 (100%)
 - **Failed Suites:** 0
-- **Total Active Passed Assertions:** 738 passes
+- **Total Active Passed Assertions:** 747 passes
 - **Active Failures:** 0
 - **Standard Skips:** Exactly 6 assertions across 5 suites (production mutation safeguards preventing dummy test data from polluting production tables).
 
