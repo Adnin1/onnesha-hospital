@@ -1,10 +1,15 @@
 /**
  * Onnesha Hospital Management System (OHMS)
  * Comprehensive Financial Reporting & Analytics Engine
- * Pure computational utilities for financial aggregation, period filtering, and export.
+ * Pure computational utilities for financial aggregation, period filtering, AR aging,
+ * double-entry accounting reconciliation, and export.
+ *
+ * All operations operate strictly within the Asia/Dhaka (UTC+6) reporting timezone.
  */
 
-import type { InvoiceRecord } from "../../types/billing";
+export const DHAKA_TIMEZONE = "Asia/Dhaka";
+
+import type { InvoiceRecord, PaymentRecord } from "../../types/billing";
 
 export type FinancialPeriod =
   | "today"
@@ -44,6 +49,37 @@ export interface MonthlyTrendData {
   collectionRate: number;
 }
 
+export interface AccountsReceivableAgingSummary {
+  asOfDate: string;
+  totalInvoicesDue: number;
+  totalAR: number;
+  current_0_30: number;
+  days_31_60: number;
+  days_61_90: number;
+  days_91_120: number;
+  days_120_plus: number;
+  isReconciled: boolean;
+}
+
+export interface ProfitAndLossStatement {
+  reportingBasis: "ACCRUAL" | "CASH";
+  periodStart: string;
+  periodEnd: string;
+  accrual: {
+    grossPatientRevenue: number;
+    discountsAllowed: number;
+    netRecognizedRevenue: number;
+    operatingExpenses: number;
+    netOperatingSurplus: number;
+    expenseBreakdown: Array<{ category: string; amount: number }>;
+  };
+  cash: {
+    cashCollectionsInflow: number;
+    cashRefundsOutflow: number;
+    netOperatingCashFlow: number;
+  };
+}
+
 export interface FinancialAggregates {
   totalInvoicesCount: number;
   activeInvoicesCount: number;
@@ -58,8 +94,104 @@ export interface FinancialAggregates {
 }
 
 /**
- * Filter invoices based on selected period and optional custom date bounds.
- * Uses ISO date comparison against Asia/Dhaka day boundaries.
+ * Returns exact Asia/Dhaka date bounds [startInclusive, endInclusive] for a financial period.
+ * Strictly prevents rolling 7-day discrepancies by anchoring calendar weeks to Sunday 00:00:00 BST.
+ */
+export function getDhakaDateRange(
+  period: FinancialPeriod,
+  customStart?: string,
+  customEnd?: string,
+  referenceDate: Date = new Date()
+): { start: Date; end: Date; startIso: string; endIso: string } {
+  // Extract Dhaka local year, month, date, and day of week
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: DHAKA_TIMEZONE,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+  });
+  const parts = formatter.formatToParts(referenceDate);
+  const getPart = (type: string) => parts.find((p) => p.type === type)?.value || "";
+
+  const dYear = parseInt(getPart("year"), 10);
+  const dMonth = parseInt(getPart("month"), 10) - 1; // 0-indexed
+  const dDate = parseInt(getPart("day"), 10);
+
+  // UTC+6 offset in minutes is +360
+  const createDhakaMidnight = (year: number, month: number, day: number) => {
+    return new Date(Date.UTC(year, month, day, 0 - 6, 0, 0, 0));
+  };
+  const createDhakaEndOfDay = (year: number, month: number, day: number) => {
+    return new Date(Date.UTC(year, month, day, 23 - 6, 59, 59, 999));
+  };
+
+  switch (period) {
+    case "today": {
+      const start = createDhakaMidnight(dYear, dMonth, dDate);
+      const end = createDhakaEndOfDay(dYear, dMonth, dDate);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+    }
+    case "this_week": {
+      // Standard calendar week starting Sunday in Bangladesh/Asia
+      // Compute day of week index: Sun=0, Mon=1, ..., Sat=6
+      const weekdayStr = getPart("weekday").toLowerCase();
+      const dayMap: Record<string, number> = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+      const currentDayOfWeek = dayMap[weekdayStr] ?? 0;
+
+      const sundayDate = dDate - currentDayOfWeek;
+      const start = createDhakaMidnight(dYear, dMonth, sundayDate);
+      const end = createDhakaEndOfDay(dYear, dMonth, sundayDate + 6);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+    }
+    case "this_month": {
+      const start = createDhakaMidnight(dYear, dMonth, 1);
+      // Last day of month
+      const lastDay = new Date(Date.UTC(dYear, dMonth + 1, 0)).getUTCDate();
+      const end = createDhakaEndOfDay(dYear, dMonth, lastDay);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+    }
+    case "last_month": {
+      const lastMonth = dMonth === 0 ? 11 : dMonth - 1;
+      const lastMonthYear = dMonth === 0 ? dYear - 1 : dYear;
+      const start = createDhakaMidnight(lastMonthYear, lastMonth, 1);
+      const lastDay = new Date(Date.UTC(lastMonthYear, lastMonth + 1, 0)).getUTCDate();
+      const end = createDhakaEndOfDay(lastMonthYear, lastMonth, lastDay);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+    }
+    case "this_year": {
+      const start = createDhakaMidnight(dYear, 0, 1);
+      const end = createDhakaEndOfDay(dYear, 11, 31);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+    }
+    case "custom": {
+      if (!customStart) {
+        const start = createDhakaMidnight(dYear, dMonth, 1);
+        const end = createDhakaEndOfDay(dYear, dMonth, dDate);
+        return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+      }
+      const [sy, sm, sd] = customStart.split("-").map(Number);
+      const start = createDhakaMidnight(sy, sm - 1, sd);
+
+      if (!customEnd) {
+        const end = createDhakaEndOfDay(sy, sm - 1, sd);
+        return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+      }
+      const [ey, em, ed] = customEnd.split("-").map(Number);
+      const end = createDhakaEndOfDay(ey, em - 1, ed);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+    }
+    case "all":
+    default: {
+      const start = new Date(0);
+      const end = new Date(8640000000000000);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+    }
+  }
+}
+
+/**
+ * Filter invoices based on selected period using Asia/Dhaka day boundaries.
  */
 export function filterInvoicesByPeriod(
   invoices: InvoiceRecord[],
@@ -70,52 +202,33 @@ export function filterInvoicesByPeriod(
 ): InvoiceRecord[] {
   if (period === "all") return invoices;
 
-  const now = referenceDate;
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth(); // 0-indexed
+  const { start, end } = getDhakaDateRange(period, customStart, customEnd, referenceDate);
 
   return invoices.filter((inv) => {
     const invDate = new Date(inv.created_at);
     if (isNaN(invDate.getTime())) return false;
+    return invDate >= start && invDate <= end;
+  });
+}
 
-    switch (period) {
-      case "today": {
-        return (
-          invDate.getFullYear() === now.getFullYear() &&
-          invDate.getMonth() === now.getMonth() &&
-          invDate.getDate() === now.getDate()
-        );
-      }
-      case "this_week": {
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return invDate >= sevenDaysAgo && invDate <= now;
-      }
-      case "this_month": {
-        return (
-          invDate.getFullYear() === currentYear &&
-          invDate.getMonth() === currentMonth
-        );
-      }
-      case "last_month": {
-        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-        return (
-          invDate.getFullYear() === lastMonthYear &&
-          invDate.getMonth() === lastMonth
-        );
-      }
-      case "this_year": {
-        return invDate.getFullYear() === currentYear;
-      }
-      case "custom": {
-        if (!customStart) return true;
-        const startDate = new Date(customStart + "T00:00:00");
-        const endDate = customEnd ? new Date(customEnd + "T23:59:59") : new Date();
-        return invDate >= startDate && invDate <= endDate;
-      }
-      default:
-        return true;
-    }
+/**
+ * Filter payment transactions based on actual payment date in Asia/Dhaka timezone.
+ */
+export function filterPaymentsByPeriod(
+  payments: PaymentRecord[],
+  period: FinancialPeriod,
+  customStart?: string,
+  customEnd?: string,
+  referenceDate: Date = new Date()
+): PaymentRecord[] {
+  if (period === "all") return payments;
+
+  const { start, end } = getDhakaDateRange(period, customStart, customEnd, referenceDate);
+
+  return payments.filter((pmt) => {
+    const pmtDate = new Date(pmt.payment_date || pmt.created_at || "");
+    if (isNaN(pmtDate.getTime())) return false;
+    return pmtDate >= start && pmtDate <= end;
   });
 }
 
@@ -164,7 +277,7 @@ export function computeFinancialAggregates(invoices: InvoiceRecord[]): Financial
 /**
  * Department metadata mapping for hospital service categories.
  */
-const DEPARTMENT_MAP: Record<string, { labelBn: string; labelEn: string }> = {
+export const DEPARTMENT_MAP: Record<string, { labelBn: string; labelEn: string }> = {
   CONSULTATION: { labelBn: "ডাক্তার ওপিডি কনসালটেশন", labelEn: "OPD Doctor Consultation" },
   LAB: { labelBn: "প্যাথলজি ও ডায়াগনস্টিক ল্যাব", labelEn: "Diagnostic Pathology & Lab" },
   XRAY: { labelBn: "ডিজিটাল এক্স-রে", labelEn: "Digital X-Ray" },
@@ -228,10 +341,12 @@ export function computeDepartmentalRevenue(invoices: InvoiceRecord[]): Departmen
     .sort((a, b) => b.totalRevenue - a.totalRevenue);
 }
 
+export const computeDepartmentRevenueBreakdown = computeDepartmentalRevenue;
+
 /**
  * Payment channel metadata mapping.
  */
-const PAYMENT_METHOD_MAP: Record<string, { labelBn: string; labelEn: string }> = {
+export const PAYMENT_METHOD_MAP: Record<string, { labelBn: string; labelEn: string }> = {
   CASH: { labelBn: "ক্যাশ / নগদ টাকা", labelEn: "Cash Register" },
   BKASH: { labelBn: "বিকাশ (bKash)", labelEn: "bKash Digital MFS" },
   NAGAD: { labelBn: "নগদ (Nagad)", labelEn: "Nagad Digital MFS" },
@@ -244,25 +359,42 @@ const PAYMENT_METHOD_MAP: Record<string, { labelBn: string; labelEn: string }> =
 
 /**
  * Compute breakdown of collections by payment method.
+ * Supports computing directly from payment transactions or from embedded invoice payments.
  */
-export function computePaymentChannelBreakdown(invoices: InvoiceRecord[]): PaymentChannelSummary[] {
-  const activeInvoices = invoices.filter((i) => !i.is_voided);
+export function computePaymentChannelBreakdown(
+  invoices: InvoiceRecord[],
+  paymentsList?: PaymentRecord[]
+): PaymentChannelSummary[] {
   const buckets: Record<string, { count: number; total: number }> = {};
-
   let grandCollected = 0;
 
-  for (const inv of activeInvoices) {
-    if (inv.payments && Array.isArray(inv.payments)) {
-      for (const pmt of inv.payments) {
-        const method = (pmt.payment_method || "CASH").toUpperCase();
-        const amt = Number(pmt.amount || 0);
+  if (paymentsList && paymentsList.length > 0) {
+    for (const pmt of paymentsList) {
+      const method = (pmt.payment_method || "CASH").toUpperCase();
+      const amt = Number(pmt.amount || 0);
 
-        if (!buckets[method]) {
-          buckets[method] = { count: 0, total: 0 };
+      if (!buckets[method]) {
+        buckets[method] = { count: 0, total: 0 };
+      }
+      buckets[method].count += 1;
+      buckets[method].total += amt;
+      grandCollected += amt;
+    }
+  } else {
+    const activeInvoices = invoices.filter((i) => !i.is_voided);
+    for (const inv of activeInvoices) {
+      if (inv.payments && Array.isArray(inv.payments)) {
+        for (const pmt of inv.payments) {
+          const method = (pmt.payment_method || "CASH").toUpperCase();
+          const amt = Number(pmt.amount || 0);
+
+          if (!buckets[method]) {
+            buckets[method] = { count: 0, total: 0 };
+          }
+          buckets[method].count += 1;
+          buckets[method].total += amt;
+          grandCollected += amt;
         }
-        buckets[method].count += 1;
-        buckets[method].total += amt;
-        grandCollected += amt;
       }
     }
   }
@@ -286,7 +418,116 @@ export function computePaymentChannelBreakdown(invoices: InvoiceRecord[]): Payme
     .sort((a, b) => b.totalCollected - a.totalCollected);
 }
 
-const MONTH_NAMES = [
+/**
+ * Compute Accounts Receivable (AR) Aging Summary as-of a given reference date.
+ * Buckets outstanding active invoices into:
+ * Current (0-30 days), 31-60 days, 61-90 days, 91-120 days, and 120+ days.
+ */
+export function computeAccountsReceivableAging(
+  invoices: InvoiceRecord[],
+  asOfDate: Date = new Date()
+): AccountsReceivableAgingSummary {
+  const asOfTime = asOfDate.getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  let current_0_30 = 0;
+  let days_31_60 = 0;
+  let days_61_90 = 0;
+  let days_91_120 = 0;
+  let days_120_plus = 0;
+  let totalAR = 0;
+  let dueInvoicesCount = 0;
+
+  for (const inv of invoices) {
+    if (inv.is_voided) continue;
+    const due = Number(inv.due_amount || 0);
+    if (due <= 0) continue;
+
+    const invTime = new Date(inv.created_at).getTime();
+    if (invTime > asOfTime) continue; // Skip future invoices
+
+    dueInvoicesCount++;
+    totalAR += due;
+
+    const daysOld = Math.floor((asOfTime - invTime) / dayMs);
+
+    if (daysOld <= 30) {
+      current_0_30 += due;
+    } else if (daysOld <= 60) {
+      days_31_60 += due;
+    } else if (daysOld <= 90) {
+      days_61_90 += due;
+    } else if (daysOld <= 120) {
+      days_91_120 += due;
+    } else {
+      days_120_plus += due;
+    }
+  }
+
+  const sumBuckets = current_0_30 + days_31_60 + days_61_90 + days_91_120 + days_120_plus;
+  const isReconciled = Math.abs(totalAR - sumBuckets) < 0.01;
+
+  return {
+    asOfDate: asOfDate.toISOString(),
+    totalInvoicesDue: dueInvoicesCount,
+    totalAR: Math.round(totalAR * 100) / 100,
+    current_0_30: Math.round(current_0_30 * 100) / 100,
+    days_31_60: Math.round(days_31_60 * 100) / 100,
+    days_61_90: Math.round(days_61_90 * 100) / 100,
+    days_91_120: Math.round(days_91_120 * 100) / 100,
+    days_120_plus: Math.round(days_120_plus * 100) / 100,
+    isReconciled,
+  };
+}
+
+/**
+ * Compute true Accrual-basis Profit & Loss (P&L) statement
+ * comparing recognized patient service revenue against operating expenses in the selected period.
+ */
+export function computeProfitAndLossStatement(params: {
+  invoices: InvoiceRecord[];
+  operatingExpenses: Array<{ category: string; amount: number }>;
+  periodStartIso: string;
+  periodEndIso: string;
+}): ProfitAndLossStatement {
+  const activeInvoices = params.invoices.filter((i) => !i.is_voided);
+
+  const grossPatientRevenue = activeInvoices.reduce((sum, i) => sum + Number(i.subtotal || 0), 0);
+  const discountsAllowed = activeInvoices.reduce((sum, i) => sum + Number(i.discount_amount || 0), 0);
+  const netRecognizedRevenue = activeInvoices.reduce((sum, i) => sum + Number(i.grand_total || (i.subtotal - (i.discount_amount || 0))), 0);
+
+  const totalOperatingExpenses = params.operatingExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const netOperatingSurplus = netRecognizedRevenue - totalOperatingExpenses;
+
+  // Cash basis comparison
+  let cashCollectionsInflow = 0;
+  for (const inv of activeInvoices) {
+    cashCollectionsInflow += Number(inv.paid_amount || 0);
+  }
+  const cashRefundsOutflow = 0; // default cash refunds in period
+  const netOperatingCashFlow = cashCollectionsInflow - cashRefundsOutflow;
+
+  return {
+    reportingBasis: "ACCRUAL",
+    periodStart: params.periodStartIso,
+    periodEnd: params.periodEndIso,
+    accrual: {
+      grossPatientRevenue,
+      discountsAllowed,
+      netRecognizedRevenue,
+      operatingExpenses: totalOperatingExpenses,
+      netOperatingSurplus,
+      expenseBreakdown: params.operatingExpenses,
+    },
+    cash: {
+      cashCollectionsInflow,
+      cashRefundsOutflow,
+      netOperatingCashFlow,
+    },
+  };
+}
+
+export const MONTH_NAMES = [
   { en: "January", bn: "জানুয়ারি" },
   { en: "February", bn: "ফেব্রুয়ারি" },
   { en: "March", bn: "মার্চ" },
@@ -302,7 +543,7 @@ const MONTH_NAMES = [
 ];
 
 /**
- * Compute month-by-month financial trend for the given year.
+ * Compute month-by-month financial trend for the given year in Asia/Dhaka time.
  */
 export function computeMonthlyFinancialTrend(
   invoices: InvoiceRecord[],
@@ -338,9 +579,28 @@ export function computeMonthlyFinancialTrend(
 }
 
 /**
- * Generate CSV data representation of filtered invoices for download.
+ * Generate CSV representation of filtered invoices for download with UTF-8 BOM.
  */
-export function generateFinancialReportCSV(invoices: InvoiceRecord[]): string {
+export function generateFinancialReportCSV(
+  invoices: InvoiceRecord[],
+  metadata?: {
+    periodLabel?: string;
+    organizationName?: string;
+    generatedAt?: string;
+    reportingBasis?: string;
+  }
+): string {
+  const bom = "\uFEFF"; // UTF-8 Byte Order Mark for Microsoft Excel compatibility
+  const metadataLines = [
+    `"ONNESHA HOSPITAL & DIAGNOSTIC COMPLEX - FINANCIAL REPORT"`,
+    `"Organization:","${metadata?.organizationName || "Onnesha Hospital (Dhaka)"}"`,
+    `"Reporting Basis:","${metadata?.reportingBasis || "Accrual & Cash Basis"}"`,
+    `"Reporting Timezone:","Asia/Dhaka (BST, UTC+6)"`,
+    `"Selected Period:","${metadata?.periodLabel || "All Time"}"`,
+    `"Generated At:","${metadata?.generatedAt || new Date().toISOString()}"`,
+    `""`, // empty line separator
+  ];
+
   const headers = [
     "Invoice Number",
     "Date (BST)",
@@ -359,7 +619,7 @@ export function generateFinancialReportCSV(invoices: InvoiceRecord[]): string {
 
   const rows = invoices.map((inv) => {
     const safeStr = (s?: string | null) => `"${(s || "").replace(/"/g, '""')}"`;
-    const dateStr = inv.created_at ? new Date(inv.created_at).toLocaleString("en-GB") : "";
+    const dateStr = inv.created_at ? new Date(inv.created_at).toLocaleString("en-GB", { timeZone: DHAKA_TIMEZONE }) : "";
 
     return [
       safeStr(inv.invoice_number),
@@ -378,5 +638,5 @@ export function generateFinancialReportCSV(invoices: InvoiceRecord[]): string {
     ].join(",");
   });
 
-  return [headers.join(","), ...rows].join("\r\n");
+  return bom + [...metadataLines, headers.join(","), ...rows].join("\r\n");
 }

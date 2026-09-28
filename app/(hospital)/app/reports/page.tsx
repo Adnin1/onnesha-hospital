@@ -21,6 +21,7 @@ import {
   Percent,
   Search,
   Stethoscope,
+  Clock,
 } from "lucide-react";
 import { InvoiceRecord } from "@/types/billing";
 import { DoctorRecord } from "@/types/appointments";
@@ -32,12 +33,16 @@ import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/Hos
 import {
   FinancialPeriod,
   filterInvoicesByPeriod,
+  filterPaymentsByPeriod,
   computeFinancialAggregates,
   computeDepartmentalRevenue,
   computePaymentChannelBreakdown,
+  computeAccountsReceivableAging,
+  computeProfitAndLossStatement,
   computeMonthlyFinancialTrend,
   generateFinancialReportCSV,
 } from "@/lib/reports/financial";
+import { PaymentRecord } from "@/types/billing";
 
 export default function ReportsManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -45,12 +50,13 @@ export default function ReportsManagementPage() {
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
   const [trialBalance, setTrialBalance] = useState<TrialBalanceRow[]>([]);
   const [period, setPeriod] = useState<FinancialPeriod>("this_month");
+  const [reportingBasis, setReportingBasis] = useState<"accrual" | "cash">("accrual");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "due" | "void">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<
-    "overview" | "departments" | "channels" | "trends" | "pnl" | "dues" | "doctors"
+    "overview" | "departments" | "channels" | "ar_aging" | "trends" | "pnl" | "dues" | "doctors"
   >("overview");
   const [showHowToGuide, setShowHowToGuide] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -62,7 +68,7 @@ export default function ReportsManagementPage() {
       try {
         setLoading(true);
         const [invRes, docRes, tbRes] = await Promise.all([
-          getInvoicesAction({ limit: 1000 }),
+          getInvoicesAction({ limit: 5000 }),
           getDoctorsAction(),
           getTrialBalanceAction(),
         ]);
@@ -98,12 +104,27 @@ export default function ReportsManagementPage() {
     };
   }, [refreshTrigger]);
 
-  // 1. Filter by period
+  // 1. Filter by period using Asia/Dhaka calendar boundaries
   const periodFilteredInvoices = useMemo(() => {
     return filterInvoicesByPeriod(invoices, period, customStart, customEnd);
   }, [invoices, period, customStart, customEnd]);
 
-  // 2. Filter by status & search
+  // 2. Filter payments by period using payment date
+  const allPayments = useMemo(() => {
+    const list: PaymentRecord[] = [];
+    for (const inv of invoices) {
+      if (!inv.is_voided && inv.payments) {
+        list.push(...inv.payments);
+      }
+    }
+    return list;
+  }, [invoices]);
+
+  const periodFilteredPayments = useMemo(() => {
+    return filterPaymentsByPeriod(allPayments, period, customStart, customEnd);
+  }, [allPayments, period, customStart, customEnd]);
+
+  // 3. Filter by status & search
   const displayedInvoices = useMemo(() => {
     return periodFilteredInvoices.filter((inv) => {
       // Status filter
@@ -135,10 +156,15 @@ export default function ReportsManagementPage() {
     return computeDepartmentalRevenue(periodFilteredInvoices);
   }, [periodFilteredInvoices]);
 
-  // Payment channels breakdown
+  // Payment channels breakdown (Payment Date basis)
   const channels = useMemo(() => {
-    return computePaymentChannelBreakdown(periodFilteredInvoices);
-  }, [periodFilteredInvoices]);
+    return computePaymentChannelBreakdown(periodFilteredInvoices, periodFilteredPayments);
+  }, [periodFilteredInvoices, periodFilteredPayments]);
+
+  // Accounts Receivable (AR) Aging Summary
+  const arAging = useMemo(() => {
+    return computeAccountsReceivableAging(invoices);
+  }, [invoices]);
 
   // Monthly trends for current calendar year
   const monthlyTrends = useMemo(() => {
@@ -152,10 +178,27 @@ export default function ReportsManagementPage() {
       .reduce((sum, row) => sum + Math.abs(Number(row.net_balance || 0)), 0);
   }, [trialBalance]);
 
-  // Net Operating Surplus / Profit = Gross Collections - Operating Expenses
+  // True Profit & Loss Statement (Accrual basis)
+  const pnlStatement = useMemo(() => {
+    const expenseRows = trialBalance
+      .filter((row) => row.account_type === "EXPENSE")
+      .map((row) => ({
+        category: `${row.account_name} (${row.account_code})`,
+        amount: Math.abs(Number(row.net_balance || 0)),
+      }));
+
+    return computeProfitAndLossStatement({
+      invoices: periodFilteredInvoices,
+      operatingExpenses: expenseRows,
+      periodStartIso: customStart || "",
+      periodEndIso: customEnd || "",
+    });
+  }, [periodFilteredInvoices, trialBalance, customStart, customEnd]);
+
+  // Net Operating Surplus / Deficit (Accrual Basis)
   const netSurplus = useMemo(() => {
-    return aggregates.totalCollected - totalExpenses;
-  }, [aggregates.totalCollected, totalExpenses]);
+    return pnlStatement.accrual.netOperatingSurplus;
+  }, [pnlStatement]);
 
   // Pending dues list
   const dueInvoices = useMemo(() => {
@@ -167,7 +210,12 @@ export default function ReportsManagementPage() {
   };
 
   const handleExportCSV = () => {
-    const csv = generateFinancialReportCSV(displayedInvoices);
+    const csv = generateFinancialReportCSV(displayedInvoices, {
+      periodLabel: period.toUpperCase(),
+      organizationName: "Onnesha Hospital & Diagnostic Complex",
+      reportingBasis: reportingBasis === "cash" ? "Cash Collection Basis" : "Accrual Accounting Basis",
+      generatedAt: new Date().toISOString(),
+    });
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -191,8 +239,11 @@ export default function ReportsManagementPage() {
             <span className="text-xs font-bold text-sky-600 uppercase tracking-wider">
               Financial Intelligence & Accounting
             </span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+              Asia/Dhaka (BST, UTC+6)
+            </span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700">
-              ERP v1.1.9
+              ERP v1.1.10
             </span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 mt-1 tracking-tight">
@@ -427,6 +478,27 @@ export default function ReportsManagementPage() {
               বাতিল (Void)
             </button>
           </div>
+
+          {/* Basis Toggle: Accrual vs Cash */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+            <span className="text-[10px] text-slate-500 font-bold px-1.5 uppercase">ভিত্তি:</span>
+            <button
+              onClick={() => setReportingBasis("accrual")}
+              className={`px-2.5 py-1.5 rounded-lg transition ${
+                reportingBasis === "accrual" ? "bg-white font-bold text-sky-800 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              অ্যাকাউন্টিং (Accrual)
+            </button>
+            <button
+              onClick={() => setReportingBasis("cash")}
+              className={`px-2.5 py-1.5 rounded-lg transition ${
+                reportingBasis === "cash" ? "bg-white font-bold text-emerald-800 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              নগদ আদায় (Cash)
+            </button>
+          </div>
         </div>
 
         {/* Custom Date Range Picker & Search Bar */}
@@ -630,6 +702,18 @@ export default function ReportsManagementPage() {
         >
           <DollarSign className="w-3.5 h-3.5" />
           লাভ-ক্ষতি বিবরণী (Income vs Expense)
+        </button>
+
+        <button
+          onClick={() => setActiveTab("ar_aging")}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+            activeTab === "ar_aging"
+              ? "bg-sky-600 text-white shadow-xs"
+              : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          বকেয়া বয়স বিশ্লেষণ (AR Aging)
         </button>
 
         <button
@@ -869,55 +953,180 @@ export default function ReportsManagementPage() {
           </div>
         )}
 
-        {/* TAB 5: PROFIT & LOSS (INCOME VS EXPENSE) */}
+        {/* TAB 5: PROFIT & LOSS (ACCRUAL & CASH STATEMENT) */}
         {activeTab === "pnl" && (
           <div className="space-y-6">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">
-              আয়-ব্যয় ও লাভ-ক্ষতি বিবরণী (Income vs Operating Expense Statement)
-            </h3>
-            <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
-              <div className="bg-slate-100 p-3 font-bold text-slate-800 flex justify-between">
-                <span>১. পরিচালন রাজস্ব / আয় (Operating Revenue)</span>
-                <span className="font-mono">{formatCurrencyBDT(aggregates.totalCollected)}</span>
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                  আয়-ব্যয় ও লাভ-ক্ষতি বিবরণী (Profit & Loss Statement)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  অ্যাকাউন্টিং স্ট্যান্ডার্ড অনুযায়ী স্বীকৃতিপ্রাপ্ত রাজস্ব এবং জেনারেল লেজারের পরিচালন ব্যয়ের সমন্বিত হিসাব।
+                </p>
               </div>
-              <div className="p-3 divide-y divide-slate-100 bg-white">
-                <div className="flex justify-between py-1.5 text-slate-600">
-                  <span>হাসপাতাল সেবা বাবদ সর্বমোট আদায়কৃত রাজস্ব</span>
-                  <span className="font-mono font-semibold text-emerald-700">
-                    +{formatCurrencyBDT(aggregates.totalCollected)}
+              <span className="px-2.5 py-1 bg-sky-50 text-sky-700 text-xs font-bold rounded-lg border border-sky-200">
+                ভিত্তি: {reportingBasis === "cash" ? "নগদ আদায় ভিত্তি (Cash)" : "বকেয়া/অ্যাকাউন্টিং ভিত্তি (Accrual)"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Accrual P&L Block */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                <div className="bg-slate-900 text-white p-3 font-bold flex justify-between items-center">
+                  <span>অ্যাকাউন্টিং লাভ-ক্ষতি (Accrual P&L Statement)</span>
+                  <span className="text-[10px] bg-sky-600 px-2 py-0.5 rounded">মানসম্মত হিসাববিজ্ঞান</span>
+                </div>
+
+                <div className="bg-slate-100 p-2.5 font-bold text-slate-800 flex justify-between border-b border-slate-200">
+                  <span>১. মোট সেবা রাজস্ব (Gross Patient Services)</span>
+                  <span className="font-mono text-emerald-700">+{formatCurrencyBDT(pnlStatement.accrual.grossPatientRevenue)}</span>
+                </div>
+                <div className="p-2.5 bg-white flex justify-between text-slate-600">
+                  <span>বাদ: অনুমোদিত ছাড় ও ওয়েভার (Discounts Allowed)</span>
+                  <span className="font-mono text-purple-700">-{formatCurrencyBDT(pnlStatement.accrual.discountsAllowed)}</span>
+                </div>
+                <div className="p-2.5 bg-slate-50 font-semibold text-slate-800 flex justify-between border-t border-b border-slate-100">
+                  <span>নীট স্বীকৃতিপ্রাপ্ত রাজস্ব (Net Recognized Revenue)</span>
+                  <span className="font-mono text-emerald-800 font-bold">+{formatCurrencyBDT(pnlStatement.accrual.netRecognizedRevenue)}</span>
+                </div>
+
+                <div className="bg-slate-100 p-2.5 font-bold text-slate-800 flex justify-between border-t border-slate-200">
+                  <span>২. পরিচালন ব্যয় (Operating Expenses from General Ledger)</span>
+                  <span className="font-mono text-rose-700">-{formatCurrencyBDT(pnlStatement.accrual.operatingExpenses)}</span>
+                </div>
+                <div className="p-2.5 divide-y divide-slate-100 bg-white max-h-48 overflow-y-auto">
+                  {pnlStatement.accrual.expenseBreakdown.length === 0 ? (
+                    <div className="py-2 text-slate-400 italic">কোনো এক্সপেন্স অ্যাকাউন্ট রেকর্ড পাওয়া যায়নি।</div>
+                  ) : (
+                    pnlStatement.accrual.expenseBreakdown.map((exp, idx) => (
+                      <div key={idx} className="flex justify-between py-1 text-slate-600">
+                        <span>{exp.category}</span>
+                        <span className="font-mono text-rose-600">-{formatCurrencyBDT(exp.amount)}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="bg-slate-800 text-white p-3 font-bold flex justify-between items-center text-sm border-t border-slate-700">
+                  <span>নীট পরিচালন উদ্বৃত্ত / (ঘাটতি) (Operating Surplus/Deficit)</span>
+                  <span className={`font-mono text-base font-black ${pnlStatement.accrual.netOperatingSurplus >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                    {formatCurrencyBDT(pnlStatement.accrual.netOperatingSurplus)}
                   </span>
                 </div>
               </div>
 
-              <div className="bg-slate-100 p-3 font-bold text-slate-800 flex justify-between border-t border-slate-200">
-                <span>২. পরিচালন ব্যয় / খরচ (Operating Expenses from General Ledger)</span>
-                <span className="font-mono text-rose-700">-{formatCurrencyBDT(totalExpenses)}</span>
+              {/* Cash Flow Block */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                <div className="bg-emerald-900 text-white p-3 font-bold flex justify-between items-center">
+                  <span>নগদ পরিচালন প্রবাহ (Cash Collection Basis)</span>
+                  <span className="text-[10px] bg-emerald-700 px-2 py-0.5 rounded">ক্যাশ কাউন্টার ভিত্তিক</span>
+                </div>
+
+                <div className="bg-slate-100 p-2.5 font-bold text-slate-800 flex justify-between border-b border-slate-200">
+                  <span>১. নগদ ও ডিজিটাল আদায় (Cash Inflows)</span>
+                  <span className="font-mono text-emerald-700">+{formatCurrencyBDT(pnlStatement.cash.cashCollectionsInflow)}</span>
+                </div>
+                <div className="p-2.5 bg-white flex justify-between text-slate-600">
+                  <span>ক্যাশ কাউন্টার আদায় (Cash Drawer)</span>
+                  <span className="font-mono">{formatCurrencyBDT(aggregates.totalCollected)}</span>
+                </div>
+                <div className="p-2.5 bg-white flex justify-between text-slate-600">
+                  <span>রিফান্ড প্রদান (Cash Refunds)</span>
+                  <span className="font-mono text-amber-700">-{formatCurrencyBDT(pnlStatement.cash.cashRefundsOutflow)}</span>
+                </div>
+
+                <div className="bg-slate-100 p-2.5 font-bold text-slate-800 flex justify-between border-t border-slate-200">
+                  <span>২. নগদ ব্যয় পরিশোধ (Cash Disbursements)</span>
+                  <span className="font-mono text-rose-700">-{formatCurrencyBDT(totalExpenses)}</span>
+                </div>
+                <div className="p-2.5 bg-white text-slate-600">
+                  <span>হাসপাতাল পরিচালন খরচ পরিশোধ</span>
+                  <span className="float-right font-mono text-rose-600">-{formatCurrencyBDT(totalExpenses)}</span>
+                </div>
+
+                <div className="bg-emerald-800 text-white p-3 font-bold flex justify-between items-center text-sm border-t border-emerald-700">
+                  <span>নীট নগদ প্রবাহ (Net Operating Cash Flow)</span>
+                  <span className={`font-mono text-base font-black ${aggregates.totalCollected - totalExpenses >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                    {formatCurrencyBDT(aggregates.totalCollected - totalExpenses)}
+                  </span>
+                </div>
               </div>
-              <div className="p-3 divide-y divide-slate-100 bg-white">
-                {trialBalance.filter((row) => row.account_type === "EXPENSE").length === 0 ? (
-                  <div className="py-2 text-slate-400 italic">
-                    কোনো এক্সপেন্স অ্যাকাউন্ট রেকর্ড পাওয়া যায়নি।
-                  </div>
-                ) : (
-                  trialBalance
-                    .filter((row) => row.account_type === "EXPENSE")
-                    .map((exp) => (
-                      <div key={exp.account_id} className="flex justify-between py-1.5 text-slate-600">
-                        <span>{exp.account_name} ({exp.account_code})</span>
-                        <span className="font-mono font-semibold text-rose-600">
-                          -{formatCurrencyBDT(Math.abs(Number(exp.net_balance || 0)))}
-                        </span>
-                      </div>
-                    ))
-                )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB: ACCOUNTS RECEIVABLE (AR) AGING */}
+        {activeTab === "ar_aging" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                  বকেয়া বয়স বিশ্লেষণ ও অডিট রিকনসিলিয়েশন (Accounts Receivable Aging)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  ইনভয়েসের বয়স অনুযায়ী বকেয়া পাওনা টাকা ৫টি আলাদা সময়সীমায় (Aging Buckets) শ্রেণীবদ্ধ।
+                </p>
+              </div>
+              <span className={`px-2.5 py-1 text-xs font-bold rounded-lg border flex items-center gap-1 ${
+                arAging.isReconciled ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"
+              }`}>
+                {arAging.isReconciled ? "✓ Reconciled: মোট বকেয়া = বাক্সের সমষ্টি" : "⚠ অডিট নোটিশ"}
+              </span>
+            </div>
+
+            {/* 5 Aging Buckets Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">চলতি (০–৩০ দিন)</span>
+                <div className="text-lg font-black text-slate-900 mt-1 font-mono">
+                  {formatCurrencyBDT(arAging.current_0_30)}
+                </div>
+                <span className="text-[10px] text-emerald-600 font-semibold">স্বাভাবিক পরিশোধ চক্র</span>
               </div>
 
-              <div className="bg-slate-900 text-white p-4 font-bold flex justify-between items-center text-sm">
-                <span>৩. নীট পরিচালন উদ্বৃত্ত / লাভ (Net Operating Surplus)</span>
-                <span className={`font-mono text-base font-black ${netSurplus >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                  {formatCurrencyBDT(netSurplus)}
-                </span>
+              <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">৩১–৬০ দিন পুরোনো</span>
+                <div className="text-lg font-black text-amber-700 mt-1 font-mono">
+                  {formatCurrencyBDT(arAging.days_31_60)}
+                </div>
+                <span className="text-[10px] text-amber-600 font-semibold">ফলো-আপ প্রয়োজন</span>
               </div>
+
+              <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">৬১–৯০ দিন পুরোনো</span>
+                <div className="text-lg font-black text-orange-700 mt-1 font-mono">
+                  {formatCurrencyBDT(arAging.days_61_90)}
+                </div>
+                <span className="text-[10px] text-orange-600 font-semibold">তাগাদা প্রদান আবশ্যক</span>
+              </div>
+
+              <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-xs">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">৯১–১২০ দিন পুরোনো</span>
+                <div className="text-lg font-black text-rose-700 mt-1 font-mono">
+                  {formatCurrencyBDT(arAging.days_91_120)}
+                </div>
+                <span className="text-[10px] text-rose-600 font-semibold">উচ্চ ঝুঁকিপূর্ণ বকেয়া</span>
+              </div>
+
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl shadow-xs">
+                <span className="text-[10px] font-bold text-rose-700 uppercase">১২০+ দিন (৪ মাস+)</span>
+                <div className="text-lg font-black text-rose-800 mt-1 font-mono">
+                  {formatCurrencyBDT(arAging.days_120_plus)}
+                </div>
+                <span className="text-[10px] text-rose-700 font-semibold">বিশেষ ব্যবস্থাপনা তলব</span>
+              </div>
+            </div>
+
+            {/* Total AR Control Total */}
+            <div className="bg-slate-900 text-white p-4 rounded-xl flex justify-between items-center text-xs">
+              <div>
+                <span className="font-bold text-sm">সর্বমোট নিয়ন্ত্রণাধীন বকেয়া (Total AR Control Total):</span>
+                <span className="block text-[11px] text-slate-400 mt-0.5">মোট অপরিশোধিত ইনভয়েস: {arAging.totalInvoicesDue} টি</span>
+              </div>
+              <span className="font-mono text-lg font-black text-amber-400">
+                {formatCurrencyBDT(arAging.totalAR)}
+              </span>
             </div>
           </div>
         )}

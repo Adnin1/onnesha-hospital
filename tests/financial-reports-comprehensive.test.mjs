@@ -49,13 +49,13 @@ describe("OHMS Financial Analytics & Comprehensive Reporting Engine", () => {
       due_amount: 0,
       status: "PAID",
       is_voided: false,
-      created_at: "2026-09-25T08:00:00Z", // 3 days ago (this_week, this_month)
-      updated_at: "2026-09-25T08:00:00Z",
+      created_at: "2026-09-27T08:00:00Z", // Sunday of current calendar week (this_week, this_month)
+      updated_at: "2026-09-27T08:00:00Z",
       items: [
         { service_category: "PHARMACY", item_name: "Antibiotics & Syrups", unit_price: 2000, quantity: 1, total_price: 2000 },
       ],
       payments: [
-        { id: "pmt-3", organization_id: "org-1", invoice_id: "inv-2", receipt_number: "REC-03", payment_method: "NAGAD", amount: 2000, cashier_id: "usr-2", payment_date: "2026-09-25T08:05:00Z" },
+        { id: "pmt-3", organization_id: "org-1", invoice_id: "inv-2", receipt_number: "REC-03", payment_method: "NAGAD", amount: 2000, cashier_id: "usr-2", payment_date: "2026-09-27T08:05:00Z" },
       ],
       patient: { id: "pat-2", patient_code: "OH-00102", full_name: "Fatema Begum", phone: "01811000002" },
     },
@@ -111,7 +111,7 @@ describe("OHMS Financial Analytics & Comprehensive Reporting Engine", () => {
     assert.ok(todayInvoices.some((i) => i.id === "inv-4"));
   });
 
-  test("2. Period filtering: this_week captures records within the rolling 7-day window", () => {
+  test("2. Period filtering: this_week captures records within the Asia/Dhaka calendar week (Sunday to Saturday)", () => {
     const weekInvoices = filterInvoicesByPeriod(sampleInvoices, "this_week", undefined, undefined, refDate);
     assert.equal(weekInvoices.length, 3); // inv-1, inv-2, inv-4
     assert.ok(!weekInvoices.some((i) => i.id === "inv-3")); // August record excluded

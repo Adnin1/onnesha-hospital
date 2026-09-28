@@ -357,99 +357,42 @@ export async function getTrialBalanceAction(): Promise<ActionResult<{ trialBalan
   try {
     const supabase = await createClient();
 
-    // Prefer authoritative PostgreSQL RPC get_trial_balance
+    // Authoritative PostgreSQL RPC get_trial_balance (Fail-closed tenant isolation)
     const { data: rpcRows, error: rpcError } = await supabase.rpc("get_trial_balance", {
       p_org_id: session.organizationId,
     });
 
-    if (!rpcError && rpcRows && Array.isArray(rpcRows) && rpcRows.length > 0) {
-      interface TrialBalanceRpcRow {
-        account_id: string;
-        account_code: string;
-        account_name: string;
-        account_type: AccountType;
-        total_debit?: number | string;
-        total_credit?: number | string;
-        net_balance?: number | string;
-      }
-      let totalDebits = 0;
-      let totalCredits = 0;
-      const trialBalance: TrialBalanceRow[] = (rpcRows as unknown as TrialBalanceRpcRow[]).map((r) => {
-        const d = Number(r.total_debit) || 0;
-        const c = Number(r.total_credit) || 0;
-        totalDebits += d;
-        totalCredits += c;
-        return {
-          account_id: r.account_id,
-          account_code: r.account_code,
-          account_name: r.account_name,
-          account_type: r.account_type,
-          total_debit: d,
-          total_credit: c,
-          net_balance: Number(r.net_balance) || (d - c),
-        };
-      });
-
-      return {
-        success: true,
-        data: {
-          trialBalance,
-          totalDebits,
-          totalCredits,
-          isBalanced: Math.abs(totalDebits - totalCredits) < 0.01,
-        },
-      };
+    if (rpcError) {
+      return { success: false, error: rpcError.message || "Failed to retrieve authoritative trial balance." };
     }
 
-    // Fallback: Fetch all accounts
-    const { data: accounts, error: accError } = await supabase
-      .from("chart_of_accounts")
-      .select("id, account_code, account_name, account_type")
-      .eq("organization_id", session.organizationId)
-      .order("account_code", { ascending: true });
-
-    if (accError) {
-      return { success: false, error: accError.message };
-    }
-
-    // Fetch all posted journal lines
-    const { data: lines, error: lineError } = await supabase
-      .from("journal_entry_lines")
-      .select("account_id, debit, credit");
-
-    if (lineError) {
-      return { success: false, error: lineError.message };
-    }
-
-    const debitMap = new Map<string, number>();
-    const creditMap = new Map<string, number>();
-
-    for (const line of lines || []) {
-      const aId = line.account_id;
-      debitMap.set(aId, (debitMap.get(aId) || 0) + Number(line.debit || 0));
-      creditMap.set(aId, (creditMap.get(aId) || 0) + Number(line.credit || 0));
+    interface TrialBalanceRpcRow {
+      account_id: string;
+      account_code: string;
+      account_name: string;
+      account_type: AccountType;
+      total_debit?: number | string;
+      total_credit?: number | string;
+      net_balance?: number | string;
     }
 
     let totalDebits = 0;
     let totalCredits = 0;
-
-    const trialBalance: TrialBalanceRow[] = (accounts || []).map((acc) => {
-      const d = debitMap.get(acc.id) || 0;
-      const c = creditMap.get(acc.id) || 0;
+    const trialBalance: TrialBalanceRow[] = ((rpcRows || []) as unknown as TrialBalanceRpcRow[]).map((r) => {
+      const d = Number(r.total_debit) || 0;
+      const c = Number(r.total_credit) || 0;
       totalDebits += d;
       totalCredits += c;
       return {
-        account_id: acc.id,
-        account_code: acc.account_code,
-        account_name: acc.account_name,
-        account_type: acc.account_type,
+        account_id: r.account_id,
+        account_code: r.account_code,
+        account_name: r.account_name,
+        account_type: r.account_type,
         total_debit: d,
         total_credit: c,
-        net_balance: d - c,
+        net_balance: Number(r.net_balance) || (d - c),
       };
     });
-
-    const isBalanced = Math.abs(totalDebits - totalCredits) < 0.01;
 
     return {
       success: true,
@@ -457,7 +400,7 @@ export async function getTrialBalanceAction(): Promise<ActionResult<{ trialBalan
         trialBalance,
         totalDebits,
         totalCredits,
-        isBalanced,
+        isBalanced: Math.abs(totalDebits - totalCredits) < 0.01,
       },
     };
   } catch (err: unknown) {

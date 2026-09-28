@@ -1,10 +1,45 @@
-# Onnesha Hospital Management System — Release Notes v1.1.9
+# Onnesha Hospital Management System — Release Notes v1.1.10
 
 **Release Date:** 2026-09-28  
-**Version:** v1.1.9  
-**Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.9`)  
+**Version:** v1.1.10  
+**Git HEAD:** Synchronized with `origin/main` (Release Tag: `v1.1.10`)  
 **Deployment Target:** Cloudflare Pages (`https://onnesha-hospital.pages.dev`)  
-**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, 88 Applied Migrations)  
+**Database:** Supabase PostgreSQL Cloud (`iuhtzahuszdkdarhxobx`, 90 Applied Migrations)  
+
+---
+
+## 🚀 What's New in v1.1.10
+
+### 1. Server-Authoritative Financial Intelligence & Reporting RPCs (`Migration 90`)
+- **Authoritative SQL RPCs (`supabase/migrations/20260928200000_financial_intelligence_reporting_and_ar_aging.sql`):** Added 5 `SECURITY DEFINER` PostgreSQL functions with strict tenant org boundaries and `SET search_path = ''`:
+  1. `get_financial_dashboard_aggregates(p_org_id, p_start_date, p_end_date)`
+  2. `get_payment_channel_breakdown(p_org_id, p_start_date, p_end_date)`
+  3. `get_department_revenue_breakdown(p_org_id, p_start_date, p_end_date)`
+  4. `get_accounts_receivable_aging(p_org_id, p_as_of_date)`
+  5. `get_profit_and_loss_summary(p_org_id, p_start_date, p_end_date)`
+- **Eliminated 1000-Row Client Aggregation Limits:** Aggregates and KPI totals are computed server-side in the database, avoiding truncation.
+
+### 2. Accounts Receivable (AR) Aging Engine & Control Total Invariant
+- **5 Standard Aging Buckets:** Current (0–30 days), 31–60 days, 61–90 days, 91–120 days, and 120+ days.
+- **Mathematical Invariant Check (`isReconciled`):** Continuous automated assertion ensuring `Total AR == Sum(Buckets)` down to 2 decimal places.
+
+### 3. True Accrual P&L vs Cash Basis Flow
+- **Accrual Basis:** Gross Patient Revenue minus Discounts Allowed = Net Recognized Revenue. Net Recognized Revenue minus Operating Expenses = Net Operating Surplus/Deficit.
+- **Cash Basis:** Inflow from patient collections minus cash outflows = Net Operating Cash Flow.
+
+### 4. Asia/Dhaka Calendar Week & Payment-Date Anchoring
+- **Fixed Rolling 7-Day Window Discrepancy:** Enforces true Bangladeshi calendar weeks starting Sunday 00:00:00 BST through Saturday 23:59:59 BST.
+- **Payment Method Grouping by Payment Date:** MFS (bKash, Nagad, Rocket), Card, and Cash transactions are grouped according to when cash was collected, not invoice generation date.
+
+### 5. Fail-Closed GL Posting & Trial Balance Isolation
+- **Audit Logging for GL Failures (`lib/billing/actions.ts`):** `createInvoiceAction` captures `post_billing_to_gl_atomic` errors and logs high-priority audit events instead of swallowing errors.
+- **Fail-Closed Trial Balance (`lib/accounting/actions.ts`):** Removed un-isolated fallback querying `journal_entry_lines` directly; enforces fail-closed return from authoritative `get_trial_balance` RPC.
+
+### 6. Certified Quality & Test Metrics
+- **84/84 Test Suites Passing:** 732 active test passes, 0 failures, 6 standard skips.
+- **38/38 Real Browser E2E Tests Passing:** Playwright Chromium test suites fully green.
+- **0 TypeScript Errors & 0 ESLint Warnings:** Strict verification passed.
+- **58 Static Routes Exported:** Deployed to Cloudflare Pages edge.
 
 ---
 

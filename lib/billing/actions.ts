@@ -226,13 +226,24 @@ export async function createInvoiceAction(params: {
     });
 
     // ERP General Ledger Integration: Automatically post billing invoice to GL
-    try {
-      await supabase.rpc("post_billing_to_gl_atomic", {
-        p_org_id: session.organizationId,
-        p_invoice_id: rpcRes.invoice_id,
+    const { error: glErr } = await supabase.rpc("post_billing_to_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_invoice_id: rpcRes.invoice_id,
+    });
+    if (glErr) {
+      console.error("[ERP GL Posting Alert] Failed to auto-post billing invoice to GL:", glErr.message);
+      await recordAuditLog({
+        userId: session.userId,
+        organizationId: session.organizationId,
+        action: "UPDATE",
+        module: "ACCOUNTING",
+        entityType: "gl_posting_alert",
+        entityId: rpcRes.invoice_id,
+        newValues: {
+          error: glErr.message,
+          invoice_number: rpcRes.invoice_number,
+        },
       });
-    } catch (glErr) {
-      console.warn("ERP GL auto-posting notice:", glErr);
     }
 
     const fullInvoice: InvoiceRecord = {

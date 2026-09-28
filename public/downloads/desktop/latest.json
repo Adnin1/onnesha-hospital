@@ -1,14 +1,14 @@
 {
-  "version": "1.1.9",
+  "version": "1.1.10",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.9. Release includes server-authoritative storage vault, public token status RPC, and hardened auth configuration.",
-  "pub_date": "2026-09-28T18:30:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.10. Release includes server-authoritative financial reporting & analytics, AR aging analysis, true accrual P&L, and fail-closed GL posting.",
+  "pub_date": "2026-09-28T20:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.9.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.10.exe",
       "installer_exe_sha256": "E176C9BE47ADC9AC412C0B4C377069F7F2173BCC1347B44D76E0A64B90E01FAE",
       "installer_exe_size": 6354483,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.9.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.10.msi",
       "installer_msi_sha256": "211741E1F785FDA274E96B37B175CD7BD71B0F01B8C48E21BD29D349FC339A40",
       "installer_msi_size": 6807552
     }

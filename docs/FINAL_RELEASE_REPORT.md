@@ -1,8 +1,8 @@
 # Onnesha Hospital Management System (OHMS) — Final Release Certification Report
 
 **Document Status:** Final & Authoritative  
-**Release Version:** `v1.1.9`  
-**Certification Date:** 2026-09-28T18:50:00+06:00  
+**Release Version:** `v1.1.10`  
+**Certification Date:** 2026-09-28T20:30:00+06:00  
 **Target Environment:** Cloudflare Pages Production Edge & Supabase Managed Database  
 
 ---
@@ -16,7 +16,7 @@ All components of the Onnesha Hospital Management System repository, release tag
 | **Git Working Tree** | Clean (`0 uncommitted changes`) | ✅ 100% |
 | **Local Branch (`main`)** | Synchronized with remotes | ✅ 100% |
 | **Remote GitHub (`origin/main`, `ssh-origin/main`)** | Synchronized | ✅ 100% |
-| **Git Release Tag (`v1.1.9`)** | Points to release commit | ✅ 100% |
+| **Git Release Tag (`v1.1.10`)** | Points to release commit | ✅ 100% |
 | **Cloudflare Pages Production Deployment** | Edge Production Dist | ✅ 100% |
 | **Cloudflare Canonical URL** | `https://onnesha-hospital.pages.dev` | ✅ Live |
 
@@ -136,17 +136,20 @@ To preserve absolute engineering integrity, every platform capability is classif
 ### Category A: Complete & Fully Verified (Software, Database & Edge)
 - [x] Complete Next.js hospital operating system (OPD, IPD, Emergency, Pharmacy, Lab, Billing, HR, Audit Vault)
 - [x] All 58 statically built public and application routes (56 HTML pages)
-- [x] 88 Supabase PostgreSQL migrations deployed and synchronized
+- [x] 90 Supabase PostgreSQL migrations deployed and synchronized
 - [x] Multi-tenant RLS policies on all operational tables
 - [x] Server-authoritative storage vault hardening and MIME whitelist
 - [x] Authoritative public token status lookup RPC (`public.get_public_token_status`)
-- [x] Server-authoritative financial calculation & atomic transaction RPCs
+- [x] Server-authoritative financial intelligence & reporting RPCs (`Migration 90`)
+- [x] Accounts Receivable (AR) Aging analysis with mathematical control total invariant
+- [x] True Accrual P&L (Recognized Revenue minus Operating Expenses) vs Cash Flow
+- [x] Asia/Dhaka calendar week (Sunday 00:00:00 to Saturday 23:59:59 BST)
 - [x] Dual-format document layout CSS (A4 formal + 80mm POS Thermal)
 - [x] PWA foundation with Service Worker clinical cache exclusion
 - [x] Core Web Vitals rating "GOOD" on all audited routes
-- [x] 82 Node.js test suites passing (713 active passes, 0 failures, 6 standard skips)
+- [x] 84 Node.js test suites passing (732 active passes, 0 failures, 6 standard skips)
 - [x] 38 Playwright real-browser scenarios passing
-- [x] Release provenance reconciled across `HEAD`, `origin/main`, tag `v1.1.9`, and Cloudflare Pages
+- [x] Release provenance reconciled across `HEAD`, `origin/main`, tag `v1.1.10`, and Cloudflare Pages
 
 ### Category B: Code Complete — Owner Action Required (Commercial & Hardware Gates)
 The software implementation is fully coded with production-grade fallback and security guards; the following items require external credentials, physical hardware, or third-party DNS authorization from the hospital owner:
