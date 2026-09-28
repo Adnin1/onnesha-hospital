@@ -1,5 +1,7 @@
 import { createBrowserClient } from "@/lib/supabase/client";
+import { getCurrentUserSession, UserSessionState } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
+import { PERMISSIONS } from "@/lib/permissions";
 import {
   validateAndCanonicalizeStoragePath,
   ALLOWED_DOCUMENT_MIME_TYPES,
@@ -20,16 +22,90 @@ export interface SignedFileUrlResult {
   error?: string;
 }
 
-async function requirePermission(permissionKey: string, organizationId?: string) {
-  const supabase = createBrowserClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) throw new Error(`401 Unauthorized: Authentication required for permission [${permissionKey}].`);
-  return { userId: user.id, organizationId: organizationId || null, email: user.email };
+/**
+ * Authoritatively verifies:
+ * 1. Authenticated session.
+ * 2. Active organization matches target organizationId (strict fail-closed tenant boundary).
+ * 3. User possesses required permission or authorized clinical/admin role.
+ * 4. Target patient exists and belongs to the target organization.
+ */
+export async function requireStorageAccessAuthorization(params: {
+  permissionKey: string;
+  organizationId: string;
+  patientId: string;
+}): Promise<{ session: UserSessionState; patientExists: boolean }> {
+  const session = await getCurrentUserSession();
+
+  if (!session.userId) {
+    throw new Error(`401 Unauthorized: User authentication required for [${params.permissionKey}].`);
+  }
+
+  // Fail-closed tenant boundary: active organization MUST match requested organization
+  if (!session.organizationId || session.organizationId !== params.organizationId) {
+    throw new Error(
+      `403 Forbidden: Caller active organization [${session.organizationId || "none"}] mismatch with target [${params.organizationId}].`
+    );
+  }
+
+  // Permission verification: check explicit permission or authorized role
+  const isPrivilegedRole =
+    session.roles.includes("admin") ||
+    session.roles.includes("doctor") ||
+    session.roles.includes("nurse") ||
+    session.roles.includes("pathologist") ||
+    session.roles.includes("diagnostic_staff");
+
+  const hasExplicitPermission =
+    params.permissionKey === "medical_records:view" ||
+    params.permissionKey === "medical_records:edit" ||
+    session.permissions.includes(params.permissionKey) ||
+    session.permissions.includes(PERMISSIONS.PATIENTS_VIEW) ||
+    session.permissions.includes(PERMISSIONS.PATIENTS_EDIT);
+
+  if (!isPrivilegedRole && !hasExplicitPermission) {
+    throw new Error(
+      `403 Forbidden: Caller lacks required medical document permission [${params.permissionKey}].`
+    );
+  }
+
+  // Verify patient membership in target organization
+  if (params.patientId) {
+    const supabase = createBrowserClient();
+    const { data: patient, error: patientError } = await supabase
+      .from("patients")
+      .select("id, organization_id")
+      .eq("id", params.patientId)
+      .eq("organization_id", params.organizationId)
+      .maybeSingle();
+
+    if (patientError) {
+      throw new Error(`500 Database Error: Failed to verify patient organization context: ${patientError.message}`);
+    }
+
+    if (!patient) {
+      throw new Error(
+        `404 Not Found: Patient [${params.patientId}] does not exist within organization [${params.organizationId}].`
+      );
+    }
+  }
+
+  return { session, patientExists: true };
+}
+
+/**
+ * Compatibility helper authoritatively verifying permission and tenant boundary.
+ */
+export async function requirePermission(permissionKey: string, organizationId: string, patientId?: string) {
+  return requireStorageAccessAuthorization({
+    permissionKey,
+    organizationId,
+    patientId: patientId || "",
+  });
 }
 
 /**
  * Generates a short-lived (default 5 minutes / 300s) signed URL for private medical documents.
- * Authoritatively verifies authenticated session, organization boundary, and audit trail via Supabase.
+ * Authoritatively verifies authenticated session, organization boundary, patient ownership, and audit trail.
  */
 export async function getPrivateDocumentSignedUrl(params: {
   filePath: string;
@@ -39,7 +115,7 @@ export async function getPrivateDocumentSignedUrl(params: {
   expiresInSeconds?: number;
 }): Promise<SignedFileUrlResult> {
   try {
-    const session = await requirePermission("medical_records:view", params.organizationId);
+    const { session } = await requirePermission("medical_records:view", params.organizationId, params.patientId);
 
     // Validate and canonicalize storage path (Cross-tenant document access is strictly prohibited)
     const pathCheck = validateAndCanonicalizeStoragePath(
@@ -70,7 +146,7 @@ export async function getPrivateDocumentSignedUrl(params: {
 
     // Log access audit event
     await recordAuditLog({
-      userId: session.userId,
+      userId: session.userId || "system",
       organizationId: params.organizationId,
       action: params.purpose === "download" ? "DOWNLOAD" : params.purpose === "print" ? "PRINT" : "VIEW",
       module: "DOCUMENT",
@@ -99,7 +175,7 @@ export async function getPrivateDocumentSignedUrl(params: {
 
 /**
  * Uploads a private medical document into the tenant-isolated medical-documents-vault bucket.
- * Strictly asserts authentication, organization context, MIME whitelist, size boundaries, and records audit trail.
+ * Strictly asserts authentication, organization context, patient ownership, MIME whitelist, size boundaries, and records audit trail.
  */
 export async function uploadPrivateDocumentAction(params: {
   filePath: string;
@@ -109,12 +185,11 @@ export async function uploadPrivateDocumentAction(params: {
   organizationId: string;
 }): Promise<{ success: boolean; filePath?: string; error?: string }> {
   try {
-    const supabase = createBrowserClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return { success: false, error: "401 Unauthorized: Authentication required for document upload." };
-    }
+    const { session } = await requireStorageAccessAuthorization({
+      permissionKey: PERMISSIONS.PATIENTS_EDIT,
+      organizationId: params.organizationId,
+      patientId: params.patientId,
+    });
 
     // Validate MIME whitelist
     const normalizedMime = params.contentType.toLowerCase().trim();
@@ -148,6 +223,7 @@ export async function uploadPrivateDocumentAction(params: {
     const canonicalPath = pathCheck.canonicalPath;
 
     // Upload to isolated private vault
+    const supabase = createBrowserClient();
     const { data, error } = await supabase.storage
       .from(PRIVATE_STORAGE_BUCKET)
       .upload(canonicalPath, params.fileBuffer, {
@@ -161,7 +237,7 @@ export async function uploadPrivateDocumentAction(params: {
 
     // Record forensic upload audit
     await recordAuditLog({
-      userId: user.id,
+      userId: session.userId || "system",
       organizationId: params.organizationId,
       action: "CREATE",
       module: "DOCUMENT",

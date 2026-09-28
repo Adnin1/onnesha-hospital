@@ -1,14 +1,14 @@
 {
-  "version": "1.1.13",
+  "version": "1.1.14",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.13. Release includes CSP production hardening, governance automation (Definition of Done, Engineering Playbook, project-health-check), SECURITY DEFINER search_path audit, and cross-browser Playwright certification.",
-  "pub_date": "2026-09-29T03:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.14. Release includes P&L date boundary fix, authoritative General Ledger accounting, storage access authorization hardening with patient boundary checks, and Docker Compose PostgreSQL entrypoint orchestrator.",
+  "pub_date": "2026-09-29T05:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.13.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.14.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.13.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.14.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0
     }

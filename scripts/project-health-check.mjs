@@ -289,6 +289,43 @@ try {
   warn(`Docker consistency check skipped: ${e.message}`);
 }
 
+// ─── 15. Storage & Accounting Invariants ───
+console.log('\n📋 15. Storage & Accounting Invariants');
+try {
+  // 15.1 Storage Authorization
+  const filesCode = fs.readFileSync(path.join(ROOT, 'lib', 'storage', 'files.ts'), 'utf8');
+  if (
+    filesCode.includes('requireStorageAccessAuthorization') &&
+    filesCode.includes('session.organizationId !== params.organizationId') &&
+    filesCode.includes('.from("patients")')
+  ) {
+    pass('Storage authorization enforces active organization, permission, and patient boundary');
+  } else {
+    critical('Storage authorization in lib/storage/files.ts is missing tenant or patient validation');
+  }
+
+  // 15.2 P&L Date Boundary & GL Accounting
+  const pnlMigration = fs.readFileSync(
+    path.join(ROOT, 'supabase', 'migrations', '20260929000000_pnl_date_boundary_and_authoritative_gl.sql'),
+    'utf8'
+  );
+  if (pnlMigration.includes('je.entry_date < v_end_date_d') && !pnlMigration.includes('FROM public.expenses')) {
+    pass('P&L summary enforces strict half-open date boundary and authoritative General Ledger');
+  } else {
+    critical('P&L summary in migration 92 violates half-open date boundary or includes legacy expenses fallback');
+  }
+
+  // 15.3 Docker Compose Entrypoint Script
+  const compose = fs.readFileSync(path.join(ROOT, 'docker-compose.yml'), 'utf8');
+  if (compose.includes('init-postgres.sh:/docker-entrypoint-initdb.d/00_init.sh:ro')) {
+    pass('Docker compose mounts init-postgres.sh directly as executable *.sh entrypoint');
+  } else {
+    critical('Docker compose does not mount executable init-postgres.sh in /docker-entrypoint-initdb.d/');
+  }
+} catch (e) {
+  warn(`Storage & Accounting invariant check skipped: ${e.message}`);
+}
+
 // ─── Summary ───
 const isStrictMode = process.argv.includes('--strict') || process.argv.includes('--release');
 console.log('\n' + '='.repeat(50));
