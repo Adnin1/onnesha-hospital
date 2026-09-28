@@ -46,14 +46,14 @@ All automated test suites were executed in strict certification mode:
 - **Total Active Passed Assertions:** 695 passes
 - **Active Failures:** 0
 - **Blocked Assertions:** 0
-- **Standard Skips:** 6 (production mutation safeguards):
-  1. `tests/e2e/auth-real-e2e.test.mjs` (2 skips): Real administrative login/logout requiring live `E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD`.
-  2. `tests/e2e/billing-real.test.mjs` (1 skip): Direct mutating billing insert requiring `SUPABASE_SERVICE_ROLE_KEY`.
-  3. `tests/e2e/patient-opd-real.test.mjs` (1 skip): Direct mutating patient insert requiring `SUPABASE_SERVICE_ROLE_KEY`.
-  4. `tests/e2e/role-rbac-real.test.mjs` (1 skip): Direct mutating role update requiring `SUPABASE_SERVICE_ROLE_KEY`.
-  5. `tests/live/authenticated-cross-tenant.live.test.mjs` (1 skip): Live mutating cross-tenant test requiring dedicated staging credentials (`OHMS_TEST_SUPABASE_URL`, `OHMS_TEST_SERVICE_ROLE_KEY`).
-  6. `tests/phase22-concurrency-rbac-slot.test.mjs` (1 skip): Mutating concurrent appointment booking requiring `SUPABASE_SERVICE_ROLE_KEY`.
-  *(Audit Finding: 0 logic defects. All 6 skips prevent accidental test pollution of production database records and are strictly enforced by the CI staging gate.)*
+- **Standard Skips:** Exactly 6 assertions across 5 test suites (production mutation safeguards):
+  1. `tests/e2e/auth-real-e2e.test.mjs` (Assertion 3): Real admin login verification requiring live `E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD`.
+  2. `tests/e2e/auth-real-e2e.test.mjs` (Assertion 5): Real admin logout verification requiring active session credentials.
+  3. `tests/e2e/billing-real.test.mjs` (Assertion 1): Direct mutating billing record insertion requiring `SUPABASE_SERVICE_ROLE_KEY`.
+  4. `tests/e2e/patient-opd-real.test.mjs` (Assertion 1): Direct mutating patient demographic insertion requiring `SUPABASE_SERVICE_ROLE_KEY`.
+  5. `tests/e2e/role-rbac-real.test.mjs` (Assertion 1): Direct mutating user role check requiring `SUPABASE_SERVICE_ROLE_KEY`.
+  6. `tests/phase22-concurrency-rbac-slot.test.mjs` (Assertion 16): Mutating concurrent appointment slot advisory lock check requiring `SUPABASE_SERVICE_ROLE_KEY`.
+  *(Audit Finding: 0 logic defects. All 6 assertions prevent test data pollution of production tables. The dedicated live mutating cross-tenant test in `tests/live/authenticated-cross-tenant.live.test.mjs` is isolated and executed strictly in CI staging via `test:staging-security`.)*
 
 ### 3.2 Playwright Real-Browser Chromium Suite (`npx playwright test --project=chromium`)
 - **Total Browser Test Suites:** 15 test files
