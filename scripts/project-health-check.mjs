@@ -222,10 +222,11 @@ try {
 // ─── 12. npm audit ───
 console.log('\n📋 12. npm Audit');
 try {
-  execSync('npm audit --audit-level=high', { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
+  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  execSync(`${npmCmd} audit --audit-level=high`, { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
   pass('npm audit: 0 high/critical vulnerabilities');
 } catch (e) {
-  const output = e.stdout || '';
+  const output = (e.stdout || '') + (e.stderr || '');
   if (output.includes('found 0 vulnerabilities')) {
     pass('npm audit: 0 vulnerabilities');
   } else {
