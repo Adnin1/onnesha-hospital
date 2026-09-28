@@ -174,8 +174,14 @@ describe("OHMS Phase 14 Enterprise Notification & Payment Suite (12 Scenarios)",
   // Scenario 12: UI Components (Checkout Modal, Reconciliation, Settings) are wired up
   test("12. Online payment modal, reconciliation page, and notification monitor exist without mock-data", () => {
     const modalFile = fs.readFileSync(path.join(rootDir, "components", "payments", "OnlinePaymentModal.tsx"), "utf8");
-    const reconFile = fs.readFileSync(path.join(rootDir, "app", "app", "billing", "reconciliation", "page.tsx"), "utf8");
-    const notifFile = fs.readFileSync(path.join(rootDir, "app", "app", "settings", "notifications", "page.tsx"), "utf8");
+    const reconPath = fs.existsSync(path.join(rootDir, "app", "(hospital)", "app", "billing", "reconciliation", "page.tsx"))
+      ? path.join(rootDir, "app", "(hospital)", "app", "billing", "reconciliation", "page.tsx")
+      : path.join(rootDir, "app", "app", "billing", "reconciliation", "page.tsx");
+    const notifPath = fs.existsSync(path.join(rootDir, "app", "(hospital)", "app", "settings", "notifications", "page.tsx"))
+      ? path.join(rootDir, "app", "(hospital)", "app", "settings", "notifications", "page.tsx")
+      : path.join(rootDir, "app", "app", "settings", "notifications", "page.tsx");
+    const reconFile = fs.readFileSync(reconPath, "utf8");
+    const notifFile = fs.readFileSync(notifPath, "utf8");
 
     assert.match(modalFile, /PaymentProvider/);
     assert.match(modalFile, /createPaymentIntent/);
