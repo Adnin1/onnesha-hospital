@@ -1,7 +1,7 @@
 # Onnesha Hospital Management System (OHMS) — Final Release Certification Report
 
 **Document Status:** Final & Authoritative  
-**Release Version:** `v1.1.12`  
+**Release Version:** `v1.1.13` (HEAD: `eb3a4af4b8f550112c14e4cbd46a96a4938c417b`)
 **Classification:** **`ENGINEERING COMPLETE — OWNER GATES REMAIN`**  
 **Certification Date:** 2026-09-29T02:15:00+06:00  
 **Target Environments:** Cloudflare Pages Production Edge (`onnesha-hospital.pages.dev`) & Supabase Managed Database (`iuhtzahuszdkdarhxobx`)  
@@ -14,8 +14,8 @@ All software engineering, security hardening, cross-browser Playwright automatio
 
 | Entity | Target Value / Identifier | Provenance Match |
 | :--- | :--- | :---: |
-| **Package Version** | `1.1.12` (`package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `latest.json`) | ✅ Synchronized |
-| **Git Working Tree** | Clean (`0 uncommitted changes` prior to release commit) | ✅ 100% |
+| **Package Version** | `1.1.13` (`package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `latest.json`) | ✅ Synchronized |
+| **Git Working Tree** | Clean (`0 uncommitted changes` prior to release commit `eb3a4af4b8f550112c14e4cbd46a96a4938c417b`) | ✅ 100% |
 | **Remote Database** | Supabase PostgreSQL (`iuhtzahuszdkdarhxobx`) | ✅ Connected & Linked |
 | **Database Migrations** | **91 Applied Migrations** (`001` through `20260928220000`) | ✅ 100% in sync |
 | **Cloudflare Pages Production Deployment** | Static Export (`58 routes`, `56 HTML pages`) | ✅ Live (`https://onnesha-hospital.pages.dev`) |
@@ -174,7 +174,7 @@ To adhere strictly to truthfulness without declaring unfulfilled external action
 The application code is complete and hardened; the following gates require owner-controlled external actions or third-party credentials:
 
 1. **Cryptographic Tag Signing (GPG/SSH):**
-   - *Status:* Git tag `v1.1.12` is unsigned locally and on GitHub because private GPG/SSH signing keys are not stored within the workspace repository. Signing requires the repository owner's private key.
+   - *Status:* Git tag `v1.1.13` is unsigned locally and on GitHub because private GPG/SSH signing keys are not stored within the workspace repository. Signing requires the repository owner's private key.
 2. **GitHub Actions Staging Environment Secrets:**
    - *Status:* CI job `live-security-test` is fail-closed. Executing automated staging tests in GitHub Actions requires configuring `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SERVICE_ROLE_KEY` in the repository's GitHub `staging` environment.
 3. **Apex Custom Domain DNS:**

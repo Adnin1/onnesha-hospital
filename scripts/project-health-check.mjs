@@ -1,0 +1,236 @@
+#!/usr/bin/env node
+/**
+ * OHMS Project Health Check — Automated Governance Validation
+ * Exits non-zero on critical violations.
+ * Run: node scripts/project-health-check.mjs
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { execSync } from 'node:child_process';
+
+const ROOT = path.resolve(import.meta.dirname, '..');
+let criticalCount = 0;
+let warningCount = 0;
+
+function critical(msg) {
+  console.error(`❌ CRITICAL: ${msg}`);
+  criticalCount++;
+}
+
+function warn(msg) {
+  console.warn(`⚠️  WARNING: ${msg}`);
+  warningCount++;
+}
+
+function pass(msg) {
+  console.log(`✅ PASS: ${msg}`);
+}
+
+function scanFiles(extensions, excludeDirs = ['node_modules', '.next', 'out', '.git']) {
+  const results = [];
+  function walk(dir) {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      if (excludeDirs.includes(entry.name)) continue;
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+      } else if (extensions.some(ext => entry.name.endsWith(ext))) {
+        results.push(fullPath);
+      }
+    }
+  }
+  walk(ROOT);
+  return results;
+}
+
+console.log('\n🏥 OHMS Project Health Check\n' + '='.repeat(50));
+
+// ─── 1. Git State ───
+console.log('\n📋 1. Git State');
+try {
+  const status = execSync('git status --porcelain', { cwd: ROOT, encoding: 'utf8' }).trim();
+  if (status) {
+    warn(`Working tree has ${status.split('\n').length} uncommitted changes`);
+  } else {
+    pass('Working tree clean');
+  }
+} catch { warn('Git not available'); }
+
+// ─── 2. Version Consistency ───
+console.log('\n📋 2. Version Consistency');
+const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+console.log(`   package.json version: ${pkg.version}`);
+try {
+  const headCommit = execSync('git rev-parse HEAD', { cwd: ROOT, encoding: 'utf8' }).trim();
+  const tagCommit = execSync(`git rev-parse v${pkg.version}^{commit}`, { cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+  if (headCommit === tagCommit) {
+    pass(`HEAD matches v${pkg.version} tag (${headCommit.slice(0, 8)})`);
+  } else {
+    warn(`HEAD (${headCommit.slice(0, 8)}) ≠ v${pkg.version} tag (${tagCommit.slice(0, 8)}) — tag needs update or version bump`);
+  }
+} catch {
+  warn(`Tag v${pkg.version} not found — release not yet tagged`);
+}
+
+// ─── 3. Secret Scanning ───
+console.log('\n📋 3. Secret Scanning');
+const sourceFiles = scanFiles(['.ts', '.tsx', '.js', '.mjs', '.json', '.yml', '.yaml']);
+const secretPatterns = [
+  { pattern: /NEXT_PUBLIC_SUPABASE_SERVICE_ROLE/i, name: 'NEXT_PUBLIC service_role leak' },
+  { pattern: /eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9/, name: 'Hardcoded JWT token' },
+  { pattern: /sk_live_[a-zA-Z0-9]{20,}/, name: 'Live Stripe key' },
+  { pattern: /password\s*[:=]\s*["'][^"']{8,}["']/i, name: 'Hardcoded password' },
+];
+let secretsFound = 0;
+for (const file of sourceFiles) {
+  // Skip test files, docs, and node_modules
+  const relPath = path.relative(ROOT, file);
+  if (relPath.includes('node_modules') || relPath.startsWith('docs')) continue;
+  try {
+    const content = fs.readFileSync(file, 'utf8');
+    for (const { pattern, name } of secretPatterns) {
+      if (pattern.test(content)) {
+        critical(`${name} found in ${relPath}`);
+        secretsFound++;
+      }
+    }
+  } catch { /* skip unreadable */ }
+}
+if (secretsFound === 0) pass('No hardcoded secrets found in source');
+
+// ─── 4. Localhost / HTTP References ───
+console.log('\n📋 4. Localhost / HTTP References');
+const prodFiles = sourceFiles.filter(f => {
+  const rel = path.relative(ROOT, f);
+  return !rel.includes('node_modules') && !rel.startsWith('docs') && !rel.startsWith('tests') && !rel.startsWith('scripts') && !rel.includes('.test.') && !rel.includes('.spec.');
+});
+let localhostCount = 0;
+for (const file of prodFiles) {
+  const relPath = path.relative(ROOT, file);
+  try {
+    const content = fs.readFileSync(file, 'utf8');
+    const lines = content.split('\n');
+    lines.forEach((line, i) => {
+      // Skip comments
+      if (line.trim().startsWith('//') || line.trim().startsWith('*') || line.trim().startsWith('/*')) return;
+      if (/localhost|127\.0\.0\.1/.test(line) && !/devUrl|sandbox|tauri\.conf/.test(relPath)) {
+        warn(`localhost reference in ${relPath}:${i + 1}`);
+        localhostCount++;
+      }
+    });
+  } catch { /* skip */ }
+}
+if (localhostCount === 0) pass('No localhost references in production source');
+
+// ─── 5. TODO/FIXME Audit ───
+console.log('\n📋 5. TODO/FIXME Audit');
+let todoCount = 0;
+for (const file of prodFiles) {
+  const relPath = path.relative(ROOT, file);
+  try {
+    const content = fs.readFileSync(file, 'utf8');
+    const matches = content.match(/\b(TODO|FIXME|HACK|XXX)\b/g);
+    if (matches) {
+      warn(`${matches.length} TODO/FIXME in ${relPath}`);
+      todoCount += matches.length;
+    }
+  } catch { /* skip */ }
+}
+if (todoCount === 0) pass('No TODO/FIXME markers in production source');
+
+// ─── 6. TypeScript ───
+console.log('\n📋 6. TypeScript Compilation');
+try {
+  execSync('npx tsc --noEmit', { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
+  pass('TypeScript compiles with 0 errors');
+} catch (e) {
+  critical(`TypeScript compilation failed: ${e.stderr?.split('\n')[0] || 'unknown error'}`);
+}
+
+// ─── 7. ESLint ───
+console.log('\n📋 7. ESLint');
+try {
+  execSync('npx eslint . --max-warnings 0', { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
+  pass('ESLint passes with 0 warnings');
+} catch (e) {
+  critical(`ESLint failed: ${e.stderr?.split('\n')[0] || 'see output'}`);
+}
+
+// ─── 8. Build ───
+console.log('\n📋 8. Build Verification');
+try {
+  execSync('npm run build', { cwd: ROOT, encoding: 'utf8', stdio: 'pipe', timeout: 120000 });
+  pass('Build succeeds');
+} catch {
+  critical('Build failed');
+}
+
+// ─── 9. Migration Count ───
+console.log('\n📋 9. Database Migrations');
+try {
+  const migrationDir = path.join(ROOT, 'supabase', 'migrations');
+  const migrations = fs.readdirSync(migrationDir).filter(f => f.endsWith('.sql'));
+  pass(`${migrations.length} migration files found`);
+} catch { warn('Migration directory not found'); }
+
+// ─── 10. Service Worker Safety ───
+console.log('\n📋 10. Service Worker Safety');
+try {
+  const sw = fs.readFileSync(path.join(ROOT, 'public', 'sw.js'), 'utf8');
+  const requiredPatterns = ['patient', 'prescription', 'diagnosis', 'invoice', 'billing', 'clinical'];
+  const missing = requiredPatterns.filter(p => !sw.toLowerCase().includes(p));
+  if (missing.length > 0) {
+    critical(`Service Worker missing NEVER_CACHE patterns for: ${missing.join(', ')}`);
+  } else {
+    pass('Service Worker covers all required NEVER_CACHE patterns');
+  }
+} catch { warn('Service Worker (sw.js) not found'); }
+
+// ─── 11. Security Headers ───
+console.log('\n📋 11. Security Headers');
+try {
+  const headers = fs.readFileSync(path.join(ROOT, 'public', '_headers'), 'utf8');
+  const required = ['Strict-Transport-Security', 'X-Frame-Options', 'X-Content-Type-Options', 'Content-Security-Policy'];
+  const missing = required.filter(h => !headers.includes(h));
+  if (missing.length > 0) {
+    critical(`Missing security headers: ${missing.join(', ')}`);
+  } else {
+    pass('All required security headers present');
+  }
+  if (headers.includes('unsafe-eval')) {
+    critical('CSP contains unsafe-eval');
+  } else {
+    pass('CSP does not contain unsafe-eval');
+  }
+} catch { warn('_headers file not found'); }
+
+// ─── 12. npm audit ───
+console.log('\n📋 12. npm Audit');
+try {
+  execSync('npm audit --audit-level=high', { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
+  pass('npm audit: 0 high/critical vulnerabilities');
+} catch (e) {
+  const output = e.stdout || '';
+  if (output.includes('found 0 vulnerabilities')) {
+    pass('npm audit: 0 vulnerabilities');
+  } else {
+    warn(`npm audit found issues — review with: npm audit`);
+  }
+}
+
+// ─── Summary ───
+console.log('\n' + '='.repeat(50));
+console.log(`Results: ${criticalCount} critical, ${warningCount} warnings`);
+if (criticalCount > 0) {
+  console.error('\n🚫 HEALTH CHECK FAILED — Fix critical issues before release.');
+  process.exit(1);
+} else if (warningCount > 0) {
+  console.log('\n⚠️  HEALTH CHECK PASSED WITH WARNINGS — Review before release.');
+  process.exit(0);
+} else {
+  console.log('\n✅ HEALTH CHECK PASSED — All gates green.');
+  process.exit(0);
+}

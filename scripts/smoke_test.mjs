@@ -127,7 +127,7 @@ async function runProductionSmokeTests() {
   const { error: rpcErr } = await anonClient.rpc('verify_and_record_online_payment', {
     p_org_id: 'a0000000-0000-0000-0000-000000000001',
     p_intent_id: 'd0000000-0000-0000-0000-000000000001',
-    p_provider_trx_id: 'HACK',
+    p_provider_trx_id: 'SMOKE_TEST_TRX',
     p_paid_amount: 100,
     p_gateway_method: 'BKASH'
   });

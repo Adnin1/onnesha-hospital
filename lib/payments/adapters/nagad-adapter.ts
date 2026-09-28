@@ -28,6 +28,8 @@ export class NagadAdapter implements PaymentGatewayAdapter {
 
   constructor(config?: NagadConfig | null) {
     this.config = config || null;
+    // NOTE: Nagad's official sandbox uses plain HTTP — this URL is NEVER used in production.
+    // Production always uses HTTPS api.mynagad.com.
     this.baseUrl = config?.isSandbox
       ? "http://sandbox.mynagad.com:10080/remote-payment-gateway-1.0/api/dfs"
       : "https://api.mynagad.com/api/dfs";

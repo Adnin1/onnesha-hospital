@@ -105,7 +105,7 @@ describe("Conversation 2: Public Website Architecture, Security & Data Integrity
     assert.ok(robots.includes("Disallow: /app/"), "robots.txt must disallow internal /app/ routes");
 
     const sitemap = fs.readFileSync(sitemapPath, "utf8");
-    assert.ok(sitemap.includes("2026-09-23T02:00:00.000Z"), "sitemap.ts must use stable release timestamp");
+    assert.ok(sitemap.includes("2026-09-29T03:00:00.000Z"), "sitemap.ts must use stable release timestamp");
   });
 
   test("6. HospitalJsonLd structured data links valid logo and accurate capabilities", () => {
