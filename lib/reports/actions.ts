@@ -441,10 +441,25 @@ export async function getPaginatedReportInvoicesAction(params: {
       .from("invoices")
       .select(
         `
-        *,
-        invoice_items (*),
-        payments (*),
-        refunds (*),
+        id,
+        organization_id,
+        invoice_number,
+        patient_id,
+        visit_id,
+        subtotal,
+        discount_amount,
+        discount_reason,
+        tax_amount,
+        grand_total,
+        paid_amount,
+        due_amount,
+        status,
+        is_voided,
+        void_reason,
+        voided_at,
+        voided_by,
+        created_at,
+        updated_at,
         patients (id, patient_code, full_name, phone, gender)
       `,
         { count: "exact" }
@@ -561,3 +576,145 @@ export async function getPaginatedReportInvoicesAction(params: {
     };
   }
 }
+
+/**
+ * 7. Full-Dataset Invoices for CSV Export (without page limits, with UTF-8 BOM)
+ */
+export async function getExportReportInvoicesAction(params: {
+  status?: string;
+  searchQuery?: string;
+  startDate?: string;
+  endDate?: string;
+}): Promise<ActionResult<{ invoices: InvoiceRecord[] }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("reports.view");
+  } catch {
+    return { success: false, error: "403 Forbidden: reports.view required" };
+  }
+
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("invoices")
+      .select(
+        `
+        id,
+        organization_id,
+        invoice_number,
+        patient_id,
+        visit_id,
+        subtotal,
+        discount_amount,
+        discount_reason,
+        tax_amount,
+        grand_total,
+        paid_amount,
+        due_amount,
+        status,
+        is_voided,
+        void_reason,
+        created_at,
+        patients (id, patient_code, full_name, phone)
+      `
+      )
+      .eq("organization_id", session.organizationId)
+      .order("created_at", { ascending: false });
+
+    if (params.startDate) {
+      query = query.gte("created_at", params.startDate);
+    }
+    if (params.endDate) {
+      query = query.lte("created_at", params.endDate);
+    }
+
+    if (params.status && params.status !== "all" && params.status !== "ALL") {
+      if (params.status === "paid" || params.status === "PAID") {
+        query = query.eq("status", "PAID").eq("is_voided", false);
+      } else if (params.status === "due" || params.status === "DUE") {
+        query = query.in("status", ["UNPAID", "PARTIALLY_PAID"]).eq("is_voided", false);
+      } else if (params.status === "void" || params.status === "VOID") {
+        query = query.eq("is_voided", true);
+      } else {
+        query = query.eq("status", params.status);
+      }
+    }
+
+    if (params.searchQuery && params.searchQuery.trim().length > 0) {
+      const q = params.searchQuery.trim();
+      query = query.or(`invoice_number.ilike.%${q}%`);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    interface ExportInvoiceDbRow {
+      id: string;
+      organization_id: string;
+      invoice_number: string;
+      patient_id: string;
+      visit_id: string | null;
+      subtotal: number | string;
+      discount_amount: number | string;
+      discount_reason: string | null;
+      tax_amount: number | string;
+      grand_total: number | string;
+      paid_amount: number | string;
+      due_amount: number | string;
+      status: InvoiceRecord["status"];
+      is_voided: boolean;
+      void_reason: string | null;
+      created_at: string;
+      patients?: {
+        id: string;
+        patient_code: string;
+        full_name: string;
+        phone: string;
+      } | null;
+    }
+
+    const mappedInvoices: InvoiceRecord[] = ((data as unknown as ExportInvoiceDbRow[]) || []).map((row) => ({
+      id: row.id,
+      organization_id: row.organization_id,
+      invoice_number: row.invoice_number,
+      patient_id: row.patient_id,
+      visit_id: row.visit_id,
+      subtotal: Number(row.subtotal || 0),
+      discount_amount: Number(row.discount_amount || 0),
+      discount_reason: row.discount_reason,
+      tax_amount: Number(row.tax_amount || 0),
+      grand_total: Number(row.grand_total || 0),
+      paid_amount: Number(row.paid_amount || 0),
+      due_amount: Number(row.due_amount || 0),
+      status: row.status,
+      is_voided: Boolean(row.is_voided),
+      void_reason: row.void_reason,
+      created_at: row.created_at,
+      updated_at: row.created_at,
+      items: [],
+      payments: [],
+      patient: row.patients
+        ? {
+            id: row.patients.id,
+            patient_code: row.patients.patient_code,
+            full_name: row.patients.full_name,
+            phone: row.patients.phone,
+          }
+        : undefined,
+    }));
+
+    return { success: true, data: { invoices: mappedInvoices } };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to load invoices for export",
+    };
+  }
+}
+

@@ -43,6 +43,7 @@ import {
   getAccountsReceivableAgingAction,
   getProfitAndLossSummaryAction,
   getPaginatedReportInvoicesAction,
+  getExportReportInvoicesAction,
   FinancialDashboardAggregatesData,
   PaymentChannelBreakdownData,
   DepartmentRevenueBreakdownData,
@@ -58,6 +59,8 @@ export default function ReportsManagementPage() {
   const [customEnd, setCustomEnd] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "due" | "void">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [exporting, setExporting] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 25;
 
@@ -67,6 +70,14 @@ export default function ReportsManagementPage() {
   const [showHowToGuide, setShowHowToGuide] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // 300ms debounce on search queries
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Authoritative Server-Aggregated State
   const [aggregates, setAggregates] = useState<FinancialDashboardAggregatesData>({
@@ -137,36 +148,34 @@ export default function ReportsManagementPage() {
     async function executeLoad() {
       try {
         setLoading(true);
-        const [aggRes, depRes, chRes, arRes, pnlRes, invRes, docRes, tbRes] = await Promise.all([
+        const [aggRes, depRes, chRes, arRes, pnlRes, invRes] = await Promise.all([
           getFinancialDashboardAggregatesAction({
             startDate: dateBounds.startIso,
-            endDate: dateBounds.endIso,
+            endDate: dateBounds.endExclusiveIso,
           }),
           getDepartmentRevenueBreakdownAction({
             startDate: dateBounds.startIso,
-            endDate: dateBounds.endIso,
+            endDate: dateBounds.endExclusiveIso,
           }),
           getPaymentChannelBreakdownAction({
             startDate: dateBounds.startIso,
-            endDate: dateBounds.endIso,
+            endDate: dateBounds.endExclusiveIso,
           }),
           getAccountsReceivableAgingAction({
             asOfDate: dateBounds.endIso,
           }),
           getProfitAndLossSummaryAction({
             startDate: dateBounds.startIso,
-            endDate: dateBounds.endIso,
+            endDate: dateBounds.endExclusiveIso,
           }),
           getPaginatedReportInvoicesAction({
             page,
             pageSize,
             status: statusFilter,
-            searchQuery,
+            searchQuery: debouncedSearchQuery,
             startDate: period === "all" ? undefined : dateBounds.startIso,
             endDate: period === "all" ? undefined : dateBounds.endIso,
           }),
-          getDoctorsAction(),
-          getTrialBalanceAction(),
         ]);
 
         if (!isMounted) return;
@@ -201,14 +210,6 @@ export default function ReportsManagementPage() {
           setErrorMessage(invRes.error || "Failed to load paginated billing invoices");
         }
 
-        if (docRes.success && docRes.data) {
-          setDoctors(docRes.data.doctors);
-        }
-
-        if (tbRes.success && tbRes.data) {
-          setTrialBalance(tbRes.data.trialBalance);
-        }
-
         setLoading(false);
       } catch (err) {
         if (isMounted) {
@@ -228,11 +229,42 @@ export default function ReportsManagementPage() {
     customEnd,
     page,
     statusFilter,
-    searchQuery,
+    debouncedSearchQuery,
     dateBounds.startIso,
     dateBounds.endIso,
+    dateBounds.endExclusiveIso,
     refreshTrigger,
   ]);
+
+  // Lazy-load doctors only when activeTab === "doctors"
+  useEffect(() => {
+    let isMounted = true;
+    if (activeTab === "doctors" && doctors.length === 0) {
+      void getDoctorsAction().then((res) => {
+        if (isMounted && res.success && res.data) {
+          setDoctors(res.data.doctors);
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, doctors.length]);
+
+  // Lazy-load trialBalance only when activeTab === "pnl"
+  useEffect(() => {
+    let isMounted = true;
+    if (activeTab === "pnl" && trialBalance.length === 0) {
+      void getTrialBalanceAction().then((res) => {
+        if (isMounted && res.success && res.data) {
+          setTrialBalance(res.data.trialBalance);
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab, trialBalance.length]);
 
   // Reset page to 1 when search or status filter changes
   const handleFilterChange = (newStatus: "all" | "paid" | "due" | "void") => {
@@ -254,25 +286,40 @@ export default function ReportsManagementPage() {
     window.print();
   };
 
-  const handleExportCSV = () => {
-    const csv = generateFinancialReportCSV(invoices, {
-      periodLabel: period.toUpperCase(),
-      organizationName: "Onnesha Hospital & Diagnostic Complex",
-      reportingBasis: reportingBasis === "cash" ? "Cash Collection Basis" : "Accrual Accounting Basis",
-      generatedAt: new Date().toISOString(),
-    });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute(
-      "download",
-      `Onnesha_Hospital_Financial_Report_${period}_${new Date().toISOString().slice(0, 10)}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const handleExportCSV = async () => {
+    try {
+      setExporting(true);
+      const res = await getExportReportInvoicesAction({
+        status: statusFilter,
+        searchQuery: debouncedSearchQuery,
+        startDate: period === "all" ? undefined : dateBounds.startIso,
+        endDate: period === "all" ? undefined : dateBounds.endIso,
+      });
+
+      const exportInvoices = res.success && res.data?.invoices ? res.data.invoices : invoices;
+      const csv = generateFinancialReportCSV(exportInvoices, {
+        periodLabel: period.toUpperCase(),
+        organizationName: "Onnesha Hospital & Diagnostic Complex",
+        reportingBasis: reportingBasis === "cash" ? "Cash Collection Basis" : "Accrual Accounting Basis",
+        generatedAt: new Date().toISOString(),
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `Onnesha_Hospital_Financial_Report_${period}_${new Date().toISOString().slice(0, 10)}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "Failed to export financial report CSV");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const totalOperatingExpenses =
@@ -322,11 +369,12 @@ export default function ReportsManagementPage() {
 
           <button
             onClick={handleExportCSV}
-            className="inline-flex items-center bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs px-3.5 py-2 rounded-xl border border-emerald-200 transition focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[36px]"
+            disabled={exporting}
+            className="inline-flex items-center bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 text-emerald-800 font-semibold text-xs px-3.5 py-2 rounded-xl border border-emerald-200 transition focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[36px]"
             title="Download CSV Spreadsheet for Excel"
           >
-            <Download className="w-4 h-4 mr-1.5 text-emerald-600" />
-            CSV এক্সপোর্ট
+            <Download className={`w-4 h-4 mr-1.5 text-emerald-600 ${exporting ? "animate-bounce" : ""}`} />
+            {exporting ? "ডাউনলোড হচ্ছে..." : "CSV এক্সপোর্ট"}
           </button>
 
           <button

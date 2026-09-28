@@ -379,4 +379,56 @@ describe("OHMS Financial Accounting Invariants & Reporting Hardening (10 Scenari
     assert.ok(pageContent.includes("getFinancialDashboardAggregatesAction"), "Reports UI must call getFinancialDashboardAggregatesAction");
     assert.ok(pageContent.includes("getPaginatedReportInvoicesAction"), "Reports UI must call getPaginatedReportInvoicesAction");
   });
+
+  test("13. getDhakaDateRange exports endExclusive and endExclusiveIso adhering to [startInclusive, endExclusive) interval", () => {
+    const today = getDhakaDateRange("today");
+    assert.ok(today.endExclusive instanceof Date, "endExclusive must be a Date");
+    assert.ok(today.endExclusiveIso, "endExclusiveIso must exist");
+    assert.ok(today.endExclusive.getTime() > today.end.getTime(), "endExclusive must follow end");
+    // Difference between end (23:59:59.999) and endExclusive (00:00:00.000) is exactly 1ms
+    assert.equal(today.endExclusive.getTime() - today.end.getTime(), 1);
+
+    const monthRange = getDhakaDateRange("this_month");
+    assert.equal(monthRange.endExclusive.getTime() - monthRange.end.getTime(), 1);
+  });
+
+  test("14. Migration 91 establishes fail-closed tenant validation with SQLSTATE 42501 and composite performance indexes", () => {
+    const migPath = path.join(ROOT, "supabase/migrations/20260928220000_fail_closed_security_and_billing_gl_atomicity.sql");
+    assert.ok(fs.existsSync(migPath), "Migration 91 must exist");
+    const sql = fs.readFileSync(migPath, "utf8");
+
+    // Fail-closed tenant check with ERRCODE 42501
+    assert.ok(sql.includes("42501"), "Must raise 42501 on organization mismatch");
+    assert.ok(sql.includes("v_active_org != p_org_id"), "Must check active organization mismatch");
+    assert.ok(sql.includes("Access denied: Organization mismatch or unauthenticated caller"), "Strict security denial error");
+
+    // Composite indexes
+    assert.ok(sql.includes("idx_payments_inv_date_amount"), "Must create idx_payments_inv_date_amount");
+    assert.ok(sql.includes("idx_refunds_inv_date_amount"), "Must create idx_refunds_inv_date_amount");
+    assert.ok(sql.includes("idx_invoices_org_created_due"), "Must create idx_invoices_org_created_due");
+
+    // Revocation and grant
+    assert.ok(sql.includes("REVOKE ALL ON FUNCTION public.get_financial_dashboard_aggregates"), "Must revoke aggregates from public");
+    assert.ok(sql.includes("GRANT EXECUTE ON FUNCTION public.create_invoice_and_post_gl_atomic"), "Must grant atomic billing to authenticated");
+  });
+
+  test("15. Single-transaction fail-closed Billing + GL atomicity (create_invoice_and_post_gl_atomic)", () => {
+    const actionsPath = path.join(ROOT, "lib/billing/actions.ts");
+    const content = fs.readFileSync(actionsPath, "utf8");
+
+    assert.ok(content.includes("create_invoice_and_post_gl_atomic"), "Billing action must call create_invoice_and_post_gl_atomic");
+    assert.ok(content.includes("journalEntryId"), "Must record journalEntryId in audit log");
+    assert.ok(content.includes("journalEntryNumber"), "Must record journalEntryNumber in audit log");
+  });
+
+  test("16. Reports UI debounces search queries, lazy-loads non-primary datasets, and exports full unpaginated CSV", () => {
+    const pagePath = path.join(ROOT, "app/(hospital)/app/reports/page.tsx");
+    const pageContent = fs.readFileSync(pagePath, "utf8");
+
+    assert.ok(pageContent.includes("debouncedSearchQuery"), "Must implement debounced search state");
+    assert.ok(pageContent.includes("setTimeout"), "Must debounce search with timer");
+    assert.ok(pageContent.includes("getExportReportInvoicesAction"), "Must call getExportReportInvoicesAction for full CSV export");
+    assert.ok(pageContent.includes("activeTab === \"doctors\""), "Must lazy load doctors on doctors tab only");
+    assert.ok(pageContent.includes("activeTab === \"pnl\""), "Must lazy load trialBalance on P&L tab only");
+  });
 });

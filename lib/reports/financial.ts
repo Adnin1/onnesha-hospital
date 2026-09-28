@@ -102,7 +102,14 @@ export function getDhakaDateRange(
   customStart?: string,
   customEnd?: string,
   referenceDate: Date = new Date()
-): { start: Date; end: Date; startIso: string; endIso: string } {
+): {
+  start: Date;
+  end: Date;
+  startIso: string;
+  endIso: string;
+  endExclusive: Date;
+  endExclusiveIso: string;
+} {
   // Extract Dhaka local year, month, date, and day of week
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: DHAKA_TIMEZONE,
@@ -130,7 +137,8 @@ export function getDhakaDateRange(
     case "today": {
       const start = createDhakaMidnight(dYear, dMonth, dDate);
       const end = createDhakaEndOfDay(dYear, dMonth, dDate);
-      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+      const endExclusive = createDhakaMidnight(dYear, dMonth, dDate + 1);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString(), endExclusive, endExclusiveIso: endExclusive.toISOString() };
     }
     case "this_week": {
       // Standard calendar week starting Sunday in Bangladesh/Asia
@@ -142,14 +150,16 @@ export function getDhakaDateRange(
       const sundayDate = dDate - currentDayOfWeek;
       const start = createDhakaMidnight(dYear, dMonth, sundayDate);
       const end = createDhakaEndOfDay(dYear, dMonth, sundayDate + 6);
-      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+      const endExclusive = createDhakaMidnight(dYear, dMonth, sundayDate + 7);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString(), endExclusive, endExclusiveIso: endExclusive.toISOString() };
     }
     case "this_month": {
       const start = createDhakaMidnight(dYear, dMonth, 1);
       // Last day of month
       const lastDay = new Date(Date.UTC(dYear, dMonth + 1, 0)).getUTCDate();
       const end = createDhakaEndOfDay(dYear, dMonth, lastDay);
-      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+      const endExclusive = createDhakaMidnight(dYear, dMonth + 1, 1);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString(), endExclusive, endExclusiveIso: endExclusive.toISOString() };
     }
     case "last_month": {
       const lastMonth = dMonth === 0 ? 11 : dMonth - 1;
@@ -157,35 +167,41 @@ export function getDhakaDateRange(
       const start = createDhakaMidnight(lastMonthYear, lastMonth, 1);
       const lastDay = new Date(Date.UTC(lastMonthYear, lastMonth + 1, 0)).getUTCDate();
       const end = createDhakaEndOfDay(lastMonthYear, lastMonth, lastDay);
-      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+      const endExclusive = createDhakaMidnight(dYear, dMonth, 1);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString(), endExclusive, endExclusiveIso: endExclusive.toISOString() };
     }
     case "this_year": {
       const start = createDhakaMidnight(dYear, 0, 1);
       const end = createDhakaEndOfDay(dYear, 11, 31);
-      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+      const endExclusive = createDhakaMidnight(dYear + 1, 0, 1);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString(), endExclusive, endExclusiveIso: endExclusive.toISOString() };
     }
     case "custom": {
       if (!customStart) {
         const start = createDhakaMidnight(dYear, dMonth, 1);
         const end = createDhakaEndOfDay(dYear, dMonth, dDate);
-        return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+        const endExclusive = createDhakaMidnight(dYear, dMonth, dDate + 1);
+        return { start, end, startIso: start.toISOString(), endIso: end.toISOString(), endExclusive, endExclusiveIso: endExclusive.toISOString() };
       }
       const [sy, sm, sd] = customStart.split("-").map(Number);
       const start = createDhakaMidnight(sy, sm - 1, sd);
 
       if (!customEnd) {
         const end = createDhakaEndOfDay(sy, sm - 1, sd);
-        return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+        const endExclusive = createDhakaMidnight(sy, sm - 1, sd + 1);
+        return { start, end, startIso: start.toISOString(), endIso: end.toISOString(), endExclusive, endExclusiveIso: endExclusive.toISOString() };
       }
       const [ey, em, ed] = customEnd.split("-").map(Number);
       const end = createDhakaEndOfDay(ey, em - 1, ed);
-      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+      const endExclusive = createDhakaMidnight(ey, em - 1, ed + 1);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString(), endExclusive, endExclusiveIso: endExclusive.toISOString() };
     }
     case "all":
     default: {
       const start = new Date(0);
       const end = new Date(8640000000000000);
-      return { start, end, startIso: start.toISOString(), endIso: end.toISOString() };
+      const endExclusive = new Date(8640000000000000);
+      return { start, end, startIso: start.toISOString(), endIso: end.toISOString(), endExclusive, endExclusiveIso: endExclusive.toISOString() };
     }
   }
 }

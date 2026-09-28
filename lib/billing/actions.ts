@@ -151,8 +151,10 @@ export async function createInvoiceAction(params: {
       return { success: false, error: "Patient not found." };
     }
 
-    // Invariant: Atomic single-transaction database RPC create_invoice_atomic encapsulates
-    // .from("invoices").insert and .from("invoice_items").insert, backed by generate_invoice_number sequence
+    // Invariant: Atomic single-transaction database RPC create_invoice_and_post_gl_atomic encapsulates
+    // supabase.rpc("create_invoice_atomic") which performs .from("invoices").insert and .from("invoice_items").insert
+    // backed by deterministic sequence generate_invoice_number, followed immediately by post_billing_to_gl_atomic
+    // in one fail-closed ACID PostgreSQL transaction.
     const itemsPayload = params.items.map((it) => ({
       service_category: it.category,
       reference_id: it.referenceId || null,
@@ -162,7 +164,7 @@ export async function createInvoiceAction(params: {
       total_price: it.unitPrice * it.quantity,
     }));
 
-    const { data: rpcResult, error: rpcErr } = await supabase.rpc("create_invoice_atomic", {
+    const { data: rpcResult, error: rpcErr } = await supabase.rpc("create_invoice_and_post_gl_atomic", {
       p_org_id: session.organizationId,
       p_patient_id: params.patientId,
       p_visit_id: params.visitId || null,
@@ -177,7 +179,21 @@ export async function createInvoiceAction(params: {
     });
 
     if (rpcErr) {
-      return { success: false, error: rpcErr.message || "Atomic invoice creation failed." };
+      console.error("[Billing & GL Posting Error] Atomic invoice creation and GL posting failed:", rpcErr.message);
+      await recordAuditLog({
+        userId: session.userId,
+        organizationId: session.organizationId,
+        action: "CREATE",
+        module: "BILLING",
+        entityType: "invoice_gl_failure",
+        entityId: session.userId,
+        newValues: {
+          error: rpcErr.message,
+          glErr: rpcErr.message,
+          patientId: params.patientId,
+        },
+      });
+      return { success: false, error: rpcErr.message || "Atomic invoice creation and GL posting failed." };
     }
 
     const rpcRes = rpcResult as {
@@ -191,6 +207,8 @@ export async function createInvoiceAction(params: {
       status?: InvoiceRecord["status"];
       payment_id?: string;
       receipt_number?: string;
+      journal_entry_id?: string;
+      journal_entry_number?: string;
       error?: string;
     };
 
@@ -222,29 +240,10 @@ export async function createInvoiceAction(params: {
         grandTotal: rpcRes.grand_total,
         paidAmount: rpcRes.paid_amount,
         status: rpcRes.status,
+        journalEntryId: rpcRes.journal_entry_id,
+        journalEntryNumber: rpcRes.journal_entry_number,
       },
     });
-
-    // ERP General Ledger Integration: Automatically post billing invoice to GL
-    const { error: glErr } = await supabase.rpc("post_billing_to_gl_atomic", {
-      p_org_id: session.organizationId,
-      p_invoice_id: rpcRes.invoice_id,
-    });
-    if (glErr) {
-      console.error("[ERP GL Posting Alert] Failed to auto-post billing invoice to GL:", glErr.message);
-      await recordAuditLog({
-        userId: session.userId,
-        organizationId: session.organizationId,
-        action: "UPDATE",
-        module: "ACCOUNTING",
-        entityType: "gl_posting_alert",
-        entityId: rpcRes.invoice_id,
-        newValues: {
-          error: glErr.message,
-          invoice_number: rpcRes.invoice_number,
-        },
-      });
-    }
 
     const fullInvoice: InvoiceRecord = {
       ...(invRow || {}),
