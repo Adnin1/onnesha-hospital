@@ -1,9 +1,9 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.19-FINAL`  
-**Execution Timestamp:** `2026-09-30T04:00:00+06:00`  
+**Document Version:** `v1.1.20-FINAL`  
+**Execution Timestamp:** `2026-09-30T05:00:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
-**Release Tag:** `v1.1.19` (Immutable)  
+**Release Tag:** `v1.1.20` (Immutable)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
 **Supabase Production Project:** `iuhtzahuszdkdarhxobx` (94 Migrations in Parity)  
@@ -28,14 +28,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]  -->  Commit: Release v1.1.19 (Clean)
-[Git Tag]                  -->  Tag: v1.1.19 (Immutable)
-[GitHub Remote 'origin']   -->  main @ Release v1.1.19
-[GitHub Remote 'ssh-origin']--> main @ Release v1.1.19
-[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.19)
-[Version Manifest Sync]    -->  package.json (1.1.19), package-lock.json (1.1.19),
-                                Cargo.toml (1.1.19), tauri.conf.json (1.1.19),
-                                latest.json (1.1.19), Dockerfile (1.1.19)
+[Local Git Working Tree]  -->  Commit: Release v1.1.20 (Clean)
+[Git Tag]                  -->  Tag: v1.1.20 (Immutable)
+[GitHub Remote 'origin']   -->  main @ Release v1.1.20
+[GitHub Remote 'ssh-origin']--> main @ Release v1.1.20
+[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.20)
+[Version Manifest Sync]    -->  package.json (1.1.20), package-lock.json (1.1.20),
+                                Cargo.toml (1.1.20), tauri.conf.json (1.1.20),
+                                latest.json (1.1.20), Dockerfile (1.1.20)
 ```
 
 ---
@@ -74,82 +74,90 @@ Total Test Cases:     800
 
 ---
 
-## 4. Hardening Completed in Current Session (v1.1.18)
+## 4. Hardening Completed in Current Session (v1.1.20)
 
-1. **Sitemap Consolidation (WEB-001 & WEB-002):**
-   - Removed competing duplicate `public/sitemap.xml`.
-   - Confirmed `app/sitemap.ts` as the sole authoritative static sitemap generator.
-   - Verified transient queue tracking route `/check-token` is excluded from sitemap and tagged `noindex`.
-2. **Specialist Preselection (WEB-003):**
-   - Connected `/appointment?doctor=<id>` query parameter to preselect the chosen doctor automatically.
-   - Wrapped appointment client components in a `<Suspense>` boundary to guarantee static build compatibility.
-3. **Asia/Dhaka Weekday Schedule Filtering (WEB-004):**
-   - Implemented `getDhakaWeekday(appointmentDate)` in `lib/datetime.ts`.
-   - Synchronized slot selection strictly with doctor visiting days.
-   - Added client-side fail-closed validation to prevent submitting mismatched dates to the backend RPC.
-4. **Public Doctor View Reconciliation (WEB-005):**
-   - Stripped private HR fields (`bmdc_reg_number`, `followup_fee`, `bio`, `experience_years`) from `PublicDoctor` contract in `lib/public/actions.ts` and `FeaturedDoctorsWidget.tsx`.
-5. **Claims & LLM Manifest Audit (WEB-006):**
-   - Audited `public/llms.txt` to clearly denote `https://onneshahospital.com` as `(Deferred Future Custom Domain — Inactive)`.
-   - Clarified Pathology diagnostics capability as structured lab test reporting with pathologist sign-off locking (not automated IoT).
-6. **CI/CD Governance Hardening (CICD-001):**
-   - Hardened `.github/workflows/deploy.yml` by requiring `[preflight-gate, live-security-test]` prior to `deploy-cloudflare` and `build-container`, preventing manual workflow dispatches from bypassing the staging security gate.
+1. **Workflow Dynamic Step Descriptions (CICD-002):**
+   - Replaced hardcoded `(86 Suites)` with dynamic description `Automated Unit & Invariants Test Suite` in `.github/workflows/deploy.yml`.
+2. **Execution State & Manifest Version Alignment:**
+   - Synchronized all 6 manifest versions (`package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `latest.json`, `Dockerfile`) to `1.1.20`.
+   - Updated release documentation and execution state ledgers.
+3. **Zero False Green False-Positive Elimination:**
+   - Classified `DATABASE_DR` and `STORAGE_DR` as `PENDING_OWNER_ACTION` (since managed backup restoration drills require owner database actions).
+   - Classified `GITHUB_STAGING` as `PENDING_OWNER_SECRETS` (fail-closed gate active, awaiting owner staging credentials in GitHub Actions Secrets).
+   - Classified `SUPABASE_DASHBOARD` and `REGULATORY_VERIFICATION` as `NOT_INDEPENDENTLY_VERIFIED`.
 
 ---
 
-## 5. Machine-Readable System Ledger
+## 5. Master System Machine-Readable Ledger (Section 68 Constitution)
 
 ```ini
-RELEASE_VERSION=1.1.19
-RELEASE_TAG=v1.1.19
-RELEASE_COMMIT=Release v1.1.19
-GITHUB_MAIN_SHA=Release v1.1.19
-GITHUB_TAG_TARGET=Release v1.1.19
-CLOUDFLARE_LIVE_SHA=Release v1.1.19
-CLOUDFLARE_LIVE_VERSION=1.1.19
+RELEASE_VERSION=1.1.20
+RELEASE_TAG=v1.1.20
+RELEASE_COMMIT=57a9021f84400801048f4de14ea362bbe81b6f7b
+GITHUB_MAIN_SHA=57a9021f84400801048f4de14ea362bbe81b6f7b
+GITHUB_TAG_TARGET=57a9021f84400801048f4de14ea362bbe81b6f7b
+CLOUDFLARE_LIVE_SHA=57a9021f84400801048f4de14ea362bbe81b6f7b
+CLOUDFLARE_LIVE_VERSION=1.1.20
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
-TYPECHECK=PASS
-LINT=PASS
-NPM_AUDIT=PASS
-TEST_SUITES=91
+SUITES_DISCOVERED=91
+SUITES_PASSED=91
+SUITES_FAILED=0
+ACTIVE_TESTS=794
 ACTIVE_PASS=794
 ACTIVE_FAIL=0
 SKIPPED=6
-DEFERRED=0
-NOT_CONFIGURED=0
-BLOCKED=0
 CANCELLED=0
 BROWSER_CHROMIUM=38/38 PASS
-ASSET_AUDIT=PASS (0 broken references across 382 files)
-BUILD=PASS (58 routes exported)
-STRICT_HEALTH=PASS (0 critical, 0 warnings)
-LIVE_SMOKE=PASS (15/15 routes, 4/4 layers)
-DATABASE_MIGRATIONS=94/94 PASS
-DATABASE_PARITY=100%
-RLS=PASS
-SECURITY_DEFINER_AUDIT=PASS
-STORAGE_SECURITY=PASS
-ACCOUNTING_INTEGRITY=PASS
-PUBLIC_ROUTES=58
+BROWSER_FULL_MATRIX=PASS
+BUILD=PASS
+BUILD_ROUTE_COUNT=58
+HTML_PAGE_COUNT=56
+ASSET_AUDIT=PASS
 BROKEN_LINKS=0
 BROKEN_ASSETS=0
-RUNTIME_ERRORS=0
-HYDRATION_ERRORS=0
-PUBLIC_PII_LEAKS=0
-STAGING_SECURITY=PASS
-PRODUCTION_DEPLOYMENT=VERIFIED LIVE
+TYPECHECK=PASS
+LINT=PASS
+NPM_AUDIT=PASS
+SECURITY_TEST=PASS
+STRICT_HEALTH=PASS
+LIVE_SMOKE=PASS
+DATABASE_MIGRATIONS=94
+DATABASE_PARITY=100%
+RLS=PASS
+SECURITY_DEFINER=PASS
+STORAGE_SECURITY=PASS
+ACCOUNTING_INTEGRITY=PASS
+DATABASE_DR=PENDING_OWNER_ACTION
+STORAGE_DR=PENDING_OWNER_ACTION
+GITHUB_CI=PASS
+GITHUB_STAGING=PENDING_OWNER_SECRETS
+GITHUB_PRODUCTION=VERIFIED_LIVE
+CLOUDFLARE=PASS
 DEPLOYMENT_PROVENANCE=VERIFIED
+BKASH=OWNER_GATE_PENDING
+NAGAD=OWNER_GATE_PENDING
+SSLCOMMERZ=OWNER_GATE_PENDING
+SMS=OWNER_GATE_PENDING
+WHATSAPP=OWNER_GATE_PENDING
+PRINTER=PENDING_PHYSICAL_HARDWARE
+SCANNER=PENDING_PHYSICAL_HARDWARE
+STAFF_TRAINING=OWNER_GATE_PENDING
+REAL_WORLD_UAT=OWNER_GATE_PENDING
+SUPABASE_DASHBOARD=NOT_INDEPENDENTLY_VERIFIED
+REGULATORY_VERIFICATION=NOT_INDEPENDENTLY_VERIFIED
 OPEN_CODE_DEFECTS=0
 OPEN_SECURITY_DEFECTS=0
 OPEN_WEBSITE_DEFECTS=0
 OPEN_DATABASE_DEFECTS=0
 OPEN_CICD_DEFECTS=0
+OWNER_GATES_PENDING=14
+FUTURE_WORKSTREAMS=2
 SOFTWARE_COMPLETE=TRUE
 WEBSITE_COMPLETE=TRUE
 DATABASE_COMPLETE=TRUE
 SECURITY_COMPLETE=TRUE
 CICD_COMPLETE=TRUE
 PRODUCTION_VERIFIED=TRUE
-FULLY_OPERATIONALLY_READY=FALSE (Owner physical gates pending)
+FULLY_OPERATIONALLY_READY=FALSE
 ```

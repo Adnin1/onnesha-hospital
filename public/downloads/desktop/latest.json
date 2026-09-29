@@ -1,14 +1,14 @@
 {
-  "version": "1.1.19",
+  "version": "1.1.20",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.19. Fully reconciled execution state ledger, authoritative sitemap.ts consolidation, doctor query param preselection, Asia/Dhaka weekday schedule slot filtering, and production certification reports.",
-  "pub_date": "2026-09-30T04:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.20. Workflow step description cleanup, truth-reconciled execution state ledger, authoritative sitemap.ts consolidation, and final production certification.",
+  "pub_date": "2026-09-30T05:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.19.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.20.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.19.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.20.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0
     }

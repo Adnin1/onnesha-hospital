@@ -61,7 +61,7 @@ jobs:
       - name: Static Link and Asset Crawl
         run: npm run audit:assets
 
-      - name: Automated Unit & Invariants Test Suite (86 Suites)
+      - name: Automated Unit & Invariants Test Suite
         run: npm run test:certification
 
       - name: Automated Project Governance Health Check (Strict Mode)
