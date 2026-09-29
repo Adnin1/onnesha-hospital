@@ -1,21 +1,24 @@
 {
-  "version": "1.1.20",
+  "version": "1.1.21",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.20. Workflow step description cleanup, truth-reconciled execution state ledger, authoritative sitemap.ts consolidation, and final production certification.",
-  "pub_date": "2026-09-30T05:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.21. Comprehensive README reconciliation, truthful desktop release provenance documentation, and infrastructure claims audit.",
+  "pub_date": "2026-09-30T06:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.20.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.21.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.20.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.21.msi",
       "installer_msi_sha256": "",
-      "installer_msi_size": 0
+      "installer_msi_size": 0,
+      "status": "pending_ci_workflow",
+      "verified_historical_installer": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.5.exe"
     }
   },
   "signing": {
     "enabled": false,
-    "distribution": "manual_installer",
-    "notice": "Informational version metadata manifest. Production updater auto-signing is disabled; distribution is via direct manual installers (WiX MSI / NSIS EXE)."
-  }
+    "distribution": "ci_windows_runner",
+    "notice": "Informational version metadata manifest. Production updater auto-signing is disabled; binary distribution is produced via GitHub Actions CI Windows build runners (WiX MSI / NSIS EXE)."
+  },
+  "artifact_status": "PENDING_CI_BUILD"
 }

@@ -8,11 +8,12 @@
 - Domain Classification: High-Performance Edge Domain with Cloudflare Pages Global Anycast CDN
 
 ## 2. Infrastructure & Cloud Hosting Architecture
-- Platform Tier: Modern Cloud Healthcare Architecture
-- Database Architecture: Managed PostgreSQL Relational Database (Supabase Platform with automated daily backups)
-- Storage & CDN: Cloudflare Pages Global Anycast CDN with Encrypted Object Storage
-- Security & Compliance: Strict Row-Level Security (RLS), TLS 1.2+ encryption in transit with modern cipher suites, AES-256 platform storage encryption at rest, Role-Based Access Control (RBAC)
-- Operational Model: Continuous Monitoring and Automated Resiliency Controls
+- Platform Tier: Multi-Tenant Cloud Healthcare Architecture
+- Database Architecture: Managed PostgreSQL Relational Database (Supabase Platform; automated daily backups & PITR subject to production tier configuration)
+- Web Hosting & Edge CDN: Cloudflare Pages Global Anycast CDN for static client assets
+- Document & Scans Storage: Supabase Storage (`medical-documents-vault` bucket with Row-Level Security and time-limited signed URLs)
+- Security Architecture: Strict Row-Level Security (RLS) on all tenant tables, TLS 1.2+ in transit with modern cipher suites, Role-Based Access Control (RBAC), and server-authoritative finance validation
+- Operational Model: Production Health Monitoring, Sanitized Error Telemetry, and Fail-Closed Staging CI Deployment Gates
 
 ## 3. Application Profile
 - Application Type: Enterprise Hospital Information System (HIS / EMR), Outpatient & Inpatient Clinical Suite

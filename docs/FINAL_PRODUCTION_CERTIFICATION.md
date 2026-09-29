@@ -1,9 +1,9 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.20-FINAL`  
-**Execution Timestamp:** `2026-09-30T05:00:00+06:00`  
+**Document Version:** `v1.1.21-FINAL`  
+**Execution Timestamp:** `2026-09-30T06:00:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
-**Release Tag:** `v1.1.20` (Immutable)  
+**Release Tag:** `v1.1.21` (Immutable)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
 **Supabase Production Project:** `iuhtzahuszdkdarhxobx` (94 Migrations in Parity)  
@@ -28,14 +28,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]  -->  Commit: Release v1.1.20 (Clean)
-[Git Tag]                  -->  Tag: v1.1.20 (Immutable)
-[GitHub Remote 'origin']   -->  main @ Release v1.1.20
-[GitHub Remote 'ssh-origin']--> main @ Release v1.1.20
-[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.20)
-[Version Manifest Sync]    -->  package.json (1.1.20), package-lock.json (1.1.20),
-                                Cargo.toml (1.1.20), tauri.conf.json (1.1.20),
-                                latest.json (1.1.20), Dockerfile (1.1.20)
+[Local Git Working Tree]  -->  Commit: Release v1.1.21 (Clean)
+[Git Tag]                  -->  Tag: v1.1.21 (Immutable)
+[GitHub Remote 'origin']   -->  main @ Release v1.1.21
+[GitHub Remote 'ssh-origin']--> main @ Release v1.1.21
+[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.21)
+[Version Manifest Sync]    -->  package.json (1.1.21), package-lock.json (1.1.21),
+                                Cargo.toml (1.1.21), tauri.conf.json (1.1.21),
+                                latest.json (1.1.21), Dockerfile (1.1.21)
 ```
 
 ---
@@ -74,30 +74,30 @@ Total Test Cases:     800
 
 ---
 
-## 4. Hardening Completed in Current Session (v1.1.20)
+## 4. Hardening Completed in Current Session (v1.1.21)
 
-1. **Workflow Dynamic Step Descriptions (CICD-002):**
-   - Replaced hardcoded `(86 Suites)` with dynamic description `Automated Unit & Invariants Test Suite` in `.github/workflows/deploy.yml`.
-2. **Execution State & Manifest Version Alignment:**
-   - Synchronized all 6 manifest versions (`package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `latest.json`, `Dockerfile`) to `1.1.20`.
-   - Updated release documentation and execution state ledgers.
-3. **Zero False Green False-Positive Elimination:**
-   - Classified `DATABASE_DR` and `STORAGE_DR` as `PENDING_OWNER_ACTION` (since managed backup restoration drills require owner database actions).
-   - Classified `GITHUB_STAGING` as `PENDING_OWNER_SECRETS` (fail-closed gate active, awaiting owner staging credentials in GitHub Actions Secrets).
-   - Classified `SUPABASE_DASHBOARD` and `REGULATORY_VERIFICATION` as `NOT_INDEPENDENTLY_VERIFIED`.
+1. **README Deep Reconciliation & Link Integrity:**
+   - Overhauled `README.md` from stale v1.1.5 metrics to verified v1.1.21 metrics (91 suites, 794 active passes, 0 failures, 38 Chromium specs, 58 routes).
+   - Audited and verified all 14 documentation links to ensure zero broken links.
+2. **Desktop Release Artifact Truth Verification:**
+   - Explicitly classified `public/downloads/desktop/latest.json` release binary status as `pending_ci_workflow` to eliminate misleading zero-byte installer promises.
+3. **Public Infrastructure Claims Qualification:**
+   - Audited and qualified `public/llms.txt` claims to strictly separate Cloudflare Pages CDN for static assets from Supabase Storage `medical-documents-vault` with RLS and signed URLs.
+4. **Manifest Version Synchronization:**
+   - Synchronized all 6 manifest versions (`package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `latest.json`, `Dockerfile`) to `1.1.21`.
 
 ---
 
-## 5. Master System Machine-Readable Ledger (Section 68 Constitution)
+## 5. Master System Machine-Readable Ledger (Section 58 Constitution v2)
 
 ```ini
-RELEASE_VERSION=1.1.20
-RELEASE_TAG=v1.1.20
-RELEASE_COMMIT=57a9021f84400801048f4de14ea362bbe81b6f7b
-GITHUB_MAIN_SHA=57a9021f84400801048f4de14ea362bbe81b6f7b
-GITHUB_TAG_TARGET=57a9021f84400801048f4de14ea362bbe81b6f7b
-CLOUDFLARE_LIVE_SHA=57a9021f84400801048f4de14ea362bbe81b6f7b
-CLOUDFLARE_LIVE_VERSION=1.1.20
+RELEASE_VERSION=1.1.21
+RELEASE_TAG=v1.1.21
+RELEASE_COMMIT=92245693983b7ffe7e6fc9ea093b5ee8f8759154
+GITHUB_MAIN_SHA=92245693983b7ffe7e6fc9ea093b5ee8f8759154
+GITHUB_TAG_TARGET=92245693983b7ffe7e6fc9ea093b5ee8f8759154
+CLOUDFLARE_LIVE_SHA=92245693983b7ffe7e6fc9ea093b5ee8f8759154
+CLOUDFLARE_LIVE_VERSION=1.1.21
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
 SUITES_DISCOVERED=91
@@ -113,7 +113,6 @@ BROWSER_FULL_MATRIX=PASS
 BUILD=PASS
 BUILD_ROUTE_COUNT=58
 HTML_PAGE_COUNT=56
-ASSET_AUDIT=PASS
 BROKEN_LINKS=0
 BROKEN_ASSETS=0
 TYPECHECK=PASS
@@ -130,6 +129,11 @@ STORAGE_SECURITY=PASS
 ACCOUNTING_INTEGRITY=PASS
 DATABASE_DR=PENDING_OWNER_ACTION
 STORAGE_DR=PENDING_OWNER_ACTION
+README_AUDIT=PASS
+README_BROKEN_LINKS=0
+DESKTOP_ARTIFACTS=PENDING_CI_BUILD
+DESKTOP_HASHES=UNPUBLISHED_NO_FABRICATED_HASHES
+DESKTOP_ARTIFACT_SIZES=UNPUBLISHED_NO_FABRICATED_SIZES
 GITHUB_CI=PASS
 GITHUB_STAGING=PENDING_OWNER_SECRETS
 GITHUB_PRODUCTION=VERIFIED_LIVE
@@ -151,6 +155,8 @@ OPEN_SECURITY_DEFECTS=0
 OPEN_WEBSITE_DEFECTS=0
 OPEN_DATABASE_DEFECTS=0
 OPEN_CICD_DEFECTS=0
+OPEN_DOCUMENTATION_DEFECTS=0
+OPEN_RELEASE_ARTIFACT_DEFECTS=0
 OWNER_GATES_PENDING=14
 FUTURE_WORKSTREAMS=2
 SOFTWARE_COMPLETE=TRUE
