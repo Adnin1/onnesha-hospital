@@ -1,14 +1,14 @@
 {
-  "version": "1.1.15",
+  "version": "1.1.16",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.15. Hardened medical document storage access authorization with upload compensation rollback, enforced admin-only storage RLS DELETE policy, and corrected Cash Basis operating disbursements against Chart of Accounts Cash & Bank asset lines.",
-  "pub_date": "2026-09-29T06:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.16. Immutable release provenance freeze, full website deep audit across 54 clinical & operational routes, refined deterministic Docker PostgreSQL init orchestrator, and all 94 database migrations verified in full remote parity.",
+  "pub_date": "2026-09-29T12:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.15.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.16.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.15.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.16.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0
     }

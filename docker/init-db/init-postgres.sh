@@ -19,7 +19,7 @@ fi
 # 2. Run migrations in strict alphanumeric order
 if [ -d "/docker-migrations" ]; then
     echo "[OHMS INIT] Applying migrations from /docker-migrations..."
-    for f in $(ls /docker-migrations/*.sql | sort); do
+    for f in $(find /docker-migrations -maxdepth 1 -name '*.sql' | sort); do
         if [ -f "$f" ]; then
             echo "[OHMS INIT] Executing migration: $f"
             psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -f "$f"
