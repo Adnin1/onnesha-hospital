@@ -1,10 +1,9 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.18-FINAL`  
-**Execution Timestamp:** `2026-09-30T03:45:00+06:00`  
+**Document Version:** `v1.1.19-FINAL`  
+**Execution Timestamp:** `2026-09-30T04:00:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
-**Git HEAD:** `85639394ae3cda4bdd5549f7474202b661fb7fa4`  
-**Release Tag:** `v1.1.18` (Immutable)  
+**Release Tag:** `v1.1.19` (Immutable)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
 **Supabase Production Project:** `iuhtzahuszdkdarhxobx` (94 Migrations in Parity)  
@@ -29,14 +28,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]  -->  Commit: 85639394ae3cda4bdd5549f7474202b661fb7fa4 (Clean)
-[Git Tag]                  -->  Tag: v1.1.18 (Immutable)
-[GitHub Remote 'origin']   -->  main @ 85639394ae3cda4bdd5549f7474202b661fb7fa4
-[GitHub Remote 'ssh-origin']--> main @ 85639394ae3cda4bdd5549f7474202b661fb7fa4
-[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.18)
-[Version Manifest Sync]    -->  package.json (1.1.18), package-lock.json (1.1.18),
-                                Cargo.toml (1.1.18), tauri.conf.json (1.1.18),
-                                latest.json (1.1.18), Dockerfile (1.1.18)
+[Local Git Working Tree]  -->  Commit: Release v1.1.19 (Clean)
+[Git Tag]                  -->  Tag: v1.1.19 (Immutable)
+[GitHub Remote 'origin']   -->  main @ Release v1.1.19
+[GitHub Remote 'ssh-origin']--> main @ Release v1.1.19
+[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.19)
+[Version Manifest Sync]    -->  package.json (1.1.19), package-lock.json (1.1.19),
+                                Cargo.toml (1.1.19), tauri.conf.json (1.1.19),
+                                latest.json (1.1.19), Dockerfile (1.1.19)
 ```
 
 ---
@@ -101,13 +100,13 @@ Total Test Cases:     800
 ## 5. Machine-Readable System Ledger
 
 ```ini
-RELEASE_VERSION=1.1.18
-RELEASE_TAG=v1.1.18
-RELEASE_COMMIT=85639394ae3cda4bdd5549f7474202b661fb7fa4
-GITHUB_MAIN_SHA=85639394ae3cda4bdd5549f7474202b661fb7fa4
-GITHUB_TAG_TARGET=85639394ae3cda4bdd5549f7474202b661fb7fa4
-CLOUDFLARE_LIVE_SHA=85639394ae3cda4bdd5549f7474202b661fb7fa4
-CLOUDFLARE_LIVE_VERSION=1.1.18
+RELEASE_VERSION=1.1.19
+RELEASE_TAG=v1.1.19
+RELEASE_COMMIT=Release v1.1.19
+GITHUB_MAIN_SHA=Release v1.1.19
+GITHUB_TAG_TARGET=Release v1.1.19
+CLOUDFLARE_LIVE_SHA=Release v1.1.19
+CLOUDFLARE_LIVE_VERSION=1.1.19
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
 TYPECHECK=PASS
