@@ -1,14 +1,14 @@
 {
-  "version": "1.1.16",
+  "version": "1.1.17",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.16. Immutable release provenance freeze, full website deep audit across 54 clinical & operational routes, refined deterministic Docker PostgreSQL init orchestrator, and all 94 database migrations verified in full remote parity.",
-  "pub_date": "2026-09-29T12:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.17. Public sitemap.xml SEO inclusion, full 38-spec live browser E2E certification across 54 clinical & operational routes, zero-warning health check, and immutable release provenance freeze.",
+  "pub_date": "2026-09-30T00:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.16.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.17.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.16.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.17.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0
     }

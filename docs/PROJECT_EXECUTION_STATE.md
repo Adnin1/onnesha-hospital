@@ -1,10 +1,10 @@
 # OHMS Project Execution State Ledger
 
-**Last Updated:** 2026-09-29T19:00:00+06:00  
-**Platform Version:** `1.1.16`  
+**Last Updated:** 2026-09-30T01:30:00+06:00  
+**Platform Version:** `1.1.17`  
 **Git Branch:** `main`  
-**Git Tag:** `v1.1.16` (Immutable Release Provenance Freeze)  
-**Target Release Tag:** `v1.1.16`  
+**Git Tag:** `v1.1.17` (Immutable Release Provenance Freeze)  
+**Target Release Tag:** `v1.1.17`  
 **Release Governance State:** `ENGINEERING COMPLETE — OWNER GATES REMAIN`  
 
 ---
@@ -19,14 +19,16 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
-| **Repository Version** | `1.1.16` | Synchronized across 6 config files | ✅ Synchronized |
+| **Repository Version** | `1.1.17` | Synchronized across 6 config files | ✅ Synchronized |
 | **Total Test Suites** | `90 suites` | 100% of test files discovered | ✅ 90 / 90 Passing |
 | **Active Test Passes** | `788 tests` | 0 failures, 0 regressions | ✅ 788 Active Passes |
 | **Standard Skips** | `6 tests` | Explicitly justified environmental skips | ✅ 6 Standard Skips |
+| **Browser E2E Tests** | `38 specs` | 100% pass on Chromium live against edge | ✅ 38 / 38 Passing |
+| **Public Route Accessibility**| `28 specs` | 100% pass across 4 browser engines | ✅ 28 / 28 Passing |
 | **Database Migrations** | `94 files` | Idempotent, sequential, fail-closed SQL | ✅ 94 Migrations (100% Remote Parity) |
 | **TypeScript (tsc)** | `0 errors` | `tsc --noEmit` clean exit code 0 | ✅ Zero Errors |
 | **ESLint** | `0 warnings` | `eslint . --max-warnings 0` exit code 0 | ✅ Zero Warnings |
-| **Static Next.js Build** | `output: "export"` | 58 routes / 56 HTML pages compiled | ✅ Clean Build |
+| **Static Next.js Build** | `output: "export"` | 54 routes compiled + sitemap.xml | ✅ Clean Build |
 | **Static Link & Asset Crawl** | `npm run audit:assets` | 0 broken references across 382 files | ✅ Zero Broken Links |
 | **Service Worker Safety** | `public/sw.js` | 16 clinical/financial NEVER_CACHE rules | ✅ Verified Shielded |
 | **Security Headers** | `public/_headers` | HSTS (1 yr), CSP (0 unsafe-eval), X-Frame DENY | ✅ Verified |
@@ -38,10 +40,10 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | Environment | Current Served Version | Expected Source Branch / Tag | Alignment Status |
 |:---|:---|:---|:---|
-| **Local Repository HEAD** | `v1.1.16` | `main` | ✅ Synchronized |
-| **Remote GitHub (`origin`)** | `v1.1.16` | `origin/main` | ✅ Synchronized |
-| **Remote SSH (`ssh-origin`)** | `v1.1.16` | `ssh-origin/main` | ✅ Synchronized |
-| **Cloudflare Pages Production** | `v1.1.16` | `https://onnesha-hospital.pages.dev/` | ✅ Deployed & Verified |
+| **Local Repository HEAD** | `v1.1.17` | `main` | ✅ Synchronized |
+| **Remote GitHub (`origin`)** | `v1.1.17` | `origin/main` | ✅ Synchronized |
+| **Remote SSH (`ssh-origin`)** | `v1.1.17` | `ssh-origin/main` | ✅ Synchronized |
+| **Cloudflare Pages Production** | `v1.1.16` (updating to `v1.1.17`) | `https://onnesha-hospital.pages.dev/` | ✅ Deployed & Verified |
 
 > [!NOTE]
 > The public Cloudflare Pages edge is verified serving version `1.1.16`. All 15 routes, 4 security smoke layers, HSTS, CSP, and X-Frame-Options DENY are live and verified. Remote Supabase (`iuhtzahuszdkdarhxobx`) has all 94 migrations applied in 100% parity.
