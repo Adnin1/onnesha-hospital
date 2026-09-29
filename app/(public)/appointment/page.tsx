@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Clock,
   CheckCircle2,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import { formatCurrencyBDT } from "@/lib/utils";
 import { HospitalPrintHeader } from "@/components/print/HospitalPrintHeader";
-import { getDhakaDateString } from "@/lib/datetime";
+import { getDhakaDateString, getDhakaWeekday } from "@/lib/datetime";
 import {
   getPublicDoctorsAction,
   getPublicDoctorSchedulesAction,
@@ -24,7 +25,10 @@ import {
   PublicBookingResult,
 } from "@/lib/public/actions";
 
-export default function AppointmentBookingPage() {
+function AppointmentBookingContent() {
+  const searchParams = useSearchParams();
+  const doctorQueryParam = searchParams.get("doctor");
+
   const [step, setStep] = useState(1);
   const [doctors, setDoctors] = useState<PublicDoctor[]>([]);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
@@ -39,7 +43,7 @@ export default function AppointmentBookingPage() {
     d.setDate(d.getDate() + 1);
     return getDhakaDateString(d);
   });
-  const [timeSlot, setTimeSlot] = useState("");
+  const [confirmedSlotLabel, setConfirmedSlotLabel] = useState<string>("");
 
   // Patient Info Form
   const [fullName, setFullName] = useState("");
@@ -53,6 +57,7 @@ export default function AppointmentBookingPage() {
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [confirmedData, setConfirmedData] = useState<PublicBookingResult["data"] | null>(null);
 
+  // Load public doctors
   useEffect(() => {
     let isMounted = true;
     async function loadDoctors() {
@@ -61,7 +66,11 @@ export default function AppointmentBookingPage() {
       if (isMounted) {
         if (res.success && res.doctors.length > 0) {
           setDoctors(res.doctors);
-          setSelectedDoctorId(res.doctors[0].id);
+          if (doctorQueryParam && res.doctors.some((d) => d.id === doctorQueryParam)) {
+            setSelectedDoctorId(doctorQueryParam);
+          } else {
+            setSelectedDoctorId(res.doctors[0].id);
+          }
         } else {
           setDoctorError(res.error || "No active specialist schedules open for online booking.");
         }
@@ -72,8 +81,9 @@ export default function AppointmentBookingPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [doctorQueryParam]);
 
+  // Load schedules for selected doctor
   useEffect(() => {
     if (!selectedDoctorId) return;
     let isMounted = true;
@@ -83,12 +93,8 @@ export default function AppointmentBookingPage() {
       if (isMounted) {
         if (res.success && res.schedules.length > 0) {
           setSchedules(res.schedules);
-          setSelectedScheduleId(res.schedules[0].id);
-          setTimeSlot(res.schedules[0].slot_label);
         } else {
           setSchedules([]);
-          setSelectedScheduleId("");
-          setTimeSlot("");
         }
         setLoadingSchedules(false);
       }
@@ -99,12 +105,44 @@ export default function AppointmentBookingPage() {
     };
   }, [selectedDoctorId]);
 
+  // Compute Asia/Dhaka weekday from appointmentDate
+  const currentWeekday = useMemo(() => {
+    return getDhakaWeekday(appointmentDate);
+  }, [appointmentDate]);
+
+  // Filter schedules strictly for the appointment day of week
+  const matchingSchedules = useMemo(() => {
+    return schedules.filter(
+      (s) => s.day_of_week.trim().toUpperCase() === currentWeekday
+    );
+  }, [schedules, currentWeekday]);
+
+  // Derive active schedule ID and slot label without cascading effect renders
+  const activeScheduleId = useMemo(() => {
+    if (matchingSchedules.length === 0) return "";
+    const exists = matchingSchedules.find((s) => s.id === selectedScheduleId);
+    return exists ? exists.id : matchingSchedules[0].id;
+  }, [matchingSchedules, selectedScheduleId]);
+
+  const activeSlotLabel = useMemo(() => {
+    const active = matchingSchedules.find((s) => s.id === activeScheduleId);
+    return active ? active.slot_label : "";
+  }, [matchingSchedules, activeScheduleId]);
+
   const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId) || doctors[0];
 
   const handleBookAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !phone.trim() || !selectedScheduleId) {
+    if (!fullName.trim() || !phone.trim() || !activeScheduleId) {
       setBookingError("Please select a published schedule slot, patient name, and contact phone number.");
+      return;
+    }
+
+    // Verify schedule matches the consultation weekday
+    if (!matchingSchedules.some((s) => s.id === activeScheduleId)) {
+      setBookingError(
+        `Selected schedule does not match the consultation day of week (${currentWeekday}). Please pick a valid slot.`
+      );
       return;
     }
 
@@ -114,7 +152,7 @@ export default function AppointmentBookingPage() {
     const parsedAge = age.trim() ? parseInt(age, 10) : undefined;
     const res = await bookOnlineAppointmentAction({
       doctorId: selectedDoctor?.id || selectedDoctorId,
-      scheduleId: selectedScheduleId,
+      scheduleId: activeScheduleId,
       appointmentDate,
       patientName: fullName.trim(),
       patientPhone: phone.trim(),
@@ -126,6 +164,7 @@ export default function AppointmentBookingPage() {
     setBookingLoading(false);
 
     if (res.success && res.data) {
+      setConfirmedSlotLabel(activeSlotLabel);
       setConfirmedData(res.data);
       setStep(4);
     } else {
@@ -294,23 +333,26 @@ export default function AppointmentBookingPage() {
                   onChange={(e) => setAppointmentDate(e.target.value)}
                   className="w-full p-2.5 min-h-[44px] text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
                 />
+                <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                  Day of week: <span className="text-sky-700 font-bold">{currentWeekday}</span> (Asia/Dhaka)
+                </p>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-2">
-                  Available Visiting Hours / Chamber Slot
+                  Available Visiting Hours / Chamber Slot ({currentWeekday})
                 </label>
                 <div className="space-y-2">
                   {loadingSchedules ? (
                     <div className="p-3 text-xs text-slate-500 flex items-center min-h-[44px]">
                       <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> Loading schedules...
                     </div>
-                  ) : schedules.length > 0 ? (
-                    schedules.map((sched) => (
+                  ) : matchingSchedules.length > 0 ? (
+                    matchingSchedules.map((sched) => (
                       <label
                         key={sched.id}
                         className={`flex items-center p-2.5 min-h-[44px] rounded-lg border text-xs cursor-pointer transition ${
-                          selectedScheduleId === sched.id
+                          activeScheduleId === sched.id
                             ? "border-sky-600 bg-sky-50/50 font-semibold text-sky-900 ring-2 ring-sky-500/20"
                             : "border-slate-200 hover:bg-slate-50 text-slate-700"
                         }`}
@@ -318,10 +360,9 @@ export default function AppointmentBookingPage() {
                         <input
                           type="radio"
                           name="slot"
-                          checked={selectedScheduleId === sched.id}
+                          checked={activeScheduleId === sched.id}
                           onChange={() => {
                             setSelectedScheduleId(sched.id);
-                            setTimeSlot(sched.slot_label);
                           }}
                           className="mr-2 text-sky-600 focus:ring-sky-500 w-4 h-4"
                         />
@@ -330,9 +371,19 @@ export default function AppointmentBookingPage() {
                       </label>
                     ))
                   ) : (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-center space-x-2">
-                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>No active published schedule available for this doctor on the selected date. Please select another doctor.</span>
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start space-x-2.5">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-amber-950">No Visiting Hours on {currentWeekday}</p>
+                        <p className="text-[11px] text-amber-800 mt-0.5">
+                          No active published schedule available for this doctor on the selected date ({appointmentDate}, {currentWeekday}). Please pick another date or select a different doctor.
+                        </p>
+                        {schedules.length > 0 && (
+                          <p className="text-[10px] text-amber-700 font-medium mt-1.5">
+                            Regular chamber days: {Array.from(new Set(schedules.map((s) => s.day_of_week))).join(", ")}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -350,7 +401,7 @@ export default function AppointmentBookingPage() {
               </button>
               <button
                 type="button"
-                disabled={!selectedScheduleId || loadingSchedules}
+                disabled={!activeScheduleId || loadingSchedules || matchingSchedules.length === 0}
                 onClick={() => setStep(3)}
                 className="inline-flex items-center bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-semibold text-xs px-6 py-2.5 min-h-[44px] rounded-lg shadow-sm transition focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
@@ -563,7 +614,7 @@ export default function AppointmentBookingPage() {
                     {confirmedData.doctorName}
                   </span>
                   <p className="text-[11px] text-slate-600">
-                    Chamber: <strong className="text-slate-900">{confirmedData.roomNumber}</strong> • Slot: <strong className="text-slate-900">{timeSlot}</strong>
+                    Chamber: <strong className="text-slate-900">{confirmedData.roomNumber}</strong> • Slot: <strong className="text-slate-900">{confirmedSlotLabel || activeSlotLabel}</strong>
                   </p>
                 </div>
               </div>
@@ -604,5 +655,24 @@ export default function AppointmentBookingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function AppointmentLoadingFallback() {
+  return (
+    <div className="py-12 bg-slate-50 min-h-[85vh] flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 text-sky-600 animate-spin mx-auto mb-2" />
+        <p className="text-xs text-slate-500">Loading appointment booking portal...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function AppointmentBookingPage() {
+  return (
+    <Suspense fallback={<AppointmentLoadingFallback />}>
+      <AppointmentBookingContent />
+    </Suspense>
   );
 }

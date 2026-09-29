@@ -67,10 +67,46 @@ jobs:
       - name: Automated Project Governance Health Check (Strict Mode)
         run: node scripts/project-health-check.mjs --strict
 
-  # 2. Cloudflare Pages Production Edge Release
+  # 2. Dedicated Staging Live Security Gate (Parity with CI Gate)
+  live-security-test:
+    name: Dedicated Staging Live Security Gate
+    runs-on: ubuntu-latest
+    needs: preflight-gate
+    environment: staging
+    permissions:
+      contents: read
+    env:
+      OHMS_TEST_SUPABASE_URL: ${{ secrets.OHMS_TEST_SUPABASE_URL }}
+      OHMS_TEST_SERVICE_ROLE_KEY: ${{ secrets.OHMS_TEST_SECRET_KEY || secrets.OHMS_TEST_SERVICE_ROLE_KEY }}
+      OHMS_TEST_PUBLISHABLE_KEY: ${{ secrets.OHMS_TEST_PUBLISHABLE_KEY || secrets.OHMS_TEST_ANON_KEY }}
+    steps:
+      - name: Fail-Closed Check for Required Staging Secrets
+        if: env.OHMS_TEST_SUPABASE_URL == '' || env.OHMS_TEST_SERVICE_ROLE_KEY == ''
+        run: |
+          echo "::error title=Staging Gate Blocked::OHMS_TEST_SUPABASE_URL and OHMS_TEST_SERVICE_ROLE_KEY are required for staging security certification. Fail-closed gate triggered. Production deployment is strictly BLOCKED until real isolated staging credentials are configured in GitHub secrets."
+          exit 1
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Execute Authenticated Cross-Tenant Live Suite
+        env:
+          RUN_LIVE_SUPABASE_TESTS: "true"
+        run: node --test tests/live/authenticated-cross-tenant.live.test.mjs
+
+  # 3. Cloudflare Pages Production Edge Release
   deploy-cloudflare:
     name: Cloudflare Pages Edge Deployment
-    needs: preflight-gate
+    needs: [preflight-gate, live-security-test]
     if: github.event.inputs.target == 'all' || github.event.inputs.target == 'cloudflare-pages'
     runs-on: ubuntu-latest
     environment: production
@@ -103,10 +139,10 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler pages deploy out --project-name=onnesha-hospital --branch=main --commit-hash=${{ github.sha }} --commit-dirty=false
 
-  # 3. Docker Container Verification Build (Local verification - push disabled)
+  # 4. Docker Container Verification Build (Local verification - push disabled)
   build-container:
     name: Docker Container Verification Build
-    needs: preflight-gate
+    needs: [preflight-gate, live-security-test]
     if: github.event.inputs.target == 'all' || github.event.inputs.target == 'docker-image'
     runs-on: ubuntu-latest
     permissions:

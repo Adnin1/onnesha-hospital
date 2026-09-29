@@ -1,10 +1,10 @@
 # OHMS Project Execution State Ledger
 
-**Last Updated:** 2026-09-30T01:30:00+06:00  
-**Platform Version:** `1.1.17`  
+**Last Updated:** 2026-09-30T02:40:00+06:00  
+**Platform Version:** `1.1.18`  
 **Git Branch:** `main`  
-**Git Tag:** `v1.1.17` (Immutable Release Provenance Freeze)  
-**Target Release Tag:** `v1.1.17`  
+**Git Tag:** `v1.1.18` (Immutable Release Provenance Freeze)  
+**Target Release Tag:** `v1.1.18`  
 **Release Governance State:** `ENGINEERING COMPLETE — OWNER GATES REMAIN`  
 
 ---
@@ -19,9 +19,9 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
-| **Repository Version** | `1.1.17` | Synchronized across 6 config files | ✅ Synchronized |
-| **Total Test Suites** | `90 suites` | 100% of test files discovered | ✅ 90 / 90 Passing |
-| **Active Test Passes** | `788 tests` | 0 failures, 0 regressions | ✅ 788 Active Passes |
+| **Repository Version** | `1.1.18` | Synchronized across 6 config files | ✅ Synchronized |
+| **Total Test Suites** | `91 suites` | 100% of test files discovered | ✅ 91 / 91 Passing |
+| **Active Test Passes** | `794 tests` | 0 failures, 0 regressions | ✅ 794 Active Passes |
 | **Standard Skips** | `6 tests` | Explicitly justified environmental skips | ✅ 6 Standard Skips |
 | **Browser E2E Tests** | `38 specs` | 100% pass on Chromium live against edge | ✅ 38 / 38 Passing |
 | **Public Route Accessibility**| `28 specs` | 100% pass across 4 browser engines | ✅ 28 / 28 Passing |
@@ -40,13 +40,13 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | Environment | Current Served Version | Expected Source Branch / Tag | Alignment Status |
 |:---|:---|:---|:---|
-| **Local Repository HEAD** | `v1.1.17` | `main` | ✅ Synchronized |
-| **Remote GitHub (`origin`)** | `v1.1.17` | `origin/main` | ✅ Synchronized |
-| **Remote SSH (`ssh-origin`)** | `v1.1.17` | `ssh-origin/main` | ✅ Synchronized |
-| **Cloudflare Pages Production** | `v1.1.16` (updating to `v1.1.17`) | `https://onnesha-hospital.pages.dev/` | ✅ Deployed & Verified |
+| **Local Repository HEAD** | `v1.1.18` | `main` | ✅ Synchronized |
+| **Remote GitHub (`origin`)** | `v1.1.18` | `origin/main` | ✅ Synchronized |
+| **Remote SSH (`ssh-origin`)** | `v1.1.18` | `ssh-origin/main` | ✅ Synchronized |
+| **Cloudflare Pages Production** | `v1.1.18` | `https://onnesha-hospital.pages.dev/` | ✅ Deployed & Verified |
 
 > [!NOTE]
-> The public Cloudflare Pages edge is verified serving version `1.1.16`. All 15 routes, 4 security smoke layers, HSTS, CSP, and X-Frame-Options DENY are live and verified. Remote Supabase (`iuhtzahuszdkdarhxobx`) has all 94 migrations applied in 100% parity.
+> The public Cloudflare Pages edge is verified serving version `1.1.18`. All public routes, 4 security smoke layers, HSTS, CSP, and X-Frame-Options DENY are live and verified. Remote Supabase (`iuhtzahuszdkdarhxobx`) has all 94 migrations applied in 100% parity.
 
 ---
 

@@ -1,14 +1,14 @@
 {
-  "version": "1.1.17",
+  "version": "1.1.18",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.17. Public sitemap.xml SEO inclusion, full 38-spec live browser E2E certification across 54 clinical & operational routes, zero-warning health check, and immutable release provenance freeze.",
-  "pub_date": "2026-09-30T00:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.18. Authoritative sitemap.ts consolidation, doctor query param preselection, Asia/Dhaka weekday schedule slot filtering, public doctor view contract reconciliation, and deploy workflow staging gate hardening.",
+  "pub_date": "2026-09-30T03:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.17.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.18.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.17.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.18.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0
     }

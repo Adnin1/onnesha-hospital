@@ -4,7 +4,7 @@
 
 ## 1. Domain & Digital Identity
 - Primary Production Domain: https://onnesha-hospital.pages.dev
-- Future Custom Apex Domain: https://onneshahospital.com
+- Future Custom Apex Domain (Deferred — Inactive): https://onneshahospital.com
 - Domain Classification: High-Performance Edge Domain with Cloudflare Pages Global Anycast CDN
 
 ## 2. Infrastructure & Cloud Hosting Architecture
@@ -22,5 +22,5 @@
 ## 4. Clinical Capabilities
 - Outpatient Department (OPD): Specialist Doctor Consultation, Digital Token Queue, Online Appointments
 - Inpatient Department (IPD): Bed Management, Ward/Cabin Admission, Discharge Summaries
-- Diagnostics & Pathology: Modern Lab Test Reporting, Automated Delivery
+- Diagnostics & Pathology: Structured Lab Test Reporting with Pathologist Sign-Off Verification, Printable Token Reports
 - Pharmacy & Billing: Fast Thermal POS Invoicing, Real-Time Inventory Management

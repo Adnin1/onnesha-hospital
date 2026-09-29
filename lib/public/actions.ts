@@ -17,14 +17,10 @@ export interface PublicDoctor {
   degrees: string;
   designation: string;
   specialization: string;
-  bmdc_reg_number?: string;
   room_number: string;
   opd_fee: number;
-  followup_fee?: number;
   avatar_url?: string | null;
-  bio?: string | null;
   public_bio?: string | null;
-  experience_years?: number;
   department_name: string;
   department_slug?: string;
   schedules?: PublicDoctorScheduleSummary[];
@@ -150,14 +146,10 @@ export async function getPublicDoctorsAction(): Promise<{
       degrees: string;
       designation: string;
       specialization: string;
-      bmdc_reg_number?: string;
       room_number: string;
       opd_fee: number;
-      followup_fee?: number;
       avatar_url?: string | null;
-      bio?: string | null;
       public_bio?: string | null;
-      experience_years?: number;
       department_name: string;
       department_slug: string;
       schedules?: Array<{ id: string; day_of_week: string; start_time: string; end_time: string; is_active?: boolean }>;
@@ -169,14 +161,10 @@ export async function getPublicDoctorsAction(): Promise<{
       degrees: d.degrees,
       designation: d.designation,
       specialization: d.specialization,
-      bmdc_reg_number: d.bmdc_reg_number,
       room_number: d.room_number,
       opd_fee: Number(d.opd_fee),
-      followup_fee: d.followup_fee !== undefined ? Number(d.followup_fee) : undefined,
       avatar_url: d.avatar_url,
-      bio: d.bio,
       public_bio: d.public_bio,
-      experience_years: d.experience_years,
       department_name: d.department_name,
       department_slug: d.department_slug,
       schedules: d.schedules || [],

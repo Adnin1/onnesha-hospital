@@ -39,3 +39,23 @@ export function getDhakaTimeString(date: Date | string | number = new Date()): s
 export function isTodayDhaka(dateString: string): boolean {
   return dateString === getDhakaDateString();
 }
+
+/**
+ * Returns uppercase day of week in Asia/Dhaka timezone (e.g., "SATURDAY", "SUNDAY", "MONDAY").
+ * Accepts Date object or "YYYY-MM-DD" string.
+ */
+export function getDhakaWeekday(date: Date | string | number = new Date()): string {
+  const d =
+    typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date.trim())
+      ? new Date(`${date.trim()}T12:00:00+06:00`)
+      : typeof date === "string" || typeof date === "number"
+      ? new Date(date)
+      : date;
+
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: DHAKA_TIMEZONE,
+    weekday: "long",
+  })
+    .format(d)
+    .toUpperCase();
+}
