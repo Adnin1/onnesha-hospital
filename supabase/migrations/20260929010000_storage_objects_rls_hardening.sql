@@ -2,11 +2,21 @@
 -- Ensures that direct access to storage.objects is strictly isolated by organization_id
 
 DO $$
+DECLARE
+    v_can_manage_storage BOOLEAN := FALSE;
 BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'storage' AND table_name = 'objects') THEN
-        -- Enable RLS on storage.objects if not already enabled
-        ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+    -- Check if current role owns storage.objects or has superuser privilege
+    SELECT EXISTS (
+        SELECT 1 FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'storage' AND c.relname = 'objects'
+          AND (
+              c.relowner = (SELECT usesysid FROM pg_user WHERE usename = CURRENT_USER)
+              OR EXISTS (SELECT 1 FROM pg_user WHERE usename = CURRENT_USER AND usesuper = TRUE)
+          )
+    ) INTO v_can_manage_storage;
 
+    IF v_can_manage_storage THEN
         -- 1. Tenant-isolated SELECT policy
         DROP POLICY IF EXISTS "medical_vault_tenant_isolation_select" ON storage.objects;
         CREATE POLICY "medical_vault_tenant_isolation_select"

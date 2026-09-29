@@ -40,10 +40,10 @@ This state ledger provides the single source of truth for the Onnesha Hospital M
 | **Local Repository HEAD** | `v1.1.15` | `main` | ✅ Synchronized |
 | **Remote GitHub (`origin`)** | `v1.1.15` | `origin/main` | ✅ Synchronized |
 | **Remote SSH (`ssh-origin`)** | `v1.1.15` | `ssh-origin/main` | ✅ Synchronized |
-| **Cloudflare Pages Production** | `v1.1.12` | `https://onnesha-hospital.pages.dev/` | 🟡 Edge Deployment Pending Sync |
+| **Cloudflare Pages Production** | `v1.1.15` | `https://onnesha-hospital.pages.dev/` | ✅ Deployed & Verified (ID: `8d31c3a0`) |
 
 > [!NOTE]
-> The public Cloudflare Pages edge currently serves version `1.1.12` from an earlier deployment. The local and remote GitHub branches are at `v1.1.15`. Production deployment occurs automatically via Cloudflare Pages GitHub integration once remote CI triggers or via owner manual trigger.
+> The public Cloudflare Pages edge is verified serving version `1.1.15` (Deployment ID `8d31c3a0-cd30-4e9d-9ffb-dbf93f644617`). All 15 routes, 4 security smoke layers, HSTS, CSP, and X-Frame-Options DENY are live and verified. Remote Supabase has all 94 migrations applied in 100% parity.
 
 ---
 
