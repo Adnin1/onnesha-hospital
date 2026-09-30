@@ -1,14 +1,14 @@
 {
-  "version": "1.1.23",
+  "version": "1.1.24",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.23. Authoritative version alignment, zero false-green provider adapters, hardened hospital master profile transactions, and verified LIS architecture.",
-  "pub_date": "2026-10-01T01:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.24. Hardened SECURITY DEFINER search_path and execution grants, consolidated SMS architecture, zero synthetic provider IDs, and authoritative payment flow.",
+  "pub_date": "2026-10-01T03:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.23.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.24.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.23.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.24.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0,
       "status": "pending_ci_workflow",

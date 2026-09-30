@@ -131,7 +131,7 @@ export class TransactionalEmailAdapter implements EmailProviderAdapter {
         });
 
         if (res.status === 202 || res.status === 200) {
-          const msgId = res.headers.get("x-message-id") || `sg_${Date.now()}`;
+          const msgId = res.headers.get("x-message-id") || undefined;
           return {
             success: true,
             providerName: this.providerName,

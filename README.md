@@ -1,9 +1,9 @@
-# Onnesha Hospital Management System (OHMS v1.1.23)
+# Onnesha Hospital Management System (OHMS v1.1.24)
 Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
-[![Version](https://img.shields.io/badge/version-v1.1.23-blue.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
-[![Tests](https://img.shields.io/badge/tests-824%20active%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
-[![Suites](https://img.shields.io/badge/test%20suites-93%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
+[![Version](https://img.shields.io/badge/version-v1.1.24-blue.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
+[![Tests](https://img.shields.io/badge/tests-834%20active%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
+[![Suites](https://img.shields.io/badge/test%20suites-94%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
 [![TypeScript](https://img.shields.io/badge/typescript-strict%200%20errors-blue.svg)](#quality-gates)
 [![ESLint](https://img.shields.io/badge/eslint-0%20warnings-brightgreen.svg)](#quality-gates)
 [![Next.js](https://img.shields.io/badge/next.js-16.3.8%20turbopack-black.svg)](https://nextjs.org)
@@ -11,13 +11,13 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
 - **Live Canonical Production URL:** [https://onnesha-hospital.pages.dev](https://onnesha-hospital.pages.dev)
 - **GitHub Repository:** [Adnin1/onnesha-hospital](https://github.com/Adnin1/onnesha-hospital)
-- **Database Engine:** Supabase PostgreSQL with Multi-Tenant Row Level Security (RLS) (97/97 Migrations Synchronized in 100% Remote Parity)
+- **Database Engine:** Supabase PostgreSQL with Multi-Tenant Row Level Security (RLS) (98/98 Migrations Synchronized)
 - **Runtime Architecture:** Next.js Turbopack Static Export (`output: "export"`) deployed to Cloudflare Pages Global Anycast CDN, backed by Supabase PostgreSQL and Tauri 2 Windows Desktop Client.
 
 ---
 
 ## 📋 Core Governance & Architectural Documentation
-- 📄 [Final Production Certification (v1.1.23)](./docs/FINAL_PRODUCTION_CERTIFICATION.md) — Authoritative release certification, automated test evidence, and 68-field machine-readable system ledger.
+- 📄 [Final Production Certification (v1.1.24)](./docs/FINAL_PRODUCTION_CERTIFICATION.md) — Authoritative release certification, automated test evidence, and 68-field machine-readable system ledger.
 - 📄 [Project Execution State Ledger](./docs/PROJECT_EXECUTION_STATE.md) — Single source of truth for runtime provenance, database parity, and 5-gate closure matrix.
 - 📄 [Operational Commissioning Status & 14 Owner Gates](./docs/FINAL_OPERATIONAL_COMMISSIONING_STATUS.md) — Real-world hospital physical and business commissioning prerequisites.
 - 📄 [Final System Architecture](./docs/FINAL_SYSTEM_ARCHITECTURE.md) — Single-platform topology, data flows, and sub-systems.
@@ -50,8 +50,8 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ---
 
 ## 🧪 Automated Testing Breakdown (Current Verified Metrics)
-- **Total Test Suites:** 92 / 92 Passed (0 failures)
-- **Active Automated Test Cases:** 814 Passed
+- **Total Test Suites:** 94 / 94 Passed (0 failures)
+- **Active Automated Test Cases:** 834 Passed
 - **Standard Deferred / Skips:** 6 (explicit external vendor / optional staging dependencies)
 - **Real Browser Chromium E2E:** 38 / 38 Passed (Playwright live against production edge)
 - **Prerendered Static Routes:** 58 / 58 Routes (56 HTML pages + sitemap.xml)
@@ -66,7 +66,7 @@ npx eslint . --max-warnings 0      # ESLint strict gate (0 warnings, 0 errors)
 npm audit --audit-level=high       # Security dependency audit (0 vulnerabilities)
 npm run build                      # 58 static routes exported cleanly
 npm run audit:assets               # 0 broken internal links or static assets
-npm test                           # 91 suites, 794 active tests pass
+npm test                           # 94 suites, 834 active tests pass
 npm run test:security              # 20 core security scenarios pass
 node scripts/project-health-check.mjs --strict  # 15/15 governance gates pass
 npx playwright test --project=chromium          # 38 live browser E2E specs pass

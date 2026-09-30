@@ -86,11 +86,13 @@ export class BangladeshSmsAdapter implements SmsProviderAdapter {
 
         const text = await response.text();
         if (response.ok && !text.toLowerCase().includes("error")) {
+          // Extract SMS ID from response text if present (e.g. "SMS ID: 123456" or numeric ID)
+          const idMatch = text.match(/SMS\s*ID[:\s]+([0-9a-zA-Z_-]+)/i) || text.match(/\b(\d{6,})\b/);
           return {
             success: true,
             providerName: this.providerName,
             status: "SENT",
-            providerMessageId: `gw_${Date.now()}`,
+            providerMessageId: idMatch ? idMatch[1] : undefined,
           };
         }
         return {
@@ -103,6 +105,7 @@ export class BangladeshSmsAdapter implements SmsProviderAdapter {
 
       if (this.config.provider === "ssl_wireless") {
         const url = this.config.apiUrl || "https://smsplus.sslwireless.com/api/v3/send-sms";
+        const clientCsmsId = `csms_${Date.now()}_${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "").substring(0, 8) : Date.now().toString(36)}`;
         const response = await fetch(url, {
           method: "POST",
           headers: {
@@ -114,7 +117,7 @@ export class BangladeshSmsAdapter implements SmsProviderAdapter {
             sid: sender,
             msisdn: internationalNumber,
             sms: options.message,
-            csms_id: `csms_${Date.now()}_${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "").substring(0, 8) : Date.now().toString(36)}`,
+            csms_id: clientCsmsId,
           }),
         });
 
@@ -124,7 +127,7 @@ export class BangladeshSmsAdapter implements SmsProviderAdapter {
             success: true,
             providerName: this.providerName,
             status: "SENT",
-            providerMessageId: data.smsinfo?.[0]?.csms_id || `ssl_${Date.now()}`,
+            providerMessageId: data.smsinfo?.[0]?.csms_id || clientCsmsId,
           };
         }
         return {

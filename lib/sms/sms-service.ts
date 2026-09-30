@@ -1,4 +1,19 @@
+/**
+ * Bangladesh SMS Gateway Service
+ * 
+ * ARCHITECTURE: This is the convenience entrypoint for SMS sending.
+ * It delegates all actual delivery to BangladeshSmsAdapter (lib/notifications/adapters/sms-adapter.ts),
+ * which is the SINGLE AUTHORITATIVE SMS transport implementation.
+ * 
+ * Callers should use either:
+ *   1. This module's sendSMS() for simple one-off sends, OR
+ *   2. NotificationOutboxService for transactional outbox-pattern sends (preferred for clinical use).
+ * 
+ * Both paths converge on BangladeshSmsAdapter — there is exactly ONE SMS gateway integration layer.
+ */
+
 import { HOSPITAL_METADATA } from "@/config/hospital";
+import { BangladeshSmsAdapter } from "@/lib/notifications/adapters/sms-adapter";
 
 export interface SendSMSOptions {
   recipientPhone: string;
@@ -12,69 +27,51 @@ export interface SMSResponse {
   error?: string;
 }
 
+// Singleton adapter instance — reuses environment config
+let _adapter: BangladeshSmsAdapter | null = null;
+function getAdapter(): BangladeshSmsAdapter {
+  if (!_adapter) {
+    _adapter = new BangladeshSmsAdapter();
+  }
+  return _adapter;
+}
+
 /**
- * Bangladesh SMS Gateway Abstraction Service
- * Easily swap between SSL Wireless, Greenweb, Elitbuzz, or Twilio
+ * Send an SMS via the authoritative BangladeshSmsAdapter.
+ * Fails closed if gateway is not configured with live credentials.
+ * Never returns success: true unless the provider actually accepted the message.
  */
 export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
   const { recipientPhone, message, smsType } = options;
 
-  // Clean Bangladeshi phone number to format 8801XXXXXXXXX
-  const cleanedPhone = recipientPhone.replace(/[^0-9]/g, "");
-  const formattedNumber = cleanedPhone.startsWith("88")
-    ? cleanedPhone
-    : cleanedPhone.startsWith("01")
-    ? `88${cleanedPhone}`
-    : cleanedPhone;
-
   // Guard debug logging to development only; mask phone number for PHI/PII compliance
   if (process.env.NODE_ENV === "development") {
-    const maskedPhone = formattedNumber.length > 6
-      ? `${formattedNumber.slice(0, 4)}****${formattedNumber.slice(-3)}`
+    const cleaned = recipientPhone.replace(/[^0-9]/g, "");
+    const masked = cleaned.length > 6
+      ? `${cleaned.slice(0, 4)}****${cleaned.slice(-3)}`
       : "****";
-    console.log(`[SMS Gateway BD] [${smsType.toUpperCase()}] To: ${maskedPhone}`);
+    console.log(`[SMS Gateway BD] [${smsType.toUpperCase()}] To: ${masked}`);
   }
 
-  const apiEndpoint = process.env.SMS_API_ENDPOINT || process.env.SMS_GATEWAY_URL || "https://api.sms-gateway-bd.com/v2/send";
   const apiKey = process.env.SMS_API_KEY || process.env.SMS_GATEWAY_API_KEY;
-  const senderId = process.env.SMS_SENDER_ID || "ONNESHA";
-
   if (!apiKey) {
-    // Gateway not configured in environment
-    console.warn("[SMS Gateway BD] Service unconfigured: SMS_API_KEY or SMS_GATEWAY_API_KEY is not set.");
     return {
       success: false,
       error: "SMS Gateway not configured: SMS_API_KEY or SMS_GATEWAY_API_KEY environment variable required.",
     };
   }
 
-  try {
-    const res = await fetch(apiEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        api_key: apiKey,
-        senderid: senderId,
-        number: formattedNumber,
-        message: message,
-      }),
-    });
+  const adapter = getAdapter();
+  const result = await adapter.send({
+    recipientPhone,
+    message,
+  });
 
-    const data = await res.json();
-    return {
-      success: res.ok,
-      providerResponseId: data?.msg_id || data?.message_id || "OK",
-    };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Failed to dispatch SMS";
-    console.error("SMS Gateway Delivery Error:", err);
-    return {
-      success: false,
-      error: errorMsg,
-    };
-  }
+  return {
+    success: result.success,
+    providerResponseId: result.providerMessageId,
+    error: result.error,
+  };
 }
 
 /**

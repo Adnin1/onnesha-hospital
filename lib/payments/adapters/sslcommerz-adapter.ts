@@ -1,10 +1,17 @@
 /**
  * SSLCommerz Payment Gateway Adapter
  * 
- * Supports:
- * - Session initiation (Gateway Page redirect URL)
- * - Order Validation API (verifying `val_id` on SSLCommerz server)
- * - Refund API
+ * ARCHITECTURAL CONTRACT:
+ * In OHMS production, online payment intents and callbacks are authoritatively
+ * handled server-side to guarantee zero credential exposure and atomic ledger settlement:
+ *   1. Initiation: Delegated exclusively to Supabase Edge Function `payment-initiate`
+ *      via `PaymentService.createPaymentIntent()`.
+ *   2. Verification & IPN Callback: Handled authoritatively by Supabase Edge Function
+ *      `payment-callback` with timing-safe HMAC/MD5 hash validation, Order Validation API,
+ *      and atomic DB RPC `verify_and_record_online_payment`.
+ * 
+ * This adapter class provides the standard `PaymentGatewayAdapter` interface for
+ * direct library consumption, unit testing, and standalone runner environments.
  */
 
 import {

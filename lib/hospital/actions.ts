@@ -62,6 +62,14 @@ export async function getHospitalMasterDataAction(): Promise<{
       };
     }
 
+    if (!org) {
+      return {
+        success: false,
+        error: "Hospital organization record not found in database. Using approved master configuration.",
+        data: APPROVED_HOSPITAL_DATA,
+      };
+    }
+
     const { data: settings, error: settingsError } = await supabase
       .from("organization_settings")
       .select("emergency_hotline, ambulance_hotline")

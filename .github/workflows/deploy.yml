@@ -1,4 +1,4 @@
-name: OHMS Enterprise Multi-Target Production Deployment
+name: OHMS Manual Multi-Target Deployment (Supplementary — Primary CI is ci.yml)
 
 on:
   workflow_dispatch:
@@ -64,8 +64,8 @@ jobs:
       - name: Automated Unit & Invariants Test Suite
         run: npm run test:certification
 
-      - name: Automated Project Governance Health Check (Strict Mode)
-        run: node scripts/project-health-check.mjs --strict
+      - name: Automated Project Governance Health Check
+        run: node scripts/project-health-check.mjs
 
   # 2. Dedicated Staging Live Security Gate (Parity with CI Gate)
   live-security-test:

@@ -1,12 +1,12 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.23-FINAL`  
-**Execution Timestamp:** `2026-10-01T01:45:00+06:00`  
+**Document Version:** `v1.1.24-FINAL`  
+**Execution Timestamp:** `2026-10-01T03:15:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
-**Release Tag:** `v1.1.23` (Immutable)  
+**Release Tag:** `v1.1.24` (Immutable)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (97 Migrations in Parity)  
+**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (98 Migrations in Parity)  
 
 ---
 
@@ -15,11 +15,11 @@
 | Evaluation Area | Status | Evidence & Verification Metric |
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 93/93 Test Suites Passed (824 Active Passes, 0 Failures) |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 94/94 Test Suites Passed (834 Active Passes, 0 Failures) |
 | **Real Browser Chromium E2E** | **CERTIFIED COMPLETE** | 38/38 Specs Passing on Chromium against Edge |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 58 Routes Prerendered, 0 Broken Links / 0 Broken Assets |
 | **Live Production Smoke** | **CERTIFIED COMPLETE** | 15/15 Routes 200 OK, 4/4 Security Layers Passed on Live Edge |
-| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 97 Migrations Applied, RLS Enabled on All Tables, 0 Anon Leaks |
+| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 98 Migrations Applied, RLS Enabled on All Tables, 0 Anon Leaks |
 | **CI/CD Security Gating** | **CERTIFIED COMPLETE** | Fail-Closed Staging Security Gate Enforced on Both CI and Deploy |
 | **Hospital Physical Commissioning** | **OWNER GATES PENDING** | Requires Hardware, Merchant Keys, Staff UAT & Regulatory Sign-offs |
 
@@ -28,14 +28,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]  -->  Commit: Release v1.1.23 (Clean)
-[Git Tag]                  -->  Tag: v1.1.23 (Immutable)
-[GitHub Remote 'origin']   -->  main @ Release v1.1.23
-[GitHub Remote 'ssh-origin']--> main @ Release v1.1.23
-[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.23)
-[Version Manifest Sync]    -->  package.json (1.1.23), package-lock.json (1.1.23),
-                                Cargo.toml (1.1.23), tauri.conf.json (1.1.23),
-                                latest.json (1.1.23), Dockerfile (1.1.23)
+[Local Git Working Tree]  -->  Commit: Release v1.1.24 (Clean)
+[Git Tag]                  -->  Tag: v1.1.24 (Immutable)
+[GitHub Remote 'origin']   -->  main @ Release v1.1.24
+[GitHub Remote 'ssh-origin']--> main @ Release v1.1.24
+[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.24)
+[Version Manifest Sync]    -->  package.json (1.1.24), package-lock.json (1.1.24),
+                                Cargo.toml (1.1.24), tauri.conf.json (1.1.24),
+                                latest.json (1.1.24), Dockerfile (1.1.24)
 ```
 
 ---
@@ -46,12 +46,12 @@
 ========================================
            OHMS TEST SUMMARY            
 ========================================
-Total Test Suites:    93
-Passed Suites:        93
+Total Test Suites:    94
+Passed Suites:        94
 Failed Suites:        0
 ----------------------------------------
-Total Test Cases:     830
-  • ACTIVE_PASS:      824
+Total Test Cases:     840
+  • ACTIVE_PASS:      834
   • ACTIVE_FAIL:      0
   • SKIPPED / OTHER:  6
     - STANDARD_SKIP:  6 (Explicitly justified environmental/service role skips)
@@ -64,7 +64,7 @@ Total Test Cases:     830
 - **`npm run typecheck`:** `tsc --noEmit` exited with code 0 (0 errors).
 - **`npx eslint . --max-warnings 0`:** Exited with code 0 (0 warnings, 0 errors).
 - **`npm audit --audit-level=high`:** Exited with code 0 (0 vulnerabilities).
-- **`npm run test:certification`:** 92 suites passed in strict mode.
+- **`npm run test:certification`:** 93 suites passed in strict mode.
 - **`npm run test:security`:** 20/20 scenarios passed.
 - **`npm run audit:assets`:** 56 HTML pages scanned, 321 internal links checked, 958 assets verified, 0 broken references.
 - **`npm run build`:** 58 static routes prerendered cleanly.
@@ -74,24 +74,30 @@ Total Test Cases:     830
 
 ---
 
-## 4. Hardening Completed in Current Session (v1.1.23)
+## 4. Hardening Completed in Current Session (v1.1.24)
 
-1. **Elimination of Synthetic False-Green Adapters:**
-   - `lib/notifications/adapters/email-adapter.ts`: Eliminated synthetic `em_${Date.now()}` return. Implemented real SendGrid and Postmark API callers with fail-closed behavior for unsupported providers.
-   - `lib/notifications/adapters/sms-adapter.ts`: Eliminated synthetic `elit_${Date.now()}` return. Implemented real Elitbuzz SMS query with fail-closed behavior for unsupported providers.
-   - `lib/sms/sms-service.ts`: Replaced hardcoded placeholder hotline (`01712-345678`) with canonical Bogura emergency hotline (`01718835623`).
-2. **Master Data Transactional Hardening & Admin Controls:**
-   - `lib/hospital/actions.ts`: Eliminated database query failure returning false `success: true`. Now returns `success: false` with explicit error diagnostics.
-   - Added phone & email format validation and atomic PostgreSQL RPC `update_hospital_master_profile` with fallback.
-   - `supabase/functions/payment-initiate/index.ts`: Removed fallback `"testbox"` and `"qwerty"` credentials; fails closed with `400 NOT_CONFIGURED` if live credentials are not set. Updated customer payload to use approved Bogura address and hotline.
-3. **Desktop Download Reconciliation:**
-   - Eliminated stale hardcoded `v1.1.8` reference in `app/(public)/downloads/desktop/page.tsx`.
-   - Dynamic version retrieval bound to `package.json` and `latest.json`.
-   - Explicitly discloses `CURRENT DESKTOP BUILD: PENDING_CI_BUILD` with verified historical v1.1.5 download link.
-4. **Test Suite Expansion:**
-   - Added comprehensive suite `tests/hospital-master-data-and-admin-controls.test.mjs` (10/10 passing), expanding active test passes to 824 across 93 suites.
+1. **SECURITY DEFINER search_path Hardening & RBAC Grants (Migration 98):**
+   - Migration `20261001030000_harden_secdef_search_path_and_grants.sql` explicitly sets `SET search_path = ''` on `ingest_analyzer_transmission_atomic` and `update_hospital_master_profile`.
+   - Enforced schema-qualified references (`public.*`) across all statements.
+   - Enforced explicit `REVOKE ALL FROM PUBLIC, anon` and `GRANT EXECUTE TO authenticated`.
+   - Disabled legacy sandbox `"testbox"`/`"qwerty"` placeholder credentials so the database fails closed until live merchant onboarding.
+2. **SMS Gateway Architecture Consolidation:**
+   - Consolidated `lib/sms/sms-service.ts` to delegate directly to `BangladeshSmsAdapter` as the single authoritative transport layer.
+   - Eliminated false-green HTTP 200 handling where error JSON bodies would return `success: true`.
+3. **Zero Synthetic / Fabricated Provider IDs:**
+   - Eliminated `sg_${Date.now()}` from `lib/notifications/adapters/email-adapter.ts`.
+   - Eliminated `gw_${Date.now()}` and `ssl_${Date.now()}` from `lib/notifications/adapters/sms-adapter.ts`.
+4. **Master Data Database Error / Missing Record Integrity:**
+   - Hardened `lib/hospital/actions.ts` to return `success: false` if organization record is null/missing.
+5. **Authoritative SSLCommerz Payment Flow:**
+   - Documented `lib/payments/adapters/sslcommerz-adapter.ts` to clarify authoritative Edge Function flow via `payment-initiate` and `payment-callback`.
+6. **CI/CD Workflow Clarity:**
+   - Clarified `.github/workflows/deploy.yml` as manual/supplementary and eliminated conflicting release gates.
+7. **Test Suite Expansion:**
+   - Added `tests/v1124-security-definer-and-integration-consolidation.test.mjs` (10/10 passing), expanding active test passes to 834 across 94 suites.
 
 ### Previous Milestones:
+- **v1.1.23:** Elimination of synthetic false-green adapters, master data transaction hardening, desktop version alignment.
 - **v1.1.22:** Direct LIS & Clinical Analyzer Integration (ASTM E1381/E1394 & HL7 v2.x parser, atomic RPC ingestion, critical alert escalation, local bridge daemon).
 - **v1.1.21:** README reconciliation, desktop release artifact metadata verification, infrastructure claims qualification.
 
@@ -100,20 +106,20 @@ Total Test Cases:     830
 ## 5. Master System Machine-Readable Ledger (Section 58 Constitution v2)
 
 ```ini
-RELEASE_VERSION=1.1.23
-RELEASE_TAG=v1.1.23
+RELEASE_VERSION=1.1.24
+RELEASE_TAG=v1.1.24
 RELEASE_COMMIT=PENDING_COMMIT
 GITHUB_MAIN_SHA=PENDING_COMMIT
 GITHUB_TAG_TARGET=PENDING_COMMIT
 CLOUDFLARE_LIVE_SHA=PENDING_DEPLOY
-CLOUDFLARE_LIVE_VERSION=1.1.23
+CLOUDFLARE_LIVE_VERSION=1.1.24
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
-SUITES_DISCOVERED=93
-SUITES_PASSED=93
+SUITES_DISCOVERED=94
+SUITES_PASSED=94
 SUITES_FAILED=0
-ACTIVE_TESTS=824
-ACTIVE_PASS=824
+ACTIVE_TESTS=834
+ACTIVE_PASS=834
 ACTIVE_FAIL=0
 SKIPPED=6
 CANCELLED=0
@@ -130,7 +136,7 @@ NPM_AUDIT=PASS
 SECURITY_TEST=PASS
 STRICT_HEALTH=PASS
 LIVE_SMOKE=PASS
-DATABASE_MIGRATIONS=97
+DATABASE_MIGRATIONS=98
 DATABASE_PARITY=100%
 RLS=PASS
 SECURITY_DEFINER=PASS
