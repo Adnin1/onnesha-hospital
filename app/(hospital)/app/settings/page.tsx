@@ -17,14 +17,20 @@ import {
 import { PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 import { RoleType } from "@/types";
 import { getAuditLogsAction, AuditLogRecord } from "@/lib/audit/logger";
+import {
+  getHospitalMasterDataAction,
+  updateHospitalMasterDataAction,
+  APPROVED_HOSPITAL_DATA,
+} from "@/lib/hospital/actions";
 
 const DEFAULT_HOSPITAL_PROFILE = {
-  name: "Onnesha Hospital & Diagnostic Complex",
-  banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক কমপ্লেক্স",
-  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "",
-  ambulanceHotline: process.env.NEXT_PUBLIC_AMBULANCE_HOTLINE || "",
+  name: "Annesha Hospital and Diagnostic Center",
+  banglaName: "অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার",
+  phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01718835623",
+  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "01718835623",
+  ambulanceHotline: process.env.NEXT_PUBLIC_AMBULANCE_HOTLINE || "01904210065",
   email: process.env.NEXT_PUBLIC_HOSPITAL_EMAIL || "aaih.apon@gmail.com",
-  address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "",
+  address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া",
 };
 
 export default function SettingsAndAuditPage() {
@@ -42,6 +48,16 @@ export default function SettingsAndAuditPage() {
   const [sslStoreId, setSslStoreId] = useState("");
   const [sslStorePass, setSslStorePass] = useState("");
   const [sslIsSandbox, setSslIsSandbox] = useState(false);
+
+  // Controlled Hospital Master Data States
+  const [hospitalName, setHospitalName] = useState(DEFAULT_HOSPITAL_PROFILE.name);
+  const [hospitalBanglaName, setHospitalBanglaName] = useState(DEFAULT_HOSPITAL_PROFILE.banglaName);
+  const [hospitalPhone, setHospitalPhone] = useState(DEFAULT_HOSPITAL_PROFILE.phone);
+  const [hospitalEmergency, setHospitalEmergency] = useState(DEFAULT_HOSPITAL_PROFILE.emergencyHotline);
+  const [hospitalAmbulance, setHospitalAmbulance] = useState(DEFAULT_HOSPITAL_PROFILE.ambulanceHotline);
+  const [hospitalEmail, setHospitalEmail] = useState(DEFAULT_HOSPITAL_PROFILE.email);
+  const [hospitalAddress, setHospitalAddress] = useState(DEFAULT_HOSPITAL_PROFILE.address);
+  const [savingHospital, setSavingHospital] = useState(false);
 
   // Real Database Audit Logs State
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
@@ -99,6 +115,69 @@ export default function SettingsAndAuditPage() {
       isMounted = false;
     };
   }, [activeTab, moduleFilter, actionFilter, searchQuery]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadHospitalData() {
+      if (activeTab !== "hospital") return;
+      try {
+        const res = await getHospitalMasterDataAction();
+        if (isMounted && res.success && res.data) {
+          setHospitalName(res.data.name);
+          setHospitalBanglaName(res.data.banglaName);
+          setHospitalPhone(res.data.phone);
+          setHospitalEmergency(res.data.emergencyHotline);
+          setHospitalAmbulance(res.data.ambulanceHotline);
+          setHospitalEmail(res.data.email);
+          setHospitalAddress(res.data.address);
+        }
+      } catch (err) {
+        console.error("Failed to load hospital master data", err);
+      }
+    }
+    void loadHospitalData();
+    return () => {
+      isMounted = false;
+    };
+  }, [activeTab]);
+
+  const handleSaveHospitalData = async () => {
+    setSavingHospital(true);
+    try {
+      const res = await updateHospitalMasterDataAction({
+        name: hospitalName,
+        banglaName: hospitalBanglaName,
+        phone: hospitalPhone,
+        emergencyHotline: hospitalEmergency,
+        ambulanceHotline: hospitalAmbulance,
+        email: hospitalEmail,
+        address: hospitalAddress,
+      });
+      if (res.success) {
+        setSavedToast("Hospital Master Profile & Letterhead information successfully updated!");
+      } else {
+        setSavedToast(`Update failed: ${res.error || "Unknown error"}`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error saving hospital data";
+      setSavedToast(`Error: ${msg}`);
+    } finally {
+      setSavingHospital(false);
+      setTimeout(() => setSavedToast(""), 5000);
+    }
+  };
+
+  const handleResetHospitalData = () => {
+    setHospitalName(APPROVED_HOSPITAL_DATA.name);
+    setHospitalBanglaName(APPROVED_HOSPITAL_DATA.banglaName);
+    setHospitalPhone(APPROVED_HOSPITAL_DATA.phone);
+    setHospitalEmergency(APPROVED_HOSPITAL_DATA.emergencyHotline);
+    setHospitalAmbulance(APPROVED_HOSPITAL_DATA.ambulanceHotline);
+    setHospitalEmail(APPROVED_HOSPITAL_DATA.email);
+    setHospitalAddress(APPROVED_HOSPITAL_DATA.address);
+    setSavedToast("Reset form values to official approved hospital master data.");
+    setTimeout(() => setSavedToast(""), 4000);
+  };
 
   const togglePermission = (permCode: string) => {
     const currentList = rolePerms[selectedRoleForEdit] || [];
@@ -632,15 +711,20 @@ export default function SettingsAndAuditPage() {
 
       {/* TAB 4: HOSPITAL PROFILE */}
       {activeTab === "hospital" && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs max-w-2xl mx-auto space-y-4 text-xs">
-          <div className="pb-4 border-b border-slate-100">
-            <h3 className="text-base font-bold text-slate-900 flex items-center">
-              <Building className="w-4 h-4 mr-2 text-sky-600" />
-              Hospital Profile & Print Letterhead Pad Details
-            </h3>
-            <p className="text-slate-500 mt-0.5">
-              These details automatically populate across all official invoices, prescriptions, and lab reports.
-            </p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs max-w-2xl mx-auto space-y-5 text-xs">
+          <div className="pb-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 flex items-center">
+                <Building className="w-4 h-4 mr-2 text-sky-600" />
+                Hospital Profile & Master Data Management
+              </h3>
+              <p className="text-slate-500 mt-0.5">
+                Official hospital identity used across public website, letterheads, invoices, prescriptions, and lab reports.
+              </p>
+            </div>
+            <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold rounded-lg shrink-0">
+              Super Admin / Administrator Only
+            </span>
           </div>
 
           <div>
@@ -649,31 +733,45 @@ export default function SettingsAndAuditPage() {
             </label>
             <input
               type="text"
-              defaultValue={DEFAULT_HOSPITAL_PROFILE.name}
-              className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-bold"
+              value={hospitalName}
+              onChange={(e) => setHospitalName(e.target.value)}
+              className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
             />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
-              Bangla Name (for Letterhead Pad)
+              Bangla Name (for Letterhead Pad, Receipts & Prescriptions)
             </label>
             <input
               type="text"
-              defaultValue={DEFAULT_HOSPITAL_PROFILE.banglaName}
-              className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
+              value={hospitalBanglaName}
+              onChange={(e) => setHospitalBanglaName(e.target.value)}
+              className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-900 font-semibold focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Main Reception Phone
+              </label>
+              <input
+                type="text"
+                value={hospitalPhone}
+                onChange={(e) => setHospitalPhone(e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
+              />
+            </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
                 Emergency Hotline Phone
               </label>
               <input
                 type="text"
-                defaultValue={DEFAULT_HOSPITAL_PROFILE.emergencyHotline}
-                className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
+                value={hospitalEmergency}
+                onChange={(e) => setHospitalEmergency(e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
               />
             </div>
             <div>
@@ -682,8 +780,9 @@ export default function SettingsAndAuditPage() {
               </label>
               <input
                 type="text"
-                defaultValue={DEFAULT_HOSPITAL_PROFILE.ambulanceHotline}
-                className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
+                value={hospitalAmbulance}
+                onChange={(e) => setHospitalAmbulance(e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
               />
             </div>
           </div>
@@ -694,20 +793,51 @@ export default function SettingsAndAuditPage() {
             </label>
             <input
               type="email"
-              defaultValue={DEFAULT_HOSPITAL_PROFILE.email}
-              className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
+              value={hospitalEmail}
+              onChange={(e) => setHospitalEmail(e.target.value)}
+              className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
             />
           </div>
 
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
-              Hospital Address & Location
+              Full Physical Address & Location
             </label>
             <textarea
               rows={2}
-              defaultValue={DEFAULT_HOSPITAL_PROFILE.address}
-              className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
+              value={hospitalAddress}
+              onChange={(e) => setHospitalAddress(e.target.value)}
+              className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
             ></textarea>
+          </div>
+
+          {/* Action Buttons for Super Admin Control */}
+          <div className="pt-2 flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => void handleSaveHospitalData()}
+              disabled={savingHospital}
+              className="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" />
+              <span>{savingHospital ? "Saving Master Data..." : "Save Hospital Master Data"}</span>
+            </button>
+            <button
+              onClick={handleResetHospitalData}
+              type="button"
+              className="px-4 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Reset to Approved Master Data</span>
+            </button>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-[11px] text-slate-600 space-y-1">
+            <div className="font-semibold text-slate-800">
+              🛡️ Forensic Audit & Real-Time Sync:
+            </div>
+            <p>
+              Updating hospital master data updates the primary PostgreSQL organization records (<code className="text-slate-800 font-mono">organizations</code> & <code className="text-slate-800 font-mono">organization_settings</code>), logs an immutable forensic record to <code className="text-slate-800 font-mono">audit_logs</code>, and propagates to all active OPD tickets, IPD discharge certificates, and diagnostic billing pads.
+            </p>
           </div>
         </div>
       )}
