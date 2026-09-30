@@ -1,10 +1,10 @@
 # OHMS Project Execution State Ledger
 
-**Last Updated:** 2026-10-01T03:22:00+06:00  
-**Platform Version:** `1.1.25`  
+**Last Updated:** 2026-10-01T04:22:00+06:00  
+**Platform Version:** `1.1.26`  
 **Git Branch:** `main`  
-**Git Tag:** `v1.1.25` (Immutable Release Provenance Freeze)  
-**Release Commit:** `8e46fe7596ac870883d3548a8bb1b667c00d67ff` (Atomic Master Data RPC, Dynamic Sitemap Freshness, 95 Test Suites / 840 Passes)  
+**Git Tag:** `v1.1.26` (Immutable Release Provenance Freeze)  
+**Release Commit:** Synchronized with tag `v1.1.26` (Authoritative Per-Route Sitemap Lastmod, CSP Hardening, Full Provenance Reconciliation)  
 **Canonical Production Host:** `https://onnesha-hospital.pages.dev`  
 **Cloudflare Pages Project:** `onnesha-hospital`  
 **Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (98 Migrations in 100% Parity)  
@@ -18,11 +18,11 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 ---
 
-## 2. Core Repository Metrics & Artifact Baseline (v1.1.25)
+## 2. Core Repository Metrics & Artifact Baseline (v1.1.26)
 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
-| **Repository Version** | `1.1.25` | Synchronized across 6 config files | ✅ Synchronized |
+| **Repository Version** | `1.1.26` | Synchronized across 6 config files | ✅ Synchronized |
 | **Total Test Suites** | `95 suites` | 100% of discovered test files passing | ✅ 95 / 95 Passing |
 | **Active Test Passes** | `840 tests` | 0 failures, 0 regressions | ✅ 840 Active Passes |
 | **Standard Skips** | `6 tests` | Explicitly justified environmental skips | ✅ 6 Standard Skips |
@@ -43,10 +43,10 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | Environment | Current Served Version | Expected Source Branch / Tag | Alignment Status |
 |:---|:---|:---|:---|
-| **Local Repository HEAD** | `v1.1.25` | `main` | ✅ Synchronized |
-| **Remote GitHub (`origin`)** | `v1.1.25` | `origin/main` | ✅ Synchronized |
-| **Remote SSH (`ssh-origin`)** | `v1.1.25` | `ssh-origin/main` | ✅ Synchronized |
-| **Cloudflare Pages Production** | `v1.1.25` | `https://onnesha-hospital.pages.dev/` | ✅ Target Deployment |
+| **Local Repository HEAD** | `v1.1.26` | `main` | ✅ Synchronized |
+| **Remote GitHub (`origin`)** | `v1.1.26` | `origin/main` | ✅ Synchronized |
+| **Remote SSH (`ssh-origin`)** | `v1.1.26` | `ssh-origin/main` | ✅ Synchronized |
+| **Cloudflare Pages Production** | `v1.1.26` | `https://onnesha-hospital.pages.dev/` | ✅ Target Deployment |
 
 > [!NOTE]
 > All public routes, 4 security smoke layers, HSTS, CSP, and X-Frame-Options DENY are configured and verified. Remote Supabase (`iuhtzahuszdkdarhxobx`) has all 98 migrations applied in 100% parity.

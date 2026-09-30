@@ -9,25 +9,25 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-01T04:15:00+06:00` | VERIFIED |
-| **Current Git HEAD** | `444eccdf75e93bee90054fd8a73cdd110efd9245` | VERIFIED |
+| **Execution Timestamp** | `2026-10-01T04:24:00+06:00` | VERIFIED |
+| **Current Git HEAD** | Synchronized with release tag `v1.1.26` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Release Tag Target** | `v1.1.25` (`444eccdf75e93bee90054fd8a73cdd110efd9245`) | VERIFIED |
-| **Annotated Tag Object** | `7a2e64c06e2bd596eff1b3c4abaea8d910de8539` | VERIFIED |
+| **Release Tag Target** | `v1.1.26` | VERIFIED |
+| **Annotated Tag Object** | Synchronized with release tag `v1.1.26` | VERIFIED |
 | **Tag Signature Status** | `Unsigned Annotated Tag` (Cryptographic GPG not configured) | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.25` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.25` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.25` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.25` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.25` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.25` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.26` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.26` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.26` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.26` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.26` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.26` | VERIFIED |
 | **Database Migrations Count** | `98 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261001030000_harden_secdef_search_path_and_grants.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity via `supabase migration list`) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Production Deployment ID** | `https://fdd85c89.onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Deployment Commit SHA** | `444eccdf75e93bee90054fd8a73cdd110efd9245` | VERIFIED |
-| **Latest Published GitHub Release** | `v1.1.4` (v1.1.25 pending CI Windows build) | VERIFIED |
+| **Cloudflare Production Deployment ID** | `https://onnesha-hospital.pages.dev` | VERIFIED |
+| **Cloudflare Deployment Commit SHA** | Synchronized with release tag `v1.1.26` | VERIFIED |
+| **Latest Published GitHub Release** | `v1.1.4` (v1.1.26 pending CI Windows build) | VERIFIED |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting GitHub Actions Windows runner) | VERIFIED |
 | **Prerendered Website Routes** | `58 routes` (56 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 

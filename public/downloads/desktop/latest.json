@@ -1,14 +1,14 @@
 {
-  "version": "1.1.25",
+  "version": "1.1.26",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.25. Authoritative atomic hospital master data RPC, dynamic sitemap lastmod, strict provenance synchronization, and hardened integration boundaries.",
-  "pub_date": "2026-10-01T03:30:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.26. Authoritative per-route sitemap lastmod, CSP hardening, release provenance reconciliation, atomic master data RPC, and hardened integration boundaries.",
+  "pub_date": "2026-10-01T04:20:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.25.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.26.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.25.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.26.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0,
       "status": "pending_ci_workflow",

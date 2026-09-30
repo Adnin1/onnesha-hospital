@@ -1,9 +1,9 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.25-FINAL`  
-**Execution Timestamp:** `2026-10-01T03:35:00+06:00`  
+**Document Version:** `v1.1.26-FINAL`  
+**Execution Timestamp:** `2026-10-01T04:22:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
-**Release Tag:** `v1.1.25` (Immutable)  
+**Release Tag:** `v1.1.26` (Immutable)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
 **Supabase Production Project:** `iuhtzahuszdkdarhxobx` (98 Migrations in Parity)  
@@ -28,14 +28,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]  -->  Commit: Release v1.1.25 (Clean)
-[Git Tag]                  -->  Tag: v1.1.25 (Immutable)
-[GitHub Remote 'origin']   -->  main @ Release v1.1.25
-[GitHub Remote 'ssh-origin']--> main @ Release v1.1.25
-[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.25)
-[Version Manifest Sync]    -->  package.json (1.1.25), package-lock.json (1.1.25),
-                                Cargo.toml (1.1.25), tauri.conf.json (1.1.25),
-                                latest.json (1.1.25), Dockerfile (1.1.25)
+[Local Git Working Tree]  -->  Commit: Release v1.1.26 (Clean)
+[Git Tag]                  -->  Tag: v1.1.26 (Immutable)
+[GitHub Remote 'origin']   -->  main @ Release v1.1.26
+[GitHub Remote 'ssh-origin']--> main @ Release v1.1.26
+[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.26)
+[Version Manifest Sync]    -->  package.json (1.1.26), package-lock.json (1.1.26),
+                                Cargo.toml (1.1.26), tauri.conf.json (1.1.26),
+                                latest.json (1.1.26), Dockerfile (1.1.26)
 ```
 
 ---

@@ -41,18 +41,18 @@ describe("v1.1.25 Atomic Transaction, Sitemap Freshness & Provenance Truth (6 Sc
     );
   });
 
-  test("4. sitemap.ts generates dynamic build-time lastModified timestamp", () => {
+  test("4. sitemap.ts generates authoritative per-route content lastModified timestamps", () => {
     const sitemapPath = path.join(ROOT, "app/sitemap.ts");
     assert.ok(fs.existsSync(sitemapPath), "app/sitemap.ts must exist");
     const content = fs.readFileSync(sitemapPath, "utf8");
 
     assert.ok(
-      content.includes("buildLastModified = new Date()"),
-      "Must generate build-time lastModified timestamp"
+      content.includes("ROUTE_CONTENT_LASTMOD"),
+      "Must define authoritative per-route content lastmod mapping"
     );
     assert.ok(
-      content.includes("lastModified: buildLastModified"),
-      "Must assign buildLastModified to each route"
+      content.includes("new Date(ROUTE_CONTENT_LASTMOD[route])"),
+      "Must assign per-route Date object to each route"
     );
   });
 

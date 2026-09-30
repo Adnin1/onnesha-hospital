@@ -1,7 +1,7 @@
-# Onnesha Hospital Management System (OHMS v1.1.25)
+# Onnesha Hospital Management System (OHMS v1.1.26)
 Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
-[![Version](https://img.shields.io/badge/version-v1.1.25-blue.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
+[![Version](https://img.shields.io/badge/version-v1.1.26-blue.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
 [![Tests](https://img.shields.io/badge/tests-840%20active%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
 [![Suites](https://img.shields.io/badge/test%20suites-95%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
 [![TypeScript](https://img.shields.io/badge/typescript-strict%200%20errors-blue.svg)](#quality-gates)
@@ -17,7 +17,7 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ---
 
 ## 📋 Core Governance & Architectural Documentation
-- 📄 [Final Production Certification (v1.1.25)](./docs/FINAL_PRODUCTION_CERTIFICATION.md) — Authoritative release certification, automated test evidence, and 68-field machine-readable system ledger.
+- 📄 [Final Production Certification (v1.1.26)](./docs/FINAL_PRODUCTION_CERTIFICATION.md) — Authoritative release certification, automated test evidence, and 68-field machine-readable system ledger.
 - 📄 [Project Execution State Ledger](./docs/PROJECT_EXECUTION_STATE.md) — Single source of truth for runtime provenance, database parity, and 5-gate closure matrix.
 - 📄 [Operational Commissioning Status & 14 Owner Gates](./docs/FINAL_OPERATIONAL_COMMISSIONING_STATUS.md) — Real-world hospital physical and business commissioning prerequisites.
 - 📄 [Final System Architecture](./docs/FINAL_SYSTEM_ARCHITECTURE.md) — Single-platform topology, data flows, and sub-systems.
