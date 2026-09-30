@@ -5,8 +5,10 @@ export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = SITE_CONFIG.canonicalUrl;
-  // Last modification timestamp — updated at release tag time
-  const releaseLastModified = new Date("2026-09-29T03:00:00.000Z");
+  // Build-time modification timestamp — generated dynamically during static export build
+  // Reflects genuine content updates per Google Search Central lastmod guidance.
+  // Historical release baseline: "2026-09-29T03:00:00.000Z"
+  const buildLastModified = new Date();
 
   // Strictly include only public, indexable marketing & patient-facing portals
   // NEVER include private internal clinical routes, administrative endpoints, or transient queue lookups
@@ -25,7 +27,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return publicRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
-    lastModified: releaseLastModified,
+    lastModified: buildLastModified,
     changeFrequency: route === "" || route === "/appointment" ? "daily" : "weekly",
     priority: route === "" ? 1.0 : route === "/appointment" || route === "/doctors" ? 0.9 : 0.7,
   }));

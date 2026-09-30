@@ -1,9 +1,9 @@
-# Onnesha Hospital Management System (OHMS v1.1.24)
+# Onnesha Hospital Management System (OHMS v1.1.25)
 Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
-[![Version](https://img.shields.io/badge/version-v1.1.24-blue.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
-[![Tests](https://img.shields.io/badge/tests-834%20active%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
-[![Suites](https://img.shields.io/badge/test%20suites-94%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
+[![Version](https://img.shields.io/badge/version-v1.1.25-blue.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
+[![Tests](https://img.shields.io/badge/tests-840%20active%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
+[![Suites](https://img.shields.io/badge/test%20suites-95%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
 [![TypeScript](https://img.shields.io/badge/typescript-strict%200%20errors-blue.svg)](#quality-gates)
 [![ESLint](https://img.shields.io/badge/eslint-0%20warnings-brightgreen.svg)](#quality-gates)
 [![Next.js](https://img.shields.io/badge/next.js-16.3.8%20turbopack-black.svg)](https://nextjs.org)
@@ -17,7 +17,7 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ---
 
 ## 📋 Core Governance & Architectural Documentation
-- 📄 [Final Production Certification (v1.1.24)](./docs/FINAL_PRODUCTION_CERTIFICATION.md) — Authoritative release certification, automated test evidence, and 68-field machine-readable system ledger.
+- 📄 [Final Production Certification (v1.1.25)](./docs/FINAL_PRODUCTION_CERTIFICATION.md) — Authoritative release certification, automated test evidence, and 68-field machine-readable system ledger.
 - 📄 [Project Execution State Ledger](./docs/PROJECT_EXECUTION_STATE.md) — Single source of truth for runtime provenance, database parity, and 5-gate closure matrix.
 - 📄 [Operational Commissioning Status & 14 Owner Gates](./docs/FINAL_OPERATIONAL_COMMISSIONING_STATUS.md) — Real-world hospital physical and business commissioning prerequisites.
 - 📄 [Final System Architecture](./docs/FINAL_SYSTEM_ARCHITECTURE.md) — Single-platform topology, data flows, and sub-systems.
@@ -50,8 +50,8 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 ---
 
 ## 🧪 Automated Testing Breakdown (Current Verified Metrics)
-- **Total Test Suites:** 94 / 94 Passed (0 failures)
-- **Active Automated Test Cases:** 834 Passed
+- **Total Test Suites:** 95 / 95 Passed (0 failures)
+- **Active Automated Test Cases:** 840 Passed
 - **Standard Deferred / Skips:** 6 (explicit external vendor / optional staging dependencies)
 - **Real Browser Chromium E2E:** 38 / 38 Passed (Playwright live against production edge)
 - **Prerendered Static Routes:** 58 / 58 Routes (56 HTML pages + sitemap.xml)
@@ -66,7 +66,7 @@ npx eslint . --max-warnings 0      # ESLint strict gate (0 warnings, 0 errors)
 npm audit --audit-level=high       # Security dependency audit (0 vulnerabilities)
 npm run build                      # 58 static routes exported cleanly
 npm run audit:assets               # 0 broken internal links or static assets
-npm test                           # 94 suites, 834 active tests pass
+npm test                           # 95 suites, 840 active tests pass
 npm run test:security              # 20 core security scenarios pass
 node scripts/project-health-check.mjs --strict  # 15/15 governance gates pass
 npx playwright test --project=chromium          # 38 live browser E2E specs pass

@@ -142,79 +142,37 @@ export async function updateHospitalMasterDataAction(payload: Partial<HospitalMa
       return { success: false, error: "Invalid ambulance hotline number format" };
     }
 
-    const orgId = session.organizationId || HOSPITAL_METADATA.id;
     const supabase = createClient();
 
-    // 1. Try atomic PostgreSQL RPC update
-    let rpcSucceeded = false;
-    try {
-      const { error: rpcErr } = await supabase.rpc("update_hospital_master_profile", {
-        p_name: payload.name?.trim() || null,
-        p_address: payload.address?.trim() || null,
-        p_phone: payload.phone?.trim() || null,
-        p_emergency_hotline: payload.emergencyHotline?.trim() || null,
-        p_ambulance_hotline: payload.ambulanceHotline?.trim() || null,
-        p_email: payload.email?.trim() || null,
-      });
+    // 1. Authoritative Atomic PostgreSQL RPC Transaction
+    // Migration 98 defines update_hospital_master_profile: atomically verifies caller role,
+    // updates organizations, upserts organization_settings, and records an audit log in audit_logs.
+    // If any step fails, the entire PostgreSQL transaction rolls back.
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("update_hospital_master_profile", {
+      p_name: payload.name?.trim() || null,
+      p_address: payload.address?.trim() || null,
+      p_phone: payload.phone?.trim() || null,
+      p_emergency_hotline: payload.emergencyHotline?.trim() || null,
+      p_ambulance_hotline: payload.ambulanceHotline?.trim() || null,
+      p_email: payload.email?.trim() || null,
+    });
 
-      if (!rpcErr) {
-        rpcSucceeded = true;
-      }
-    } catch {
-      rpcSucceeded = false;
+    if (rpcErr) {
+      return {
+        success: false,
+        error: `Hospital master data atomic transaction failed: ${rpcErr.message}`,
+      };
     }
 
-    // 2. Direct tables fallback if RPC not installed
-    if (!rpcSucceeded) {
-      const orgUpdate: Record<string, string> = { updated_at: new Date().toISOString() };
-      if (payload.name && payload.name.trim()) orgUpdate.name = payload.name.trim();
-      if (payload.phone && payload.phone.trim()) orgUpdate.phone = payload.phone.trim();
-      if (payload.email && payload.email.trim()) orgUpdate.email = payload.email.trim();
-      if (payload.address && payload.address.trim()) orgUpdate.address = payload.address.trim();
-
-      const { error: orgErr } = await supabase
-        .from("organizations")
-        .update(orgUpdate)
-        .eq("id", orgId);
-
-      if (orgErr) {
-        return { success: false, error: `Failed to update hospital organization: ${orgErr.message}` };
-      }
-
-      const settingsUpdate: Record<string, string> = { updated_at: new Date().toISOString() };
-      if (payload.emergencyHotline && payload.emergencyHotline.trim()) {
-        settingsUpdate.emergency_hotline = payload.emergencyHotline.trim();
-      }
-      if (payload.ambulanceHotline && payload.ambulanceHotline.trim()) {
-        settingsUpdate.ambulance_hotline = payload.ambulanceHotline.trim();
-      }
-
-      const { error: setErr } = await supabase
-        .from("organization_settings")
-        .upsert({ organization_id: orgId, ...settingsUpdate }, { onConflict: "organization_id" });
-
-      if (setErr) {
-        return { success: false, error: `Failed to update hospital settings: ${setErr.message}` };
-      }
+    const rpcData = rpcRes as { success?: boolean; error?: string } | null;
+    if (!rpcData?.success) {
+      return {
+        success: false,
+        error: rpcData?.error || "Hospital master data atomic transaction aborted by database policy",
+      };
     }
 
-    // 3. Log audit event
-    try {
-      await supabase.from("audit_logs").insert({
-        organization_id: orgId,
-        actor_id: session.userId,
-        module: "SETTINGS",
-        action: "HOSPITAL_MASTER_DATA_UPDATE",
-        details: {
-          changes: payload,
-          updated_by: session.email || session.userId,
-          timestamp: new Date().toISOString(),
-        },
-      });
-    } catch (auditErr) {
-      console.warn("Audit log insert warning:", auditErr);
-    }
-
+    // 2. Fetch and return committed master profile
     return await getHospitalMasterDataAction();
   } catch (err) {
     return {
