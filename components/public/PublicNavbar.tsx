@@ -38,10 +38,10 @@ export function PublicNavbar() {
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center space-x-4">
             {HOSPITAL_METADATA.emergencyHotline ? (
-              <span className="flex items-center text-sky-200">
-                <Phone className="w-3.5 h-3.5 mr-1 text-emerald-400" />
-                Emergency: <strong className="ml-1 text-white">{HOSPITAL_METADATA.emergencyHotline}</strong>
-              </span>
+              <a href={`tel:${HOSPITAL_METADATA.emergencyHotline}`} className="flex items-center text-sky-200 hover:text-white transition">
+                <Phone className="w-3.5 h-3.5 mr-1 text-emerald-400" aria-hidden="true" />
+                Emergency: <strong className="ml-1 text-white hover:underline">{HOSPITAL_METADATA.emergencyHotline}</strong>
+              </a>
             ) : (
               <Link href="/contact" prefetch={false} className="flex items-center text-sky-200 hover:text-white transition">
                 <Phone className="w-3.5 h-3.5 mr-1 text-emerald-400" />
@@ -49,10 +49,10 @@ export function PublicNavbar() {
               </Link>
             )}
             {HOSPITAL_METADATA.ambulanceHotline ? (
-              <span className="hidden sm:flex items-center text-sky-200">
-                <ShieldAlert className="w-3.5 h-3.5 mr-1 text-red-400" />
-                Ambulance: <strong className="ml-1 text-white">{HOSPITAL_METADATA.ambulanceHotline}</strong>
-              </span>
+              <a href={`tel:${HOSPITAL_METADATA.ambulanceHotline}`} className="hidden sm:flex items-center text-sky-200 hover:text-white transition">
+                <ShieldAlert className="w-3.5 h-3.5 mr-1 text-red-400" aria-hidden="true" />
+                Ambulance: <strong className="ml-1 text-white hover:underline">{HOSPITAL_METADATA.ambulanceHotline}</strong>
+              </a>
             ) : null}
           </div>
           <div className="flex items-center space-x-4">
@@ -91,7 +91,7 @@ export function PublicNavbar() {
           </Link>
 
           {/* Desktop Links */}
-          <nav className="hidden lg:flex items-center space-x-1">
+          <nav className="hidden lg:flex items-center space-x-1" aria-label="Main Navigation">
             {navLinks.map((link) => {
               const active = pathname === link.href;
               return (
@@ -99,6 +99,7 @@ export function PublicNavbar() {
                   key={link.href}
                   href={link.href}
                   prefetch={false}
+                  aria-current={active ? "page" : undefined}
                   className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors ${
                     active
                       ? "text-sky-700 bg-sky-50 font-semibold"
@@ -163,6 +164,7 @@ export function PublicNavbar() {
                 href={link.href}
                 prefetch={false}
                 onClick={() => setMobileOpen(false)}
+                aria-current={active ? "page" : undefined}
                 className={`block px-3 py-2.5 rounded-lg text-base font-medium transition ${
                   active
                     ? "text-sky-700 bg-sky-50 font-semibold"

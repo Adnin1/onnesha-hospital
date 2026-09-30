@@ -1,7 +1,7 @@
 # OHMS Next Autonomous Execution Queue
 
 **Document Purpose:** Durable continuation queue for subsequent Antigravity engineering sessions. Allows immediate resumption without redundant re-auditing.  
-**Baseline Release:** `v1.1.25` (Commit `444eccdf75e93bee90054fd8a73cdd110efd9245`)  
+**Baseline Release:** `v1.1.26` (Synchronized with release tag `v1.1.26`)  
 **Canonical Host:** `https://onnesha-hospital.pages.dev`  
 
 ---
@@ -12,9 +12,9 @@
 |:---|:---|:---:|:---|
 | **CSP Directive Verification** | Security Headers | ✅ COMPLETED | Removed `api.resend.com` from `public/_headers` and `docker/nginx.conf` |
 | **Atomic Master Data RPC** | Database Actions | ✅ COMPLETED | Eliminated direct-table fallback in `lib/hospital/actions.ts` |
-| **Google Dynamic Sitemap** | SEO / Search | ✅ COMPLETED | Configured dynamic build-time `buildLastModified` in `app/sitemap.ts` |
-| **Manifest Version Alignment** | Versioning | ✅ COMPLETED | Synchronized version `1.1.25` across all 6 manifests |
-| **Discrepancy Reconciliation** | Documentation | ✅ COMPLETED | Aligned test runner count to 95 suites / 840 passes in certification docs |
+| **Authoritative Per-Route Sitemap** | SEO / Search | ✅ COMPLETED | Configured per-route static modification dates in `app/sitemap.ts` |
+| **Manifest Version Alignment** | Versioning | ✅ COMPLETED | Synchronized version `1.1.26` across all 6 manifests |
+| **Content Truth & Nav Hardening** | Public UI & UX | ✅ COMPLETED | Removed 24/7 & PDPA claims, added `tel:` links & ARIA accessibility |
 | **CI Staging Secret Injection** | GitHub Actions | 🟡 BLOCKED (External) | Owner must inject `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SERVICE_ROLE_KEY` |
 | **Tauri Windows MSI Artifact** | Desktop Release | 🟡 BLOCKED (CI Dependency)| Automated compilation triggers upon green staging gate in CI |
 

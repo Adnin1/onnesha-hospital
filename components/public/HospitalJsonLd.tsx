@@ -6,8 +6,8 @@ export function HospitalJsonLd() {
   const structuredData: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Hospital",
-    "name": HOSPITAL_METADATA.name,
-    "alternateName": HOSPITAL_METADATA.banglaName,
+    "name": SITE_CONFIG.name,
+    "alternateName": [HOSPITAL_METADATA.name, HOSPITAL_METADATA.banglaName],
     "url": SITE_CONFIG.canonicalUrl,
     "logo": `${SITE_CONFIG.canonicalUrl}/logo.png`,
     "hasOfferCatalog": {

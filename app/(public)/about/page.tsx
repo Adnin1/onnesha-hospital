@@ -76,13 +76,13 @@ export default function AboutPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             {[
-              "Central Oxygen Supply System",
-              "Sterile Operating Theatre Environment",
-              "Automated Biochemistry Analyzers",
-              "Digital Radiography Equipment",
-              "Hematology Laboratory",
+              "Clinical Oxygen Support Facilities",
+              "Clinical Procedure & Minor Surgery Suites",
+              "Diagnostic Biochemistry & Pathology",
+              "Digital Radiography & Imaging Support",
+              "Hematology Laboratory Services",
               "Ultrasonography Services",
-              "Standby Generator Power Backup",
+              "Emergency Standby Power Backup",
               "Dedicated Inpatient Nursing Care",
             ].map((fac, idx) => (
               <div key={idx} className="flex items-center space-x-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
@@ -105,7 +105,7 @@ export default function AboutPage() {
               </h2>
             </div>
             <div className="text-xs bg-slate-100 text-slate-700 font-medium px-3 py-1.5 rounded-lg border border-slate-200">
-              Enterprise HIS / EMR Cloud Tier
+              Integrated Digital HMS Platform
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-600 leading-relaxed">

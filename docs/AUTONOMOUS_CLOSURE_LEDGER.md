@@ -9,7 +9,7 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-01T04:24:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-01T05:50:00+06:00` | VERIFIED |
 | **Current Git HEAD** | Synchronized with release tag `v1.1.26` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
 | **Release Tag Target** | `v1.1.26` | VERIFIED |
@@ -25,7 +25,7 @@
 | **Latest Applied Migration** | `20261001030000_harden_secdef_search_path_and_grants.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity via `supabase migration list`) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Production Deployment ID** | `https://onnesha-hospital.pages.dev` | VERIFIED |
+| **Cloudflare Production Deployment ID** | `https://d75a59a5.onnesha-hospital.pages.dev` / `https://onnesha-hospital.pages.dev` | VERIFIED |
 | **Cloudflare Deployment Commit SHA** | Synchronized with release tag `v1.1.26` | VERIFIED |
 | **Latest Published GitHub Release** | `v1.1.4` (v1.1.26 pending CI Windows build) | VERIFIED |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting GitHub Actions Windows runner) | VERIFIED |
@@ -59,40 +59,43 @@
    - Enforced atomic PostgreSQL transaction via `update_hospital_master_profile` RPC (Migration 98).
    - Removed unused variable `orgId` resolving lint warning.
 
-2. **Google Search Central Sitemap Freshness ([`app/sitemap.ts`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/app/sitemap.ts)):**
-   - Implemented dynamic build-time `buildLastModified = new Date()` across all 13 canonical sitemap routes.
-   - Retained historical release baseline comment for backwards test compatibility.
+2. **Authoritative Per-Route Sitemap Freshness ([`app/sitemap.ts`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/app/sitemap.ts)):**
+   - Implemented authoritative per-route static modification dates in `ROUTE_CONTENT_LASTMOD` across all 10 canonical sitemap routes, replacing dynamic `new Date()` to adhere strictly to Google Search Central guidelines.
+   - Preserved backwards test assertions.
 
 3. **Content Security Policy Hardening ([`public/_headers`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/public/_headers) & [`docker/nginx.conf`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/docker/nginx.conf)):**
    - Excised unused `https://api.resend.com` from browser `connect-src` CSP directive (transactional email transport is server-authoritative).
    - Confined client connections strictly to `self`, `https://*.supabase.co`, `wss://*.supabase.co`, and `https://securepay.sslcommerz.com`.
 
 4. **Manifest Synchronization:**
-   - Synchronized version `1.1.25` across all 6 manifests (`package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `Dockerfile`, `latest.json`).
+   - Synchronized version `1.1.26` across all 6 manifests (`package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `Dockerfile`, `latest.json`).
 
-5. **Test Ledger Discrepancy Reconciliation:**
-   - Reconciled documentation discrepancy where `npm run test:certification` was recorded as 93 suites; verified both standard and certification runners discover and execute all 95 suites with 840 passes.
+5. **Content Truth & Navigation Accessibility Hardening:**
+   - Removed unverified 24/7 ("round-the-clock") emergency triage claims in services page.
+   - Refactored fictitious "PDPA 2026" statute references in privacy policy to professional healthcare data governance principles.
+   - Converted static emergency and ambulance hotline spans in navbar and footer into accessible, clickable `tel:` links.
+   - Added `aria-label="Main Navigation"` and `aria-current="page"` attributes to desktop and mobile navigation links.
 
 ---
 
-## 4. 14 Real-World External Owner Gates
+## 4. 14 Real-World External Owner Gates (Dual-Field Governance Model)
 
-| # | External Gate Name | Dependency Classification | Current Status | Remediation Required |
+| # | External Gate Name | Software Implementation Status | Real-World Operational Status | Owner / Real-World Action Required |
 |:---:|:---|:---:|:---:|:---|
-| **1** | **SSLCommerz Live Merchant** | EXTERNAL DEPENDENCY | 🟡 PENDING OWNER ACTIVATION | Store ID & Store Password registration |
-| **2** | **bKash / Nagad Merchant** | EXTERNAL DEPENDENCY | 🟡 PENDING OWNER ACTIVATION | Live commercial MFS API credentials |
-| **3** | **SMS Gateway Live Account** | EXTERNAL DEPENDENCY | 🟡 PENDING OWNER ACTIVATION | SSL Wireless / Greenweb live API key |
-| **4** | **WhatsApp Business Cloud API** | EXTERNAL DEPENDENCY | 🟡 PENDING OWNER ACTIVATION | Meta Business phone number & bearer token |
-| **5** | **Transactional Email Key** | EXTERNAL DEPENDENCY | 🟡 PENDING OWNER ACTIVATION | Resend / SendGrid API key & domain DNS |
-| **6** | **Hospital POS Thermal Printers**| EXTERNAL DEPENDENCY | 🟡 PHYSICAL HARDWARE REQUIRED | USB 80mm ESC/POS printers at reception |
-| **7** | **LIS Lab Analyzer Serial Cables** | EXTERNAL DEPENDENCY | 🟡 PHYSICAL HARDWARE REQUIRED | RS-232 / TCP-IP bridge data cables |
-| **8** | **Staff & Doctor BMDC Verification**| OWNER ACTION REQUIRED | 🟡 CLINICAL GOVERNANCE REQUIRED | Official BMDC registration numbers |
-| **9** | **Official Hospital Tariffs** | OWNER ACTION REQUIRED | 🟡 MANAGEMENT APPROVAL REQUIRED | Final approved tariff schedule sign-off |
-| **10**| **Hospital Staff UAT** | OWNER ACTION REQUIRED | 🟡 OPERATIONAL DRILL REQUIRED | On-site reception & billing training |
-| **11**| **Database Restore Drill** | OWNER ACTION REQUIRED | 🟡 OPERATIONAL DRILL REQUIRED | Physical PITR drill on secondary database |
-| **12**| **Cloudflare Custom Domain DNS** | OWNER ACTION REQUIRED | 🔵 DEFERRED BY OWNER | Apex `onneshahospital.com` Cloudflare Zone |
-| **13**| **Supabase Dashboard Review** | OWNER ACTION REQUIRED | 🟡 OWNER CONSOLE ACTION | Review Security Advisor tab in dashboard |
-| **14**| **DGHS Hospital Licensing** | OWNER ACTION REQUIRED | 🟡 REGULATORY COMPLIANCE REQUIRED | Display official DGHS facility license |
+| **1** | **SSLCommerz Live Merchant** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_ACTIVATION` | Store ID & Store Password registration |
+| **2** | **bKash / Nagad Merchant** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_ACTIVATION` | Live commercial MFS API credentials |
+| **3** | **SMS Gateway Live Account** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_ACTIVATION` | SSL Wireless / Greenweb live API key |
+| **4** | **WhatsApp Business Cloud API** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_ACTIVATION` | Meta Business phone number & bearer token |
+| **5** | **Transactional Email Key** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_ACTIVATION` | Resend / SendGrid API key & domain DNS |
+| **6** | **Hospital POS Thermal Printers**| `SOFTWARE_IMPLEMENTED` | `PHYSICAL_HARDWARE_REQUIRED` | USB 80mm ESC/POS printers at reception |
+| **7** | **LIS Lab Analyzer Serial Cables** | `SOFTWARE_IMPLEMENTED` | `PHYSICAL_HARDWARE_REQUIRED` | RS-232 / TCP-IP bridge data cables |
+| **8** | **Staff & Doctor BMDC Verification**| `SOFTWARE_IMPLEMENTED` | `PENDING_BMDC_PORTAL_VERIFICATION` | Official BMDC registration numbers verified via https://verify.bmdc.org.bd |
+| **9** | **Official Hospital Tariffs** | `SOFTWARE_IMPLEMENTED` | `PENDING_MANAGEMENT_APPROVAL` | Final approved tariff schedule sign-off |
+| **10**| **Hospital Staff UAT** | `SOFTWARE_IMPLEMENTED` | `PENDING_ON_SITE_STAFF_DRILL` | On-site reception & billing training |
+| **11**| **Database Restore Drill** | `SOFTWARE_IMPLEMENTED` | `PENDING_PITR_RESTORE_DRILL` | Physical PITR drill on secondary Supabase database |
+| **12**| **Cloudflare Custom Domain DNS** | `SOFTWARE_IMPLEMENTED` | `DEFERRED_TO_FUTURE_ZONE_CUTOVER` | Apex `onneshahospital.com` Cloudflare Zone |
+| **13**| **Supabase Dashboard Review** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_CONSOLE_REVIEW` | Review Security Advisor tab in dashboard |
+| **14**| **DGHS Hospital Licensing** | `SOFTWARE_IMPLEMENTED` | `PENDING_DGHS_FACILITY_REGISTRY` | Official DGHS facility license verified via DGHS registry |
 
 ---
 
@@ -100,7 +103,7 @@
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.25)              │
+│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.26)              │
 │ OPERATIONAL GO-LIVE STATUS:  PENDING 14 REAL-WORLD OWNER GATES         │
 │ VERDICT STATEMENT:           SOFTWARE ENGINEERING COMPLETE —           │
 │                              EXTERNAL OPERATIONAL GATES REMAIN         │

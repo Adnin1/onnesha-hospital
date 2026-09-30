@@ -57,7 +57,7 @@ export function PublicFooter() {
               </li>
               <li>
                 <Link href="/privacy" prefetch={false} className="hover:text-sky-400 transition">
-                  Privacy Policy (PDPA 2026)
+                  Privacy Policy &amp; Data Security
                 </Link>
               </li>
               <li>
@@ -112,20 +112,26 @@ export function PublicFooter() {
               )}
               {HOSPITAL_METADATA.phone && (
                 <li className="flex items-center">
-                  <Phone className="w-4 h-4 mr-2 text-emerald-400 shrink-0" />
-                  <span>Hotline: {HOSPITAL_METADATA.phone}</span>
+                  <Phone className="w-4 h-4 mr-2 text-emerald-400 shrink-0" aria-hidden="true" />
+                  <a href={`tel:${HOSPITAL_METADATA.phone}`} className="hover:text-white hover:underline transition">
+                    Hotline: {HOSPITAL_METADATA.phone}
+                  </a>
                 </li>
               )}
               {HOSPITAL_METADATA.ambulanceHotline && (
                 <li className="flex items-center">
-                  <Phone className="w-4 h-4 mr-2 text-red-400 shrink-0" />
-                  <span>Ambulance: {HOSPITAL_METADATA.ambulanceHotline}</span>
+                  <Phone className="w-4 h-4 mr-2 text-red-400 shrink-0" aria-hidden="true" />
+                  <a href={`tel:${HOSPITAL_METADATA.ambulanceHotline}`} className="hover:text-white hover:underline transition">
+                    Ambulance: {HOSPITAL_METADATA.ambulanceHotline}
+                  </a>
                 </li>
               )}
               {HOSPITAL_METADATA.email && (
                 <li className="flex items-center">
-                  <Mail className="w-4 h-4 mr-2 text-sky-400 shrink-0" />
-                  <span>{HOSPITAL_METADATA.email}</span>
+                  <Mail className="w-4 h-4 mr-2 text-sky-400 shrink-0" aria-hidden="true" />
+                  <a href={`mailto:${HOSPITAL_METADATA.email}`} className="hover:text-white hover:underline transition">
+                    {HOSPITAL_METADATA.email}
+                  </a>
                 </li>
               )}
             </ul>

@@ -25,7 +25,7 @@ export default function ServicesPage() {
             Comprehensive Hospital & Laboratory Services
           </h1>
           <p className="text-sm text-slate-600 mt-2">
-            Modern diagnostic imaging, automated pathology investigations, inpatient wards, and round-the-clock emergency casualty triage.
+            Modern diagnostic imaging, automated pathology investigations, inpatient wards, and emergency casualty triage with acute care stabilization.
           </p>
         </div>
 
@@ -33,7 +33,7 @@ export default function ServicesPage() {
         <div className="mb-14">
           <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center">
             <Activity className="w-5 h-5 mr-2 text-sky-600" />
-            Specialized Hospital Departments & Inpatient Units
+            Core Clinical Hospital Departments & Inpatient Units
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

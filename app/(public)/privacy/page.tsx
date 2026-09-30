@@ -4,11 +4,11 @@ import { HOSPITAL_METADATA } from "@/config/hospital";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Onnesha Hospital",
-  description: "Personal Data Protection and Patient Privacy Policy referencing Bangladesh Personal Data Protection Act 2026 standards.",
+  description: "Patient Privacy Policy and Personal Data Protection principles at Onnesha Hospital & Diagnostic Complex.",
   alternates: { canonical: "/privacy" },
   openGraph: {
     title: "Privacy Policy | Onnesha Hospital",
-    description: "Personal Data Protection and Patient Privacy Policy referencing Bangladesh Personal Data Protection Act 2026 standards.",
+    description: "Patient Privacy Policy and Personal Data Protection principles at Onnesha Hospital & Diagnostic Complex.",
     url: "/privacy",
     type: "website",
   },
@@ -30,7 +30,7 @@ export default function PrivacyPage() {
             Privacy Policy & Data Security
           </h1>
           <p className="text-xs text-slate-600 mt-2">
-            Referencing the statutory standards of the Bangladesh Personal Data Protection Act 2026
+            Guided by international healthcare data governance principles and patient confidentiality best practices.
           </p>
         </div>
 
@@ -79,10 +79,10 @@ export default function PrivacyPage() {
           <section className="space-y-3">
             <div className="flex items-center gap-3 text-sky-700">
               <Eye className="w-5 h-5 shrink-0" />
-              <h2 className="text-lg font-bold text-slate-900">3. Patient Data Rights (Personal Data Protection Act 2026)</h2>
+              <h2 className="text-lg font-bold text-slate-900">3. Patient Data Rights (Bangladesh Personal Data Protection Act Framework)</h2>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Under the statutory provisions of the Bangladesh Personal Data Protection Act 2026, registered patients have the following defined rights:
+              Referencing the provisions and standards of the Bangladesh Personal Data Protection Act framework, registered patients have the following defined rights:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
               <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100">
