@@ -135,12 +135,42 @@ export class BangladeshSmsAdapter implements SmsProviderAdapter {
         };
       }
 
-      // Default or Elitbuzz
+      if (this.config.provider === "elitbuzz") {
+        const url = this.config.apiUrl || "https://msg.elitbuzz-bd.com/smsapi";
+        const queryParams = new URLSearchParams({
+          api_key: this.config.apiToken,
+          type: "text",
+          contacts: internationalNumber,
+          senderid: sender,
+          msg: options.message,
+        });
+        const response = await fetch(`${url}?${queryParams.toString()}`, {
+          method: "GET",
+        });
+
+        const text = await response.text();
+        const trimmedText = text.trim();
+        if (response.ok && trimmedText && !trimmedText.toLowerCase().includes("error") && !trimmedText.toLowerCase().includes("invalid")) {
+          return {
+            success: true,
+            providerName: this.providerName,
+            status: "SENT",
+            providerMessageId: trimmedText.substring(0, 40),
+          };
+        }
+        return {
+          success: false,
+          providerName: this.providerName,
+          status: "FAILED",
+          error: `Elitbuzz SMS failure: ${text}`,
+        };
+      }
+
       return {
-        success: true,
+        success: false,
         providerName: this.providerName,
-        status: "SENT",
-        providerMessageId: `elit_${Date.now()}`,
+        status: "FAILED",
+        error: `Unsupported SMS provider: ${this.config.provider}`,
       };
     } catch (err) {
       return {

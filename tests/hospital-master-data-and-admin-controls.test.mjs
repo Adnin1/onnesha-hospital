@@ -5,7 +5,7 @@ import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
-describe("Approved Hospital Master Data and Super Admin Controls (6 Scenarios)", () => {
+describe("Approved Hospital Master Data, Zero False-Green & Authoritative Release (10 Scenarios)", () => {
   test("1. Canonical config/hospital.ts contains approved hospital credentials", () => {
     const configPath = path.join(ROOT, "config/hospital.ts");
     assert.ok(fs.existsSync(configPath), "config/hospital.ts must exist");
@@ -79,5 +79,48 @@ describe("Approved Hospital Master Data and Super Admin Controls (6 Scenarios)",
     assert.ok(envExample.includes("01718835623"), "Phone env required");
     assert.ok(envExample.includes("01904210065"), "Ambulance env required");
     assert.ok(envExample.includes("aaih.apon@gmail.com"), "Email env required");
+  });
+
+  test("7. lib/hospital/actions.ts handles DB failures fail-closed and validates input formats", () => {
+    const actionsFile = path.join(ROOT, "lib/hospital/actions.ts");
+    const content = fs.readFileSync(actionsFile, "utf8");
+
+    assert.ok(content.includes("orgError"), "Must check org query error");
+    assert.ok(content.includes("settingsError"), "Must check settings query error");
+    assert.ok(content.includes("success: false"), "Must return success: false on DB error");
+    assert.ok(content.includes("Invalid hospital contact email format"), "Must validate email format");
+    assert.ok(content.includes("Invalid emergency hotline number format"), "Must validate emergency hotline format");
+  });
+
+  test("8. Email adapter eliminates fake success and implements real SendGrid/Postmark/Resend calls", () => {
+    const emailAdapterPath = path.join(ROOT, "lib/notifications/adapters/email-adapter.ts");
+    const content = fs.readFileSync(emailAdapterPath, "utf8");
+
+    assert.ok(!content.includes("em_${Date.now()}"), "Must NOT return synthetic fake message id");
+    assert.ok(content.includes("api.resend.com"), "Must call real Resend API");
+    assert.ok(content.includes("api.sendgrid.com"), "Must call real SendGrid API");
+    assert.ok(content.includes("api.postmarkapp.com"), "Must call real Postmark API");
+    assert.ok(content.includes("Unsupported email provider"), "Must fail closed on unsupported provider");
+  });
+
+  test("9. SMS adapter eliminates fake success and implements real Elitbuzz/SSL/Greenweb calls", () => {
+    const smsAdapterPath = path.join(ROOT, "lib/notifications/adapters/sms-adapter.ts");
+    const content = fs.readFileSync(smsAdapterPath, "utf8");
+
+    assert.ok(!content.includes("elit_${Date.now()}"), "Must NOT return synthetic fake message id");
+    assert.ok(content.includes("msg.elitbuzz-bd.com"), "Must call real Elitbuzz API");
+    assert.ok(content.includes("smsplus.sslwireless.com"), "Must call real SSL Wireless API");
+    assert.ok(content.includes("api.greenweb.com.bd"), "Must call real Greenweb API");
+    assert.ok(content.includes("Unsupported SMS provider"), "Must fail closed on unsupported provider");
+  });
+
+  test("10. Public desktop download page has zero stale v1.1.8 strings and derives version authoritatively", () => {
+    const pagePath = path.join(ROOT, "app/(public)/downloads/desktop/page.tsx");
+    const content = fs.readFileSync(pagePath, "utf8");
+
+    assert.doesNotMatch(content, /verifiedReleaseVersion\s*=\s*"1\.1\.8"/, "Must NOT contain hardcoded v1.1.8");
+    assert.ok(content.includes("latestManifest.artifact_status"), "Must check latestManifest.artifact_status");
+    assert.ok(content.includes("CURRENT DESKTOP BUILD:"), "Must display current build status");
+    assert.ok(content.includes("Historical Verified Release"), "Must provide historical verified release link");
   });
 });

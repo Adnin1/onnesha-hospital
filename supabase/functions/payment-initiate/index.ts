@@ -239,9 +239,21 @@ serve(async (req: Request) => {
     // 6. SSLCommerz Live / Sandbox Gateway Execution
     if (normalizedProvider === "SSLCOMMERZ") {
       const creds = (integ.encrypted_credentials || {}) as Record<string, string>;
-      const storeId = creds.store_id || Deno.env.get("SSLCOMMERZ_STORE_ID") || "testbox";
-      const storePassword = creds.store_passwd || creds.store_password || Deno.env.get("SSLCOMMERZ_STORE_PASSWD") || "qwerty";
-      const isSandbox = integ.environment === "sandbox" || Deno.env.get("SSLCOMMERZ_IS_SANDBOX") === "true" || storeId === "testbox";
+      const storeId = creds.store_id || Deno.env.get("SSLCOMMERZ_STORE_ID");
+      const storePassword = creds.store_passwd || creds.store_password || Deno.env.get("SSLCOMMERZ_STORE_PASSWD");
+
+      if (!storeId || !storePassword) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            status: "NOT_CONFIGURED",
+            error: "SSLCommerz credentials missing. Please configure STORE_ID and STORE_PASSWORD in organization integrations or environment.",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const isSandbox = integ.environment === "sandbox" || Deno.env.get("SSLCOMMERZ_IS_SANDBOX") === "true";
       const baseUrl = isSandbox ? "https://sandbox.sslcommerz.com" : "https://securepay.sslcommerz.com";
       const siteUrl = (Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://onnesha-hospital.pages.dev").replace(/\/$/, "");
       const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "https://iuhtzahuszdkdarhxobx.supabase.co").replace(/\/$/, "");
@@ -259,11 +271,11 @@ serve(async (req: Request) => {
         cancel_url: `${siteUrl}/app/billing?payment_status=cancel&tran_id=${intentReference}`,
         ipn_url: `${supabaseUrl}/functions/v1/payment-callback`,
         cus_name: "Patient",
-        cus_email: "billing@onnesha-hospital.pages.dev",
-        cus_add1: "Hospital Reception",
-        cus_city: "Dhaka",
+        cus_email: "aaih.apon@gmail.com",
+        cus_add1: "সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া",
+        cus_city: "Bogura",
         cus_country: "Bangladesh",
-        cus_phone: "01700000000",
+        cus_phone: "01718835623",
         shipping_method: "NO",
         product_name: `Invoice #${invoice.invoice_number}`,
         product_category: "Healthcare",

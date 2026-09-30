@@ -1,8 +1,9 @@
 /**
  * Transactional Email Provider Adapter
  * 
- * Supports compliant transactional email delivery (Resend, SendGrid).
+ * Supports compliant transactional email delivery (Resend, SendGrid, Postmark).
  * Enforces HTML sanitization and safe portal links without PHI leakage.
+ * Fails closed with explicit error if provider is unconfigured or returns HTTP error.
  */
 
 import { EmailProviderAdapter, ProviderSendResult } from "../types";
@@ -106,12 +107,87 @@ export class TransactionalEmailAdapter implements EmailProviderAdapter {
         };
       }
 
-      // Default or SendGrid
+      if (this.config.provider === "sendgrid") {
+        const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.config.apiKey}`,
+          },
+          body: JSON.stringify({
+            personalizations: [{ to: [{ email: options.recipientEmail }] }],
+            from: {
+              email: options.fromEmail || this.config.fromEmail || "aaih.apon@gmail.com",
+              name: this.config.fromName || "Onnesha Hospital",
+            },
+            subject: options.subject,
+            content: [
+              {
+                type: "text/html",
+                value: options.htmlBody,
+              },
+            ],
+          }),
+        });
+
+        if (res.status === 202 || res.status === 200) {
+          const msgId = res.headers.get("x-message-id") || `sg_${Date.now()}`;
+          return {
+            success: true,
+            providerName: this.providerName,
+            status: "SENT",
+            providerMessageId: msgId,
+          };
+        }
+
+        const errText = await res.text();
+        return {
+          success: false,
+          providerName: this.providerName,
+          status: "FAILED",
+          error: `SendGrid HTTP error ${res.status}: ${errText}`,
+        };
+      }
+
+      if (this.config.provider === "postmark") {
+        const res = await fetch("https://api.postmarkapp.com/email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Postmark-Server-Token": this.config.apiKey,
+          },
+          body: JSON.stringify({
+            From: fromAddress,
+            To: options.recipientEmail,
+            Subject: options.subject,
+            HtmlBody: options.htmlBody,
+            TextBody: options.textBody,
+          }),
+        });
+
+        const data = (await res.json()) as { MessageID?: string; Message?: string; ErrorCode?: number };
+        if (res.ok && data.MessageID) {
+          return {
+            success: true,
+            providerName: this.providerName,
+            status: "SENT",
+            providerMessageId: data.MessageID,
+          };
+        }
+
+        return {
+          success: false,
+          providerName: this.providerName,
+          status: "FAILED",
+          error: data.Message || `Postmark HTTP error ${res.status}`,
+        };
+      }
+
       return {
-        success: true,
+        success: false,
         providerName: this.providerName,
-        status: "SENT",
-        providerMessageId: `em_${Date.now()}`,
+        status: "FAILED",
+        error: `Unsupported email provider: ${this.config.provider}`,
       };
     } catch (err) {
       return {

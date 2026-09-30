@@ -6,6 +6,8 @@
  *
  * Strictly role-gated: only Super Admin, Hospital Administrator, or Admin
  * can edit, modify, or update hospital master data.
+ *
+ * Database failures fail closed and return success: false with clear diagnostics.
  */
 
 import { createClient } from "@/lib/supabase/client";
@@ -46,17 +48,33 @@ export async function getHospitalMasterDataAction(): Promise<{
 }> {
   try {
     const supabase = createClient();
-    const { data: org } = await supabase
+    const { data: org, error: orgError } = await supabase
       .from("organizations")
       .select("id, name, code, phone, email, address, updated_at")
       .eq("id", HOSPITAL_METADATA.id)
       .maybeSingle();
 
-    const { data: settings } = await supabase
+    if (orgError) {
+      return {
+        success: false,
+        error: `Database query failed for organizations: ${orgError.message}`,
+        data: APPROVED_HOSPITAL_DATA,
+      };
+    }
+
+    const { data: settings, error: settingsError } = await supabase
       .from("organization_settings")
       .select("emergency_hotline, ambulance_hotline")
       .eq("organization_id", HOSPITAL_METADATA.id)
       .maybeSingle();
+
+    if (settingsError) {
+      return {
+        success: false,
+        error: `Database query failed for organization_settings: ${settingsError.message}`,
+        data: APPROVED_HOSPITAL_DATA,
+      };
+    }
 
     return {
       success: true,
@@ -74,9 +92,10 @@ export async function getHospitalMasterDataAction(): Promise<{
         updatedAt: org?.updated_at || new Date().toISOString(),
       },
     };
-  } catch {
+  } catch (err) {
     return {
-      success: true,
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to retrieve hospital master data from database",
       data: APPROVED_HOSPITAL_DATA,
     };
   }
@@ -101,37 +120,75 @@ export async function updateHospitalMasterDataAction(payload: Partial<HospitalMa
       };
     }
 
+    // Input format validation
+    if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email.trim())) {
+      return { success: false, error: "Invalid hospital contact email format" };
+    }
+    if (payload.phone && !/^[0-9+() -]{6,20}$/.test(payload.phone.trim())) {
+      return { success: false, error: "Invalid hospital reception phone number format" };
+    }
+    if (payload.emergencyHotline && !/^[0-9+() -]{6,20}$/.test(payload.emergencyHotline.trim())) {
+      return { success: false, error: "Invalid emergency hotline number format" };
+    }
+    if (payload.ambulanceHotline && !/^[0-9+() -]{6,20}$/.test(payload.ambulanceHotline.trim())) {
+      return { success: false, error: "Invalid ambulance hotline number format" };
+    }
+
     const orgId = session.organizationId || HOSPITAL_METADATA.id;
     const supabase = createClient();
 
-    // 1. Update organizations table
-    const orgUpdate: Record<string, string> = { updated_at: new Date().toISOString() };
-    if (payload.name && payload.name.trim()) orgUpdate.name = payload.name.trim();
-    if (payload.phone && payload.phone.trim()) orgUpdate.phone = payload.phone.trim();
-    if (payload.email && payload.email.trim()) orgUpdate.email = payload.email.trim();
-    if (payload.address && payload.address.trim()) orgUpdate.address = payload.address.trim();
+    // 1. Try atomic PostgreSQL RPC update
+    let rpcSucceeded = false;
+    try {
+      const { error: rpcErr } = await supabase.rpc("update_hospital_master_profile", {
+        p_name: payload.name?.trim() || null,
+        p_address: payload.address?.trim() || null,
+        p_phone: payload.phone?.trim() || null,
+        p_emergency_hotline: payload.emergencyHotline?.trim() || null,
+        p_ambulance_hotline: payload.ambulanceHotline?.trim() || null,
+        p_email: payload.email?.trim() || null,
+      });
 
-    const { error: orgErr } = await supabase
-      .from("organizations")
-      .update(orgUpdate)
-      .eq("id", orgId);
-
-    if (orgErr) {
-      return { success: false, error: `Failed to update hospital organization: ${orgErr.message}` };
+      if (!rpcErr) {
+        rpcSucceeded = true;
+      }
+    } catch {
+      rpcSucceeded = false;
     }
 
-    // 2. Update organization_settings table
-    const settingsUpdate: Record<string, string> = { updated_at: new Date().toISOString() };
-    if (payload.emergencyHotline && payload.emergencyHotline.trim()) {
-      settingsUpdate.emergency_hotline = payload.emergencyHotline.trim();
-    }
-    if (payload.ambulanceHotline && payload.ambulanceHotline.trim()) {
-      settingsUpdate.ambulance_hotline = payload.ambulanceHotline.trim();
-    }
+    // 2. Direct tables fallback if RPC not installed
+    if (!rpcSucceeded) {
+      const orgUpdate: Record<string, string> = { updated_at: new Date().toISOString() };
+      if (payload.name && payload.name.trim()) orgUpdate.name = payload.name.trim();
+      if (payload.phone && payload.phone.trim()) orgUpdate.phone = payload.phone.trim();
+      if (payload.email && payload.email.trim()) orgUpdate.email = payload.email.trim();
+      if (payload.address && payload.address.trim()) orgUpdate.address = payload.address.trim();
 
-    await supabase
-      .from("organization_settings")
-      .upsert({ organization_id: orgId, ...settingsUpdate }, { onConflict: "organization_id" });
+      const { error: orgErr } = await supabase
+        .from("organizations")
+        .update(orgUpdate)
+        .eq("id", orgId);
+
+      if (orgErr) {
+        return { success: false, error: `Failed to update hospital organization: ${orgErr.message}` };
+      }
+
+      const settingsUpdate: Record<string, string> = { updated_at: new Date().toISOString() };
+      if (payload.emergencyHotline && payload.emergencyHotline.trim()) {
+        settingsUpdate.emergency_hotline = payload.emergencyHotline.trim();
+      }
+      if (payload.ambulanceHotline && payload.ambulanceHotline.trim()) {
+        settingsUpdate.ambulance_hotline = payload.ambulanceHotline.trim();
+      }
+
+      const { error: setErr } = await supabase
+        .from("organization_settings")
+        .upsert({ organization_id: orgId, ...settingsUpdate }, { onConflict: "organization_id" });
+
+      if (setErr) {
+        return { success: false, error: `Failed to update hospital settings: ${setErr.message}` };
+      }
+    }
 
     // 3. Log audit event
     try {
@@ -146,8 +203,8 @@ export async function updateHospitalMasterDataAction(payload: Partial<HospitalMa
           timestamp: new Date().toISOString(),
         },
       });
-    } catch {
-      // Non-blocking audit log
+    } catch (auditErr) {
+      console.warn("Audit log insert warning:", auditErr);
     }
 
     return await getHospitalMasterDataAction();

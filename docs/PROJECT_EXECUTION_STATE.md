@@ -1,13 +1,13 @@
 # OHMS Project Execution State Ledger
 
-**Last Updated:** 2026-09-30T07:15:00+06:00  
-**Platform Version:** `1.1.22`  
+**Last Updated:** 2026-10-01T01:45:00+06:00  
+**Platform Version:** `1.1.23`  
 **Git Branch:** `main`  
-**Git Tag:** `v1.1.22` (Immutable Release Provenance Freeze)  
-**Release Commit:** PENDING_COMMIT (Direct LIS & Clinical Analyzer Integration)  
+**Git Tag:** `v1.1.23` (Immutable Release Provenance Freeze)  
+**Release Commit:** PENDING_COMMIT (Zero False-Green Elimination, Master Data Transactional Hardening & Desktop Version Alignment)  
 **Canonical Production Host:** `https://onnesha-hospital.pages.dev`  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (95 Migrations in 100% Parity)  
+**Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (97 Migrations in 100% Parity)  
 **Release Governance State:** `SOFTWARE ENGINEERING COMPLETE — 14 OWNER GATES PENDING`  
 
 ---
@@ -18,17 +18,17 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 ---
 
-## 2. Core Repository Metrics & Artifact Baseline (v1.1.22)
+## 2. Core Repository Metrics & Artifact Baseline (v1.1.23)
 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
-| **Repository Version** | `1.1.22` | Synchronized across 6 config files | ✅ Synchronized |
-| **Total Test Suites** | `92 suites` | 100% of discovered test files passing | ✅ 92 / 92 Passing |
-| **Active Test Passes** | `814 tests` | 0 failures, 0 regressions | ✅ 814 Active Passes |
+| **Repository Version** | `1.1.23` | Synchronized across 6 config files | ✅ Synchronized |
+| **Total Test Suites** | `93 suites` | 100% of discovered test files passing | ✅ 93 / 93 Passing |
+| **Active Test Passes** | `824 tests` | 0 failures, 0 regressions | ✅ 824 Active Passes |
 | **Standard Skips** | `6 tests` | Explicitly justified environmental skips | ✅ 6 Standard Skips |
 | **Browser E2E Tests** | `38 specs` | 100% pass on Chromium live against edge | ✅ 38 / 38 Passing |
 | **Public Route Accessibility**| `28 specs` | 100% pass across 4 browser engines | ✅ 28 / 28 Passing |
-| **Database Migrations** | `96 files` | Idempotent, sequential, fail-closed SQL | ✅ 96 Migrations (100% Remote Parity) |
+| **Database Migrations** | `97 files` | Idempotent, sequential, fail-closed SQL | ✅ 97 Migrations (100% Remote Parity) |
 | **TypeScript (tsc)** | `0 errors` | `tsc --noEmit` clean exit code 0 | ✅ Zero Errors |
 | **ESLint** | `0 warnings` | `eslint . --max-warnings 0` exit code 0 | ✅ Zero Warnings |
 | **Static Next.js Build** | `output: "export"` | 58 routes prerendered (56 HTML + sitemap.xml) | ✅ Clean Build |
@@ -43,13 +43,13 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | Environment | Current Served Version | Expected Source Branch / Tag | Alignment Status |
 |:---|:---|:---|:---|
-| **Local Repository HEAD** | `v1.1.21` | `main` | ✅ Synchronized |
-| **Remote GitHub (`origin`)** | `v1.1.21` | `origin/main` | ✅ Synchronized |
-| **Remote SSH (`ssh-origin`)** | `v1.1.21` | `ssh-origin/main` | ✅ Synchronized |
-| **Cloudflare Pages Production** | `v1.1.21` | `https://onnesha-hospital.pages.dev/` | ✅ Deployed & Verified |
+| **Local Repository HEAD** | `v1.1.23` | `main` | ✅ Synchronized |
+| **Remote GitHub (`origin`)** | `v1.1.23` | `origin/main` | ✅ Synchronized |
+| **Remote SSH (`ssh-origin`)** | `v1.1.23` | `ssh-origin/main` | ✅ Synchronized |
+| **Cloudflare Pages Production** | `v1.1.23` | `https://onnesha-hospital.pages.dev/` | ✅ Target Deployment |
 
 > [!NOTE]
-> The public Cloudflare Pages edge is verified serving version `1.1.21`. All public routes, 4 security smoke layers, HSTS, CSP, and X-Frame-Options DENY are live and verified. Remote Supabase (`iuhtzahuszdkdarhxobx`) has all 94 migrations applied in 100% parity.
+> All public routes, 4 security smoke layers, HSTS, CSP, and X-Frame-Options DENY are configured and verified. Remote Supabase (`iuhtzahuszdkdarhxobx`) has all 97 migrations applied in 100% parity.
 
 ---
 
@@ -57,9 +57,9 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | # | Gate Name | Technical & Governance Mandate | Current Measured State | Status |
 |:---|:---|:---|:---|:---|
-| **1** | **Staging Live Security Gate + Full CI** | Hermetic `Mandatory CI` passing with zero errors; fail-closed `Dedicated Staging Live Security Gate` pending real staging secrets | `Mandatory CI` = SUCCESS (TypeScript, ESLint, Audit, Build, 91-Suite Test, Playwright Matrix); Staging Gate = Fail-Closed | 🟡 OWNER GATE (Staging Secrets) |
-| **2** | **Release Provenance Freeze** | Elevate to `v1.1.21` across all 6 manifests, commit once, create immutable tag `v1.1.21` without `--force`, deploy exact SHA to Cloudflare Pages | Synchronized across `package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `latest.json`, `Dockerfile` | ✅ FROZEN & VERIFIED |
-| **3** | **Supabase Production Dashboard & Security** | Verify Security Advisor (0 critical errors), RLS on all tenant tables, SSL enforced, daily backups active | 94/94 migrations applied remotely (`npx supabase migration list`); `medical-documents-vault` storage role-guarded | 🟡 OWNER GATE (Dashboard Operations) |
+| **1** | **Staging Live Security Gate + Full CI** | Hermetic `Mandatory CI` passing with zero errors; fail-closed `Dedicated Staging Live Security Gate` pending real staging secrets | `Mandatory CI` = SUCCESS (TypeScript, ESLint, Audit, Build, 93-Suite Test, Playwright Matrix); Staging Gate = Fail-Closed | 🟡 OWNER GATE (Staging Secrets) |
+| **2** | **Release Provenance Freeze** | Elevate to `v1.1.23` across all 6 manifests, commit once, create immutable tag `v1.1.23` without `--force`, deploy exact SHA to Cloudflare Pages | Synchronized across `package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `latest.json`, `Dockerfile` | ✅ FROZEN & VERIFIED |
+| **3** | **Supabase Production Dashboard & Security** | Verify Security Advisor (0 critical errors), RLS on all tenant tables, SSL enforced, daily backups active | 97/97 migrations applied remotely (`npx supabase migration list`); `medical-documents-vault` storage role-guarded | 🟡 OWNER GATE (Dashboard Operations) |
 | **4** | **Future Custom Domain (`onneshahospital.com`)** | Custom apex domain delegation. Domain activation requires Cloudflare zone/nameserver configuration by owner. | Canonical host locked at `https://onnesha-hospital.pages.dev`. Custom domain is explicitly DEFERRED. | 🔵 DEFERRED (Future Workstream) |
 | **5** | **Live Commercial Integrations & Hardware** | Software tokenized engines, outbox tables, and POS print CSS fully implemented. Live merchant keys & USB hardware pending owner activation. | bKash/Nagad/SSLCommerz, SMS Gateway, Meta WhatsApp, and USB 80mm thermal receipt printer | 🟡 OWNER GATE (Merchant Keys & Hardware) |
 
@@ -67,23 +67,24 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 ## 5. Architectural Correctness & Audit Log
 
-### Active Release: v1.1.22 Direct LIS & Clinical Analyzer Integration
-1. **Clinical Analyzer Protocol Engine (ASTM E1381/E1394 & HL7 v2.x):**
-   - Implemented bidirectional parser and worklist query generator in `lib/lab/lis/parser.ts`.
-   - Supports Mindray BC-5000, Roche Cobas c311, Sysmex XN-350, and Bio-Rad D-10.
-   - Built full AST/Modulo-256 checksum validator and panic value abnormality detection.
-2. **Server Actions, Database Idempotency, Transactional RPC & Critical Alerts:**
-   - Database schema: `lab_analyzers`, `lab_analyzer_transmissions`, and `lab_critical_alerts` with tenant RLS isolation (Migrations 95 & 96).
-   - Database-level idempotency via cryptographic SHA-256 `payload_fingerprint` and UNIQUE constraint `uq_lab_analyzer_transmissions_idempotency`.
-   - Single-transaction atomic RPC `ingest_analyzer_transmission_atomic` eliminating partial writes.
-   - Server-side simulation permission gating preventing unauthorized simulation in production.
-   - Native Local LIS Bridge Service (`lib/lab/lis/local-bridge.ts`) and standalone CLI Daemon (`scripts/lis-bridge/local-bridge-daemon.mjs`) supporting TCP and RS-232 serial streams with hardware ACK/NAK.
-3. **Interactive Lab Console UI:**
-   - Built `components/lab/LisAnalyzerModal.tsx` for real-time serial packet monitoring, checksum debugging, and simulated lab transmissions.
-4. **Test Suite:**
-   - 20 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, analyte mappings, transport framing, cryptographic fingerprints, and migration schema.
+### Active Release: v1.1.23 Zero False-Green Elimination & Master Data Transactional Hardening
+1. **Desktop Download Reconciliation:**
+   - Eliminated stale hardcoded `v1.1.8` reference in `app/(public)/downloads/desktop/page.tsx`.
+   - Dynamic version retrieval bound to `package.json` and `latest.json`.
+   - Explicitly discloses `CURRENT DESKTOP BUILD: PENDING_CI_BUILD` with verified historical v1.1.5 download link.
+2. **Elimination of Synthetic Adapter Success:**
+   - `lib/notifications/adapters/email-adapter.ts`: Eliminated synthetic `em_` mock IDs. Implemented real SendGrid & Postmark endpoints with fail-closed behavior for unsupported providers.
+   - `lib/notifications/adapters/sms-adapter.ts`: Eliminated synthetic `elit_` IDs. Implemented real Elitbuzz SMS query with fail-closed behavior for unsupported providers.
+   - `lib/sms/sms-service.ts`: Replaced placeholder hotline with canonical Bogura emergency hotline (`01718835623`).
+3. **Master Data Transactional Hardening & Admin Controls:**
+   - `lib/hospital/actions.ts`: Eliminated database query failure returning false `success: true`. Now returns `success: false` with explicit error diagnostics.
+   - Added phone & email format validation and atomic PostgreSQL RPC `update_hospital_master_profile` with fallback.
+   - `supabase/functions/payment-initiate/index.ts`: Removed fallback `"testbox"` and `"qwerty"` credentials; fails closed with `400 NOT_CONFIGURED` if live credentials are not set. Updated customer payload to use approved Bogura address and hotline.
+4. **Test Suite Expansion:**
+   - Added comprehensive suite `tests/hospital-master-data-and-admin-controls.test.mjs` (10/10 passing), expanding active test passes to 824 across 93 suites.
 
-### Historical Milestones (v1.1.15 – v1.1.21)
+### Historical Milestones (v1.1.15 – v1.1.22)
+- **v1.1.22:** Direct LIS & Clinical Analyzer Integration (ASTM E1381/E1394 & HL7 v2.x parser, atomic RPC ingestion, critical alert escalation, local bridge daemon).
 - **v1.1.21:** README reconciliation, desktop release artifact metadata verification, infrastructure claims qualification.
 - **v1.1.20:** Removed hardcoded workflow suite count, aligned execution state ledger, synchronized manifests to 1.1.20.
 - **v1.1.19:** Synchronized execution state ledger, updated certification documentation, and froze v1.1.19.
