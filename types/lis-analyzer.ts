@@ -1,5 +1,5 @@
 export type AnalyzerProtocol = "ASTM_1394" | "HL7_V2" | "REST_JSON";
-export type AnalyzerStatus = "ONLINE" | "OFFLINE" | "MAINTENANCE" | "BUSY";
+export type AnalyzerStatus = "ONLINE" | "OFFLINE" | "MAINTENANCE" | "BUSY" | "UNCONFIGURED";
 export type AnalyzerConnectionType = "TCP_IP" | "SERIAL_RS232" | "HTTP_WEBHOOK";
 export type AbnormalitySeverity = "NORMAL" | "HIGH" | "LOW" | "CRITICAL_HIGH" | "CRITICAL_LOW";
 
@@ -42,6 +42,7 @@ export interface ParsedAnalyzerMessage {
   results: ParsedAnalyteResult[];
   checksum_valid: boolean;
   raw_frame_count: number;
+  is_simulation?: boolean;
 }
 
 export interface LabAnalyzerTransmission {
@@ -61,9 +62,11 @@ export interface LabAnalyzerTransmission {
     sample_barcode: string;
     instrument_code: string;
     patient_identifier?: string;
+    is_simulation?: boolean;
   };
   status: "RECEIVED" | "PARSED" | "MATCHED" | "APPLIED" | "REJECTED";
   error_message?: string;
+  is_simulation?: boolean;
   created_at: string;
 }
 

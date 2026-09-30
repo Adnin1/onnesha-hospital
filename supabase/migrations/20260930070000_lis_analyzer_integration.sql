@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS lab_analyzers (
     ip_address VARCHAR(50),
     port INT,
     baud_rate INT,
-    status VARCHAR(20) NOT NULL DEFAULT 'ONLINE' CHECK (status IN ('ONLINE', 'OFFLINE', 'MAINTENANCE', 'BUSY')),
+    status VARCHAR(20) NOT NULL DEFAULT 'UNCONFIGURED' CHECK (status IN ('UNCONFIGURED', 'OFFLINE', 'ONLINE', 'MAINTENANCE', 'BUSY')),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     last_heartbeat_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS lab_analyzer_transmissions (
     parsed_results JSONB NOT NULL DEFAULT '{}'::jsonb,
     status VARCHAR(30) NOT NULL DEFAULT 'PARSED' CHECK (status IN ('RECEIVED', 'PARSED', 'MATCHED', 'APPLIED', 'REJECTED')),
     error_message TEXT,
+    is_simulation BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -88,9 +89,9 @@ BEGIN
             'Hematology', 
             'ASTM_1394', 
             'TCP_IP', 
-            '192.168.10.101', 
-            5100, 
-            'ONLINE', 
+            NULL, 
+            NULL, 
+            'UNCONFIGURED', 
             TRUE
         ),
         (
@@ -100,9 +101,9 @@ BEGIN
             'Biochemistry', 
             'HL7_V2', 
             'TCP_IP', 
-            '192.168.10.102', 
-            5200, 
-            'ONLINE', 
+            NULL, 
+            NULL, 
+            'UNCONFIGURED', 
             TRUE
         ),
         (
@@ -114,7 +115,7 @@ BEGIN
             'SERIAL_RS232', 
             NULL, 
             NULL, 
-            'ONLINE', 
+            'UNCONFIGURED', 
             TRUE
         ),
         (
@@ -124,9 +125,9 @@ BEGIN
             'Biochemistry', 
             'ASTM_1394', 
             'TCP_IP', 
-            '192.168.10.104', 
-            5400, 
-            'ONLINE', 
+            NULL, 
+            NULL, 
+            'UNCONFIGURED', 
             TRUE
         )
         ON CONFLICT (organization_id, code) DO NOTHING;

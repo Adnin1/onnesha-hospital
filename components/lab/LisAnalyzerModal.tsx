@@ -12,6 +12,8 @@ import {
   ArrowRight,
   Terminal,
   Activity,
+  ShieldAlert,
+  Info,
 } from "lucide-react";
 import {
   LabAnalyzer,
@@ -53,6 +55,9 @@ export function LisAnalyzerModal({
   const [ingesting, setIngesting] = useState(false);
   const [rawPacket, setRawPacket] = useState<string>("");
   const [lastParsed, setLastParsed] = useState<ParsedAnalyzerMessage | null>(null);
+  const [lastTxId, setLastTxId] = useState<string | null>(null);
+  const [lastIsSimulation, setLastIsSimulation] = useState<boolean>(false);
+  const [lastUnmapped, setLastUnmapped] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"stream" | "devices" | "history">("stream");
 
   useEffect(() => {
@@ -102,17 +107,20 @@ export function LisAnalyzerModal({
     if (res.success && res.data) {
       setRawPacket(res.data.rawPacket);
       setLastParsed(res.data.ingestResult.parsedMessage);
+      setLastTxId(res.data.ingestResult.transmissionId);
+      setLastIsSimulation(true);
+      setLastUnmapped(res.data.ingestResult.unmappedAnalytes || []);
+
       onToast(
-        `সফলভাবে ইনজেস্ট হয়েছে! ${res.data.ingestResult.resultsAppliedCount}টি রেজাল্ট রিপোর্টে সেভ করা হয়েছে।`,
-        "success"
+        `সিমুলেশন সম্পন্ন! ${res.data.ingestResult.parsedMessage.results.length}টি অ্যানালাইট পার্স হয়েছে (কোনো লাইভ ক্লিনিক্যাল ডেটা পরিবর্তন হয়নি)।`,
+        "info"
       );
       if (res.data.ingestResult.panicValuesDetected > 0) {
         onToast(
-          `⚠️ সতর্কতা: ${res.data.ingestResult.panicValuesDetected}টি Critical Panic Value পাওয়া গেছে! অবিলম্বে প্যাথলজিস্টকে জানান।`,
+          `⚠️ সিমুলেশনে ${res.data.ingestResult.panicValuesDetected}টি Critical Panic Value শনাক্ত হয়েছে।`,
           "error"
         );
       }
-      if (onResultsApplied) onResultsApplied();
     } else {
       onToast(res.error || "অ্যানালাইজার সিমুলেশনে সমস্যা হয়েছে।", "error");
     }
@@ -128,13 +136,22 @@ export function LisAnalyzerModal({
     const res = await ingestAnalyzerTransmissionAction({
       analyzerCode: selectedAnalyzerCode,
       rawPacket: rawPacket.trim(),
+      isSimulation: false,
     });
     setIngesting(false);
 
     if (res.success && res.data) {
       setLastParsed(res.data.parsedMessage);
-      onToast(`প্যাকেট প্রসেস সম্পন্ন: ${res.data.resultsAppliedCount}টি প্যারামিটার যুক্ত হয়েছে।`, "success");
-      if (onResultsApplied) onResultsApplied();
+      setLastTxId(res.data.transmissionId);
+      setLastIsSimulation(false);
+      setLastUnmapped(res.data.unmappedAnalytes || []);
+
+      if (res.data.isDuplicate) {
+        onToast("ডুপ্লিকেট ট্রান্সমিশন শনাক্ত হয়েছে — পূর্বে প্রসেস করা রেজাল্ট অক্ষুণ্ণ রয়েছে।", "info");
+      } else {
+        onToast(`প্যাকেট প্রসেস সম্পন্ন: ${res.data.resultsAppliedCount}টি প্যারামিটার যুক্ত হয়েছে।`, "success");
+        if (onResultsApplied) onResultsApplied();
+      }
     } else {
       onToast(res.error || "প্যাকেট পার্স করতে ব্যর্থ হয়েছে।", "error");
     }
@@ -207,6 +224,25 @@ export function LisAnalyzerModal({
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === "stream" && (
             <div className="space-y-6">
+              {/* Simulation Notice Banner */}
+              {lastIsSimulation && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5 text-xs text-amber-900">
+                  <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+                  <div>
+                    <span className="font-bold">🧪 SIMULATION MODE ACTIVE:</span> This was an in-memory verification run.
+                    Diagnostic tables and patient medical records were NOT mutated.
+                  </div>
+                </div>
+              )}
+
+              {/* Physical Transport Boundary Notice */}
+              <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl flex items-start gap-2.5 text-xs text-sky-900">
+                <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Physical Transport Architecture:</span> Real laboratory instruments communicate via RS-232 serial COM or LAN TCP/IP sockets. Connect through the <strong>Local LIS Bridge Agent</strong> (Tauri 2 desktop daemon) on the hospital network to securely stream packets to OHMS over authenticated HTTPS.
+                </div>
+              </div>
+
               {/* Controls bar */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div>
@@ -218,11 +254,15 @@ export function LisAnalyzerModal({
                     onChange={(e) => setSelectedAnalyzerCode(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg bg-white font-medium"
                   >
-                    {analyzers.map((a) => (
-                      <option key={a.id} value={a.code}>
-                        {a.name} ({a.protocol})
-                      </option>
-                    ))}
+                    {analyzers.length === 0 ? (
+                      <option value="MINDRAY-BC5000">Mindray BC-5000 (Default Template)</option>
+                    ) : (
+                      analyzers.map((a) => (
+                        <option key={a.id} value={a.code}>
+                          {a.name} ({a.protocol}) — {a.status}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
@@ -243,12 +283,12 @@ export function LisAnalyzerModal({
                   <button
                     onClick={handleSimulateRun}
                     disabled={simulating || !sampleBarcode}
-                    className="flex-1 py-2 px-3 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
+                    className="flex-1 py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
                   >
                     {simulating ? (
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                      <Zap className="w-3.5 h-3.5 text-amber-300" />
+                      <Zap className="w-3.5 h-3.5" />
                     )}
                     <span>Simulate Analyzer Run</span>
                   </button>
@@ -257,7 +297,7 @@ export function LisAnalyzerModal({
                     disabled={ingesting || !rawPacket}
                     className="py-2 px-3 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition disabled:opacity-50"
                   >
-                    {ingesting ? "Ingesting..." : "Ingest Packet"}
+                    {ingesting ? "Ingesting..." : "Live Ingest"}
                   </button>
                 </div>
               </div>
@@ -282,6 +322,16 @@ export function LisAnalyzerModal({
                 />
               </div>
 
+              {/* Unmapped Analytes Warning */}
+              {lastUnmapped.length > 0 && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2 text-xs text-amber-800">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>
+                    <strong>Unmapped Analytes ({lastUnmapped.length}):</strong> The following instrument test codes could not be mapped to the order&apos;s parameters and were safely ignored: {lastUnmapped.join(", ")}
+                  </span>
+                </div>
+              )}
+
               {/* Parsed Results Live Inspector */}
               {lastParsed && (
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
@@ -293,6 +343,11 @@ export function LisAnalyzerModal({
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-[11px] font-mono">
+                      {lastTxId && (
+                        <span className="text-slate-500">
+                          TxID: <strong className="text-slate-800">{lastTxId.slice(0, 8)}...</strong>
+                        </span>
+                      )}
                       <span className="text-slate-500">
                         Barcode: <strong className="text-slate-800">{lastParsed.sample_barcode}</strong>
                       </span>
@@ -375,7 +430,15 @@ export function LisAnalyzerModal({
           {activeTab === "devices" && (
             <div className="space-y-4">
               {loading ? (
-                <div className="p-8 text-center text-xs text-slate-400">Loading connected analyzers...</div>
+                <div className="p-8 text-center text-xs text-slate-400">Loading analyzers registry...</div>
+              ) : analyzers.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+                  <Server className="w-8 h-8 mx-auto text-slate-400 mb-2" />
+                  <p className="font-bold text-slate-700">No analyzers configured yet</p>
+                  <p className="text-slate-500 text-[11px] mt-1">
+                    Laboratory administrator can register physical analyzers and configure local serial/IP ports in organization settings.
+                  </p>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {analyzers.map((dev) => (
@@ -388,8 +451,16 @@ export function LisAnalyzerModal({
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
                             {dev.department}
                           </span>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                            <Activity className="w-3 h-3 animate-pulse" /> {dev.status}
+                          <span
+                            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                              dev.status === "ONLINE"
+                                ? "text-emerald-700 bg-emerald-50"
+                                : dev.status === "UNCONFIGURED"
+                                ? "text-amber-700 bg-amber-50"
+                                : "text-slate-600 bg-slate-100"
+                            }`}
+                          >
+                            <Activity className="w-3 h-3" /> {dev.status}
                           </span>
                         </div>
                         <h3 className="text-xs font-bold text-slate-900 mb-1">{dev.name}</h3>
@@ -406,7 +477,7 @@ export function LisAnalyzerModal({
 
                       <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-[10px]">
                         <span className="text-slate-400">
-                          Heartbeat: {dev.last_heartbeat_at ? new Date(dev.last_heartbeat_at).toLocaleTimeString() : "Online"}
+                          Heartbeat: {dev.last_heartbeat_at ? new Date(dev.last_heartbeat_at).toLocaleTimeString() : "Unverified"}
                         </span>
                         <button
                           onClick={() => {
@@ -451,8 +522,17 @@ export function LisAnalyzerModal({
                           <td className="px-4 py-2 font-mono text-slate-900">{t.sample_barcode}</td>
                           <td className="px-4 py-2 font-mono text-sky-700">{t.protocol}</td>
                           <td className="px-4 py-2">
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                t.status === "APPLIED"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : t.status === "REJECTED"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-slate-100 text-slate-700"
+                              }`}
+                            >
                               {t.status}
+                              {t.is_simulation && " (SIM)"}
                             </span>
                           </td>
                         </tr>

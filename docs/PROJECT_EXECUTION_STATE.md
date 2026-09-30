@@ -24,7 +24,7 @@ This state ledger provides the persistent, authoritative single source of truth 
 |:---|:---|:---|:---|
 | **Repository Version** | `1.1.22` | Synchronized across 6 config files | ✅ Synchronized |
 | **Total Test Suites** | `92 suites` | 100% of discovered test files passing | ✅ 92 / 92 Passing |
-| **Active Test Passes** | `804 tests` | 0 failures, 0 regressions | ✅ 804 Active Passes |
+| **Active Test Passes** | `809 tests` | 0 failures, 0 regressions | ✅ 809 Active Passes |
 | **Standard Skips** | `6 tests` | Explicitly justified environmental skips | ✅ 6 Standard Skips |
 | **Browser E2E Tests** | `38 specs` | 100% pass on Chromium live against edge | ✅ 38 / 38 Passing |
 | **Public Route Accessibility**| `28 specs` | 100% pass across 4 browser engines | ✅ 28 / 28 Passing |
@@ -72,13 +72,15 @@ This state ledger provides the persistent, authoritative single source of truth 
    - Implemented bidirectional parser and worklist query generator in `lib/lab/lis/parser.ts`.
    - Supports Mindray BC-5000, Roche Cobas c311, Sysmex XN-350, and Bio-Rad D-10.
    - Built full AST/Modulo-256 checksum validator and panic value abnormality detection.
-2. **Server Actions & Database Storage:**
+2. **Server Actions, Database Persistence & Transport Bridge:**
    - Database schema: `lab_analyzers` and `lab_analyzer_transmissions` with tenant RLS isolation (Migration 95).
-   - Ingestion action `ingestAnalyzerTransmissionAction()` populating `diagnostic_results` and `diagnostic_result_values`.
+   - Ingestion action `ingestAnalyzerTransmissionAction()` persisting genuine database rows with UUIDs and populating `diagnostic_results` and `diagnostic_result_values`.
+   - Simulation isolation ensuring `simulateAnalyzerTransmissionAction()` runs in-memory with `is_simulation: true` without polluting live clinical records.
+   - Physical transport bridge architecture (`lib/lab/lis/transport.ts`) defining local serial RS-232 / LAN TCP forwarding over authenticated HTTPS.
 3. **Interactive Lab Console UI:**
    - Built `components/lab/LisAnalyzerModal.tsx` for real-time serial packet monitoring, checksum debugging, and simulated lab transmissions.
 4. **Test Suite:**
-   - 10 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, and migration schema.
+   - 15 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, analyte mappings, transport framing, and migration schema.
 
 ### Historical Milestones (v1.1.15 – v1.1.21)
 - **v1.1.21:** README reconciliation, desktop release artifact metadata verification, infrastructure claims qualification.

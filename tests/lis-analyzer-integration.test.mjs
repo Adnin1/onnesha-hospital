@@ -11,10 +11,16 @@ import {
   generateASTMWorklistRecord,
   generateHL7WorklistResponse,
 } from "../lib/lab/lis/parser.ts";
+import { mapAnalyteToParameter } from "../lib/lab/lis/mapping.ts";
+import {
+  extractProtocolFrame,
+  computePayloadFingerprint,
+  generateHardwareResponse,
+} from "../lib/lab/lis/transport.ts";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
-describe("OHMS Laboratory Information System (LIS) & Analyzer Integration Suite (10 Scenarios)", () => {
+describe("OHMS Laboratory Information System (LIS) & Analyzer Integration Suite (15 Scenarios)", () => {
   test("1. ASTM E1381 2-digit Hex Checksum matches specification (Modulo 256 sum)", () => {
     // Frame sample data
     const frameContent = "1H|\\^&|||Mindray_BC5000|||||||P|1\r\x03";
@@ -195,5 +201,93 @@ describe("OHMS Laboratory Information System (LIS) & Analyzer Integration Suite 
     assert.ok(typeContent.includes("LabAnalyzer"), "LabAnalyzer interface required");
     assert.ok(typeContent.includes("ParsedAnalyzerMessage"), "ParsedAnalyzerMessage interface required");
     assert.ok(typeContent.includes("CRITICAL_HIGH"), "Critical Panic Value severity required");
+  });
+
+  test("11. Strict Analyte-to-Parameter mapping resolves exact codes, synonyms, and rejects unmapped/ambiguous", () => {
+    const testParameters = [
+      { id: "param-1", parameter_name: "Hemoglobin", parameter_code: "HGB" },
+      { id: "param-2", parameter_name: "White Blood Cell Count", parameter_code: "WBC" },
+      { id: "param-3", parameter_name: "Fasting Blood Glucose", parameter_code: "GLU_FAST" },
+      { id: "param-4", parameter_name: "Serum Creatinine", parameter_code: "CREA" },
+    ];
+
+    // 1. Direct code match
+    const hgbMatch = mapAnalyteToParameter("HGB", testParameters);
+    assert.equal(hgbMatch.status, "MATCHED");
+    if (hgbMatch.status === "MATCHED") {
+      assert.equal(hgbMatch.parameter.id, "param-1");
+      assert.equal(hgbMatch.definition.standard_name, "Hemoglobin");
+    }
+
+    // 2. Synonym match from dictionary (e.g. FBS -> Fasting Blood Glucose)
+    const gluMatch = mapAnalyteToParameter("GLU_FAST", testParameters);
+    assert.equal(gluMatch.status, "MATCHED");
+
+    // 3. Unmapped analyte rejection
+    const unmappedMatch = mapAnalyteToParameter("XYZ_UNKNOWN_MARKER", testParameters);
+    assert.equal(unmappedMatch.status, "UNMAPPED");
+    assert.ok(unmappedMatch.reason.includes("could not be unambiguously mapped"));
+
+    // 4. Ambiguous duplicate parameter code handling
+    const ambiguousParams = [
+      { id: "param-a", parameter_name: "WBC Blood", parameter_code: "WBC" },
+      { id: "param-b", parameter_name: "WBC Urine", parameter_code: "WBC" },
+    ];
+    const ambigMatch = mapAnalyteToParameter("WBC", ambiguousParams);
+    assert.equal(ambigMatch.status, "AMBIGUOUS");
+  });
+
+  test("12. Transport Bridge Protocol Frame Extractor validates ASTM STX/ETX checksum boundaries", () => {
+    // Valid ASTM E1381 frame: STX + data + ETX + 2-digit checksum + CR + LF
+    const innerData = "1H|\\^&|||Mindray_BC5000\r\x03";
+    const chk = calculateASTMChecksum(innerData);
+    const validStream = `\x02${innerData}${chk}\r\n`;
+
+    const extracted = extractProtocolFrame(validStream);
+    assert.equal(extracted.complete, true);
+    assert.equal(extracted.frameProtocol, "ASTM_1394");
+    assert.equal(extracted.checksumValid, true);
+
+    // Corrupted checksum frame
+    const badStream = `\x02${innerData}FF\r\n`;
+    const badExtracted = extractProtocolFrame(badStream);
+    assert.equal(badExtracted.complete, true);
+    assert.equal(badExtracted.checksumValid, false);
+
+    // Incomplete stream (no ETX yet)
+    const incompleteStream = "\x021H|\\^&|||Mindray_BC5000";
+    const incExtracted = extractProtocolFrame(incompleteStream);
+    assert.equal(incExtracted.complete, false);
+  });
+
+  test("13. Transport Bridge generates deterministic payload fingerprints for transmission deduplication", () => {
+    const rawPacket = "H|\\^&|||SYSMEX\r\nO|1|BARCODE-01||^^^CBC\r\nR|1|^^^WBC|7.5\r\nL|1|N";
+    const fp1 = computePayloadFingerprint("SYSMEX-XN350", "BARCODE-01", rawPacket);
+    const fp2 = computePayloadFingerprint("SYSMEX-XN350", "BARCODE-01", rawPacket);
+    assert.equal(fp1, fp2, "Fingerprints must be deterministic");
+
+    const fpDifferentBarcode = computePayloadFingerprint("SYSMEX-XN350", "BARCODE-02", rawPacket);
+    assert.notEqual(fp1, fpDifferentBarcode, "Different barcode must produce different fingerprint");
+  });
+
+  test("14. Transport Bridge generates protocol-compliant hardware responses (ASTM ACK/NAK & HL7 MSA)", () => {
+    // ASTM ACK / NAK
+    assert.equal(generateHardwareResponse("ASTM_1394", true), "\x06");
+    assert.equal(generateHardwareResponse("ASTM_1394", false), "\x15");
+
+    // HL7 ACK
+    const hl7Ack = generateHardwareResponse("HL7_V2", true, "CTRL_9988");
+    assert.ok(hl7Ack.includes("MSA|AA|CTRL_9988"));
+    const hl7Nack = generateHardwareResponse("HL7_V2", false, "CTRL_9988");
+    assert.ok(hl7Nack.includes("MSA|AE|CTRL_9988"));
+  });
+
+  test("15. Device initial state in migration enforces UNCONFIGURED status and null network coordinates", () => {
+    const migrationPath = path.join(ROOT, "supabase/migrations/20260930070000_lis_analyzer_integration.sql");
+    const sql = fs.readFileSync(migrationPath, "utf8");
+
+    assert.ok(sql.includes("DEFAULT 'UNCONFIGURED'"), "Default analyzer status must be UNCONFIGURED");
+    assert.ok(!sql.includes("'192.168.10.101'"), "Fake online IP 192.168.10.101 must not be hardcoded in migration");
+    assert.ok(sql.includes("is_simulation BOOLEAN NOT NULL DEFAULT FALSE"), "is_simulation column required on transmissions");
   });
 });

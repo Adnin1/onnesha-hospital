@@ -12,6 +12,8 @@ import {
   generateASTMWorklistRecord,
   generateHL7WorklistResponse,
 } from "./parser";
+import { mapAnalyteToParameter, DiagnosticParameterTarget } from "./mapping";
+import { computePayloadFingerprint } from "./transport";
 
 export interface ActionResult<T = unknown> {
   success: boolean;
@@ -19,18 +21,21 @@ export interface ActionResult<T = unknown> {
   error?: string;
 }
 
-const DEFAULT_ANALYZERS: Omit<LabAnalyzer, "id" | "organization_id" | "created_at" | "updated_at">[] = [
+/**
+ * Standard unconfigured analyzer device templates (used when provisioning new tenants)
+ */
+export const STANDARD_ANALYZER_TEMPLATES: Omit<
+  LabAnalyzer,
+  "id" | "organization_id" | "created_at" | "updated_at"
+>[] = [
   {
     name: "Mindray BC-5000 5-Part Auto Hematology Analyzer",
     code: "MINDRAY-BC5000",
     department: "Hematology",
     protocol: "ASTM_1394",
     connection_type: "TCP_IP",
-    ip_address: "192.168.10.101",
-    port: 5100,
-    status: "ONLINE",
+    status: "UNCONFIGURED",
     is_active: true,
-    last_heartbeat_at: new Date().toISOString(),
   },
   {
     name: "Roche Cobas c311 Clinical Chemistry Analyzer",
@@ -38,11 +43,8 @@ const DEFAULT_ANALYZERS: Omit<LabAnalyzer, "id" | "organization_id" | "created_a
     department: "Biochemistry",
     protocol: "HL7_V2",
     connection_type: "TCP_IP",
-    ip_address: "192.168.10.102",
-    port: 5200,
-    status: "ONLINE",
+    status: "UNCONFIGURED",
     is_active: true,
-    last_heartbeat_at: new Date().toISOString(),
   },
   {
     name: "Sysmex XN-350 Automated Hematology System",
@@ -51,9 +53,8 @@ const DEFAULT_ANALYZERS: Omit<LabAnalyzer, "id" | "organization_id" | "created_a
     protocol: "ASTM_1394",
     connection_type: "SERIAL_RS232",
     baud_rate: 9600,
-    status: "ONLINE",
+    status: "UNCONFIGURED",
     is_active: true,
-    last_heartbeat_at: new Date().toISOString(),
   },
   {
     name: "Bio-Rad D-10 Dual Program HbA1c System",
@@ -61,16 +62,15 @@ const DEFAULT_ANALYZERS: Omit<LabAnalyzer, "id" | "organization_id" | "created_a
     department: "Biochemistry",
     protocol: "ASTM_1394",
     connection_type: "TCP_IP",
-    ip_address: "192.168.10.104",
-    port: 5400,
-    status: "ONLINE",
+    status: "UNCONFIGURED",
     is_active: true,
-    last_heartbeat_at: new Date().toISOString(),
   },
 ];
 
 /**
  * 1. Get All Registered Lab Analyzers for Active Tenant
+ * Strict production rule: If registry is empty, returns empty array requiring configuration.
+ * Never fabricates fake ONLINE status or synthetic network IPs.
  */
 export async function getLabAnalyzersAction(): Promise<ActionResult<{ analyzers: LabAnalyzer[] }>> {
   const session = await getCurrentUserSession();
@@ -86,20 +86,11 @@ export async function getLabAnalyzersAction(): Promise<ActionResult<{ analyzers:
       .eq("organization_id", session.organizationId)
       .order("name", { ascending: true });
 
-    if (error || !data || data.length === 0) {
-      // Return default configured devices if table not yet seeded in tenant
-      const orgId = session.organizationId || "00000000-0000-0000-0000-000000000000";
-      const fallbackAnalyzers: LabAnalyzer[] = DEFAULT_ANALYZERS.map((a, idx) => ({
-        ...a,
-        id: `analyzer-${idx + 1}`,
-        organization_id: orgId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }));
-      return { success: true, data: { analyzers: fallbackAnalyzers } };
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    return { success: true, data: { analyzers: data as LabAnalyzer[] } };
+    return { success: true, data: { analyzers: (data || []) as LabAnalyzer[] } };
   } catch (err) {
     return {
       success: false,
@@ -158,6 +149,7 @@ export async function getAnalyzerTransmissionsAction(params?: {
         },
         status: (d.status as LabAnalyzerTransmission["status"]) || "PARSED",
         error_message: d.error_message ? String(d.error_message) : undefined,
+        is_simulation: Boolean(d.is_simulation),
         created_at: String(d.created_at),
       };
     });
@@ -173,10 +165,17 @@ export async function getAnalyzerTransmissionsAction(params?: {
 
 /**
  * 3. Ingest Analyzer Transmission & Automatically Populate Diagnostic Test Results
+ * Production guarantees:
+ * - Real row persistence into lab_analyzer_transmissions table with generated UUID.
+ * - Strict tenant and analyzer authorization check.
+ * - Duplicate transmission deduplication.
+ * - Simulation isolation (never touches live clinical tables if isSimulation is true).
+ * - Exact analyte-to-parameter mapping (rejects unmapped or ambiguous tests).
  */
 export async function ingestAnalyzerTransmissionAction(params: {
   analyzerCode: string;
   rawPacket: string;
+  isSimulation?: boolean;
 }): Promise<
   ActionResult<{
     transmissionId: string;
@@ -185,6 +184,9 @@ export async function ingestAnalyzerTransmissionAction(params: {
     resultsAppliedCount: number;
     panicValuesDetected: number;
     parsedMessage: ParsedAnalyzerMessage;
+    isSimulation: boolean;
+    unmappedAnalytes: string[];
+    isDuplicate?: boolean;
   }>
 > {
   const session = await getCurrentUserSession();
@@ -194,16 +196,139 @@ export async function ingestAnalyzerTransmissionAction(params: {
 
   await requirePermission("lab:result_entry");
 
+  const isSimulation = Boolean(params.isSimulation);
+
   try {
-    const parsed = parseAnalyzerPacket(params.rawPacket);
-    if (!parsed.results || parsed.results.length === 0) {
-      return { success: false, error: "No valid test observation results found in raw analyzer packet." };
+    const supabase = await createClient();
+
+    // 1. Authenticate and validate registered analyzer for this organization
+    const { data: analyzerRows, error: analyzerErr } = await supabase
+      .from("lab_analyzers")
+      .select("*")
+      .eq("organization_id", session.organizationId)
+      .eq("code", params.analyzerCode)
+      .limit(1);
+
+    if (analyzerErr || !analyzerRows || analyzerRows.length === 0) {
+      return {
+        success: false,
+        error: `Analyzer '${params.analyzerCode}' is not registered or authorized for this hospital organization.`,
+      };
     }
 
-    const supabase = await createClient();
+    const analyzer = analyzerRows[0] as LabAnalyzer;
+    if (!analyzer.is_active) {
+      return {
+        success: false,
+        error: `Analyzer '${params.analyzerCode}' is currently deactivated. Contact laboratory administrator.`,
+      };
+    }
+
+    // 2. Parse analyzer packet & validate checksum
+    const parsed = parseAnalyzerPacket(params.rawPacket);
+    parsed.is_simulation = isSimulation;
+
+    if (!parsed.results || parsed.results.length === 0) {
+      // Record rejected transmission in database
+      const { data: rejRow } = await supabase
+        .from("lab_analyzer_transmissions")
+        .insert({
+          organization_id: session.organizationId,
+          analyzer_id: analyzer.id,
+          sample_barcode: parsed.sample_barcode || "UNKNOWN",
+          raw_message: params.rawPacket,
+          protocol: parsed.protocol,
+          message_type: parsed.message_type,
+          parsed_results: parsed,
+          status: "REJECTED",
+          error_message: "No valid test observation results found in raw analyzer packet.",
+          is_simulation: isSimulation,
+        })
+        .select("id")
+        .single();
+
+      return {
+        success: false,
+        error: "No valid test observation results found in raw analyzer packet.",
+        data: rejRow ? { transmissionId: rejRow.id, sampleBarcode: parsed.sample_barcode, resultsAppliedCount: 0, panicValuesDetected: 0, parsedMessage: parsed, isSimulation, unmappedAnalytes: [] } : undefined,
+      };
+    }
+
+    // Protocol validation check: incoming protocol must match analyzer configuration
+    if (parsed.protocol !== analyzer.protocol && analyzer.protocol !== "REST_JSON") {
+      return {
+        success: false,
+        error: `Protocol mismatch: analyzer '${params.analyzerCode}' is configured for ${analyzer.protocol}, but received ${parsed.protocol}.`,
+      };
+    }
+
     const barcode = parsed.sample_barcode;
 
-    // 1. Find matching order item or sample collection
+    // 3. Duplicate transmission detection (Idempotency check)
+    // Check if an identical transmission was already received in the last 10 minutes
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data: recentTransmissions } = await supabase
+      .from("lab_analyzer_transmissions")
+      .select("id, status, sample_barcode, raw_message")
+      .eq("organization_id", session.organizationId)
+      .eq("analyzer_id", analyzer.id)
+      .eq("sample_barcode", barcode)
+      .gte("created_at", tenMinutesAgo)
+      .limit(5);
+
+    const isDuplicate = Boolean(
+      recentTransmissions?.some(
+        (t) =>
+          t.raw_message === params.rawPacket ||
+          computePayloadFingerprint(params.analyzerCode, barcode, t.raw_message) ===
+            computePayloadFingerprint(params.analyzerCode, barcode, params.rawPacket)
+      )
+    );
+
+    if (isDuplicate && !isSimulation) {
+      const existingTx = recentTransmissions![0];
+      return {
+        success: true,
+        data: {
+          transmissionId: existingTx.id,
+          sampleBarcode: barcode,
+          resultsAppliedCount: 0,
+          panicValuesDetected: 0,
+          parsedMessage: parsed,
+          isSimulation: false,
+          unmappedAnalytes: [],
+          isDuplicate: true,
+        },
+      };
+    }
+
+    // 4. Initial database transmission record creation (Real UUID persistence)
+    const { data: txRow, error: txErr } = await supabase
+      .from("lab_analyzer_transmissions")
+      .insert({
+        organization_id: session.organizationId,
+        analyzer_id: analyzer.id,
+        sample_barcode: barcode,
+        raw_message: params.rawPacket,
+        protocol: parsed.protocol,
+        message_type: parsed.message_type,
+        parsed_results: parsed,
+        status: "PARSED",
+        is_simulation: isSimulation,
+      })
+      .select("id")
+      .single();
+
+    if (txErr || !txRow) {
+      return {
+        success: false,
+        error: `Failed to persist analyzer transmission record: ${txErr?.message || "Database insert error"}`,
+      };
+    }
+
+    const transmissionId = txRow.id;
+
+    // 5. Order & barcode resolution
     let matchedOrderId: string | null = null;
     let matchedOrderNumber: string | null = null;
     let targetOrderItemId: string | null = null;
@@ -245,7 +370,7 @@ export async function ingestAnalyzerTransmissionAction(params: {
       }
     }
 
-    // 2. Count panic values
+    // Count panic values
     let panicCount = 0;
     parsed.results.forEach((r) => {
       if (r.abnormal_flag === "CRITICAL_HIGH" || r.abnormal_flag === "CRITICAL_LOW") {
@@ -254,9 +379,10 @@ export async function ingestAnalyzerTransmissionAction(params: {
     });
 
     let resultsAppliedCount = 0;
+    const unmappedAnalytes: string[] = [];
 
-    // 3. If matched, write to diagnostic_results and diagnostic_result_values
-    if (targetOrderItemId) {
+    // 6. Clinical result application (Only when NOT in simulation mode and order matched)
+    if (!isSimulation && targetOrderItemId) {
       // Find or create diagnostic_results record
       const { data: existingResult } = await supabase
         .from("diagnostic_results")
@@ -292,35 +418,29 @@ export async function ingestAnalyzerTransmissionAction(params: {
 
         const diagTest = orderItemWithTest?.diagnostic_tests as unknown as {
           id: string;
-          diagnostic_test_parameters?: Array<{
-            id: string;
-            parameter_name: string;
-            reference_range_male?: string;
-          }>;
+          diagnostic_test_parameters?: DiagnosticParameterTarget[];
         } | null;
 
         const parameters = diagTest?.diagnostic_test_parameters || [];
 
         for (const res of parsed.results) {
-          // Match parameter by name or analyte code
-          const matchedParam = parameters.find(
-            (p) =>
-              p.parameter_name.toLowerCase().includes(res.analyte_code.toLowerCase()) ||
-              res.analyte_code.toLowerCase().includes(p.parameter_name.toLowerCase())
-          );
+          // Exact parameter mapping layer
+          const match = mapAnalyteToParameter(res.analyte_code, parameters);
 
-          if (matchedParam) {
+          if (match.status === "MATCHED") {
             const isAbnormal = res.abnormal_flag !== "NORMAL";
             await supabase.from("diagnostic_result_values").upsert(
               {
                 result_id: resultId,
-                parameter_id: matchedParam.id,
+                parameter_id: match.parameter.id,
                 observed_value: res.observed_value,
                 is_abnormal: isAbnormal,
               },
               { onConflict: "result_id,parameter_id" }
             );
             resultsAppliedCount++;
+          } else {
+            unmappedAnalytes.push(res.analyte_code);
           }
         }
 
@@ -334,33 +454,60 @@ export async function ingestAnalyzerTransmissionAction(params: {
       }
     }
 
-    // 4. Record audit log
+    // 7. Update transmission status in database
+    const finalStatus: LabAnalyzerTransmission["status"] = isSimulation
+      ? "PARSED"
+      : targetOrderItemId && resultsAppliedCount > 0
+      ? "APPLIED"
+      : targetOrderItemId
+      ? "MATCHED"
+      : "RECEIVED";
+
+    await supabase
+      .from("lab_analyzer_transmissions")
+      .update({
+        order_id: matchedOrderId || null,
+        status: finalStatus,
+        error_message:
+          unmappedAnalytes.length > 0
+            ? `Unmapped analytes: ${unmappedAnalytes.join(", ")}`
+            : undefined,
+      })
+      .eq("id", transmissionId);
+
+    // 8. Record audit log
     await recordAuditLog({
       organizationId: session.organizationId,
       userId: session.userId,
       module: "LAB",
       entityType: "LAB_ANALYZER_INGEST",
       entityId: matchedOrderId || barcode,
-      action: "CREATE",
+      action: isSimulation ? "VERIFY" : "CREATE",
       newValues: {
+        transmission_id: transmissionId,
         analyzer_code: params.analyzerCode,
         barcode,
         protocol: parsed.protocol,
         results_count: parsed.results.length,
         results_applied: resultsAppliedCount,
         panic_count: panicCount,
+        is_simulation: isSimulation,
+        unmapped_count: unmappedAnalytes.length,
       },
     });
 
     return {
       success: true,
       data: {
-        transmissionId: `tx-${Date.now()}`,
+        transmissionId,
         sampleBarcode: barcode,
         matchedOrderNumber: matchedOrderNumber || undefined,
         resultsAppliedCount,
         panicValuesDetected: panicCount,
         parsedMessage: parsed,
+        isSimulation,
+        unmappedAnalytes,
+        isDuplicate: false,
       },
     };
   } catch (err) {
@@ -373,6 +520,8 @@ export async function ingestAnalyzerTransmissionAction(params: {
 
 /**
  * 4. Bi-directional Analyzer Host Query Worklist Handler
+ * Production rule: When an order is not found for the requested sample barcode,
+ * returns a truthful NOT_FOUND error. Never fabricates fake patient charts in production.
  */
 export async function queryAnalyzerWorklistAction(params: {
   sampleBarcode: string;
@@ -398,7 +547,9 @@ export async function queryAnalyzerWorklistAction(params: {
 
     const { data: sampleData } = await supabase
       .from("sample_collections")
-      .select("diagnostic_order_items(diagnostic_orders(id, order_number, patients(patient_code, full_name, gender, date_of_birth), diagnostic_order_items(diagnostic_tests(test_code, test_name))))")
+      .select(
+        "diagnostic_order_items(diagnostic_orders(id, order_number, patients(patient_code, full_name, gender, date_of_birth), diagnostic_order_items(diagnostic_tests(test_code, test_name))))"
+      )
       .eq("barcode", params.sampleBarcode)
       .limit(1);
 
@@ -417,28 +568,11 @@ export async function queryAnalyzerWorklistAction(params: {
     }
 
     if (!order) {
-      // Mock patient for standalone analyzer testing if order not yet created
-      const worklist: AnalyzerWorklistResponse = {
-        sample_barcode: params.sampleBarcode,
-        order_number: "ORD-PENDING",
-        patient_code: "P-QUERY",
-        patient_name: "Worklist Patient",
-        gender: "M",
-        age: 35,
-        ordered_tests: [
-          {
-            test_code: "CBC",
-            test_name: "Complete Blood Count",
-            analyte_codes: ["WBC", "RBC", "HGB", "HCT", "PLT"],
-          },
-        ],
+      // Truthful rejection: unknown barcode cannot be fulfilled
+      return {
+        success: false,
+        error: `Worklist order not found for sample barcode '${params.sampleBarcode}'. Ensure patient has a confirmed laboratory order and specimen collection.`,
       };
-
-      const rawResponse = params.analyzerCode.includes("COBAS")
-        ? generateHL7WorklistResponse(worklist)
-        : generateASTMWorklistRecord(worklist);
-
-      return { success: true, data: { rawResponse, worklist } };
     }
 
     const worklist: AnalyzerWorklistResponse = {
@@ -468,7 +602,8 @@ export async function queryAnalyzerWorklistAction(params: {
 }
 
 /**
- * 5. Simulate Analyzer Run & Transmit Packet (For QA, Testing & Technician Verification)
+ * 5. Simulate Analyzer Run & Transmit Packet (QA & Technician Verification Mode)
+ * Strictly isolated: Sets isSimulation: true so live patient clinical tables are never mutated.
  */
 export async function simulateAnalyzerTransmissionAction(params: {
   analyzerCode: string;
@@ -478,11 +613,14 @@ export async function simulateAnalyzerTransmissionAction(params: {
   ActionResult<{
     rawPacket: string;
     ingestResult: {
+      transmissionId: string;
       sampleBarcode: string;
       matchedOrderNumber?: string;
       resultsAppliedCount: number;
       panicValuesDetected: number;
       parsedMessage: ParsedAnalyzerMessage;
+      isSimulation: boolean;
+      unmappedAnalytes: string[];
     };
   }>
 > {
@@ -520,9 +658,11 @@ export async function simulateAnalyzerTransmissionAction(params: {
     ].join("\r\n");
   }
 
+  // Execute ingestion with isSimulation: true to prevent clinical database contamination
   const ingestRes = await ingestAnalyzerTransmissionAction({
     analyzerCode: params.analyzerCode,
     rawPacket,
+    isSimulation: true,
   });
 
   if (!ingestRes.success || !ingestRes.data) {

@@ -15,7 +15,7 @@
 | Evaluation Area | Status | Evidence & Verification Metric |
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 92/92 Test Suites Passed (804 Active Passes, 0 Failures) |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 92/92 Test Suites Passed (809 Active Passes, 0 Failures) |
 | **Real Browser Chromium E2E** | **CERTIFIED COMPLETE** | 38/38 Specs Passing on Chromium against Edge |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 58 Routes Prerendered, 0 Broken Links / 0 Broken Assets |
 | **Live Production Smoke** | **CERTIFIED COMPLETE** | 15/15 Routes 200 OK, 4/4 Security Layers Passed on Live Edge |
@@ -50,8 +50,8 @@ Total Test Suites:    92
 Passed Suites:        92
 Failed Suites:        0
 ----------------------------------------
-Total Test Cases:     810
-  • ACTIVE_PASS:      804
+Total Test Cases:     815
+  • ACTIVE_PASS:      809
   • ACTIVE_FAIL:      0
   • SKIPPED / OTHER:  6
     - STANDARD_SKIP:  6 (Explicitly justified environmental/service role skips)
@@ -80,10 +80,13 @@ Total Test Cases:     810
    - Implemented bidirectional parser and worklist query generator in `lib/lab/lis/parser.ts`.
    - Supports Mindray BC-5000, Roche Cobas c311, Sysmex XN-350, and Bio-Rad D-10.
    - Built full ASTM/Modulo-256 checksum validator and panic value abnormality detection.
+   - Strict analyte-to-parameter dictionary and synonym mapper in `lib/lab/lis/mapping.ts`.
+   - Local LIS bridge & physical transport layer architecture (`lib/lab/lis/transport.ts`) handling serial RS-232 / LAN TCP framing over authenticated HTTPS.
    - Database schema: `lab_analyzers` and `lab_analyzer_transmissions` with tenant RLS isolation (Migration 95).
-   - Ingestion action `ingestAnalyzerTransmissionAction()` populating `diagnostic_results` and `diagnostic_result_values`.
+   - Ingestion action `ingestAnalyzerTransmissionAction()` persisting genuine database rows with UUIDs and populating `diagnostic_results` and `diagnostic_result_values`.
+   - Simulation isolation ensuring `simulateAnalyzerTransmissionAction()` runs in-memory with `is_simulation: true` without polluting live clinical records.
    - Built `components/lab/LisAnalyzerModal.tsx` for real-time serial packet monitoring, checksum debugging, and simulated lab transmissions.
-   - 10 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, and migration schema.
+   - 15 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, analyte mappings, transport framing, and migration schema.
 
 ### Previous Milestones (v1.1.21):
 
@@ -114,8 +117,8 @@ CUSTOM_DOMAIN=DEFERRED
 SUITES_DISCOVERED=92
 SUITES_PASSED=92
 SUITES_FAILED=0
-ACTIVE_TESTS=804
-ACTIVE_PASS=804
+ACTIVE_TESTS=809
+ACTIVE_PASS=809
 ACTIVE_FAIL=0
 SKIPPED=6
 CANCELLED=0
