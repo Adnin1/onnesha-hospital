@@ -4,7 +4,7 @@
 **Platform Version:** `1.1.24`  
 **Git Branch:** `main`  
 **Git Tag:** `v1.1.24` (Immutable Release Provenance Freeze)  
-**Release Commit:** PENDING_COMMIT (Security Definer search_path Hardening, SMS Consolidation, Zero-Synthetic IDs & Authoritative Payment Contract)  
+**Release Commit:** `ee0c9993eda6c3a17e27701581ea8806e39f1207` (Security Definer search_path Hardening, SMS Consolidation, Zero-Synthetic IDs & Authoritative Payment Contract)  
 **Canonical Production Host:** `https://onnesha-hospital.pages.dev`  
 **Cloudflare Pages Project:** `onnesha-hospital`  
 **Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (98 Migrations in 100% Parity)  
