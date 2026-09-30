@@ -1,7 +1,7 @@
 # Onnesha Hospital Management System (OHMS) — Final Operational Commissioning Status
 
-**Document Version:** `v1.1.21-OPERATIONAL-GATES`  
-**Execution Timestamp:** `2026-09-30T06:00:00+06:00`  
+**Document Version:** `v1.1.22-OPERATIONAL-GATES`  
+**Execution Timestamp:** `2026-09-30T07:00:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Current Governance State:** `SOFTWARE COMPLETE — 14 OWNER GATES PENDING PHYSICAL ACTION`  
 
@@ -38,14 +38,14 @@ The following 14 items require external physical hardware, bank merchant onboard
 
 ---
 
-## 3. Deferred Future Workstreams
+## 3. Deferred Future Workstreams & Completed Capabilities
 
 1. **Custom Apex Domain (`https://onneshahospital.com`):**
    - **Status:** `DEFERRED`
    - **Rationale:** The canonical production host is locked at `https://onnesha-hospital.pages.dev`. Activating a custom apex domain requires DNS delegation and Cloudflare Universal SSL validation by the domain owner.
-2. **Direct Lab Analyzer / LIS Middleware (HL7 / ASTM):**
-   - **Status:** `DEFERRED (FUTURE SCOPE)`
-   - **Rationale:** The current architecture supports structured manual entry and CSV bulk intake with pathologist sign-off verification. Direct serial/bidirectional analyzer middleware requires dedicated on-prem agent software and physical instrument connectivity.
+2. **Direct Lab Analyzer / LIS Middleware (ASTM E1381/E1394 & HL7 v2.x):**
+   - **Status:** `IMPLEMENTED & DELIVERED (v1.1.22)`
+   - **Verification:** Completed in full. Includes ASTM 1394 and HL7 v2.5.1 parser engine, bi-directional host query worklist handler, automated result ingestion, panic value alerts, `lab_analyzers` & `lab_analyzer_transmissions` tables (Migration 95), and interactive LIS Modal console (`components/lab/LisAnalyzerModal.tsx`). Verified via `tests/lis-analyzer-integration.test.mjs` (10/10 passing).
 
 ---
 

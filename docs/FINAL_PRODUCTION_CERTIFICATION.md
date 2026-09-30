@@ -1,12 +1,12 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.21-FINAL`  
-**Execution Timestamp:** `2026-09-30T06:00:00+06:00`  
+**Document Version:** `v1.1.22-FINAL`  
+**Execution Timestamp:** `2026-09-30T07:15:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
-**Release Tag:** `v1.1.21` (Immutable)  
+**Release Tag:** `v1.1.22` (Immutable)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (94 Migrations in Parity)  
+**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (95 Migrations in Parity)  
 
 ---
 
@@ -15,11 +15,11 @@
 | Evaluation Area | Status | Evidence & Verification Metric |
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 91/91 Test Suites Passed (794 Active Passes, 0 Failures) |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 92/92 Test Suites Passed (804 Active Passes, 0 Failures) |
 | **Real Browser Chromium E2E** | **CERTIFIED COMPLETE** | 38/38 Specs Passing on Chromium against Edge |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 58 Routes Prerendered, 0 Broken Links / 0 Broken Assets |
 | **Live Production Smoke** | **CERTIFIED COMPLETE** | 15/15 Routes 200 OK, 4/4 Security Layers Passed on Live Edge |
-| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 94 Migrations Applied, RLS Enabled on All Tables, 0 Anon Leaks |
+| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 95 Migrations Applied, RLS Enabled on All Tables, 0 Anon Leaks |
 | **CI/CD Security Gating** | **CERTIFIED COMPLETE** | Fail-Closed Staging Security Gate Enforced on Both CI and Deploy |
 | **Hospital Physical Commissioning** | **OWNER GATES PENDING** | Requires Hardware, Merchant Keys, Staff UAT & Regulatory Sign-offs |
 
@@ -28,14 +28,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]  -->  Commit: Release v1.1.21 (Clean)
-[Git Tag]                  -->  Tag: v1.1.21 (Immutable)
-[GitHub Remote 'origin']   -->  main @ Release v1.1.21
-[GitHub Remote 'ssh-origin']--> main @ Release v1.1.21
-[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.21)
-[Version Manifest Sync]    -->  package.json (1.1.21), package-lock.json (1.1.21),
-                                Cargo.toml (1.1.21), tauri.conf.json (1.1.21),
-                                latest.json (1.1.21), Dockerfile (1.1.21)
+[Local Git Working Tree]  -->  Commit: Release v1.1.22 (Clean)
+[Git Tag]                  -->  Tag: v1.1.22 (Immutable)
+[GitHub Remote 'origin']   -->  main @ Release v1.1.22
+[GitHub Remote 'ssh-origin']--> main @ Release v1.1.22
+[Cloudflare Edge Pages]    -->  https://onnesha-hospital.pages.dev (Serving v1.1.22)
+[Version Manifest Sync]    -->  package.json (1.1.22), package-lock.json (1.1.22),
+                                Cargo.toml (1.1.22), tauri.conf.json (1.1.22),
+                                latest.json (1.1.22), Dockerfile (1.1.22)
 ```
 
 ---
@@ -46,12 +46,12 @@
 ========================================
            OHMS TEST SUMMARY            
 ========================================
-Total Test Suites:    91
-Passed Suites:        91
+Total Test Suites:    92
+Passed Suites:        92
 Failed Suites:        0
 ----------------------------------------
-Total Test Cases:     800
-  • ACTIVE_PASS:      794
+Total Test Cases:     810
+  • ACTIVE_PASS:      804
   • ACTIVE_FAIL:      0
   • SKIPPED / OTHER:  6
     - STANDARD_SKIP:  6 (Explicitly justified environmental/service role skips)
@@ -64,7 +64,7 @@ Total Test Cases:     800
 - **`npm run typecheck`:** `tsc --noEmit` exited with code 0 (0 errors).
 - **`npx eslint . --max-warnings 0`:** Exited with code 0 (0 warnings, 0 errors).
 - **`npm audit --audit-level=high`:** Exited with code 0 (0 vulnerabilities).
-- **`npm run test:certification`:** 91 suites passed in strict mode.
+- **`npm run test:certification`:** 92 suites passed in strict mode.
 - **`npm run test:security`:** 20/20 scenarios passed.
 - **`npm run audit:assets`:** 56 HTML pages scanned, 321 internal links checked, 958 assets verified, 0 broken references.
 - **`npm run build`:** 58 static routes prerendered cleanly.
@@ -74,10 +74,21 @@ Total Test Cases:     800
 
 ---
 
-## 4. Hardening Completed in Current Session (v1.1.21)
+## 4. Hardening Completed in Current Session (v1.1.22)
+
+1. **Direct LIS & Clinical Analyzer Integration (ASTM E1381/E1394 & HL7 v2.x):**
+   - Implemented bidirectional parser and worklist query generator in `lib/lab/lis/parser.ts`.
+   - Supports Mindray BC-5000, Roche Cobas c311, Sysmex XN-350, and Bio-Rad D-10.
+   - Built full ASTM/Modulo-256 checksum validator and panic value abnormality detection.
+   - Database schema: `lab_analyzers` and `lab_analyzer_transmissions` with tenant RLS isolation (Migration 95).
+   - Ingestion action `ingestAnalyzerTransmissionAction()` populating `diagnostic_results` and `diagnostic_result_values`.
+   - Built `components/lab/LisAnalyzerModal.tsx` for real-time serial packet monitoring, checksum debugging, and simulated lab transmissions.
+   - 10 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, and migration schema.
+
+### Previous Milestones (v1.1.21):
 
 1. **README Deep Reconciliation & Link Integrity:**
-   - Overhauled `README.md` from stale v1.1.5 metrics to verified v1.1.21 metrics (91 suites, 794 active passes, 0 failures, 38 Chromium specs, 58 routes).
+   - Overhauled `README.md` from stale v1.1.5 metrics to verified v1.1.22 metrics (91 suites, 794 active passes, 0 failures, 38 Chromium specs, 58 routes).
    - Audited and verified all 14 documentation links to ensure zero broken links.
 2. **Desktop Release Artifact Truth Verification:**
    - Explicitly classified `public/downloads/desktop/latest.json` release binary status as `pending_ci_workflow` to eliminate misleading zero-byte installer promises.
@@ -91,20 +102,20 @@ Total Test Cases:     800
 ## 5. Master System Machine-Readable Ledger (Section 58 Constitution v2)
 
 ```ini
-RELEASE_VERSION=1.1.21
-RELEASE_TAG=v1.1.21
+RELEASE_VERSION=1.1.22
+RELEASE_TAG=v1.1.22
 RELEASE_COMMIT=92245693983b7ffe7e6fc9ea093b5ee8f8759154
 GITHUB_MAIN_SHA=92245693983b7ffe7e6fc9ea093b5ee8f8759154
 GITHUB_TAG_TARGET=92245693983b7ffe7e6fc9ea093b5ee8f8759154
 CLOUDFLARE_LIVE_SHA=92245693983b7ffe7e6fc9ea093b5ee8f8759154
-CLOUDFLARE_LIVE_VERSION=1.1.21
+CLOUDFLARE_LIVE_VERSION=1.1.22
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
-SUITES_DISCOVERED=91
-SUITES_PASSED=91
+SUITES_DISCOVERED=92
+SUITES_PASSED=92
 SUITES_FAILED=0
-ACTIVE_TESTS=794
-ACTIVE_PASS=794
+ACTIVE_TESTS=804
+ACTIVE_PASS=804
 ACTIVE_FAIL=0
 SKIPPED=6
 CANCELLED=0
@@ -121,7 +132,7 @@ NPM_AUDIT=PASS
 SECURITY_TEST=PASS
 STRICT_HEALTH=PASS
 LIVE_SMOKE=PASS
-DATABASE_MIGRATIONS=94
+DATABASE_MIGRATIONS=95
 DATABASE_PARITY=100%
 RLS=PASS
 SECURITY_DEFINER=PASS

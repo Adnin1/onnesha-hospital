@@ -12,6 +12,7 @@ import {
   X,
   FilePlus,
   Check,
+  Cpu,
 } from "lucide-react";
 import { DiagnosticOrderRecord, DiagnosticParameterRecord } from "@/types/clinical-emr";
 import { DoctorRecord } from "@/types/appointments";
@@ -27,6 +28,7 @@ import { searchPatientsAction } from "@/lib/patient/actions";
 import { formatDateBDT } from "@/lib/utils";
 import { HospitalPrintHeader } from "@/components/print/HospitalPrintHeader";
 import { Toast } from "@/components/ui/Toast";
+import { LisAnalyzerModal } from "@/components/lab/LisAnalyzerModal";
 
 export default function LabManagementPage() {
   const [labOrders, setLabOrders] = useState<DiagnosticOrderRecord[]>([]);
@@ -43,6 +45,8 @@ export default function LabManagementPage() {
 
   // New Order Modal State
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isLisModalOpen, setIsLisModalOpen] = useState(false);
+  const [selectedForLis, setSelectedForLis] = useState<DiagnosticOrderRecord | null>(null);
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [patients, setPatients] = useState<PatientMaster[]>([]);
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
@@ -255,6 +259,16 @@ export default function LabManagementPage() {
 
         <div className="flex items-center space-x-3">
           <button
+            onClick={() => {
+              setSelectedForLis(null);
+              setIsLisModalOpen(true);
+            }}
+            className="flex items-center space-x-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
+          >
+            <Cpu className="w-4 h-4 text-sky-400" />
+            <span>LIS Analyzer Integration</span>
+          </button>
+          <button
             onClick={() => setIsOrderModalOpen(true)}
             className="flex items-center space-x-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
           >
@@ -366,14 +380,26 @@ export default function LabManagementPage() {
 
                 <div className="flex space-x-2">
                   {selectedOrder.status !== "VERIFIED" && (
-                    <button
-                      onClick={() => handleVerifyReport(selectedOrder.id)}
-                      disabled={verifying}
-                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-50"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>{verifying ? "Verifying..." : "Verify & Sign Report"}</span>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          setSelectedForLis(selectedOrder);
+                          setIsLisModalOpen(true);
+                        }}
+                        className="flex items-center space-x-1.5 px-3 py-1.5 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-xl text-xs font-bold transition shadow-xs"
+                      >
+                        <Cpu className="w-4 h-4 text-sky-600" />
+                        <span>LIS Ingest</span>
+                      </button>
+                      <button
+                        onClick={() => handleVerifyReport(selectedOrder.id)}
+                        disabled={verifying}
+                        className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{verifying ? "Verifying..." : "Verify & Sign Report"}</span>
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={handlePrint}
@@ -681,6 +707,25 @@ export default function LabManagementPage() {
           </div>
         </div>
       )}
+
+      {/* LIS Analyzer Integration Modal */}
+      <LisAnalyzerModal
+        isOpen={isLisModalOpen}
+        onClose={() => setIsLisModalOpen(false)}
+        selectedOrderNumber={selectedForLis?.order_number || selectedOrder?.order_number}
+        selectedSampleBarcode={selectedForLis?.sample_barcode || selectedForLis?.barcode || selectedOrder?.sample_barcode || selectedOrder?.barcode}
+        onResultsApplied={async () => {
+          const ordersRes = await getDiagnosticOrdersAction();
+          if (ordersRes.success && ordersRes.data?.orders) {
+            setLabOrders(ordersRes.data.orders);
+            const updated = ordersRes.data.orders.find(
+              (o) => o.id === (selectedForLis?.id || selectedOrder?.id)
+            );
+            if (updated) setSelectedOrder(updated);
+          }
+        }}
+        onToast={showToast}
+      />
 
       {/* Production Toast Notifications */}
       {toast && (

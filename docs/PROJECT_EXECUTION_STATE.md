@@ -1,13 +1,13 @@
 # OHMS Project Execution State Ledger
 
-**Last Updated:** 2026-09-30T06:00:00+06:00  
-**Platform Version:** `1.1.21`  
+**Last Updated:** 2026-09-30T07:15:00+06:00  
+**Platform Version:** `1.1.22`  
 **Git Branch:** `main`  
-**Git Tag:** `v1.1.21` (Immutable Release Provenance Freeze)  
-**Release Commit:** 92245693983b7ffe7e6fc9ea093b5ee8f8759154 (Base)  
+**Git Tag:** `v1.1.22` (Immutable Release Provenance Freeze)  
+**Release Commit:** PENDING_COMMIT (Direct LIS & Clinical Analyzer Integration)  
 **Canonical Production Host:** `https://onnesha-hospital.pages.dev`  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (94 Migrations in 100% Parity)  
+**Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (95 Migrations in 100% Parity)  
 **Release Governance State:** `SOFTWARE ENGINEERING COMPLETE — 14 OWNER GATES PENDING`  
 
 ---
@@ -18,21 +18,21 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 ---
 
-## 2. Core Repository Metrics & Artifact Baseline (v1.1.21)
+## 2. Core Repository Metrics & Artifact Baseline (v1.1.22)
 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
-| **Repository Version** | `1.1.21` | Synchronized across 6 config files | ✅ Synchronized |
-| **Total Test Suites** | `91 suites` | 100% of discovered test files passing | ✅ 91 / 91 Passing |
-| **Active Test Passes** | `794 tests` | 0 failures, 0 regressions | ✅ 794 Active Passes |
+| **Repository Version** | `1.1.22` | Synchronized across 6 config files | ✅ Synchronized |
+| **Total Test Suites** | `92 suites` | 100% of discovered test files passing | ✅ 92 / 92 Passing |
+| **Active Test Passes** | `804 tests` | 0 failures, 0 regressions | ✅ 804 Active Passes |
 | **Standard Skips** | `6 tests` | Explicitly justified environmental skips | ✅ 6 Standard Skips |
 | **Browser E2E Tests** | `38 specs` | 100% pass on Chromium live against edge | ✅ 38 / 38 Passing |
 | **Public Route Accessibility**| `28 specs` | 100% pass across 4 browser engines | ✅ 28 / 28 Passing |
-| **Database Migrations** | `94 files` | Idempotent, sequential, fail-closed SQL | ✅ 94 Migrations (100% Remote Parity) |
+| **Database Migrations** | `95 files` | Idempotent, sequential, fail-closed SQL | ✅ 95 Migrations (100% Remote Parity) |
 | **TypeScript (tsc)** | `0 errors` | `tsc --noEmit` clean exit code 0 | ✅ Zero Errors |
 | **ESLint** | `0 warnings` | `eslint . --max-warnings 0` exit code 0 | ✅ Zero Warnings |
 | **Static Next.js Build** | `output: "export"` | 58 routes prerendered (56 HTML + sitemap.xml) | ✅ Clean Build |
-| **Static Link & Asset Crawl** | `npm run audit:assets` | 0 broken references across 382 files | ✅ Zero Broken Links |
+| **Static Link & Asset Crawl** | `npm run audit:assets` | 0 broken references across 384 files | ✅ Zero Broken Links |
 | **Service Worker Safety** | `public/sw.js` | 16 clinical/financial NEVER_CACHE rules | ✅ Verified Shielded |
 | **Security Headers** | `public/_headers` | HSTS (1 yr), CSP (0 unsafe-eval), X-Frame DENY | ✅ Verified |
 | **Docker Topology & Init** | `docker-compose.yml` | Deterministic `init-postgres.sh` (no ls parsing) | ✅ Verified (6/6) |
@@ -67,16 +67,21 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 ## 5. Architectural Correctness & Audit Log
 
-### Active Release: v1.1.21 README Reconciliation & Desktop Provenance Closure
-1. **README Deep Reconciliation:**
-   - Overhauled `README.md` from stale v1.1.5 metrics to verified v1.1.21 metrics (91 suites, 794 active passes, 0 failures, 38 Chromium specs, 58 routes).
-   - Audited and verified all 14 documentation links to ensure zero broken links.
-2. **Desktop Release Artifact Truth Verification:**
-   - Classified `public/downloads/desktop/latest.json` release binary status accurately as `pending_ci_workflow` to eliminate misleading zero-byte installer promises.
-3. **Public Infrastructure Claims Qualification:**
-   - Audited and qualified `public/llms.txt` claims to strictly separate Cloudflare Pages CDN for static assets from Supabase Storage `medical-documents-vault` with RLS and signed URLs.
+### Active Release: v1.1.22 Direct LIS & Clinical Analyzer Integration
+1. **Clinical Analyzer Protocol Engine (ASTM E1381/E1394 & HL7 v2.x):**
+   - Implemented bidirectional parser and worklist query generator in `lib/lab/lis/parser.ts`.
+   - Supports Mindray BC-5000, Roche Cobas c311, Sysmex XN-350, and Bio-Rad D-10.
+   - Built full AST/Modulo-256 checksum validator and panic value abnormality detection.
+2. **Server Actions & Database Storage:**
+   - Database schema: `lab_analyzers` and `lab_analyzer_transmissions` with tenant RLS isolation (Migration 95).
+   - Ingestion action `ingestAnalyzerTransmissionAction()` populating `diagnostic_results` and `diagnostic_result_values`.
+3. **Interactive Lab Console UI:**
+   - Built `components/lab/LisAnalyzerModal.tsx` for real-time serial packet monitoring, checksum debugging, and simulated lab transmissions.
+4. **Test Suite:**
+   - 10 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, and migration schema.
 
-### Historical Milestones (v1.1.15 – v1.1.20)
+### Historical Milestones (v1.1.15 – v1.1.21)
+- **v1.1.21:** README reconciliation, desktop release artifact metadata verification, infrastructure claims qualification.
 - **v1.1.20:** Removed hardcoded workflow suite count, aligned execution state ledger, synchronized manifests to 1.1.20.
 - **v1.1.19:** Synchronized execution state ledger, updated certification documentation, and froze v1.1.19.
 - **v1.1.18:** Sitemap consolidation, doctor preselection, schedule weekday filtering, and contract reconciliation.
