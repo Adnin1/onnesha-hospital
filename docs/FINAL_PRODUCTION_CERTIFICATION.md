@@ -15,11 +15,11 @@
 | Evaluation Area | Status | Evidence & Verification Metric |
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 92/92 Test Suites Passed (809 Active Passes, 0 Failures) |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 92/92 Test Suites Passed (814 Active Passes, 0 Failures) |
 | **Real Browser Chromium E2E** | **CERTIFIED COMPLETE** | 38/38 Specs Passing on Chromium against Edge |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 58 Routes Prerendered, 0 Broken Links / 0 Broken Assets |
 | **Live Production Smoke** | **CERTIFIED COMPLETE** | 15/15 Routes 200 OK, 4/4 Security Layers Passed on Live Edge |
-| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 95 Migrations Applied, RLS Enabled on All Tables, 0 Anon Leaks |
+| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 96 Migrations Applied, RLS Enabled on All Tables, 0 Anon Leaks |
 | **CI/CD Security Gating** | **CERTIFIED COMPLETE** | Fail-Closed Staging Security Gate Enforced on Both CI and Deploy |
 | **Hospital Physical Commissioning** | **OWNER GATES PENDING** | Requires Hardware, Merchant Keys, Staff UAT & Regulatory Sign-offs |
 
@@ -50,8 +50,8 @@ Total Test Suites:    92
 Passed Suites:        92
 Failed Suites:        0
 ----------------------------------------
-Total Test Cases:     815
-  • ACTIVE_PASS:      809
+Total Test Cases:     820
+  • ACTIVE_PASS:      814
   • ACTIVE_FAIL:      0
   • SKIPPED / OTHER:  6
     - STANDARD_SKIP:  6 (Explicitly justified environmental/service role skips)
@@ -81,12 +81,13 @@ Total Test Cases:     815
    - Supports Mindray BC-5000, Roche Cobas c311, Sysmex XN-350, and Bio-Rad D-10.
    - Built full ASTM/Modulo-256 checksum validator and panic value abnormality detection.
    - Strict analyte-to-parameter dictionary and synonym mapper in `lib/lab/lis/mapping.ts`.
-   - Local LIS bridge & physical transport layer architecture (`lib/lab/lis/transport.ts`) handling serial RS-232 / LAN TCP framing over authenticated HTTPS.
-   - Database schema: `lab_analyzers` and `lab_analyzer_transmissions` with tenant RLS isolation (Migration 95).
-   - Ingestion action `ingestAnalyzerTransmissionAction()` persisting genuine database rows with UUIDs and populating `diagnostic_results` and `diagnostic_result_values`.
-   - Simulation isolation ensuring `simulateAnalyzerTransmissionAction()` runs in-memory with `is_simulation: true` without polluting live clinical records.
+   - Native Local LIS Bridge Service (`lib/lab/lis/local-bridge.ts`) and standalone CLI Daemon (`scripts/lis-bridge/local-bridge-daemon.mjs`) handling serial RS-232 / LAN TCP framing over authenticated HTTPS.
+   - Database schema: `lab_analyzers`, `lab_analyzer_transmissions`, and `lab_critical_alerts` with tenant RLS isolation (Migrations 95 & 96).
+   - Database-level idempotency constraint `uq_lab_analyzer_transmissions_idempotency` with cryptographic SHA-256 fingerprinting.
+   - Atomic transactional RPC `ingest_analyzer_transmission_atomic` eliminating partial writes.
+   - Server-side simulation permission gating and persistent panic alert tracking.
    - Built `components/lab/LisAnalyzerModal.tsx` for real-time serial packet monitoring, checksum debugging, and simulated lab transmissions.
-   - 15 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, analyte mappings, transport framing, and migration schema.
+   - 20 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, analyte mappings, transport framing, cryptographic fingerprints, and migration schema.
 
 ### Previous Milestones (v1.1.21):
 
@@ -117,8 +118,8 @@ CUSTOM_DOMAIN=DEFERRED
 SUITES_DISCOVERED=92
 SUITES_PASSED=92
 SUITES_FAILED=0
-ACTIVE_TESTS=809
-ACTIVE_PASS=809
+ACTIVE_TESTS=814
+ACTIVE_PASS=814
 ACTIVE_FAIL=0
 SKIPPED=6
 CANCELLED=0
@@ -135,7 +136,7 @@ NPM_AUDIT=PASS
 SECURITY_TEST=PASS
 STRICT_HEALTH=PASS
 LIVE_SMOKE=PASS
-DATABASE_MIGRATIONS=95
+DATABASE_MIGRATIONS=96
 DATABASE_PARITY=100%
 RLS=PASS
 SECURITY_DEFINER=PASS

@@ -20,7 +20,7 @@ import {
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
-describe("OHMS Laboratory Information System (LIS) & Analyzer Integration Suite (15 Scenarios)", () => {
+describe("OHMS Laboratory Information System (LIS) & Analyzer Integration Suite (20 Scenarios)", () => {
   test("1. ASTM E1381 2-digit Hex Checksum matches specification (Modulo 256 sum)", () => {
     // Frame sample data
     const frameContent = "1H|\\^&|||Mindray_BC5000|||||||P|1\r\x03";
@@ -289,5 +289,62 @@ describe("OHMS Laboratory Information System (LIS) & Analyzer Integration Suite 
     assert.ok(sql.includes("DEFAULT 'UNCONFIGURED'"), "Default analyzer status must be UNCONFIGURED");
     assert.ok(!sql.includes("'192.168.10.101'"), "Fake online IP 192.168.10.101 must not be hardcoded in migration");
     assert.ok(sql.includes("is_simulation BOOLEAN NOT NULL DEFAULT FALSE"), "is_simulation column required on transmissions");
+  });
+
+  test("16. Database-level idempotency constraint & Atomic RPC defined in Migration 96", () => {
+    const migration96Path = path.join(ROOT, "supabase/migrations/20261001000000_lis_idempotency_transactions.sql");
+    assert.ok(fs.existsSync(migration96Path), "Migration 96 must exist");
+    const sql = fs.readFileSync(migration96Path, "utf8");
+
+    assert.ok(sql.includes("payload_fingerprint VARCHAR(64)"), "payload_fingerprint column required");
+    assert.ok(sql.includes("uq_lab_analyzer_transmissions_idempotency"), "Unique idempotency constraint required");
+    assert.ok(sql.includes("CREATE OR REPLACE FUNCTION ingest_analyzer_transmission_atomic"), "Atomic RPC function required");
+    assert.ok(sql.includes("SECURITY DEFINER"), "RPC must be SECURITY DEFINER");
+  });
+
+  test("17. Persistent Critical Alerts Vault with Tenant RLS defined in Migration 96", () => {
+    const migration96Path = path.join(ROOT, "supabase/migrations/20261001000000_lis_idempotency_transactions.sql");
+    const sql = fs.readFileSync(migration96Path, "utf8");
+
+    assert.ok(sql.includes("CREATE TABLE IF NOT EXISTS lab_critical_alerts"), "lab_critical_alerts table required");
+    assert.ok(sql.includes("abnormal_flag IN ('CRITICAL_HIGH', 'CRITICAL_LOW', 'PANIC')"), "Abnormal flag constraint required");
+    assert.ok(sql.includes("ALTER TABLE lab_critical_alerts ENABLE ROW LEVEL SECURITY"), "RLS required on critical alerts");
+    assert.ok(sql.includes("tenant_isolation_lab_critical_alerts"), "Tenant isolation policy required on critical alerts");
+  });
+
+  test("18. Cryptographic SHA-256 fingerprinting produces collision-resistant 64-char hex strings", () => {
+    const rawPacket1 = "H|\\^&|||ROCHE_COBAS\r\nO|1|BARCODE-01||^^^LFT\r\nR|1|^^^GLU|185|mg/dL||HH\r\nL|1|N";
+    const rawPacket2 = "H|\\^&|||ROCHE_COBAS\r\nO|1|BARCODE-01||^^^LFT\r\nR|1|^^^GLU|186|mg/dL||HH\r\nL|1|N";
+
+    const fp1 = computePayloadFingerprint("ROCHE-COBAS-C311", "BARCODE-01", rawPacket1);
+    const fp2 = computePayloadFingerprint("ROCHE-COBAS-C311", "BARCODE-01", rawPacket2);
+
+    assert.equal(fp1.length, 64, "SHA-256 fingerprint must be 64 hex characters");
+    assert.equal(fp2.length, 64, "SHA-256 fingerprint must be 64 hex characters");
+    assert.match(fp1, /^[0-9a-f]{64}$/, "Must be valid hex string");
+    assert.notEqual(fp1, fp2, "1-unit difference in observed value must produce completely different hash");
+  });
+
+  test("19. Local LIS Bridge Service class & standalone CLI Daemon script exist and export cleanly", () => {
+    const bridgeClassPath = path.join(ROOT, "lib/lab/lis/local-bridge.ts");
+    assert.ok(fs.existsSync(bridgeClassPath), "lib/lab/lis/local-bridge.ts must exist");
+    const bridgeCode = fs.readFileSync(bridgeClassPath, "utf8");
+    assert.ok(bridgeCode.includes("export class LocalLisBridge"), "LocalLisBridge class must be exported");
+    assert.ok(bridgeCode.includes("maxFrameSizeBytes"), "Buffer protection required");
+    assert.ok(bridgeCode.includes("forwardPayloadToCloud"), "Cloud HTTPS forwarder required");
+
+    const daemonCliPath = path.join(ROOT, "scripts/lis-bridge/local-bridge-daemon.mjs");
+    assert.ok(fs.existsSync(daemonCliPath), "scripts/lis-bridge/local-bridge-daemon.mjs must exist");
+    const daemonCode = fs.readFileSync(daemonCliPath, "utf8");
+    assert.ok(daemonCode.includes("LocalLisBridge"), "Daemon must instantiate LocalLisBridge");
+  });
+
+  test("20. Error truthfulness: Database failures in getAnalyzerTransmissionsAction surface as error=false", () => {
+    const actionsPath = path.join(ROOT, "lib/lab/lis/actions.ts");
+    const actionsCode = fs.readFileSync(actionsPath, "utf8");
+
+    // Verify error is not masked as empty success
+    assert.ok(actionsCode.includes("Failed to fetch transmissions:"), "DB error must surface explicitly");
+    assert.ok(!actionsCode.includes("if (error || !data) {\n      return { success: true, data: { transmissions: [] } };"), "Error must not be converted into success: true + empty array");
   });
 });

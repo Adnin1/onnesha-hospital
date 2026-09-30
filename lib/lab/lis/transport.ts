@@ -13,6 +13,8 @@
  *   structured payloads over authenticated HTTPS with tenant isolation to OHMS.
  */
 
+import crypto from "node:crypto";
+
 const ASTM_CTRL = {
   STX: "\x02",
   ETX: "\x03",
@@ -164,14 +166,10 @@ export function computePayloadFingerprint(
   sampleBarcode: string,
   rawPayload: string
 ): string {
-  // Normalize whitespaces for deterministic comparison
+  // Normalize line endings for deterministic hashing
   const normalized = rawPayload.replace(/\r\n/g, "\n").trim();
-  let hash = 0;
-  for (let i = 0; i < normalized.length; i++) {
-    hash = (hash << 5) - hash + normalized.charCodeAt(i);
-    hash |= 0;
-  }
-  return `${analyzerCode}:${sampleBarcode}:${Math.abs(hash).toString(16)}`;
+  const content = `${analyzerCode}:${sampleBarcode}:${normalized}`;
+  return crypto.createHash("sha256").update(content, "utf8").digest("hex");
 }
 
 /**

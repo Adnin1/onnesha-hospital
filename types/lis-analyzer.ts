@@ -67,6 +67,24 @@ export interface LabAnalyzerTransmission {
   status: "RECEIVED" | "PARSED" | "MATCHED" | "APPLIED" | "REJECTED";
   error_message?: string;
   is_simulation?: boolean;
+  payload_fingerprint?: string;
+  created_at: string;
+}
+
+export interface LabCriticalAlert {
+  id: string;
+  organization_id: string;
+  transmission_id: string;
+  order_id?: string;
+  sample_barcode: string;
+  analyte_code: string;
+  observed_value: string;
+  abnormal_flag: "CRITICAL_HIGH" | "CRITICAL_LOW" | "PANIC";
+  detected_at: string;
+  status: "PENDING_ACK" | "ACKNOWLEDGED" | "ESCALATED" | "RESOLVED";
+  acknowledged_by?: string;
+  acknowledged_at?: string;
+  clinical_notes?: string;
   created_at: string;
 }
 

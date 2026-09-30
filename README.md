@@ -2,16 +2,16 @@
 Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 
 [![Version](https://img.shields.io/badge/version-v1.1.22-blue.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
-[![Tests](https://img.shields.io/badge/tests-809%20active%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
+[![Tests](https://img.shields.io/badge/tests-814%20active%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
 [![Suites](https://img.shields.io/badge/test%20suites-92%20passed-brightgreen.svg)](./docs/FINAL_PRODUCTION_CERTIFICATION.md)
 [![TypeScript](https://img.shields.io/badge/typescript-strict%200%20errors-blue.svg)](#quality-gates)
 [![ESLint](https://img.shields.io/badge/eslint-0%20warnings-brightgreen.svg)](#quality-gates)
-[![Next.js](https://img.shields.io/badge/next.js-16.3.5%20turbopack-black.svg)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/next.js-16.3.8%20turbopack-black.svg)](https://nextjs.org)
 [![Cloudflare](https://img.shields.io/badge/deployment-cloudflare%20pages-orange.svg)](https://onnesha-hospital.pages.dev)
 
 - **Live Canonical Production URL:** [https://onnesha-hospital.pages.dev](https://onnesha-hospital.pages.dev)
 - **GitHub Repository:** [Adnin1/onnesha-hospital](https://github.com/Adnin1/onnesha-hospital)
-- **Database Engine:** Supabase PostgreSQL with Multi-Tenant Row Level Security (RLS) (95/95 Migrations Synchronized in 100% Remote Parity)
+- **Database Engine:** Supabase PostgreSQL with Multi-Tenant Row Level Security (RLS) (96/96 Migrations Synchronized in 100% Remote Parity)
 - **Runtime Architecture:** Next.js Turbopack Static Export (`output: "export"`) deployed to Cloudflare Pages Global Anycast CDN, backed by Supabase PostgreSQL and Tauri 2 Windows Desktop Client.
 
 ---
@@ -44,14 +44,14 @@ Enterprise Healthcare Operations & Multi-Tenant SaaS Platform
 - **Inpatient Department (IPD):** Admission workflow, bed transfers, and mandatory discharge diagnoses (`/app/ipd`).
 - **Emergency Department:** Casualty triage with RED/YELLOW/GREEN prioritization and temporary unknown patient chart intake (`/app/emergency`).
 - **Diagnostic Pathology & Imaging:** Order processing, specimen accessioning, reference range validations, and pathologist sign-off locking.
-- **Direct Clinical Analyzer / LIS Integration:** Automated bi-directional laboratory instrument integration supporting ASTM E1381/E1394 and HL7 v2.5.1 protocols (Mindray, Roche Cobas, Sysmex, Bio-Rad) with real-time serial stream monitoring, panic value flags, and host-query worklist generation.
+- **Direct Clinical Analyzer / LIS Integration:** Automated bi-directional laboratory instrument integration supporting ASTM E1381/E1394 and HL7 v2.5.1 protocols (Mindray, Roche Cobas, Sysmex, Bio-Rad) with native Local LIS Bridge daemon (`lib/lab/lis/local-bridge.ts`), database-level idempotency constraints, atomic transactional RPC writes, persistent critical panic value alerts (`lab_critical_alerts`), and host-query worklist generation.
 - **Pharmacy & POS Inventory:** Batch tracking, FEFO dispensing, stock alerts, thermal POS receipt generation.
 
 ---
 
 ## 🧪 Automated Testing Breakdown (Current Verified Metrics)
 - **Total Test Suites:** 92 / 92 Passed (0 failures)
-- **Active Automated Test Cases:** 809 Passed
+- **Active Automated Test Cases:** 814 Passed
 - **Standard Deferred / Skips:** 6 (explicit external vendor / optional staging dependencies)
 - **Real Browser Chromium E2E:** 38 / 38 Passed (Playwright live against production edge)
 - **Prerendered Static Routes:** 58 / 58 Routes (56 HTML pages + sitemap.xml)

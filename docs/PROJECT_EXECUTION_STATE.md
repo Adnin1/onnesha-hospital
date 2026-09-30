@@ -24,11 +24,11 @@ This state ledger provides the persistent, authoritative single source of truth 
 |:---|:---|:---|:---|
 | **Repository Version** | `1.1.22` | Synchronized across 6 config files | ✅ Synchronized |
 | **Total Test Suites** | `92 suites` | 100% of discovered test files passing | ✅ 92 / 92 Passing |
-| **Active Test Passes** | `809 tests` | 0 failures, 0 regressions | ✅ 809 Active Passes |
+| **Active Test Passes** | `814 tests` | 0 failures, 0 regressions | ✅ 814 Active Passes |
 | **Standard Skips** | `6 tests` | Explicitly justified environmental skips | ✅ 6 Standard Skips |
 | **Browser E2E Tests** | `38 specs` | 100% pass on Chromium live against edge | ✅ 38 / 38 Passing |
 | **Public Route Accessibility**| `28 specs` | 100% pass across 4 browser engines | ✅ 28 / 28 Passing |
-| **Database Migrations** | `95 files` | Idempotent, sequential, fail-closed SQL | ✅ 95 Migrations (100% Remote Parity) |
+| **Database Migrations** | `96 files` | Idempotent, sequential, fail-closed SQL | ✅ 96 Migrations (100% Remote Parity) |
 | **TypeScript (tsc)** | `0 errors` | `tsc --noEmit` clean exit code 0 | ✅ Zero Errors |
 | **ESLint** | `0 warnings` | `eslint . --max-warnings 0` exit code 0 | ✅ Zero Warnings |
 | **Static Next.js Build** | `output: "export"` | 58 routes prerendered (56 HTML + sitemap.xml) | ✅ Clean Build |
@@ -72,15 +72,16 @@ This state ledger provides the persistent, authoritative single source of truth 
    - Implemented bidirectional parser and worklist query generator in `lib/lab/lis/parser.ts`.
    - Supports Mindray BC-5000, Roche Cobas c311, Sysmex XN-350, and Bio-Rad D-10.
    - Built full AST/Modulo-256 checksum validator and panic value abnormality detection.
-2. **Server Actions, Database Persistence & Transport Bridge:**
-   - Database schema: `lab_analyzers` and `lab_analyzer_transmissions` with tenant RLS isolation (Migration 95).
-   - Ingestion action `ingestAnalyzerTransmissionAction()` persisting genuine database rows with UUIDs and populating `diagnostic_results` and `diagnostic_result_values`.
-   - Simulation isolation ensuring `simulateAnalyzerTransmissionAction()` runs in-memory with `is_simulation: true` without polluting live clinical records.
-   - Physical transport bridge architecture (`lib/lab/lis/transport.ts`) defining local serial RS-232 / LAN TCP forwarding over authenticated HTTPS.
+2. **Server Actions, Database Idempotency, Transactional RPC & Critical Alerts:**
+   - Database schema: `lab_analyzers`, `lab_analyzer_transmissions`, and `lab_critical_alerts` with tenant RLS isolation (Migrations 95 & 96).
+   - Database-level idempotency via cryptographic SHA-256 `payload_fingerprint` and UNIQUE constraint `uq_lab_analyzer_transmissions_idempotency`.
+   - Single-transaction atomic RPC `ingest_analyzer_transmission_atomic` eliminating partial writes.
+   - Server-side simulation permission gating preventing unauthorized simulation in production.
+   - Native Local LIS Bridge Service (`lib/lab/lis/local-bridge.ts`) and standalone CLI Daemon (`scripts/lis-bridge/local-bridge-daemon.mjs`) supporting TCP and RS-232 serial streams with hardware ACK/NAK.
 3. **Interactive Lab Console UI:**
    - Built `components/lab/LisAnalyzerModal.tsx` for real-time serial packet monitoring, checksum debugging, and simulated lab transmissions.
 4. **Test Suite:**
-   - 15 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, analyte mappings, transport framing, and migration schema.
+   - 20 automated test scenarios in `tests/lis-analyzer-integration.test.mjs` verifying protocol parsing, frame checksums, worklist responses, analyte mappings, transport framing, cryptographic fingerprints, and migration schema.
 
 ### Historical Milestones (v1.1.15 – v1.1.21)
 - **v1.1.21:** README reconciliation, desktop release artifact metadata verification, infrastructure claims qualification.
