@@ -10,7 +10,7 @@ export const HOSPITAL_METADATA = {
   phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "",
   emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "",
   ambulanceHotline: process.env.NEXT_PUBLIC_AMBULANCE_HOTLINE || "",
-  email: process.env.NEXT_PUBLIC_HOSPITAL_EMAIL || "",
+  email: process.env.NEXT_PUBLIC_HOSPITAL_EMAIL || "aaih.apon@gmail.com",
   address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "",
   regNo: process.env.NEXT_PUBLIC_HOSPITAL_REG_NO || "",
   timezone: "Asia/Dhaka",

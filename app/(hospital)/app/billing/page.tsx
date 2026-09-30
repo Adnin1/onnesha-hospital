@@ -802,6 +802,7 @@ export default function BillingManagementPage() {
                   <option value="NAGAD">Nagad</option>
                   <option value="ROCKET">Rocket</option>
                   <option value="VISA">Visa / Mastercard</option>
+                  <option value="SSLCOMMERZ">SSLCommerz (Cards & Net Banking)</option>
                 </select>
               </div>
 

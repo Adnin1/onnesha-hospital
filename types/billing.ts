@@ -15,7 +15,7 @@ export interface PaymentRecord {
   organization_id: string;
   invoice_id: string;
   receipt_number: string;
-  payment_method: "CASH" | "BKASH" | "NAGAD" | "ROCKET" | "UPAY" | "VISA" | "MASTERCARD" | "BANK_TRANSFER";
+  payment_method: "CASH" | "BKASH" | "NAGAD" | "ROCKET" | "UPAY" | "VISA" | "MASTERCARD" | "BANK_TRANSFER" | "SSLCOMMERZ";
   amount: number;
   gateway_transaction_id?: string | null;
   cashier_id: string;

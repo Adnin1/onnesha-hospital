@@ -29,8 +29,23 @@ export class SslCommerzAdapter implements PaymentGatewayAdapter {
   private baseUrl: string;
 
   constructor(config?: SslCommerzConfig | null) {
-    this.config = config || null;
-    this.baseUrl = config?.isSandbox
+    if (config && config.storeId && config.storePassword) {
+      this.config = config;
+    } else {
+      const envStoreId = process.env.SSLCOMMERZ_STORE_ID || "";
+      const envStorePass = process.env.SSLCOMMERZ_STORE_PASS || process.env.SSLCOMMERZ_STORE_PASSWD || "";
+      const isSandbox = config?.isSandbox ?? (process.env.SSLCOMMERZ_IS_SANDBOX === "true");
+      if (envStoreId && envStorePass) {
+        this.config = {
+          storeId: envStoreId,
+          storePassword: envStorePass,
+          isSandbox,
+        };
+      } else {
+        this.config = config || null;
+      }
+    }
+    this.baseUrl = this.config?.isSandbox
       ? "https://sandbox.sslcommerz.com"
       : "https://securepay.sslcommerz.com";
   }
@@ -49,7 +64,7 @@ export class SslCommerzAdapter implements PaymentGatewayAdapter {
         provider: "SSLCOMMERZ",
         paymentId: "",
         redirectGatewayUrl: "",
-        errorMessage: "SSLCommerz credentials not configured. Ready for integration setup.",
+        errorMessage: "SSLCommerz credentials not configured. Ready for integration setup or SSLCOMMERZ_STORE_ID in environment.",
       };
     }
 
@@ -66,7 +81,7 @@ export class SslCommerzAdapter implements PaymentGatewayAdapter {
         cancel_url: `${params.callbackUrl}?status=cancel&tran_id=${params.intentNumber}`,
         ipn_url: `${params.callbackUrl}/ipn`,
         cus_name: params.customerName || "Patient",
-        cus_email: process.env.NEXT_PUBLIC_HOSPITAL_BILLING_EMAIL || HOSPITAL_METADATA.email,
+        cus_email: process.env.NEXT_PUBLIC_HOSPITAL_BILLING_EMAIL || HOSPITAL_METADATA.email || "aaih.apon@gmail.com",
         cus_add1: "Hospital Reception",
         cus_city: "Dhaka",
         cus_country: "Bangladesh",

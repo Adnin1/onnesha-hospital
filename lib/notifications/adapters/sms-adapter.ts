@@ -22,8 +22,25 @@ export class BangladeshSmsAdapter implements SmsProviderAdapter {
   private config: SmsGatewayConfig | null;
 
   constructor(config?: SmsGatewayConfig | null) {
-    this.config = config || null;
-    this.providerName = config?.provider ? `sms_${config.provider}` : "sms_bd_gateway";
+    if (config && config.apiToken) {
+      this.config = config;
+    } else {
+      const apiToken = process.env.SMS_GATEWAY_API_KEY || process.env.SMS_API_KEY || "";
+      const apiUrl = process.env.SMS_GATEWAY_URL || process.env.SMS_API_ENDPOINT || "https://api.sms-gateway-bd.com/v2/send";
+      const senderId = process.env.SMS_SENDER_ID || "ONNESHA";
+      const provider = (process.env.SMS_PROVIDER as SmsGatewayConfig["provider"]) || "ssl_wireless";
+      if (apiToken) {
+        this.config = {
+          provider,
+          apiToken,
+          senderId,
+          apiUrl,
+        };
+      } else {
+        this.config = config || null;
+      }
+    }
+    this.providerName = this.config?.provider ? `sms_${this.config.provider}` : "sms_bd_gateway";
   }
 
   async send(options: {
@@ -47,7 +64,7 @@ export class BangladeshSmsAdapter implements SmsProviderAdapter {
         success: false,
         providerName: this.providerName,
         status: "FAILED",
-        error: "SMS Gateway not configured with credentials. Ready for integration configuration in organization_integrations.",
+        error: "SMS Gateway not configured with credentials. Ready for integration configuration in organization_integrations or SMS_GATEWAY_API_KEY in environment.",
       };
     }
 

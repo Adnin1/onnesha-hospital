@@ -19,8 +19,25 @@ export class TransactionalEmailAdapter implements EmailProviderAdapter {
   private config: EmailGatewayConfig | null;
 
   constructor(config?: EmailGatewayConfig | null) {
-    this.config = config || null;
-    this.providerName = config?.provider ? `email_${config.provider}` : "email_transactional";
+    if (config && config.apiKey) {
+      this.config = config;
+    } else {
+      const apiKey = process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY || "";
+      const fromEmail = process.env.EMAIL_FROM || "aaih.apon@gmail.com";
+      const fromName = process.env.EMAIL_FROM_NAME || "Onnesha Hospital";
+      const provider = (process.env.EMAIL_PROVIDER as EmailGatewayConfig["provider"]) || "resend";
+      if (apiKey) {
+        this.config = {
+          provider,
+          apiKey,
+          fromEmail,
+          fromName,
+        };
+      } else {
+        this.config = config || null;
+      }
+    }
+    this.providerName = this.config?.provider ? `email_${this.config.provider}` : "email_transactional";
   }
 
   async send(options: {
@@ -45,11 +62,14 @@ export class TransactionalEmailAdapter implements EmailProviderAdapter {
         success: false,
         providerName: this.providerName,
         status: "FAILED",
-        error: "Email provider not configured with API key. Ready for integration configuration in organization_integrations.",
+        error: "Email provider not configured with API key. Ready for integration configuration in organization_integrations or RESEND_API_KEY in environment.",
       };
     }
 
-    const fromAddress = options.fromEmail || `${this.config.fromName || "Hospital"} <${this.config.fromEmail}>`;
+    const defaultFrom = this.config?.fromEmail
+      ? `${this.config.fromName || "Hospital"} <${this.config.fromEmail}>`
+      : "Onnesha Hospital <aaih.apon@gmail.com>";
+    const fromAddress = options.fromEmail || defaultFrom;
 
     try {
       if (this.config.provider === "resend") {

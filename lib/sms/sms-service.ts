@@ -33,16 +33,16 @@ export async function sendSMS(options: SendSMSOptions): Promise<SMSResponse> {
     console.log(`[SMS Gateway BD] [${smsType.toUpperCase()}] To: ${maskedPhone}`);
   }
 
-  const apiEndpoint = process.env.SMS_API_ENDPOINT;
-  const apiKey = process.env.SMS_API_KEY;
+  const apiEndpoint = process.env.SMS_API_ENDPOINT || process.env.SMS_GATEWAY_URL || "https://api.sms-gateway-bd.com/v2/send";
+  const apiKey = process.env.SMS_API_KEY || process.env.SMS_GATEWAY_API_KEY;
   const senderId = process.env.SMS_SENDER_ID || "ONNESHA";
 
-  if (!apiEndpoint || !apiKey) {
+  if (!apiKey) {
     // Gateway not configured in environment
-    console.warn("[SMS Gateway BD] Service unconfigured: SMS_API_ENDPOINT or SMS_API_KEY is not set.");
+    console.warn("[SMS Gateway BD] Service unconfigured: SMS_API_KEY or SMS_GATEWAY_API_KEY is not set.");
     return {
       success: false,
-      error: "SMS Gateway not configured: SMS_API_ENDPOINT and SMS_API_KEY environment variables required.",
+      error: "SMS Gateway not configured: SMS_API_KEY or SMS_GATEWAY_API_KEY environment variable required.",
     };
   }
 

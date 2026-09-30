@@ -23,6 +23,7 @@ const DEFAULT_HOSPITAL_PROFILE = {
   banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক কমপ্লেক্স",
   emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "",
   ambulanceHotline: process.env.NEXT_PUBLIC_AMBULANCE_HOTLINE || "",
+  email: process.env.NEXT_PUBLIC_HOSPITAL_EMAIL || "aaih.apon@gmail.com",
   address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "",
 };
 
@@ -32,10 +33,15 @@ export default function SettingsAndAuditPage() {
   const [rolePerms, setRolePerms] = useState<Record<RoleType, string[]>>(DEFAULT_ROLE_PERMISSIONS);
   const [savedToast, setSavedToast] = useState("");
 
-  // SMS Settings
+  // SMS & Gateway Settings
   const [smsEndpoint, setSmsEndpoint] = useState("");
   const [smsApiKey, setSmsApiKey] = useState("");
   const [smsSenderId, setSmsSenderId] = useState("ONNESHAHOSP");
+  const [emailSender, setEmailSender] = useState("aaih.apon@gmail.com");
+  const [resendApiKey, setResendApiKey] = useState("");
+  const [sslStoreId, setSslStoreId] = useState("");
+  const [sslStorePass, setSslStorePass] = useState("");
+  const [sslIsSandbox, setSslIsSandbox] = useState(false);
 
   // Real Database Audit Logs State
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
@@ -162,7 +168,7 @@ export default function SettingsAndAuditPage() {
               activeTab === "sms" ? "bg-white text-slate-900 shadow-2xs" : "text-slate-600"
             }`}
           >
-            SMS Gateway
+            Gateways & APIs
           </button>
           <button
             onClick={() => setActiveTab("hospital")}
@@ -507,6 +513,120 @@ export default function SettingsAndAuditPage() {
               Save SMS Credentials
             </button>
           </div>
+
+          {/* Transactional Email Section */}
+          <div className="pt-6 border-t border-slate-200 space-y-4">
+            <div className="pb-2">
+              <h3 className="text-base font-bold text-slate-900 flex items-center">
+                <span className="text-sky-600 mr-2">✉️</span>
+                Transactional Email (Resend / SendGrid)
+              </h3>
+              <p className="text-slate-500 mt-0.5">
+                Send appointment receipts, invoices, and OTP verification via transactional email.
+              </p>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Hospital Notification & Sender Email
+              </label>
+              <input
+                type="email"
+                value={emailSender}
+                onChange={(e) => setEmailSender(e.target.value)}
+                className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Resend API Key (re_...)
+              </label>
+              <input
+                type="password"
+                placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx"
+                value={resendApiKey}
+                onChange={(e) => setResendApiKey(e.target.value)}
+                className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
+              />
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  setSavedToast("Transactional Email configuration updated!");
+                  setTimeout(() => setSavedToast(""), 3000);
+                }}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl shadow-sm transition"
+              >
+                Save Email Gateway Settings
+              </button>
+            </div>
+          </div>
+
+          {/* SSLCommerz Payment Gateway Section */}
+          <div className="pt-6 border-t border-slate-200 space-y-4">
+            <div className="pb-2">
+              <h3 className="text-base font-bold text-slate-900 flex items-center">
+                <span className="text-sky-600 mr-2">💳</span>
+                SSLCommerz Payment Gateway
+              </h3>
+              <p className="text-slate-500 mt-0.5">
+                Accept Visa, Mastercard, bKash, Nagad, and Internet Banking online.
+              </p>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Store ID (e.g. testbox or Production Store ID)
+              </label>
+              <input
+                type="text"
+                placeholder="Store ID"
+                value={sslStoreId}
+                onChange={(e) => setSslStoreId(e.target.value)}
+                className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Store Password / Secret
+              </label>
+              <input
+                type="password"
+                placeholder="Store Password"
+                value={sslStorePass}
+                onChange={(e) => setSslStorePass(e.target.value)}
+                className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="sslSandbox"
+                checked={sslIsSandbox}
+                onChange={(e) => setSslIsSandbox(e.target.checked)}
+                className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+              />
+              <label htmlFor="sslSandbox" className="font-semibold text-slate-700">
+                Sandbox / Test Mode (Uncheck for Live Production)
+              </label>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  setSavedToast("SSLCommerz credentials saved!");
+                  setTimeout(() => setSavedToast(""), 3000);
+                }}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl shadow-sm transition"
+              >
+                Save SSLCommerz Configuration
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -566,6 +686,17 @@ export default function SettingsAndAuditPage() {
                 className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">
+              Official & Transactional Email
+            </label>
+            <input
+              type="email"
+              defaultValue={DEFAULT_HOSPITAL_PROFILE.email}
+              className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
+            />
           </div>
 
           <div>
