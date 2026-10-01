@@ -9,25 +9,24 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-01T05:50:00+06:00` | VERIFIED |
-| **Current Git HEAD** | Synchronized with release tag `v1.1.26` | VERIFIED |
+| **Execution Timestamp** | `2026-10-02T02:15:00+06:00` | VERIFIED |
+| **Current Git HEAD** | `7958bda3f624d2a457c9fe10cf6feea396b035e4` (`7958bda`) | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Release Tag Target** | `v1.1.26` | VERIFIED |
-| **Annotated Tag Object** | Synchronized with release tag `v1.1.26` | VERIFIED |
-| **Tag Signature Status** | `Unsigned Annotated Tag` (Cryptographic GPG not configured) | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.26` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.26` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.26` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.26` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.26` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.26` | VERIFIED |
+| **Active Release Tag** | `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`) | VERIFIED |
+| **Preserved Release Tag** | `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` aligned with HEAD | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.27` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.27` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.27` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.27` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.27` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.27` | VERIFIED |
 | **Database Migrations Count** | `98 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261001030000_harden_secdef_search_path_and_grants.sql` | VERIFIED |
-| **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity via `supabase migration list`) | VERIFIED |
+| **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Production Deployment ID** | `https://d75a59a5.onnesha-hospital.pages.dev` / `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Deployment Commit SHA** | Synchronized with release tag `v1.1.26` | VERIFIED |
-| **Latest Published GitHub Release** | `v1.1.4` (v1.1.26 pending CI Windows build) | VERIFIED |
+| **Cloudflare Production Deployment** | `https://2cd621b2.onnesha-hospital.pages.dev` / `https://onnesha-hospital.pages.dev` | VERIFIED |
+| **Cloudflare Deployment Commit SHA** | `7958bda3` | VERIFIED |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting GitHub Actions Windows runner) | VERIFIED |
 | **Prerendered Website Routes** | `58 routes` (56 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 
@@ -37,17 +36,20 @@
 
 | Suite / Gate | Result / Count | Status | Notes |
 |:---|:---:|:---:|:---|
-| **Total Test Suites** | `95 suites` | PASS | 100% of discovered test files passing |
-| **Active Test Passes** | `840 passes` | PASS | 0 failures, 0 regressions |
+| **Total Test Suites** | `96 suites` | PASS | 100% of discovered test files passing |
+| **Active Test Passes** | `850 passes` | PASS | Zero active failures, zero regressions |
 | **Test Failures** | `0 failures` | PASS | Zero active failures |
 | **Standard / Environment Skips** | `6 skips` | SKIPPED | Explicitly justified hermetic skips |
-| **TypeScript Compilation (`npm run typecheck`)** | `0 errors` | PASS | `tsc --noEmit` exit code 0 |
-| **ESLint (`npx eslint . --max-warnings 0`)** | `0 warnings` | PASS | Zero lint warnings |
-| **Static Link & Asset Crawl (`npm run audit:assets`)** | `0 broken references` | PASS | 384 files crawled |
-| **Strict Project Health Check (`--strict`)** | `0 critical, 0 warnings`| PASS | All 15 release gates green |
-| **Mandatory CI Workflow (`validate` job)** | `SUCCESS` | PASS | Hermetic static validation passing |
+| **TypeScript Strict Compilation** | `0 errors` | PASS | `tsc --noEmit` clean (exit code 0) |
+| **ESLint Static Analysis** | `0 warnings / 0 errors`| PASS | React 19 strict rule compliance |
+| **Strict Project Health Check** | `15 / 15 Gates Green` | PASS | `node scripts/project-health-check.mjs --strict` (0 critical, 0 warnings) |
+| **Security Test Suite** | `20 / 20 PASS` | PASS | RLS & tenant isolation verified |
+| **Clinical & Statutory Regression**| `10 / 10 PASS` | PASS | NID, bed concurrency, vitals, PDPA 2026 |
+| **Static Link & Asset Forensics** | `0 broken links` | PASS | 365 links and 961 assets verified (384 files crawled) |
+| **Dependency Security Audit** | `0 vulnerabilities` | PASS | `npm audit --audit-level=high` clean |
+| **Four-Layer Smoke Suite** | `15/15 Routes HTTP 200` | PASS | Zero data leakage, PostgREST shielded |
+| **Mandatory CI Workflow (`validate` job)** | `SUCCESS` | PASS | Hermetic static validation passing in GitHub Actions |
 | **Dedicated Staging Live Security Gate** | `BLOCKED (Fail-Closed)`| BLOCKED | Pending real staging secrets in GitHub Actions |
-| **Cloudflare Live 4-Layer Smoke Suite** | `15/15 Routes 200 OK` | PASS | All 4 security/shielding layers verified |
 
 ---
 
