@@ -13,6 +13,7 @@ import {
   FilePlus,
   Check,
   Cpu,
+  DollarSign,
 } from "lucide-react";
 import { DiagnosticOrderRecord, DiagnosticParameterRecord } from "@/types/clinical-emr";
 import { DoctorRecord } from "@/types/appointments";
@@ -29,8 +30,10 @@ import { formatDateBDT } from "@/lib/utils";
 import { HospitalPrintHeader } from "@/components/print/HospitalPrintHeader";
 import { Toast } from "@/components/ui/Toast";
 import { LisAnalyzerModal } from "@/components/lab/LisAnalyzerModal";
+import { TestTariffManager } from "@/components/lab/TestTariffManager";
 
 export default function LabManagementPage() {
+  const [activeView, setActiveView] = useState<"orders" | "tariffs">("orders");
   const [labOrders, setLabOrders] = useState<DiagnosticOrderRecord[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<DiagnosticOrderRecord | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -118,6 +121,13 @@ export default function LabManagementPage() {
       mounted = false;
     };
   }, []);
+
+  const refreshCatalog = async () => {
+    const catalogRes = await getDiagnosticTestsCatalogAction();
+    if (catalogRes.success && catalogRes.data?.tests) {
+      setTestCatalog(catalogRes.data.tests);
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -282,8 +292,37 @@ export default function LabManagementPage() {
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* View Switcher Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 no-print">
+        <button
+          onClick={() => setActiveView("orders")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+            activeView === "orders"
+              ? "bg-sky-600 text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <FlaskConical className="w-4 h-4" />
+          <span>ল্যাব অর্ডার ও পেশেন্ট রিপোর্ট (Orders & Reports)</span>
+        </button>
+        <button
+          onClick={() => setActiveView("tariffs")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+            activeView === "tariffs"
+              ? "bg-sky-600 text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <DollarSign className="w-4 h-4 text-emerald-500" />
+          <span>টেস্ট ফি শিডিউল ও সার্ভিস রেট (Tariff Management)</span>
+        </button>
+      </div>
+
+      {activeView === "tariffs" ? (
+        <TestTariffManager onCatalogChanged={refreshCatalog} />
+      ) : (
+        /* Main Grid */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Lab Orders List (5 cols) */}
         <div className="lg:col-span-5 space-y-4 no-print">
           <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
@@ -543,6 +582,7 @@ export default function LabManagementPage() {
           )}
         </div>
       </div>
+    )}
 
       {/* New Diagnostic Order Modal */}
       {isOrderModalOpen && (

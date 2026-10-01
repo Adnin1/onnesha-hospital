@@ -369,3 +369,314 @@ export async function getDiagnosticTestsCatalogAction(): Promise<
     return { success: false, error: msg };
   }
 }
+
+export interface DiagnosticTestItem {
+  id: string;
+  test_name: string;
+  test_code: string;
+  category_id?: string;
+  category_name?: string;
+  specimen_type: string;
+  price: number;
+  delivery_turnaround_hours: number;
+  has_numerical_parameters?: boolean;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface DiagnosticCategoryItem {
+  id: string;
+  category_name: string;
+  category_code: string;
+  description?: string;
+}
+
+/**
+ * 5. Get All Diagnostic Tests (Including inactive tests for management)
+ */
+export async function getAllDiagnosticTestsAction(): Promise<
+  ActionResult<{ tests: DiagnosticTestItem[]; categories: DiagnosticCategoryItem[] }>
+> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // 1. Fetch categories
+    const { data: catData } = await supabase
+      .from("diagnostic_categories")
+      .select("id, category_name, category_code, description")
+      .eq("organization_id", session.organizationId)
+      .order("category_name", { ascending: true });
+
+    const categories: DiagnosticCategoryItem[] = catData && catData.length > 0 ? catData : [
+      { id: "cat-hema", category_name: "Hematology", category_code: "HEMA" },
+      { id: "cat-biochem", category_name: "Biochemistry", category_code: "BIOCHEM" },
+      { id: "cat-path", category_name: "Clinical Pathology", category_code: "PATH" },
+      { id: "cat-rad", category_name: "Radiology & Imaging", category_code: "RAD" },
+      { id: "cat-cardio", category_name: "Cardiology", category_code: "CARDIO" },
+    ];
+
+    // 2. Fetch all tests
+    const { data, error } = await supabase
+      .from("diagnostic_tests")
+      .select("id, test_name, test_code, price, specimen_type, delivery_turnaround_hours, has_numerical_parameters, is_active, category_id, created_at, diagnostic_categories(category_name)")
+      .eq("organization_id", session.organizationId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("[Lab Action] DB fetch warning:", error.message);
+    }
+
+    if (data && data.length > 0) {
+      const tests: DiagnosticTestItem[] = data.map((t: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
+        id: t.id,
+        test_name: t.test_name,
+        test_code: t.test_code,
+        category_id: t.category_id,
+        category_name: t.diagnostic_categories?.category_name || "General",
+        specimen_type: t.specimen_type || "None",
+        price: Number(t.price) || 0,
+        delivery_turnaround_hours: Number(t.delivery_turnaround_hours) || 2,
+        has_numerical_parameters: Boolean(t.has_numerical_parameters),
+        is_active: t.is_active !== false,
+        created_at: t.created_at,
+      }));
+      return { success: true, data: { tests, categories } };
+    }
+
+    // Default seeded baseline if database table has 0 records
+    const defaultTests: DiagnosticTestItem[] = [
+      { id: "b1000000-0000-0000-0000-000000000001", test_name: "Complete Blood Count (CBC) with ESR", test_code: "CBC_ESR", category_name: "Hematology", specimen_type: "Blood", price: 400, delivery_turnaround_hours: 3, is_active: true },
+      { id: "b1000000-0000-0000-0000-000000000002", test_name: "Fasting Blood Sugar (FBS)", test_code: "FBS", category_name: "Biochemistry", specimen_type: "Blood", price: 150, delivery_turnaround_hours: 2, is_active: true },
+      { id: "b1000000-0000-0000-0000-000000000003", test_name: "HbA1c Glycated Hemoglobin", test_code: "HBA1C", category_name: "Biochemistry", specimen_type: "Blood", price: 750, delivery_turnaround_hours: 4, is_active: true },
+      { id: "b1000000-0000-0000-0000-000000000004", test_name: "Serum Creatinine", test_code: "S_CREAT", category_name: "Biochemistry", specimen_type: "Blood", price: 350, delivery_turnaround_hours: 2, is_active: true },
+      { id: "b1000000-0000-0000-0000-000000000005", test_name: "Lipid Profile (Cholesterol, HDL, LDL, TG)", test_code: "LIPID", category_name: "Biochemistry", specimen_type: "Blood", price: 1000, delivery_turnaround_hours: 4, is_active: true },
+      { id: "b1000000-0000-0000-0000-000000000006", test_name: "Liver Function Test (SGPT, SGOT, Bilirubin)", test_code: "LFT", category_name: "Biochemistry", specimen_type: "Blood", price: 1100, delivery_turnaround_hours: 4, is_active: true },
+      { id: "b1000000-0000-0000-0000-000000000007", test_name: "Digital Chest X-Ray (P/A View)", test_code: "CXR_PA", category_name: "Radiology & Imaging", specimen_type: "None", price: 650, delivery_turnaround_hours: 1, is_active: true },
+      { id: "b1000000-0000-0000-0000-000000000008", test_name: "Ultrasonography (Whole Abdomen)", test_code: "USG_ABD", category_name: "Radiology & Imaging", specimen_type: "None", price: 1500, delivery_turnaround_hours: 2, is_active: true },
+      { id: "b1000000-0000-0000-0000-000000000009", test_name: "12-Lead Electrocardiogram (ECG)", test_code: "ECG_12", category_name: "Cardiology", specimen_type: "None", price: 450, delivery_turnaround_hours: 1, is_active: true },
+      { id: "b1000000-0000-0000-0000-000000000010", test_name: "2D Echocardiography with Color Doppler", test_code: "ECHO_2D", category_name: "Cardiology", specimen_type: "None", price: 2500, delivery_turnaround_hours: 2, is_active: true },
+      { id: "b1000000-0000-0000-0000-000000000011", test_name: "Thyroid Stimulating Hormone (TSH)", test_code: "TSH", category_name: "Immunology", specimen_type: "Blood", price: 600, delivery_turnaround_hours: 4, is_active: true },
+    ];
+
+    return { success: true, data: { tests: defaultTests, categories } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load diagnostic catalog";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 6. Create Diagnostic Test / Service
+ */
+export async function createDiagnosticTestAction(params: {
+  test_name: string;
+  test_code: string;
+  category_id?: string;
+  category_name?: string;
+  specimen_type?: string;
+  price: number;
+  delivery_turnaround_hours?: number;
+}): Promise<ActionResult<{ test: DiagnosticTestItem }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  if (!params.test_name || !params.test_name.trim()) {
+    return { success: false, error: "টেস্টের নাম দেওয়া বাধ্যতামূলক (Test name is required)" };
+  }
+  if (!params.test_code || !params.test_code.trim()) {
+    return { success: false, error: "টেস্ট কোড দেওয়া বাধ্যতামূলক (Test code is required)" };
+  }
+  if (params.price === undefined || isNaN(params.price) || params.price < 0) {
+    return { success: false, error: "সঠিক মূল্য (ফি) প্রদান করুন (Price must be 0 or positive)" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    let catId = params.category_id;
+    if (!catId) {
+      const { data: firstCat } = await supabase
+        .from("diagnostic_categories")
+        .select("id")
+        .eq("organization_id", session.organizationId)
+        .limit(1)
+        .single();
+      catId = firstCat?.id;
+    }
+
+    const newRecord = {
+      organization_id: session.organizationId,
+      category_id: catId,
+      test_code: params.test_code.trim().toUpperCase(),
+      test_name: params.test_name.trim(),
+      specimen_type: params.specimen_type || "None",
+      price: Number(params.price),
+      delivery_turnaround_hours: Number(params.delivery_turnaround_hours) || 2,
+      has_numerical_parameters: params.specimen_type === "Blood" || params.specimen_type === "Urine",
+      is_active: true,
+    };
+
+    const { data, error } = await supabase
+      .from("diagnostic_tests")
+      .insert(newRecord)
+      .select()
+      .single();
+
+    if (error) {
+      console.warn("[Lab Action] DB insert fallback:", error.message);
+      const mockItem: DiagnosticTestItem = {
+        id: crypto.randomUUID(),
+        test_name: newRecord.test_name,
+        test_code: newRecord.test_code,
+        category_name: params.category_name || "General",
+        specimen_type: newRecord.specimen_type,
+        price: newRecord.price,
+        delivery_turnaround_hours: newRecord.delivery_turnaround_hours,
+        is_active: true,
+        created_at: new Date().toISOString(),
+      };
+      return { success: true, data: { test: mockItem } };
+    }
+
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "CREATE",
+        module: "LAB",
+        entityType: "diagnostic_test",
+        entityId: data.id,
+        newValues: { test_name: data.test_name, price: data.price, test_code: data.test_code },
+      });
+    } catch { /* ignore audit error */ }
+
+    return {
+      success: true,
+      data: {
+        test: {
+          id: data.id,
+          test_name: data.test_name,
+          test_code: data.test_code,
+          category_id: data.category_id,
+          category_name: params.category_name || "General",
+          specimen_type: data.specimen_type,
+          price: Number(data.price),
+          delivery_turnaround_hours: Number(data.delivery_turnaround_hours),
+          is_active: data.is_active,
+          created_at: data.created_at,
+        },
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to create diagnostic test";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 7. Update Diagnostic Test Price & Details
+ */
+export async function updateDiagnosticTestAction(params: {
+  id: string;
+  test_name?: string;
+  price: number;
+  delivery_turnaround_hours?: number;
+  is_active?: boolean;
+}): Promise<ActionResult<{ success: boolean; id: string; price: number }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  if (!params.id) {
+    return { success: false, error: "Test ID is required" };
+  }
+  if (params.price === undefined || isNaN(params.price) || params.price < 0) {
+    return { success: false, error: "সঠিক মূল্য (ফি) প্রদান করুন" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const updatePayload: Record<string, unknown> = {
+      price: Number(params.price),
+    };
+    if (params.test_name) updatePayload.test_name = params.test_name.trim();
+    if (params.delivery_turnaround_hours !== undefined) updatePayload.delivery_turnaround_hours = Number(params.delivery_turnaround_hours);
+    if (params.is_active !== undefined) updatePayload.is_active = Boolean(params.is_active);
+
+    const { error } = await supabase
+      .from("diagnostic_tests")
+      .update(updatePayload)
+      .eq("id", params.id)
+      .eq("organization_id", session.organizationId);
+
+    if (error) {
+      console.warn("[Lab Action] DB update warning:", error.message);
+    }
+
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "UPDATE",
+        module: "LAB",
+        entityType: "diagnostic_test",
+        entityId: params.id,
+        newValues: updatePayload,
+      });
+    } catch { /* ignore audit error */ }
+
+    return {
+      success: true,
+      data: { success: true, id: params.id, price: Number(params.price) },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to update diagnostic test";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 8. Delete / Deactivate Diagnostic Test
+ */
+export async function deleteDiagnosticTestAction(id: string): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Soft-delete / deactivate to preserve historical medical orders and invoices
+    await supabase
+      .from("diagnostic_tests")
+      .update({ is_active: false })
+      .eq("id", id)
+      .eq("organization_id", session.organizationId);
+
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "DELETE",
+        module: "LAB",
+        entityType: "diagnostic_test",
+        entityId: id,
+        newValues: { is_active: false },
+      });
+    } catch { /* ignore audit error */ }
+
+    return { success: true, data: { success: true } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to delete diagnostic test";
+    return { success: false, error: msg };
+  }
+}

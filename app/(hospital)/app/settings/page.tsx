@@ -22,6 +22,7 @@ import {
   updateHospitalMasterDataAction,
   APPROVED_HOSPITAL_DATA,
 } from "@/lib/hospital/actions";
+import { TestTariffManager } from "@/components/lab/TestTariffManager";
 
 const DEFAULT_HOSPITAL_PROFILE = {
   name: "Annesha Hospital and Diagnostic Center",
@@ -34,7 +35,7 @@ const DEFAULT_HOSPITAL_PROFILE = {
 };
 
 export default function SettingsAndAuditPage() {
-  const [activeTab, setActiveTab] = useState<"hospital" | "rbac" | "sms" | "audit">("rbac");
+  const [activeTab, setActiveTab] = useState<"hospital" | "rbac" | "sms" | "audit" | "tariffs">("rbac");
   const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<RoleType>("accountant");
   const [rolePerms, setRolePerms] = useState<Record<RoleType, string[]>>(DEFAULT_ROLE_PERMISSIONS);
   const [savedToast, setSavedToast] = useState("");
@@ -256,6 +257,14 @@ export default function SettingsAndAuditPage() {
             }`}
           >
             Hospital Profile
+          </button>
+          <button
+            onClick={() => setActiveTab("tariffs")}
+            className={`px-3 py-1.5 rounded-lg transition ${
+              activeTab === "tariffs" ? "bg-white text-slate-900 shadow-2xs" : "text-slate-600"
+            }`}
+          >
+            টেস্ট ফি ও সার্ভিস ট্যারিফ
           </button>
         </div>
       </div>
@@ -840,6 +849,11 @@ export default function SettingsAndAuditPage() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Tariffs & Service Rate Manager */}
+      {activeTab === "tariffs" && (
+        <TestTariffManager />
       )}
     </div>
   );
