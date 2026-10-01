@@ -72,7 +72,7 @@
 
 5. **Content Truth & Navigation Accessibility Hardening:**
    - Removed unverified 24/7 ("round-the-clock") emergency triage claims in services page.
-   - Refactored fictitious "PDPA 2026" statute references in privacy policy to professional healthcare data governance principles.
+   - Aligned privacy policy and consent guidelines with the enacted Bangladesh Personal Data Protection Act, 2026 (ব্যক্তিগত উপাত্ত সুরক্ষা আইন, ২০২৬ — Act No. 63 of 2026, deemed effective 6 November 2025) across Sections 11, 12, 13, 14, 17, 18, and 20.
    - Converted static emergency and ambulance hotline spans in navbar and footer into accessible, clickable `tel:` links.
    - Added `aria-label="Main Navigation"` and `aria-current="page"` attributes to desktop and mobile navigation links.
 

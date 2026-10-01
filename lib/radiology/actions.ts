@@ -268,12 +268,23 @@ export async function approveRadiologyReportAction(payload: {
   impression: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
+    if (!payload.findings || payload.findings.trim().length < 5) {
+      return { success: false, error: "Radiological findings must be documented (at least 5 characters)." };
+    }
+    if (!payload.impression || payload.impression.trim().length < 3) {
+      return { success: false, error: "Diagnostic impression is required for consultant report sign-off." };
+    }
+
+    const session = await getCurrentUserSession();
+    const radiologistId = session.userId || "usr-radiologist-consultant";
+
     const supabase = createClient();
     await supabase
       .from("radiology_studies")
       .update({
-        findings: payload.findings,
-        impression: payload.impression,
+        findings: payload.findings.trim(),
+        impression: payload.impression.trim(),
+        radiologist_id: radiologistId,
         status: "approved",
         approved_at: new Date().toISOString(),
       })

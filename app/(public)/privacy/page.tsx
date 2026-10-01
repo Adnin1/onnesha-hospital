@@ -79,10 +79,10 @@ export default function PrivacyPage() {
           <section className="space-y-3">
             <div className="flex items-center gap-3 text-sky-700">
               <Eye className="w-5 h-5 shrink-0" />
-              <h2 className="text-lg font-bold text-slate-900">3. Patient Data Rights (Bangladesh Personal Data Protection Act Framework)</h2>
+              <h2 className="text-lg font-bold text-slate-900">3. Patient Data Rights (ব্যক্তিগত উপাত্ত সুরক্ষা আইন, ২০২৬ / Personal Data Protection Act, 2026 — Act No. 63 of 2026)</h2>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Referencing the provisions and standards of the Bangladesh Personal Data Protection Act framework, registered patients have the following defined rights:
+              In alignment with the statutory principles of the Bangladesh Personal Data Protection Act, 2026 (ব্যক্তিগত উপাত্ত সুরক্ষা আইন, ২০২৬ — Act No. 63 of 2026, deemed effective from 6 November 2025, with specified administrative provisions subject to gazetted commencement), registered patients are afforded the following defined healthcare information rights:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
               <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100">

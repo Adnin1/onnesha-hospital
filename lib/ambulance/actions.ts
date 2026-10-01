@@ -192,10 +192,27 @@ export async function dispatchAmbulanceTripAction(payload: {
   vehicle_type?: string;
 }): Promise<{ success: boolean; data?: AmbulanceTrip; error?: string }> {
   try {
+    if (!payload.pickup_location || payload.pickup_location.trim().length < 2) {
+      return { success: false, error: "পিকআপ লোকেশন উল্লেখ করা আবশ্যক।" };
+    }
+    if (!payload.drop_location || payload.drop_location.trim().length < 2) {
+      return { success: false, error: "গন্তব্য / ড্রপ লোকেশন উল্লেখ করা আবশ্যক।" };
+    }
+    if (payload.fare_amount < 0) {
+      return { success: false, error: "ভাড়া ঋণাত্মক হতে পারে না।" };
+    }
+
     const session = await getCurrentUserSession();
     const orgId = session.organizationId || DEFAULT_ORG_ID;
 
     const supabase = createClient();
+
+    // Set vehicle status to on_trip
+    await supabase
+      .from("ambulance_vehicles")
+      .update({ status: "on_trip" })
+      .eq("id", payload.vehicle_id);
+
     const { data: inserted } = await supabase
       .from("ambulance_trips")
       .insert({
@@ -203,8 +220,8 @@ export async function dispatchAmbulanceTripAction(payload: {
         trip_number: payload.trip_number,
         vehicle_id: payload.vehicle_id,
         patient_id: payload.patient_id,
-        pickup_location: payload.pickup_location,
-        drop_location: payload.drop_location,
+        pickup_location: payload.pickup_location.trim(),
+        drop_location: payload.drop_location.trim(),
         fare_amount: payload.fare_amount,
         status: "dispatched",
       })
@@ -257,6 +274,21 @@ export async function updateAmbulanceTripStatusAction(params: {
         ...(params.status === "completed" ? { completion_time: new Date().toISOString() } : {}),
       })
       .eq("id", params.tripId);
+
+    // Release vehicle upon completion or cancellation
+    if (params.status === "completed" || params.status === "cancelled") {
+      const { data: trip } = await supabase
+        .from("ambulance_trips")
+        .select("vehicle_id")
+        .eq("id", params.tripId)
+        .maybeSingle();
+      if (trip && trip.vehicle_id) {
+        await supabase
+          .from("ambulance_vehicles")
+          .update({ status: "available" })
+          .eq("id", trip.vehicle_id);
+      }
+    }
 
     return { success: true };
   } catch (err: unknown) {

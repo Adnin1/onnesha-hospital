@@ -3,6 +3,7 @@
 import React from "react";
 import { X, Printer, ShieldCheck, QrCode } from "lucide-react";
 import { MedicalCertificate } from "@/lib/registrar/actions";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 
 interface PrintCertificateModalProps {
   isOpen: boolean;
@@ -62,13 +63,13 @@ export function PrintCertificateModal({
           {/* Official Letterhead */}
           <div className="text-center border-b-2 border-slate-900 pb-5">
             <h1 className="text-2xl sm:text-3xl font-black tracking-wide font-sans text-sky-950">
-              ONNESHA HOSPITAL & DIAGNOSTIC COMPLEX
+              {HOSPITAL_METADATA.name.toUpperCase()}
             </h1>
             <p className="text-xs font-sans text-slate-600 mt-1 uppercase tracking-widest">
-              Unified Medical Records Registrar & Healthcare Services
+              {HOSPITAL_METADATA.banglaName} • Unified Medical Records Registrar
             </p>
             <p className="text-xs font-sans text-slate-500 mt-0.5">
-              Medical College Road, Dhaka-1216, Bangladesh • 24/7 Helpline: 10678 • Web: onneshahospital.com
+              {HOSPITAL_METADATA.address} • Phone: {HOSPITAL_METADATA.phone} • Email: {HOSPITAL_METADATA.email}
             </p>
           </div>
 
@@ -166,11 +167,11 @@ export function PrintCertificateModal({
                 <QrCode className="h-16 w-16 text-slate-900" />
               </div>
               <div className="text-[10px] text-slate-500 space-y-0.5">
-                <p className="font-bold text-slate-800 uppercase tracking-wider">Cryptographic Anti-Tamper</p>
+                <p className="font-bold text-slate-800 uppercase tracking-wider">Cryptographic Integrity Hash</p>
                 <p className="font-mono break-all max-w-[200px] leading-tight text-slate-600">
                   {certificate.qr_verification_hash}
                 </p>
-                <p className="text-emerald-700 font-semibold">✓ Verified by Onnesha HMS Registrar</p>
+                <p className="text-emerald-700 font-semibold">✓ Record Integrity Fingerprint Verified</p>
               </div>
             </div>
 

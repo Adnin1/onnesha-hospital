@@ -68,6 +68,17 @@ export async function registerPatientAction(formData: {
     return { success: false, error: "A valid 11-digit Bangladeshi mobile number is required (01xxxxxxxxx)." };
   }
 
+  // Optional NID format validation if supplied
+  if (formData.nid && formData.nid.trim().length > 0) {
+    const cleanNid = formData.nid.trim().replace(/[\s-]/g, "");
+    if (!/^\d{10}$|^\d{13}$|^\d{17}$/.test(cleanNid)) {
+      return {
+        success: false,
+        error: "NID / জন্ম নিবন্ধন নম্বরটি সঠিক নয় (১০, ১৩ বা ১৭ ডিজিটের সংখ্যা হতে হবে; ঐচ্ছিক ক্ষেত্র — না থাকলে ফাঁকা রাখুন)।",
+      };
+    }
+  }
+
   // Duplicate Patient Check
   if (!formData.bypassDuplicateWarning) {
     const dupResult = await detectDuplicatePatients({

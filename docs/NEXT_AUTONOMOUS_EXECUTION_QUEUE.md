@@ -14,7 +14,7 @@
 | **Atomic Master Data RPC** | Database Actions | ✅ COMPLETED | Eliminated direct-table fallback in `lib/hospital/actions.ts` |
 | **Authoritative Per-Route Sitemap** | SEO / Search | ✅ COMPLETED | Configured per-route static modification dates in `app/sitemap.ts` |
 | **Manifest Version Alignment** | Versioning | ✅ COMPLETED | Synchronized version `1.1.26` across all 6 manifests |
-| **Content Truth & Nav Hardening** | Public UI & UX | ✅ COMPLETED | Removed 24/7 & PDPA claims, added `tel:` links & ARIA accessibility |
+| **Content Truth & Nav Hardening** | Public UI & UX | ✅ COMPLETED | Grounded 24/7 claims, aligned PDPA 2026 (Act 63 of 2026), added `tel:` links & ARIA accessibility |
 | **CI Staging Secret Injection** | GitHub Actions | 🟡 BLOCKED (External) | Owner must inject `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SERVICE_ROLE_KEY` |
 | **Tauri Windows MSI Artifact** | Desktop Release | 🟡 BLOCKED (CI Dependency)| Automated compilation triggers upon green staging gate in CI |
 

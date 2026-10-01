@@ -260,19 +260,35 @@ export async function assignBedAction(params: {
   try {
     const supabase = await createClient();
 
-    // Verify bed or cabin availability
+    // Verify and atomically lock bed or cabin availability (Optimistic Concurrency Protection)
     if (params.bedId) {
-      const { data: bed } = await supabase.from("beds").select("status").eq("id", params.bedId).single();
-      if (bed && bed.status !== "VACANT") {
-        return { success: false, error: "Selected bed is not vacant." };
+      const { data: updatedBed } = await supabase
+        .from("beds")
+        .update({ status: "OCCUPIED" })
+        .eq("id", params.bedId)
+        .eq("status", "VACANT")
+        .select();
+
+      if (!updatedBed || updatedBed.length === 0) {
+        const { data: existingBed } = await supabase.from("beds").select("status").eq("id", params.bedId).maybeSingle();
+        if (existingBed && existingBed.status !== "VACANT") {
+          return { success: false, error: "Selected bed is not vacant or has been assigned concurrently." };
+        }
       }
-      await supabase.from("beds").update({ status: "OCCUPIED" }).eq("id", params.bedId);
     } else if (params.cabinId) {
-      const { data: cabin } = await supabase.from("cabins").select("status").eq("id", params.cabinId).single();
-      if (cabin && cabin.status !== "VACANT") {
-        return { success: false, error: "Selected cabin is not vacant." };
+      const { data: updatedCabin } = await supabase
+        .from("cabins")
+        .update({ status: "OCCUPIED" })
+        .eq("id", params.cabinId)
+        .eq("status", "VACANT")
+        .select();
+
+      if (!updatedCabin || updatedCabin.length === 0) {
+        const { data: existingCabin } = await supabase.from("cabins").select("status").eq("id", params.cabinId).maybeSingle();
+        if (existingCabin && existingCabin.status !== "VACANT") {
+          return { success: false, error: "Selected cabin is not vacant or has been assigned concurrently." };
+        }
       }
-      await supabase.from("cabins").update({ status: "OCCUPIED" }).eq("id", params.cabinId);
     }
 
     // Insert bed_assignment

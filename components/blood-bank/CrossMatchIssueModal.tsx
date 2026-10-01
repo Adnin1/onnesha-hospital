@@ -220,6 +220,9 @@ export function CrossMatchIssueModal({
             <p className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               ল্যাবরেটরি ক্রস-ম্যাচিং রেজাল্ট (Cross-Match Compatibility)
             </p>
+            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-[10px] text-amber-900 leading-normal">
+              <strong>ক্লিনিক্যাল দায়িত্ববিধি:</strong> সফটওয়্যার ওয়ার্কফ্লো আসল ল্যাবরেটরি ক্রস-ম্যাচ পরীক্ষার বিকল্প নয়। রক্ত ইস্যু করার পূর্বে ল্যাবে টিউব/জেল টেস্টে অ্যাগ্লুটিনেশন ও অ্যান্টি-হিউম্যান গ্লোবুলিন (AHG) পরীক্ষা সম্পন্ন করা বাধ্যতামূলক।
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">

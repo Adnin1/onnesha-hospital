@@ -287,6 +287,26 @@ export async function recordCriticalCareObservationAction(payload: {
   clinical_notes?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
+    // Clinical physiological validation guards
+    if (payload.systolic_bp !== undefined && (payload.systolic_bp < 40 || payload.systolic_bp > 300)) {
+      return { success: false, error: "Systolic Blood Pressure must be between 40 and 300 mmHg." };
+    }
+    if (payload.diastolic_bp !== undefined && (payload.diastolic_bp < 20 || payload.diastolic_bp > 200)) {
+      return { success: false, error: "Diastolic Blood Pressure must be between 20 and 200 mmHg." };
+    }
+    if (payload.heart_rate !== undefined && (payload.heart_rate < 20 || payload.heart_rate > 300)) {
+      return { success: false, error: "Heart Rate must be between 20 and 300 beats per minute." };
+    }
+    if (payload.spo2 !== undefined && (payload.spo2 < 40 || payload.spo2 > 100)) {
+      return { success: false, error: "Oxygen Saturation (SpO2) must be between 40% and 100%." };
+    }
+    if (payload.fio2 !== undefined && (payload.fio2 < 21 || payload.fio2 > 100)) {
+      return { success: false, error: "Fraction of Inspired Oxygen (FiO2) must be between 21% (room air) and 100%." };
+    }
+    if (payload.gcs_score !== undefined && (payload.gcs_score < 3 || payload.gcs_score > 15)) {
+      return { success: false, error: "Glasgow Coma Scale (GCS) score must be between 3 (deep coma) and 15 (fully alert)." };
+    }
+
     const session = await getCurrentUserSession();
     const orgId = session.organizationId || DEFAULT_ORG_ID;
     const userId = session.userId || "usr-nurse-on-duty";

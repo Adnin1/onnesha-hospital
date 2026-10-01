@@ -40,7 +40,7 @@ export default function ConsentPage() {
             <div className="text-xs text-slate-700 leading-relaxed">
               <h2 className="font-bold text-slate-900 text-sm mb-1">Consent Principles</h2>
               <p>
-                In alignment with Section 13 of the Bangladesh Personal Data Protection Act 2026, Onnesha Hospital outlines below how patient demographic, outpatient consultation, and diagnostic test information is processed.
+                In alignment with Section 13 of the Bangladesh Personal Data Protection Act, 2026 (ব্যক্তিগত উপাত্ত সুরক্ষা আইন, ২০২৬ — Act No. 63 of 2026), Onnesha Hospital outlines below how patient demographic, outpatient consultation, and diagnostic test information is processed.
               </p>
             </div>
           </div>
@@ -101,7 +101,7 @@ export default function ConsentPage() {
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-2">
             <h3 className="font-bold text-slate-900">How to Update or Revoke Optional Consent</h3>
             <p>
-              To modify communication preferences or exercise data subject rights under the Personal Data Protection Act 2026, please visit our hospital reception counter or contact the patient relations desk at{" "}
+              To modify communication preferences or exercise data subject rights under the Personal Data Protection Act, 2026 (Act No. 63 of 2026), please visit our hospital reception counter or contact the patient relations desk at{" "}
               {HOSPITAL_METADATA.phone || "the hospital front desk"}.
             </p>
           </div>
