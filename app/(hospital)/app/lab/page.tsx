@@ -14,6 +14,8 @@ import {
   Check,
   Cpu,
   DollarSign,
+  FileEdit,
+  Send,
 } from "lucide-react";
 import { DiagnosticOrderRecord, DiagnosticParameterRecord } from "@/types/clinical-emr";
 import { DoctorRecord } from "@/types/appointments";
@@ -23,6 +25,8 @@ import {
   verifyDiagnosticReportAction,
   getDiagnosticTestsCatalogAction,
   createDiagnosticOrderAction,
+  collectSampleAction,
+  deliverDiagnosticOrderAction,
 } from "@/lib/lab/actions";
 import { getDoctorsAction } from "@/lib/appointments/actions";
 import { searchPatientsAction } from "@/lib/patient/actions";
@@ -31,6 +35,7 @@ import { HospitalPrintHeader } from "@/components/print/HospitalPrintHeader";
 import { Toast } from "@/components/ui/Toast";
 import { LisAnalyzerModal } from "@/components/lab/LisAnalyzerModal";
 import { TestTariffManager } from "@/components/lab/TestTariffManager";
+import { LabResultEntryModal } from "@/components/lab/LabResultEntryModal";
 
 export default function LabManagementPage() {
   const [activeView, setActiveView] = useState<"orders" | "tariffs">("orders");
@@ -39,6 +44,9 @@ export default function LabManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
+  const [collectingSample, setCollectingSample] = useState(false);
+  const [delivering, setDelivering] = useState(false);
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
 
   // Production-grade Toast notifications
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
@@ -158,6 +166,59 @@ export default function LabManagementPage() {
     }
   };
 
+  const handleCollectSample = async (orderId: string) => {
+    setCollectingSample(true);
+    const res = await collectSampleAction({ orderId });
+    setCollectingSample(false);
+    if (res.success && res.data) {
+      showToast(`নমুনা সফলভাবে গৃহীত হয়েছে। বারকোড: ${res.data.barcode}`, "success");
+      setLabOrders((prev) =>
+        prev.map((ord) =>
+          ord.id === orderId ? { ...ord, status: "SAMPLE_COLLECTED", barcode: res.data!.barcode } : ord
+        )
+      );
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder((prev) =>
+          prev ? { ...prev, status: "SAMPLE_COLLECTED", barcode: res.data!.barcode } : null
+        );
+      }
+    } else {
+      showToast(res.error || "স্যাম্পল গ্রহণ ব্যর্থ হয়েছে", "error");
+    }
+  };
+
+  const handleDeliverReport = async (orderId: string) => {
+    setDelivering(true);
+    const res = await deliverDiagnosticOrderAction(orderId);
+    setDelivering(false);
+    if (res.success) {
+      showToast("রিপোর্ট রোগীর নিকট সফলভাবে ডেলিভারি সম্পন্ন হয়েছে।", "success");
+      setLabOrders((prev) =>
+        prev.map((ord) =>
+          ord.id === orderId ? { ...ord, status: "DELIVERED" } : ord
+        )
+      );
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder((prev) =>
+          prev ? { ...prev, status: "DELIVERED" } : null
+        );
+      }
+    } else {
+      showToast(res.error || "ডেলিভারি আপডেট ব্যর্থ হয়েছে", "error");
+    }
+  };
+
+  const reloadOrders = async () => {
+    const ordersRes = await getDiagnosticOrdersAction();
+    if (ordersRes.success && ordersRes.data?.orders) {
+      setLabOrders(ordersRes.data.orders);
+      if (selectedOrder) {
+        const updated = ordersRes.data.orders.find((o) => o.id === selectedOrder.id);
+        if (updated) setSelectedOrder(updated);
+      }
+    }
+  };
+
   const toggleTest = (testId: string) => {
     setSelectedTestIds((prev) =>
       prev.includes(testId) ? prev.filter((id) => id !== testId) : [...prev, testId]
@@ -267,25 +328,26 @@ export default function LabManagementPage() {
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => {
-              setSelectedForLis(null);
-              setIsLisModalOpen(true);
-            }}
-            className="flex items-center space-x-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
-          >
-            <Cpu className="w-4 h-4 text-sky-400" />
-            <span>LIS Analyzer Integration</span>
-          </button>
+        <div className="flex items-center space-x-2">
           <button
             onClick={() => setIsOrderModalOpen(true)}
             className="flex items-center space-x-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            <span>New Diagnostic Order</span>
+            <span>+ নতুন টেস্ট অর্ডার (New Order)</span>
           </button>
-          <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-purple-50 text-purple-800 border border-purple-200 flex items-center">
+          <button
+            onClick={() => {
+              setSelectedForLis(null);
+              setIsLisModalOpen(true);
+            }}
+            className="flex items-center space-x-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition"
+            title="অটোমেটেড ল্যাব মেশিন RS232/LAN কানেকশন ও প্যাকেট ইনজেস্ট"
+          >
+            <Cpu className="w-4 h-4 text-slate-600" />
+            <span>মেশিন কানেকশন (LIS)</span>
+          </button>
+          <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-purple-50 text-purple-800 border border-purple-200 hidden sm:flex items-center">
             <FlaskConical className="w-4 h-4 mr-1.5 text-purple-600" />
             Lab Engine Online
           </span>
@@ -317,6 +379,55 @@ export default function LabManagementPage() {
           <span>টেস্ট ফি শিডিউল ও সার্ভিস রেট (Tariff Management)</span>
         </button>
       </div>
+
+      {/* 4-Step Hospital Staff Lab Workflow Stepper */}
+      {activeView === "orders" && (
+        <div className="bg-gradient-to-r from-sky-50 via-purple-50 to-emerald-50 border border-sky-100 rounded-2xl p-4 no-print shadow-2xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <FlaskConical className="w-4 h-4 text-sky-600" />
+              <span>হাসপাতাল ল্যাব ও ডায়াগনস্টিক কার্যপ্রণালী (Staff Workflow Guide)</span>
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium hidden sm:inline">
+              ৪-ধাপে সম্পূর্ণ টেস্ট ও রিপোর্ট প্রসেসিং
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+            <div className="bg-white p-2.5 rounded-xl border border-sky-200 flex items-center gap-2 shadow-2xs">
+              <span className="w-6 h-6 rounded-full bg-sky-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">১</span>
+              <div>
+                <p className="font-bold text-slate-800">টেস্ট অর্ডার গ্রহণ</p>
+                <p className="text-[10px] text-slate-500">রোগীর টেস্ট সিলেক্ট করে অর্ডার দিন</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-2.5 rounded-xl border border-purple-200 flex items-center gap-2 shadow-2xs">
+              <span className="w-6 h-6 rounded-full bg-purple-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">২</span>
+              <div>
+                <p className="font-bold text-slate-800">নমুনা ও বারকোড</p>
+                <p className="text-[10px] text-slate-500">স্যাম্পল গ্রহণ ও বারকোড জেনারেট</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-2.5 rounded-xl border border-blue-200 flex items-center gap-2 shadow-2xs">
+              <span className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">৩</span>
+              <div>
+                <p className="font-bold text-slate-800">ফলাফল এন্ট্রি (Result)</p>
+                <p className="text-[10px] text-slate-500">প্যারামিটার মান ও ফাইন্ডিংস ইনপুট</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-2.5 rounded-xl border border-emerald-200 flex items-center gap-2 shadow-2xs">
+              <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0">৪</span>
+              <div>
+                <p className="font-bold text-slate-800">ডাক্তার স্বাক্ষর ও প্রিন্ট</p>
+                <p className="text-[10px] text-slate-500">ভেরিফাই করে ডেলিভারি ও প্রিন্ট</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeView === "tariffs" ? (
         <TestTariffManager onCatalogChanged={refreshCatalog} />
@@ -401,51 +512,100 @@ export default function LabManagementPage() {
           {selectedOrder ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-6">
               {/* Action Buttons */}
-              <div className="flex justify-between items-center no-print border-b border-slate-100 pb-4">
+              <div className="flex flex-wrap justify-between items-center gap-3 no-print border-b border-slate-100 pb-4">
                 <div className="flex items-center space-x-2">
                   <span className="font-mono text-sm font-bold text-slate-900">
                     Order #{selectedOrder.order_number}
                   </span>
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${
-                      selectedOrder.status === "VERIFIED"
+                      selectedOrder.status === "DELIVERED"
+                        ? "bg-purple-100 text-purple-800"
+                        : selectedOrder.status === "VERIFIED"
                         ? "bg-emerald-100 text-emerald-800"
-                        : "bg-amber-100 text-amber-800"
+                        : selectedOrder.status === "PROCESSING"
+                        ? "bg-blue-100 text-blue-800"
+                        : selectedOrder.status === "SAMPLE_COLLECTED"
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-slate-100 text-slate-800"
                     }`}
                   >
                     {selectedOrder.status}
                   </span>
                 </div>
 
-                <div className="flex space-x-2">
-                  {selectedOrder.status !== "VERIFIED" && (
-                    <>
-                      <button
-                        onClick={() => {
-                          setSelectedForLis(selectedOrder);
-                          setIsLisModalOpen(true);
-                        }}
-                        className="flex items-center space-x-1.5 px-3 py-1.5 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-xl text-xs font-bold transition shadow-xs"
-                      >
-                        <Cpu className="w-4 h-4 text-sky-600" />
-                        <span>LIS Ingest</span>
-                      </button>
-                      <button
-                        onClick={() => handleVerifyReport(selectedOrder.id)}
-                        disabled={verifying}
-                        className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-50"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>{verifying ? "Verifying..." : "Verify & Sign Report"}</span>
-                      </button>
-                    </>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Step 2: Collect Sample if pending */}
+                  {(!selectedOrder.barcode || selectedOrder.status === "ORDERED" || selectedOrder.status === "PAID") && (
+                    <button
+                      onClick={() => handleCollectSample(selectedOrder.id)}
+                      disabled={collectingSample}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-50"
+                      title="রোগীর কাছ থেকে স্যাম্পল গ্রহণ করুন এবং বারকোড আইডি বরাদ্দ করুন"
+                    >
+                      <Barcode className="w-4 h-4" />
+                      <span>{collectingSample ? "বারকোড তৈরি হচ্ছে..." : "নমুনা গ্রহণ ও বারকোড"}</span>
+                    </button>
                   )}
+
+                  {/* Step 3: Enter / Edit Results (Available unless DELIVERED) */}
+                  {selectedOrder.status !== "DELIVERED" && (
+                    <button
+                      onClick={() => setIsResultModalOpen(true)}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                      title="পরীক্ষার সংখ্যাসূচক মান এবং বিবরণ এন্ট্রি করুন"
+                    >
+                      <FileEdit className="w-4 h-4" />
+                      <span>ফলাফল এন্ট্রি / সম্পাদন</span>
+                    </button>
+                  )}
+
+                  {/* Step 4: Doctor Verification & Sign */}
+                  {selectedOrder.status !== "VERIFIED" && selectedOrder.status !== "DELIVERED" && (
+                    <button
+                      onClick={() => handleVerifyReport(selectedOrder.id)}
+                      disabled={verifying}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-50"
+                      title="প্যাথলজিস্ট / রেডিওলজিস্ট ডাক্তারের ইলেকট্রনিক স্বাক্ষর ও অনুমোদন"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{verifying ? "যাচাই হচ্ছে..." : "ডাক্তার অনুমোদন ও স্বাক্ষর"}</span>
+                    </button>
+                  )}
+
+                  {/* Step 5: Deliver Report to Patient */}
+                  {selectedOrder.status === "VERIFIED" && (
+                    <button
+                      onClick={() => handleDeliverReport(selectedOrder.id)}
+                      disabled={delivering}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-50"
+                      title="রোগীকে ফাইনাল প্রিন্টসহ রিপোর্ট প্রদান সম্পন্ন করুন"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span>{delivering ? "ডেলিভারি হচ্ছে..." : "রিপোর্ট ডেলিভারি সম্পন্ন"}</span>
+                    </button>
+                  )}
+
+                  {/* LIS Analyzer Machine Connection (Auxiliary) */}
+                  <button
+                    onClick={() => {
+                      setSelectedForLis(selectedOrder);
+                      setIsLisModalOpen(true);
+                    }}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 rounded-xl text-xs font-semibold transition shadow-xs"
+                    title="অটোমেটেড ল্যাব অ্যানালাইজার মেশিন থেকে সরাসরি সিরিয়াল/নেটওয়ার্ক প্যাকেট রিড করুন"
+                  >
+                    <Cpu className="w-4 h-4 text-slate-600" />
+                    <span>মেশিন ইনজেস্ট (LIS)</span>
+                  </button>
+
+                  {/* Print Report */}
                   <button
                     onClick={handlePrint}
                     className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
                   >
                     <Printer className="w-4 h-4" />
-                    <span>Print Report</span>
+                    <span>প্রিন্ট রিপোর্ট</span>
                   </button>
                 </div>
               </div>
@@ -511,10 +671,18 @@ export default function LabManagementPage() {
                             >
                               <td className="p-2.5 font-medium text-slate-800">{p.parameter_name}</td>
                               <td className="p-2.5 font-mono">
-                                {p.observed_value || "Pending"}{" "}
-                                {p.is_abnormal && (
-                                  <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1 py-0.5 rounded ml-1">
-                                    OUT OF RANGE
+                                {p.observed_value ? (
+                                  <span className="font-semibold text-slate-900">
+                                    {p.observed_value}{" "}
+                                    {p.is_abnormal && (
+                                      <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-1 py-0.5 rounded ml-1">
+                                        OUT OF RANGE
+                                      </span>
+                                    )}
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-700 italic font-sans font-medium text-[11px] bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                    অপেক্ষমান (Pending)
                                   </span>
                                 )}
                               </td>
@@ -529,9 +697,13 @@ export default function LabManagementPage() {
                           <tr key={tIdx}>
                             <td className="p-2.5 font-semibold text-slate-900" colSpan={2}>
                               {t.test_name}
-                              {t.descriptive_findings && (
-                                <p className="font-normal text-slate-600 mt-1 whitespace-pre-line text-[11px]">
+                              {t.descriptive_findings ? (
+                                <div className="font-normal text-slate-700 mt-1 whitespace-pre-line text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                                   {t.descriptive_findings}
+                                </div>
+                              ) : (
+                                <p className="font-normal text-amber-700 italic text-[11px] mt-1 bg-amber-50/70 p-1.5 rounded border border-amber-200">
+                                  বিবরণমূলক রিপোর্ট অপেক্ষমান — &apos;ফলাফল এন্ট্রি&apos; বাটনে ক্লিক করে ফলাফল লিখুন
                                 </p>
                               )}
                             </td>
@@ -545,6 +717,16 @@ export default function LabManagementPage() {
                   <p className="text-[10px] text-slate-400 mt-1.5 italic">
                     * Biological reference intervals calibrated for patient gender and chronological age.
                   </p>
+
+                  {/* Pathologist Remarks if available */}
+                  {selectedOrder.pathologist_remarks && (
+                    <div className="mt-4 p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-xs">
+                      <span className="text-emerald-700 text-[10px] font-bold block uppercase tracking-wider">
+                        Pathologist / Doctor Remarks (পরামর্শ)
+                      </span>
+                      <p className="text-slate-800 font-medium mt-0.5">{selectedOrder.pathologist_remarks}</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Verification Footer */}
@@ -766,6 +948,18 @@ export default function LabManagementPage() {
         }}
         onToast={showToast}
       />
+
+      {/* Manual Diagnostic Result Entry Modal */}
+      {selectedOrder && (
+        <LabResultEntryModal
+          key={selectedOrder.id}
+          isOpen={isResultModalOpen}
+          onClose={() => setIsResultModalOpen(false)}
+          order={selectedOrder}
+          onSaved={reloadOrders}
+          onToast={showToast}
+        />
+      )}
 
       {/* Production Toast Notifications */}
       {toast && (

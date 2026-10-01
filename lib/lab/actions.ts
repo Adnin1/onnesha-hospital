@@ -113,8 +113,46 @@ export async function getDiagnosticOrdersAction(params?: {
           barcode = item.sample_collections.barcode;
         }
 
+const DEFAULT_TEST_PARAMETERS: Record<
+  string,
+  Array<{ name: string; unit: string; male: string; female: string; child?: string }>
+> = {
+  CBC: [
+    { name: "Hemoglobin (Hb)", unit: "g/dL", male: "13.5 - 17.5", female: "12.0 - 15.5", child: "11.0 - 14.5" },
+    { name: "Erythrocyte Sedimentation Rate (ESR)", unit: "mm/1st hr", male: "0 - 15", female: "0 - 20", child: "0 - 10" },
+    { name: "Total White Blood Cell Count (WBC)", unit: "/cu mm", male: "4,000 - 11,000", female: "4,000 - 11,000", child: "5,000 - 15,000" },
+    { name: "Platelet Count", unit: "x 10^3/uL", male: "150 - 450", female: "150 - 450", child: "150 - 450" },
+    { name: "Neutrophils", unit: "%", male: "40 - 75", female: "40 - 75" },
+    { name: "Lymphocytes", unit: "%", male: "20 - 45", female: "20 - 45" },
+  ],
+  FBS: [
+    { name: "Fasting Blood Sugar (FBS)", unit: "mg/dL", male: "70 - 100", female: "70 - 100", child: "70 - 100" },
+  ],
+  RBS: [
+    { name: "Random Blood Sugar (RBS)", unit: "mg/dL", male: "70 - 140", female: "70 - 140" },
+  ],
+  CREATININE: [
+    { name: "Serum Creatinine", unit: "mg/dL", male: "0.7 - 1.3", female: "0.6 - 1.1", child: "0.3 - 0.7" },
+  ],
+  LIPID: [
+    { name: "Total Cholesterol", unit: "mg/dL", male: "< 200", female: "< 200" },
+    { name: "Triglycerides", unit: "mg/dL", male: "< 150", female: "< 150" },
+    { name: "HDL Cholesterol", unit: "mg/dL", male: "> 40", female: "> 50" },
+    { name: "LDL Cholesterol", unit: "mg/dL", male: "< 100", female: "< 100" },
+  ],
+  URINE: [
+    { name: "Colour", unit: "", male: "Pale Yellow", female: "Pale Yellow" },
+    { name: "Appearance", unit: "", male: "Clear", female: "Clear" },
+    { name: "Pus Cells", unit: "/HPF", male: "0 - 5", female: "0 - 5" },
+    { name: "RBCs", unit: "/HPF", male: "Nil", female: "Nil" },
+    { name: "Epithelial Cells", unit: "/HPF", male: "1 - 2", female: "1 - 2" },
+    { name: "Albumin", unit: "", male: "Nil", female: "Nil" },
+    { name: "Sugar", unit: "", male: "Nil", female: "Nil" },
+  ],
+};
+
         const res = item.diagnostic_results?.[0];
-        const paramsList = (res?.diagnostic_result_values || []).map((v) => ({
+        let paramsList = (res?.diagnostic_result_values || []).map((v) => ({
           id: v.id,
           test_id: item.test_id,
           parameter_name: v.diagnostic_test_parameters?.parameter_name || "Parameter",
@@ -125,6 +163,27 @@ export async function getDiagnosticOrdersAction(params?: {
           observed_value: v.observed_value,
           is_abnormal: v.is_abnormal,
         }));
+
+        if (paramsList.length === 0) {
+          const testCode = item.diagnostic_tests?.test_code?.toUpperCase() || "";
+          const testName = item.diagnostic_tests?.test_name?.toUpperCase() || "";
+          const matched = Object.entries(DEFAULT_TEST_PARAMETERS).find(([k]) =>
+            testCode.includes(k) || testName.includes(k)
+          );
+          if (matched) {
+            paramsList = matched[1].map((dp, i) => ({
+              id: `param-${item.test_id}-${i}`,
+              test_id: item.test_id,
+              parameter_name: dp.name,
+              unit: dp.unit,
+              reference_range_male: dp.male,
+              reference_range_female: dp.female,
+              reference_range_child: dp.child,
+              observed_value: "",
+              is_abnormal: false,
+            }));
+          }
+        }
 
         return {
           id: item.id,
@@ -677,6 +736,288 @@ export async function deleteDiagnosticTestAction(id: string): Promise<ActionResu
     return { success: true, data: { success: true } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to delete diagnostic test";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 9. Save Diagnostic Test Results & Findings (Technician & Clinical Entry)
+ */
+export async function saveDiagnosticResultsAction(params: {
+  orderId: string;
+  testId?: string;
+  orderItemId?: string;
+  parameters: Array<{
+    parameterId?: string;
+    parameterName: string;
+    observedValue: string;
+    unit?: string;
+    referenceRangeMale?: string;
+    referenceRangeFemale?: string;
+    referenceRangeChild?: string;
+    isAbnormal?: boolean;
+  }>;
+  descriptiveFindings?: string;
+  clinicalRemarks?: string;
+}): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // 1. Find or verify target order item
+    let targetOrderItemId = params.orderItemId;
+    if (!targetOrderItemId) {
+      const { data: items } = await supabase
+        .from("diagnostic_order_items")
+        .select("id, test_id")
+        .eq("order_id", params.orderId)
+        .limit(1);
+      targetOrderItemId = items?.[0]?.id;
+    }
+
+    if (targetOrderItemId) {
+      // Find or insert diagnostic_results
+      const { data: existingResults } = await supabase
+        .from("diagnostic_results")
+        .select("id")
+        .eq("order_item_id", targetOrderItemId)
+        .limit(1);
+
+      let resultId = existingResults?.[0]?.id;
+      if (!resultId) {
+        const { data: newRes, error: insErr } = await supabase
+          .from("diagnostic_results")
+          .insert({
+            order_item_id: targetOrderItemId,
+            descriptive_findings: params.descriptiveFindings || params.clinicalRemarks || "Clinical laboratory findings entered.",
+            technician_id: session.userId,
+            entered_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+        if (!insErr && newRes) {
+          resultId = newRes.id;
+        }
+      } else if (params.descriptiveFindings) {
+        await supabase
+          .from("diagnostic_results")
+          .update({
+            descriptive_findings: params.descriptiveFindings,
+            entered_at: new Date().toISOString(),
+          })
+          .eq("id", resultId);
+      }
+
+      // Upsert parameters into diagnostic_result_values if resultId is available
+      if (resultId && params.parameters.length > 0) {
+        for (const p of params.parameters) {
+          let paramId = p.parameterId;
+          const isRealUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(paramId || "");
+          if (!isRealUuid && params.testId) {
+            const { data: foundParam } = await supabase
+              .from("diagnostic_test_parameters")
+              .select("id")
+              .eq("test_id", params.testId)
+              .eq("parameter_name", p.parameterName)
+              .limit(1)
+              .maybeSingle();
+
+            if (foundParam?.id) {
+              paramId = foundParam.id;
+            } else {
+              const { data: createdParam } = await supabase
+                .from("diagnostic_test_parameters")
+                .insert({
+                  test_id: params.testId,
+                  parameter_name: p.parameterName,
+                  unit: p.unit || null,
+                  reference_range_male: p.referenceRangeMale || null,
+                  reference_range_female: p.referenceRangeFemale || null,
+                  reference_range_child: p.referenceRangeChild || null,
+                })
+                .select("id")
+                .single();
+              paramId = createdParam?.id;
+            }
+          }
+
+          if (paramId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(paramId)) {
+            await supabase.from("diagnostic_result_values").upsert(
+              {
+                result_id: resultId,
+                parameter_id: paramId,
+                observed_value: p.observedValue,
+                is_abnormal: Boolean(p.isAbnormal),
+              },
+              { onConflict: "result_id,parameter_id" }
+            );
+          }
+        }
+      }
+    }
+
+    // Advance order status to PROCESSING if currently ORDERED or PAID
+    await supabase
+      .from("diagnostic_orders")
+      .update({
+        status: "PROCESSING",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.orderId)
+      .in("status", ["ORDERED", "PAID", "SAMPLE_COLLECTED"]);
+
+    await supabase
+      .from("diagnostic_order_items")
+      .update({ status: "PROCESSING" })
+      .eq("order_id", params.orderId)
+      .in("status", ["PENDING", "SAMPLE_COLLECTED"]);
+
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "UPDATE",
+        module: "LAB",
+        entityType: "diagnostic_order",
+        entityId: params.orderId,
+        newValues: {
+          action: "SAVE_RESULTS",
+          parameterCount: params.parameters.length,
+          hasDescriptiveFindings: Boolean(params.descriptiveFindings),
+        },
+      });
+    } catch { /* ignore audit error */ }
+
+    return { success: true, data: { success: true } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to save diagnostic results";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 10. Sample Collection & Phlebotomy Barcoding Action
+ */
+export async function collectSampleAction(params: {
+  orderId: string;
+  barcode?: string;
+  specimenType?: string;
+}): Promise<ActionResult<{ barcode: string; status: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const sampleBarcode =
+      params.barcode?.trim() ||
+      `SMP-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const { data: items } = await supabase
+      .from("diagnostic_order_items")
+      .select("id, specimen_type:diagnostic_tests(specimen_type)")
+      .eq("order_id", params.orderId);
+
+    if (items && items.length > 0) {
+      for (const item of items) {
+        const spec =
+          params.specimenType ||
+          (item.specimen_type as unknown as { specimen_type?: string })?.specimen_type ||
+          "Blood";
+
+        await supabase.from("sample_collections").upsert(
+          {
+            order_item_id: item.id,
+            barcode: sampleBarcode,
+            specimen_type: spec,
+            collected_by: session.userId,
+            collected_at: new Date().toISOString(),
+          },
+          { onConflict: "order_item_id" }
+        );
+      }
+    }
+
+    await supabase
+      .from("diagnostic_orders")
+      .update({
+        status: "SAMPLE_COLLECTED",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.orderId)
+      .eq("organization_id", session.organizationId);
+
+    await supabase
+      .from("diagnostic_order_items")
+      .update({ status: "SAMPLE_COLLECTED" })
+      .eq("order_id", params.orderId);
+
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "UPDATE",
+        module: "LAB",
+        entityType: "diagnostic_order",
+        entityId: params.orderId,
+        newValues: { action: "SAMPLE_COLLECTED", barcode: sampleBarcode },
+      });
+    } catch { /* ignore audit error */ }
+
+    return { success: true, data: { barcode: sampleBarcode, status: "SAMPLE_COLLECTED" } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to collect sample";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 11. Deliver Diagnostic Order to Patient Action
+ */
+export async function deliverDiagnosticOrderAction(orderId: string): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    await supabase
+      .from("diagnostic_orders")
+      .update({
+        status: "DELIVERED",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", orderId)
+      .eq("organization_id", session.organizationId);
+
+    await supabase
+      .from("diagnostic_order_items")
+      .update({ status: "DELIVERED" })
+      .eq("order_id", orderId);
+
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "UPDATE",
+        module: "LAB",
+        entityType: "diagnostic_order",
+        entityId: orderId,
+        newValues: { action: "REPORT_DELIVERED", deliveredAt: new Date().toISOString() },
+      });
+    } catch { /* ignore audit error */ }
+
+    return { success: true, data: { success: true } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to deliver report";
     return { success: false, error: msg };
   }
 }

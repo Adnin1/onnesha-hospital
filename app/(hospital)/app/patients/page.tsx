@@ -586,10 +586,13 @@ export default function PatientsManagementPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">NID / Birth Cert No.</label>
+                  <label className="block font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>NID / জন্ম নিবন্ধন নম্বর</span>
+                    <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">ঐচ্ছিক (Optional)</span>
+                  </label>
                   <input
                     type="text"
-                    placeholder="10, 13 or 17 digit NID / BRN"
+                    placeholder="ঐচ্ছিক — না থাকলে ফাঁকা রাখুন (১০, ১৩ বা ১৭ ডিজিট)"
                     value={newNid}
                     onChange={(e) => setNewNid(e.target.value)}
                     className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"

@@ -65,6 +65,7 @@ export interface DiagnosticOrderRecord {
   referred_by_doctor_id?: string;
   status: "ORDERED" | "PAID" | "SAMPLE_COLLECTED" | "PROCESSING" | "VERIFIED" | "DELIVERED" | "CANCELLED";
   clinical_notes?: string;
+  pathologist_remarks?: string;
   verified_by_profile_id?: string;
   verified_at?: string;
   created_at: string;
