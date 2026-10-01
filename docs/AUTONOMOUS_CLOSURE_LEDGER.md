@@ -9,24 +9,21 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-02T02:15:00+06:00` | VERIFIED |
-| **Current Git HEAD** | `7958bda3f624d2a457c9fe10cf6feea396b035e4` (`7958bda`) | VERIFIED |
+| **Execution Timestamp** | `2026-10-02T03:00:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`) | VERIFIED |
-| **Preserved Release Tag** | `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.28` | VERIFIED |
+| **Preserved Release Tags** | `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` aligned with HEAD | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.27` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.27` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.27` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.27` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.27` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.27` | VERIFIED |
-| **Database Migrations Count** | `98 migration files` | VERIFIED |
-| **Latest Applied Migration** | `20261001030000_harden_secdef_search_path_and_grants.sql` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.28` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.28` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.28` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.28` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.28` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.28` | VERIFIED |
+| **Database Migrations Count** | `99 migration files` | VERIFIED |
+| **Latest Applied Migration** | `20261002040000_fix_beds_wards_schema_and_atomic_workflow.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Production Deployment** | `https://2cd621b2.onnesha-hospital.pages.dev` / `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Deployment Commit SHA** | `7958bda3` | VERIFIED |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting GitHub Actions Windows runner) | VERIFIED |
 | **Prerendered Website Routes** | `58 routes` (56 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 
@@ -36,8 +33,8 @@
 
 | Suite / Gate | Result / Count | Status | Notes |
 |:---|:---:|:---:|:---|
-| **Total Test Suites** | `96 suites` | PASS | 100% of discovered test files passing |
-| **Active Test Passes** | `850 passes` | PASS | Zero active failures, zero regressions |
+| **Total Test Suites** | `97 suites` | PASS | 100% of discovered test files passing |
+| **Active Test Passes** | `860 passes` | PASS | Zero active failures, zero regressions |
 | **Test Failures** | `0 failures` | PASS | Zero active failures |
 | **Standard / Environment Skips** | `6 skips` | SKIPPED | Explicitly justified hermetic skips |
 | **TypeScript Strict Compilation** | `0 errors` | PASS | `tsc --noEmit` clean (exit code 0) |

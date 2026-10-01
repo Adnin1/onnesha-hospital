@@ -44,6 +44,7 @@ export interface BedRecord {
   bed_type_id: string;
   bed_number: string;
   status: "VACANT" | "OCCUPIED" | "CLEANING" | "MAINTENANCE";
+  daily_rate?: number;
   is_active: boolean;
   created_at?: string;
   ward?: WardRecord;

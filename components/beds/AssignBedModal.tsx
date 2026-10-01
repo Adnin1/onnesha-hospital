@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, UserPlus, Search, Check, Loader2 } from "lucide-react";
+import { X, UserPlus, Search, Check, Loader2, Stethoscope, FileText, Calendar, DollarSign } from "lucide-react";
 import { BedRecord, CabinRecord } from "@/types/beds-ot";
 import { PatientMaster } from "@/types/clinical";
 import { searchPatientsAction } from "@/lib/patient/actions";
@@ -28,9 +28,12 @@ export function AssignBedModal({
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPatientId, setSelectedPatientId] = useState("");
-  const [dailyRate, setDailyRate] = useState(
-    String(selectedBed?.bed_type?.daily_rate || selectedCabin?.daily_rate || 500)
-  );
+  const [admissionType, setAdmissionType] = useState("IPD Admission");
+  const [consultantName, setConsultantName] = useState("Dr. Inpatient Consultant");
+  const [admissionReason, setAdmissionReason] = useState("Acute observation and treatment");
+  const defaultRate = String(selectedBed?.bed_type?.daily_rate || selectedBed?.daily_rate || selectedCabin?.daily_rate || 600);
+  const [customDailyRate, setCustomDailyRate] = useState<string | null>(null);
+  const dailyRate = customDailyRate !== null ? customDailyRate : defaultRate;
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -56,9 +59,9 @@ export function AssignBedModal({
   if (!isOpen) return null;
 
   const targetTitle = selectedBed
-    ? `বেড: ${selectedBed.bed_number} (${selectedBed.ward?.name || "Ward"})`
+    ? `${selectedBed.bed_number} — ${selectedBed.ward?.name || "General Ward"}`
     : selectedCabin
-    ? `কেবিন: ${selectedCabin.cabin_number}`
+    ? `Cabin ${selectedCabin.cabin_number} (Floor ${selectedCabin.floor_number})`
     : "বেড বরাদ্দ";
 
   const handleAssign = async (e: React.FormEvent) => {
@@ -68,18 +71,19 @@ export function AssignBedModal({
       return;
     }
     setSubmitting(true);
-    const fakeVisitId = `vst-${Date.now()}`;
     const res = await assignBedAction({
-      visitId: fakeVisitId,
       patientId: selectedPatientId,
       bedId: selectedBed?.id,
       cabinId: selectedCabin?.id,
-      dailyCharge: Number(dailyRate) || 500,
+      dailyCharge: Number(dailyRate) || 600,
+      admissionType: admissionType,
+      admissionReason: admissionReason.trim(),
+      doctorName: consultantName.trim(),
     });
     setSubmitting(false);
 
     if (res.success) {
-      onToast("রোগীর জন্য সফলভাবে বেড বরাদ্দ সম্পন্ন হয়েছে।", "success");
+      onToast("রোগীর জন্য সফলভাবে বেড বরাদ্দ ও ভর্তি সম্পন্ন হয়েছে।", "success");
       onAssigned();
       onClose();
     } else {
@@ -89,16 +93,16 @@ export function AssignBedModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
               <UserPlus className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                রোগী বেড বরাদ্দকরণ (Bed Allocation)
+                রোগী ভর্তি ও বেড বরাদ্দ (Assign Bed / Admit Patient)
               </h2>
               <p className="text-xs text-slate-500 font-medium">{targetTitle}</p>
             </div>
@@ -112,24 +116,24 @@ export function AssignBedModal({
         </div>
 
         {/* Body */}
-        <form onSubmit={handleAssign} className="p-5 space-y-4 overflow-y-auto flex-1">
+        <form onSubmit={handleAssign} className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
           {/* Patient Search */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              রোগী নির্বাচন করুন (Select Patient) *
+              রোগী নির্বাচন করুন (Search OH-ID / Patient Name) *
             </label>
             <div className="relative mb-2">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
-                placeholder="রোগীর নাম বা OH-ID বা মোবাইল দিয়ে খুঁজুন..."
+                placeholder="রোগীর নাম বা OH-ID বা মোবাইল নম্বর দিয়ে খুঁজুন..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               />
             </div>
 
-            <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+            <div className="max-h-36 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50">
               {loadingPatients ? (
                 <div className="p-4 text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
                   <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
@@ -147,7 +151,7 @@ export function AssignBedModal({
                     className={`p-2.5 flex items-center justify-between cursor-pointer transition text-xs ${
                       selectedPatientId === pat.id
                         ? "bg-emerald-50 text-emerald-900 font-bold"
-                        : "hover:bg-slate-50 text-slate-700"
+                        : "hover:bg-slate-100 text-slate-700"
                     }`}
                   >
                     <div>
@@ -157,7 +161,7 @@ export function AssignBedModal({
                       </p>
                     </div>
                     {selectedPatientId === pat.id && (
-                      <Check className="w-4 h-4 text-emerald-600" />
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                     )}
                   </div>
                 ))
@@ -165,37 +169,127 @@ export function AssignBedModal({
             </div>
           </div>
 
-          {/* Daily Charge */}
+          {/* Admission Type & Ward/Bed Info */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                ভর্তির ধরন (Admission Type)
+              </label>
+              <select
+                value={admissionType}
+                onChange={(e) => setAdmissionType(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="IPD Admission">IPD Admission (সাধারণ ভর্তি)</option>
+                <option value="Emergency IPD">Emergency IPD (জরুরি ভর্তি)</option>
+                <option value="Post-Operative">Post-Operative (অপারেশন পরবর্তী)</option>
+                <option value="Observation Daycare">Daycare Observation</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                নির্ধারিত স্থান (Allocated Bed / Ward)
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={targetTitle}
+                className="w-full px-3 py-2 border border-slate-200 bg-slate-100 rounded-xl text-xs text-slate-700 font-semibold cursor-not-allowed"
+              />
+            </div>
+          </div>
+
+          {/* Consultant Doctor */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              দৈনিক ভাড়া (Daily Charge ৳) *
+            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+              <Stethoscope className="w-3.5 h-3.5 text-indigo-600" />
+              দায়িত্বপ্রাপ্ত কনসালট্যান্ট (Consultant Doctor) *
             </label>
             <input
-              type="number"
-              min="0"
+              type="text"
               required
-              value={dailyRate}
-              onChange={(e) => setDailyRate(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              value={consultantName}
+              onChange={(e) => setConsultantName(e.target.value)}
+              placeholder="Dr. Consultant Name, MBBS, FCPS"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
 
+          {/* Admission Reason / Diagnosis */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+              <FileText className="w-3.5 h-3.5 text-slate-500" />
+              ভর্তির কারণ / প্রাথমিক পর্যবেক্ষণ (Admission Reason) *
+            </label>
+            <input
+              type="text"
+              required
+              value={admissionReason}
+              onChange={(e) => setAdmissionReason(e.target.value)}
+              placeholder="যেমন: Severe abdominal pain, suspected appendicitis"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          {/* Date and Daily Bed Charge */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                ভর্তির সময় (Admission Date/Time)
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={new Date().toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+                className="w-full px-3 py-2 border border-slate-200 bg-slate-100 rounded-xl text-xs text-slate-600 cursor-not-allowed"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1">
+                <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                দৈনিক ভাড়া (Daily Bed Charge - ৳) *
+              </label>
+              <input
+                type="number"
+                min="0"
+                required
+                value={dailyRate}
+                onChange={(e) => setCustomDailyRate(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white font-mono font-bold text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+          </div>
+
+          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800">
+            ✓ নিশ্চিত করলে এক ক্লিকে রোগীর IPD এডমিশন, বেড এসাইনমেন্ট, বেড OCCUPIED স্ট্যাটাস এবং অডিট লগ স্বয়ংক্রিয় অ্যাটমিক ট্রানজেকশনে সম্পন্ন হবে।
+          </div>
+
           {/* Actions */}
-          <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+          <div className="flex gap-2 justify-end pt-2">
             <button
               type="button"
+              disabled={submitting}
               onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition"
             >
-              বাতিল
+              বাতিল (Cancel)
             </button>
             <button
               type="submit"
-              disabled={submitting || !selectedPatientId}
-              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+              disabled={submitting}
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition flex items-center gap-1.5 shadow-xs"
             >
-              <Check className="w-4 h-4" />
-              <span>{submitting ? "বরাদ্দ হচ্ছে..." : "বেড বরাদ্দ সম্পন্ন করুন"}</span>
+              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>ভর্তি ও বরাদ্দ নিশ্চিত করুন (Confirm Admission)</span>
             </button>
           </div>
         </form>

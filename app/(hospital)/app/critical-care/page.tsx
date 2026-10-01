@@ -11,26 +11,32 @@ import {
   CheckCircle2,
   Stethoscope,
   LogOut,
+  ArrowRightLeft,
 } from "lucide-react";
 import {
   getCriticalCareAdmissionsAction,
   dischargeCriticalCareAdmissionAction,
+  getCriticalCareAlertsAction,
   CriticalCareAdmission,
+  CriticalCareAlert,
 } from "@/lib/critical-care/actions";
 import { CriticalCareAdmissionModal } from "@/components/critical-care/CriticalCareAdmissionModal";
 import { CriticalCareVitalsModal } from "@/components/critical-care/CriticalCareVitalsModal";
+import { CriticalCarePatientPanel } from "@/components/critical-care/CriticalCarePatientPanel";
 
 export default function CriticalCarePage() {
   const [selectedUnit, setSelectedUnit] = useState<string>("ICU");
   const [patientSearch, setPatientSearch] = useState<string>("");
   const [admissions, setAdmissions] = useState<CriticalCareAdmission[]>([]);
+  const [activeAlerts, setActiveAlerts] = useState<CriticalCareAlert[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
-  // Modals
+  // Modals & Drawers
   const [isAdmissionModalOpen, setIsAdmissionModalOpen] = useState(false);
   const [vitalsModalAdmission, setVitalsModalAdmission] = useState<CriticalCareAdmission | null>(null);
+  const [selectedPatientAdmission, setSelectedPatientAdmission] = useState<CriticalCareAdmission | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -38,12 +44,20 @@ export default function CriticalCarePage() {
     async function fetchData() {
       setLoading(true);
       setErrorMsg(null);
-      const res = await getCriticalCareAdmissionsAction(selectedUnit);
+      const [resAdmissions, resAlerts] = await Promise.all([
+        getCriticalCareAdmissionsAction(selectedUnit),
+        getCriticalCareAlertsAction(),
+      ]);
+
       if (!isMounted) return;
-      if (res.success && res.data) {
-        setAdmissions(res.data);
+      if (resAdmissions.success && resAdmissions.data) {
+        setAdmissions(resAdmissions.data);
       } else {
-        setErrorMsg(res.error || "Failed to load critical care admissions.");
+        setErrorMsg(resAdmissions.error || "Failed to load critical care admissions.");
+      }
+
+      if (resAlerts.success) {
+        setActiveAlerts(resAlerts.data.filter((a) => a.status === "TRIGGERED" || a.status === "ACKNOWLEDGED"));
       }
       setLoading(false);
     }
@@ -63,15 +77,17 @@ export default function CriticalCarePage() {
     newStatus: "transferred" | "discharged"
   ) {
     const label = newStatus === "transferred" ? "জেনারেল ওয়ার্ডে স্থানান্তর (Step-down)" : "ছাড়পত্র (Discharge)";
-    if (!window.confirm(`আপনি কি নিশ্চিত যে রোগী ${adm.patients?.full_name || ""} কে ${label} করতে চান?`)) {
+    if (!window.confirm(`আপনি কি নিশ্চিত যে রোগী ${adm.patients?.full_name || ""} কে ${label} করতে চান? (বেড স্ট্যাটাস ক্লিনিক্যাল ক্লিনিং-এ স্থানান্তরিত হবে)`)) {
       return;
     }
     const res = await dischargeCriticalCareAdmissionAction({
       admissionId: adm.id,
       status: newStatus,
+      destination: newStatus === "transferred" ? "General Medical Ward" : "Home",
     });
     if (res.success) {
-      showSuccess(`রোগীর ${label} সফলভাবে সম্পন্ন হয়েছে।`);
+      showSuccess(`রোগীর ${label} সফলভাবে সম্পন্ন হয়েছে। বেড ক্লিনিং প্রক্রিয়ায় পাঠানো হয়েছে।`);
+      setSelectedPatientAdmission(null);
       setRefreshKey((k) => k + 1);
     } else {
       setErrorMsg(res.error || "স্ট্যাটাস পরিবর্তন করতে ব্যর্থ হয়েছে।");
@@ -87,7 +103,7 @@ export default function CriticalCarePage() {
     return pCode.includes(term) || pName.includes(term) || bNum.includes(term);
   });
 
-  const activeAdmissions = admissions.filter((a) => a.status === "admitted");
+  const activeAdmissions = admissions.filter((a) => a.status === "admitted" || a.status === "ACTIVE");
   const activeVentilators = activeAdmissions.filter((a) => a.ventilator_required).length;
 
   return (
@@ -166,9 +182,11 @@ export default function CriticalCarePage() {
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Triage Alerts</p>
-            <p className="text-2xl font-bold text-emerald-600 mt-1">0 Critical Alerts</p>
+            <p className="text-2xl font-bold text-rose-600 mt-1">
+              {activeAlerts.length} Critical Alerts
+            </p>
           </div>
-          <div className="h-10 w-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
             <AlertTriangle className="h-5 w-5" />
           </div>
         </div>
@@ -219,15 +237,35 @@ export default function CriticalCarePage() {
                 </tr>
               ) : filteredAdmissions.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-8 text-slate-400">
-                    <HeartPulse className="h-8 w-8 mx-auto text-slate-300" />
-                    <p className="mt-2 text-sm font-medium text-slate-600">No active {selectedUnit} admissions found.</p>
-                    <p className="text-xs text-slate-400">Click &ldquo;+ Critical Care Admission&rdquo; above to admit a patient.</p>
+                  <td colSpan={8} className="py-12">
+                    <div className="text-center max-w-md mx-auto space-y-3">
+                      <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
+                        <HeartPulse className="h-6 w-6" />
+                      </div>
+                      <h3 className="text-base font-bold text-slate-800">
+                        No active {selectedUnit} admissions
+                      </h3>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        Currently there are no admitted patients in the {selectedUnit} complex. All configured beds are vacant and ready for admission.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setIsAdmissionModalOpen(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        + Critical Care Admission
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 filteredAdmissions.map((adm) => (
-                  <tr key={adm.id} className="hover:bg-slate-50/50">
+                  <tr
+                    key={adm.id}
+                    onClick={() => setSelectedPatientAdmission(adm)}
+                    className="hover:bg-rose-50/40 cursor-pointer transition-colors"
+                  >
                     <td className="px-4 py-3 font-semibold text-slate-900">{adm.bed_number}</td>
                     <td className="px-4 py-3 font-mono text-xs">{adm.patients?.patient_code || "N/A"}</td>
                     <td className="px-4 py-3 font-medium text-slate-900">{adm.patients?.full_name || "Anonymous Patient"}</td>
@@ -250,15 +288,15 @@ export default function CriticalCarePage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 text-xs rounded font-medium capitalize ${
-                        adm.status === "admitted"
+                        adm.status === "admitted" || adm.status === "ACTIVE"
                           ? "bg-emerald-100 text-emerald-800"
                           : "bg-slate-100 text-slate-600"
                       }`}>
                         {adm.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      {adm.status === "admitted" ? (
+                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      {adm.status === "admitted" || adm.status === "ACTIVE" ? (
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
@@ -275,8 +313,17 @@ export default function CriticalCarePage() {
                             className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                             title="জেনারেল ওয়ার্ডে স্থানান্তর"
                           >
-                            <LogOut className="h-3.5 w-3.5" />
+                            <ArrowRightLeft className="h-3.5 w-3.5" />
                             ট্রান্সফার
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleDischargeOrTransfer(adm, "discharged")}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="আইসিইউ ছাড়পত্র"
+                          >
+                            <LogOut className="h-3.5 w-3.5" />
+                            ছাড়পত্র
                           </button>
                         </div>
                       ) : (
@@ -300,6 +347,7 @@ export default function CriticalCarePage() {
         onSuccess={(newAdmission) => {
           setAdmissions((prev) => [newAdmission, ...prev]);
           showSuccess("রোগী সফলভাবে ক্রিটিক্যাল কেয়ার ইউনিটে ভর্তি করা হয়েছে।");
+          setRefreshKey((k) => k + 1);
         }}
       />
 
@@ -312,6 +360,17 @@ export default function CriticalCarePage() {
           showSuccess("ভাইটালস সফলভাবে রেকর্ড করা হয়েছে।");
           setRefreshKey((k) => k + 1);
         }}
+      />
+
+      {/* Critical Care Patient Slide-Over Panel */}
+      <CriticalCarePatientPanel
+        isOpen={!!selectedPatientAdmission}
+        admission={selectedPatientAdmission}
+        onClose={() => setSelectedPatientAdmission(null)}
+        onRecordVitals={(adm) => setVitalsModalAdmission(adm)}
+        onTransfer={(adm) => void handleDischargeOrTransfer(adm, "transferred")}
+        onDischarge={(adm) => void handleDischargeOrTransfer(adm, "discharged")}
+        onAlertUpdated={() => setRefreshKey((k) => k + 1)}
       />
     </div>
   );

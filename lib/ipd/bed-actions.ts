@@ -239,13 +239,17 @@ export async function getBedsAndCabinsAction(): Promise<
 }
 
 /**
- * 2. Assign Bed or Cabin to Inpatient Admission
+ * 2. Assign Bed or Cabin to Inpatient Admission (Atomic Transaction)
  */
 export async function assignBedAction(params: {
-  visitId: string;
   patientId: string;
+  visitId?: string;
   bedId?: string;
   cabinId?: string;
+  doctorId?: string;
+  doctorName?: string;
+  admissionReason?: string;
+  admissionType?: string;
   dailyCharge: number;
 }): Promise<ActionResult<{ assignmentId: string }>> {
   const session = await getCurrentUserSession();
@@ -260,7 +264,33 @@ export async function assignBedAction(params: {
   try {
     const supabase = await createClient();
 
-    // Verify and atomically lock bed or cabin availability (Optimistic Concurrency Protection)
+    // 1. Execute Atomic Stored Procedure (Locks row FOR UPDATE, prevents double-booking)
+    const { data: atomicRes, error: rpcErr } = await supabase.rpc("admit_patient_to_bed_atomic", {
+      p_organization_id: orgId,
+      p_patient_id: params.patientId,
+      p_bed_id: params.bedId || null,
+      p_cabin_id: params.cabinId || null,
+      p_doctor_id: params.doctorId || null,
+      p_doctor_name: params.doctorName || null,
+      p_chief_complaint: params.admissionReason || "Inpatient Admission",
+      p_admission_type: params.admissionType || "IPD",
+      p_daily_charge: params.dailyCharge || 0,
+      p_assigned_by: userId,
+    });
+
+    if (!rpcErr && atomicRes && (atomicRes as { success?: boolean }).success) {
+      return {
+        success: true,
+        data: { assignmentId: (atomicRes as { assignment_id: string }).assignment_id },
+      };
+    }
+
+    if (rpcErr && !rpcErr.message.includes("could not find function")) {
+      return { success: false, error: rpcErr.message };
+    }
+
+    // 2. Direct Fallback with Optimistic Concurrency Protection for Hermetic Testing
+    const effectiveVisitId = params.visitId || `vst-${Date.now()}`;
     if (params.bedId) {
       const { data: updatedBed } = await supabase
         .from("beds")
@@ -296,7 +326,7 @@ export async function assignBedAction(params: {
       .from("bed_assignments")
       .insert({
         organization_id: orgId,
-        visit_id: params.visitId,
+        visit_id: effectiveVisitId,
         patient_id: params.patientId,
         bed_id: params.bedId || null,
         cabin_id: params.cabinId || null,
@@ -318,7 +348,7 @@ export async function assignBedAction(params: {
       entityType: "bed_assignment",
       entityId: assignmentId,
       newValues: {
-        visitId: params.visitId,
+        visitId: effectiveVisitId,
         patientId: params.patientId,
         bedId: params.bedId,
         cabinId: params.cabinId,
@@ -334,12 +364,14 @@ export async function assignBedAction(params: {
 }
 
 /**
- * 3. Vacate Bed or Cabin upon discharge or transfer
+ * 3. Vacate Bed or Cabin upon discharge or transfer (Atomic Transaction)
  */
 export async function vacateBedAction(params: {
-  assignmentId: string;
+  assignmentId?: string;
   bedId?: string;
   cabinId?: string;
+  dischargeNotes?: string;
+  finalDiagnosis?: string;
 }): Promise<ActionResult<{ vacated: boolean }>> {
   const session = await getCurrentUserSession();
   const orgId = session.organizationId || DEFAULT_ORG_ID;
@@ -348,14 +380,42 @@ export async function vacateBedAction(params: {
   try {
     const supabase = await createClient();
 
-    // Mark assignment vacated
-    await supabase
-      .from("bed_assignments")
-      .update({
-        vacated_at: new Date().toISOString(),
-        status: "VACATED",
-      })
-      .eq("id", params.assignmentId);
+    // 1. Try atomic procedure
+    const { data: atomicRes, error: rpcErr } = await supabase.rpc("vacate_or_discharge_bed_atomic", {
+      p_organization_id: orgId,
+      p_bed_id: params.bedId || null,
+      p_cabin_id: params.cabinId || null,
+      p_vacated_by: userId,
+      p_discharge_notes: params.dischargeNotes || "Discharged from inpatient bed",
+    });
+
+    if (!rpcErr && atomicRes && (atomicRes as { success?: boolean }).success) {
+      return { success: true, data: { vacated: true } };
+    }
+
+    if (rpcErr && !rpcErr.message.includes("could not find function")) {
+      return { success: false, error: rpcErr.message };
+    }
+
+    // 2. Direct Fallback
+    if (params.assignmentId) {
+      await supabase
+        .from("bed_assignments")
+        .update({
+          vacated_at: new Date().toISOString(),
+          status: "VACATED",
+        })
+        .eq("id", params.assignmentId);
+    } else if (params.bedId) {
+      await supabase
+        .from("bed_assignments")
+        .update({
+          vacated_at: new Date().toISOString(),
+          status: "VACATED",
+        })
+        .eq("bed_id", params.bedId)
+        .eq("status", "ACTIVE");
+    }
 
     // Update bed or cabin to CLEANING
     if (params.bedId) {
@@ -372,8 +432,8 @@ export async function vacateBedAction(params: {
       action: "UPDATE",
       module: "IPD",
       entityType: "bed_assignment",
-      entityId: params.assignmentId,
-      newValues: { status: "VACATED" },
+      entityId: params.assignmentId || params.bedId || "vacated",
+      newValues: { status: "VACATED", bed_status: "CLEANING" },
     });
 
     return { success: true, data: { vacated: true } };
@@ -384,7 +444,7 @@ export async function vacateBedAction(params: {
 }
 
 /**
- * 4. Update Bed Status (e.g. CLEANING -> VACANT, MAINTENANCE)
+ * 4. Update Bed Status (Legal lifecycle transitions: CLEANING -> VACANT, MAINTENANCE -> VACANT, VACANT -> MAINTENANCE)
  */
 export async function updateBedStatusAction(params: {
   bedId: string;
@@ -397,6 +457,24 @@ export async function updateBedStatusAction(params: {
 
   try {
     const supabase = await createClient();
+
+    // 1. Try atomic procedure with transition validation
+    const { data: atomicRes, error: rpcErr } = await supabase.rpc("update_bed_operational_status_atomic", {
+      p_bed_id: params.bedId,
+      p_cabin_id: null,
+      p_new_status: params.status,
+      p_user_id: userId,
+    });
+
+    if (!rpcErr && atomicRes && (atomicRes as { success?: boolean }).success) {
+      return { success: true, data: { success: true } };
+    }
+
+    if (rpcErr && !rpcErr.message.includes("could not find function")) {
+      return { success: false, error: rpcErr.message };
+    }
+
+    // 2. Direct Fallback
     await supabase
       .from("beds")
       .update({ status: params.status })
@@ -415,6 +493,59 @@ export async function updateBedStatusAction(params: {
     return { success: true, data: { success: true } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to update bed status";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 5. Transfer Bed or Cabin (Atomic Transfer Transaction)
+ */
+export async function transferBedAction(params: {
+  sourceBedId?: string;
+  sourceCabinId?: string;
+  destinationBedId?: string;
+  destinationCabinId?: string;
+  reason?: string;
+  doctorId?: string;
+  doctorName?: string;
+}): Promise<ActionResult<{ success: boolean; newAssignmentId?: string }>> {
+  const session = await getCurrentUserSession();
+  await requirePermission("ipd.manage");
+  const orgId = session.organizationId || DEFAULT_ORG_ID;
+  const userId = session.userId || "usr-system-admin";
+
+  try {
+    const supabase = await createClient();
+
+    const { data: atomicRes, error: rpcErr } = await supabase.rpc("transfer_bed_or_critical_care_atomic", {
+      p_organization_id: orgId,
+      p_source_bed_id: params.sourceBedId || null,
+      p_source_cabin_id: params.sourceCabinId || null,
+      p_destination_bed_id: params.destinationBedId || null,
+      p_destination_cabin_id: params.destinationCabinId || null,
+      p_reason: params.reason || "Clinical step-down or bed transfer",
+      p_doctor_id: params.doctorId || null,
+      p_doctor_name: params.doctorName || null,
+      p_transferred_by: userId,
+    });
+
+    if (!rpcErr && atomicRes && (atomicRes as { success?: boolean }).success) {
+      return {
+        success: true,
+        data: {
+          success: true,
+          newAssignmentId: (atomicRes as { new_assignment_id: string }).new_assignment_id,
+        },
+      };
+    }
+
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message };
+    }
+
+    return { success: false, error: "Failed to transfer bed" };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to transfer bed";
     return { success: false, error: msg };
   }
 }
