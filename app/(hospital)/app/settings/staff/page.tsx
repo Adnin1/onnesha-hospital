@@ -152,11 +152,12 @@ export default function StaffManagementPage() {
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStaffFullName.trim() || !newStaffEmail.trim() || !newStaffPhone.trim()) {
-      alert("অনুগ্রহ করে সকল প্রয়োজনীয় ফিল্ড পূরণ করুন।");
+      setErrorMsg("অনুগ্রহ করে সকল প্রয়োজনীয় ফিল্ড পূরণ করুন।");
       return;
     }
 
     setSubmittingCreate(true);
+    setErrorMsg(null);
     try {
       const tempPassword = generateSecureTemporaryPassword();
       const res = await createStaffAccountAction({
@@ -186,11 +187,11 @@ export default function StaffManagementPage() {
         fetchDirectory();
         triggerToast("নতুন স্টাফ অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!");
       } else {
-        alert("অ্যাকাউন্ট তৈরি ব্যর্থ: " + (res.error || "Unknown error"));
+        setErrorMsg("অ্যাকাউন্ট তৈরি ব্যর্থ: " + (res.error || "Unknown error"));
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error creating staff";
-      alert("ব্যর্থ: " + msg);
+      setErrorMsg("ব্যর্থ: " + msg);
     } finally {
       setSubmittingCreate(false);
     }
@@ -202,6 +203,7 @@ export default function StaffManagementPage() {
     if (!showRoleModal) return;
 
     setSubmittingRoleChange(true);
+    setErrorMsg(null);
     try {
       const res = await changeStaffRoleAction(showRoleModal.id, selectedNewRole);
       if (res.success) {
@@ -209,11 +211,11 @@ export default function StaffManagementPage() {
         fetchDirectory();
         triggerToast("স্টাফ রোল সফলভাবে পরিবর্তন করা হয়েছে!");
       } else {
-        alert("রোল পরিবর্তন ব্যর্থ: " + (res.error || "Unknown error"));
+        setErrorMsg("রোল পরিবর্তন ব্যর্থ: " + (res.error || "Unknown error"));
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error updating role";
-      alert("ব্যর্থ: " + msg);
+      setErrorMsg("ব্যর্থ: " + msg);
     } finally {
       setSubmittingRoleChange(false);
     }
@@ -233,17 +235,18 @@ export default function StaffManagementPage() {
 
     if (!window.confirm(confirmMsg)) return;
 
+    setErrorMsg(null);
     try {
       const res = await setStaffStatusAction(staff.id, newStatus);
       if (res.success) {
         fetchDirectory();
         triggerToast(`অ্যাকাউন্ট স্ট্যাটাস সফলভাবে '${newStatus}' করা হয়েছে।`);
       } else {
-        alert("স্ট্যাটাস পরিবর্তন ব্যর্থ: " + (res.error || "Unknown error"));
+        setErrorMsg("স্ট্যাটাস পরিবর্তন ব্যর্থ: " + (res.error || "Unknown error"));
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error updating status";
-      alert("ব্যর্থ: " + msg);
+      setErrorMsg("ব্যর্থ: " + msg);
     }
   };
 
@@ -253,11 +256,12 @@ export default function StaffManagementPage() {
     if (!showResetModal) return;
 
     if (resetMode === "custom" && customResetPassword.trim().length < 8) {
-      alert("সুপার অ্যাডমিন নির্ধারিত পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।");
+      setErrorMsg("সুপার অ্যাডমিন নির্ধারিত পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।");
       return;
     }
 
     setSubmittingReset(true);
+    setErrorMsg(null);
     try {
       const passwordToSet =
         resetMode === "custom" && customResetPassword.trim()
@@ -283,11 +287,11 @@ export default function StaffManagementPage() {
         fetchDirectory();
         triggerToast("পাসওয়ার্ড সফলভাবে আপডেট করা হয়েছে এবং নিরাপত্তা অডিট লগে রেকর্ড করা হয়েছে।");
       } else {
-        alert("পাসওয়ার্ড রিসেট ব্যর্থ: " + (res.error || "Unknown error"));
+        setErrorMsg("পাসওয়ার্ড রিসেট ব্যর্থ: " + (res.error || "Unknown error"));
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error resetting password";
-      alert("ব্যর্থ: " + msg);
+      setErrorMsg("ব্যর্থ: " + msg);
     } finally {
       setSubmittingReset(false);
     }

@@ -60,6 +60,11 @@ export default function AccountingPage() {
   ]);
   const [submitting, setSubmitting] = useState(false);
 
+  // Reversal Modal
+  const [reversalModalEntry, setReversalModalEntry] = useState<{ id: string; num: string } | null>(null);
+  const [reversalReason, setReversalReason] = useState("");
+  const [reversing, setReversing] = useState(false);
+
   // New Account Modal
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [newAccCode, setNewAccCode] = useState("");
@@ -143,26 +148,37 @@ export default function AccountingPage() {
     };
   }, []);
 
-  const handleReverseJournal = async (entryId: string, entryNum: string) => {
-    const reason = window.prompt(`Enter mandatory reason for reversing journal entry ${entryNum}:`);
-    if (!reason || !reason.trim()) return;
-    setLoading(true);
+  const handleReverseJournal = (entryId: string, entryNum: string) => {
+    setReversalModalEntry({ id: entryId, num: entryNum });
+    setReversalReason("");
+  };
+
+  const handleConfirmReverse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reversalModalEntry) return;
+    if (!reversalReason.trim()) {
+      setErrorMsg("Mandatory reversal justification required.");
+      return;
+    }
+    setReversing(true);
     try {
       const res = await reverseJournalEntryAction({
-        originalEntryId: entryId,
-        reversalReason: reason.trim(),
+        originalEntryId: reversalModalEntry.id,
+        reversalReason: reversalReason.trim(),
       });
       if (!res.success) {
         setErrorMsg(res.error || "Failed to reverse journal entry");
       } else {
-        setSuccessMsg(`Journal entry ${entryNum} successfully reversed.`);
+        setSuccessMsg(`Journal entry ${reversalModalEntry.num} successfully reversed.`);
+        setReversalModalEntry(null);
+        setReversalReason("");
         await loadData();
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error reversing entry";
       setErrorMsg(msg);
     } finally {
-      setLoading(false);
+      setReversing(false);
     }
   };
 
@@ -933,6 +949,53 @@ export default function AccountingPage() {
                   className="px-4 py-2 text-sm font-medium bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50"
                 >
                   {submitting ? "Creating..." : "Save Account"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reversal Confirmation Modal */}
+      {reversalModalEntry && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+              Reverse Journal Entry {reversalModalEntry.num}
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Enter mandatory reason for reversing this entry. A compensating reversal entry will be posted into the general ledger.
+            </p>
+
+            <form onSubmit={handleConfirmReverse} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Reversal Reason / Audit Justification <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={reversalReason}
+                  onChange={(e) => setReversalReason(e.target.value)}
+                  placeholder="e.g. Correcting mistaken duplicate entry from invoice batch..."
+                  className="w-full p-2.5 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setReversalModalEntry(null)}
+                  className="px-4 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reversing || !reversalReason.trim()}
+                  className="px-4 py-2 text-xs font-medium bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50"
+                >
+                  {reversing ? "Reversing..." : "Confirm Reversal"}
                 </button>
               </div>
             </form>

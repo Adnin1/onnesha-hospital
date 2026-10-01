@@ -24,6 +24,7 @@ import {
   createMedicineBatchAction,
 } from "@/lib/pharmacy/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
+import { Toast } from "@/components/ui/Toast";
 
 export default function PharmacyPage() {
   const [loading, setLoading] = useState(true);
@@ -32,6 +33,7 @@ export default function PharmacyPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"catalog" | "pos" | "ledger">("catalog");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   // POS Sale State
   const [selectedBatchId, setSelectedBatchId] = useState("");
@@ -164,7 +166,7 @@ export default function PharmacyPage() {
   const handleDispenseMedicine = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBatchId) {
-      alert("Please select a medicine batch with available stock.");
+      setToast({ message: "Please select a medicine batch with available stock.", type: "error" });
       return;
     }
 
@@ -177,15 +179,15 @@ export default function PharmacyPage() {
       });
 
       if (res.success && res.data) {
-        setPosSuccessMsg(
-          `Sale ${res.data.sale.sale_number} processed! Amount: ${formatCurrencyBDT(res.data.sale.total_amount)} (Remaining stock: ${res.data.remainingStock})`
-        );
+        const msg = `Sale ${res.data.sale.sale_number} processed! Amount: ${formatCurrencyBDT(res.data.sale.total_amount)} (Remaining stock: ${res.data.remainingStock})`;
+        setPosSuccessMsg(msg);
+        setToast({ message: msg, type: "success" });
         await loadCatalog();
       } else {
-        alert(res.error || "Failed to dispense medicine");
+        setToast({ message: res.error || "Failed to dispense medicine", type: "error" });
       }
     } catch {
-      alert("Network error processing sale");
+      setToast({ message: "Network error processing sale", type: "error" });
     } finally {
       setPosLoading(false);
     }
@@ -203,13 +205,14 @@ export default function PharmacyPage() {
       });
       if (res.success) {
         setShowAddMedModal(false);
+        setToast({ message: `Medicine "${newBrandName}" added to catalog.`, type: "success" });
         setNewBrandName("");
         await loadCatalog();
       } else {
-        alert(res.error || "Failed to add medicine");
+        setToast({ message: res.error || "Failed to add medicine", type: "error" });
       }
     } catch {
-      alert("Error adding medicine");
+      setToast({ message: "Error adding medicine", type: "error" });
     }
   };
 
@@ -229,13 +232,14 @@ export default function PharmacyPage() {
 
       if (res.success) {
         setSelectedMedForBatch(null);
+        setToast({ message: `Batch ${newBatchNumber} intake recorded into stock inventory.`, type: "success" });
         setNewBatchNumber("");
         await loadCatalog();
       } else {
-        alert(res.error || "Failed to add batch");
+        setToast({ message: res.error || "Failed to add batch", type: "error" });
       }
     } catch {
-      alert("Error adding batch");
+      setToast({ message: "Error adding batch", type: "error" });
     }
   };
 
@@ -760,6 +764,14 @@ export default function PharmacyPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

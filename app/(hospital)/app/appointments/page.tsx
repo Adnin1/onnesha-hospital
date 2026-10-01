@@ -9,6 +9,7 @@ import {
   X,
   Users,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { DoctorRecord, WaitingQueueRecord } from "@/types/appointments";
 import { PatientMaster } from "@/types/clinical";
@@ -19,6 +20,7 @@ import {
   updateQueueStatusAction,
 } from "@/lib/appointments/actions";
 import { searchPatientsAction } from "@/lib/patient/actions";
+import { Toast } from "@/components/ui/Toast";
 
 export default function AppointmentsQueuePage() {
   const [queue, setQueue] = useState<WaitingQueueRecord[]>([]);
@@ -26,7 +28,9 @@ export default function AppointmentsQueuePage() {
   const [patients, setPatients] = useState<PatientMaster[]>([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshIndex, setRefreshIndex] = useState(0);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   // Walk-in modal state
   const [isWalkInModalOpen, setIsWalkInModalOpen] = useState(false);
@@ -40,29 +44,39 @@ export default function AppointmentsQueuePage() {
     let mounted = true;
     async function initData() {
       setLoading(true);
-      const [docRes, patRes, qRes] = await Promise.all([
-        getDoctorsAction(),
-        searchPatientsAction({ pageSize: 50 }),
-        getLiveWaitingQueueAction(selectedDoctorId || undefined),
-      ]);
+      setLoadError(null);
+      try {
+        const [docRes, patRes, qRes] = await Promise.all([
+          getDoctorsAction(),
+          searchPatientsAction({ pageSize: 50 }),
+          getLiveWaitingQueueAction(selectedDoctorId || undefined),
+        ]);
 
-      if (mounted) {
-        if (docRes.success && docRes.data?.doctors) {
-          setDoctors(docRes.data.doctors);
-          if (!selectedDoctorId && docRes.data.doctors.length > 0) {
-            setModalDoctorId(docRes.data.doctors[0].id);
+        if (mounted) {
+          if (docRes.success && docRes.data?.doctors) {
+            setDoctors(docRes.data.doctors);
+            if (!selectedDoctorId && docRes.data.doctors.length > 0) {
+              setModalDoctorId(docRes.data.doctors[0].id);
+            }
           }
-        }
-        if (patRes.success && patRes.data?.patients) {
-          setPatients(patRes.data.patients);
-          if (patRes.data.patients.length > 0) {
-            setModalPatientId(patRes.data.patients[0].id);
+          if (patRes.success && patRes.data?.patients) {
+            setPatients(patRes.data.patients);
+            if (patRes.data.patients.length > 0) {
+              setModalPatientId(patRes.data.patients[0].id);
+            }
           }
+          if (qRes.success && qRes.data?.queue) {
+            setQueue(qRes.data.queue);
+          } else if (!qRes.success && qRes.error) {
+            setLoadError(qRes.error);
+          }
+          setLoading(false);
         }
-        if (qRes.success && qRes.data?.queue) {
-          setQueue(qRes.data.queue);
+      } catch {
+        if (mounted) {
+          setLoadError("Failed to load appointments queue. Please retry.");
+          setLoading(false);
         }
-        setLoading(false);
       }
     }
     initData();
@@ -74,38 +88,44 @@ export default function AppointmentsQueuePage() {
   const handleGenerateWalkInToken = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!modalDoctorId || !modalPatientId) {
-      alert("Please select both a doctor and a registered patient.");
+      setToast({ message: "Please select both a doctor and a registered patient.", type: "error" });
       return;
     }
 
     setSubmitting(true);
-    const res = await bookAppointmentAction({
-      doctorId: modalDoctorId,
-      patientId: modalPatientId,
-      source: "WALKIN",
-      notes: modalNotes || undefined,
-    });
+    try {
+      const res = await bookAppointmentAction({
+        doctorId: modalDoctorId,
+        patientId: modalPatientId,
+        source: "WALKIN",
+        notes: modalNotes || undefined,
+      });
 
-    setSubmitting(false);
+      setSubmitting(false);
 
-    if (!res.success) {
-      alert(res.error || "Failed to book appointment and generate token.");
-      return;
-    }
+      if (!res.success) {
+        setToast({ message: res.error || "Failed to book appointment and generate token.", type: "error" });
+        return;
+      }
 
-    const tokenNo = res.data?.tokenNumber;
-    const doc = doctors.find((d) => d.id === modalDoctorId);
-    const pat = patients.find((p) => p.id === modalPatientId);
+      const tokenNo = res.data?.tokenNumber;
+      const doc = doctors.find((d) => d.id === modalDoctorId);
+      const pat = patients.find((p) => p.id === modalPatientId);
 
-    setIsWalkInModalOpen(false);
-    setModalNotes("");
-    setRefreshIndex((prev) => prev + 1);
+      setIsWalkInModalOpen(false);
+      setModalNotes("");
+      setRefreshIndex((prev) => prev + 1);
+      setToast({ message: `Token #${tokenNo} generated successfully for ${doc?.full_name || "Doctor"}!`, type: "success" });
 
-    if (pat && doc) {
-      setSmsAlertToast(
-        `SMS Sent to ${pat.phone}: "Onnesha Hospital: Token #${tokenNo} assigned for ${doc.full_name} (${doc.room_number}). Please wait in OPD lobby."`
-      );
-      setTimeout(() => setSmsAlertToast(""), 6000);
+      if (pat && doc) {
+        setSmsAlertToast(
+          `SMS Sent to ${pat.phone}: "Onnesha Hospital: Token #${tokenNo} assigned for ${doc.full_name} (${doc.room_number}). Please wait in OPD lobby."`
+        );
+        setTimeout(() => setSmsAlertToast(""), 6000);
+      }
+    } catch {
+      setSubmitting(false);
+      setToast({ message: "Network error booking appointment.", type: "error" });
     }
   };
 
@@ -113,19 +133,24 @@ export default function AppointmentsQueuePage() {
     queueId: string,
     newStatus: "WAITING" | "CALLED" | "IN_ROOM" | "COMPLETED" | "SKIPPED"
   ) => {
-    const res = await updateQueueStatusAction({
-      queueId,
-      status: newStatus,
-    });
+    try {
+      const res = await updateQueueStatusAction({
+        queueId,
+        status: newStatus,
+      });
 
-    if (res.success) {
-      setQueue((prev) =>
-        prev
-          .map((q) => (q.id === queueId ? { ...q, queue_status: newStatus } : q))
-          .filter((q) => !["COMPLETED", "SKIPPED"].includes(q.queue_status))
-      );
-    } else {
-      alert(res.error || "Failed to update queue status");
+      if (res.success) {
+        setQueue((prev) =>
+          prev
+            .map((q) => (q.id === queueId ? { ...q, queue_status: newStatus } : q))
+            .filter((q) => !["COMPLETED", "SKIPPED"].includes(q.queue_status))
+        );
+        setToast({ message: `Queue status updated to ${newStatus}.`, type: "success" });
+      } else {
+        setToast({ message: res.error || "Failed to update queue status", type: "error" });
+      }
+    } catch {
+      setToast({ message: "Network error updating queue status", type: "error" });
     }
   };
 
@@ -204,6 +229,17 @@ export default function AppointmentsQueuePage() {
 
         {loading ? (
           <div className="py-12 text-center text-xs text-slate-400">Loading active queue...</div>
+        ) : loadError ? (
+          <div className="py-12 text-center text-rose-600 flex flex-col items-center gap-2">
+            <AlertTriangle className="w-8 h-8 text-rose-500" />
+            <p className="font-semibold text-rose-700">{loadError}</p>
+            <button
+              onClick={() => setRefreshIndex((prev) => prev + 1)}
+              className="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold rounded-lg text-xs transition"
+            >
+              Retry
+            </button>
+          </div>
         ) : queue.length === 0 ? (
           <div className="py-12 text-center text-slate-400">
             <Users className="w-8 h-8 mx-auto text-slate-300 mb-2" />
@@ -378,6 +414,14 @@ export default function AppointmentsQueuePage() {
             </form>
           </div>
         </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

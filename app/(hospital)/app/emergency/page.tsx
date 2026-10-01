@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { registerEmergencyEncounterAction, getEmergencyCasesAction } from "@/lib/patient/actions";
 import { HOSPITAL_METADATA } from "@/config/hospital";
+import { Toast } from "@/components/ui/Toast";
 
 interface EmergencyCaseItem {
   id: string;
@@ -33,6 +34,7 @@ export default function EmergencyTriagePage() {
   const [intakeComplaint, setIntakeComplaint] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   const fetchEmergencyRecords = useCallback(async () => {
     try {
@@ -116,8 +118,11 @@ export default function EmergencyTriagePage() {
       setIntakeName("");
       setIntakeComplaint("");
       await loadLiveCases();
+      setToast({ message: "Emergency casualty intake registered successfully!", type: "success" });
     } else {
-      alert(res.error || "Emergency registration failed. Please verify database sequence.");
+      const err = res.error || "Emergency registration failed. Please verify database sequence.";
+      setErrorMessage(err);
+      setToast({ message: err, type: "error" });
     }
     setSubmitting(false);
   };
@@ -357,6 +362,14 @@ export default function EmergencyTriagePage() {
             </form>
           </div>
         </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

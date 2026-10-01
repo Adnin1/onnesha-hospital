@@ -154,7 +154,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Local Container Image (Fail-closed: No fake production fallbacks)
+      - name: "Build Local Container Image (Fail-closed: No fake production fallbacks)"
         uses: docker/build-push-action@v5
         with:
           context: .

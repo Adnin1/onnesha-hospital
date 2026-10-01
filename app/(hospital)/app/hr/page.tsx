@@ -24,6 +24,7 @@ import {
   getPayrollSummaryAction,
 } from "@/lib/hr/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
+import { Toast } from "@/components/ui/Toast";
 
 export default function HRManagementPage() {
   const [activeTab, setActiveTab] = useState<"staff" | "attendance" | "payroll" | "bridge">("staff");
@@ -40,6 +41,7 @@ export default function HRManagementPage() {
     payrollRuns: PayrollRunRecord[];
   } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   // New Employee Modal
   const [showNewEmpModal, setShowNewEmpModal] = useState(false);
@@ -142,11 +144,12 @@ export default function HRManagementPage() {
         setEmpFullName("");
         setEmpPhone("");
         await loadData();
+        setToast({ message: "Employee registered successfully!", type: "success" });
       } else {
-        alert(res.error || "Failed to register employee");
+        setToast({ message: res.error || "Failed to register employee", type: "error" });
       }
     } catch {
-      alert("Network error creating employee");
+      setToast({ message: "Network error creating employee", type: "error" });
     } finally {
       setFormLoading(false);
     }
@@ -167,11 +170,12 @@ export default function HRManagementPage() {
       if (res.success) {
         setShowPunchModal(false);
         await loadData();
+        setToast({ message: `Biometric punch (${punchType}) recorded successfully!`, type: "success" });
       } else {
-        alert(res.error || "Failed to record punch");
+        setToast({ message: res.error || "Failed to record punch", type: "error" });
       }
     } catch {
-      alert("Error simulating biometric punch");
+      setToast({ message: "Error simulating biometric punch", type: "error" });
     } finally {
       setPunchLoading(false);
     }
@@ -617,6 +621,14 @@ export default function HRManagementPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

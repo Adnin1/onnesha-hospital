@@ -11,6 +11,7 @@ import {
 import { WaitingQueueRecord } from "@/types/appointments";
 import { getLiveWaitingQueueAction, updateQueueStatusAction } from "@/lib/appointments/actions";
 import { recordVitalsAction, createClinicalNoteAction } from "@/lib/patient/actions";
+import { Toast } from "@/components/ui/Toast";
 
 export default function OPDConsultationPage() {
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,7 @@ export default function OPDConsultationPage() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   const loadQueue = async () => {
     setLoading(true);
@@ -111,12 +113,13 @@ export default function OPDConsultationPage() {
           });
         }
         setSaved(true);
+        setToast({ message: "Vitals and clinical examination notes saved.", type: "success" });
         setTimeout(() => setSaved(false), 4000);
       } else {
-        alert(res.error || "Failed to record vitals");
+        setToast({ message: res.error || "Failed to record vitals", type: "error" });
       }
     } catch {
-      alert("Error saving vitals to database");
+      setToast({ message: "Error saving vitals to database", type: "error" });
     } finally {
       setSaving(false);
     }
@@ -125,26 +128,36 @@ export default function OPDConsultationPage() {
   const handleCallIn = async (item: WaitingQueueRecord) => {
     setActiveQueueItem(item);
     try {
-      await updateQueueStatusAction({
+      const res = await updateQueueStatusAction({
         queueId: item.id,
         status: "IN_ROOM",
       });
-      await loadQueue();
+      if (res.success) {
+        setToast({ message: `Token #${item.token_number} called into chamber.`, type: "success" });
+        await loadQueue();
+      } else {
+        setToast({ message: res.error || "Failed to update queue status", type: "error" });
+      }
     } catch {
-      // ignore
+      setToast({ message: "Network error calling patient into chamber", type: "error" });
     }
   };
 
   const handleCompleteConsultation = async () => {
     if (!activeQueueItem) return;
     try {
-      await updateQueueStatusAction({
+      const res = await updateQueueStatusAction({
         queueId: activeQueueItem.id,
         status: "COMPLETED",
       });
-      await loadQueue();
+      if (res.success) {
+        setToast({ message: `Consultation marked complete for Token #${activeQueueItem.token_number}.`, type: "success" });
+        await loadQueue();
+      } else {
+        setToast({ message: res.error || "Failed to complete consultation", type: "error" });
+      }
     } catch {
-      // ignore
+      setToast({ message: "Network error completing consultation", type: "error" });
     }
   };
 
@@ -429,6 +442,14 @@ export default function OPDConsultationPage() {
           </div>
         </div>
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

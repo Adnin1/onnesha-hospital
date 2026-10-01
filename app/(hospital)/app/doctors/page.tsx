@@ -18,6 +18,7 @@ import {
   createDoctorScheduleAction,
 } from "@/lib/appointments/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
+import { Toast } from "@/components/ui/Toast";
 
 export default function DoctorsAdminPage() {
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
@@ -26,6 +27,7 @@ export default function DoctorsAdminPage() {
   const [selectedDoctor, setSelectedDoctor] = useState<DoctorRecord | null>(null);
   const [schedules, setSchedules] = useState<DoctorScheduleRecord[]>([]);
   const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   // Add Doctor Form State
   const [showAddDoctorModal, setShowAddDoctorModal] = useState(false);
@@ -75,11 +77,12 @@ export default function DoctorsAdminPage() {
         setDocRoom("");
         setShowAddDoctorModal(false);
         await refreshDoctors();
+        setToast({ message: "Doctor profile created successfully!", type: "success" });
       } else {
-        alert("Failed to create doctor: " + (res.error || "Unknown error"));
+        setToast({ message: "Failed to create doctor: " + (res.error || "Unknown error"), type: "error" });
       }
     } catch {
-      alert("Network error creating doctor");
+      setToast({ message: "Network error creating doctor", type: "error" });
     } finally {
       setSavingDoc(false);
     }
@@ -107,11 +110,12 @@ export default function DoctorsAdminPage() {
         if (schedRes.success && schedRes.data?.schedules) {
           setSchedules(schedRes.data.schedules);
         }
+        setToast({ message: "Schedule published successfully!", type: "success" });
       } else {
-        alert("Failed to publish schedule: " + (res.error || "Unknown error"));
+        setToast({ message: "Failed to publish schedule: " + (res.error || "Unknown error"), type: "error" });
       }
     } catch {
-      alert("Network error publishing schedule");
+      setToast({ message: "Network error publishing schedule", type: "error" });
     } finally {
       setSavingSched(false);
     }
@@ -497,6 +501,14 @@ export default function DoctorsAdminPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

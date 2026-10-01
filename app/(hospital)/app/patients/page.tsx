@@ -24,9 +24,15 @@ import { getInvoicesAction } from "@/lib/billing/actions";
 import { getPrescriptionsAction } from "@/lib/prescriptions/actions";
 import { getDiagnosticOrdersAction } from "@/lib/lab/actions";
 import { formatCurrencyBDT, formatDateBDT, calculateAgeFromDOB } from "@/lib/utils";
+import { Toast } from "@/components/ui/Toast";
 
 export default function PatientsManagementPage() {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message, type });
+  };
   const [patients, setPatients] = useState<PatientMaster[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<PatientMaster | null>(null);
@@ -56,6 +62,7 @@ export default function PatientsManagementPage() {
 
   const loadPatients = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await getPatientsAction();
       if (res.success && res.data) {
@@ -63,9 +70,11 @@ export default function PatientsManagementPage() {
         if (res.data.patients.length > 0 && !selectedPatient) {
           selectPatient(res.data.patients[0]);
         }
+      } else {
+        setLoadError(res.error || "Unable to load patient directory from database.");
       }
     } catch {
-      // ignore
+      setLoadError("Network error loading patient directory.");
     } finally {
       setLoading(false);
     }
@@ -95,7 +104,7 @@ export default function PatientsManagementPage() {
         setLabOrders(labRes.data.orders || []);
       }
     } catch {
-      // ignore
+      // ignore non-critical sub-record load
     } finally {
       setSubLoading(false);
     }
@@ -125,9 +134,11 @@ export default function PatientsManagementPage() {
               if (labRes.success && labRes.data) setLabOrders(labRes.data.orders || []);
             }
           }
+        } else if (isMounted && res.error) {
+          setLoadError(res.error);
         }
       } catch {
-        // ignore
+        if (isMounted) setLoadError("Network error loading patient directory.");
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -169,7 +180,7 @@ export default function PatientsManagementPage() {
           setRegisterLoading(false);
           return;
         }
-        alert(res.error || "Registration failed.");
+        showToast(res.error || "Registration failed.", "error");
         setRegisterLoading(false);
         return;
       }
@@ -186,9 +197,10 @@ export default function PatientsManagementPage() {
         setNewNid("");
         setNewEmergencyName("");
         setNewEmergencyPhone("");
+        showToast(`Patient ${created.full_name} (${created.patient_code}) registered successfully!`, "success");
       }
     } catch {
-      alert("Error saving patient registration");
+      showToast("Error saving patient registration to database", "error");
     } finally {
       setRegisterLoading(false);
     }
@@ -257,6 +269,17 @@ export default function PatientsManagementPage() {
               <div className="p-8 text-center text-slate-500 text-xs flex justify-center items-center">
                 <Loader2 className="w-4 h-4 animate-spin mr-2 text-sky-600" />
                 Loading patient directory...
+              </div>
+            ) : loadError ? (
+              <div className="p-8 text-center text-rose-600 text-xs flex flex-col items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-rose-500" />
+                <p>{loadError}</p>
+                <button
+                  onClick={loadPatients}
+                  className="px-3 py-1 bg-rose-50 text-rose-700 font-semibold rounded-lg hover:bg-rose-100 transition"
+                >
+                  Retry
+                </button>
               </div>
             ) : filteredPatients.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs">
@@ -704,6 +727,14 @@ export default function PatientsManagementPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

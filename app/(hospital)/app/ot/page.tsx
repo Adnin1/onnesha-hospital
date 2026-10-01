@@ -20,6 +20,7 @@ import {
 } from "@/lib/ot/actions";
 import { getDoctorsAction } from "@/lib/appointments/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
+import { Toast } from "@/components/ui/Toast";
 
 export default function OperationTheaterPage() {
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,7 @@ export default function OperationTheaterPage() {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   // New Booking Form State
   const [formProcedure, setFormProcedure] = useState("");
@@ -116,7 +118,7 @@ export default function OperationTheaterPage() {
   const handleCreateBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formProcedure.trim()) {
-      alert("Procedure name is required");
+      setToast({ message: "Procedure name is required", type: "error" });
       return;
     }
 
@@ -140,11 +142,12 @@ export default function OperationTheaterPage() {
         setShowBookingModal(false);
         setFormProcedure("");
         await loadData();
+        setToast({ message: "Surgical procedure scheduled successfully!", type: "success" });
       } else {
-        alert(res.error || "Failed to schedule surgical procedure");
+        setToast({ message: res.error || "Failed to schedule surgical procedure", type: "error" });
       }
     } catch {
-      alert("Network error scheduling surgery");
+      setToast({ message: "Network error scheduling surgery", type: "error" });
     } finally {
       setActionLoading(false);
     }
@@ -159,11 +162,12 @@ export default function OperationTheaterPage() {
       const res = await updateOTBookingStatusAction({ bookingId, status });
       if (res.success) {
         await loadData();
+        setToast({ message: `Surgical status updated to ${status}.`, type: "success" });
       } else {
-        alert(res.error || "Failed to update surgical status");
+        setToast({ message: res.error || "Failed to update surgical status", type: "error" });
       }
     } catch {
-      alert("Error updating OT status");
+      setToast({ message: "Error updating OT status", type: "error" });
     } finally {
       setActionLoading(false);
     }
@@ -485,6 +489,14 @@ export default function OperationTheaterPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

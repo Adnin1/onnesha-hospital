@@ -10,6 +10,8 @@ import {
   Loader2,
   RefreshCw,
   Wallet,
+  X,
+  AlertTriangle,
 } from "lucide-react";
 import {
   InvoiceRecord,
@@ -26,6 +28,7 @@ import {
 } from "@/lib/billing/actions";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
+import { Toast } from "@/components/ui/Toast";
 
 export default function BillingManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -35,6 +38,12 @@ export default function BillingManagementPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  // Void Modal State
+  const [voidModalInv, setVoidModalInv] = useState<InvoiceRecord | null>(null);
+  const [voidReasonInput, setVoidReasonInput] = useState("");
+  const [voidLoading, setVoidLoading] = useState(false);
 
   // New Invoice Modal
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -146,7 +155,7 @@ export default function BillingManagementPage() {
   const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!patientIdInput.trim()) {
-      alert("Please enter a valid Patient ID or Code.");
+      setToast({ message: "Please enter a valid Patient ID or Code.", type: "error" });
       return;
     }
 
@@ -165,11 +174,12 @@ export default function BillingManagementPage() {
         setIsCreatingNew(false);
         await loadBillingData();
         setSelectedInvoice(res.data.invoice);
+        setToast({ message: `Invoice ${res.data.invoice.invoice_number} created successfully!`, type: "success" });
       } else {
-        alert(res.error || "Failed to generate invoice");
+        setToast({ message: res.error || "Failed to generate invoice", type: "error" });
       }
     } catch {
-      alert("Error generating invoice");
+      setToast({ message: "Error generating invoice", type: "error" });
     } finally {
       setFormLoading(false);
     }
@@ -191,29 +201,46 @@ export default function BillingManagementPage() {
       if (res.success) {
         setPaymentModalInv(null);
         await loadBillingData();
+        setToast({ message: "Payment collected and recorded in cash register.", type: "success" });
       } else {
-        alert(res.error || "Failed to collect payment");
+        setToast({ message: res.error || "Failed to collect payment", type: "error" });
       }
     } catch {
-      alert("Error processing payment");
+      setToast({ message: "Error processing payment", type: "error" });
     } finally {
       setCollectLoading(false);
     }
   };
 
-  const handleVoidInvoice = async (invoice: InvoiceRecord) => {
-    const reason = prompt("Enter supervisor void reason for audit vault:");
-    if (!reason) return;
+  const handleVoidInvoice = (invoice: InvoiceRecord) => {
+    setVoidModalInv(invoice);
+    setVoidReasonInput("");
+  };
 
+  const handleConfirmVoid = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!voidModalInv) return;
+    if (voidReasonInput.trim().length < 5) {
+      setToast({ message: "Mandatory justification must be at least 5 characters.", type: "error" });
+      return;
+    }
+
+    setVoidLoading(true);
     try {
-      const res = await voidInvoiceAction({ invoiceId: invoice.id, reason });
+      const res = await voidInvoiceAction({ invoiceId: voidModalInv.id, reason: voidReasonInput.trim() });
       if (res.success) {
+        const invNum = voidModalInv.invoice_number;
+        setVoidModalInv(null);
+        setVoidReasonInput("");
         await loadBillingData();
+        setToast({ message: `Invoice ${invNum} voided and recorded in audit vault.`, type: "success" });
       } else {
-        alert(res.error || "Failed to void invoice");
+        setToast({ message: res.error || "Failed to void invoice", type: "error" });
       }
     } catch {
-      alert("Error voiding invoice");
+      setToast({ message: "Error voiding invoice", type: "error" });
+    } finally {
+      setVoidLoading(false);
     }
   };
 
@@ -837,6 +864,75 @@ export default function BillingManagementPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* VOID INVOICE MODAL */}
+      {voidModalInv && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+                <h3 className="text-base font-black text-slate-900">Void Invoice (Audit Vault)</h3>
+              </div>
+              <button
+                onClick={() => setVoidModalInv(null)}
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-500"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmVoid} className="space-y-4 pt-4 text-xs">
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800">
+                <p className="font-bold">Warning: Irreversible Financial Action</p>
+                <p className="mt-1 text-[11px] leading-relaxed">
+                  Voiding invoice <span className="font-mono font-bold">{voidModalInv.invoice_number}</span> will cancel all remaining due balance and record a forensic audit trail with your supervisor ID and timestamp.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Mandatory Clinical / Administrative Justification <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Enter detailed reason for voiding (e.g. Duplicate entry by counter staff, patient transferred to tertiary facility)..."
+                  value={voidReasonInput}
+                  onChange={(e) => setVoidReasonInput(e.target.value)}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-xs focus:ring-2 focus:ring-rose-500/20"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setVoidModalInv(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={voidLoading || voidReasonInput.trim().length < 5}
+                  className="px-5 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-xl flex items-center shadow-xs"
+                >
+                  {voidLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+                  Confirm Void & Record Audit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );
