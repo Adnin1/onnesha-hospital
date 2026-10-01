@@ -47,7 +47,7 @@ RUN npm run build
 # --- Stage 3: Production Web Server ---
 FROM nginx:alpine AS runner
 LABEL maintainer="Onnesha Hospital Engineering Team <tech@onneshahospital.com>"
-LABEL version="1.1.28"
+LABEL version="1.1.29"
 LABEL description="Onnesha Hospital & Diagnostic Complex - High Availability Production Web Container"
 
 # Create unprivileged nginx user directories

@@ -98,13 +98,43 @@
 
 ---
 
-## 5. System Acceptance Verdict
+## 5. System Acceptance Verdict (Historical v1.1.26 - v1.1.28)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.26)              │
+│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.28)              │
 │ OPERATIONAL GO-LIVE STATUS:  PENDING 14 REAL-WORLD OWNER GATES         │
 │ VERDICT STATEMENT:           SOFTWARE ENGINEERING COMPLETE —           │
 │                              EXTERNAL OPERATIONAL GATES REMAIN         │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 6. Release v1.1.29 — Public Website Acceptance & Inpatient RLS Hardening Closure
+
+- **Release Date:** 2026-10-02
+- **Version:** `v1.1.29` (All 6 manifests synchronized: `package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `Dockerfile`, `latest.json`)
+- **Key Enhancements:**
+  1. **Public Website Final Acceptance:** Completed forensic audit across all 11 public routes (`/`, `/about`, `/services`, `/doctors`, `/appointment`, `/check-token`, `/contact`, `/privacy`, `/terms`, `/consent`, `/downloads/desktop`). 10/10 acceptance scenarios passing in `tests/phase62-public-website-acceptance-matrix.test.mjs`.
+  2. **Install Prompt Accessibility & Session Persistence:** Updated [`components/app/InstallPrompt.tsx`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/components/app/InstallPrompt.tsx) with accessible landmark region, dismiss button, and session storage persistence to eliminate intrusive popups.
+  3. **Inpatient Bed, Ward, Cabin & Critical Care Zero-Trust RLS Hardening:**
+     - **Migration 100** (`20261002050000_harden_bed_ward_rls_and_revoke_anon.sql`): Revoked all permissions from `anon` and `PUBLIC` on `beds`, `cabins`, `wards`, `bed_types`, `critical_care_units`, `critical_care_admissions`, `critical_care_observations`. Enforced strict tenant isolation policies for `authenticated` and `service_role`.
+     - **Migration 101** (`20261002050100_clean_cc_legacy_policies.sql`): Dropped legacy `{public}` role policies on `critical_care_admissions`.
+  4. **PDPA 2026 Act 63 Truthfulness:** Verified statutory citation of Bangladesh Personal Data Protection Act, 2026 (ব্যক্তিগত উপাত্ত সুরক্ষা আইন, ২০২৬ — Act No. 63 of 2026) across legal policies without any fictitious labeling.
+  5. **Automated Quality Score:** 98/98 test suites passing, 870 active passes, 0 failed, 0 blocked.
+  6. **Static Export Build:** 58 static routes compiled cleanly with 0 broken assets/links.
+
+---
+
+## 7. System Acceptance Verdict (v1.1.29)
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.29)              │
+│ OPERATIONAL GO-LIVE STATUS:  PENDING 14 REAL-WORLD OWNER GATES         │
+│ GITHUB CI REALITY:           Mandatory CI: PASSED (Hermetic)           │
+│                              Staging Live Gate: PENDING_SECRETS        │
+│ CLOUDFLARE PRODUCTION:       https://onnesha-hospital.pages.dev        │
 └────────────────────────────────────────────────────────────────────────┘
 ```

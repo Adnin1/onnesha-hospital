@@ -1,14 +1,14 @@
 {
-  "version": "1.1.28",
+  "version": "1.1.29",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.28. Enterprise hospital bed lifecycle hierarchy (Ward -> Room -> Bed), atomic bed admission with row lock concurrency guards, Critical Care command center and clinical alerts lifecycle (TRIGGERED -> ACKNOWLEDGED -> REVIEWED -> RESOLVED).",
-  "pub_date": "2026-10-02T03:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.29. Public website acceptance closure, accessible install prompts, hardened RLS policies on inpatient ward beds and critical care units with zero anonymous leaks.",
+  "pub_date": "2026-10-02T03:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.28.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.29.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.28.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.29.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0,
       "status": "pending_ci_workflow",
