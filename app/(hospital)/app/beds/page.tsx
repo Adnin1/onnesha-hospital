@@ -11,14 +11,20 @@ import {
   DoorOpen,
   Loader2,
   RefreshCw,
+  Plus,
+  UserPlus,
 } from "lucide-react";
 import { BedRecord, CabinRecord, WardRecord } from "@/types/beds-ot";
 import {
   getBedsAndCabinsAction,
   updateBedStatusAction,
+  updateCabinStatusAction,
   vacateBedAction,
 } from "@/lib/ipd/bed-actions";
 import { formatCurrencyBDT } from "@/lib/utils";
+import { AddBedOrCabinModal } from "@/components/beds/AddBedOrCabinModal";
+import { AssignBedModal } from "@/components/beds/AssignBedModal";
+import { Toast } from "@/components/ui/Toast";
 
 export default function BedManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -28,8 +34,18 @@ export default function BedManagementPage() {
   const [activeTab, setActiveTab] = useState<"beds" | "cabins">("beds");
   const [selectedWard, setSelectedWard] = useState("all");
   const [activeBedModal, setActiveBedModal] = useState<BedRecord | null>(null);
+  const [activeCabinModal, setActiveCabinModal] = useState<CabinRecord | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assignTargetBed, setAssignTargetBed] = useState<BedRecord | null>(null);
+  const [assignTargetCabin, setAssignTargetCabin] = useState<CabinRecord | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message, type });
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -151,10 +167,17 @@ export default function BedManagementPage() {
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center space-x-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ নতুন বেড / কেবিন</span>
+          </button>
           <button
             onClick={loadData}
-            className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition"
+            className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition cursor-pointer"
             title="Refresh bed live matrix"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -372,12 +395,13 @@ export default function BedManagementPage() {
             return (
               <div
                 key={cabin.id}
-                className={`p-5 rounded-2xl border shadow-2xs flex flex-col justify-between ${
+                onClick={() => setActiveCabinModal(cabin)}
+                className={`p-5 rounded-2xl border shadow-2xs flex flex-col justify-between cursor-pointer hover:shadow-md transition ${
                   isAvailable
-                    ? "bg-white border-emerald-300"
+                    ? "bg-white border-emerald-300 hover:border-emerald-500"
                     : isOccupied
-                    ? "bg-rose-50/50 border-rose-300"
-                    : "bg-amber-50/50 border-amber-300"
+                    ? "bg-rose-50/50 border-rose-300 hover:border-rose-500"
+                    : "bg-amber-50/50 border-amber-300 hover:border-amber-500"
                 }`}
               >
                 <div>
@@ -460,6 +484,21 @@ export default function BedManagementPage() {
             )}
 
             <div className="space-y-2">
+              {activeBedModal.status === "VACANT" && (
+                <button
+                  disabled={actionLoading}
+                  onClick={() => {
+                    setAssignTargetBed(activeBedModal);
+                    setActiveBedModal(null);
+                    setIsAssignModalOpen(true);
+                  }}
+                  className="w-full text-left p-3 rounded-xl border border-sky-300 bg-sky-50 hover:bg-sky-100 font-bold text-sky-900 flex justify-between items-center transition disabled:opacity-50"
+                >
+                  <span>রোগী বরাদ্দ করুন (Assign Patient to this Bed)</span>
+                  <UserPlus className="w-4 h-4 text-sky-600" />
+                </button>
+              )}
+
               {activeBedModal.status === "OCCUPIED" && activeBedModal.current_assignment && (
                 <button
                   disabled={actionLoading}
@@ -510,6 +549,144 @@ export default function BedManagementPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* CABIN STATUS MODAL / ACTION DIALOG */}
+      {activeCabinModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-xs">
+            <h3 className="text-base font-black text-slate-900 mb-1">
+              Cabin Controller: {activeCabinModal.cabin_number}
+            </h3>
+            <p className="text-slate-500 mb-4">
+              Floor {activeCabinModal.floor_number} • Tariff: {formatCurrencyBDT(activeCabinModal.daily_rate)} / day • Current:{" "}
+              <strong className="uppercase">{activeCabinModal.status}</strong>
+            </p>
+
+            {activeCabinModal.current_assignment?.patient && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl mb-4">
+                <span className="text-[10px] font-bold text-rose-800 uppercase block">Current Inpatient</span>
+                <p className="font-bold text-rose-950 text-sm">{activeCabinModal.current_assignment.patient.full_name}</p>
+                <p className="text-rose-700 text-[11px]">
+                  ID: {activeCabinModal.current_assignment.patient.patient_code}
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {activeCabinModal.status === "VACANT" && (
+                <button
+                  disabled={actionLoading}
+                  onClick={() => {
+                    setAssignTargetCabin(activeCabinModal);
+                    setActiveCabinModal(null);
+                    setIsAssignModalOpen(true);
+                  }}
+                  className="w-full text-left p-3 rounded-xl border border-sky-300 bg-sky-50 hover:bg-sky-100 font-bold text-sky-900 flex justify-between items-center transition disabled:opacity-50"
+                >
+                  <span>রোগী বরাদ্দ করুন (Assign Patient to this Cabin)</span>
+                  <UserPlus className="w-4 h-4 text-sky-600" />
+                </button>
+              )}
+
+              {activeCabinModal.status === "OCCUPIED" && activeCabinModal.current_assignment && (
+                <button
+                  disabled={actionLoading}
+                  onClick={async () => {
+                    if (!confirm("Are you sure you want to vacate this cabin?")) return;
+                    setActionLoading(true);
+                    await vacateBedAction({
+                      assignmentId: activeCabinModal.current_assignment!.id,
+                      cabinId: activeCabinModal.id,
+                    });
+                    await loadData();
+                    setActiveCabinModal(null);
+                    setActionLoading(false);
+                    showToast("কেবিন খালি করা সম্পন্ন হয়েছে।", "success");
+                  }}
+                  className="w-full text-left p-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 font-bold text-rose-900 flex justify-between items-center transition disabled:opacity-50"
+                >
+                  <span>Vacate Inpatient & Send to Housekeeping</span>
+                  <DoorOpen className="w-4 h-4" />
+                </button>
+              )}
+
+              <button
+                disabled={actionLoading}
+                onClick={async () => {
+                  setActionLoading(true);
+                  await updateCabinStatusAction({ cabinId: activeCabinModal.id, status: "VACANT" });
+                  await loadData();
+                  setActiveCabinModal(null);
+                  setActionLoading(false);
+                  showToast("কেবিন এখন প্রস্তুত ও খালি (VACANT)।", "success");
+                }}
+                className="w-full text-left p-3 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 font-bold text-emerald-900 flex justify-between items-center transition disabled:opacity-50"
+              >
+                <span>Mark Clean & VACANT (Available for new patient)</span>
+                <CheckCircle2 className="w-4 h-4" />
+              </button>
+
+              <button
+                disabled={actionLoading}
+                onClick={async () => {
+                  setActionLoading(true);
+                  await updateCabinStatusAction({ cabinId: activeCabinModal.id, status: "CLEANING" });
+                  await loadData();
+                  setActiveCabinModal(null);
+                  setActionLoading(false);
+                  showToast("কেবিন ক্লিনিং স্ট্যাটাসে দেওয়া হয়েছে।", "info");
+                }}
+                className="w-full text-left p-3 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 font-bold text-amber-900 flex justify-between items-center transition disabled:opacity-50"
+              >
+                <span>Mark for CLEANING / Sanitization</span>
+                <Sparkles className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-slate-100 text-right">
+              <button
+                disabled={actionLoading}
+                onClick={() => setActiveCabinModal(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD BED OR CABIN MODAL */}
+      <AddBedOrCabinModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        wards={wards}
+        onAdded={loadData}
+        onToast={showToast}
+      />
+
+      {/* ASSIGN BED OR CABIN MODAL */}
+      <AssignBedModal
+        isOpen={isAssignModalOpen}
+        onClose={() => {
+          setIsAssignModalOpen(false);
+          setAssignTargetBed(null);
+          setAssignTargetCabin(null);
+        }}
+        selectedBed={assignTargetBed}
+        selectedCabin={assignTargetCabin}
+        onAssigned={loadData}
+        onToast={showToast}
+      />
+
+      {/* TOAST NOTIFICATION */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );
