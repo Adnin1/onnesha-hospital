@@ -1,14 +1,14 @@
 {
-  "version": "1.1.30",
+  "version": "1.1.31",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.30. Staff portal browser alert and prompt elimination, deploy workflow syntax repair, accessible Toast notifications, and strict error state resilience.",
-  "pub_date": "2026-10-02T04:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.31. Canonical domain consistency alignment, comprehensive Next.js static export edge evaluation, and verified statutory compliance documentation.",
+  "pub_date": "2026-10-02T04:15:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.30.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.31.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.30.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.31.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0,
       "status": "pending_ci_workflow",

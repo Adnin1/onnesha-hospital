@@ -1,7 +1,7 @@
 # OHMS Final Website Acceptance & Production Quality Matrix
 
 **Document Purpose:** Immutable engineering and UX acceptance matrix for the Onnesha Hospital Management System (OHMS) public website, patient portal, and staff workspace.  
-**Version:** `v1.1.30`  
+**Version:** `v1.1.31`  
 **Evaluation Standard:** Next.js 15+ Production Checklist, Google Search Central Core Guidelines, WCAG 2.2 Level AA, Cloudflare Pages Edge Runtime, Supabase PostgreSQL RLS.
 
 ---
@@ -17,7 +17,7 @@
 | **Accessibility (a11y)** | WCAG 2.2 AA compliant | Keyboard focus visible, 44×44px touch targets, skip link | **PASS** |
 | **SEO & Structured Data** | 100% valid JSON-LD | Hospital, MedicalWebPage, Physician schemas, no fake claims | **PASS** |
 | **Performance / Core Web Vitals** | LCP ≤ 2.5s, CLS ≤ 0.1, INP ≤ 200ms | Standalone static bundle, zero server-runtime overhead | **PASS** |
-| **Security & Privacy** | PDPA 2026 Act 63 compliant | Strict RLS, anonymous PostgREST shielding, zero PHI in shell | **PASS** |
+| **Security & Privacy** | Aligned with PDPA 2026 (Act 63) | Documented controls (Sec 11, 17, 18), RLS, zero PHI in shell | **PASS** |
 | **Automated Test Suite** | 98 suites, 870 active passes | 0 failed suites, 0 active failures, 6 hermetic skips | **PASS** |
 | **Mandatory GitHub CI** | `validate` job green | Typecheck clean, ESLint clean, static export clean | **PASS** |
 | **Real-World Operational Readiness** | 14 external gates | Clear demarcation: software complete vs owner actions | **GATED** |
@@ -26,19 +26,21 @@
 
 ## 2. Public Website Routes Acceptance Matrix (11 Canonical Routes)
 
-| # | Route | Title & Metadata | Canonical Link | OpenGraph & Twitter | Structured Data | Mobile Responsive | WCAG 2.2 Focus | Status |
+> **Canonical Domain Invariant:** Authoritative baseline origin is `https://onnesha-hospital.pages.dev`. The custom domain `https://onneshahospital.com` is deferred until owner DNS CNAME cutover.
+
+| # | Route | Title & Metadata | Active Canonical Link | OpenGraph & Twitter | Structured Data | Mobile Responsive | WCAG 2.2 Focus | Status |
 |:---:|:---|:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| 1 | `/` | Onnesha Hospital & Diagnostic Complex | `https://onneshahospital.com/` | Verified | `Hospital` | Verified | Verified | **PASS** |
-| 2 | `/about` | About Us — Excellence in Healthcare | `https://onneshahospital.com/about` | Verified | `MedicalOrganization` | Verified | Verified | **PASS** |
-| 3 | `/services` | Clinical & Diagnostic Services | `https://onneshahospital.com/services` | Verified | `MedicalProcedure` | Verified | Verified | **PASS** |
-| 4 | `/doctors` | Specialist Physicians & Consultants | `https://onneshahospital.com/doctors` | Verified | `Physician` | Verified | Verified | **PASS** |
-| 5 | `/appointment` | Online OPD Appointment Booking | `https://onneshahospital.com/appointment` | Verified | `MedicalWebPage` | Verified | Verified | **PASS** |
-| 6 | `/check-token` | Live OPD Token & Chamber Queue | `https://onneshahospital.com/check-token` | Verified | `MedicalWebPage` | Verified | Verified | **PASS** |
-| 7 | `/contact` | Contact & Emergency Helpline | `https://onneshahospital.com/contact` | Verified | `LocalBusiness` | Verified | Verified | **PASS** |
-| 8 | `/privacy` | Privacy Policy & Data Protection | `https://onneshahospital.com/privacy` | Verified | `WebPage` | Verified | Verified | **PASS** |
-| 9 | `/terms` | Terms of Service & Patient Charter | `https://onneshahospital.com/terms` | Verified | `WebPage` | Verified | Verified | **PASS** |
-| 10 | `/consent` | Patient Informed Consent Framework | `https://onneshahospital.com/consent` | Verified | `WebPage` | Verified | Verified | **PASS** |
-| 11 | `/downloads/desktop`| PC Client Software Download | `https://onneshahospital.com/downloads/desktop` | Verified | `SoftwareApplication` | Verified | Verified | **PASS** |
+| 1 | `/` | Onnesha Hospital & Diagnostic Complex | `https://onnesha-hospital.pages.dev/` | Verified | `Hospital` | Verified | Verified | **PASS** |
+| 2 | `/about` | About Us — Excellence in Healthcare | `https://onnesha-hospital.pages.dev/about` | Verified | `MedicalOrganization` | Verified | Verified | **PASS** |
+| 3 | `/services` | Clinical & Diagnostic Services | `https://onnesha-hospital.pages.dev/services` | Verified | `MedicalProcedure` | Verified | Verified | **PASS** |
+| 4 | `/doctors` | Specialist Physicians & Consultants | `https://onnesha-hospital.pages.dev/doctors` | Verified | `Physician` | Verified | Verified | **PASS** |
+| 5 | `/appointment` | Online OPD Appointment Booking | `https://onnesha-hospital.pages.dev/appointment` | Verified | `MedicalWebPage` | Verified | Verified | **PASS** |
+| 6 | `/check-token` | Live OPD Token & Chamber Queue | `https://onnesha-hospital.pages.dev/check-token` | Verified | `MedicalWebPage` | Verified | Verified | **PASS** |
+| 7 | `/contact` | Contact & Emergency Helpline | `https://onnesha-hospital.pages.dev/contact` | Verified | `LocalBusiness` | Verified | Verified | **PASS** |
+| 8 | `/privacy` | Privacy Policy & Data Protection | `https://onnesha-hospital.pages.dev/privacy` | Verified | `WebPage` | Verified | Verified | **PASS** |
+| 9 | `/terms` | Terms of Service & Patient Charter | `https://onnesha-hospital.pages.dev/terms` | Verified | `WebPage` | Verified | Verified | **PASS** |
+| 10 | `/consent` | Patient Informed Consent Framework | `https://onnesha-hospital.pages.dev/consent` | Verified | `WebPage` | Verified | Verified | **PASS** |
+| 11 | `/downloads/desktop`| PC Client Software Download | `https://onnesha-hospital.pages.dev/downloads/desktop` | Verified | `SoftwareApplication` | Verified | Verified | **PASS** |
 
 ---
 

@@ -45,6 +45,17 @@ All application code, database schema, security policies, and user interfaces ar
 - [ ] **First Administrative Staff Provisioning:** Log into `/login` with initial Super Admin credentials, navigate to `/app/settings/staff`, and create department staff accounts with enforced one-time temporary passwords and mandatory initial password change on first login.
 - [ ] **Public Self-Registration Status:** Confirmed that public self-registration (`/register` / `/signup`) is permanently disabled by architectural design. The hospital management system is an enterprise internal clinical application; patient accounts are bound to OPD/IPD registrations (`/app/patients`) and staff accounts are strictly managed through authorized administrative provisioning (`admin_create_staff_account`).
 
+### 🛡️ 8. GitHub Repository Branch Protection Ruleset (`main` Branch Governance)
+- [ ] **Navigate to Branch Rulesets:** In GitHub repository (`Adnin1/onnesha-hospital`), go to **Settings** ➔ **Rules** ➔ **Rulesets** (or **Branches** ➔ **Add branch protection rule**).
+- [ ] **Set Target Branch:** Specify `main` branch.
+- [ ] **Enforce Required Status Checks:** Check "Require status checks to pass before merging" and select:
+  1. `Mandatory CI` (from `.github/workflows/ci.yml`)
+  2. `Dedicated Staging Live Security Gate` (from `.github/workflows/ci.yml`)
+- [ ] **Enforce Pull Request Reviews:** Check "Require a pull request before merging" (1 approving review, dismiss stale approvals on new commits).
+- [ ] **Prevent Destructive Changes:**
+  - Check "Block force pushes" (enforces immutable commit history and tag provenance).
+  - Check "Block deletions" (prevents accidental deletion of the `main` production branch).
+
 ---
 
 ## 🎯 Launch Status Statement

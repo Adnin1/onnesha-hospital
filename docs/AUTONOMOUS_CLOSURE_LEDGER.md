@@ -9,17 +9,17 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-02T04:00:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-02T04:15:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.30` | VERIFIED |
-| **Preserved Release Tags** | `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.31` | VERIFIED |
+| **Preserved Release Tags** | `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` aligned with HEAD | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.30` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.30` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.30` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.30` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.30` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.30` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.31` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.31` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.31` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.31` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.31` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.31` | VERIFIED |
 | **Database Migrations Count** | `101 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261002050100_clean_cc_legacy_policies.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity) | VERIFIED |
@@ -33,8 +33,8 @@
 
 | Suite / Gate | Result / Count | Status | Notes |
 |:---|:---:|:---:|:---|
-| **Total Test Suites** | `97 suites` | PASS | 100% of discovered test files passing |
-| **Active Test Passes** | `860 passes` | PASS | Zero active failures, zero regressions |
+| **Total Test Suites** | `98 suites` | PASS | 100% of discovered test files passing |
+| **Active Test Passes** | `870 passes` | PASS | Zero active failures, zero regressions |
 | **Test Failures** | `0 failures` | PASS | Zero active failures |
 | **Standard / Environment Skips** | `6 skips` | SKIPPED | Explicitly justified hermetic skips |
 | **TypeScript Strict Compilation** | `0 errors` | PASS | `tsc --noEmit` clean (exit code 0) |
@@ -167,11 +167,12 @@
 
 ---
 
-## 9. Final System Acceptance Verdict (v1.1.30)
+## 9. Historical System Acceptance Verdict (v1.1.30)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.30)              │
+│ IMMUTABLE COMMIT SHA:        cdffdb4c94ae57270853303c5b7de8dd4308a8b2  │
 │ OPERATIONAL GO-LIVE STATUS:  PENDING 14 REAL-WORLD OWNER GATES         │
 │ GITHUB CI REALITY:           Mandatory CI: PASSED (Hermetic)           │
 │                              Staging Live Gate: FAIL_CLOSED_SECRETS    │
@@ -180,4 +181,30 @@
 │ CLOUDFLARE PRODUCTION:       https://onnesha-hospital.pages.dev        │
 └────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 10. Release v1.1.31 — Conversation A: Public Website, Edge Architecture & Statutory Truth
+
+- **Release Date:** 2026-10-02
+- **Version:** `v1.1.31` (All 6 manifests synchronized: `package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `Dockerfile`, `latest.json`)
+- **Key Enhancements:**
+  1. **Canonical Domain Alignment (`docs/FINAL_WEBSITE_ACCEPTANCE_MATRIX.md`):**
+     - Aligned all 11 public route entries to `https://onnesha-hospital.pages.dev`, perfectly matching `robots.txt`, `sitemap.xml`, and the live production baseline.
+     - Documented `https://onneshahospital.com` as deferred until authoritative domain owner DNS delegation.
+  2. **Statutory Compliance Terminology Refinement:**
+     - Refined references to the Bangladesh Personal Data Protection Act, 2026 (Act No. 63 of 2026) to reflect documented implementation of technical controls (Sections 11, 17, 18) rather than unverified legal claims.
+  3. **Next.js Static Export Architecture Audit ([`docs/NEXTJS_STATIC_EXPORT_ARCHITECTURE_AUDIT.md`](file:///docs/NEXTJS_STATIC_EXPORT_ARCHITECTURE_AUDIT.md)):**
+     - Executed a feature-by-feature classification across browser [A], database RPC [B], secure server function [C], and owner gate [D].
+     - Concluded that `output: "export"` with Cloudflare Pages Edge and Supabase BaaS is optimal, secure, and performant; blind migration to Workers is unneeded.
+  4. **GitHub Main Branch Governance Instructions ([`docs/OWNER_ACTION_CHECKLIST.md`](file:///docs/OWNER_ACTION_CHECKLIST.md)):**
+     - Detailed exact instructions for the owner to configure GitHub branch protection rulesets (`main`) requiring `Mandatory CI` and `Dedicated Staging Live Security Gate`.
+  5. **Verification & Quality Gates:**
+     - TypeScript: 0 errors (`tsc --noEmit`).
+     - ESLint: 0 warnings, 0 errors.
+     - Tests: 98 test suites, 870 active passes, 0 failures, 6 hermetic skips.
+     - Build: 58 static routes exported.
+     - Asset crawl: 365 links, 963 assets, 0 broken references.
+     - Four-layer smoke suite: 15/15 routes HTTP 200 on live edge.
+
 
