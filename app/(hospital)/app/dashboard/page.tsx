@@ -46,8 +46,8 @@ export default function HospitalDashboardPage() {
     todayIncome: 0,
     todayPatients: 0,
     totalDoctors: 0,
-    onDutyDoctors: 0,
-    offDutyDoctors: 0,
+    scheduledDoctors: 0,
+    offScheduleDoctors: 0,
     availableBeds: 0,
     totalBeds: 0,
     dueAmount: 0,
@@ -75,20 +75,20 @@ export default function HospitalDashboardPage() {
           .gte("created_at", startOfToday)
           .lt("created_at", endOfToday);
 
-        // 2. Fetch real beds status using server-side index count queries (no full table scans)
+        // 2. Fetch real beds status using server-side index count queries (canonical status 'VACANT')
         const [totalBedsRes, availableBedsRes] = await Promise.all([
           supabase.from("beds").select("*", { count: "exact", head: true }),
           supabase
             .from("beds")
             .select("*", { count: "exact", head: true })
-            .in("status", ["available", "VACANT", "AVAILABLE"]),
+            .eq("status", "VACANT"),
         ]);
 
         const totalBedsCount = totalBedsRes.count ?? 0;
         const availableBedsCount = availableBedsRes.count ?? 0;
         const bedsHasError = Boolean(totalBedsRes.error || availableBedsRes.error);
 
-        // 3. Fetch real doctors and on-duty schedule count
+        // 3. Fetch real doctors and today's scheduled visiting hours
         const dhakaDayName = getDhakaWeekday();
         const [doctorsRes, schedulesRes] = await Promise.all([
           supabase.from("doctors").select("*", { count: "exact", head: true }).eq("is_active", true),
@@ -101,27 +101,51 @@ export default function HospitalDashboardPage() {
 
         const totalDoctorsCount = doctorsRes.count ?? 0;
         const doctorsHasError = Boolean(doctorsRes.error);
-        const onDutyDoctorIds = new Set(
+        const scheduledDoctorIds = new Set(
           (schedulesRes.data || []).map((s: { doctor_id: string }) => s.doctor_id)
         );
-        const onDutyDoctorsCount = onDutyDoctorIds.size;
-        const offDutyDoctorsCount = Math.max(0, totalDoctorsCount - onDutyDoctorsCount);
+        const scheduledDoctorsCount = scheduledDoctorIds.size;
+        const offScheduleDoctorsCount = Math.max(0, totalDoctorsCount - scheduledDoctorsCount);
 
-        // 4. Fetch real invoices for today without artificial limit cap
-        const { data: invoicesData, error: invError } = await supabase
-          .from("invoices")
-          .select("paid_amount, due_amount")
-          .gte("created_at", startOfToday)
-          .lt("created_at", endOfToday);
-
+        // 4. Fetch real invoices revenue aggregate directly via server-side database RPC
         let incomeSum = 0;
         let dueSum = 0;
-        if (invoicesData && invoicesData.length > 0) {
-          interface InvRow { paid_amount?: number; due_amount?: number }
-          (invoicesData as InvRow[]).forEach((inv) => {
-            incomeSum += Number(inv.paid_amount || 0);
-            dueSum += Number(inv.due_amount || 0);
-          });
+        let invHasError = false;
+
+        try {
+          const { data: finData, error: finErr } = await supabase.rpc(
+            "get_dashboard_today_financial_summary",
+            {
+              p_start_date: startOfToday,
+              p_end_date: endOfToday,
+            }
+          );
+
+          if (!finErr && finData && typeof finData === "object" && "today_income" in finData) {
+            const summary = finData as { today_income?: number; today_due?: number };
+            incomeSum = Number(summary.today_income || 0);
+            dueSum = Number(summary.today_due || 0);
+          } else {
+            // High-throughput query fallback
+            const { data: invoicesData, error: qErr } = await supabase
+              .from("invoices")
+              .select("paid_amount, due_amount")
+              .gte("created_at", startOfToday)
+              .lt("created_at", endOfToday);
+
+            if (qErr) {
+              invHasError = true;
+            } else if (invoicesData) {
+              interface InvRow { paid_amount?: number; due_amount?: number }
+              (invoicesData as InvRow[]).forEach((inv) => {
+                incomeSum += Number(inv.paid_amount || 0);
+                dueSum += Number(inv.due_amount || 0);
+              });
+            }
+          }
+        } catch (err: unknown) {
+          console.error("[DashboardPage] financial aggregation error:", err);
+          invHasError = true;
         }
 
         // 5. Fetch live waiting queue
@@ -148,14 +172,14 @@ export default function HospitalDashboardPage() {
             todayIncome: incomeSum,
             todayPatients: todayPatientsCount ?? 0,
             totalDoctors: totalDoctorsCount,
-            onDutyDoctors: onDutyDoctorsCount,
-            offDutyDoctors: offDutyDoctorsCount,
+            scheduledDoctors: scheduledDoctorsCount,
+            offScheduleDoctors: offScheduleDoctorsCount,
             availableBeds: availableBedsCount,
             totalBeds: totalBedsCount,
             dueAmount: dueSum,
           });
           setMetricErrors({
-            income: Boolean(invError),
+            income: invHasError,
             patients: Boolean(patientErr),
             beds: bedsHasError,
             doctors: doctorsHasError,
@@ -359,7 +383,7 @@ export default function HospitalDashboardPage() {
           badge={
             metricErrors.doctors
               ? "Schedule error"
-              : `${metrics.onDutyDoctors} On Duty • ${metrics.offDutyDoctors} Off Duty`
+              : `${metrics.scheduledDoctors} Scheduled Today • ${metrics.offScheduleDoctors} Off Schedule`
           }
           isLoading={isLoading}
         />

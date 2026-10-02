@@ -9,19 +9,19 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-02T22:20:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-03T05:00:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.35` | VERIFIED |
-| **Preserved Release Tags** | `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.36` | VERIFIED |
+| **Preserved Release Tags** | `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` aligned with HEAD | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.35` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.35` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.35` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.35` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.35` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.35` | VERIFIED |
-| **Database Migrations Count** | `103 migration files` | VERIFIED |
-| **Latest Applied Migration** | `20261002070000_ot_and_biomedical_security.sql` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.36` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.36` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.36` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.36` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.36` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.36` | VERIFIED |
+| **Database Migrations Count** | `104 migration files` | VERIFIED |
+| **Latest Applied Migration** | `20261003050000_dashboard_financial_aggregate_and_performance_indexes.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting GitHub Actions Windows runner) | VERIFIED |
@@ -73,7 +73,18 @@
    - Removed unverified 24/7 ("round-the-clock") emergency triage claims in services page.
    - Aligned privacy policy and consent guidelines with the enacted Bangladesh Personal Data Protection Act, 2026 (ব্যক্তিগত উপাত্ত সুরক্ষা আইন, ২০২৬ — Act No. 63 of 2026, deemed effective 6 November 2025) across Sections 11, 12, 13, 14, 17, 18, and 20.
    - Converted static emergency and ambulance hotline spans in navbar and footer into accessible, clickable `tel:` links.
-   - Added `aria-label="Main Navigation"` and `aria-current="page"` attributes to desktop and mobile navigation links.
+7. **Dashboard Real-Time Truth & Zero Synthetic Fallback (v1.1.35):**
+   - Completely eradicated synthetic mock fallbacks and mock chart literals across hospital dashboard.
+   - Fixed patient count date filter with half-open Asia/Dhaka day boundaries (`>= startOfDay` and `< endOfDay`).
+   - Removed arbitrary `.limit(100)` cap on daily revenue calculation.
+   - Unified multi-tenant server authorization model across medical departments.
+
+8. **Server-Side Aggregation RPC & Canonical Status Alignment (v1.1.36):**
+   - Implemented authoritative PostgreSQL RPC `get_dashboard_today_financial_summary` with `SECURITY DEFINER`, strict search_path, and tenant isolation, returning `today_income` and `today_due` as a single small payload.
+   - Added covering index `idx_invoices_dashboard_financial_agg` on `invoices(organization_id, created_at) INCLUDE (paid_amount, due_amount) WHERE is_voided = FALSE` for Index-Only Scans.
+   - Added performance indexes `idx_patients_org_created_at`, `idx_doctor_schedules_org_day_active`, and `idx_beds_org_status_active`.
+   - Replaced non-standard bed query with canonical database check constraint status `'VACANT'`.
+   - Replaced doctor attendance assumption with truthful visiting hours schedule semantics (`Scheduled Today` and `Off Schedule`).
 
 ---
 
@@ -102,12 +113,12 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
 
 ---
 
-## 5. System Acceptance Verdict (v1.1.34 Final Delivery State)
+## 5. System Acceptance Verdict (v1.1.36 Final Delivery State)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.34)              │
-│ LIVE CLOUDFLARE PAGES:       VERIFIED DEPLOYED (v1.1.34)               │
+│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.36)              │
+│ LIVE CLOUDFLARE PAGES:       VERIFIED DEPLOYED (v1.1.36)               │
 │ TAURI WINDOWS INSTALLER:     PENDING_CI_BUILD (Awaiting Runner)        │
 │ OPERATIONAL GO-LIVE STATUS:  PENDING 16 REAL-WORLD OWNER GATES         │
 │ FINAL VERDICT STATEMENT:     SOFTWARE VERIFIED — OWNER GATES REMAIN    │
