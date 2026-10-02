@@ -77,35 +77,40 @@
 
 ---
 
-## 4. 14 Real-World External Owner Gates (Dual-Field Governance Model)
+## 4. Operational Owner Gates Matrix (Strict Real-World Commissioning Model)
 
-| # | External Gate Name | Software Implementation Status | Real-World Operational Status | Owner / Real-World Action Required |
-|:---:|:---|:---:|:---:|:---|
-| **1** | **SSLCommerz Live Merchant** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_ACTIVATION` | Store ID & Store Password registration |
-| **2** | **bKash / Nagad Merchant** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_ACTIVATION` | Live commercial MFS API credentials |
-| **3** | **SMS Gateway Live Account** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_ACTIVATION` | SSL Wireless / Greenweb live API key |
-| **4** | **WhatsApp Business Cloud API** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_ACTIVATION` | Meta Business phone number & bearer token |
-| **5** | **Transactional Email Key** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_ACTIVATION` | Resend / SendGrid API key & domain DNS |
-| **6** | **Hospital POS Thermal Printers**| `SOFTWARE_IMPLEMENTED` | `PHYSICAL_HARDWARE_REQUIRED` | USB 80mm ESC/POS printers at reception |
-| **7** | **LIS Lab Analyzer Serial Cables** | `SOFTWARE_IMPLEMENTED` | `PHYSICAL_HARDWARE_REQUIRED` | RS-232 / TCP-IP bridge data cables |
-| **8** | **Staff & Doctor BMDC Verification**| `SOFTWARE_IMPLEMENTED` | `PENDING_BMDC_PORTAL_VERIFICATION` | Official BMDC registration numbers verified via https://verify.bmdc.org.bd |
-| **9** | **Official Hospital Tariffs** | `SOFTWARE_IMPLEMENTED` | `PENDING_MANAGEMENT_APPROVAL` | Final approved tariff schedule sign-off |
-| **10**| **Hospital Staff UAT** | `SOFTWARE_IMPLEMENTED` | `PENDING_ON_SITE_STAFF_DRILL` | On-site reception & billing training |
-| **11**| **Database Restore Drill** | `SOFTWARE_IMPLEMENTED` | `PENDING_PITR_RESTORE_DRILL` | Physical PITR drill on secondary Supabase database |
-| **12**| **Cloudflare Custom Domain DNS** | `SOFTWARE_IMPLEMENTED` | `DEFERRED_TO_FUTURE_ZONE_CUTOVER` | Apex `onneshahospital.com` Cloudflare Zone |
-| **13**| **Supabase Dashboard Review** | `SOFTWARE_IMPLEMENTED` | `PENDING_OWNER_CONSOLE_REVIEW` | Review Security Advisor tab in dashboard |
-| **14**| **DGHS Hospital Licensing** | `SOFTWARE_IMPLEMENTED` | `PENDING_DGHS_FACILITY_REGISTRY` | Official DGHS facility license verified via DGHS registry |
+Per the Zero False-Green doctrine, software implementation readiness is separated from physical/operational execution. The following matrix tracks all real-world owner gates using the required classifications (`VERIFIED`, `PENDING OWNER`, `BLOCKED`, `NOT APPLICABLE`):
+
+| # | Operational Domain | Gate Description | Real-World Operational Status | Owner / Action Required |
+|:---:|:---|:---|:---:|:---|
+| **1** | Financial / Payment | Production SSLCommerz & bKash Credentials | `PENDING OWNER` | Register merchant store ID & keys in production secrets |
+| **2** | Telecommunications | Production SMS Gateway API Key & Sender ID | `PENDING OWNER` | Provision sender ID with telco and supply live API key |
+| **3** | Telecommunications | WhatsApp Business API Credentials | `PENDING OWNER` | Configure Meta Cloud API bearer token and HSM templates |
+| **4** | Email Infrastructure | Production Resend / SendGrid SMTP & DNS | `PENDING OWNER` | Add SPF/DKIM/DMARC records for hospital domain |
+| **5** | Hardware Integration | Physical Receipt Printers (POS ESC/POS) | `PENDING OWNER` | Connect USB/network 80mm thermal receipt printers |
+| **6** | Hardware Integration | Physical Barcode / QR Scanners | `PENDING OWNER` | Deploy 2D handheld USB HID barcode scanners |
+| **7** | Biometric Hardware | Physical Biometric Time Clock (ZKTeco/Hikvision) | `PENDING OWNER` | Connect Ethernet/RS485 time clock to attendance daemon |
+| **8** | Clinical Diagnostics | Production PACS / DICOM Modality Equipment | `PENDING OWNER` | Bind CT/X-Ray modalities to DICOM AE titles and store nodes |
+| **9** | Clinical Diagnostics | Laboratory Analyzers (LIS) Serial Interfaces | `PENDING OWNER` | Connect Sysmex/Mindray analyzers via HL7/ASTM RS-232 bridge |
+| **10** | CI/CD Infrastructure | GitHub Staging Secrets Configuration | `PENDING OWNER` | Add `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SERVICE_ROLE_KEY` to repo secrets |
+| **11** | Database Operations | Supabase Platform PITR Restore Drill | `PENDING OWNER` | Conduct platform restore rehearsal on secondary project |
+| **12** | Desktop Security | Windows Authenticode EV Code Signing Cert | `PENDING OWNER` | Provide EV certificate hardware token / HSM in CI runner |
+| **13** | Clinical Governance | Formal Clinical UAT Sign-Off | `PENDING OWNER` | Conduct formal UAT with Medical Director and Nursing Supv |
+| **14** | Statutory Compliance | DGHS Licensing & BMDC Registration Check | `PENDING OWNER` | Verify DGHS facility registration and doctor BMDC licenses |
+| **15** | Repository Governance| GitHub Branch Protection / Ruleset on `main` | `PENDING OWNER` | Configure GitHub branch ruleset requiring `Mandatory CI` |
+| **16** | DNS & SSL | Official Custom Domain DNS Binding | `PENDING OWNER` | Point custom domain DNS to Cloudflare Pages (pages.dev canonical) |
 
 ---
 
-## 5. System Acceptance Verdict (Historical v1.1.26 - v1.1.28)
+## 5. System Acceptance Verdict (v1.1.34 Final Delivery State)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.28)              │
-│ OPERATIONAL GO-LIVE STATUS:  PENDING 14 REAL-WORLD OWNER GATES         │
-│ VERDICT STATEMENT:           SOFTWARE ENGINEERING COMPLETE —           │
-│                              EXTERNAL OPERATIONAL GATES REMAIN         │
+│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.34)              │
+│ LIVE CLOUDFLARE PAGES:       VERIFIED DEPLOYED (v1.1.34)               │
+│ TAURI WINDOWS INSTALLER:     PENDING_CI_BUILD (Awaiting Runner)        │
+│ OPERATIONAL GO-LIVE STATUS:  PENDING 16 REAL-WORLD OWNER GATES         │
+│ FINAL VERDICT STATEMENT:     SOFTWARE VERIFIED — OWNER GATES REMAIN    │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
