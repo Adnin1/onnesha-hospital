@@ -44,7 +44,7 @@ export default function AboutPage() {
             </div>
             <h3 className="font-bold text-base text-slate-900 mb-2">Our Mission</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              To deliver patient-centered healthcare services with unwavering integrity, clinical excellence, modern diagnostic accuracy, and affordable cost structures.
+              To deliver patient-centered healthcare services with unwavering integrity, clinical excellence, reliable diagnostic services, and affordable cost structures.
             </p>
           </div>
 

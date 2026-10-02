@@ -80,26 +80,32 @@ export function DispatchAmbulanceModal({
       setErrorMsg("ড্রপ লোকেশন (Drop Location) উল্লেখ করুন।");
       return;
     }
+    if (!selectedVehicle?.id) {
+      setErrorMsg("ডিসপ্যাচের জন্য একটি সক্রিয় অ্যাম্বুলেন্স নির্বাচন করুন।");
+      return;
+    }
 
     setSubmitting(true);
     setErrorMsg(null);
 
-    const tripNum = `TRIP-${new Date().toISOString().slice(0, 7).replace("-", "")}-${Math.floor(
-      1000 + Math.random() * 9000
-    )}`;
+    const randSuffix =
+      typeof crypto !== "undefined" && crypto.getRandomValues
+        ? (crypto.getRandomValues(new Uint32Array(1))[0] % 9000) + 1000
+        : Math.floor(1000 + Math.random() * 9000);
+    const tripNum = `TRIP-${new Date().toISOString().slice(0, 7).replace("-", "")}-${randSuffix}`;
 
     const res = await dispatchAmbulanceTripAction({
       trip_number: tripNum,
-      vehicle_id: selectedVehicleId || selectedVehicle?.id || "veh-01",
+      vehicle_id: selectedVehicle.id,
       patient_id: selectedPatient?.id,
       patient_name: selectedPatient?.full_name || nonRegisteredPatientName || "Emergency Patient",
-      patient_code: selectedPatient?.patient_code || "OH-EMG-01",
+      patient_code: selectedPatient?.patient_code || undefined,
       pickup_location: pickupLocation.trim(),
       drop_location: dropLocation.trim(),
       fare_amount: fareAmount,
-      vehicle_number: selectedVehicle?.vehicle_number,
-      vehicle_type: selectedVehicle?.vehicle_type,
-      driver_name: selectedVehicle?.driver_name,
+      vehicle_number: selectedVehicle.vehicle_number,
+      vehicle_type: selectedVehicle.vehicle_type,
+      driver_name: selectedVehicle.driver_name,
     });
 
     setSubmitting(false);

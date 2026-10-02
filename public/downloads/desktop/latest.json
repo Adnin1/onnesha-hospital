@@ -1,18 +1,18 @@
 {
-  "version": "1.1.36",
+  "version": "1.1.37",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.36. Server-side aggregate RPC for daily financial metrics, canonical vacant bed status, scheduled doctor metrics, and production manifest synchronization.",
-  "pub_date": "2026-10-03T05:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.37. Forensic eradication of synthetic vehicle/patient fallbacks, cryptographic Web Crypto SHA-256 certificate hashing, verified v1.1.4 historical release reference, and truthful public website operational claims.",
+  "pub_date": "2026-10-03T05:20:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.36.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.37.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.36.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.37.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0,
       "status": "pending_ci_workflow",
-      "verified_historical_installer": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.5.exe"
+      "verified_historical_installer": "https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe"
     }
   },
   "signing": {

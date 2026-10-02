@@ -124,8 +124,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800">Service Hours</h3>
-                  <p className="text-slate-600 mt-0.5">Emergency & Diagnostic Services: Available for Acute Care</p>
-                  <p className="text-slate-500 text-[11px]">Specialist OPD: 09:00 AM – 10:00 PM Daily</p>
+                  <p className="text-slate-600 mt-0.5">Emergency & Diagnostic Services: Available for Inpatient & Triage Care</p>
+                  <p className="text-slate-500 text-[11px]">Specialist OPD: Per doctor chamber visiting schedule</p>
                 </div>
               </div>
             </div>

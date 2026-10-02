@@ -98,9 +98,15 @@ export function IssueCertificateModal({
     setErrorMsg(null);
 
     const certNum = generateCertNumber();
-    const hash = `sha256:${Array.from({ length: 32 }, () =>
-      Math.floor(Math.random() * 16).toString(16)
-    ).join("")}`;
+    const certPayloadForHash = `${certNum}:${selectedPatient.id}:${doctorName}:${Date.now()}`;
+    const hashBuffer = await crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(certPayloadForHash)
+    );
+    const hashHex = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    const hash = `sha256:${hashHex}`;
 
     const content_payload: MedicalCertificate["content_payload"] = {
       doctor_name: doctorName,

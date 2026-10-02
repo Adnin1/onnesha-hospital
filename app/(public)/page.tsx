@@ -224,15 +224,15 @@ export default function HomePage() {
                 Why Patients Trust Onnesha Hospital
               </h2>
               <p className="text-sm text-slate-600 mt-3 leading-relaxed">
-                We combine experienced clinical governance, hygienic inpatient facilities, and clear itemized billing without hidden surcharges.
+                We combine dedicated medical professionals, hygienic inpatient facilities, and clear itemized billing without hidden surcharges.
               </p>
 
               <div className="space-y-4 mt-6">
                 {[
                   { title: "Digital OPD Token Management", desc: "Automated digital tokens, live waiting queue display screens, and electronic serial confirmation." },
-                  { title: "Clinical Diagnostic Laboratory", desc: "Biochemistry, hematology, and clinical pathology tests with consultant-verified diagnostic reports." },
+                  { title: "Clinical Diagnostic Laboratory", desc: "Biochemistry, hematology, and clinical pathology tests with qualified medical technologist and pathologist reporting." },
                   { title: "Transparent Itemized Billing", desc: "Computer-generated receipts, detailed breakdown for every test and medicine, with zero hidden surcharges." },
-                  { title: "Clean & Spacious Inpatient Cabins", desc: "Air-conditioned cabins, general beds, and post-operative wards with dedicated inpatient nursing staff." },
+                  { title: "Inpatient Accommodation", desc: "Private cabins, general ward beds, and post-operative monitoring with attending nursing care." },
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-start space-x-3">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />

@@ -24,8 +24,8 @@ export default function DesktopDownloadPage() {
   const desktopVersion = latestManifest.version || coreVersion;
   const artifactStatus = latestManifest.artifact_status || "PENDING_CI_BUILD";
   const isArtifactReady = artifactStatus === "VERIFIED_RELEASE";
-  const historicalVersion = "1.1.5";
-  const historicalExeUrl = "https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.5/Onnesha-Hospital-Setup-1.1.5.exe";
+  const historicalVersion = "1.1.4";
+  const historicalExeUrl = "https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe";
 
   const exeArtifactName = `Onnesha-Hospital-Setup-${desktopVersion}.exe`;
   const msiArtifactName = `Onnesha-Hospital-${desktopVersion}.msi`;
