@@ -30,7 +30,8 @@ export class WebhookSecurity {
       }
 
       return timingSafeEqual(computedBuf, receivedBuf);
-    } catch {
+    } catch (err: unknown) {
+      console.error("[WebhookSecurity] verifyHmacSha256Signature error:", err);
       return false;
     }
   }

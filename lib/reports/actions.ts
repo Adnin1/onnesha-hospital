@@ -96,8 +96,8 @@ export async function getFinancialDashboardAggregatesAction(params: {
 
   try {
     await requirePermission("reports.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: reports.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: reports.view required" };
   }
 
   try {
@@ -166,8 +166,8 @@ export async function getPaymentChannelBreakdownAction(params: {
 
   try {
     await requirePermission("reports.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: reports.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: reports.view required" };
   }
 
   try {
@@ -220,8 +220,8 @@ export async function getDepartmentRevenueBreakdownAction(params: {
 
   try {
     await requirePermission("reports.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: reports.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: reports.view required" };
   }
 
   try {
@@ -273,8 +273,8 @@ export async function getAccountsReceivableAgingAction(params: {
 
   try {
     await requirePermission("reports.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: reports.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: reports.view required" };
   }
 
   try {
@@ -338,8 +338,8 @@ export async function getProfitAndLossSummaryAction(params: {
 
   try {
     await requirePermission("reports.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: reports.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: reports.view required" };
   }
 
   try {
@@ -431,8 +431,8 @@ export async function getPaginatedReportInvoicesAction(params: {
 
   try {
     await requirePermission("reports.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: reports.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: reports.view required" };
   }
 
   const page = Math.max(1, params.page || 1);
@@ -600,8 +600,8 @@ export async function getExportReportInvoicesAction(params: {
 
   try {
     await requirePermission("reports.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: reports.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: reports.view required" };
   }
 
   try {

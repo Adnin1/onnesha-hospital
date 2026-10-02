@@ -73,7 +73,8 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
           } else if (isMounted) {
             setError("No registered patient found in this hospital organization. Please register a patient from the directory first.");
           }
-        } catch {
+        } catch (err: unknown) {
+          console.error("[PatientDetailView] loadPatient error:", err);
           if (isMounted) setError("Failed to load patient record from clinical database.");
         } finally {
           if (isMounted) setLoading(false);

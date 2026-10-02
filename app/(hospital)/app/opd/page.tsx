@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { WaitingQueueRecord } from "@/types/appointments";
 import { getLiveWaitingQueueAction, updateQueueStatusAction } from "@/lib/appointments/actions";
-import { recordVitalsAction, createClinicalNoteAction } from "@/lib/patient/actions";
+import { recordVitalsAction, createClinicalNoteAction, registerOpdEncounterAction } from "@/lib/patient/actions";
 import { Toast } from "@/components/ui/Toast";
 
 export default function OPDConsultationPage() {
@@ -43,7 +43,8 @@ export default function OPDConsultationPage() {
       } else {
         setErrorMsg(res.error || "Failed to load OPD queue");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[loadQueue] error:", err);
       setErrorMsg("Network error loading waiting queue");
     } finally {
       setLoading(false);
@@ -65,7 +66,8 @@ export default function OPDConsultationPage() {
             setErrorMsg(res.error || "Failed to load OPD queue");
           }
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[init loadQueue] error:", err);
         if (isMounted) setErrorMsg("Network error loading waiting queue");
       } finally {
         if (isMounted) setLoading(false);
@@ -81,20 +83,41 @@ export default function OPDConsultationPage() {
     e.preventDefault();
     if (!activeQueueItem) return;
 
+    const patientId = activeQueueItem.patient?.id || activeQueueItem.patient_id;
+    if (!patientId) {
+      setToast({ message: "No patient linked to this queue token.", type: "error" });
+      return;
+    }
+
     setSaving(true);
     setErrorMsg(null);
 
     try {
+      let visitId = activeQueueItem.visit_id;
+      if (!visitId) {
+        const encRes = await registerOpdEncounterAction({
+          patientId,
+          doctorId: activeQueueItem.doctor_id,
+          chiefComplaint: notes.trim() || "OPD Consultation",
+        });
+        if (encRes.success && encRes.data?.visit) {
+          visitId = encRes.data.visit.id;
+          setActiveQueueItem((prev) => (prev ? { ...prev, visit_id: visitId } : null));
+        } else {
+          setToast({ message: encRes.error || "Failed to initialize OPD visit encounter.", type: "error" });
+          return;
+        }
+      }
+
       const [sys, dia] = bp.split("/").map((n) => parseInt(n.trim()));
       const pulseVal = parseInt(pulse) || undefined;
       const tempVal = parseFloat(temp) || undefined;
       const tempC = tempVal ? (tempVal > 50 ? Math.round(((tempVal - 32) * 5) / 9 * 10) / 10 : tempVal) : undefined;
       const weightVal = parseFloat(weight) || undefined;
-
       const spo2Val = parseInt(spo2) || undefined;
 
       const res = await recordVitalsAction({
-        visitId: activeQueueItem.visit_id || activeQueueItem.id,
+        visitId,
         systolicBp: sys || undefined,
         diastolicBp: dia || undefined,
         pulseRate: pulseVal,
@@ -106,8 +129,8 @@ export default function OPDConsultationPage() {
       if (res.success) {
         if (notes.trim()) {
           await createClinicalNoteAction({
-            patientId: activeQueueItem.patient?.id || activeQueueItem.id,
-            visitId: activeQueueItem.visit_id || activeQueueItem.id,
+            patientId,
+            visitId,
             noteContent: notes.trim(),
             noteType: "PROGRESS",
           });
@@ -118,7 +141,8 @@ export default function OPDConsultationPage() {
       } else {
         setToast({ message: res.error || "Failed to record vitals", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleSaveVitals] error:", err);
       setToast({ message: "Error saving vitals to database", type: "error" });
     } finally {
       setSaving(false);
@@ -138,7 +162,8 @@ export default function OPDConsultationPage() {
       } else {
         setToast({ message: res.error || "Failed to update queue status", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleCallIn] error:", err);
       setToast({ message: "Network error calling patient into chamber", type: "error" });
     }
   };
@@ -156,7 +181,8 @@ export default function OPDConsultationPage() {
       } else {
         setToast({ message: res.error || "Failed to complete consultation", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleCompleteConsultation] error:", err);
       setToast({ message: "Network error completing consultation", type: "error" });
     }
   };

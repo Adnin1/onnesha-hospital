@@ -109,7 +109,8 @@ export default function CheckTokenPage() {
           setSearchResult(authRes);
         }
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[CheckTokenPage] handleSearch error:", err);
       setSearchResult({
         success: false,
         found: false,

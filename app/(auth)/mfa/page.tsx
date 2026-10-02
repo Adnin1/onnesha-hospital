@@ -47,7 +47,8 @@ export default function MfaChallengePage() {
 
         setFactorId(verifiedTotp.id);
         setIsLoading(false);
-      } catch {
+      } catch (err: unknown) {
+        console.error("[MFAPage] loadMfaFactors error:", err);
         setErrorMessage("সিকিউরিটি সার্ভিস কানেকশন এরর।");
         setIsLoading(false);
       }
@@ -94,7 +95,8 @@ export default function MfaChallengePage() {
 
       // 3. Success -> Session elevated to AAL2 -> Redirect to target route
       router.push(redirectTo);
-    } catch {
+    } catch (err: unknown) {
+      console.error("[MFAPage] handleVerifyOtp error:", err);
       setErrorMessage("ভেরিফিকেশনে সাময়িক ত্রুটি হয়েছে।");
       setIsSubmitting(false);
     }

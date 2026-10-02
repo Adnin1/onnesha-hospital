@@ -73,7 +73,8 @@ export default function PatientsManagementPage() {
       } else {
         setLoadError(res.error || "Unable to load patient directory from database.");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[loadPatients] error:", err);
       setLoadError("Network error loading patient directory.");
     } finally {
       setLoading(false);
@@ -90,7 +91,6 @@ export default function PatientsManagementPage() {
         getPrescriptionsAction({ patientId: patient.id }),
         getDiagnosticOrdersAction({ patientId: patient.id }),
       ]);
-
       if (p360.success && p360.data) {
         setTimeline(p360.data.timeline || []);
       }
@@ -103,8 +103,8 @@ export default function PatientsManagementPage() {
       if (labRes.success && labRes.data) {
         setLabOrders(labRes.data.orders || []);
       }
-    } catch {
-      // ignore non-critical sub-record load
+    } catch (err: unknown) {
+      console.error("[selectPatient] sub-record load error:", err);
     } finally {
       setSubLoading(false);
     }
@@ -137,7 +137,8 @@ export default function PatientsManagementPage() {
         } else if (isMounted && res.error) {
           setLoadError(res.error);
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[init patients] error:", err);
         if (isMounted) setLoadError("Network error loading patient directory.");
       } finally {
         if (isMounted) {
@@ -151,6 +152,15 @@ export default function PatientsManagementPage() {
       isMounted = false;
     };
   }, [selectedPatient]);
+
+  useEffect(() => {
+    if (!isRegisterModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsRegisterModalOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isRegisterModalOpen]);
 
   const handleRegisterPatient = async (e: React.FormEvent, bypass = false) => {
     e.preventDefault();
@@ -199,7 +209,8 @@ export default function PatientsManagementPage() {
         setNewEmergencyPhone("");
         showToast(`Patient ${created.full_name} (${created.patient_code}) registered successfully!`, "success");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleRegisterPatient] error:", err);
       showToast("Error saving patient registration to database", "error");
     } finally {
       setRegisterLoading(false);
@@ -526,8 +537,14 @@ export default function PatientsManagementPage() {
 
       {/* REGISTRATION MODAL */}
       {isRegisterModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto text-xs">
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          onClick={() => setIsRegisterModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
               <div>
                 <h3 className="text-lg font-black text-slate-900">

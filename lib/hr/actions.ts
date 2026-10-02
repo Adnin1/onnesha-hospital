@@ -27,8 +27,8 @@ export async function getEmployeesAction(): Promise<
 
   try {
     await requirePermission("hr.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: hr.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: hr.view required" };
   }
 
   try {
@@ -100,8 +100,8 @@ export async function createEmployeeAction(params: {
 
   try {
     await requirePermission("hr.manage");
-  } catch {
-    return { success: false, error: "403 Forbidden: hr.manage required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: hr.manage required" };
   }
 
   try {
@@ -174,8 +174,8 @@ export async function recordBiometricPunchAction(params: {
 
   try {
     await requirePermission("hr.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: hr permission required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: hr permission required" };
   }
 
   try {
@@ -237,8 +237,8 @@ export async function getTodayAttendanceAction(): Promise<
 
   try {
     await requirePermission("hr.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: hr.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: hr.view required" };
   }
 
   try {
@@ -312,8 +312,8 @@ export async function createPayrollRunAction(params: {
 
   try {
     await requirePermission("hr.manage");
-  } catch {
-    return { success: false, error: "403 Forbidden: hr.manage required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: hr.manage required" };
   }
 
   const supabase = await createClient();
@@ -342,21 +342,21 @@ export async function createPayrollRunAction(params: {
   let totalDeductions = 0;
 
   const lineItems = (emps || []).map((e) => {
-    const gross =
-      Number(e.basic_salary || 0) +
-      Number(e.house_rent || 0) +
-      Number(e.medical_allowance || 0);
+    const basic = Number(e.basic_salary || 0);
+    const allowances =
+      Number(e.house_rent || 0) + Number(e.medical_allowance || 0);
+    const gross = basic + allowances;
     // Standard 5% provident fund deduction — adjust per policy
     const deduction = Number((gross * 0.05).toFixed(2));
     totalGross += gross;
     totalDeductions += deduction;
     return {
-      organization_id: session.organizationId as string,
       employee_id: e.id,
-      month_year: params.monthYear,
-      gross_salary: gross,
+      basic_salary: basic,
+      allowances,
       deductions: deduction,
       net_salary: Number((gross - deduction).toFixed(2)),
+      payment_status: "PENDING",
     };
   });
 
@@ -379,12 +379,17 @@ export async function createPayrollRunAction(params: {
 
   // Insert per-employee payslip lines
   const payslipLines = lineItems.map((li) => ({
-    ...li,
     payroll_run_id: run.id,
+    employee_id: li.employee_id,
+    basic_salary: li.basic_salary,
+    allowances: li.allowances,
+    deductions: li.deductions,
+    net_salary: li.net_salary,
+    payment_status: li.payment_status,
   }));
 
   const { error: lineErr } = await supabase
-    .from("payroll_line_items")
+    .from("payroll_items")
     .insert(payslipLines);
 
   if (lineErr) {
@@ -428,8 +433,8 @@ export async function getPayslipAction(params: {
   }
   try {
     await requirePermission("hr.view");
-  } catch {
-    return { success: false, error: "403 Forbidden" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
   }
 
   const supabase = await createClient();
@@ -443,12 +448,22 @@ export async function getPayslipAction(params: {
 
   if (empErr || !emp) return { success: false, error: "Employee not found" };
 
-  const { data: line, error: lineErr } = await supabase
-    .from("payroll_line_items")
-    .select("*, payroll_runs(status)")
-    .eq("employee_id", params.employeeId)
-    .eq("month_year", params.monthYear)
+  const { data: run, error: runErr } = await supabase
+    .from("payroll_runs")
+    .select("id, status")
     .eq("organization_id", session.organizationId)
+    .eq("month_year", params.monthYear)
+    .single();
+
+  if (runErr || !run) {
+    return { success: false, error: `No payslip found for ${params.monthYear}` };
+  }
+
+  const { data: line, error: lineErr } = await supabase
+    .from("payroll_items")
+    .select("*")
+    .eq("payroll_run_id", run.id)
+    .eq("employee_id", params.employeeId)
     .single();
 
   if (lineErr || !line) {
@@ -460,10 +475,10 @@ export async function getPayslipAction(params: {
     data: {
       employee: emp,
       monthYear: params.monthYear,
-      grossSalary: Number(line.gross_salary),
+      grossSalary: Number(line.basic_salary) + Number(line.allowances),
       deductions: Number(line.deductions),
       netSalary: Number(line.net_salary),
-      payrollRunStatus: (line.payroll_runs as { status: string } | null)?.status ?? null,
+      payrollRunStatus: run.status ?? null,
     },
   };
 }
@@ -491,14 +506,14 @@ export async function getEmployeeLeaveAction(params?: {
   }
   try {
     await requirePermission("hr.view");
-  } catch {
-    return { success: false, error: "403 Forbidden" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
   }
 
   const supabase = await createClient();
   let query = supabase
-    .from("employee_leaves")
-    .select("*")
+    .from("leave_requests")
+    .select("*, leave_types(name)")
     .eq("organization_id", session.organizationId);
 
   if (params?.employeeId) query = query.eq("employee_id", params.employeeId);
@@ -507,7 +522,38 @@ export async function getEmployeeLeaveAction(params?: {
   const { data, error } = await query.order("start_date", { ascending: false }).limit(100);
   if (error) return { success: false, error: error.message };
 
-  return { success: true, data: { leaves: (data || []) as typeof data & Array<{ id: string; employee_id: string; leave_type: string; start_date: string; end_date: string; total_days: number; reason: string; status: string; approved_by?: string | null }> } };
+  interface LeaveRequestRow {
+    id: string;
+    employee_id: string;
+    start_date: string;
+    end_date: string;
+    reason: string;
+    status: string;
+    approved_by?: string | null;
+    leave_types?: { name?: string } | null;
+  }
+
+  const leaves = ((data || []) as unknown as LeaveRequestRow[]).map((r) => {
+    const s = new Date(r.start_date);
+    const e = new Date(r.end_date);
+    const totalDays =
+      isNaN(s.getTime()) || isNaN(e.getTime())
+        ? 1
+        : Math.max(1, Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+    return {
+      id: r.id,
+      employee_id: r.employee_id,
+      leave_type: r.leave_types?.name || "LEAVE",
+      start_date: r.start_date,
+      end_date: r.end_date,
+      total_days: totalDays,
+      reason: r.reason,
+      status: r.status,
+      approved_by: r.approved_by || null,
+    };
+  });
+
+  return { success: true, data: { leaves } };
 }
 
 /**
@@ -526,8 +572,8 @@ export async function applyLeaveAction(params: {
   }
   try {
     await requirePermission("hr.view");
-  } catch {
-    return { success: false, error: "403 Forbidden" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
   }
 
   const start = new Date(params.startDate);
@@ -540,15 +586,46 @@ export async function applyLeaveAction(params: {
     Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
   const supabase = await createClient();
+
+  // Resolve or create leave type for this organization
+  let leaveTypeId: string | null = null;
+  const { data: lt } = await supabase
+    .from("leave_types")
+    .select("id")
+    .eq("organization_id", session.organizationId)
+    .ilike("name", params.leaveType)
+    .limit(1)
+    .maybeSingle();
+
+  if (lt) {
+    leaveTypeId = lt.id;
+  } else {
+    const { data: newLt } = await supabase
+      .from("leave_types")
+      .insert({
+        organization_id: session.organizationId,
+        name: params.leaveType,
+        annual_quota_days: 14,
+      })
+      .select("id")
+      .single();
+    if (newLt) {
+      leaveTypeId = newLt.id;
+    }
+  }
+
+  if (!leaveTypeId) {
+    return { success: false, error: "Failed to resolve leave type" };
+  }
+
   const { data, error } = await supabase
-    .from("employee_leaves")
+    .from("leave_requests")
     .insert({
       organization_id: session.organizationId,
       employee_id: params.employeeId,
-      leave_type: params.leaveType,
+      leave_type_id: leaveTypeId,
       start_date: params.startDate,
       end_date: params.endDate,
-      total_days: totalDays,
       reason: params.reason,
       status: "PENDING",
     })
@@ -589,8 +666,8 @@ export async function getPayrollSummaryAction(): Promise<
 
   try {
     await requirePermission("hr.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: hr.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: hr.view required" };
   }
 
   try {

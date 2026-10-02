@@ -51,7 +51,8 @@ export function sanitizeRedirectPath(path: string | null | undefined, fallback: 
       const nextDecoded = decodeURIComponent(decoded);
       if (nextDecoded === decoded) break;
       decoded = nextDecoded;
-    } catch {
+    } catch (err: unknown) {
+      console.error("[SafeErrors] decodeURIComponent error:", err);
       return fallback;
     }
   }

@@ -56,8 +56,8 @@ export function IssueCertificateModal({
         if (isMounted && res.success && res.data?.patients) {
           setPatients(res.data.patients);
         }
-      } catch {
-        // fallback
+      } catch (err: unknown) {
+        console.error("[IssueCertificateModal] fetchPatients error:", err);
       } finally {
         if (isMounted) setLoadingPatients(false);
       }

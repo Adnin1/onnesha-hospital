@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUserSession } from "@/lib/auth/session";
+import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export interface MedicalCertificate {
   id: string;
@@ -39,115 +40,6 @@ export interface MedicalCertificate {
   };
 }
 
-const DEFAULT_ORG_ID = "a0000000-0000-0000-0000-000000000001";
-
-export const DEFAULT_MEDICAL_CERTIFICATES: MedicalCertificate[] = [
-  {
-    id: "cert-birth-001",
-    organization_id: DEFAULT_ORG_ID,
-    certificate_number: "OH-BC-202610-001",
-    patient_id: "pat-baby-01",
-    certificate_type: "birth",
-    issued_by: "Dr. Nazmul Huda, MBBS, DGO",
-    issue_date: "2026-10-01",
-    qr_verification_hash: "sha256:8f4c2e6d1b9a7c3e5f2a1d0b8c7e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e",
-    content_payload: {
-      child_name: "Baby of Shamima Akhter",
-      father_name: "Tariqul Islam",
-      mother_name: "Shamima Akhter",
-      birth_weight_kg: 3.2,
-      time_of_birth: "04:30 AM",
-      doctor_name: "Dr. Nazmul Huda",
-      doctor_designation: "Consultant Gynecologist & Obstetrician",
-      remarks: "Normal spontaneous vaginal delivery. Baby cry immediate, APGAR score 9/10.",
-    },
-    is_void: false,
-    created_at: new Date().toISOString(),
-    patients: {
-      id: "pat-baby-01",
-      patient_code: "OH-202610-0081",
-      full_name: "Baby of Shamima Akhter",
-      gender: "FEMALE",
-      phone: "+8801711223344",
-    },
-  },
-  {
-    id: "cert-fit-002",
-    organization_id: DEFAULT_ORG_ID,
-    certificate_number: "OH-FC-202610-002",
-    patient_id: "pat-tanvir-01",
-    certificate_type: "medical_fitness",
-    issued_by: "Prof. Dr. M. A. Jalil, FCPS, FRCP",
-    issue_date: "2026-10-01",
-    qr_verification_hash: "sha256:1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
-    content_payload: {
-      fitness_status: "FIT",
-      doctor_name: "Prof. Dr. M. A. Jalil",
-      doctor_designation: "Chief Medical Officer & Professor of Medicine",
-      remarks: "Clinically examined and found physically and mentally sound. Free from infectious diseases.",
-    },
-    is_void: false,
-    created_at: new Date().toISOString(),
-    patients: {
-      id: "pat-tanvir-01",
-      patient_code: "OH-202610-0001",
-      full_name: "Mohammad Tanvir Rahman",
-      gender: "MALE",
-      phone: "+8801712345678",
-    },
-  },
-  {
-    id: "cert-overseas-003",
-    organization_id: DEFAULT_ORG_ID,
-    certificate_number: "OH-OC-202610-003",
-    patient_id: "pat-rokeya-02",
-    certificate_type: "overseas_clearance",
-    issued_by: "Dr. K. M. Rahman, MBBS, DTCD",
-    issue_date: "2026-09-30",
-    qr_verification_hash: "sha256:7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d",
-    content_payload: {
-      destination_country: "Kingdom of Saudi Arabia (KSA)",
-      fit_for_travel: true,
-      doctor_name: "Dr. K. M. Rahman",
-      doctor_designation: "Authorized Overseas Medical Examiner",
-      remarks: "CXR clear, VDRL non-reactive, HBsAg negative, Anti-HCV negative. Fit for international employment.",
-    },
-    is_void: false,
-    created_at: new Date().toISOString(),
-    patients: {
-      id: "pat-rokeya-02",
-      patient_code: "OH-202610-0002",
-      full_name: "Begum Rokeya Khatun",
-      gender: "FEMALE",
-      phone: "+8801819000111",
-    },
-  },
-  {
-    id: "cert-dis-004",
-    organization_id: DEFAULT_ORG_ID,
-    certificate_number: "OH-DC-202609-004",
-    patient_id: "pat-karim-03",
-    certificate_type: "discharge",
-    issued_by: "Dr. S. M. Faruq, MS (Ortho)",
-    issue_date: "2026-09-29",
-    qr_verification_hash: "sha256:4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e",
-    content_payload: {
-      doctor_name: "Dr. S. M. Faruq",
-      doctor_designation: "Consultant Orthopedic Surgeon",
-      remarks: "Underwent closed reduction and internal fixation of right tibia. Wound healthy, sutures removed. Discharged with oral analgesics.",
-    },
-    is_void: false,
-    created_at: new Date().toISOString(),
-    patients: {
-      id: "pat-karim-03",
-      patient_code: "OH-202609-0033",
-      full_name: "Abdul Karim",
-      gender: "MALE",
-      phone: "+8801912888999",
-    },
-  },
-];
-
 export async function getMedicalCertificatesAction(certType?: string): Promise<{
   success: boolean;
   data?: MedicalCertificate[];
@@ -155,13 +47,17 @@ export async function getMedicalCertificatesAction(certType?: string): Promise<{
 }> {
   try {
     const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    await requirePermission(PERMISSIONS.REGISTRAR_VIEW);
 
     const supabase = createClient();
     let query = supabase
       .from("medical_certificates")
       .select("*, patients(id, patient_code, full_name, phone, gender, date_of_birth)")
-      .eq("organization_id", orgId)
+      .eq("organization_id", session.organizationId)
       .order("issue_date", { ascending: false });
 
     if (certType && certType !== "ALL") {
@@ -169,18 +65,13 @@ export async function getMedicalCertificatesAction(certType?: string): Promise<{
     }
 
     const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      const filtered = certType && certType !== "ALL"
-        ? DEFAULT_MEDICAL_CERTIFICATES.filter((c) => c.certificate_type === certType)
-        : DEFAULT_MEDICAL_CERTIFICATES;
-      return { success: true, data: filtered };
+    if (error) {
+      return { success: false, error: error.message };
     }
-    return { success: true, data: data as MedicalCertificate[] };
-  } catch {
-    const filtered = certType && certType !== "ALL"
-      ? DEFAULT_MEDICAL_CERTIFICATES.filter((c) => c.certificate_type === certType)
-      : DEFAULT_MEDICAL_CERTIFICATES;
-    return { success: true, data: filtered };
+    return { success: true, data: (data as MedicalCertificate[]) || [] };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load medical certificates.";
+    return { success: false, error: msg };
   }
 }
 
@@ -196,11 +87,30 @@ export async function issueMedicalCertificateAction(payload: {
 }): Promise<{ success: boolean; data?: MedicalCertificate; error?: string }> {
   try {
     const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
-    const userId = session.userId || "usr-registrar-officer";
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    await requirePermission(PERMISSIONS.REGISTRAR_MANAGE);
+
+    const orgId = session.organizationId;
+    const userId = session.userId;
 
     const supabase = createClient();
-    const { data: inserted } = await supabase
+
+    // Verify patient belongs to organization
+    const { data: patient, error: patientErr } = await supabase
+      .from("patients")
+      .select("id, patient_code, full_name, phone, gender, date_of_birth")
+      .eq("id", payload.patient_id)
+      .eq("organization_id", orgId)
+      .single();
+
+    if (patientErr || !patient) {
+      return { success: false, error: "Patient not found or cross-tenant access denied." };
+    }
+
+    const { data: inserted, error: insertErr } = await supabase
       .from("medical_certificates")
       .insert({
         organization_id: orgId,
@@ -214,9 +124,12 @@ export async function issueMedicalCertificateAction(payload: {
       .select()
       .single();
 
-    const certId = inserted ? inserted.id : `cert-${Date.now()}`;
+    if (insertErr || !inserted) {
+      return { success: false, error: insertErr ? insertErr.message : "Failed to issue certificate." };
+    }
+
     const newCert: MedicalCertificate = {
-      id: certId,
+      id: inserted.id,
       organization_id: orgId,
       certificate_number: payload.certificate_number,
       patient_id: payload.patient_id,
@@ -226,11 +139,14 @@ export async function issueMedicalCertificateAction(payload: {
       qr_verification_hash: payload.qr_verification_hash,
       content_payload: payload.content_payload || {},
       is_void: false,
-      created_at: new Date().toISOString(),
+      created_at: inserted.created_at || new Date().toISOString(),
       patients: {
-        id: payload.patient_id,
-        patient_code: payload.patient_code || "OH-202610-0099",
-        full_name: payload.patient_name || "Certified Patient",
+        id: patient.id,
+        patient_code: patient.patient_code,
+        full_name: patient.full_name,
+        phone: patient.phone,
+        gender: patient.gender,
+        date_of_birth: patient.date_of_birth,
       },
     };
 

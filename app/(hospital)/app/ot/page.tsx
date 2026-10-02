@@ -17,6 +17,8 @@ import {
   getOTRoomsAction,
   bookOTAction,
   updateOTBookingStatusAction,
+  getActiveVisitsAction,
+  ActiveVisitRecord,
 } from "@/lib/ot/actions";
 import { getDoctorsAction } from "@/lib/appointments/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
@@ -27,12 +29,14 @@ export default function OperationTheaterPage() {
   const [bookings, setBookings] = useState<OTBookingRecord[]>([]);
   const [rooms, setRooms] = useState<OTRoomRecord[]>([]);
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
+  const [visits, setVisits] = useState<ActiveVisitRecord[]>([]);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   // New Booking Form State
+  const [formVisitId, setFormVisitId] = useState("");
   const [formProcedure, setFormProcedure] = useState("");
   const [formRoomId, setFormRoomId] = useState("");
   const [formSurgeonId, setFormSurgeonId] = useState("");
@@ -46,10 +50,11 @@ export default function OperationTheaterPage() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const [bRes, rRes, dRes] = await Promise.all([
+      const [bRes, rRes, dRes, vRes] = await Promise.all([
         getOTBookingsAction(),
         getOTRoomsAction(),
         getDoctorsAction(),
+        getActiveVisitsAction(),
       ]);
 
       if (bRes.success && bRes.data) setBookings(bRes.data.bookings);
@@ -65,7 +70,14 @@ export default function OperationTheaterPage() {
           setFormSurgeonId(dRes.data.doctors[0].id);
         }
       }
-    } catch {
+      if (vRes.success && vRes.data) {
+        setVisits(vRes.data.visits);
+        if (vRes.data.visits.length > 0 && !formVisitId) {
+          setFormVisitId(vRes.data.visits[0].id);
+        }
+      }
+    } catch (err: unknown) {
+      console.error("[OTPage] loadData error:", err);
       setErrorMsg("Failed to load OT roster");
     } finally {
       setLoading(false);
@@ -76,10 +88,11 @@ export default function OperationTheaterPage() {
     let isMounted = true;
     async function init() {
       try {
-        const [bRes, rRes, dRes] = await Promise.all([
+        const [bRes, rRes, dRes, vRes] = await Promise.all([
           getOTBookingsAction(),
           getOTRoomsAction(),
           getDoctorsAction(),
+          getActiveVisitsAction(),
         ]);
 
         if (isMounted) {
@@ -91,19 +104,27 @@ export default function OperationTheaterPage() {
 
           if (rRes.success && rRes.data) {
             setRooms(rRes.data.rooms);
-            if (rRes.data.rooms.length > 0 && !formRoomId) {
+            if (rRes.data.rooms.length > 0) {
               setFormRoomId(rRes.data.rooms[0].id);
             }
           }
 
           if (dRes.success && dRes.data) {
             setDoctors(dRes.data.doctors);
-            if (dRes.data.doctors.length > 0 && !formSurgeonId) {
+            if (dRes.data.doctors.length > 0) {
               setFormSurgeonId(dRes.data.doctors[0].id);
             }
           }
+
+          if (vRes.success && vRes.data) {
+            setVisits(vRes.data.visits);
+            if (vRes.data.visits.length > 0) {
+              setFormVisitId(vRes.data.visits[0].id);
+            }
+          }
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[OTPage] init error:", err);
         if (isMounted) setErrorMsg("Failed to load OT roster");
       } finally {
         if (isMounted) setLoading(false);
@@ -113,7 +134,7 @@ export default function OperationTheaterPage() {
     return () => {
       isMounted = false;
     };
-  }, [formRoomId, formSurgeonId]);
+  }, []);
 
   const handleCreateBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,14 +142,18 @@ export default function OperationTheaterPage() {
       setToast({ message: "Procedure name is required", type: "error" });
       return;
     }
+    if (!formVisitId) {
+      setToast({ message: "Please select an active patient visit", type: "error" });
+      return;
+    }
 
     setActionLoading(true);
     try {
-      const startDateTime = `${formDate}T${formStartTime}:00.000Z`;
-      const endDateTime = `${formDate}T${formEndTime}:00.000Z`;
+      const startDateTime = new Date(`${formDate}T${formStartTime}:00+06:00`).toISOString();
+      const endDateTime = new Date(`${formDate}T${formEndTime}:00+06:00`).toISOString();
 
       const res = await bookOTAction({
-        visitId: "00000000-0000-0000-0000-000000000000", // Emergency/Elective visit link
+        visitId: formVisitId,
         otRoomId: formRoomId,
         procedureName: formProcedure,
         leadSurgeonId: formSurgeonId,
@@ -146,7 +171,8 @@ export default function OperationTheaterPage() {
       } else {
         setToast({ message: res.error || "Failed to schedule surgical procedure", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[OTPage] handleCreateBooking error:", err);
       setToast({ message: "Network error scheduling surgery", type: "error" });
     } finally {
       setActionLoading(false);
@@ -166,7 +192,8 @@ export default function OperationTheaterPage() {
       } else {
         setToast({ message: res.error || "Failed to update surgical status", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[OTPage] handleUpdateStatus error:", err);
       setToast({ message: "Error updating OT status", type: "error" });
     } finally {
       setActionLoading(false);
@@ -370,6 +397,26 @@ export default function OperationTheaterPage() {
             </p>
 
             <form onSubmit={handleCreateBooking} className="space-y-3">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Patient / IPD Visit *</label>
+                <select
+                  value={formVisitId}
+                  onChange={(e) => setFormVisitId(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-xl bg-slate-50 font-semibold"
+                  required
+                >
+                  {visits.length === 0 ? (
+                    <option value="">No active visits found</option>
+                  ) : (
+                    visits.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.patient?.full_name || "Patient"} ({v.patient?.patient_code || "Code"}) — Visit: {v.visit_number} [{v.visit_type}]
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Procedure Name *</label>
                 <input

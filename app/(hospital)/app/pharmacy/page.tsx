@@ -61,6 +61,8 @@ export default function PharmacyPage() {
   const [newPurchaseRate, setNewPurchaseRate] = useState(2.5);
   const [newMrp, setNewMrp] = useState(3.5);
   const [newBatchQty, setNewBatchQty] = useState(500);
+  const [medSubmitting, setMedSubmitting] = useState(false);
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
 
   const loadCatalog = async () => {
     setLoading(true);
@@ -80,7 +82,8 @@ export default function PharmacyPage() {
       } else {
         setErrorMsg(res.error || "Failed to load medicine catalog");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[loadCatalog] error:", err);
       setErrorMsg("Network error loading pharmacy catalog");
     } finally {
       setLoading(false);
@@ -94,8 +97,8 @@ export default function PharmacyPage() {
       if (res.success && res.data) {
         setLedgerEntries(res.data.transactions);
       }
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      console.error("[loadLedger] error:", err);
     } finally {
       setLedgerLoading(false);
     }
@@ -120,7 +123,8 @@ export default function PharmacyPage() {
             setErrorMsg(res.error || "Failed to load pharmacy catalog");
           }
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[initCatalog] error:", err);
         if (isMounted) setErrorMsg("Network error loading pharmacy inventory");
       } finally {
         if (isMounted) setLoading(false);
@@ -141,8 +145,8 @@ export default function PharmacyPage() {
           if (isMounted && res.success && res.data) {
             setLedgerEntries(res.data.transactions);
           }
-        } catch {
-          // ignore
+        } catch (err: unknown) {
+          console.error("[fetchLedger] error:", err);
         } finally {
           if (isMounted) setLedgerLoading(false);
         }
@@ -186,7 +190,8 @@ export default function PharmacyPage() {
       } else {
         setToast({ message: res.error || "Failed to dispense medicine", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handlePosCheckout] error:", err);
       setToast({ message: "Network error processing sale", type: "error" });
     } finally {
       setPosLoading(false);
@@ -195,6 +200,7 @@ export default function PharmacyPage() {
 
   const handleCreateMedicine = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMedSubmitting(true);
     try {
       const res = await createMedicineAction({
         brandName: newBrandName,
@@ -207,12 +213,19 @@ export default function PharmacyPage() {
         setShowAddMedModal(false);
         setToast({ message: `Medicine "${newBrandName}" added to catalog.`, type: "success" });
         setNewBrandName("");
+        setNewGenericName("");
+        setNewDosageForm("Tablet");
+        setNewStrength("500mg");
+        setNewManufacturer("Square Pharmaceuticals");
         await loadCatalog();
       } else {
         setToast({ message: res.error || "Failed to add medicine", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleCreateMedicine] error:", err);
       setToast({ message: "Error adding medicine", type: "error" });
+    } finally {
+      setMedSubmitting(false);
     }
   };
 
@@ -220,6 +233,7 @@ export default function PharmacyPage() {
     e.preventDefault();
     if (!selectedMedForBatch) return;
 
+    setBatchSubmitting(true);
     try {
       const res = await createMedicineBatchAction({
         medicineId: selectedMedForBatch.id,
@@ -234,12 +248,19 @@ export default function PharmacyPage() {
         setSelectedMedForBatch(null);
         setToast({ message: `Batch ${newBatchNumber} intake recorded into stock inventory.`, type: "success" });
         setNewBatchNumber("");
+        setNewExpiryDate("2028-12-31");
+        setNewPurchaseRate(2.5);
+        setNewMrp(3.5);
+        setNewBatchQty(500);
         await loadCatalog();
       } else {
         setToast({ message: res.error || "Failed to add batch", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleCreateBatch] error:", err);
       setToast({ message: "Error adding batch", type: "error" });
+    } finally {
+      setBatchSubmitting(false);
     }
   };
 
@@ -668,9 +689,10 @@ export default function PharmacyPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl"
+                  disabled={medSubmitting}
+                  className="px-5 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold rounded-xl"
                 >
-                  Save Brand
+                  {medSubmitting ? "Saving..." : "Save Brand"}
                 </button>
               </div>
             </form>
@@ -756,9 +778,10 @@ export default function PharmacyPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl"
+                  disabled={batchSubmitting}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold rounded-xl"
                 >
-                  Confirm Intake
+                  {batchSubmitting ? "Recording..." : "Confirm Intake"}
                 </button>
               </div>
             </form>

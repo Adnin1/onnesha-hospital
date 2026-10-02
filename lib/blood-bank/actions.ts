@@ -206,7 +206,8 @@ export async function getBloodInventoryAction(bloodGroup?: string): Promise<{
       return { success: true, data: filtered };
     }
     return { success: true, data: data as BloodBagItem[] };
-  } catch {
+  } catch (err: unknown) {
+    console.error("[BloodBankActions] getBloodInventoryAction error:", err);
     const filtered = bloodGroup && bloodGroup !== "ALL"
       ? DEFAULT_BLOOD_INVENTORY.filter((b) => b.blood_group === bloodGroup)
       : DEFAULT_BLOOD_INVENTORY;

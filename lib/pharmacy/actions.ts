@@ -110,8 +110,8 @@ export async function createMedicineAction(params: {
 
   try {
     await requirePermission("pharmacy.manage");
-  } catch {
-    return { success: false, error: "403 Forbidden: pharmacy.manage required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: pharmacy.manage required" };
   }
 
   try {
@@ -202,8 +202,8 @@ export async function createMedicineBatchAction(params: {
 
   try {
     await requirePermission("pharmacy.manage");
-  } catch {
-    return { success: false, error: "403 Forbidden: pharmacy.manage required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: pharmacy.manage required" };
   }
 
   if (params.quantity <= 0) {
@@ -282,8 +282,8 @@ export async function dispensePharmacySaleAction(params: {
 
   try {
     await requirePermission("pharmacy.dispense");
-  } catch {
-    return { success: false, error: "403 Forbidden: pharmacy.dispense required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: pharmacy.dispense required" };
   }
 
   if (params.quantity <= 0) {

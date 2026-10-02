@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUserSession } from "@/lib/auth/session";
+import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export interface AmbulanceVehicle {
   id: string;
@@ -39,95 +40,6 @@ export interface AmbulanceTrip {
   };
 }
 
-const DEFAULT_ORG_ID = "a0000000-0000-0000-0000-000000000001";
-
-export const DEFAULT_AMBULANCE_FLEET: AmbulanceVehicle[] = [
-  {
-    id: "veh-icu-01",
-    organization_id: DEFAULT_ORG_ID,
-    vehicle_number: "Dhaka Metro Cha-71-4201",
-    vehicle_type: "icu_equipped",
-    driver_name: "Md. Rafiqul Islam",
-    driver_phone: "+8801711002233",
-    is_available: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "veh-bls-02",
-    organization_id: DEFAULT_ORG_ID,
-    vehicle_number: "Dhaka Metro Cha-72-8921",
-    vehicle_type: "basic",
-    driver_name: "Md. Al-Amin",
-    driver_phone: "+8801819334455",
-    is_available: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "veh-neo-03",
-    organization_id: DEFAULT_ORG_ID,
-    vehicle_number: "Dhaka Metro Cha-73-1102",
-    vehicle_type: "neonatal",
-    driver_name: "Md. Kamrul Hasan",
-    driver_phone: "+8801912556677",
-    is_available: false,
-    created_at: new Date().toISOString(),
-  },
-];
-
-export const DEFAULT_AMBULANCE_TRIPS: AmbulanceTrip[] = [
-  {
-    id: "trip-001",
-    organization_id: DEFAULT_ORG_ID,
-    trip_number: "TRIP-202610-001",
-    vehicle_id: "veh-neo-03",
-    patient_id: "pat-baby-01",
-    pickup_location: "Dhanmondi Clinic, Road 27",
-    drop_location: "Onnesha Hospital Neonatal ICU (NICU)",
-    fare_amount: 3500,
-    status: "in_transit",
-    start_time: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-    created_at: new Date().toISOString(),
-    ambulance_vehicles: {
-      id: "veh-neo-03",
-      vehicle_number: "Dhaka Metro Cha-73-1102",
-      vehicle_type: "neonatal",
-      driver_name: "Md. Kamrul Hasan",
-    },
-    patients: {
-      id: "pat-baby-01",
-      patient_code: "OH-202610-0081",
-      full_name: "Baby of Shamima Akhter",
-      phone: "+8801711223344",
-    },
-  },
-  {
-    id: "trip-002",
-    organization_id: DEFAULT_ORG_ID,
-    trip_number: "TRIP-202610-002",
-    vehicle_id: "veh-icu-01",
-    patient_id: "pat-tanvir-01",
-    pickup_location: "Uttara Sector 4, House 12",
-    drop_location: "Onnesha Hospital Emergency",
-    fare_amount: 2500,
-    status: "completed",
-    start_time: new Date(Date.now() - 120 * 60 * 1000).toISOString(),
-    completion_time: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
-    created_at: new Date().toISOString(),
-    ambulance_vehicles: {
-      id: "veh-icu-01",
-      vehicle_number: "Dhaka Metro Cha-71-4201",
-      vehicle_type: "icu_equipped",
-      driver_name: "Md. Rafiqul Islam",
-    },
-    patients: {
-      id: "pat-tanvir-01",
-      patient_code: "OH-202610-0001",
-      full_name: "Mohammad Tanvir Rahman",
-      phone: "+8801712345678",
-    },
-  },
-];
-
 export async function getAmbulanceFleetAction(): Promise<{
   success: boolean;
   data?: AmbulanceVehicle[];
@@ -135,21 +47,26 @@ export async function getAmbulanceFleetAction(): Promise<{
 }> {
   try {
     const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    await requirePermission(PERMISSIONS.AMBULANCE_VIEW);
 
     const supabase = createClient();
     const { data, error } = await supabase
       .from("ambulance_vehicles")
       .select("*")
-      .eq("organization_id", orgId)
+      .eq("organization_id", session.organizationId)
       .order("vehicle_number", { ascending: true });
 
-    if (error || !data || data.length === 0) {
-      return { success: true, data: DEFAULT_AMBULANCE_FLEET };
+    if (error) {
+      return { success: false, error: error.message };
     }
-    return { success: true, data: data as AmbulanceVehicle[] };
-  } catch {
-    return { success: true, data: DEFAULT_AMBULANCE_FLEET };
+    return { success: true, data: (data as AmbulanceVehicle[]) || [] };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load ambulance fleet.";
+    return { success: false, error: msg };
   }
 }
 
@@ -160,21 +77,26 @@ export async function getAmbulanceTripsAction(): Promise<{
 }> {
   try {
     const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    await requirePermission(PERMISSIONS.AMBULANCE_VIEW);
 
     const supabase = createClient();
     const { data, error } = await supabase
       .from("ambulance_trips")
       .select("*, ambulance_vehicles(id, vehicle_number, vehicle_type, driver_name), patients(id, patient_code, full_name, phone)")
-      .eq("organization_id", orgId)
+      .eq("organization_id", session.organizationId)
       .order("start_time", { ascending: false });
 
-    if (error || !data || data.length === 0) {
-      return { success: true, data: DEFAULT_AMBULANCE_TRIPS };
+    if (error) {
+      return { success: false, error: error.message };
     }
-    return { success: true, data: data as AmbulanceTrip[] };
-  } catch {
-    return { success: true, data: DEFAULT_AMBULANCE_TRIPS };
+    return { success: true, data: (data as AmbulanceTrip[]) || [] };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load ambulance trips.";
+    return { success: false, error: msg };
   }
 }
 
@@ -203,17 +125,27 @@ export async function dispatchAmbulanceTripAction(payload: {
     }
 
     const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
 
+    await requirePermission(PERMISSIONS.AMBULANCE_MANAGE);
+
+    const orgId = session.organizationId;
     const supabase = createClient();
 
-    // Set vehicle status to on_trip
-    await supabase
+    // Set vehicle status to on_trip and is_available to false
+    const { error: vehicleErr } = await supabase
       .from("ambulance_vehicles")
-      .update({ status: "on_trip" })
-      .eq("id", payload.vehicle_id);
+      .update({ status: "on_trip", is_available: false })
+      .eq("id", payload.vehicle_id)
+      .eq("organization_id", orgId);
 
-    const { data: inserted } = await supabase
+    if (vehicleErr) {
+      return { success: false, error: vehicleErr.message };
+    }
+
+    const { data: inserted, error: insertErr } = await supabase
       .from("ambulance_trips")
       .insert({
         organization_id: orgId,
@@ -228,9 +160,22 @@ export async function dispatchAmbulanceTripAction(payload: {
       .select()
       .single();
 
-    const tripId = inserted ? inserted.id : `trip-${Date.now()}`;
+    if (insertErr || !inserted) {
+      // Rollback vehicle status on trip failure
+      await supabase
+        .from("ambulance_vehicles")
+        .update({ status: "available", is_available: true })
+        .eq("id", payload.vehicle_id)
+        .eq("organization_id", orgId);
+
+      return {
+        success: false,
+        error: insertErr?.message || "Failed to dispatch ambulance trip.",
+      };
+    }
+
     const newTrip: AmbulanceTrip = {
-      id: tripId,
+      id: inserted.id,
       organization_id: orgId,
       trip_number: payload.trip_number,
       vehicle_id: payload.vehicle_id,
@@ -266,27 +211,50 @@ export async function updateAmbulanceTripStatusAction(params: {
   status: "dispatched" | "in_transit" | "completed" | "cancelled";
 }): Promise<{ success: boolean; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    await requirePermission(PERMISSIONS.AMBULANCE_MANAGE);
+
+    const orgId = session.organizationId;
     const supabase = createClient();
-    await supabase
+
+    const { error: tripUpdateErr } = await supabase
       .from("ambulance_trips")
       .update({
         status: params.status,
         ...(params.status === "completed" ? { completion_time: new Date().toISOString() } : {}),
       })
-      .eq("id", params.tripId);
+      .eq("id", params.tripId)
+      .eq("organization_id", orgId);
 
-    // Release vehicle upon completion or cancellation
-    if (params.status === "completed" || params.status === "cancelled") {
-      const { data: trip } = await supabase
-        .from("ambulance_trips")
-        .select("vehicle_id")
-        .eq("id", params.tripId)
-        .maybeSingle();
-      if (trip && trip.vehicle_id) {
+    if (tripUpdateErr) {
+      return { success: false, error: tripUpdateErr.message };
+    }
+
+    // Release vehicle upon completion or cancellation, or set busy upon dispatch or transit
+    const { data: trip } = await supabase
+      .from("ambulance_trips")
+      .select("vehicle_id")
+      .eq("id", params.tripId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
+
+    if (trip && trip.vehicle_id) {
+      if (params.status === "completed" || params.status === "cancelled") {
         await supabase
           .from("ambulance_vehicles")
-          .update({ status: "available" })
-          .eq("id", trip.vehicle_id);
+          .update({ status: "available", is_available: true })
+          .eq("id", trip.vehicle_id)
+          .eq("organization_id", orgId);
+      } else if (params.status === "dispatched" || params.status === "in_transit") {
+        await supabase
+          .from("ambulance_vehicles")
+          .update({ status: "on_trip", is_available: false })
+          .eq("id", trip.vehicle_id)
+          .eq("organization_id", orgId);
       }
     }
 

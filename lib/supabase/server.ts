@@ -22,15 +22,17 @@ export async function createClient() {
       set(name: string, value: string, options: CookieOptions) {
         try {
           cookieStore.set({ name, value, ...options });
-        } catch {
+        } catch (err: unknown) {
           // Can happen in Server Components
+          console.error("[SupabaseServer] cookieStore.set error:", err);
         }
       },
       remove(name: string, options: CookieOptions) {
         try {
           cookieStore.set({ name, value: "", ...options });
-        } catch {
+        } catch (err: unknown) {
           // Can happen in Server Components
+          console.error("[SupabaseServer] cookieStore.remove error:", err);
         }
       },
     },

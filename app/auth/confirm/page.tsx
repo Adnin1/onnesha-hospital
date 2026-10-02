@@ -150,7 +150,8 @@ function AuthConfirmContent() {
             "কোনো বৈধ password-recovery credential পাওয়া যায়নি। আপনার ইমেইলের নতুন রিসেট লিংক ব্যবহার করুন।"
           );
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[AuthConfirmPage] handleRecovery error:", err);
         if (isMounted) {
           setErrorMessage("রিকভারি প্রক্রিয়ায় অপ্রত্যাশিত সমস্যা হয়েছে। নতুন রিসেট লিংক পাঠান।");
         }

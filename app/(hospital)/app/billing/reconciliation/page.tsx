@@ -67,7 +67,8 @@ export default function PaymentReconciliationPage() {
           }
           setLoading(false);
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[ReconciliationPage] loadData error:", err);
         if (isMounted) {
           setLoading(false);
         }

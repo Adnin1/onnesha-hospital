@@ -73,7 +73,8 @@ export function TransferBedModal({
       } else {
         onToast(res.error || "স্থানান্তর সম্পন্ন করা যায়নি", "error");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[TransferBedModal] handleTransferSubmit error:", err);
       setSubmitting(false);
       onToast("বেড স্থানান্তর প্রক্রিয়ায় ত্রুটি ঘটেছে", "error");
     }

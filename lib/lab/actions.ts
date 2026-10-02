@@ -602,7 +602,9 @@ export async function createDiagnosticTestAction(params: {
         entityId: data.id,
         newValues: { test_name: data.test_name, price: data.price, test_code: data.test_code },
       });
-    } catch { /* ignore audit error */ }
+    } catch (err: unknown) {
+      console.error("[LabActions] recordAuditLog error:", err);
+    }
 
     return {
       success: true,
@@ -678,7 +680,9 @@ export async function updateDiagnosticTestAction(params: {
         entityId: params.id,
         newValues: updatePayload,
       });
-    } catch { /* ignore audit error */ }
+    } catch (err: unknown) {
+      console.error("[LabActions] recordAuditLog error:", err);
+    }
 
     return {
       success: true,
@@ -719,7 +723,9 @@ export async function deleteDiagnosticTestAction(id: string): Promise<ActionResu
         entityId: id,
         newValues: { is_active: false },
       });
-    } catch { /* ignore audit error */ }
+    } catch (err: unknown) {
+      console.error("[LabActions] recordAuditLog error:", err);
+    }
 
     return { success: true, data: { success: true } };
   } catch (err: unknown) {
@@ -878,7 +884,9 @@ export async function saveDiagnosticResultsAction(params: {
           hasDescriptiveFindings: Boolean(params.descriptiveFindings),
         },
       });
-    } catch { /* ignore audit error */ }
+    } catch (err: unknown) {
+      console.error("[LabActions] recordAuditLog error:", err);
+    }
 
     return { success: true, data: { success: true } };
   } catch (err: unknown) {
@@ -956,7 +964,9 @@ export async function collectSampleAction(params: {
         entityId: params.orderId,
         newValues: { action: "SAMPLE_COLLECTED", barcode: sampleBarcode },
       });
-    } catch { /* ignore audit error */ }
+    } catch (err: unknown) {
+      console.error("[LabActions] recordAuditLog error:", err);
+    }
 
     return { success: true, data: { barcode: sampleBarcode, status: "SAMPLE_COLLECTED" } };
   } catch (err: unknown) {
@@ -1001,7 +1011,9 @@ export async function deliverDiagnosticOrderAction(orderId: string): Promise<Act
         entityId: orderId,
         newValues: { action: "REPORT_DELIVERED", deliveredAt: new Date().toISOString() },
       });
-    } catch { /* ignore audit error */ }
+    } catch (err: unknown) {
+      console.error("[LabActions] recordAuditLog error:", err);
+    }
 
     return { success: true, data: { success: true } };
   } catch (err: unknown) {

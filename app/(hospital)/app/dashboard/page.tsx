@@ -141,7 +141,8 @@ export default function HospitalDashboardPage() {
           );
           setIsLoading(false);
         }
-      } catch (err) {
+      } catch (err: unknown) {
+        console.error("[DashboardPage] load error:", err);
         if (isMounted) {
           setErrorMessage(err instanceof Error ? err.message : "Failed to load dashboard metrics");
           setIsLoading(false);
@@ -179,7 +180,8 @@ export default function HospitalDashboardPage() {
       } else {
         setErrorMessage(res.error || "Failed to update token queue status");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[DashboardPage] handleCallToken error:", err);
       setErrorMessage("Network error updating token status");
     } finally {
       setActionInProgressId(null);
@@ -199,7 +201,8 @@ export default function HospitalDashboardPage() {
       } else {
         setErrorMessage(res.error || "Failed to mark token as completed");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[DashboardPage] handleMarkDone error:", err);
       setErrorMessage("Network error completing token");
     } finally {
       setActionInProgressId(null);

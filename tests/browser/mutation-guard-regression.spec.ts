@@ -21,7 +21,8 @@ test.describe("Production Mutation Guard — Runtime Network Layer Verification"
           body: JSON.stringify({ action: "mutation_attempt" }),
         });
       });
-    } catch {
+    } catch (err: unknown) {
+      console.error("[mutationGuardRegression] fetch failed as expected:", err);
       fetchFailed = true;
     }
 

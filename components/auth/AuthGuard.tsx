@@ -124,7 +124,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
         if (isMounted) {
           setIsAuthenticated(true);
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[AuthGuard] checkAuthAndMfa error:", err);
         if (isMounted) {
           setIsAuthenticated(false);
           router.push(`/login?redirectTo=${encodeURIComponent(pathname)}`);

@@ -18,6 +18,7 @@ import {
   dischargePatientAction,
   transferPatientAction,
 } from "@/lib/patient/actions";
+import { getCurrentUserSession } from "@/lib/auth/session";
 
 interface InpatientRecord {
   id: string; // visit_id
@@ -86,6 +87,13 @@ export default function IPDAdmissionsPage() {
       try {
         const supabase = createClient();
 
+        const session = await getCurrentUserSession();
+        const orgId = session?.organizationId;
+        if (!orgId) {
+          setLoading(false);
+          return;
+        }
+
         // 1. Fetch active IPD visits
         const { data: visitsData, error: vErr } = await supabase
           .from("patient_visits")
@@ -116,6 +124,7 @@ export default function IPDAdmissionsPage() {
               )
             )
           `)
+          .eq("organization_id", orgId)
           .eq("visit_type", "IPD")
           .eq("status", "ACTIVE")
           .order("admitted_at", { ascending: false });
@@ -184,6 +193,7 @@ export default function IPDAdmissionsPage() {
               name
             )
           `)
+          .eq("organization_id", orgId)
           .order("bed_number");
 
         if (bedsData) {
@@ -201,8 +211,9 @@ export default function IPDAdmissionsPage() {
           }));
           setAvailableBeds(mappedBeds);
         }
-      } catch {
-        // Handled gracefully
+      } catch (err: unknown) {
+        console.error("[IPD loadData] error:", err);
+        setActionError("Failed to load IPD patient and bed directory.");
       } finally {
         setLoading(false);
       }

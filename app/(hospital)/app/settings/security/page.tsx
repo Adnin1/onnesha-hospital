@@ -46,7 +46,8 @@ export default function SecuritySettingsPage() {
 
       setFactors(factorData.all as unknown as Factor[]);
       setIsLoading(false);
-    } catch {
+    } catch (err: unknown) {
+      console.error("[SecuritySettingsPage] fetchSecurityState error:", err);
       setErrorMessage("সিকিউরিটি সার্ভিসে সংযোগ ব্যর্থ হয়েছে।");
       setIsLoading(false);
     }
@@ -72,7 +73,8 @@ export default function SecuritySettingsPage() {
 
         setFactors(factorData.all as unknown as Factor[]);
         setIsLoading(false);
-      } catch {
+      } catch (err: unknown) {
+        console.error("[SecuritySettingsPage] loadState error:", err);
         if (active) {
           setErrorMessage("সিকিউরিটি সার্ভিসে সংযোগ ব্যর্থ হয়েছে।");
           setIsLoading(false);
@@ -108,7 +110,8 @@ export default function SecuritySettingsPage() {
       setNewFactorId(data.id);
       setQrCodeSvg(data.totp.qr_code);
       setSecretKey(data.totp.secret);
-    } catch {
+    } catch (err: unknown) {
+      console.error("[SecuritySettingsPage] handleStartEnrollment error:", err);
       setErrorMessage("TOTP এনরোলমেন্ট প্রক্রিয়া শুরু করতে ত্রুটি হয়েছে।");
       setIsEnrolling(false);
     }
@@ -154,7 +157,8 @@ export default function SecuritySettingsPage() {
       setSecretKey(null);
       setVerifyCode("");
       void fetchSecurityState();
-    } catch {
+    } catch (err: unknown) {
+      console.error("[SecuritySettingsPage] handleVerifyEnrollment error:", err);
       setErrorMessage("এনরোলমেন্ট ভেরিফিকেশনে সাময়িক ত্রুটি।");
       setIsVerifying(false);
     }
@@ -179,7 +183,8 @@ export default function SecuritySettingsPage() {
 
       setSuccessMessage("TOTP ফ্যাক্টর সফলভাবে মুছে ফেলা হয়েছে।");
       void fetchSecurityState();
-    } catch {
+    } catch (err: unknown) {
+      console.error("[SecuritySettingsPage] handleUnenrollFactor error:", err);
       setErrorMessage("ফ্যাক্টর মুছতে সাময়িক ত্রুটি।");
     }
   };

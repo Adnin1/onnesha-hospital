@@ -70,7 +70,8 @@ function isMutationCapable(filePath: string): boolean {
   try {
     const content = fs.readFileSync(filePath, "utf8");
     return MUTATION_PATTERNS.some((p) => p.test(content));
-  } catch {
+  } catch (err: unknown) {
+    console.error("[globalSetup] file read error:", err);
     return false;
   }
 }
@@ -96,9 +97,9 @@ export default async function globalSetup() {
   let hostname: string;
   try {
     hostname = new URL(baseURL).hostname;
-  } catch {
+  } catch (err: unknown) {
     throw new Error(
-      `[E2E Guard Layer 1] Invalid E2E_BASE_URL: "${baseURL}" — must be a valid URL.`
+      `[E2E Guard Layer 1] Invalid E2E_BASE_URL: "${baseURL}" — must be a valid URL. Error: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 

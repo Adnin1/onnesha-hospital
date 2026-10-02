@@ -1099,8 +1099,8 @@ export async function getAPAgingReportAction(): Promise<
   }
   try {
     await requirePermission("accounting.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: accounting.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: accounting.view required" };
   }
 
   try {
@@ -1200,8 +1200,8 @@ export async function getIncomeSummaryAction(params: {
   }
   try {
     await requirePermission("accounting.view");
-  } catch {
-    return { success: false, error: "403 Forbidden: accounting.view required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: accounting.view required" };
   }
 
   if (!params.periodStart || !params.periodEnd) {

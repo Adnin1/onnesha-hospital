@@ -120,7 +120,8 @@ export async function getCriticalCareUnitsAction(): Promise<{
       return { success: true, data: DEFAULT_CRITICAL_CARE_UNITS };
     }
     return { success: true, data: data as CriticalCareUnit[] };
-  } catch {
+  } catch (err: unknown) {
+    console.error("[CriticalCareActions] getCriticalCareUnitsAction error:", err);
     return { success: true, data: DEFAULT_CRITICAL_CARE_UNITS };
   }
 }

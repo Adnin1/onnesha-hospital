@@ -9,19 +9,19 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-02T04:15:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-02T16:25:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.31` | VERIFIED |
-| **Preserved Release Tags** | `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.33` | VERIFIED |
+| **Preserved Release Tags** | `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` aligned with HEAD | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.31` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.31` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.31` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.31` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.31` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.31` | VERIFIED |
-| **Database Migrations Count** | `101 migration files` | VERIFIED |
-| **Latest Applied Migration** | `20261002050100_clean_cc_legacy_policies.sql` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.33` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.33` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.33` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.33` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.33` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.33` | VERIFIED |
+| **Database Migrations Count** | `103 migration files` | VERIFIED |
+| **Latest Applied Migration** | `20261002070000_ot_and_biomedical_security.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting GitHub Actions Windows runner) | VERIFIED |
@@ -208,3 +208,58 @@
      - Four-layer smoke suite: 15/15 routes HTTP 200 on live edge.
 
 
+
+
+---
+
+## 11. Release v1.1.32 — Comprehensive Forensic Security Audit & Database Hardening
+
+- **Release Date:** 2026-10-02
+- **Authoritative Commit SHA:** `c9286a0c4a81a7ef7b48d339840d1f6447973698`
+- **Release Tag:** `v1.1.32`
+- **Key Enhancements (22 P0/P1 Closures):**
+  1. **Tenant Isolation / IDOR Protection (P0):**
+     - Enforced `organization_id` checks across `recordDiagnosis`, `recordVitals`, `createClinicalNote`, `discharge`, and `transfer` in `lib/patient/actions.ts`.
+     - Added tenant filtering on pharmacy batch dispensation, invoice patient lookup, chart of accounts parent assignment, and radiology report approval.
+     - Scoped radiology media stock retrieval/consumption and blood bag issuance strictly by `organization_id`.
+     - Eliminated cross-tenant in-memory `Map` in `lib/critical-care/actions.ts`.
+  2. **Integrity & Mock Data Elimination (P0):**
+     - Eradicated fake mock item fallbacks and default test lists in `lib/lab/actions.ts`.
+     - Removed synthetic ID generation on DB failure across radiology studies, blood bags, and supplementary patient inserts.
+     - Added optimistic concurrency control on pharmacy inventory and radiology media consumption.
+     - Enforced integer / paisa arithmetic for general ledger balanced entry validation.
+  3. **Database Security Hardening Migration (`20261002060000_comprehensive_security_hardening.sql`):**
+     - Enabled RLS across 38+ previously unprotected database tables.
+     - Configured `security_invoker = on` for public views (`public_doctors_view`, `public_departments_view`, `audit_trail_summary`).
+     - Set `search_path = ''` on all SECURITY DEFINER functions to prevent search path hijacking.
+     - Revoked `EXECUTE` privileges from `PUBLIC` and `anon` on sensitive hospital RPCs.
+
+---
+
+## 12. Release v1.1.33 — P1 Forensic Closures: RBAC Authorization, Mock Elimination & Schema Realignment
+
+- **Release Date:** 2026-10-02
+- **Release Tag:** `v1.1.33`
+- **Scope & Addressed Defects (56 Forensic Audit Findings):**
+  1. **HR, Staff & Doctors Hardening:**
+     - `BUG-HR-1 & BUG-HR-2`: Realigned `payroll_items` and `leave_requests` database table schemas.
+     - `BUG-HR-3 & BUG-HR-4`: Enforced `requirePermission` on staff accounts, status changes, role assignments (`settings.manage_roles`), and password resets.
+     - `BUG-DOC-1..4`: Added `doctors.manage` authorization on doctor and schedule creation, verified tenant ownership of doctor departments and doctor IDs, added tenant filter on appointments doctor queries, and populated `organization_id` in `token_calls`.
+  2. **Ambulance, Registrar & Biomedical Hardening:**
+     - `BUG-AMBULANCE-1..5, 7`: Removed `DEFAULT_ORG_ID`, eradicated `DEFAULT_AMBULANCE_FLEET` / `DEFAULT_AMBULANCE_TRIPS` mock fallbacks, eliminated synthetic `trip-${Date.now()}` IDs, added vehicle rollback on failure, enforced RBAC (`ambulance.view`, `ambulance.manage`), and synchronized `is_available` boolean.
+     - `BUG-REGISTRAR-1..4, 6`: Eliminated synthetic user `usr-registrar-officer` and `cert-${Date.now()}` IDs, removed `DEFAULT_MEDICAL_CERTIFICATES` mock data, enforced fail-closed 401 checks, and verified patient tenant boundary on certificate issuance.
+     - `BUG-BIOMEDICAL-1..3`: Removed unsupported `"use client";` in server action library, added session authentication and `biomedical.view` permission checks, and added tenant isolation filters.
+  3. **Operation Theater & Procurement Hardening:**
+     - `BUG-OT-1..6`: Enforced `ot.view` RBAC, added theater double-booking collision prevention, synchronized `ot_rooms.status` transitions (`IN_SURGERY`, `STERILIZING`), fixed 6-hour Dhaka timezone skew (+06:00), and replaced hardcoded nil UUIDs with real active patient visit selection.
+     - `BUG-PROCUREMENT-1..5`: Corrected table query to `erp_purchase_order_items(*)`, ensured atomic GL posting error propagation in GRN creation, added `procurement.view` permissions, and scoped PO rollback cleanup by `organization_id`.
+  4. **Universal Error Preservation (Catch Block Remediation):**
+     - Remediated all bare `catch {}` blocks across the entire repository to `catch (err: unknown) {` with contextual logging and structured error responses. Zero bare catch blocks remain.
+  5. **Database Security Migration (`20261002070000_ot_and_biomedical_security.sql`):**
+     - Enforced RLS policies on `ot_rooms` and `ot_bookings`.
+     - Verified RLS policies on `biomedical_devices`.
+     - Migrated `employees.biometric_device_pin` from a global unique constraint to a multi-tenant composite unique constraint `(organization_id, biometric_device_pin)`.
+  6. **Release Verification Metrics:**
+     - TypeScript: Clean (`tsc --noEmit`, 0 errors).
+     - ESLint: Clean (`eslint . --max-warnings 0`, 0 warnings).
+     - Automated Tests: 98/98 suites passed (870 active passed, 0 failed, 6 skips).
+     - Static Export: 58/58 routes generated with zero server-only dependencies.

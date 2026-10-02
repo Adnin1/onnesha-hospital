@@ -149,7 +149,8 @@ export default function BedManagementPage() {
       }
       setHousekeepingItem(null);
       await reloadData();
-    } catch {
+    } catch (err: unknown) {
+      console.error("[BedsPage] handleCompleteSanitization error:", err);
       showToast("স্ট্যাটাস আপডেট ব্যর্থ হয়েছে", "error");
     } finally {
       setActionLoading(false);

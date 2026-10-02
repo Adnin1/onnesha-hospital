@@ -130,6 +130,15 @@ export default function LabManagementPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOrderModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOrderModalOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOrderModalOpen]);
+
   const refreshCatalog = async () => {
     const catalogRes = await getDiagnosticTestsCatalogAction();
     if (catalogRes.success && catalogRes.data?.tests) {
@@ -768,8 +777,14 @@ export default function LabManagementPage() {
 
       {/* New Diagnostic Order Modal */}
       {isOrderModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setIsOrderModalOpen(false)}
+        >
+          <div
+            className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div className="flex items-center space-x-2">

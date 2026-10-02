@@ -70,8 +70,8 @@ export async function getServerUserSession(): Promise<ServerUserSessionState> {
       if (factors?.totp) {
         mfaFactorsCount = factors.totp.filter((f) => f.status === "verified").length;
       }
-    } catch {
-      // MFA metadata lookup fallback
+    } catch (err: unknown) {
+      console.error("[ServerSession] MFA metadata lookup error:", err);
     }
 
     // 3. Resolve active roles strictly scoped to organization

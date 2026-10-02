@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
+import { PERMISSIONS } from "@/lib/permissions";
 import { recordAuditLog } from "@/lib/audit/logger";
 import { getDhakaDateString } from "@/lib/datetime";
 import {
@@ -103,6 +104,13 @@ export async function createDoctorAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
+  try {
+    await requirePermission(PERMISSIONS.DOCTORS_MANAGE);
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
   if (
     !params.fullName?.trim() ||
     !params.specialization?.trim() ||
@@ -121,7 +129,18 @@ export async function createDoctorAction(params: {
     const supabase = await createClient();
 
     let deptId = params.departmentId;
-    if (!deptId) {
+    if (deptId) {
+      const { data: dept, error: deptErr } = await supabase
+        .from("departments")
+        .select("id")
+        .eq("id", deptId)
+        .eq("organization_id", session.organizationId)
+        .maybeSingle();
+
+      if (deptErr || !dept) {
+        return { success: false, error: "Department not found or belongs to another organization" };
+      }
+    } else {
       const { data: dept } = await supabase
         .from("departments")
         .select("id")
@@ -197,6 +216,13 @@ export async function createDoctorScheduleAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
+  try {
+    await requirePermission(PERMISSIONS.DOCTORS_MANAGE);
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
   if (params.endTime <= params.startTime) {
     return { success: false, error: "Invalid schedule: End time must be strictly after start time." };
   }
@@ -207,6 +233,19 @@ export async function createDoctorScheduleAction(params: {
 
   try {
     const supabase = await createClient();
+
+    // Verify doctor belongs to session.organizationId
+    const { data: doctor, error: docErr } = await supabase
+      .from("doctors")
+      .select("id")
+      .eq("id", params.doctorId)
+      .eq("organization_id", session.organizationId)
+      .maybeSingle();
+
+    if (docErr || !doctor) {
+      return { success: false, error: "Doctor not found or belongs to another organization" };
+    }
+
     const isPublishedState = params.isPublished ?? true;
 
     const DAYS_MAP: Record<number, string> = {
@@ -349,6 +388,7 @@ export async function bookAppointmentAction(params: {
       .from("doctors")
       .select("id, full_name, specialization, room_number, opd_fee")
       .eq("id", params.doctorId)
+      .eq("organization_id", session.organizationId)
       .maybeSingle();
 
     const row = appt as unknown as ApptWithPatientRow;
@@ -435,26 +475,59 @@ export async function getLiveWaitingQueueAction(
       } | null;
     }
 
-    const queue: WaitingQueueRecord[] = ((data || []) as unknown as QueueDbRow[]).map((q) => ({
-      id: q.id,
-      organization_id: q.organization_id,
-      appointment_id: q.appointment_id,
-      doctor_id: q.doctor_id,
-      room_number: q.room_number || q.doctors?.room_number || "",
-      token_number: q.token_number,
-      queue_status: q.queue_status,
-      status: q.queue_status,
-      called_at: q.called_at,
-      started_at: q.started_at,
-      finished_at: q.finished_at,
-      created_at: q.created_at,
-      patient_name: q.appointments?.patients?.full_name || "Patient",
-      patient_code: q.appointments?.patients?.patient_code || "",
-      patient_phone: q.appointments?.patients?.phone || "",
-      doctor_name: q.doctors?.full_name || "Doctor",
-      patient: q.appointments?.patients || undefined,
-      doctor: q.doctors || undefined,
-    }));
+    const queueRows = (data || []) as unknown as QueueDbRow[];
+    const patientIds = Array.from(
+      new Set(
+        queueRows
+          .map((q) => q.appointments?.patients?.id)
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+
+    const activeVisitsMap = new Map<string, string>();
+    if (patientIds.length > 0) {
+      const { data: visits } = await supabase
+        .from("patient_visits")
+        .select("id, patient_id")
+        .eq("organization_id", session.organizationId)
+        .in("patient_id", patientIds)
+        .eq("status", "ACTIVE")
+        .order("admitted_at", { ascending: false });
+
+      if (visits) {
+        for (const v of visits) {
+          if (!activeVisitsMap.has(v.patient_id)) {
+            activeVisitsMap.set(v.patient_id, v.id);
+          }
+        }
+      }
+    }
+
+    const queue: WaitingQueueRecord[] = queueRows.map((q) => {
+      const patId = q.appointments?.patients?.id;
+      return {
+        id: q.id,
+        organization_id: q.organization_id,
+        appointment_id: q.appointment_id,
+        doctor_id: q.doctor_id,
+        room_number: q.room_number || q.doctors?.room_number || "",
+        token_number: q.token_number,
+        queue_status: q.queue_status,
+        status: q.queue_status,
+        called_at: q.called_at,
+        started_at: q.started_at,
+        finished_at: q.finished_at,
+        created_at: q.created_at,
+        visit_id: patId ? activeVisitsMap.get(patId) : undefined,
+        patient_id: patId,
+        patient_name: q.appointments?.patients?.full_name || "Patient",
+        patient_code: q.appointments?.patients?.patient_code || "",
+        patient_phone: q.appointments?.patients?.phone || "",
+        doctor_name: q.doctors?.full_name || "Doctor",
+        patient: q.appointments?.patients || undefined,
+        doctor: q.doctors || undefined,
+      };
+    });
 
     return { success: true, data: { queue } };
   } catch (err: unknown) {
@@ -503,6 +576,7 @@ export async function updateQueueStatusAction(params: {
 
     if (params.status === "CALLED" && qItem) {
       await supabase.from("token_calls").insert({
+        organization_id: session.organizationId,
         waiting_queue_id: params.queueId,
         called_by: session.userId,
       });
@@ -514,10 +588,16 @@ export async function updateQueueStatusAction(params: {
       else if (params.status === "COMPLETED") apptStatus = "COMPLETED";
       else if (params.status === "SKIPPED") apptStatus = "NO_SHOW";
 
-      await supabase
+      const { error: apptErr } = await supabase
         .from("appointments")
         .update({ status: apptStatus })
-        .eq("id", qItem.appointment_id);
+        .eq("id", qItem.appointment_id)
+        .eq("organization_id", session.organizationId);
+
+      if (apptErr) {
+        console.error("[updateQueueStatusAction] appointment status sync error:", apptErr);
+        return { success: false, error: `Failed to synchronize appointment status: ${apptErr.message}` };
+      }
     }
 
     return { success: true, data: { updated: true } };

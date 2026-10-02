@@ -53,7 +53,9 @@ export function reportWebVitals(handler?: ReportHandler): void {
       }
     });
     lcpObserver.observe({ type: "largest-contentful-paint", buffered: true });
-  } catch { /* unsupported */ }
+  } catch (err: unknown) {
+    console.warn("[WebVitals] LCP observation not supported:", err);
+  }
 
   // CLS
   try {
@@ -68,5 +70,7 @@ export function reportWebVitals(handler?: ReportHandler): void {
       report({ name: "CLS", value: clsValue, rating: getRating("CLS", clsValue), route: getAnonymousRoute() });
     });
     clsObserver.observe({ type: "layout-shift", buffered: true });
-  } catch { /* unsupported */ }
+  } catch (err: unknown) {
+    console.warn("[WebVitals] CLS observation not supported:", err);
+  }
 }

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUserSession } from "@/lib/auth/session";
+import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
+import { PERMISSIONS } from "@/lib/permissions";
 import { RoleType } from "@/types";
 
 export interface StaffMemberRecord {
@@ -93,6 +94,7 @@ export async function getStaffDirectoryAction(filters?: {
   status?: string;
 }): Promise<{ success: boolean; data?: StaffMemberRecord[]; error?: string }> {
   try {
+    await requirePermission(PERMISSIONS.STAFF_VIEW);
     const session = await getCurrentUserSession();
     if (!session.userId || !session.organizationId) {
       return { success: false, error: "401 Unauthorized" };
@@ -124,6 +126,7 @@ export async function createStaffAccountAction(
   payload: CreateStaffPayload
 ): Promise<CreateStaffResult> {
   try {
+    await requirePermission(PERMISSIONS.STAFF_MANAGE);
     const session = await getCurrentUserSession();
     if (!session.userId || !session.organizationId) {
       return { success: false, error: "401 Unauthorized: Please sign in." };
@@ -179,6 +182,7 @@ export async function resetStaffPasswordAction(
   newTempPassword?: string
 ): Promise<{ success: boolean; tempPassword?: string; error?: string }> {
   try {
+    await requirePermission(PERMISSIONS.SETTINGS_MANAGE_ROLES);
     const session = await getCurrentUserSession();
     if (!session.userId || !session.organizationId) {
       return { success: false, error: "401 Unauthorized" };
@@ -212,6 +216,7 @@ export async function setStaffStatusAction(
   status: "ACTIVE" | "SUSPENDED" | "DISABLED"
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    await requirePermission(PERMISSIONS.STAFF_MANAGE);
     const session = await getCurrentUserSession();
     if (!session.userId || !session.organizationId) {
       return { success: false, error: "401 Unauthorized" };
@@ -243,6 +248,7 @@ export async function changeStaffRoleAction(
   newRoleName: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    await requirePermission(PERMISSIONS.SETTINGS_MANAGE_ROLES);
     const session = await getCurrentUserSession();
     if (!session.userId || !session.organizationId) {
       return { success: false, error: "401 Unauthorized" };

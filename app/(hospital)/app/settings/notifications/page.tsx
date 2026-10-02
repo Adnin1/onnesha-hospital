@@ -39,7 +39,8 @@ export default function NotificationSettingsPage() {
           }
           setLoading(false);
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[NotificationsSettingsPage] loadOutbox error:", err);
         if (isMounted) {
           setLoading(false);
         }

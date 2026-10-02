@@ -418,7 +418,8 @@ class SslCommerzAdapter implements PaymentProviderAdapter {
         code: "PROVIDER_VALIDATION_FAILED",
         error: "Payment gateway validation failed or returned unconfirmed status.",
       };
-    } catch {
+    } catch (err: unknown) {
+      console.error("[PaymentCallback] validateGatewayTransaction error:", err);
       return {
         verified: false,
         code: "PROVIDER_UNAVAILABLE",
@@ -504,7 +505,8 @@ serve(async (req: Request) => {
     } else {
       try {
         body = JSON.parse(rawBody);
-      } catch {
+      } catch (err: unknown) {
+        console.error("[PaymentCallback] JSON parse error, checking form urlencoded:", err);
         if (rawBody.includes("=") && rawBody.includes("&")) {
           const params = new URLSearchParams(rawBody);
           for (const [k, v] of params.entries()) {
@@ -861,7 +863,8 @@ serve(async (req: Request) => {
       JSON.stringify({ ...rpcRes, correlationId }),
       { headers: { ...cors, "Content-Type": "application/json" } }
     );
-  } catch {
+  } catch (err: unknown) {
+    console.error("[PaymentCallback] Edge function unhandled error:", err);
     return new Response(
       JSON.stringify({
         success: false,

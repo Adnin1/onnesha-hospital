@@ -44,22 +44,29 @@ export default function CriticalCarePage() {
     async function fetchData() {
       setLoading(true);
       setErrorMsg(null);
-      const [resAdmissions, resAlerts] = await Promise.all([
-        getCriticalCareAdmissionsAction(selectedUnit),
-        getCriticalCareAlertsAction(),
-      ]);
+      try {
+        const [resAdmissions, resAlerts] = await Promise.all([
+          getCriticalCareAdmissionsAction(selectedUnit),
+          getCriticalCareAlertsAction(),
+        ]);
 
-      if (!isMounted) return;
-      if (resAdmissions.success && resAdmissions.data) {
-        setAdmissions(resAdmissions.data);
-      } else {
-        setErrorMsg(resAdmissions.error || "Failed to load critical care admissions.");
-      }
+        if (!isMounted) return;
+        if (resAdmissions.success && resAdmissions.data) {
+          setAdmissions(resAdmissions.data);
+        } else {
+          setErrorMsg(resAdmissions.error || "Failed to load critical care admissions.");
+        }
 
-      if (resAlerts.success) {
-        setActiveAlerts(resAlerts.data.filter((a) => a.status === "TRIGGERED" || a.status === "ACKNOWLEDGED"));
+        if (resAlerts.success) {
+          setActiveAlerts(resAlerts.data.filter((a) => a.status === "TRIGGERED" || a.status === "ACKNOWLEDGED"));
+        }
+      } catch (err: unknown) {
+        if (!isMounted) return;
+        console.error("[critical-care fetchData] error:", err);
+        setErrorMsg("Network error loading critical care data.");
+      } finally {
+        if (isMounted) setLoading(false);
       }
-      setLoading(false);
     }
     void fetchData();
     return () => {

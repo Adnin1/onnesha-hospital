@@ -81,7 +81,8 @@ export function TestTariffManager({ onCatalogChanged }: Props) {
       } else {
         showToast(res.error || "টেস্ট তালিকা লোড করা যায়নি", "error");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[TestTariffManager] reloadCatalog error:", err);
       showToast("ক্যাটালগ লোড করতে সমস্যা হয়েছে", "error");
     } finally {
       setLoading(false);
@@ -101,7 +102,8 @@ export function TestTariffManager({ onCatalogChanged }: Props) {
             setNewCategory((prev) => prev || res.data!.categories[0].category_name);
           }
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[TestTariffManager] initCatalog error:", err);
         if (mounted) showToast("ক্যাটালগ লোড করতে সমস্যা হয়েছে", "error");
       } finally {
         if (mounted) setLoading(false);
@@ -173,7 +175,8 @@ export function TestTariffManager({ onCatalogChanged }: Props) {
       } else {
         showToast(res.error || "টেস্ট যোগ করতে সমস্যা হয়েছে", "error");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[TestTariffManager] handleAddTest error:", err);
       showToast("সার্ভারে সমস্যা হয়েছে", "error");
     } finally {
       setSubmittingAdd(false);
@@ -230,7 +233,8 @@ export function TestTariffManager({ onCatalogChanged }: Props) {
       } else {
         showToast(res.error || "আপডেট ব্যর্থ হয়েছে", "error");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[TestTariffManager] handleUpdateTest error:", err);
       showToast("সার্ভারে সমস্যা হয়েছে", "error");
     } finally {
       setSubmittingEdit(false);
@@ -253,7 +257,8 @@ export function TestTariffManager({ onCatalogChanged }: Props) {
       } else {
         showToast(res.error || "ডিলিট করতে সমস্যা হয়েছে", "error");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[TestTariffManager] handleDeleteConfirm error:", err);
       showToast("সার্ভারে সমস্যা হয়েছে", "error");
     } finally {
       setSubmittingDelete(false);
@@ -279,7 +284,8 @@ export function TestTariffManager({ onCatalogChanged }: Props) {
         );
         if (onCatalogChanged) onCatalogChanged();
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[TestTariffManager] handleToggleStatus error:", err);
       showToast("স্ট্যাটাস পরিবর্তন ব্যর্থ হয়েছে", "error");
     }
   }

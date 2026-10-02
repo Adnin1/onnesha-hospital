@@ -34,7 +34,8 @@ export class PrintService {
       }
 
       return { success: true, logId: data?.id };
-    } catch {
+    } catch (err: unknown) {
+      console.error("[PrintService] recordPrintLog error:", err);
       return { success: false };
     }
   }

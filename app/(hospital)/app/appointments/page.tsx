@@ -72,7 +72,8 @@ export default function AppointmentsQueuePage() {
           }
           setLoading(false);
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[initData] appointments load error:", err);
         if (mounted) {
           setLoadError("Failed to load appointments queue. Please retry.");
           setLoading(false);
@@ -114,6 +115,8 @@ export default function AppointmentsQueuePage() {
 
       setIsWalkInModalOpen(false);
       setModalNotes("");
+      setModalDoctorId("");
+      setModalPatientId("");
       setRefreshIndex((prev) => prev + 1);
       setToast({ message: `Token #${tokenNo} generated successfully for ${doc?.full_name || "Doctor"}!`, type: "success" });
 
@@ -123,7 +126,8 @@ export default function AppointmentsQueuePage() {
         );
         setTimeout(() => setSmsAlertToast(""), 6000);
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleGenerateWalkInToken] error:", err);
       setSubmitting(false);
       setToast({ message: "Network error booking appointment.", type: "error" });
     }
@@ -149,7 +153,8 @@ export default function AppointmentsQueuePage() {
       } else {
         setToast({ message: res.error || "Failed to update queue status", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleStatusChange] error:", err);
       setToast({ message: "Network error updating queue status", type: "error" });
     }
   };

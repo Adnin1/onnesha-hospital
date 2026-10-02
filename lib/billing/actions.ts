@@ -129,8 +129,8 @@ export async function createInvoiceAction(params: {
 
   try {
     await requirePermission("billing.create");
-  } catch {
-    return { success: false, error: "403 Forbidden: billing.create required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.create required" };
   }
 
   if (!params.items || params.items.length === 0) {
@@ -294,8 +294,8 @@ export async function collectPaymentAction(params: {
 
   try {
     await requirePermission("billing.collect");
-  } catch {
-    return { success: false, error: "403 Forbidden: billing.collect required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.collect required" };
   }
 
   if (params.amount <= 0) {
@@ -398,8 +398,8 @@ export async function voidInvoiceAction(params: {
 
   try {
     await requirePermission("billing.manage");
-  } catch {
-    return { success: false, error: "403 Forbidden: billing.manage required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.manage required" };
   }
 
   if (params.reason.trim().length < 5) {

@@ -95,8 +95,8 @@ export function CriticalCareAdmissionModal({
         if (isMounted && res.success && res.data?.patients) {
           setPatients(res.data.patients);
         }
-      } catch {
-        // fallback
+      } catch (err: unknown) {
+        console.error("[CriticalCareAdmissionModal] fetchPatients error:", err);
       } finally {
         if (isMounted) setLoadingPatients(false);
       }

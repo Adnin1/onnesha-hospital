@@ -72,7 +72,8 @@ export function HospitalSidebar() {
           }
           setIsLoadingSession(false);
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[HospitalSidebar] initSession error:", err);
         if (isMounted) {
           setActiveRole(null);
           setUserPermissions([]);
@@ -104,15 +105,15 @@ export function HospitalSidebar() {
       const { createBrowserClientInstance } = await import("@/lib/supabase/browser");
       const supabase = createBrowserClientInstance();
       await supabase.auth.signOut();
-    } catch {
-      // Ignored
+    } catch (err: unknown) {
+      console.error("[HospitalSidebar] signOut error:", err);
     }
     if (typeof window !== "undefined") {
       try {
         localStorage.clear();
         sessionStorage.clear();
-      } catch {
-        // Privacy mode safety
+      } catch (err: unknown) {
+        console.error("[HospitalSidebar] storage clear error:", err);
       }
     }
     router.push("/login");

@@ -1,14 +1,14 @@
 {
-  "version": "1.1.32",
+  "version": "1.1.33",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.32. Comprehensive forensic security audit: 13 P0 tenant isolation fixes, mock-data-on-failure elimination, race condition patches, integer arithmetic for financial validation, and Supabase RLS hardening migration.",
-  "pub_date": "2026-10-02T15:25:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.33. Comprehensive P1 module security & integrity hardening: RBAC authorization across Staff, Doctors, OT, Procurement, Ambulance, Registrar, and Biomedical modules; tenant isolation; elimination of mock data fallbacks; composite unique constraints; and eradication of bare catch blocks.",
+  "pub_date": "2026-10-02T16:20:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.32.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.33.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.32.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.33.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0,
       "status": "pending_ci_workflow",

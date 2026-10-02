@@ -74,7 +74,8 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
       if (factorData && factorData.all && !factorErr) {
         mfaFactorsCount = factorData.all.filter((f) => f.status === "verified").length;
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[Session] MFA factor resolution error:", err);
       aalLevel = null;
       nextAalLevel = null;
       mfaFactorsCount = 0;
@@ -199,7 +200,8 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
       nextAalLevel,
       mfaFactorsCount,
     };
-  } catch {
+  } catch (err: unknown) {
+    console.error("[Session] getCurrentUserSession error:", err);
     return EMPTY_SESSION;
   }
 }

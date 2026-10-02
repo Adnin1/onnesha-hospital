@@ -77,7 +77,8 @@ export function OccupiedBedPanel({
       } else {
         onToast(res.error || "ডিসচার্জ সম্পন্ন করা যায়নি", "error");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[OccupiedBedPanel] handleDischarge error:", err);
       setSubmitting(false);
       onToast("ডিসচার্জ প্রসেস চলাকালীন ত্রুটি হয়েছে", "error");
     }
@@ -95,7 +96,8 @@ export function OccupiedBedPanel({
       onToast(`${targetIdentifier} হাউসকিপিং ক্লিনিং-এ পাঠানো হয়েছে`, "info");
       onActionComplete();
       onClose();
-    } catch {
+    } catch (err: unknown) {
+      console.error("[OccupiedBedPanel] handleMarkCleaning error:", err);
       setSubmitting(false);
       onToast("স্ট্যাটাস পরিবর্তন ব্যর্থ হয়েছে", "error");
     }

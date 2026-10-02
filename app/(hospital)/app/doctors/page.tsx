@@ -81,7 +81,8 @@ export default function DoctorsAdminPage() {
       } else {
         setToast({ message: "Failed to create doctor: " + (res.error || "Unknown error"), type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[DoctorsPage] handleCreateDoctor error:", err);
       setToast({ message: "Network error creating doctor", type: "error" });
     } finally {
       setSavingDoc(false);
@@ -114,7 +115,8 @@ export default function DoctorsAdminPage() {
       } else {
         setToast({ message: "Failed to publish schedule: " + (res.error || "Unknown error"), type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[DoctorsPage] handleCreateSchedule error:", err);
       setToast({ message: "Network error publishing schedule", type: "error" });
     } finally {
       setSavingSched(false);

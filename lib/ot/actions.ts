@@ -1,12 +1,26 @@
 import { createClient } from "@/lib/supabase/client";
 import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
+import { PERMISSIONS } from "@/lib/permissions";
 import { OTBookingRecord, OTRoomRecord } from "@/types/beds-ot";
 
 export interface ActionResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+}
+
+export interface ActiveVisitRecord {
+  id: string;
+  visit_number: string;
+  patient_id: string;
+  visit_type: string;
+  patient?: {
+    id: string;
+    patient_code: string;
+    full_name: string;
+    phone: string;
+  };
 }
 
 /**
@@ -18,6 +32,12 @@ export async function getOTRoomsAction(): Promise<
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.OT_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
   }
 
   try {
@@ -48,6 +68,12 @@ export async function getOTBookingsAction(): Promise<
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.OT_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
   }
 
   try {
@@ -135,12 +161,86 @@ export async function bookOTAction(params: {
 
   try {
     await requirePermission("ot.manage");
-  } catch {
-    return { success: false, error: "403 Forbidden: ot.manage required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: ot.manage required" };
+  }
+
+  if (!params.procedureName || !params.procedureName.trim()) {
+    return { success: false, error: "Procedure name is required" };
+  }
+
+  if (new Date(params.scheduledEnd).getTime() <= new Date(params.scheduledStart).getTime()) {
+    return { success: false, error: "Scheduled end time must be after scheduled start time" };
+  }
+
+  if (!params.otRoomId) {
+    return { success: false, error: "OT Room is required" };
+  }
+
+  if (!params.leadSurgeonId) {
+    return { success: false, error: "Lead Surgeon is required" };
+  }
+
+  if (!params.visitId || params.visitId === "00000000-0000-0000-0000-000000000000") {
+    return { success: false, error: "A valid patient visit is required" };
   }
 
   try {
     const supabase = await createClient();
+
+    // Verify room belongs to active organization
+    const { data: room } = await supabase
+      .from("ot_rooms")
+      .select("id")
+      .eq("id", params.otRoomId)
+      .eq("organization_id", session.organizationId)
+      .maybeSingle();
+
+    if (!room) {
+      return { success: false, error: "OT Room not found in this organization" };
+    }
+
+    // Verify lead surgeon belongs to active organization
+    const { data: surgeon } = await supabase
+      .from("doctors")
+      .select("id")
+      .eq("id", params.leadSurgeonId)
+      .eq("organization_id", session.organizationId)
+      .maybeSingle();
+
+    if (!surgeon) {
+      return { success: false, error: "Lead Surgeon not found in this organization" };
+    }
+
+    // Verify patient visit belongs to active organization
+    const { data: visit } = await supabase
+      .from("patient_visits")
+      .select("id")
+      .eq("id", params.visitId)
+      .eq("organization_id", session.organizationId)
+      .maybeSingle();
+
+    if (!visit) {
+      return { success: false, error: "Patient visit not found in this organization" };
+    }
+
+    // Check for overlapping bookings in the same room
+    const { data: overlappingBookings, error: overlapErr } = await supabase
+      .from("ot_bookings")
+      .select("id")
+      .eq("organization_id", session.organizationId)
+      .eq("ot_room_id", params.otRoomId)
+      .in("status", ["SCHEDULED", "IN_SURGERY"])
+      .lt("scheduled_start", params.scheduledEnd)
+      .gt("scheduled_end", params.scheduledStart);
+
+    if (overlapErr) {
+      return { success: false, error: overlapErr.message };
+    }
+
+    if (overlappingBookings && overlappingBookings.length > 0) {
+      return { success: false, error: "OT Room is already booked for the selected time window" };
+    }
 
     const { data, error } = await supabase
       .from("ot_bookings")
@@ -148,7 +248,7 @@ export async function bookOTAction(params: {
         organization_id: session.organizationId,
         visit_id: params.visitId,
         ot_room_id: params.otRoomId,
-        procedure_name: params.procedureName,
+        procedure_name: params.procedureName.trim(),
         lead_surgeon_id: params.leadSurgeonId,
         anesthetist_id: params.anesthetistId || null,
         anesthesia_type: params.anesthesiaType || "GENERAL",
@@ -200,20 +300,36 @@ export async function updateOTBookingStatusAction(params: {
 
   try {
     await requirePermission("ot.manage");
-  } catch {
-    return { success: false, error: "403 Forbidden: ot.manage required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: ot.manage required" };
   }
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase
+    const { data: booking, error } = await supabase
       .from("ot_bookings")
       .update({ status: params.status })
       .eq("id", params.bookingId)
-      .eq("organization_id", session.organizationId);
+      .eq("organization_id", session.organizationId)
+      .select("ot_room_id")
+      .single();
 
-    if (error) {
-      return { success: false, error: error.message };
+    if (error || !booking) {
+      return { success: false, error: error?.message || "Failed to update OT status" };
+    }
+
+    if (params.status === "IN_SURGERY") {
+      await supabase
+        .from("ot_rooms")
+        .update({ status: "IN_SURGERY" })
+        .eq("id", booking.ot_room_id)
+        .eq("organization_id", session.organizationId);
+    } else if (params.status === "COMPLETED") {
+      await supabase
+        .from("ot_rooms")
+        .update({ status: "STERILIZING" })
+        .eq("id", booking.ot_room_id)
+        .eq("organization_id", session.organizationId);
     }
 
     await recordAuditLog({
@@ -229,6 +345,75 @@ export async function updateOTBookingStatusAction(params: {
     return { success: true, data: { success: true } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to update OT status";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 5. Fetch Active Patient Visits for OT Booking
+ */
+export async function getActiveVisitsAction(): Promise<
+  ActionResult<{ visits: ActiveVisitRecord[] }>
+> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.OT_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("patient_visits")
+      .select(`
+        id,
+        visit_number,
+        patient_id,
+        visit_type,
+        patients (
+          id,
+          patient_code,
+          full_name,
+          phone
+        )
+      `)
+      .eq("organization_id", session.organizationId)
+      .eq("status", "ACTIVE")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    interface VisitDbRow {
+      id: string;
+      visit_number: string;
+      patient_id: string;
+      visit_type: string;
+      patients?: {
+        id: string;
+        patient_code: string;
+        full_name: string;
+        phone: string;
+      } | null;
+    }
+
+    const visits: ActiveVisitRecord[] = ((data || []) as unknown as VisitDbRow[]).map((v) => ({
+      id: v.id,
+      visit_number: v.visit_number,
+      patient_id: v.patient_id,
+      visit_type: v.visit_type,
+      patient: v.patients || undefined,
+    }));
+
+    return { success: true, data: { visits } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load active patient visits";
     return { success: false, error: msg };
   }
 }

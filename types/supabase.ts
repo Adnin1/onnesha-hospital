@@ -5285,6 +5285,7 @@ export type Database = {
           called_at: string
           called_by: string | null
           id: string
+          organization_id: string | null
           waiting_queue_id: string
         }
         Insert: {
@@ -5292,6 +5293,7 @@ export type Database = {
           called_at?: string
           called_by?: string | null
           id?: string
+          organization_id?: string | null
           waiting_queue_id: string
         }
         Update: {
@@ -5299,6 +5301,7 @@ export type Database = {
           called_at?: string
           called_by?: string | null
           id?: string
+          organization_id?: string | null
           waiting_queue_id?: string
         }
         Relationships: [

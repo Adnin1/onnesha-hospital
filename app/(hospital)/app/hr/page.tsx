@@ -82,7 +82,8 @@ export default function HRManagementPage() {
       if (payRes.success && payRes.data) {
         setPayrollSummary(payRes.data);
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[HRPage] loadData error:", err);
       setErrorMsg("Failed to load HR and Attendance roster");
     } finally {
       setLoading(false);
@@ -115,7 +116,8 @@ export default function HRManagementPage() {
             setPayrollSummary(payRes.data);
           }
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[HRPage] init error:", err);
         if (isMounted) setErrorMsg("Failed to load HR and Attendance roster");
       } finally {
         if (isMounted) setLoading(false);
@@ -148,7 +150,8 @@ export default function HRManagementPage() {
       } else {
         setToast({ message: res.error || "Failed to register employee", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[HRPage] handleCreateEmployee error:", err);
       setToast({ message: "Network error creating employee", type: "error" });
     } finally {
       setFormLoading(false);
@@ -174,7 +177,8 @@ export default function HRManagementPage() {
       } else {
         setToast({ message: res.error || "Failed to record punch", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[HRPage] handleBiometricPunch error:", err);
       setToast({ message: "Error simulating biometric punch", type: "error" });
     } finally {
       setPunchLoading(false);

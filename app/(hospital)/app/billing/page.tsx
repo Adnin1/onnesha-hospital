@@ -95,7 +95,8 @@ export default function BillingManagementPage() {
       if (regRes.success && regRes.data) {
         setRegisterSummary(regRes.data.summary);
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[loadBillingData] error:", err);
       setErrorMsg("Network error loading billing ledger");
     } finally {
       setLoading(false);
@@ -122,7 +123,8 @@ export default function BillingManagementPage() {
             setRegisterSummary(regRes.data.summary);
           }
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[init billing] error:", err);
         if (isMounted) setErrorMsg("Network error loading billing ledger");
       } finally {
         if (isMounted) setLoading(false);
@@ -172,13 +174,27 @@ export default function BillingManagementPage() {
 
       if (res.success && res.data) {
         setIsCreatingNew(false);
+        setPatientIdInput("");
+        setItems([
+          {
+            category: "CONSULTATION",
+            itemName: "General OPD Consultation",
+            unitPrice: 500,
+            quantity: 1,
+          },
+        ]);
+        setDiscountAmount(0);
+        setDiscountReason("");
+        setInitialPaymentAmount(500);
+        setPaymentMethod("CASH");
         await loadBillingData();
         setSelectedInvoice(res.data.invoice);
         setToast({ message: `Invoice ${res.data.invoice.invoice_number} created successfully!`, type: "success" });
       } else {
         setToast({ message: res.error || "Failed to generate invoice", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleCreateInvoice] error:", err);
       setToast({ message: "Error generating invoice", type: "error" });
     } finally {
       setFormLoading(false);
@@ -205,7 +221,8 @@ export default function BillingManagementPage() {
       } else {
         setToast({ message: res.error || "Failed to collect payment", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleCollectPayment] error:", err);
       setToast({ message: "Error processing payment", type: "error" });
     } finally {
       setCollectLoading(false);
@@ -237,7 +254,8 @@ export default function BillingManagementPage() {
       } else {
         setToast({ message: res.error || "Failed to void invoice", type: "error" });
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[handleConfirmVoid] error:", err);
       setToast({ message: "Error voiding invoice", type: "error" });
     } finally {
       setVoidLoading(false);

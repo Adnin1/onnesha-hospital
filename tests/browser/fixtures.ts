@@ -72,7 +72,8 @@ async function installMutationGuard(page: Page, baseURL: string): Promise<void> 
   let hostname: string;
   try {
     hostname = new URL(baseURL).hostname;
-  } catch {
+  } catch (err: unknown) {
+    console.error("[installMutationGuard] Invalid baseURL:", err);
     return; // Invalid URL — let other guards handle it
   }
 
@@ -108,7 +109,7 @@ async function installMutationGuard(page: Page, baseURL: string): Promise<void> 
     // Block any mutation method against any production host
     if (isMutationMethod) {
       const targetHost = (() => {
-        try { return new URL(url).hostname; } catch { return url; }
+        try { return new URL(url).hostname; } catch (err: unknown) { console.error("[installMutationGuard] targetHost parse error:", err); return url; }
       })();
 
       // If it's a read-only RPC against Supabase, allow it

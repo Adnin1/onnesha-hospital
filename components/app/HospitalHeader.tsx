@@ -77,7 +77,8 @@ export function HospitalHeader() {
         } else if (isMounted) {
           setActivities([]);
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[HospitalHeader] fetchSystemActivities error:", err);
         if (isMounted) setActivities([]);
       } finally {
         if (isMounted) setLoadingActivities(false);

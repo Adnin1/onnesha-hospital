@@ -81,6 +81,12 @@ export async function getPurchaseRequisitionsAction(params?: {
   }
 
   try {
+    await requirePermission(PERMISSIONS.PROCUREMENT_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
+  }
+
+  try {
     const supabase = await createClient();
     let query = supabase
       .from("purchase_requisitions")
@@ -208,6 +214,12 @@ export async function getGoodsReceiptNotesAction(params?: {
   }
 
   try {
+    await requirePermission(PERMISSIONS.PROCUREMENT_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
+  }
+
+  try {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("goods_receipt_notes")
@@ -316,12 +328,16 @@ export async function createGoodsReceiptNoteAction(input: {
 
     // ERP General Ledger Integration: Automatically post GRN to Inventory and Supplier Payable GL
     try {
-      await supabase.rpc("post_grn_to_inventory_and_gl_atomic", {
+      const { error: glErr } = await supabase.rpc("post_grn_to_inventory_and_gl_atomic", {
         p_org_id: session.organizationId,
         p_grn_id: header.id,
       });
-    } catch (glErr) {
-      console.warn("ERP GRN GL auto-posting notice:", glErr);
+      if (glErr) {
+        return { success: false, error: glErr.message };
+      }
+    } catch (glErr: unknown) {
+      const msg = glErr instanceof Error ? glErr.message : "Failed to post GRN to inventory and GL";
+      return { success: false, error: msg };
     }
 
     const result: GoodsReceiptNoteRecord = {
@@ -343,6 +359,12 @@ export async function getWarehousesAction(): Promise<ActionResult<{ warehouses: 
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.PROCUREMENT_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
   }
 
   try {
@@ -437,8 +459,8 @@ export async function getSuppliersAction(params?: {
 
   try {
     await requirePermission(PERMISSIONS.PROCUREMENT_VIEW);
-  } catch {
-    return { success: false, error: "403 Forbidden" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
   }
 
   const supabase = await createClient();
@@ -477,8 +499,8 @@ export async function createSupplierAction(input: {
   }
   try {
     await requirePermission(PERMISSIONS.PROCUREMENT_MANAGE);
-  } catch {
-    return { success: false, error: "403 Forbidden: procurement.manage required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: procurement.manage required" };
   }
 
   if (!input.companyName?.trim() || !input.phone?.trim()) {
@@ -550,8 +572,8 @@ export async function createPurchaseOrderAction(input: {
   }
   try {
     await requirePermission(PERMISSIONS.PROCUREMENT_MANAGE);
-  } catch {
-    return { success: false, error: "403 Forbidden: procurement.manage required" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: procurement.manage required" };
   }
 
   if (!input.supplierId) return { success: false, error: "supplierId is required" };
@@ -624,7 +646,11 @@ export async function createPurchaseOrderAction(input: {
 
   const { error: lineErr } = await supabase.from("erp_purchase_order_items").insert(lineInserts);
   if (lineErr) {
-    await supabase.from("erp_purchase_orders").delete().eq("id", header.id);
+    await supabase
+      .from("erp_purchase_orders")
+      .delete()
+      .eq("id", header.id)
+      .eq("organization_id", session.organizationId);
     return { success: false, error: `PO line insert failed: ${lineErr.message}` };
   }
 
@@ -658,14 +684,14 @@ export async function getPurchaseOrdersAction(params?: {
   }
   try {
     await requirePermission(PERMISSIONS.PROCUREMENT_VIEW);
-  } catch {
-    return { success: false, error: "403 Forbidden" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
   }
 
   const supabase = await createClient();
   let query = supabase
     .from("erp_purchase_orders")
-    .select("*, purchase_order_items(*)")
+    .select("*, erp_purchase_order_items(*)")
     .eq("organization_id", session.organizationId)
     .order("created_at", { ascending: false })
     .limit(params?.limit ?? 50);
@@ -676,7 +702,14 @@ export async function getPurchaseOrdersAction(params?: {
   const { data, error } = await query;
   if (error) return { success: false, error: error.message };
 
-  return { success: true, data: { purchaseOrders: (data as unknown as PurchaseOrderRecord[]) || [] } };
+  const purchaseOrders: PurchaseOrderRecord[] = (
+    (data || []) as (PurchaseOrderRecord & { erp_purchase_order_items?: PurchaseOrderItem[] })[]
+  ).map((po) => ({
+    ...po,
+    items: po.erp_purchase_order_items ?? po.items ?? [],
+  }));
+
+  return { success: true, data: { purchaseOrders } };
 }
 
 /**
@@ -693,8 +726,8 @@ export async function getSupplierInvoicesAction(params?: {
   }
   try {
     await requirePermission(PERMISSIONS.PROCUREMENT_VIEW);
-  } catch {
-    return { success: false, error: "403 Forbidden" };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
   }
 
   const supabase = await createClient();

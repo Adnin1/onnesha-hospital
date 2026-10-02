@@ -43,7 +43,8 @@ export function LiveQueueWidget() {
         } else {
           setLoadState("error");
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[LiveQueueWidget] runFetch error:", err);
         if (mounted) {
           setLoadState("error");
         }

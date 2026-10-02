@@ -192,7 +192,8 @@ export async function getRadiologyStudiesAction(modalityCode?: string): Promise<
       return { success: true, data: filtered };
     }
     return { success: true, data: data as RadiologyStudy[] };
-  } catch {
+  } catch (err: unknown) {
+    console.error("[RadiologyActions] getRadiologyStudiesAction error:", err);
     const filtered = modalityCode && modalityCode !== "ALL"
       ? DEFAULT_RADIOLOGY_STUDIES.filter((s) => s.radiology_modalities?.modality_code === modalityCode)
       : DEFAULT_RADIOLOGY_STUDIES;

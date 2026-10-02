@@ -14,7 +14,8 @@ export default function InstallPrompt() {
     if (typeof window === "undefined") return false;
     try {
       return window.sessionStorage.getItem("ohms_install_dismissed") === "1";
-    } catch {
+    } catch (err: unknown) {
+      console.error("[InstallPrompt] sessionStorage.getItem error:", err);
       return false;
     }
   });
@@ -48,8 +49,8 @@ export default function InstallPrompt() {
     setDismissed(true);
     try {
       window.sessionStorage.setItem("ohms_install_dismissed", "1");
-    } catch {
-      // safe fallback if storage is restricted
+    } catch (err: unknown) {
+      console.error("[InstallPrompt] sessionStorage.setItem error:", err);
     }
   };
 

@@ -103,7 +103,8 @@ export default function StaffManagementPage() {
         } else {
           setErrorMsg(res.error || "স্টাফ তালিকা লোড করতে সমস্যা হয়েছে।");
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[StaffSettingsPage] load error:", err);
         if (isMounted) setErrorMsg("সার্ভারে সংযোগ ব্যর্থ হয়েছে।");
       } finally {
         if (isMounted) setLoading(false);
@@ -130,7 +131,8 @@ export default function StaffManagementPage() {
       } else {
         setErrorMsg(res.error || "স্টাফ তালিকা লোড করতে সমস্যা হয়েছে।");
       }
-    } catch {
+    } catch (err: unknown) {
+      console.error("[StaffSettingsPage] fetchDirectory error:", err);
       setErrorMsg("সার্ভারে সংযোগ ব্যর্থ হয়েছে।");
     } finally {
       setLoading(false);

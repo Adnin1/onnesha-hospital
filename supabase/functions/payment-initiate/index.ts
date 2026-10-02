@@ -354,7 +354,8 @@ serve(async (req: Request) => {
       }),
       { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch {
+  } catch (err: unknown) {
+    console.error("[PaymentInitiate] Edge function unhandled error:", err);
     return new Response(
       JSON.stringify({
         success: false,

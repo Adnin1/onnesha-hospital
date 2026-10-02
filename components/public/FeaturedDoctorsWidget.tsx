@@ -41,7 +41,8 @@ export function FeaturedDoctorsWidget() {
         } else {
           setLoadState("error");
         }
-      } catch {
+      } catch (err: unknown) {
+        console.error("[FeaturedDoctorsWidget] load error:", err);
         if (mounted) setLoadState("error");
       }
     }

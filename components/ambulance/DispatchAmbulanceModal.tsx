@@ -51,8 +51,8 @@ export function DispatchAmbulanceModal({
         if (isMounted && res.success && res.data?.patients) {
           setPatients(res.data.patients);
         }
-      } catch {
-        // fallback
+      } catch (err: unknown) {
+        console.error("[DispatchAmbulanceModal] fetchPatients error:", err);
       } finally {
         if (isMounted) setLoadingPatients(false);
       }
