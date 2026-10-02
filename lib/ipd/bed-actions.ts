@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
+import { PERMISSIONS } from "@/lib/permissions";
 import { recordAuditLog } from "@/lib/audit/logger";
 import { BedRecord, CabinRecord, WardRecord, BedAssignmentRecord } from "@/types/beds-ot";
 
@@ -9,78 +10,6 @@ export interface ActionResult<T = unknown> {
   error?: string;
 }
 
-const DEFAULT_ORG_ID = "a0000000-0000-0000-0000-000000000001";
-
-export const DEFAULT_HOSPITAL_WARDS: WardRecord[] = [
-  {
-    id: "ward-001-male",
-    organization_id: DEFAULT_ORG_ID,
-    name: "পুরুষ জেনারেল ওয়ার্ড (Male Medical Ward)",
-    ward_type: "Male Ward",
-    floor_number: "2nd Floor",
-    total_beds: 8,
-  },
-  {
-    id: "ward-002-female",
-    organization_id: DEFAULT_ORG_ID,
-    name: "মহিলা জেনারেল ওয়ার্ড (Female Medical Ward)",
-    ward_type: "Female Ward",
-    floor_number: "2nd Floor",
-    total_beds: 8,
-  },
-  {
-    id: "ward-003-postop",
-    organization_id: DEFAULT_ORG_ID,
-    name: "পোস্ট-অপারেটিভ রিকভারি ওয়ার্ড (Post-Op Ward)",
-    ward_type: "Post-Op",
-    floor_number: "3rd Floor",
-    total_beds: 4,
-  },
-  {
-    id: "ward-004-pediatric",
-    organization_id: DEFAULT_ORG_ID,
-    name: "শিশু ওয়ার্ড (Pediatric Ward)",
-    ward_type: "Pediatric Ward",
-    floor_number: "3rd Floor",
-    total_beds: 4,
-  },
-  {
-    id: "ward-005-icu",
-    organization_id: DEFAULT_ORG_ID,
-    name: "ইনটেনসিভ কেয়ার ইউনিট (ICU Complex)",
-    ward_type: "ICU",
-    floor_number: "4th Floor",
-    total_beds: 4,
-  },
-];
-
-export const DEFAULT_HOSPITAL_BEDS: BedRecord[] = [
-  { id: "bed-mw-101", organization_id: DEFAULT_ORG_ID, ward_id: "ward-001-male", bed_type_id: "bt-gen", bed_number: "MW-101", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[0], bed_type: { id: "bt-gen", organization_id: DEFAULT_ORG_ID, name: "General Bed", daily_rate: 500 } },
-  { id: "bed-mw-102", organization_id: DEFAULT_ORG_ID, ward_id: "ward-001-male", bed_type_id: "bt-gen", bed_number: "MW-102", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[0], bed_type: { id: "bt-gen", organization_id: DEFAULT_ORG_ID, name: "General Bed", daily_rate: 500 } },
-  { id: "bed-mw-103", organization_id: DEFAULT_ORG_ID, ward_id: "ward-001-male", bed_type_id: "bt-gen", bed_number: "MW-103", status: "CLEANING", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[0], bed_type: { id: "bt-gen", organization_id: DEFAULT_ORG_ID, name: "General Bed", daily_rate: 500 } },
-  { id: "bed-mw-104", organization_id: DEFAULT_ORG_ID, ward_id: "ward-001-male", bed_type_id: "bt-gen", bed_number: "MW-104", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[0], bed_type: { id: "bt-gen", organization_id: DEFAULT_ORG_ID, name: "General Bed", daily_rate: 500 } },
-
-  { id: "bed-fw-201", organization_id: DEFAULT_ORG_ID, ward_id: "ward-002-female", bed_type_id: "bt-gen", bed_number: "FW-201", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[1], bed_type: { id: "bt-gen", organization_id: DEFAULT_ORG_ID, name: "General Bed", daily_rate: 500 } },
-  { id: "bed-fw-202", organization_id: DEFAULT_ORG_ID, ward_id: "ward-002-female", bed_type_id: "bt-gen", bed_number: "FW-202", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[1], bed_type: { id: "bt-gen", organization_id: DEFAULT_ORG_ID, name: "General Bed", daily_rate: 500 } },
-  { id: "bed-fw-203", organization_id: DEFAULT_ORG_ID, ward_id: "ward-002-female", bed_type_id: "bt-gen", bed_number: "FW-203", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[1], bed_type: { id: "bt-gen", organization_id: DEFAULT_ORG_ID, name: "General Bed", daily_rate: 500 } },
-
-  { id: "bed-po-301", organization_id: DEFAULT_ORG_ID, ward_id: "ward-003-postop", bed_type_id: "bt-postop", bed_number: "PO-301", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[2], bed_type: { id: "bt-postop", organization_id: DEFAULT_ORG_ID, name: "Post-Op Bed", daily_rate: 1200 } },
-  { id: "bed-po-302", organization_id: DEFAULT_ORG_ID, ward_id: "ward-003-postop", bed_type_id: "bt-postop", bed_number: "PO-302", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[2], bed_type: { id: "bt-postop", organization_id: DEFAULT_ORG_ID, name: "Post-Op Bed", daily_rate: 1200 } },
-
-  { id: "bed-ped-401", organization_id: DEFAULT_ORG_ID, ward_id: "ward-004-pediatric", bed_type_id: "bt-ped", bed_number: "PED-401", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[3], bed_type: { id: "bt-ped", organization_id: DEFAULT_ORG_ID, name: "Pediatric Bed", daily_rate: 600 } },
-  { id: "bed-ped-402", organization_id: DEFAULT_ORG_ID, ward_id: "ward-004-pediatric", bed_type_id: "bt-ped", bed_number: "PED-402", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[3], bed_type: { id: "bt-ped", organization_id: DEFAULT_ORG_ID, name: "Pediatric Bed", daily_rate: 600 } },
-
-  { id: "bed-icu-01", organization_id: DEFAULT_ORG_ID, ward_id: "ward-005-icu", bed_type_id: "bt-icu", bed_number: "ICU-01", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[4], bed_type: { id: "bt-icu", organization_id: DEFAULT_ORG_ID, name: "ICU High-Dependency", daily_rate: 5000 } },
-  { id: "bed-icu-02", organization_id: DEFAULT_ORG_ID, ward_id: "ward-005-icu", bed_type_id: "bt-icu", bed_number: "ICU-02", status: "VACANT", is_active: true, ward: DEFAULT_HOSPITAL_WARDS[4], bed_type: { id: "bt-icu", organization_id: DEFAULT_ORG_ID, name: "ICU High-Dependency", daily_rate: 5000 } },
-];
-
-export const DEFAULT_HOSPITAL_CABINS: CabinRecord[] = [
-  { id: "cab-501", organization_id: DEFAULT_ORG_ID, cabin_number: "CAB-501 (VIP Suite)", cabin_type: "VIP_SUITE", floor_number: "5th Floor", daily_rate: 5000, status: "VACANT", amenities: "Central AC, LED TV, Refrigerator, Attendant Bed, Intercom, Attached Luxury Bath" },
-  { id: "cab-502", organization_id: DEFAULT_ORG_ID, cabin_number: "CAB-502 (AC Deluxe)", cabin_type: "AC_DELUXE", floor_number: "5th Floor", daily_rate: 2500, status: "VACANT", amenities: "Split AC, TV, Attendant Bed, Attached Bath" },
-  { id: "cab-503", organization_id: DEFAULT_ORG_ID, cabin_number: "CAB-503 (Standard AC)", cabin_type: "AC_DELUXE", floor_number: "5th Floor", daily_rate: 2000, status: "VACANT", amenities: "Split AC, Single Sofa, Attached Bath" },
-  { id: "cab-504", organization_id: DEFAULT_ORG_ID, cabin_number: "CAB-504 (Non-AC Standard)", cabin_type: "NON_AC_STANDARD", floor_number: "5th Floor", daily_rate: 1200, status: "VACANT", amenities: "Ceiling Fan, Attendant Stool, Attached Bath" },
-];
-
 /**
  * 1. Fetch all Wards, Beds, Cabins, and active patient assignments
  */
@@ -88,31 +17,47 @@ export async function getBedsAndCabinsAction(): Promise<
   ActionResult<{ beds: BedRecord[]; cabins: CabinRecord[]; wards: WardRecord[] }>
 > {
   const session = await getCurrentUserSession();
-  const orgId = session.organizationId || DEFAULT_ORG_ID;
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission(PERMISSIONS.BEDS_VIEW);
+  const orgId = session.organizationId;
 
   try {
     const supabase = await createClient();
 
     // 1. Wards
-    const { data: dbWards } = await supabase
+    const { data: dbWards, error: wardErr } = await supabase
       .from("wards")
       .select("*")
       .eq("organization_id", orgId)
       .order("name", { ascending: true });
 
-    // 2. Beds (Safe select without embedded relationship that triggers PGRST200)
-    const { data: dbBeds } = await supabase
+    if (wardErr) {
+      return { success: false, error: wardErr.message };
+    }
+
+    // 2. Beds
+    const { data: dbBeds, error: bedErr } = await supabase
       .from("beds")
       .select("*")
       .eq("organization_id", orgId)
       .order("bed_number", { ascending: true });
 
+    if (bedErr) {
+      return { success: false, error: bedErr.message };
+    }
+
     // 3. Cabins
-    const { data: dbCabins } = await supabase
+    const { data: dbCabins, error: cabErr } = await supabase
       .from("cabins")
       .select("*")
       .eq("organization_id", orgId)
       .order("cabin_number", { ascending: true });
+
+    if (cabErr) {
+      return { success: false, error: cabErr.message };
+    }
 
     // 4. Bed Types
     const { data: dbBedTypes } = await supabase
@@ -121,11 +66,15 @@ export async function getBedsAndCabinsAction(): Promise<
       .eq("organization_id", orgId);
 
     // 5. Active Bed Assignments with patient details
-    const { data: activeAssignments } = await supabase
+    const { data: activeAssignments, error: asgErr } = await supabase
       .from("bed_assignments")
       .select("*, patients(id, patient_code, full_name, phone, gender)")
       .eq("organization_id", orgId)
       .eq("status", "ACTIVE");
+
+    if (asgErr) {
+      return { success: false, error: asgErr.message };
+    }
 
     interface AssignmentRow {
       id: string;
@@ -160,10 +109,7 @@ export async function getBedsAndCabinsAction(): Promise<
       if (a.cabin_id) cabinAssignmentsMap.set(a.cabin_id, record);
     });
 
-    // Resolve final wards
-    const resolvedWards: WardRecord[] = (dbWards && dbWards.length > 0)
-      ? (dbWards as WardRecord[])
-      : DEFAULT_HOSPITAL_WARDS;
+    const resolvedWards: WardRecord[] = (dbWards || []) as WardRecord[];
 
     interface BedRow {
       id: string;
@@ -178,51 +124,40 @@ export async function getBedsAndCabinsAction(): Promise<
       created_at?: string;
     }
 
-    // Resolve final beds
-    let resolvedBeds: BedRecord[] = [];
-    if (dbBeds && dbBeds.length > 0) {
-      resolvedBeds = (dbBeds as BedRow[]).map((b) => {
-        const normalizedStatus = (b.status ? b.status.toUpperCase() : "VACANT") as "VACANT" | "OCCUPIED" | "CLEANING" | "MAINTENANCE";
-        const wardObj = resolvedWards.find((w) => w.id === b.ward_id) || resolvedWards[0];
-        const typeObj = (dbBedTypes || []).find((bt) => bt.id === b.bed_type_id) || {
-          id: b.bed_type_id || "gen",
-          organization_id: orgId,
-          name: typeof b.bed_type === "string" ? b.bed_type : "General Bed",
-          daily_rate: Number(b.daily_rate || 500),
-        };
-        return {
-          id: b.id,
-          organization_id: b.organization_id || orgId,
-          ward_id: b.ward_id || wardObj.id,
-          bed_type_id: b.bed_type_id || typeObj.id,
-          bed_number: b.bed_number,
-          status: normalizedStatus === "OCCUPIED" || normalizedStatus === "CLEANING" || normalizedStatus === "MAINTENANCE" ? normalizedStatus : "VACANT",
-          is_active: b.is_active !== false,
-          ward: wardObj,
-          bed_type: typeObj,
-          current_assignment: assignmentsMap.get(b.id),
-        };
-      });
-    } else {
-      resolvedBeds = DEFAULT_HOSPITAL_BEDS.map((b) => ({
-        ...b,
+    const resolvedBeds: BedRecord[] = (dbBeds || []).map((b: BedRow) => {
+      const normalizedStatus = (b.status ? b.status.toUpperCase() : "VACANT") as "VACANT" | "OCCUPIED" | "CLEANING" | "MAINTENANCE";
+      const wardObj = resolvedWards.find((w) => w.id === b.ward_id) || {
+        id: b.ward_id || "unassigned",
+        organization_id: orgId,
+        name: "General Ward",
+        ward_type: "General Ward",
+        floor_number: "N/A",
+        total_beds: 0,
+      };
+      const typeObj = (dbBedTypes || []).find((bt) => bt.id === b.bed_type_id) || {
+        id: b.bed_type_id || "gen",
+        organization_id: orgId,
+        name: typeof b.bed_type === "string" ? b.bed_type : "General Bed",
+        daily_rate: Number(b.daily_rate || 500),
+      };
+      return {
+        id: b.id,
+        organization_id: b.organization_id || orgId,
+        ward_id: b.ward_id || wardObj.id,
+        bed_type_id: b.bed_type_id || typeObj.id,
+        bed_number: b.bed_number,
+        status: normalizedStatus === "OCCUPIED" || normalizedStatus === "CLEANING" || normalizedStatus === "MAINTENANCE" ? normalizedStatus : "VACANT",
+        is_active: b.is_active !== false,
+        ward: wardObj,
+        bed_type: typeObj,
         current_assignment: assignmentsMap.get(b.id),
-      }));
-    }
+      };
+    });
 
-    // Resolve final cabins
-    let resolvedCabins: CabinRecord[] = [];
-    if (dbCabins && dbCabins.length > 0) {
-      resolvedCabins = (dbCabins as CabinRecord[]).map((c) => ({
-        ...c,
-        current_assignment: cabinAssignmentsMap.get(c.id),
-      }));
-    } else {
-      resolvedCabins = DEFAULT_HOSPITAL_CABINS.map((c) => ({
-        ...c,
-        current_assignment: cabinAssignmentsMap.get(c.id),
-      }));
-    }
+    const resolvedCabins: CabinRecord[] = (dbCabins || []).map((c: CabinRecord) => ({
+      ...c,
+      current_assignment: cabinAssignmentsMap.get(c.id),
+    }));
 
     return {
       success: true,
@@ -253,9 +188,12 @@ export async function assignBedAction(params: {
   dailyCharge: number;
 }): Promise<ActionResult<{ assignmentId: string }>> {
   const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
   await requirePermission("ipd.manage");
-  const orgId = session.organizationId || DEFAULT_ORG_ID;
-  const userId = session.userId || "usr-system-admin";
+  const orgId = session.organizationId;
+  const userId = session.userId;
 
   if (!params.bedId && !params.cabinId) {
     return { success: false, error: "Either Bed ID or Cabin ID must be selected." };
@@ -263,6 +201,18 @@ export async function assignBedAction(params: {
 
   try {
     const supabase = await createClient();
+
+    // Verify patient belongs to organization
+    const { data: patient, error: patErr } = await supabase
+      .from("patients")
+      .select("id")
+      .eq("id", params.patientId)
+      .eq("organization_id", orgId)
+      .single();
+
+    if (patErr || !patient) {
+      return { success: false, error: "Patient not found or unauthorized tenant." };
+    }
 
     // 1. Execute Atomic Stored Procedure (Locks row FOR UPDATE, prevents double-booking)
     const { data: atomicRes, error: rpcErr } = await supabase.rpc("admit_patient_to_bed_atomic", {
@@ -290,7 +240,23 @@ export async function assignBedAction(params: {
     }
 
     // 2. Direct Fallback with Optimistic Concurrency Protection for Hermetic Testing
-    const effectiveVisitId = params.visitId || `vst-${Date.now()}`;
+    let effectiveVisitId = params.visitId;
+    if (!effectiveVisitId) {
+      const { data: activeVisit } = await supabase
+        .from("patient_visits")
+        .select("id")
+        .eq("patient_id", params.patientId)
+        .eq("organization_id", orgId)
+        .eq("status", "ACTIVE")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (activeVisit) {
+        effectiveVisitId = activeVisit.id;
+      }
+    }
+
     if (params.bedId) {
       const { data: updatedBed } = await supabase
         .from("beds")
@@ -324,11 +290,11 @@ export async function assignBedAction(params: {
     }
 
     // Insert bed_assignment
-    const { data: assignment } = await supabase
+    const { data: assignment, error: insertErr } = await supabase
       .from("bed_assignments")
       .insert({
         organization_id: orgId,
-        visit_id: effectiveVisitId,
+        visit_id: effectiveVisitId || null,
         patient_id: params.patientId,
         bed_id: params.bedId || null,
         cabin_id: params.cabinId || null,
@@ -339,7 +305,11 @@ export async function assignBedAction(params: {
       .select()
       .single();
 
-    const assignmentId = assignment ? assignment.id : `asg-${Date.now()}`;
+    if (insertErr || !assignment) {
+      return { success: false, error: insertErr?.message || "Failed to create bed assignment." };
+    }
+
+    const assignmentId = assignment.id;
 
     // Audit log
     await recordAuditLog({
@@ -376,8 +346,12 @@ export async function vacateBedAction(params: {
   finalDiagnosis?: string;
 }): Promise<ActionResult<{ vacated: boolean }>> {
   const session = await getCurrentUserSession();
-  const orgId = session.organizationId || DEFAULT_ORG_ID;
-  const userId = session.userId || "usr-system-admin";
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("ipd.manage");
+  const orgId = session.organizationId;
+  const userId = session.userId;
 
   try {
     const supabase = await createClient();
@@ -455,9 +429,12 @@ export async function updateBedStatusAction(params: {
   status: "VACANT" | "OCCUPIED" | "CLEANING" | "MAINTENANCE";
 }): Promise<ActionResult<{ success: boolean }>> {
   const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
   await requirePermission("ipd.manage");
-  const orgId = session.organizationId || DEFAULT_ORG_ID;
-  const userId = session.userId || "usr-system-admin";
+  const orgId = session.organizationId;
+  const userId = session.userId;
 
   try {
     const supabase = await createClient();
@@ -479,11 +456,15 @@ export async function updateBedStatusAction(params: {
     }
 
     // 2. Direct Fallback
-    await supabase
+    const { error: updateErr } = await supabase
       .from("beds")
       .update({ status: params.status })
       .eq("id", params.bedId)
       .eq("organization_id", orgId);
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
 
     await recordAuditLog({
       organizationId: orgId,
@@ -515,9 +496,12 @@ export async function transferBedAction(params: {
   doctorName?: string;
 }): Promise<ActionResult<{ success: boolean; newAssignmentId?: string }>> {
   const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
   await requirePermission("ipd.manage");
-  const orgId = session.organizationId || DEFAULT_ORG_ID;
-  const userId = session.userId || "usr-system-admin";
+  const orgId = session.organizationId;
+  const userId = session.userId;
 
   try {
     const supabase = await createClient();
@@ -556,23 +540,31 @@ export async function transferBedAction(params: {
 }
 
 /**
- * 5. Update Cabin Status (e.g. CLEANING -> VACANT, MAINTENANCE)
+ * 6. Update Cabin Status (e.g. CLEANING -> VACANT, MAINTENANCE)
  */
 export async function updateCabinStatusAction(params: {
   cabinId: string;
   status: "VACANT" | "OCCUPIED" | "CLEANING" | "MAINTENANCE";
 }): Promise<ActionResult<{ success: boolean }>> {
   const session = await getCurrentUserSession();
-  const orgId = session.organizationId || DEFAULT_ORG_ID;
-  const userId = session.userId || "usr-system-admin";
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("ipd.manage");
+  const orgId = session.organizationId;
+  const userId = session.userId;
 
   try {
     const supabase = await createClient();
-    await supabase
+    const { error: updateErr } = await supabase
       .from("cabins")
       .update({ status: params.status })
       .eq("id", params.cabinId)
       .eq("organization_id", orgId);
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
 
     await recordAuditLog({
       organizationId: orgId,
@@ -592,7 +584,7 @@ export async function updateCabinStatusAction(params: {
 }
 
 /**
- * 6. Add New Bed Dynamically
+ * 7. Add New Bed Dynamically
  */
 export async function addBedAction(payload: {
   bed_number: string;
@@ -601,12 +593,16 @@ export async function addBedAction(payload: {
   bed_type?: string;
 }): Promise<ActionResult<{ bed: BedRecord }>> {
   const session = await getCurrentUserSession();
-  const orgId = session.organizationId || DEFAULT_ORG_ID;
-  const userId = session.userId || "usr-system-admin";
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("ipd.manage");
+  const orgId = session.organizationId;
+  const userId = session.userId;
 
   try {
     const supabase = await createClient();
-    const { data: inserted } = await supabase
+    const { data: inserted, error: insertErr } = await supabase
       .from("beds")
       .insert({
         organization_id: orgId,
@@ -618,7 +614,11 @@ export async function addBedAction(payload: {
       .select()
       .single();
 
-    const bedId = inserted ? inserted.id : `bed-${Date.now()}`;
+    if (insertErr || !inserted) {
+      return { success: false, error: insertErr?.message || "Failed to add bed" };
+    }
+
+    const bedId = inserted.id;
     const newBed: BedRecord = {
       id: bedId,
       organization_id: orgId,
@@ -653,7 +653,7 @@ export async function addBedAction(payload: {
 }
 
 /**
- * 7. Add New Cabin Dynamically
+ * 8. Add New Cabin Dynamically
  */
 export async function addCabinAction(payload: {
   cabin_number: string;
@@ -663,12 +663,16 @@ export async function addCabinAction(payload: {
   amenities?: string;
 }): Promise<ActionResult<{ cabin: CabinRecord }>> {
   const session = await getCurrentUserSession();
-  const orgId = session.organizationId || DEFAULT_ORG_ID;
-  const userId = session.userId || "usr-system-admin";
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("ipd.manage");
+  const orgId = session.organizationId;
+  const userId = session.userId;
 
   try {
     const supabase = await createClient();
-    const { data: inserted } = await supabase
+    const { data: inserted, error: insertErr } = await supabase
       .from("cabins")
       .insert({
         organization_id: orgId,
@@ -682,7 +686,11 @@ export async function addCabinAction(payload: {
       .select()
       .single();
 
-    const cabinId = inserted ? inserted.id : `cab-${Date.now()}`;
+    if (insertErr || !inserted) {
+      return { success: false, error: insertErr?.message || "Failed to add cabin" };
+    }
+
+    const cabinId = inserted.id;
     const newCabin: CabinRecord = {
       id: cabinId,
       organization_id: orgId,

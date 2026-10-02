@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUserSession } from "@/lib/auth/session";
+import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
+import { PERMISSIONS } from "@/lib/permissions";
 import { recordAuditLog } from "@/lib/audit/logger";
 
 export interface CriticalCareUnit {
@@ -84,19 +85,6 @@ export interface CriticalCareAlert {
   bed_number?: string;
 }
 
-const DEFAULT_ORG_ID = "a0000000-0000-0000-0000-000000000001";
-
-export const DEFAULT_CRITICAL_CARE_UNITS: CriticalCareUnit[] = [
-  { id: "c0000000-0001-0000-0000-000000000001", organization_id: DEFAULT_ORG_ID, unit_name: "Intensive Care Unit (ICU)", unit_type: "ICU", floor: "4th Floor", total_beds: 6, daily_charge: 7500, is_active: true, created_at: new Date().toISOString() },
-  { id: "c0000000-0001-0000-0000-000000000002", organization_id: DEFAULT_ORG_ID, unit_name: "Coronary Care Unit (CCU)", unit_type: "CCU", floor: "4th Floor", total_beds: 4, daily_charge: 6500, is_active: true, created_at: new Date().toISOString() },
-  { id: "c0000000-0001-0000-0000-000000000003", organization_id: DEFAULT_ORG_ID, unit_name: "Intensive Coronary Care Unit (ICCU)", unit_type: "ICCU", floor: "4th Floor", total_beds: 4, daily_charge: 6500, is_active: true, created_at: new Date().toISOString() },
-  { id: "c0000000-0001-0000-0000-000000000004", organization_id: DEFAULT_ORG_ID, unit_name: "Surgical ICU (SICU)", unit_type: "SICU", floor: "4th Floor", total_beds: 4, daily_charge: 7500, is_active: true, created_at: new Date().toISOString() },
-  { id: "c0000000-0001-0000-0000-000000000005", organization_id: DEFAULT_ORG_ID, unit_name: "Medical ICU (MICU)", unit_type: "MICU", floor: "4th Floor", total_beds: 4, daily_charge: 7500, is_active: true, created_at: new Date().toISOString() },
-  { id: "c0000000-0001-0000-0000-000000000006", organization_id: DEFAULT_ORG_ID, unit_name: "Pediatric ICU (PICU)", unit_type: "PICU", floor: "4th Floor", total_beds: 4, daily_charge: 6000, is_active: true, created_at: new Date().toISOString() },
-];
-
-// In-memory alert store removed to prevent cross-tenant leakage.
-
 /**
  * 1. Fetch configured Critical Care Units from database
  */
@@ -105,24 +93,32 @@ export async function getCriticalCareUnitsAction(): Promise<{
   data?: CriticalCareUnit[];
   error?: string;
 }> {
-  try {
-    const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
 
+  try {
+    await requirePermission(PERMISSIONS.CRITICAL_CARE_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: critical_care.view required" };
+  }
+
+  try {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("critical_care_units")
       .select("*")
-      .eq("organization_id", orgId)
+      .eq("organization_id", session.organizationId)
       .order("unit_type", { ascending: true });
 
-    if (error || !data || data.length === 0) {
-      return { success: true, data: DEFAULT_CRITICAL_CARE_UNITS };
+    if (error) {
+      return { success: false, error: error.message };
     }
-    return { success: true, data: data as CriticalCareUnit[] };
+    return { success: true, data: (data as CriticalCareUnit[]) || [] };
   } catch (err: unknown) {
     console.error("[CriticalCareActions] getCriticalCareUnitsAction error:", err);
-    return { success: true, data: DEFAULT_CRITICAL_CARE_UNITS };
+    return { success: false, error: err instanceof Error ? err.message : "Failed to load critical care units" };
   }
 }
 
@@ -134,15 +130,24 @@ export async function getAvailableCriticalCareBedsAction(unitType?: string): Pro
   data?: Array<{ id: string; bed_number: string; status: string; ward_name?: string }>;
   error?: string;
 }> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
   try {
-    const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
+    await requirePermission(PERMISSIONS.CRITICAL_CARE_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: critical_care.view required" };
+  }
+
+  try {
     const supabase = await createClient();
 
     let query = supabase
       .from("beds")
       .select("id, bed_number, status, ward_name")
-      .eq("organization_id", orgId)
+      .eq("organization_id", session.organizationId)
       .in("status", ["VACANT", "AVAILABLE"])
       .order("bed_number", { ascending: true });
 
@@ -171,15 +176,23 @@ export async function getCriticalCareAdmissionsAction(unitType?: string): Promis
   data?: CriticalCareAdmission[];
   error?: string;
 }> {
-  try {
-    const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized", data: [] };
+  }
 
+  try {
+    await requirePermission(PERMISSIONS.CRITICAL_CARE_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: critical_care.view required", data: [] };
+  }
+
+  try {
     const supabase = await createClient();
     let query = supabase
       .from("critical_care_admissions")
       .select("*, patients(id, patient_code, full_name, phone, gender), critical_care_units(id, unit_name, unit_type)")
-      .eq("organization_id", orgId)
+      .eq("organization_id", session.organizationId)
       .in("status", ["admitted", "ACTIVE"])
       .order("admission_time", { ascending: false });
 
@@ -189,11 +202,9 @@ export async function getCriticalCareAdmissionsAction(unitType?: string): Promis
 
     const { data, error } = await query;
     if (error) {
-      // If table query fails, return error rather than faking mock data
       return { success: false, error: error.message, data: [] };
     }
 
-    // Return exact database rows (which may be empty [] if 0 active admissions)
     return { success: true, data: (data || []) as CriticalCareAdmission[] };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to query critical care admissions";
@@ -215,27 +226,45 @@ export async function createCriticalCareAdmissionAction(payload: {
   unit_type?: string;
   notes?: string;
 }): Promise<{ success: boolean; data?: CriticalCareAdmission; error?: string }> {
-  try {
-    const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
-    const userId = session.userId || "00000000-0000-0000-0000-000000000001";
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
 
+  try {
+    await requirePermission(PERMISSIONS.CRITICAL_CARE_MANAGE);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: critical_care.manage required" };
+  }
+
+  try {
     const supabase = await createClient();
+
+    // Verify patient belongs to current organization
+    const { data: patientRec, error: patErr } = await supabase
+      .from("patients")
+      .select("id, patient_code, full_name, phone, gender")
+      .eq("id", payload.patient_id)
+      .eq("organization_id", session.organizationId)
+      .maybeSingle();
+
+    if (patErr || !patientRec) {
+      return { success: false, error: "Patient not found in this organization" };
+    }
 
     // 1. Attempt atomic stored procedure execution
     const { data: rpcData, error: rpcError } = await supabase.rpc("admit_critical_care_atomic", {
-      p_organization_id: orgId,
+      p_organization_id: session.organizationId,
       p_patient_id: payload.patient_id,
       p_unit_id: payload.unit_id,
       p_bed_number: payload.bed_number,
       p_ventilator_required: !!payload.ventilator_required,
-      p_admitting_doctor_id: userId,
+      p_admitting_doctor_id: session.userId,
       p_initial_diagnosis: payload.initial_diagnosis,
       p_notes: payload.notes || null,
     });
 
     if (rpcError) {
-      // If error is a business constraint (e.g. bed unavailable), return it directly
       if (rpcError.message.includes("BED_UNAVAILABLE") || rpcError.message.includes("DOUBLE_ASSIGNMENT")) {
         return { success: false, error: rpcError.message };
       }
@@ -244,63 +273,58 @@ export async function createCriticalCareAdmissionAction(payload: {
       const { data: inserted, error: insertError } = await supabase
         .from("critical_care_admissions")
         .insert({
-          organization_id: orgId,
+          organization_id: session.organizationId,
           patient_id: payload.patient_id,
           unit_id: payload.unit_id,
           bed_number: payload.bed_number,
           initial_diagnosis: payload.initial_diagnosis,
           ventilator_required: !!payload.ventilator_required,
-          admitting_doctor_id: userId,
+          admitting_doctor_id: session.userId,
           status: "admitted",
         })
         .select()
         .single();
 
-      if (insertError) {
-        return { success: false, error: insertError.message };
+      if (insertError || !inserted?.id) {
+        return { success: false, error: insertError?.message || "Failed to create admission record" };
       }
 
-      // Update matching bed status to OCCUPIED
       await supabase
         .from("beds")
         .update({ status: "OCCUPIED", admitted_at: new Date().toISOString() })
-        .eq("organization_id", orgId)
+        .eq("organization_id", session.organizationId)
         .eq("bed_number", payload.bed_number);
 
-      const admissionId = inserted?.id || `cca-${Date.now()}`;
+      const admissionId = inserted.id;
       const newAdmission: CriticalCareAdmission = {
         id: admissionId,
-        organization_id: orgId,
+        organization_id: session.organizationId,
         patient_id: payload.patient_id,
         unit_id: payload.unit_id,
         bed_number: payload.bed_number,
         initial_diagnosis: payload.initial_diagnosis,
         ventilator_required: !!payload.ventilator_required,
-        admitting_doctor_id: userId,
+        admitting_doctor_id: session.userId,
         status: "admitted",
         admission_time: new Date().toISOString(),
         created_at: new Date().toISOString(),
         patients: {
-          id: payload.patient_id,
-          patient_code: payload.patient_code || "OH-202610-0099",
-          full_name: payload.patient_name || "Admitted Patient",
+          id: patientRec.id,
+          patient_code: patientRec.patient_code,
+          full_name: patientRec.full_name,
+          phone: patientRec.phone,
+          gender: patientRec.gender,
         },
         critical_care_units: {
           id: payload.unit_id,
           unit_name: `${payload.unit_type || "ICU"} Complex`,
-          unit_type: payload.unit_type || "ICU",
-        },
-        latest_vitals: {
-          spo2: payload.ventilator_required ? 95 : 98,
-          heart_rate: 82,
-          bp: "120/80",
-          gcs: payload.ventilator_required ? 10 : 15,
+          unit_type: (payload.unit_type || "ICU") as "ICU" | "ICCU" | "CCU" | "SICU" | "MICU" | "PICU",
         },
       };
 
       await recordAuditLog({
-        organizationId: orgId,
-        userId,
+        organizationId: session.organizationId,
+        userId: session.userId,
         action: "CREATE",
         module: "IPD",
         entityType: "critical_care_admissions",
@@ -316,34 +340,34 @@ export async function createCriticalCareAdmissionAction(payload: {
       return { success: true, data: newAdmission };
     }
 
-    const admissionId = (rpcData as { admission_id?: string })?.admission_id || `cca-${Date.now()}`;
+    const admissionId = (rpcData as { admission_id?: string })?.admission_id;
+    if (!admissionId) {
+      return { success: false, error: "Stored procedure completed without returning an admission ID" };
+    }
+
     const newAdmission: CriticalCareAdmission = {
       id: admissionId,
-      organization_id: orgId,
+      organization_id: session.organizationId,
       patient_id: payload.patient_id,
       unit_id: payload.unit_id,
       bed_number: payload.bed_number,
       initial_diagnosis: payload.initial_diagnosis,
       ventilator_required: !!payload.ventilator_required,
-      admitting_doctor_id: userId,
+      admitting_doctor_id: session.userId,
       status: "admitted",
       admission_time: new Date().toISOString(),
       created_at: new Date().toISOString(),
       patients: {
-        id: payload.patient_id,
-        patient_code: payload.patient_code || "OH-202610-0099",
-        full_name: payload.patient_name || "Admitted Patient",
+        id: patientRec.id,
+        patient_code: patientRec.patient_code,
+        full_name: patientRec.full_name,
+        phone: patientRec.phone,
+        gender: patientRec.gender,
       },
       critical_care_units: {
         id: payload.unit_id,
         unit_name: `${payload.unit_type || "ICU"} Complex`,
-        unit_type: payload.unit_type || "ICU",
-      },
-      latest_vitals: {
-        spo2: payload.ventilator_required ? 95 : 98,
-        heart_rate: 82,
-        bp: "120/80",
-        gcs: payload.ventilator_required ? 10 : 15,
+        unit_type: (payload.unit_type || "ICU") as "ICU" | "ICCU" | "CCU" | "SICU" | "MICU" | "PICU",
       },
     };
 
@@ -392,14 +416,21 @@ export async function recordCriticalCareObservationAction(payload: {
     }
 
     const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
-    const userId = session.userId || "00000000-0000-0000-0000-000000000001";
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    try {
+      await requirePermission(PERMISSIONS.CRITICAL_CARE_MANAGE);
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: critical_care.manage required" };
+    }
 
     const supabase = await createClient();
     await supabase.from("critical_care_observations").insert({
-      organization_id: orgId,
+      organization_id: session.organizationId,
       admission_id: payload.admission_id,
-      recorded_by: userId,
+      recorded_by: session.userId,
       recorded_at: new Date().toISOString(),
       systolic_bp: payload.systolic_bp,
       diastolic_bp: payload.diastolic_bp,
@@ -483,8 +514,16 @@ export async function dischargeCriticalCareAdmissionAction(params: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
-    const userId = session.userId || "00000000-0000-0000-0000-000000000001";
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    try {
+      await requirePermission(PERMISSIONS.CRITICAL_CARE_MANAGE);
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: critical_care.manage required" };
+    }
+
     const supabase = await createClient();
 
     // 1. Attempt atomic stored procedure execution
@@ -493,7 +532,7 @@ export async function dischargeCriticalCareAdmissionAction(params: {
       p_final_diagnosis: params.finalDiagnosis || "Condition stabilized / stepped down",
       p_destination: params.destination || (params.status === "transferred" ? "General Medical Ward" : "Home"),
       p_clinical_notes: params.clinicalNotes || null,
-      p_discharged_by: userId,
+      p_discharged_by: session.userId,
     });
 
     if (rpcError) {
@@ -502,7 +541,12 @@ export async function dischargeCriticalCareAdmissionAction(params: {
         .from("critical_care_admissions")
         .select("bed_number")
         .eq("id", params.admissionId)
-        .single();
+        .eq("organization_id", session.organizationId)
+        .maybeSingle();
+
+      if (!adm) {
+        return { success: false, error: "Admission not found in this organization" };
+      }
 
       await supabase
         .from("critical_care_admissions")
@@ -510,10 +554,11 @@ export async function dischargeCriticalCareAdmissionAction(params: {
           status: params.status,
           discharge_time: new Date().toISOString(),
         })
-        .eq("id", params.admissionId);
+        .eq("id", params.admissionId)
+        .eq("organization_id", session.organizationId);
 
       // Bed transitions strictly to CLEANING (not directly to vacant!)
-      if (adm?.bed_number) {
+      if (adm.bed_number) {
         await supabase
           .from("beds")
           .update({
@@ -521,14 +566,14 @@ export async function dischargeCriticalCareAdmissionAction(params: {
             admitted_at: null,
             patient_name: null,
           })
-          .eq("organization_id", orgId)
+          .eq("organization_id", session.organizationId)
           .eq("bed_number", adm.bed_number);
       }
     }
 
     await recordAuditLog({
-      organizationId: orgId,
-      userId,
+      organizationId: session.organizationId,
+      userId: session.userId,
       action: "UPDATE",
       module: "IPD",
       entityType: "critical_care_admissions",

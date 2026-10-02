@@ -9,17 +9,17 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-02T16:25:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-02T16:50:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.33` | VERIFIED |
-| **Preserved Release Tags** | `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.34` | VERIFIED |
+| **Preserved Release Tags** | `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` aligned with HEAD | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.33` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.33` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.33` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.33` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.33` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.33` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.34` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.34` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.34` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.34` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.34` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.34` | VERIFIED |
 | **Database Migrations Count** | `103 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261002070000_ot_and_biomedical_security.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity) | VERIFIED |
@@ -262,4 +262,45 @@
      - TypeScript: Clean (`tsc --noEmit`, 0 errors).
      - ESLint: Clean (`eslint . --max-warnings 0`, 0 warnings).
      - Automated Tests: 98/98 suites passed (870 active passed, 0 failed, 6 skips).
+     - Static Export: 58/58 routes generated with zero server-only dependencies.
+
+---
+
+## 13. Release v1.1.34 — Total Mock Eradication & Strict Multi-Tenant Enforcement
+
+- **Release Date:** 2026-10-02
+- **Release Tag:** `v1.1.34`
+- **Scope & Addressed Defects:**
+  1. **Blood Bank Action Hardening ([`lib/blood-bank/actions.ts`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/lib/blood-bank/actions.ts)):**
+     - Eradicated `DEFAULT_BLOOD_INVENTORY` mock dataset and `DEFAULT_ORG_ID`.
+     - Enforced fail-closed 401 session guard when `!session.userId || !session.organizationId`.
+     - Enforced `requirePermission(PERMISSIONS.BLOOD_BANK_VIEW)` on inventory reads and `requirePermission(PERMISSIONS.BLOOD_BANK_MANAGE)` on donations and issuance.
+     - Added tenant ownership verification of recipient patient upon blood bag issuance.
+     - Database errors propagate immediately; empty database yields real empty array `[]`, zero mock fallbacks.
+  2. **Critical Care Action Hardening ([`lib/critical-care/actions.ts`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/lib/critical-care/actions.ts)):**
+     - Eradicated `DEFAULT_CRITICAL_CARE_UNITS` mock dataset and `DEFAULT_ORG_ID`.
+     - Eradicated synthetic `cca-${Date.now()}` ID generation on database insertion errors.
+     - Eradicated hardcoded mock vitals and fallback patient codes (`OH-202610-0099`).
+     - Enforced fail-closed 401 session guards and `critical_care.view` / `critical_care.manage` permissions.
+     - Scoped critical care unit transfers and patient discharges strictly to active `organization_id`.
+  3. **Radiology Action Hardening ([`lib/radiology/actions.ts`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/lib/radiology/actions.ts)):**
+     - Eradicated `DEFAULT_RADIOLOGY_STUDIES` mock dataset and `DEFAULT_ORG_ID`.
+     - Eradicated synthetic doctor user fallbacks (`usr-doctor`, `usr-radiologist-consultant`).
+     - Enforced fail-closed 401 session guards and `requirePermission(PERMISSIONS.RADIOLOGY_VIEW)` / `requirePermission(PERMISSIONS.RADIOLOGY_MANAGE)`.
+     - Added patient tenant boundary check verifying patient exists in active organization prior to study ordering.
+     - Returns real empty array `[]` on zero studies; database errors return `{ success: false, error: ... }`.
+  4. **Inpatient Bed & Cabin Hardening ([`lib/ipd/bed-actions.ts`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/lib/ipd/bed-actions.ts)):**
+     - Eradicated `DEFAULT_HOSPITAL_WARDS`, `DEFAULT_HOSPITAL_BEDS`, and `DEFAULT_HOSPITAL_CABINS` mock datasets.
+     - Eradicated `DEFAULT_ORG_ID`.
+     - Eradicated synthetic IDs `vst-${Date.now()}`, `asg-${Date.now()}`, `bed-${Date.now()}`, `cab-${Date.now()}` on database errors.
+     - Enforced fail-closed 401 session guards across all bed and cabin operations.
+     - Enforced `requirePermission(PERMISSIONS.BEDS_VIEW)` for reads and `requirePermission("ipd.manage")` for bed assignments, status updates, transfers, vacating, and additions.
+     - Verified patient tenant boundary prior to inpatient bed allocation.
+  5. **Role-Based Access Control Expansion ([`lib/permissions.ts`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/lib/permissions.ts)):**
+     - Formally registered `IPD_MANAGE: "ipd.manage"` in `PERMISSIONS`.
+     - Bound `IPD_MANAGE` to `doctor` and `nurse` roles in `DEFAULT_ROLE_PERMISSIONS`.
+  6. **Release Quality Metrics:**
+     - TypeScript: 0 errors (`tsc --noEmit`).
+     - ESLint: 0 warnings, 0 errors (`eslint . --max-warnings 0`).
+     - Automated Tests: 98/98 test suites passed (870 active passed, 0 failed, 6 skips).
      - Static Export: 58/58 routes generated with zero server-only dependencies.

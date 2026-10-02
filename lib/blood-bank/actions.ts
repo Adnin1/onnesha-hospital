@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUserSession } from "@/lib/auth/session";
+import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
+import { PERMISSIONS } from "@/lib/permissions";
 
 export interface BloodDonor {
   id: string;
@@ -30,168 +31,28 @@ export interface BloodBagItem {
   patient_name?: string;
 }
 
-const DEFAULT_ORG_ID = "a0000000-0000-0000-0000-000000000001";
-
-export const DEFAULT_BLOOD_INVENTORY: BloodBagItem[] = [
-  {
-    id: "bag-a-pos-01",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-A101",
-    blood_group: "A+",
-    component_type: "prbc",
-    collection_date: "2026-09-25",
-    expiry_date: "2026-11-05",
-    storage_location: "Cold Storage Refrigerator 1 (Shelf A)",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Farhan Ahmed",
-  },
-  {
-    id: "bag-a-pos-02",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-A102",
-    blood_group: "A+",
-    component_type: "whole_blood",
-    collection_date: "2026-09-28",
-    expiry_date: "2026-11-02",
-    storage_location: "Cold Storage Refrigerator 1 (Shelf A)",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Mahmud Hasan",
-  },
-  {
-    id: "bag-b-pos-01",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-B201",
-    blood_group: "B+",
-    component_type: "prbc",
-    collection_date: "2026-09-27",
-    expiry_date: "2026-11-07",
-    storage_location: "Cold Storage Refrigerator 1 (Shelf B)",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Sayedur Rahman",
-  },
-  {
-    id: "bag-b-pos-02",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-B202",
-    blood_group: "B+",
-    component_type: "platelets",
-    collection_date: "2026-09-30",
-    expiry_date: "2026-10-05",
-    storage_location: "Platelet Agitator Incubator",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Kamrul Islam",
-  },
-  {
-    id: "bag-o-pos-01",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-O301",
-    blood_group: "O+",
-    component_type: "prbc",
-    collection_date: "2026-09-26",
-    expiry_date: "2026-11-06",
-    storage_location: "Cold Storage Refrigerator 2 (Shelf A)",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Jamil Hossain",
-  },
-  {
-    id: "bag-o-pos-02",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-O302",
-    blood_group: "O+",
-    component_type: "ffp",
-    collection_date: "2026-09-20",
-    expiry_date: "2027-09-20",
-    storage_location: "Deep Freezer -40°C",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Tanvir Ahmed",
-  },
-  {
-    id: "bag-o-neg-01",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-ON401",
-    blood_group: "O-",
-    component_type: "prbc",
-    collection_date: "2026-09-29",
-    expiry_date: "2026-11-09",
-    storage_location: "Cold Storage Refrigerator 2 (Emergency Shelf)",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Volunteer Donor Society",
-  },
-  {
-    id: "bag-ab-pos-01",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-AB501",
-    blood_group: "AB+",
-    component_type: "prbc",
-    collection_date: "2026-09-24",
-    expiry_date: "2026-11-04",
-    storage_location: "Cold Storage Refrigerator 1 (Shelf C)",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Nayeem Uddin",
-  },
-  {
-    id: "bag-ab-neg-01",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-ABN502",
-    blood_group: "AB-",
-    component_type: "ffp",
-    collection_date: "2026-09-22",
-    expiry_date: "2027-09-22",
-    storage_location: "Deep Freezer -40°C",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Red Crescent Club",
-  },
-  {
-    id: "bag-a-neg-01",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-AN601",
-    blood_group: "A-",
-    component_type: "prbc",
-    collection_date: "2026-09-26",
-    expiry_date: "2026-11-06",
-    storage_location: "Cold Storage Refrigerator 1 (Shelf D)",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Ahsan Habib",
-  },
-  {
-    id: "bag-b-neg-01",
-    organization_id: DEFAULT_ORG_ID,
-    bag_number: "BB-202610-BN701",
-    blood_group: "B-",
-    component_type: "prbc",
-    collection_date: "2026-09-25",
-    expiry_date: "2026-11-05",
-    storage_location: "Cold Storage Refrigerator 1 (Shelf D)",
-    status: "available",
-    created_at: new Date().toISOString(),
-    donor_name: "Shakil Khan",
-  },
-];
-
 export async function getBloodInventoryAction(bloodGroup?: string): Promise<{
   success: boolean;
   data?: BloodBagItem[];
   error?: string;
 }> {
-  try {
-    const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
 
+  try {
+    await requirePermission(PERMISSIONS.BLOOD_BANK_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: blood_bank.view required" };
+  }
+
+  try {
     const supabase = createClient();
     let query = supabase
       .from("blood_inventory")
       .select("*")
-      .eq("organization_id", orgId)
+      .eq("organization_id", session.organizationId)
       .order("expiry_date", { ascending: true });
 
     if (bloodGroup && bloodGroup !== "ALL") {
@@ -199,19 +60,13 @@ export async function getBloodInventoryAction(bloodGroup?: string): Promise<{
     }
 
     const { data, error } = await query;
-    if (error || !data || data.length === 0) {
-      const filtered = bloodGroup && bloodGroup !== "ALL"
-        ? DEFAULT_BLOOD_INVENTORY.filter((b) => b.blood_group === bloodGroup)
-        : DEFAULT_BLOOD_INVENTORY;
-      return { success: true, data: filtered };
+    if (error) {
+      return { success: false, error: error.message };
     }
-    return { success: true, data: data as BloodBagItem[] };
+    return { success: true, data: (data as BloodBagItem[]) || [] };
   } catch (err: unknown) {
     console.error("[BloodBankActions] getBloodInventoryAction error:", err);
-    const filtered = bloodGroup && bloodGroup !== "ALL"
-      ? DEFAULT_BLOOD_INVENTORY.filter((b) => b.blood_group === bloodGroup)
-      : DEFAULT_BLOOD_INVENTORY;
-    return { success: true, data: filtered };
+    return { success: false, error: err instanceof Error ? err.message : "Failed to load blood inventory." };
   }
 }
 
@@ -225,22 +80,30 @@ export async function registerBloodBagAction(payload: {
   expiry_date: string;
   storage_location?: string;
 }): Promise<{ success: boolean; data?: BloodBagItem; error?: string }> {
-  try {
-    const session = await getCurrentUserSession();
-    const orgId = session.organizationId || DEFAULT_ORG_ID;
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
 
+  try {
+    await requirePermission(PERMISSIONS.BLOOD_BANK_MANAGE);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: blood_bank.manage required" };
+  }
+
+  try {
     const supabase = createClient();
     const { data: inserted, error } = await supabase
       .from("blood_inventory")
       .insert({
-        organization_id: orgId,
+        organization_id: session.organizationId,
         bag_number: payload.bag_number,
         donor_id: payload.donor_id,
         blood_group: payload.blood_group,
         component_type: payload.component_type,
         collection_date: payload.collection_date,
         expiry_date: payload.expiry_date,
-        storage_location: payload.storage_location,
+        storage_location: payload.storage_location || "Central Blood Bank Refrigerator",
         status: "available",
       })
       .select()
@@ -250,24 +113,9 @@ export async function registerBloodBagAction(payload: {
       return { success: false, error: error.message };
     }
 
-    const bagId = inserted.id;
-    const newBag: BloodBagItem = {
-      id: bagId,
-      organization_id: orgId,
-      bag_number: payload.bag_number,
-      donor_id: payload.donor_id,
-      donor_name: payload.donor_name || "Screened Voluntary Donor",
-      blood_group: payload.blood_group,
-      component_type: payload.component_type,
-      collection_date: payload.collection_date,
-      expiry_date: payload.expiry_date,
-      storage_location: payload.storage_location || "Central Blood Bank Refrigerator",
-      status: "available",
-      created_at: new Date().toISOString(),
-    };
-
-    return { success: true, data: newBag };
+    return { success: true, data: inserted as BloodBagItem };
   } catch (err: unknown) {
+    console.error("[BloodBankActions] registerBloodBagAction error:", err);
     const msg = err instanceof Error ? err.message : "Failed to register blood bag.";
     return { success: false, error: msg };
   }
@@ -279,13 +127,36 @@ export async function issueBloodBagAction(payload: {
   patient_name?: string;
   cross_match_result: "compatible" | "incompatible";
 }): Promise<{ success: boolean; error?: string }> {
+  if (payload.cross_match_result !== "compatible") {
+    return { success: false, error: "রক্তের ব্যাগ রোগীটির সাথে ইনকম্প্যাটিবল (Incompatible). ক্রস-ম্যাচ ব্যতীত রক্ত প্রদান নিষিদ্ধ।" };
+  }
+
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
   try {
-    if (payload.cross_match_result !== "compatible") {
-      return { success: false, error: "রক্তের ব্যাগ রোগীটির সাথে ইনকম্প্যাটিবল (Incompatible). ক্রস-ম্যাচ ব্যতীত রক্ত প্রদান নিষিদ্ধ।" };
+    await requirePermission(PERMISSIONS.BLOOD_BANK_MANAGE);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: blood_bank.manage required" };
+  }
+
+  try {
+    const supabase = createClient();
+
+    // Verify patient belongs to this organization
+    const { data: patient, error: pErr } = await supabase
+      .from("patients")
+      .select("id")
+      .eq("id", payload.patient_id)
+      .eq("organization_id", session.organizationId)
+      .maybeSingle();
+
+    if (pErr || !patient) {
+      return { success: false, error: "Patient not found in this organization." };
     }
 
-    const session = await getCurrentUserSession();
-    const supabase = createClient();
     const { data: updated, error } = await supabase
       .from("blood_inventory")
       .update({
@@ -305,6 +176,7 @@ export async function issueBloodBagAction(payload: {
 
     return { success: true };
   } catch (err: unknown) {
+    console.error("[BloodBankActions] issueBloodBagAction error:", err);
     const msg = err instanceof Error ? err.message : "Failed to issue blood bag.";
     return { success: false, error: msg };
   }
