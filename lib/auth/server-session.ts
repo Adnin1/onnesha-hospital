@@ -52,11 +52,24 @@ export async function getServerUserSession(): Promise<ServerUserSessionState> {
       .eq("id", user.id)
       .single();
 
-    if (profileError || !profile || profile.status === "inactive" || profile.status === "suspended") {
+    if (
+      profileError ||
+      !profile ||
+      profile.is_active === false ||
+      profile.status === "inactive" ||
+      profile.status === "suspended" ||
+      (profile as Record<string, unknown>).account_status === "SUSPENDED"
+    ) {
       return EMPTY_SERVER_SESSION;
     }
 
-    const organizationId = profile.organization_id || null;
+    // Active organization is authoritative for tenant authorization scope
+    const organizationId =
+      profile.active_organization_id || profile.organization_id || null;
+
+    if (!organizationId) {
+      return EMPTY_SERVER_SESSION;
+    }
 
     // 2. Resolve MFA assurance level
     let aalLevel: "aal1" | "aal2" | null = "aal1";
@@ -83,6 +96,7 @@ export async function getServerUserSession(): Promise<ServerUserSessionState> {
       }
     }
 
+    const roleIds: string[] = [];
     if (organizationId) {
       const { data: userRoles } = await supabase
         .from("user_roles")
@@ -91,7 +105,10 @@ export async function getServerUserSession(): Promise<ServerUserSessionState> {
         .eq("organization_id", organizationId);
 
       if (userRoles) {
-        for (const ur of userRoles as unknown as Array<{ roles: { name: string } | null }>) {
+        for (const ur of userRoles as unknown as Array<{ role_id: string; roles: { name: string } | null }>) {
+          if (ur.role_id) {
+            roleIds.push(ur.role_id);
+          }
           if (ur.roles?.name) {
             const normalized = normalizeRole(ur.roles.name);
             if (normalized && !roles.includes(normalized as RoleType)) {
@@ -102,8 +119,26 @@ export async function getServerUserSession(): Promise<ServerUserSessionState> {
       }
     }
 
-    // 4. Resolve permissions for active roles
+    // 4. Resolve permissions for active roles (DB permissions + fallback role permissions)
     const permissionSet = new Set<string>();
+
+    // 4a. Database-defined permissions
+    if (roleIds.length > 0) {
+      const { data: permRecords, error: permError } = await supabase
+        .from("role_permissions")
+        .select("permission_key")
+        .in("role_id", roleIds);
+
+      if (!permError && permRecords) {
+        for (const record of permRecords as Array<{ permission_key: string }>) {
+          if (record.permission_key) {
+            permissionSet.add(record.permission_key);
+          }
+        }
+      }
+    }
+
+    // 4b. Default role permissions merge
     for (const role of roles) {
       const rolePerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[role];
       if (rolePerms) {

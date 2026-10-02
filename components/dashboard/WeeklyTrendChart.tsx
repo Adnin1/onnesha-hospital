@@ -9,24 +9,16 @@ export interface WeeklyDataPoint {
   count: number;
 }
 
-const DEFAULT_WEEKLY_DATA: WeeklyDataPoint[] = [
-  { day: "Mon", bnDay: "সোম", count: 78 },
-  { day: "Tue", bnDay: "মঙ্গল", count: 92 },
-  { day: "Wed", bnDay: "বুধ", count: 88 },
-  { day: "Thu", bnDay: "বৃহঃ", count: 82 },
-  { day: "Fri", bnDay: "শুক্র", count: 95 },
-  { day: "Sat", bnDay: "শনি", count: 110 },
-  { day: "Sun", bnDay: "রবি", count: 124 },
-];
-
 export function WeeklyTrendChart({
-  data = DEFAULT_WEEKLY_DATA,
-  todayCount = 124,
+  data = [],
+  todayCount = 0,
 }: {
   data?: WeeklyDataPoint[];
   todayCount?: number;
 }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const hasData = data.length > 1 && data.some((d) => d.count > 0);
 
   // SVG Chart Dimensions
   const width = 500;
@@ -34,15 +26,22 @@ export function WeeklyTrendChart({
   const paddingX = 35;
   const paddingY = 30;
 
-  const minCount = Math.min(...data.map((d) => d.count), 50);
-  const maxCount = Math.max(...data.map((d) => d.count), todayCount, 130);
+  const minCount = hasData ? Math.min(...data.map((d) => d.count)) : 0;
+  const maxCount = hasData ? Math.max(...data.map((d) => d.count), todayCount, 1) : 1;
 
   // Map data to coordinate points
-  const points = data.map((d, index) => {
-    const x = paddingX + (index * (width - 2 * paddingX)) / (data.length - 1);
-    const y = height - paddingY - ((d.count - minCount) / (maxCount - minCount || 1)) * (height - 2 * paddingY);
-    return { x, y, ...d };
-  });
+  const points = hasData
+    ? data.map((d, index) => {
+        const x = paddingX + (index * (width - 2 * paddingX)) / (data.length - 1);
+        const y = height - paddingY - ((d.count - minCount) / (maxCount - minCount || 1)) * (height - 2 * paddingY);
+        return { x, y, ...d };
+      })
+    : [];
+
+  const avgDaily =
+    data.length > 0
+      ? Math.round(data.reduce((acc, d) => acc + d.count, 0) / data.length)
+      : todayCount;
 
   // Generate smooth SVG Catmull-Rom or cubic Bezier path
   const generateSmoothPath = (pts: { x: number; y: number }[]) => {
@@ -65,9 +64,9 @@ export function WeeklyTrendChart({
   };
 
   const linePath = generateSmoothPath(points);
-  const firstPoint = points[0];
-  const lastPoint = points[points.length - 1];
-  const areaPath = `${linePath} L ${lastPoint.x},${height - paddingY} L ${firstPoint.x},${height - paddingY} Z`;
+  const firstPoint = points[0] || { x: paddingX, y: height - paddingY };
+  const lastPoint = points[points.length - 1] || { x: width - paddingX, y: height - paddingY };
+  const areaPath = hasData ? `${linePath} L ${lastPoint.x},${height - paddingY} L ${firstPoint.x},${height - paddingY} Z` : "";
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-slate-300 transition duration-200">
@@ -75,10 +74,12 @@ export function WeeklyTrendChart({
         <div>
           <div className="flex items-center space-x-2">
             <h3 className="text-sm font-bold text-slate-900 tracking-tight">Weekly Patient Trend</h3>
-            <span className="inline-flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <TrendingUp className="w-3 h-3 mr-0.5" />
-              +14.8%
-            </span>
+            {hasData && (
+              <span className="inline-flex items-center text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                <TrendingUp className="w-3 h-3 mr-0.5" />
+                ট্রেন্ডিং
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-0.5">গত ৭ দিনের রোগীর প্রবণতা ও আগমনের পরিসংখ্যান</p>
         </div>
@@ -88,13 +89,18 @@ export function WeeklyTrendChart({
         </div>
       </div>
 
-      {/* SVG Canvas */}
-      <div className="relative w-full overflow-hidden">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-auto overflow-visible select-none"
-          preserveAspectRatio="xMidYMid meet"
-        >
+      {/* SVG Canvas or Clean Empty State */}
+      {!hasData ? (
+        <div className="py-14 text-center text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl my-2">
+          কোনো সাপ্তাহিক ট্রেন্ড ডেটা নেই (No weekly trend data available)
+        </div>
+      ) : (
+        <div className="relative w-full overflow-hidden">
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            className="w-full h-auto overflow-visible select-none"
+            preserveAspectRatio="xMidYMid meet"
+          >
           <defs>
             <linearGradient id="patientTrendGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#0284c7" stopOpacity="0.32" />
@@ -222,11 +228,12 @@ export function WeeklyTrendChart({
           })}
         </svg>
       </div>
+      )}
 
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
         <span className="flex items-center">
           <Users className="w-3.5 h-3.5 mr-1 text-sky-600" />
-          গড় দৈনিক রোগী: <strong>৯৬ জন</strong>
+          গড় দৈনিক রোগী: <strong>{avgDaily} জন</strong>
         </span>
         <span className="text-slate-400">সাপ্তাহিক ট্র্যাকার • রিয়েল-টাইম ডেটাবেস সিঙ্ক</span>
       </div>

@@ -1,14 +1,14 @@
 {
-  "version": "1.1.34",
+  "version": "1.1.35",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.34. Total Mock Eradication & Strict Multi-Tenant Release: Complete removal of mock fallback datasets and DEFAULT_ORG_ID across Blood Bank, Critical Care, Radiology, and IPD Bed management; strict 401 fail-closed session guards; and RBAC authorization verification.",
-  "pub_date": "2026-10-02T16:50:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.35. Final Delivery Release: Forensic eradication of mock fallback dashboard metrics and chart literals, corrected today-patient half-open Dhaka day boundary filter, uncapped revenue aggregation, unified multi-tenant server authorization model, and verified live production readiness.",
+  "pub_date": "2026-10-02T22:15:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.34.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.35.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.34.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.35.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0,
       "status": "pending_ci_workflow",

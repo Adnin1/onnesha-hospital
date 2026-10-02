@@ -27,7 +27,8 @@ import { TodayAppointmentsWidget } from "@/components/dashboard/TodayAppointment
 import { RecentPatientsTable } from "@/components/dashboard/RecentPatientsTable";
 import { WaitingQueueItem } from "@/types";
 import { formatCurrencyBDT } from "@/lib/utils";
-import { getDhakaDateString } from "@/lib/datetime";
+import { getDhakaDateString, getDhakaWeekday } from "@/lib/datetime";
+import { APP_VERSION } from "@/lib/version";
 
 export default function HospitalDashboardPage() {
   const [waitingQueue, setWaitingQueue] = useState<WaitingQueueItem[]>([]);
@@ -39,10 +40,14 @@ export default function HospitalDashboardPage() {
     income: false,
     patients: false,
     beds: false,
+    doctors: false,
   });
   const [metrics, setMetrics] = useState({
     todayIncome: 0,
-    totalPatients: 0,
+    todayPatients: 0,
+    totalDoctors: 0,
+    onDutyDoctors: 0,
+    offDutyDoctors: 0,
     availableBeds: 0,
     totalBeds: 0,
     dueAmount: 0,
@@ -57,10 +62,18 @@ export default function HospitalDashboardPage() {
         const { createBrowserClientInstance } = await import("@/lib/supabase/browser");
         const supabase = createBrowserClientInstance();
 
-        // 1. Fetch real patients count via server-side head count
-        const { count: patientCount, error: patientErr } = await supabase
+        // 1. Fetch real today's patients count with bounded Dhaka date boundaries
+        const todayStr = getDhakaDateString();
+        const startOfToday = `${todayStr}T00:00:00+06:00`;
+        const tomorrowObj = new Date(`${todayStr}T00:00:00Z`);
+        tomorrowObj.setUTCDate(tomorrowObj.getUTCDate() + 1);
+        const endOfToday = `${tomorrowObj.toISOString().slice(0, 10)}T00:00:00+06:00`;
+
+        const { count: todayPatientsCount, error: patientErr } = await supabase
           .from("patients")
-          .select("*", { count: "exact", head: true });
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", startOfToday)
+          .lt("created_at", endOfToday);
 
         // 2. Fetch real beds status using server-side index count queries (no full table scans)
         const [totalBedsRes, availableBedsRes] = await Promise.all([
@@ -75,19 +88,31 @@ export default function HospitalDashboardPage() {
         const availableBedsCount = availableBedsRes.count ?? 0;
         const bedsHasError = Boolean(totalBedsRes.error || availableBedsRes.error);
 
-        // 3. Fetch real invoices for today with bounded Dhaka date boundaries (Asia/Dhaka timezone)
-        const todayStr = getDhakaDateString();
-        const startOfToday = `${todayStr}T00:00:00+06:00`;
-        const tomorrowObj = new Date(`${todayStr}T00:00:00Z`);
-        tomorrowObj.setUTCDate(tomorrowObj.getUTCDate() + 1);
-        const endOfToday = `${tomorrowObj.toISOString().slice(0, 10)}T00:00:00+06:00`;
+        // 3. Fetch real doctors and on-duty schedule count
+        const dhakaDayName = getDhakaWeekday();
+        const [doctorsRes, schedulesRes] = await Promise.all([
+          supabase.from("doctors").select("*", { count: "exact", head: true }).eq("is_active", true),
+          supabase
+            .from("doctor_schedules")
+            .select("doctor_id")
+            .eq("day_of_week", dhakaDayName)
+            .eq("is_active", true),
+        ]);
 
+        const totalDoctorsCount = doctorsRes.count ?? 0;
+        const doctorsHasError = Boolean(doctorsRes.error);
+        const onDutyDoctorIds = new Set(
+          (schedulesRes.data || []).map((s: { doctor_id: string }) => s.doctor_id)
+        );
+        const onDutyDoctorsCount = onDutyDoctorIds.size;
+        const offDutyDoctorsCount = Math.max(0, totalDoctorsCount - onDutyDoctorsCount);
+
+        // 4. Fetch real invoices for today without artificial limit cap
         const { data: invoicesData, error: invError } = await supabase
           .from("invoices")
           .select("paid_amount, due_amount")
           .gte("created_at", startOfToday)
-          .lt("created_at", endOfToday)
-          .limit(500);
+          .lt("created_at", endOfToday);
 
         let incomeSum = 0;
         let dueSum = 0;
@@ -99,7 +124,7 @@ export default function HospitalDashboardPage() {
           });
         }
 
-        // 4. Fetch live waiting queue
+        // 5. Fetch live waiting queue
         const { getLiveWaitingQueueAction } = await import("@/lib/appointments/actions");
         const queueRes = await getLiveWaitingQueueAction();
         let mappedQueue: WaitingQueueItem[] = [];
@@ -121,7 +146,10 @@ export default function HospitalDashboardPage() {
         if (isMounted) {
           setMetrics({
             todayIncome: incomeSum,
-            totalPatients: patientCount ?? 0,
+            todayPatients: todayPatientsCount ?? 0,
+            totalDoctors: totalDoctorsCount,
+            onDutyDoctors: onDutyDoctorsCount,
+            offDutyDoctors: offDutyDoctorsCount,
             availableBeds: availableBedsCount,
             totalBeds: totalBedsCount,
             dueAmount: dueSum,
@@ -130,6 +158,7 @@ export default function HospitalDashboardPage() {
             income: Boolean(invError),
             patients: Boolean(patientErr),
             beds: bedsHasError,
+            doctors: doctorsHasError,
           });
           setWaitingQueue(mappedQueue);
           setLastSyncTime(
@@ -209,21 +238,16 @@ export default function HospitalDashboardPage() {
     }
   };
 
-  // Display computation values: real database figures or clinical preview numbers
-  const displayPatientCount = metrics.totalPatients > 0 ? metrics.totalPatients : 124;
+  // Display computation values: real database figures (no fake fallbacks)
+  const displayPatientCount = metricErrors.patients ? "Unavailable" : metrics.todayPatients;
   const displayIncomeValue = metricErrors.income
     ? "Unavailable"
-    : metrics.todayIncome > 0
-    ? formatCurrencyBDT(metrics.todayIncome)
-    : "85,400 ৳";
+    : formatCurrencyBDT(metrics.todayIncome);
   const displayAvailableBeds = metricErrors.beds
     ? "Unavailable"
-    : metrics.totalBeds > 0
-    ? metrics.availableBeds
-    : 12;
-  const displayTotalBeds = metrics.totalBeds > 0 ? metrics.totalBeds : 44;
-  const displayOccupiedBeds =
-    metrics.totalBeds > 0 ? metrics.totalBeds - metrics.availableBeds : 32;
+    : metrics.availableBeds;
+  const displayTotalBeds = metrics.totalBeds;
+  const displayOccupiedBeds = Math.max(0, metrics.totalBeds - metrics.availableBeds);
 
   return (
     <div className="space-y-6">
@@ -298,13 +322,13 @@ export default function HospitalDashboardPage() {
         <StatCard
           title="Today Patients"
           bengaliTitle="আজকের রোগী"
-          value={metricErrors.patients ? "Unavailable" : displayPatientCount}
-          bengaliSubtitle="আজকের রোগী"
+          value={displayPatientCount}
+          bengaliSubtitle="আজকের নিবন্ধিত রোগী"
           icon={Users}
           iconColor="text-sky-600"
           bgColor="bg-sky-100/80"
           cardTheme="sky"
-          trend={{ value: "+12", isPositive: true }}
+          badge={metricErrors.patients ? "Data error" : "লাইভ ট্র্যাকিং"}
           isLoading={isLoading}
         />
 
@@ -318,7 +342,7 @@ export default function HospitalDashboardPage() {
           iconColor="text-emerald-600"
           bgColor="bg-emerald-100/80"
           cardTheme="teal"
-          trend={{ value: "+8.2%", isPositive: true }}
+          badge={metricErrors.income ? "Ledger error" : "আজকের মোট জমা"}
           isLoading={isLoading}
         />
 
@@ -326,13 +350,17 @@ export default function HospitalDashboardPage() {
         <StatCard
           title="Total Doctors"
           bengaliTitle="মোট ডাক্তার"
-          value={18}
-          bengaliSubtitle="মোট ডাক্তার তালিকাভুক্ত"
+          value={metricErrors.doctors ? "Unavailable" : metrics.totalDoctors}
+          bengaliSubtitle="সক্রিয় ডাক্তার তালিকাভুক্ত"
           icon={Stethoscope}
           iconColor="text-blue-600"
           bgColor="bg-blue-100/80"
           cardTheme="blue"
-          badge="5 On Duty • 13 Off Duty"
+          badge={
+            metricErrors.doctors
+              ? "Schedule error"
+              : `${metrics.onDutyDoctors} On Duty • ${metrics.offDutyDoctors} Off Duty`
+          }
           isLoading={isLoading}
         />
 
@@ -346,8 +374,15 @@ export default function HospitalDashboardPage() {
           iconColor="text-indigo-600"
           bgColor="bg-indigo-100/80"
           cardTheme="indigo"
-          badge={metricErrors.beds ? "Ward matrix error" : `${displayOccupiedBeds} Occupied / ${displayTotalBeds} Total`}
-          progress={{ current: displayOccupiedBeds, total: displayTotalBeds }}
+          badge={
+            metricErrors.beds
+              ? "Ward matrix error"
+              : `${displayOccupiedBeds} Occupied / ${displayTotalBeds} Total`
+          }
+          progress={{
+            current: displayOccupiedBeds,
+            total: Math.max(displayTotalBeds, 1),
+          }}
           isLoading={isLoading}
         />
       </div>
@@ -356,14 +391,14 @@ export default function HospitalDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column (8 cols): Trend Chart + Recent Patients */}
         <div className="lg:col-span-7 space-y-6">
-          <WeeklyTrendChart todayCount={Number(displayPatientCount)} />
+          <WeeklyTrendChart todayCount={typeof displayPatientCount === "number" ? displayPatientCount : 0} />
           <RecentPatientsTable />
         </div>
 
         {/* Right Column (5 cols): Today's Appointments + Department Donut */}
         <div className="lg:col-span-5 space-y-6">
           <TodayAppointmentsWidget />
-          <DepartmentDistributionChart totalCount={Number(displayPatientCount)} />
+          <DepartmentDistributionChart totalCount={typeof displayPatientCount === "number" ? displayPatientCount : 0} />
         </div>
       </div>
 
@@ -434,7 +469,7 @@ export default function HospitalDashboardPage() {
               <span>View Audit Logs & Settings</span>
               <span className="ml-1">→</span>
             </Link>
-            <span className="text-[10px] text-slate-400 font-mono">v1.1.5</span>
+            <span className="text-[10px] text-slate-400 font-mono">{APP_VERSION}</span>
           </div>
         </div>
       </div>

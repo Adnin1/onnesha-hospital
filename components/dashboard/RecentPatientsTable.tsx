@@ -15,51 +15,8 @@ export interface RecentPatientRecord {
   status: "Admitted" | "Ongoing" | "Discharged";
 }
 
-const DEFAULT_RECENT_PATIENTS: RecentPatientRecord[] = [
-  {
-    id: "p1",
-    patientId: "PID-1024",
-    name: "Rahim Uddin",
-    age: "45y",
-    gender: "M",
-    department: "Cardiology",
-    visitTime: "09:15 AM",
-    status: "Admitted",
-  },
-  {
-    id: "p2",
-    patientId: "PID-1023",
-    name: "Fatema Khatun",
-    age: "32y",
-    gender: "F",
-    department: "Gynaecology",
-    visitTime: "10:20 AM",
-    status: "Ongoing",
-  },
-  {
-    id: "p3",
-    patientId: "PID-1022",
-    name: "Md. Hasan",
-    age: "58y",
-    gender: "M",
-    department: "Medicine",
-    visitTime: "11:05 AM",
-    status: "Discharged",
-  },
-  {
-    id: "p4",
-    patientId: "PID-1021",
-    name: "Salma Akter",
-    age: "27y",
-    gender: "F",
-    department: "Paediatrics",
-    visitTime: "11:40 AM",
-    status: "Admitted",
-  },
-];
-
 export function RecentPatientsTable({
-  patients = DEFAULT_RECENT_PATIENTS,
+  patients = [],
 }: {
   patients?: RecentPatientRecord[];
 }) {
@@ -96,50 +53,58 @@ export function RecentPatientsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {patients.map((p) => {
-              const isAdmitted = p.status === "Admitted";
-              const isOngoing = p.status === "Ongoing";
+            {patients.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
+                  কোনো সাম্প্রতিক রোগী রেকর্ড পাওয়া যায়নি (No recent patient visits recorded)
+                </td>
+              </tr>
+            ) : (
+              patients.map((p) => {
+                const isAdmitted = p.status === "Admitted";
+                const isOngoing = p.status === "Ongoing";
 
-              return (
-                <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-2.5 px-3 font-mono font-semibold text-slate-800 text-[11px]">
-                    {p.patientId}
-                  </td>
-                  <td className="py-2.5 px-3 font-bold text-slate-900">
-                    {p.name}
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-500">
-                    {p.age} {p.gender ? `(${p.gender})` : ""}
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-700 font-medium">
-                    {p.department}
-                  </td>
-                  <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500">
-                    {p.visitTime}
-                  </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <span
-                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${
-                        isAdmitted
-                          ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                          : isOngoing
-                          ? "bg-amber-100 text-amber-800 border border-amber-200"
-                          : "bg-slate-100 text-slate-700 border border-slate-200"
-                      }`}
-                    >
-                      {p.status}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
+                return (
+                  <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-2.5 px-3 font-mono font-semibold text-slate-800 text-[11px]">
+                      {p.patientId}
+                    </td>
+                    <td className="py-2.5 px-3 font-bold text-slate-900">
+                      {p.name}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-500">
+                      {p.age} {p.gender ? `(${p.gender})` : ""}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-700 font-medium">
+                      {p.department}
+                    </td>
+                    <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500">
+                      {p.visitTime}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase ${
+                          isAdmitted
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                            : isOngoing
+                            ? "bg-amber-100 text-amber-800 border border-amber-200"
+                            : "bg-slate-100 text-slate-700 border border-slate-200"
+                        }`}
+                      >
+                        {p.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
 
       <div className="flex items-center justify-between mt-3 text-[11px] text-slate-400">
         <span>সক্রিয় পেশেন্ট কিউ ট্র্যাকার</span>
-        <span>মোট ৪ জন সাম্প্রতিক রোগী তালিকাভুক্ত</span>
+        <span>মোট {patients.length} জন সাম্প্রতিক রোগী তালিকাভুক্ত</span>
       </div>
     </div>
   );
