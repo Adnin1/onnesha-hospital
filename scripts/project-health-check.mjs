@@ -76,12 +76,13 @@ try {
       if (diffFiles) {
         const files = diffFiles.split('\n').map(f => f.trim()).filter(Boolean);
         isDocsOnly = files.every(f =>
-          f.startsWith('docs/') || f.startsWith('CHANGELOG') || f.startsWith('README') || f.endsWith('.md')
+          f.startsWith('docs/') || f.startsWith('scripts/') || f.startsWith('tests/') ||
+          f.startsWith('CHANGELOG') || f.startsWith('README') || f.endsWith('.md')
         );
       }
     } catch { /* diff check failed, treat as non-docs */ }
     if (isDocsOnly) {
-      pass(`HEAD (${headCommit.slice(0, 8)}) is docs-only ahead of v${pkg.version} tag (${tagCommit.slice(0, 8)}) — no code change`);
+      pass(`HEAD (${headCommit.slice(0, 8)}) is non-production ahead of v${pkg.version} tag (${tagCommit.slice(0, 8)}) — no app code change`);
     } else {
       warn(`HEAD (${headCommit.slice(0, 8)}) ≠ v${pkg.version} tag (${tagCommit.slice(0, 8)}) — tag needs update or version bump`);
     }
