@@ -52,7 +52,7 @@ test("Phase 42 - ERP Double-Entry Accounting & General Ledger Invariants", async
     assert.match(actionsCode, /export async function getJournalEntriesAction/);
     assert.match(actionsCode, /export async function postJournalEntryAction/);
     assert.match(actionsCode, /export async function getTrialBalanceAction/);
-    assert.match(actionsCode, /Math\.abs\(totalDebit - totalCredit\) > 0\.001/);
+    assert.match(actionsCode, /totalDebitPaisa !== totalCreditPaisa/);
     assert.match(actionsCode, /post_journal_entry_atomic/);
   });
 

@@ -296,11 +296,12 @@ export async function assignBedAction(params: {
         .from("beds")
         .update({ status: "OCCUPIED" })
         .eq("id", params.bedId)
+        .eq("organization_id", orgId)
         .eq("status", "VACANT")
         .select();
 
       if (!updatedBed || updatedBed.length === 0) {
-        const { data: existingBed } = await supabase.from("beds").select("status").eq("id", params.bedId).maybeSingle();
+        const { data: existingBed } = await supabase.from("beds").select("status").eq("id", params.bedId).eq("organization_id", orgId).maybeSingle();
         if (existingBed && existingBed.status !== "VACANT") {
           return { success: false, error: "Selected bed is not vacant or has been assigned concurrently." };
         }
@@ -310,11 +311,12 @@ export async function assignBedAction(params: {
         .from("cabins")
         .update({ status: "OCCUPIED" })
         .eq("id", params.cabinId)
+        .eq("organization_id", orgId)
         .eq("status", "VACANT")
         .select();
 
       if (!updatedCabin || updatedCabin.length === 0) {
-        const { data: existingCabin } = await supabase.from("cabins").select("status").eq("id", params.cabinId).maybeSingle();
+        const { data: existingCabin } = await supabase.from("cabins").select("status").eq("id", params.cabinId).eq("organization_id", orgId).maybeSingle();
         if (existingCabin && existingCabin.status !== "VACANT") {
           return { success: false, error: "Selected cabin is not vacant or has been assigned concurrently." };
         }
@@ -405,7 +407,8 @@ export async function vacateBedAction(params: {
           vacated_at: new Date().toISOString(),
           status: "VACATED",
         })
-        .eq("id", params.assignmentId);
+        .eq("id", params.assignmentId)
+        .eq("organization_id", orgId);
     } else if (params.bedId) {
       await supabase
         .from("bed_assignments")
@@ -414,15 +417,16 @@ export async function vacateBedAction(params: {
           status: "VACATED",
         })
         .eq("bed_id", params.bedId)
+        .eq("organization_id", orgId)
         .eq("status", "ACTIVE");
     }
 
     // Update bed or cabin to CLEANING
     if (params.bedId) {
-      await supabase.from("beds").update({ status: "CLEANING" }).eq("id", params.bedId);
+      await supabase.from("beds").update({ status: "CLEANING" }).eq("id", params.bedId).eq("organization_id", orgId);
     }
     if (params.cabinId) {
-      await supabase.from("cabins").update({ status: "CLEANING" }).eq("id", params.cabinId);
+      await supabase.from("cabins").update({ status: "CLEANING" }).eq("id", params.cabinId).eq("organization_id", orgId);
     }
 
     // Audit log
@@ -478,7 +482,8 @@ export async function updateBedStatusAction(params: {
     await supabase
       .from("beds")
       .update({ status: params.status })
-      .eq("id", params.bedId);
+      .eq("id", params.bedId)
+      .eq("organization_id", orgId);
 
     await recordAuditLog({
       organizationId: orgId,
@@ -566,7 +571,8 @@ export async function updateCabinStatusAction(params: {
     await supabase
       .from("cabins")
       .update({ status: params.status })
-      .eq("id", params.cabinId);
+      .eq("id", params.cabinId)
+      .eq("organization_id", orgId);
 
     await recordAuditLog({
       organizationId: orgId,

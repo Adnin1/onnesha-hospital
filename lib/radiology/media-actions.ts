@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { getCurrentUserSession } from "@/lib/auth/session";
 
 export interface RadiologyMediaStock {
   id: string;
@@ -17,10 +18,12 @@ export async function getRadiologyMediaStockAction(): Promise<{
   error?: string;
 }> {
   try {
+    const session = await getCurrentUserSession();
     const supabase = createClient();
     const { data, error } = await supabase
       .from("radiology_media_stock")
       .select("*")
+      .eq("organization_id", session.organizationId)
       .order("media_type", { ascending: true });
 
     if (error) throw error;
@@ -55,19 +58,29 @@ export async function recordMediaConsumptionAction(params: {
     if (insertErr) throw insertErr;
 
     // Adjust balance in stock
+    const session = await getCurrentUserSession();
     const { data: currentStock } = await supabase
       .from("radiology_media_stock")
       .select("current_quantity")
       .eq("id", params.media_id)
+      .eq("organization_id", session.organizationId)
       .single();
 
     if (currentStock) {
-      await supabase
+      const { data: updatedRows, error: updateErr } = await supabase
         .from("radiology_media_stock")
         .update({
           current_quantity: Math.max(0, currentStock.current_quantity - params.quantity_used),
         })
-        .eq("id", params.media_id);
+        .eq("id", params.media_id)
+        .eq("organization_id", session.organizationId)
+        .eq("current_quantity", currentStock.current_quantity)
+        .select();
+
+      if (updateErr) throw updateErr;
+      if (!updatedRows || updatedRows.length !== 1) {
+        throw new Error("Concurrency conflict or lost update");
+      }
     }
 
     return { success: true };

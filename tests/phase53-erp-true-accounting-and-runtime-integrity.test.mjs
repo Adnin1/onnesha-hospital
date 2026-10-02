@@ -132,7 +132,7 @@ test("Phase 53 - ERP True Accounting, Transaction Ordering & Database Integrity"
   });
 
   await t.test("12. Client-Side Double-Entry Mathematical Invariant Validation", () => {
-    assert.match(actionsCode, /Math\.abs\(totalDebit - totalCredit\) > 0\.001/);
+    assert.match(actionsCode, /totalDebitPaisa !== totalCreditPaisa/);
     assert.match(actionsCode, /Unbalanced journal entry: Total Debit/);
     assert.match(actionsCode, /Each line must have debit > 0 XOR credit > 0/);
   });

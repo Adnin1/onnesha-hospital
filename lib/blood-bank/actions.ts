@@ -229,7 +229,7 @@ export async function registerBloodBagAction(payload: {
     const orgId = session.organizationId || DEFAULT_ORG_ID;
 
     const supabase = createClient();
-    const { data: inserted } = await supabase
+    const { data: inserted, error } = await supabase
       .from("blood_inventory")
       .insert({
         organization_id: orgId,
@@ -245,7 +245,11 @@ export async function registerBloodBagAction(payload: {
       .select()
       .single();
 
-    const bagId = inserted ? inserted.id : `bag-${Date.now()}`;
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const bagId = inserted.id;
     const newBag: BloodBagItem = {
       id: bagId,
       organization_id: orgId,
@@ -279,13 +283,24 @@ export async function issueBloodBagAction(payload: {
       return { success: false, error: "রক্তের ব্যাগ রোগীটির সাথে ইনকম্প্যাটিবল (Incompatible). ক্রস-ম্যাচ ব্যতীত রক্ত প্রদান নিষিদ্ধ।" };
     }
 
+    const session = await getCurrentUserSession();
     const supabase = createClient();
-    await supabase
+    const { data: updated, error } = await supabase
       .from("blood_inventory")
       .update({
         status: "issued",
       })
-      .eq("id", payload.bag_id);
+      .eq("id", payload.bag_id)
+      .eq("organization_id", session.organizationId)
+      .eq("status", "available")
+      .select();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    if (!updated || updated.length !== 1) {
+      return { success: false, error: "Blood bag is not available or does not exist." };
+    }
 
     return { success: true };
   } catch (err: unknown) {

@@ -110,6 +110,19 @@ export async function createAccountAction(input: {
 
   try {
     const supabase = await createClient();
+    
+    if (input.parent_account_id) {
+      const { data: parentAcc } = await supabase
+        .from("chart_of_accounts")
+        .select("organization_id")
+        .eq("id", input.parent_account_id)
+        .single();
+        
+      if (!parentAcc || parentAcc.organization_id !== session.organizationId) {
+        return { success: false, error: "Invalid parent account or cross-tenant access denied." };
+      }
+    }
+
     const payload = {
       organization_id: session.organizationId,
       account_code: input.account_code.trim(),
@@ -285,10 +298,13 @@ export async function postJournalEntryAction(input: {
   const totalDebit = input.lines.reduce((acc, l) => acc + (Number(l.debit) || 0), 0);
   const totalCredit = input.lines.reduce((acc, l) => acc + (Number(l.credit) || 0), 0);
 
-  if (Math.abs(totalDebit - totalCredit) > 0.001) {
+  const totalDebitPaisa = input.lines.reduce((acc, l) => acc + Math.round((Number(l.debit) || 0) * 100), 0);
+  const totalCreditPaisa = input.lines.reduce((acc, l) => acc + Math.round((Number(l.credit) || 0) * 100), 0);
+
+  if (totalDebitPaisa !== totalCreditPaisa) {
     return {
       success: false,
-      error: `Unbalanced journal entry: Total Debit (${totalDebit.toFixed(2)}) does not equal Total Credit (${totalCredit.toFixed(2)})`,
+      error: `Unbalanced journal entry: Total Debit (${(totalDebitPaisa / 100).toFixed(2)}) does not equal Total Credit (${(totalCreditPaisa / 100).toFixed(2)})`,
     };
   }
 

@@ -145,6 +145,7 @@ export async function createInvoiceAction(params: {
       .from("patients")
       .select("id, patient_code, full_name, phone, gender")
       .eq("id", params.patientId)
+      .eq("organization_id", session.organizationId)
       .single();
 
     if (!patient) {
@@ -401,8 +402,8 @@ export async function voidInvoiceAction(params: {
     return { success: false, error: "403 Forbidden: billing.manage required" };
   }
 
-  if (!params.reason.trim()) {
-    return { success: false, error: "Void reason is required for supervisory audit." };
+  if (params.reason.trim().length < 5) {
+    return { success: false, error: "Void reason is required for supervisory audit and must be at least 5 characters long." };
   }
 
   try {

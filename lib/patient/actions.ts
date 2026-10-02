@@ -139,34 +139,37 @@ export async function registerPatientAction(formData: {
 
     // Insert Identification if provided
     if (formData.nid) {
-      await supabase.from("patient_identifications").insert({
+      const { error: nidErr } = await supabase.from("patient_identifications").insert({
         patient_id: newPatient.id,
         id_type: "NID",
         id_number: formData.nid.trim().replace(/[\s-]/g, ""),
         is_verified: false,
       });
+      if (nidErr) console.error("Failed to insert patient NID", nidErr);
     }
 
     // Insert Address if provided
     if (formData.address) {
-      await supabase.from("patient_addresses").insert({
+      const { error: addrErr } = await supabase.from("patient_addresses").insert({
         patient_id: newPatient.id,
         address_type: "PRESENT",
         street_address: formData.address.trim(),
         district: null,
         division: null,
       });
+      if (addrErr) console.error("Failed to insert patient address", addrErr);
     }
 
     // Insert Emergency Contact if provided
     if (formData.emergencyName && formData.emergencyPhone) {
-      await supabase.from("patient_contacts").insert({
+      const { error: contactErr } = await supabase.from("patient_contacts").insert({
         patient_id: newPatient.id,
         contact_name: formData.emergencyName.trim(),
         relationship: formData.emergencyRelation || "Guardian",
         phone: normalizeBDPhone(formData.emergencyPhone),
         is_primary_emergency: true,
       });
+      if (contactErr) console.error("Failed to insert patient contact", contactErr);
     }
 
     // Record Immutable Audit Log
@@ -607,6 +610,9 @@ export async function recordVitalsAction(params: {
   try {
     const supabase = await createClient();
 
+    const { data: visitCheck, error: vCheckErr } = await supabase.from('patient_visits').select('id').eq('id', params.visitId).eq('organization_id', session.organizationId).single();
+    if (vCheckErr || !visitCheck) return { success: false, error: 'Visit not found in your organization.' };
+
     const { data: newVitals, error } = await supabase
       .from("vital_signs")
       .insert({
@@ -671,6 +677,9 @@ export async function recordDiagnosisAction(params: {
   try {
     const supabase = await createClient();
 
+    const { data: patientCheck, error: pCheckErr } = await supabase.from('patients').select('id').eq('id', params.patientId).eq('organization_id', session.organizationId).single();
+    if (pCheckErr || !patientCheck) return { success: false, error: 'Patient not found in your organization.' };
+
     const { data: newDiag, error } = await supabase
       .from("patient_diagnoses")
       .insert({
@@ -730,6 +739,9 @@ export async function createClinicalNoteAction(params: {
 
   try {
     const supabase = await createClient();
+
+    const { data: patientCheck, error: pCheckErr } = await supabase.from('patients').select('id').eq('id', params.patientId).eq('organization_id', session.organizationId).single();
+    if (pCheckErr || !patientCheck) return { success: false, error: 'Patient not found in your organization.' };
 
     const { data: newNote, error } = await supabase
       .from("clinical_notes")
@@ -841,6 +853,7 @@ export async function createIpdAdmissionAction(params: {
       await supabase
         .from("beds")
         .update({ status: "OCCUPIED" })
+        .eq("organization_id", session.organizationId)
         .eq("id", params.bedId);
     }
 
@@ -901,6 +914,7 @@ export async function dischargePatientAction(params: {
       .from("patient_visits")
       .select("id, status, patient_id")
       .eq("id", params.visitId)
+      .eq("organization_id", session.organizationId)
       .single();
 
     if (vErr || !visit) {
@@ -946,6 +960,7 @@ export async function dischargePatientAction(params: {
       .from("bed_assignments")
       .select("id, bed_id")
       .eq("visit_id", params.visitId)
+      .eq("organization_id", session.organizationId)
       .eq("status", "ACTIVE")
       .single();
 
@@ -953,12 +968,14 @@ export async function dischargePatientAction(params: {
       await supabase
         .from("bed_assignments")
         .update({ status: "DISCHARGED", discharged_at: new Date().toISOString() })
+        .eq("organization_id", session.organizationId)
         .eq("id", bedAssign.id);
 
       if (bedAssign.bed_id) {
         await supabase
           .from("beds")
           .update({ status: "VACANT" })
+          .eq("organization_id", session.organizationId)
           .eq("id", bedAssign.bed_id);
       }
     }
@@ -1023,6 +1040,7 @@ export async function transferPatientAction(params: {
       .from("beds")
       .select("id, status, bed_number")
       .eq("id", params.toBedId)
+      .eq("organization_id", session.organizationId)
       .single();
 
     if (tbErr || !targetBed) {
@@ -1060,6 +1078,7 @@ export async function transferPatientAction(params: {
       await supabase
         .from("bed_assignments")
         .update({ status: "TRANSFERRED", discharged_at: new Date().toISOString() })
+        .eq("organization_id", session.organizationId)
         .eq("visit_id", params.visitId)
         .eq("bed_id", params.fromBedId)
         .eq("status", "ACTIVE");
@@ -1067,6 +1086,7 @@ export async function transferPatientAction(params: {
       await supabase
         .from("beds")
         .update({ status: "CLEANING_REQUIRED" })
+        .eq("organization_id", session.organizationId)
         .eq("id", params.fromBedId);
     }
 
@@ -1084,6 +1104,7 @@ export async function transferPatientAction(params: {
     await supabase
       .from("beds")
       .update({ status: "OCCUPIED" })
+      .eq("organization_id", session.organizationId)
       .eq("id", params.toBedId);
 
     // Audit Log

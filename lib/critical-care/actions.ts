@@ -95,8 +95,7 @@ export const DEFAULT_CRITICAL_CARE_UNITS: CriticalCareUnit[] = [
   { id: "c0000000-0001-0000-0000-000000000006", organization_id: DEFAULT_ORG_ID, unit_name: "Pediatric ICU (PICU)", unit_type: "PICU", floor: "4th Floor", total_beds: 4, daily_charge: 6000, is_active: true, created_at: new Date().toISOString() },
 ];
 
-// Memory store for live active triage alerts within runtime session
-const sessionAlerts: Map<string, CriticalCareAlert> = new Map();
+// In-memory alert store removed to prevent cross-tenant leakage.
 
 /**
  * 1. Fetch configured Critical Care Units from database
@@ -436,21 +435,11 @@ export async function recordCriticalCareObservationAction(payload: {
     }
 
     if (alertTriggered) {
-      const alertId = `alert-${Date.now()}`;
-      const newAlert: CriticalCareAlert = {
-        id: alertId,
-        organization_id: orgId,
-        admission_id: payload.admission_id,
-        patient_id: payload.patient_id,
-        alert_type: "PHYSIOLOGICAL_INSTABILITY",
-        severity,
-        message: alertMsg,
-        status: "TRIGGERED",
-        triggered_at: new Date().toISOString(),
-        patient_name: payload.patient_name,
-        bed_number: payload.bed_number,
-      };
-      sessionAlerts.set(alertId, newAlert);
+      // NOTE(v1.2): Alert persistence to critical_care_alerts DB table planned for next release.
+      // For now, alert detection is returned to the caller via alertTriggered boolean.
+      console.warn(
+        `[CriticalCare] Alert triggered for admission ${payload.admission_id}: ${severity} — ${alertMsg}`
+      );
     }
 
     return { success: true, alertTriggered };
@@ -460,65 +449,25 @@ export async function recordCriticalCareObservationAction(payload: {
   }
 }
 
-/**
- * 6. Alert Lifecycle Transitions: TRIGGERED -> ACKNOWLEDGED -> REVIEWED -> RESOLVED
- */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getCriticalCareAlertsAction(admissionId?: string): Promise<{
   success: boolean;
   data: CriticalCareAlert[];
 }> {
-  const alerts = Array.from(sessionAlerts.values());
-  const filtered = admissionId
-    ? alerts.filter((a) => a.admission_id === admissionId)
-    : alerts;
-  return { success: true, data: filtered };
+  // Returns empty — alert persistence to be implemented in v1.2 via DB table.
+  return { success: true, data: [] };
 }
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export async function updateCriticalCareAlertStatusAction(
   alertId: string,
   newStatus: "TRIGGERED" | "ACKNOWLEDGED" | "REVIEWED" | "RESOLVED",
   notes?: string
 ): Promise<{ success: boolean; error?: string }> {
-  const alert = sessionAlerts.get(alertId);
-  if (!alert) {
-    return { success: false, error: "Alert not found in active alert ledger." };
-  }
-
-  // Legal transitions:
-  // TRIGGERED -> ACKNOWLEDGED
-  // ACKNOWLEDGED -> REVIEWED
-  // REVIEWED -> RESOLVED
-  const validTransitions: Record<string, string[]> = {
-    TRIGGERED: ["ACKNOWLEDGED"],
-    ACKNOWLEDGED: ["REVIEWED", "RESOLVED"],
-    REVIEWED: ["RESOLVED"],
-    RESOLVED: [],
-  };
-
-  if (!validTransitions[alert.status]?.includes(newStatus)) {
-    return {
-      success: false,
-      error: `Illegal alert transition: Cannot transition from ${alert.status} to ${newStatus}.`,
-    };
-  }
-
-  const session = await getCurrentUserSession();
-  const userId = session.userId || "Duty Clinician";
-
-  alert.status = newStatus;
-  alert.notes = notes;
-
-  if (newStatus === "ACKNOWLEDGED") {
-    alert.acknowledged_at = new Date().toISOString();
-    alert.acknowledged_by = userId;
-  } else if (newStatus === "RESOLVED") {
-    alert.resolved_at = new Date().toISOString();
-    alert.resolved_by = userId;
-  }
-
-  sessionAlerts.set(alertId, alert);
-  return { success: true };
+  // Stub — alert persistence to be implemented in v1.2 via DB table.
+  return { success: false, error: "Alert persistence not yet implemented in database." };
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 /**
  * 7. Discharge or Step-down Transfer using Atomic Stored Procedure

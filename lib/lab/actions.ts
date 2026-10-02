@@ -487,7 +487,7 @@ export async function getAllDiagnosticTestsAction(): Promise<
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.warn("[Lab Action] DB fetch warning:", error.message);
+      return { success: false, error: error.message };
     }
 
     if (data && data.length > 0) {
@@ -589,19 +589,7 @@ export async function createDiagnosticTestAction(params: {
       .single();
 
     if (error) {
-      console.warn("[Lab Action] DB insert fallback:", error.message);
-      const mockItem: DiagnosticTestItem = {
-        id: crypto.randomUUID(),
-        test_name: newRecord.test_name,
-        test_code: newRecord.test_code,
-        category_name: params.category_name || "General",
-        specimen_type: newRecord.specimen_type,
-        price: newRecord.price,
-        delivery_turnaround_hours: newRecord.delivery_turnaround_hours,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-      return { success: true, data: { test: mockItem } };
+      return { success: false, error: error.message };
     }
 
     try {

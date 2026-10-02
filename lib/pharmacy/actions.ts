@@ -298,6 +298,7 @@ export async function dispensePharmacySaleAction(params: {
       .from("medicine_batches")
       .select("id, current_stock, mrp, batch_number")
       .eq("id", params.batchId)
+      .eq("organization_id", session.organizationId)
       .single();
 
     if (!batch) {
@@ -323,10 +324,16 @@ export async function dispensePharmacySaleAction(params: {
     const saleNumber = saleNumData as string;
 
     // 2. Deduct Batch Stock
-    await supabase
+    const { data: updatedBatch } = await supabase
       .from("medicine_batches")
       .update({ current_stock: newStock })
-      .eq("id", batch.id);
+      .eq("id", batch.id)
+      .eq("current_stock", batch.current_stock)
+      .select();
+
+    if (!updatedBatch || updatedBatch.length === 0) {
+      return { success: false, error: "Stock was modified concurrently. Please try again." };
+    }
 
     // 3. Record Pharmacy Sale
     const { data: sale, error: saleErr } = await supabase

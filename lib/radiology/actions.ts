@@ -216,7 +216,7 @@ export async function createRadiologyStudyAction(payload: {
     const userId = session.userId || "usr-doctor";
 
     const supabase = createClient();
-    const { data: inserted } = await supabase
+    const { data: inserted, error } = await supabase
       .from("radiology_studies")
       .insert({
         organization_id: orgId,
@@ -230,7 +230,11 @@ export async function createRadiologyStudyAction(payload: {
       .select()
       .single();
 
-    const studyId = inserted ? inserted.id : `study-${Date.now()}`;
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const studyId = inserted.id;
     const newStudy: RadiologyStudy = {
       id: studyId,
       organization_id: orgId,
@@ -288,7 +292,8 @@ export async function approveRadiologyReportAction(payload: {
         status: "approved",
         approved_at: new Date().toISOString(),
       })
-      .eq("id", payload.study_id);
+      .eq("id", payload.study_id)
+      .eq("organization_id", session.organizationId);
 
     return { success: true };
   } catch (err: unknown) {
