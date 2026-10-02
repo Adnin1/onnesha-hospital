@@ -69,7 +69,22 @@ try {
   if (headCommit === tagCommit) {
     pass(`HEAD matches v${pkg.version} tag (${headCommit.slice(0, 8)})`);
   } else {
-    warn(`HEAD (${headCommit.slice(0, 8)}) ≠ v${pkg.version} tag (${tagCommit.slice(0, 8)}) — tag needs update or version bump`);
+    // Check if diff between tag and HEAD is docs-only (no code changes)
+    let isDocsOnly = false;
+    try {
+      const diffFiles = execSync(`git diff --name-only "v${pkg.version}^{commit}" HEAD`, { cwd: ROOT, encoding: 'utf8' }).trim();
+      if (diffFiles) {
+        const files = diffFiles.split('\n').map(f => f.trim()).filter(Boolean);
+        isDocsOnly = files.every(f =>
+          f.startsWith('docs/') || f.startsWith('CHANGELOG') || f.startsWith('README') || f.endsWith('.md')
+        );
+      }
+    } catch { /* diff check failed, treat as non-docs */ }
+    if (isDocsOnly) {
+      pass(`HEAD (${headCommit.slice(0, 8)}) is docs-only ahead of v${pkg.version} tag (${tagCommit.slice(0, 8)}) — no code change`);
+    } else {
+      warn(`HEAD (${headCommit.slice(0, 8)}) ≠ v${pkg.version} tag (${tagCommit.slice(0, 8)}) — tag needs update or version bump`);
+    }
   }
 } catch {
   warn(`Tag v${pkg.version} not found — release not yet tagged`);
