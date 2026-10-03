@@ -245,7 +245,16 @@ try {
 console.log('\n📋 12. npm Audit');
 try {
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  execSync(`${npmCmd} audit --audit-level=high --omit=dev`, { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' });
+  const cleanEnv = { ...process.env };
+  for (const k of Object.keys(cleanEnv)) {
+    if (k.startsWith('npm_')) delete cleanEnv[k];
+  }
+  execSync(`${npmCmd} audit --audit-level=high --omit=dev`, {
+    cwd: ROOT,
+    encoding: 'utf8',
+    stdio: 'pipe',
+    env: cleanEnv,
+  });
   pass('npm audit: 0 high/critical vulnerabilities');
 } catch (e) {
   const output = (e.stdout || '') + (e.stderr || '');
