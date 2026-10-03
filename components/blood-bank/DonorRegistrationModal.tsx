@@ -50,9 +50,7 @@ export function DonorRegistrationModal({
     setErrorMsg(null);
 
     const grpCode = bloodGroup.replace("+", "P").replace("-", "N");
-    const bagNum = `BB-${new Date().toISOString().slice(0, 7).replace("-", "")}-${grpCode}${Math.floor(
-      100 + Math.random() * 900
-    )}`;
+    const bagNum = `BB-${new Date().toISOString().slice(0, 7).replace("-", "")}-${grpCode}${(crypto.getRandomValues(new Uint16Array(1))[0] % 900) + 100}`;
 
     const collectionDate = new Date().toISOString().split("T")[0];
     const expiry = new Date(Date.now() + (componentType === "platelets" ? 5 : 42) * 86400000)

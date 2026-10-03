@@ -88,10 +88,7 @@ export function DispatchAmbulanceModal({
     setSubmitting(true);
     setErrorMsg(null);
 
-    const randSuffix =
-      typeof crypto !== "undefined" && crypto.getRandomValues
-        ? (crypto.getRandomValues(new Uint32Array(1))[0] % 9000) + 1000
-        : Math.floor(1000 + Math.random() * 9000);
+    const randSuffix = (crypto.getRandomValues(new Uint32Array(1))[0] % 9000) + 1000;
     const tripNum = `TRIP-${new Date().toISOString().slice(0, 7).replace("-", "")}-${randSuffix}`;
 
     const res = await dispatchAmbulanceTripAction({

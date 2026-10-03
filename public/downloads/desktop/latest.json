@@ -1,14 +1,14 @@
 {
-  "version": "1.1.37",
+  "version": "1.1.38",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.37. Forensic eradication of synthetic vehicle/patient fallbacks, cryptographic Web Crypto SHA-256 certificate hashing, verified v1.1.4 historical release reference, and truthful public website operational claims.",
-  "pub_date": "2026-10-03T05:20:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.38. Complete elimination of Math.random across clinical workflows, cryptographic random byte generation, production-hardened npm audit verification, and full test suite passing.",
+  "pub_date": "2026-10-03T18:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.37.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.38.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.37.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.38.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0,
       "status": "pending_ci_workflow",

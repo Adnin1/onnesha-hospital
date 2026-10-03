@@ -83,7 +83,7 @@ export function IssueCertificateModal({
     };
     const prefix = prefixMap[certType] || "MC";
     const dateStr = new Date().toISOString().slice(0, 7).replace("-", "");
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const randomSuffix = (crypto.getRandomValues(new Uint16Array(1))[0] % 9000) + 1000;
     return `OH-${prefix}-${dateStr}-${randomSuffix}`;
   }
 

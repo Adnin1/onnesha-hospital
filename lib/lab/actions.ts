@@ -913,7 +913,7 @@ export async function collectSampleAction(params: {
 
     const sampleBarcode =
       params.barcode?.trim() ||
-      `SMP-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+      `SMP-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${String(crypto.getRandomValues(new Uint16Array(1))[0] % 9000 + 1000)}`;
 
     const { data: items } = await supabase
       .from("diagnostic_order_items")
