@@ -256,27 +256,11 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     const historicalLink = page.locator('a[href*="Onnesha.Hospital_1.1.4_x64-setup.exe"]');
     await expect(historicalLink).toBeVisible();
 
-    // Directly test HTTP fetch to verify historical binary exists and is accessible
-    const downloadCheck = await page.evaluate(async () => {
-      try {
-        const res = await fetch("https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe", {
-          method: "HEAD",
-        });
-        return {
-          status: res.status,
-          contentType: res.headers.get("content-type"),
-          contentLength: res.headers.get("content-length"),
-        };
-      } catch (err: unknown) {
-        return { error: String(err) };
-      }
-    });
-
-    if ("status" in downloadCheck) {
-      expect(downloadCheck.status).toBe(200);
-      expect(downloadCheck.contentType).toBe("application/octet-stream");
-      expect(parseInt(downloadCheck.contentLength || "0", 10)).toBeGreaterThan(1000000);
-    }
+    // Directly test HTTP fetch to verify historical binary exists and is accessible (using Playwright request context for CORS immunity)
+    const downloadRes = await page.request.head("https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe");
+    expect(downloadRes.status()).toBe(200);
+    expect(downloadRes.headers()["content-type"]).toBe("application/octet-stream");
+    expect(parseInt(downloadRes.headers()["content-length"] || "0", 10)).toBeGreaterThan(1000000);
   });
 
   test("8. Mobile Viewport (360x740) touch targets and interactive drawer navigation", async ({ page }) => {

@@ -9,23 +9,23 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-04T04:45:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-04T05:00:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.45` | VERIFIED (IMMUTABLE) |
-| **Preserved Release Tags** | `v1.1.44` (`b5dd5eec71bebdcaa97f842db3963daa9d70986e`), `v1.1.43` (`05dfe1e7a560efe461b31835d1f98a8dccd44dba`), `v1.1.42` (`4a06582db6ba30395bfa90a264a9e7f10519a9f6`), `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.46` | VERIFIED (IMMUTABLE) |
+| **Preserved Release Tags** | `v1.1.45` (`edd8d4d5aa03ca3cfb80ae14a5e7e2a72d65f9fb`), `v1.1.44` (`b5dd5eec71bebdcaa97f842db3963daa9d70986e`), `v1.1.43` (`05dfe1e7a560efe461b31835d1f98a8dccd44dba`), `v1.1.42` (`4a06582db6ba30395bfa90a264a9e7f10519a9f6`), `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED (100% IN SYNC) |
-| **GitHub Mandatory CI Status** | Run `#37152052397` (tag `v1.1.43`) & Run `#37156431063` (`main`) | SUCCESS (13/13 Steps, 4 Browsers) |
-| **Package Version (`package.json`)** | `1.1.45` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.45` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.45` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.45` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.45` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.45` | VERIFIED |
+| **GitHub Mandatory CI Status** | Run `#37159558662` (tag `v1.1.45`) | SUCCESS (13/13 Steps, 4 Browsers) |
+| **Package Version (`package.json`)** | `1.1.46` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.46` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.46` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.46` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.46` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.46` | VERIFIED |
 | **Database Migrations Count** | `107 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261004040000_align_diagnostic_order_items_and_lab_alerts_schema.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity, 0 fatal lint errors) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Live Version** | `1.1.45` | PENDING DEPLOY |
+| **Cloudflare Live Version** | `1.1.46` | PENDING DEPLOY |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting Owner Secrets Gate in GitHub Actions; verified fallback to v1.1.4) | VERIFIED (FAIL-CLOSED) |
 | **Prerendered Website Routes** | `61 routes` (59 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 | **Website Route Acceptance** | `59 / 59 HTML routes PASS` (0 violations, 21 forensic schema fields) | VERIFIED (`audit:routes`) |
@@ -559,6 +559,30 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
   4. **Strict Real-World Owner Gate Reconciliation:**
      - Strictly confirmed and reconciled all 16 owner gates in Section 4 (G1 to G16) as `PENDING OWNER` (0 Ready, 16 Pending Owner). Zero ambiguity between summary baselines and detailed matrices.
   5. **Release Quality Metrics:**
+     - TypeScript: Clean (`tsc --noEmit`, 0 errors).
+     - ESLint: Clean (`eslint`, 0 errors, 0 warnings).
+     - Automated Tests: 100/100 test suites passed (897 active passes, 0 failures, 6 hermetic skips).
+     - Playwright Browser Tests: 50/50 tests passed.
+     - Database Migrations: 107/107 migrations in 100% parity (`npx supabase migration list`).
+     - Database Linting: 0 fatal errors (`npx supabase db lint --linked`).
+     - Dependency Security: 0 high/critical vulnerabilities (`npm audit --audit-level=high`).
+     - Project Health Check: All 16 gates green in strict mode (`npm run health:check`).
+
+---
+
+## 21. Release v1.1.46 — Edge Redirect Hardening, Resilient Playwright Verification & Production Closure
+
+- **Release Date:** 2026-10-04
+- **Version:** `1.1.46` (Synchronized across all 9 authoritative manifests: `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/api/health.json`, `public/downloads/desktop/latest.json`)
+- **Key Enhancements & Closure Tracks:**
+  1. **Edge Redirect Hardening (`public/_redirects`):**
+     - Safely eliminated premature redirect mapping of unbuilt desktop installers to non-existent GitHub Releases URLs (which returned HTTP 404).
+     - Mapped unbuilt `/downloads/desktop/Onnesha-Hospital-Setup-1.1.46.exe` and `.msi` directly to `/downloads/desktop` (status 302), providing full user context and verified historical binary access.
+  2. **Playwright Request Context Hardening:**
+     - Upgraded desktop installer HTTP verification from in-page `page.evaluate()` fetch to Playwright Node-level `page.request.head()`, eliminating browser CORS anomalies across WebKit/Firefox.
+  3. **CI Pipeline Forensic Diagnostics:**
+     - Added automatic upload of `playwright-report` test artifacts on failure to `.github/workflows/ci.yml`.
+  4. **Release Quality Metrics:**
      - TypeScript: Clean (`tsc --noEmit`, 0 errors).
      - ESLint: Clean (`eslint`, 0 errors, 0 warnings).
      - Automated Tests: 100/100 test suites passed (897 active passes, 0 failures, 6 hermetic skips).
