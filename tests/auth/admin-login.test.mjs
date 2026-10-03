@@ -187,5 +187,21 @@ describe("OHMS Priority-1 Admin Authentication Test Suite (10 Scenarios)", async
     assert.ok(content.includes("8. Super Admin role assigned"), "super_admin role check required");
     assert.ok(content.includes("9. Employee record active"), "active employee check required");
   });
+
+  test("21. Admin tooling enforces strict fail-closed policy with zero CLI key reveal fallback and zero default passwords", () => {
+    const createScript = fs.readFileSync(path.join(ROOT, "scripts/create_admin.mjs"), "utf8");
+    const verifyScript = fs.readFileSync(path.join(ROOT, "scripts/verify-admin-account.mjs"), "utf8");
+
+    // Zero CLI reveal fallback
+    assert.ok(!createScript.includes("--reveal"), "create_admin.mjs must not contain --reveal CLI key extraction");
+    assert.ok(!verifyScript.includes("--reveal"), "verify-admin-account.mjs must not contain --reveal CLI key extraction");
+
+    // Zero hardcoded default passwords
+    assert.ok(!createScript.includes('targetPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD || "'), "create_admin.mjs must not have a default password fallback");
+
+    // Fail-closed enforcement
+    assert.ok(createScript.includes("FAIL-CLOSED: SUPABASE_SERVICE_ROLE_KEY environment variable is required"), "create_admin.mjs must fail closed without service key");
+    assert.ok(verifyScript.includes("BLOCKED — Privileged verification credentials unavailable"), "verify-admin-account.mjs must fail closed without service key");
+  });
 });
 

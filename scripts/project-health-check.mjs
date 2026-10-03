@@ -241,27 +241,47 @@ try {
   }
 } catch { warn('_headers file not found'); }
 
-// ─── 12. npm audit ───
+// ─── 12. npm Audit (Dual Gate: Production & Full Dependency Tree) ───
 console.log('\n📋 12. npm Audit');
+const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const cleanEnv = { ...process.env };
+for (const k of Object.keys(cleanEnv)) {
+  if (k.startsWith('npm_')) delete cleanEnv[k];
+}
+
+// Gate 12A: Production Dependency Security
 try {
-  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const cleanEnv = { ...process.env };
-  for (const k of Object.keys(cleanEnv)) {
-    if (k.startsWith('npm_')) delete cleanEnv[k];
-  }
   execSync(`${npmCmd} audit --audit-level=high --omit=dev`, {
     cwd: ROOT,
     encoding: 'utf8',
     stdio: 'pipe',
     env: cleanEnv,
   });
-  pass('npm audit: 0 high/critical vulnerabilities');
+  pass('Gate 12A: Production dependencies audit: 0 high/critical vulnerabilities');
 } catch (e) {
   const output = (e.stdout || '') + (e.stderr || '');
   if (output.includes('found 0 vulnerabilities')) {
-    pass('npm audit: 0 vulnerabilities');
+    pass('Gate 12A: Production dependencies audit: 0 vulnerabilities');
   } else {
-    warn(`npm audit found issues — review with: npm audit`);
+    critical('Gate 12A: Production dependencies contain high/critical vulnerabilities');
+  }
+}
+
+// Gate 12B: Full Dependency Tree Audit (including dev/build tooling)
+try {
+  execSync(`${npmCmd} audit --audit-level=high`, {
+    cwd: ROOT,
+    encoding: 'utf8',
+    stdio: 'pipe',
+    env: cleanEnv,
+  });
+  pass('Gate 12B: Full dependency tree audit: 0 high/critical vulnerabilities');
+} catch (e) {
+  const output = (e.stdout || '') + (e.stderr || '');
+  if (output.includes('found 0 vulnerabilities')) {
+    pass('Gate 12B: Full dependency tree audit: 0 vulnerabilities');
+  } else {
+    critical('Gate 12B: Full dependency tree contains high/critical vulnerabilities');
   }
 }
 
