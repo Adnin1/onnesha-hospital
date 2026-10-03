@@ -1,6 +1,6 @@
 {
   "name": "onnesha-hospital",
-  "version": "1.1.42",
+  "version": "1.1.43",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,6 +14,7 @@
     "test:security": "node --test tests/security.test.mjs",
     "test:live-security": "node --test tests/live/*.live.test.mjs",
     "test:e2e": "playwright test",
+    "audit:routes": "node scripts/website-route-acceptance.mjs",
     "audit:assets": "node scripts/website-link-asset-forensics.mjs",
     "health:check": "node scripts/project-health-check.mjs --strict",
     "admin:verify": "node scripts/verify-admin-account.mjs",

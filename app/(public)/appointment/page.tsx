@@ -663,6 +663,7 @@ function AppointmentLoadingFallback() {
     <div className="py-12 bg-slate-50 min-h-[85vh] flex items-center justify-center">
       <div className="text-center">
         <Loader2 className="w-8 h-8 text-sky-600 animate-spin mx-auto mb-2" />
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">অনলাইন ডক্টর অ্যাপয়েন্টমেন্ট</h1>
         <p className="text-xs text-slate-500">Loading appointment booking portal...</p>
       </div>
     </div>

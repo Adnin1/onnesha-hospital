@@ -142,17 +142,24 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if (isAuthenticated === null) {
     return (
-      <div className="flex items-center justify-center min-h-[70vh]" role="status" aria-label="Authenticating session">
-        <div className="text-center space-y-3">
+      <main id="main-content" className="flex items-center justify-center min-h-[70vh] w-full grow">
+        <div className="text-center space-y-3" role="status" aria-label="Authenticating session">
           <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-sky-600 border-r-transparent" />
           <p className="text-xs text-slate-500 font-medium">অথেন্টিকেশন সিকিউরিটি যাচাই করা হচ্ছে...</p>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <main id="main-content" className="flex items-center justify-center min-h-[70vh] w-full grow">
+        <div className="text-center space-y-3" role="status" aria-label="Redirecting to login">
+          <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-sky-600 border-r-transparent" />
+          <p className="text-xs text-slate-500 font-medium">লগইন পেজে রিডাইরেক্ট করা হচ্ছে...</p>
+        </div>
+      </main>
+    );
   }
 
   return <>{children}</>;

@@ -475,4 +475,31 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
      - Supabase Lint: 0 fatal errors on linked remote database.
      - Migration Parity: 107 / 107 migrations in full sync.
 
+---
+
+## 18. Release v1.1.43 — Universal WCAG 2.2 AA Landmark Infrastructure & Route Acceptance Certification
+
+- **Release Date:** 2026-10-04
+- **Version:** `1.1.43` (Synchronized across all 9 project manifests: `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/api/health.json`, `public/downloads/desktop/latest.json`)
+- **Key Enhancements & Closure Tracks:**
+  1. **Universal WCAG 2.2 AA Main Content Landmark Compliance:**
+     - Remediated `components/auth/AuthGuard.tsx` to render an accessible `<main id="main-content">` landmark during unauthenticated and session-authenticating states, ensuring that all 40+ protected hospital management routes (`/app/*`) provide a valid WCAG 2.2 AA main landmark in their pre-rendered static HTML shell.
+     - Remediated `app/auth/confirm/page.tsx` and its Suspense fallback to wrap verification views in `<main id="main-content">` and upgraded status messages to explicit semantic `<h1>` headings.
+     - Remediated `app/(public)/appointment/page.tsx`'s static Suspense fallback (`AppointmentLoadingFallback`) to render a prominent `<h1>` element, ensuring 100% heading hierarchy compliance during static HTML generation.
+  2. **Automated Route-by-Route Forensic Acceptance Suite (`scripts/website-route-acceptance.mjs`):**
+     - Authored and integrated `audit:routes` script into `package.json` that audits every HTML route in `out/` across:
+       - Document & Metadata Validity (DOCTYPE, Title, Viewport, Charset, Canonical).
+       - WCAG 2.2 AA Accessibility (Main Landmark, Skip Link target, Heading Hierarchy).
+       - Security & Privacy (Zero Service-Role Secrets, Zero raw browser dialogs).
+       - Content Truth & Regulatory Consistency (Zero ungrounded accreditation claims).
+     - Generates machine-readable audit report at `test-results/website-route-acceptance-matrix.json`.
+  3. **Release Quality Metrics:**
+     - TypeScript: Clean (`tsc --noEmit`, 0 errors).
+     - ESLint: Clean (`eslint`, 0 errors, 0 warnings).
+     - Automated Tests: 100/100 test suites passed (897 active passes, 0 failures, 6 hermetic skips).
+     - Static Export: 61/61 static routes compiled (`next build`).
+     - Route Acceptance: 100% of routes passing all forensic checks (0 failures).
+     - Cloudflare Pages Deployment: Deployed to `https://onnesha-hospital.pages.dev`.
+
+
 

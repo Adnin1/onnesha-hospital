@@ -166,14 +166,14 @@ function AuthConfirmContent() {
   }, [router, searchParams]);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+    <main id="main-content" className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full text-center space-y-5 bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-2xl">
         {errorMessage ? (
           <div className="space-y-4">
             <div className="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/40">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <h2 className="text-base font-bold text-white">পাসওয়ার্ড রিকভারি ব্যর্থ হয়েছে</h2>
+            <h1 className="text-base font-bold text-white">পাসওয়ার্ড রিকভারি ব্যর্থ হয়েছে</h1>
             <p className="text-xs text-rose-200 leading-relaxed bg-rose-950/60 p-3 rounded-xl border border-rose-800/50">
               {errorMessage}
             </p>
@@ -191,12 +191,12 @@ function AuthConfirmContent() {
             <div className="w-12 h-12 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center mx-auto border border-sky-500/40">
               <RefreshCw className="w-6 h-6 animate-spin" />
             </div>
-            <h2 className="text-base font-bold text-white">সিকিউর সেশন ভেরিফিকেশন</h2>
+            <h1 className="text-base font-bold text-white">সিকিউর সেশন ভেরিফিকেশন</h1>
             <p className="text-xs text-slate-300 leading-relaxed">{statusMessage}</p>
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -204,9 +204,9 @@ export default function AuthConfirmPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center">
+        <main id="main-content" className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center">
           <RefreshCw className="w-8 h-8 animate-spin text-sky-400" />
-        </div>
+        </main>
       }
     >
       <AuthConfirmContent />
