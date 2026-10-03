@@ -5,3 +5,5 @@
 /auth/mfa        /mfa            302
 /portal          /app/dashboard  302
 /staff           /login          302
+/admin           /login          302
+/admin/login     /login          302

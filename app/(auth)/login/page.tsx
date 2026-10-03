@@ -33,7 +33,7 @@ export default function LoginPage() {
     try {
       const supabase = createBrowserClient();
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
       });
 
@@ -143,6 +143,8 @@ export default function LoginPage() {
                   type="email"
                   required
                   autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@onneshahospital.com"
