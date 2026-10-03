@@ -13,6 +13,7 @@ import {
   Search,
   Eye,
   Users,
+  Cpu,
 } from "lucide-react";
 import { PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 import { RoleType } from "@/types";
@@ -224,7 +225,14 @@ export default function SettingsAndAuditPage() {
             className="px-3 py-1.5 rounded-lg transition bg-sky-600 hover:bg-sky-500 text-white font-bold flex items-center gap-1.5 shadow-2xs"
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Staff Directory & Access</span>
+            <span>Staff Directory</span>
+          </Link>
+          <Link
+            href="/app/settings/hardware"
+            className="px-3 py-1.5 rounded-lg transition bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center gap-1.5 shadow-2xs"
+          >
+            <Cpu className="w-3.5 h-3.5 text-sky-400" />
+            <span>Hardware & Devices</span>
           </Link>
           <button
             onClick={() => setActiveTab("rbac")}

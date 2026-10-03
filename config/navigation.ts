@@ -31,6 +31,7 @@ import {
   HeartHandshake,
   MessageSquare,
   Eye,
+  Printer,
   type LucideIcon,
 } from "lucide-react";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -263,6 +264,12 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         label: "Staff Directory & Access",
         icon: ShieldCheck,
         perm: PERMISSIONS.STAFF_VIEW,
+      },
+      {
+        href: "/app/settings/hardware",
+        label: "Hardware & Devices",
+        icon: Printer,
+        perm: PERMISSIONS.SETTINGS_VIEW,
       },
       {
         href: "/app/settings",

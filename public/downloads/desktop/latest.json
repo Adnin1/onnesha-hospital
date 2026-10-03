@@ -1,14 +1,14 @@
 {
-  "version": "1.1.39",
+  "version": "1.1.40",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.39. Full dependency tree audit remediation (zero vulnerabilities), fail-closed admin IAM tooling, cryptographic security hardening, and production commissioning.",
-  "pub_date": "2026-10-03T19:30:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.40. Universal plug-and-play hardware engine, ESC/POS 80mm thermal driver, barcode scanner wedge listener, LIS analyzer bridge & emulators, PACS DICOM viewer, and public HDMI/Android TV kiosk displays.",
+  "pub_date": "2026-10-03T20:15:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.39.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.40.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.39.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.40.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0,
       "status": "pending_ci_workflow",
