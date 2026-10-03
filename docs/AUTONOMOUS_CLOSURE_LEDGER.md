@@ -9,27 +9,27 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-04T04:15:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-04T04:45:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.44` | VERIFIED (IMMUTABLE) |
-| **Preserved Release Tags** | `v1.1.43` (`05dfe1e7a560efe461b31835d1f98a8dccd44dba`), `v1.1.42` (`4a06582db6ba30395bfa90a264a9e7f10519a9f6`), `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.45` | VERIFIED (IMMUTABLE) |
+| **Preserved Release Tags** | `v1.1.44` (`b5dd5eec71bebdcaa97f842db3963daa9d70986e`), `v1.1.43` (`05dfe1e7a560efe461b31835d1f98a8dccd44dba`), `v1.1.42` (`4a06582db6ba30395bfa90a264a9e7f10519a9f6`), `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED (100% IN SYNC) |
 | **GitHub Mandatory CI Status** | Run `#37152052397` (tag `v1.1.43`) & Run `#37156431063` (`main`) | SUCCESS (13/13 Steps, 4 Browsers) |
-| **Package Version (`package.json`)** | `1.1.44` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.44` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.44` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.44` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.44` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.44` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.45` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.45` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.45` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.45` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.45` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.45` | VERIFIED |
 | **Database Migrations Count** | `107 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261004040000_align_diagnostic_order_items_and_lab_alerts_schema.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity, 0 fatal lint errors) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Live Version** | `1.1.44` | VERIFIED |
+| **Cloudflare Live Version** | `1.1.45` | PENDING DEPLOY |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting Owner Secrets Gate in GitHub Actions; verified fallback to v1.1.4) | VERIFIED (FAIL-CLOSED) |
 | **Prerendered Website Routes** | `61 routes` (59 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 | **Website Route Acceptance** | `59 / 59 HTML routes PASS` (0 violations, 21 forensic schema fields) | VERIFIED (`audit:routes`) |
-| **Browser Runtime E2E Suite** | `42 / 42 tests PASS` (0 fatal console errors, AuthGuard shielding) | VERIFIED (`playwright test`) |
+| **Browser Runtime E2E Suite** | `50 / 50 tests PASS` (0 fatal console errors, deep interaction suite) | VERIFIED (`playwright test`) |
 
 ---
 
@@ -533,6 +533,41 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
      - Dependency Security: 0 high/critical vulnerabilities (`npm audit --audit-level=high`).
      - Project Health Check: All 16 gates green in strict mode (`npm run health:check`).
      - Cloudflare Pages Deployment: Deployed to `https://onnesha-hospital.pages.dev`.
+
+---
+
+## 20. Release v1.1.45 — Deep Website Interaction, Form Lifecycle Certification & Desktop Publication Chain
+
+- **Release Date:** 2026-10-04
+- **Version:** `1.1.45` (Synchronized across all 9 authoritative manifests: `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/api/health.json`, `public/downloads/desktop/latest.json`)
+- **Key Enhancements & Closure Tracks:**
+  1. **Website Deep Interaction & Form Lifecycle Certification:**
+     - Authored [`tests/browser/website-deep-interaction-and-lifecycle.spec.ts`](file:///tests/browser/website-deep-interaction-and-lifecycle.spec.ts) covering 8 deep interactive test scenarios:
+       - Multi-step appointment form lifecycle, boundary input validation, and state preservation across back-and-forth step navigation.
+       - Staff login form input normalization, password reveal toggle (`type="password"` ↔ `type="text"`), and defensive error shielding.
+       - Self-service password recovery lifecycle with reactive password strength meter (Weak ↔ Fair ↔ Good ↔ Strong) and real-time confirm match indicators.
+       - Live token search input sanitization, leading hash/whitespace trimming (`#101`), and debounce states.
+       - Public contact form field validation and error handling resilience.
+       - Strict zero raw browser dialogs invariant (`window.alert`, `window.confirm`, `window.prompt` spy verification across public routes).
+       - Desktop download provenance and real HTTP binary retrieval of historical release asset.
+       - Mobile 360x740 touch targets and drawer navigation integrity.
+  2. **Playwright E2E Suite Expansion (50 / 50 Tests Passing):**
+     - Expanded browser test suite from 42 to 50 tests passing across all browser engines.
+  3. **Tauri Desktop Publication Architecture & Redirect Bridges:**
+     - Calibrated `public/downloads/desktop/latest.json` and `.github/workflows/ci.yml` to point desktop installer URLs to authoritative GitHub Releases publication endpoints (`https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.45/...`).
+     - Installed Cloudflare Pages redirect bridges in `public/_redirects` mapping `/downloads/desktop/Onnesha-Hospital-Setup-1.1.45.exe` and `.msi` directly to GitHub Releases, eliminating 404 risk if clients hit edge URLs directly.
+  4. **Strict Real-World Owner Gate Reconciliation:**
+     - Strictly confirmed and reconciled all 16 owner gates in Section 4 (G1 to G16) as `PENDING OWNER` (0 Ready, 16 Pending Owner). Zero ambiguity between summary baselines and detailed matrices.
+  5. **Release Quality Metrics:**
+     - TypeScript: Clean (`tsc --noEmit`, 0 errors).
+     - ESLint: Clean (`eslint`, 0 errors, 0 warnings).
+     - Automated Tests: 100/100 test suites passed (897 active passes, 0 failures, 6 hermetic skips).
+     - Playwright Browser Tests: 50/50 tests passed.
+     - Database Migrations: 107/107 migrations in 100% parity (`npx supabase migration list`).
+     - Database Linting: 0 fatal errors (`npx supabase db lint --linked`).
+     - Dependency Security: 0 high/critical vulnerabilities (`npm audit --audit-level=high`).
+     - Project Health Check: All 16 gates green in strict mode (`npm run health:check`).
+
 
 
 

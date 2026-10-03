@@ -308,10 +308,10 @@ jobs:
           $manifest = Get-Content $manifestPath | ConvertFrom-Json
           $manifest.version = $ver
           $manifest.pub_date = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-          $manifest.platforms.'windows-x86_64'.installer_exe = "https://onnesha-hospital.pages.dev/downloads/desktop/$($nsis.Name)"
+          $manifest.platforms.'windows-x86_64'.installer_exe = "https://github.com/Adnin1/onnesha-hospital/releases/download/v$ver/$($nsis.Name)"
           $manifest.platforms.'windows-x86_64'.installer_exe_sha256 = $nsisHash
           $manifest.platforms.'windows-x86_64'.installer_exe_size = $nsis.Length
-          $manifest.platforms.'windows-x86_64'.installer_msi = "https://onnesha-hospital.pages.dev/downloads/desktop/$($msi.Name)"
+          $manifest.platforms.'windows-x86_64'.installer_msi = "https://github.com/Adnin1/onnesha-hospital/releases/download/v$ver/$($msi.Name)"
           $manifest.platforms.'windows-x86_64'.installer_msi_sha256 = $msiHash
           $manifest.platforms.'windows-x86_64'.installer_msi_size = $msi.Length
           $manifest.platforms.'windows-x86_64'.status = "built_verified"

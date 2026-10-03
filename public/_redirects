@@ -7,3 +7,9 @@
 /staff           /login          302
 /admin           /login          302
 /admin/login     /login          302
+/downloads/desktop/Onnesha.Hospital_1.1.4_x64-setup.exe https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe 302
+/downloads/desktop/historical-installer.exe https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe 302
+/downloads/desktop/Onnesha-Hospital-Setup-1.1.44.exe https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.44/Onnesha-Hospital-Setup-1.1.44.exe 302
+/downloads/desktop/Onnesha-Hospital-1.1.44.msi https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.44/Onnesha-Hospital-1.1.44.msi 302
+/downloads/desktop/Onnesha-Hospital-Setup-1.1.45.exe https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.45/Onnesha-Hospital-Setup-1.1.45.exe 302
+/downloads/desktop/Onnesha-Hospital-1.1.45.msi https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.45/Onnesha-Hospital-1.1.45.msi 302
