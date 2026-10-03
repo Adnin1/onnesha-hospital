@@ -26,7 +26,13 @@ if (fs.existsSync(envPath)) {
 }
 
 if (!adminEmail) {
-  adminEmail = process.env.ADMIN_EMAIL || "aaih.apon@gmail.com";
+  adminEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_HOSPITAL_EMAIL || "";
+}
+
+if (!adminEmail) {
+  console.error("\n❌ FAIL-CLOSED: Target administrative email is required.");
+  console.error("Please supply ADMIN_EMAIL or NEXT_PUBLIC_HOSPITAL_EMAIL in environment variables.\n");
+  process.exit(1);
 }
 
 if (!supabaseUrl) {

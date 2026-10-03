@@ -25,8 +25,10 @@ console.log(`\n========================================`);
 console.log(`  OHMS DESKTOP COMPILATION (v${version})`);
 console.log(`========================================\n`);
 
+const CARGO_DIR = path.join(userProfile, ".cargo", "bin");
+
 const env = { ...process.env };
-env.PATH = `${WIX_DIR};${NSIS_DIR};${env.PATH || ""}`;
+env.PATH = `${CARGO_DIR};${WIX_DIR};${NSIS_DIR};${env.PATH || ""}`;
 env.WIX = WIX_DIR;
 
 console.log(`[1/4] Ensuring build environment...`);

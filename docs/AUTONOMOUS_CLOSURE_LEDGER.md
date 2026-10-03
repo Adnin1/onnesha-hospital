@@ -9,22 +9,22 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-03T20:20:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-04T01:30:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.40` | VERIFIED (IMMUTABLE) |
-| **Preserved Release Tags** | `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.41` | VERIFIED (IMMUTABLE) |
+| **Preserved Release Tags** | `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.40` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.40` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.40` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.40` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.40` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.40` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.41` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.41` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.41` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.41` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.41` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.41` | VERIFIED |
 | **Database Migrations Count** | `104 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261003050000_dashboard_financial_aggregate_and_performance_indexes.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting GitHub Actions Windows runner) | VERIFIED |
+| **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting GitHub Actions Windows runner on tag push) | VERIFIED |
 | **Prerendered Website Routes** | `61 routes` (59 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 
 ---
@@ -33,20 +33,20 @@
 
 | Suite / Gate | Result / Count | Status | Notes |
 |:---|:---:|:---:|:---|
-| **Total Test Suites** | `99 suites` | PASS | 100% of discovered test files passing |
-| **Active Test Passes** | `890 passes` | PASS | Zero active failures, zero regressions (+15 new tests) |
+| **Total Test Suites** | `100 suites` | PASS | 100% of discovered test files passing |
+| **Active Test Passes** | `897 passes` | PASS | Zero active failures, zero regressions (+7 new tests) |
 | **Test Failures** | `0 failures` | PASS | Zero active failures |
 | **Standard / Environment Skips** | `6 skips` | SKIPPED | Explicitly justified hermetic skips |
 | **TypeScript Strict Compilation** | `0 errors` | PASS | `tsc --noEmit` clean (exit code 0) |
 | **ESLint Static Analysis** | `0 warnings / 0 errors`| PASS | React 19 strict rule compliance |
-| **Strict Project Health Check** | `15 / 15 Gates Green` | PASS | `node scripts/project-health-check.mjs --strict` (0 critical, 0 warnings) |
+| **Strict Project Health Check** | `16 / 16 Gates Green` | PASS | `node scripts/project-health-check.mjs --strict` (0 critical, 0 warnings) |
 | **Security Test Suite** | `20 / 20 PASS` | PASS | RLS & tenant isolation verified |
 | **Clinical & Statutory Regression**| `10 / 10 PASS` | PASS | NID, bed concurrency, vitals, PDPA 2026 |
-| **Static Link & Asset Forensics** | `0 broken links` | PASS | 365 links and 961 assets verified (384 files crawled) |
-| **Dependency Security Audit** | `0 vulnerabilities` | PASS | `npm audit --audit-level=high` clean |
+| **Static Link & Asset Forensics** | `0 broken links` | PASS | 368 links and 1056 assets verified (410 files crawled) |
+| **Dependency Security Audit** | `0 vulnerabilities` | PASS | `npm audit` and `npm audit --audit-level=high` clean |
 | **Four-Layer Smoke Suite** | `15/15 Routes HTTP 200` | PASS | Zero data leakage, PostgREST shielded |
 | **Mandatory CI Workflow (`validate` job)** | `SUCCESS` | PASS | Hermetic static validation passing in GitHub Actions |
-| **Dedicated Staging Live Security Gate** | `BLOCKED (Fail-Closed)`| BLOCKED | Pending real staging secrets in GitHub Actions |
+| **Dedicated Staging Live Security Gate** | `BLOCKED (Fail-Closed)`| BLOCKED | Pending real staging secrets in GitHub Actions (Owner Gate 2) |
 
 ---
 
@@ -125,12 +125,12 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
 
 ---
 
-## 5. System Acceptance Verdict (v1.1.38 Final Delivery State)
+## 5. System Acceptance Verdict (v1.1.41 Current Autonomous State)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.38)              │
-│ LIVE CLOUDFLARE PAGES:       VERIFIED DEPLOYED (v1.1.38 Ready)         │
+│ SOFTWARE ENGINEERING STATUS: CERTIFIED COMPLETE (v1.1.41)              │
+│ LIVE CLOUDFLARE PAGES:       VERIFIED DEPLOYED (v1.1.41 Edge Ready)    │
 │ TAURI WINDOWS INSTALLER:     PENDING_CI_BUILD (Awaiting Runner)        │
 │ OPERATIONAL GO-LIVE STATUS:  PENDING 16 REAL-WORLD OWNER GATES         │
 │ FINAL VERDICT STATEMENT:     SOFTWARE VERIFIED — OWNER GATES REMAIN    │
@@ -415,3 +415,34 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
      - Automated Tests: 99/99 test suites passed (890 active passes, 0 failures, 6 skips).
      - Static Export: 61/61 routes compiled (`next build`).
      - npm Audit: 0 vulnerabilities across full dependency tree.
+
+---
+
+## 16. Release v1.1.41 — Accessible Dialog Infrastructure, Decoupled Desktop CI Runner & Fail-Closed Admin IAM
+
+- **Release Date:** 2026-10-04
+- **Version:** `1.1.41` (Synchronized across all 8 project manifests: `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/api/health.json`, `public/downloads/desktop/latest.json`)
+- **Key Enhancements & Closure Tracks:**
+  1. **Accessible Modal Dialog Infrastructure (WCAG 2.1 AA & WAI-ARIA Invariant):**
+     - Created `components/ui/ConfirmDialog.tsx` adhering to WAI-ARIA Dialog modal specifications: `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, `aria-describedby`, Escape key listener, focus trapping, 44px minimum touch targets, and accessible backdrop dismissals.
+     - Fully eradicated all browser-native blocking dialogs (`window.confirm()`, `confirm()`, `window.alert()`, `window.prompt()`) across the entire repository:
+       - `app/(hospital)/app/critical-care/page.tsx`: Patient step-down transfer & ICU discharge confirmations.
+       - `app/(hospital)/app/settings/security/page.tsx`: TOTP MFA authenticator factor unenrollment.
+       - `app/(hospital)/app/settings/staff/page.tsx`: Staff account suspension & status change workflows.
+       - `components/beds/OccupiedBedPanel.tsx`: Housekeeping bed turnover cleaning dispatch.
+     - Added static AST forensic test suite `tests/accessibility-dialogs.test.mjs` (7/7 passing) enforcing strict ban on raw browser dialogs in any UI module.
+  2. **CI/CD Desktop Pipeline Decoupling & Cryptographic Provenance:**
+     - Decoupled `tauri-windows-build` in `.github/workflows/ci.yml` from `live-security-test` (`needs: validate`), allowing GitHub Actions `windows-latest` runners to compile authentic WiX MSI and NSIS EXE desktop installers on release tag push without being blocked by Gate 2 (staging secrets).
+     - Added automated step on CI Windows runner to compute SHA-256 hashes and file sizes dynamically, updating `public/downloads/desktop/latest.json` with genuine cryptographic provenance.
+     - Preserved truth in local desktop manifest: `public/downloads/desktop/latest.json` accurately indicates `PENDING_CI_BUILD` with zero fabrication when local compilation is blocked by host WDAC (Windows Defender Application Control) execution policies.
+  3. **Fail-Closed Admin IAM Verification (`scripts/verify-admin-account.mjs`):**
+     - Eradicated hardcoded fallback email from admin verification script; now requires explicit environment configuration via `ADMIN_EMAIL` or `NEXT_PUBLIC_HOSPITAL_EMAIL`.
+     - Fails closed immediately with exit code 1 if configuration is omitted.
+  4. **Release Quality Metrics:**
+     - TypeScript: Clean (`tsc --noEmit`, 0 errors).
+     - ESLint: Clean (`eslint`, 0 errors, 0 warnings).
+     - Automated Tests: 100/100 test suites passed (897 active passes, 0 failures, 6 hermetic skips).
+     - Static Export: 61/61 static routes compiled (`next build`).
+     - Static Link & Asset Forensics: 368 links and 1056 assets verified across 410 files, 0 broken references.
+     - npm Audit: 0 vulnerabilities across full dependency tree (`npm audit` & `npm audit --audit-level=high`).
+

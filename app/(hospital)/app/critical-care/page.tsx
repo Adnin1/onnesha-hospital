@@ -23,6 +23,7 @@ import {
 import { CriticalCareAdmissionModal } from "@/components/critical-care/CriticalCareAdmissionModal";
 import { CriticalCareVitalsModal } from "@/components/critical-care/CriticalCareVitalsModal";
 import { CriticalCarePatientPanel } from "@/components/critical-care/CriticalCarePatientPanel";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function CriticalCarePage() {
   const [selectedUnit, setSelectedUnit] = useState<string>("ICU");
@@ -38,6 +39,12 @@ export default function CriticalCarePage() {
   const [vitalsModalAdmission, setVitalsModalAdmission] = useState<CriticalCareAdmission | null>(null);
   const [selectedPatientAdmission, setSelectedPatientAdmission] = useState<CriticalCareAdmission | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [confirmAction, setConfirmAction] = useState<{
+    adm: CriticalCareAdmission;
+    newStatus: "transferred" | "discharged";
+    label: string;
+  } | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -79,25 +86,34 @@ export default function CriticalCarePage() {
     setTimeout(() => setSuccessToast(null), 4000);
   }
 
-  async function handleDischargeOrTransfer(
+  function handleDischargeOrTransfer(
     adm: CriticalCareAdmission,
     newStatus: "transferred" | "discharged"
   ) {
     const label = newStatus === "transferred" ? "জেনারেল ওয়ার্ডে স্থানান্তর (Step-down)" : "ছাড়পত্র (Discharge)";
-    if (!window.confirm(`আপনি কি নিশ্চিত যে রোগী ${adm.patients?.full_name || ""} কে ${label} করতে চান? (বেড স্ট্যাটাস ক্লিনিক্যাল ক্লিনিং-এ স্থানান্তরিত হবে)`)) {
-      return;
-    }
-    const res = await dischargeCriticalCareAdmissionAction({
-      admissionId: adm.id,
-      status: newStatus,
-      destination: newStatus === "transferred" ? "General Medical Ward" : "Home",
-    });
-    if (res.success) {
-      showSuccess(`রোগীর ${label} সফলভাবে সম্পন্ন হয়েছে। বেড ক্লিনিং প্রক্রিয়ায় পাঠানো হয়েছে।`);
-      setSelectedPatientAdmission(null);
-      setRefreshKey((k) => k + 1);
-    } else {
-      setErrorMsg(res.error || "স্ট্যাটাস পরিবর্তন করতে ব্যর্থ হয়েছে।");
+    setConfirmAction({ adm, newStatus, label });
+  }
+
+  async function executeDischargeOrTransfer() {
+    if (!confirmAction) return;
+    const { adm, newStatus, label } = confirmAction;
+    setActionLoading(true);
+    try {
+      const res = await dischargeCriticalCareAdmissionAction({
+        admissionId: adm.id,
+        status: newStatus,
+        destination: newStatus === "transferred" ? "General Medical Ward" : "Home",
+      });
+      if (res.success) {
+        showSuccess(`রোগীর ${label} সফলভাবে সম্পন্ন হয়েছে। বেড ক্লিনিং প্রক্রিয়ায় পাঠানো হয়েছে।`);
+        setSelectedPatientAdmission(null);
+        setRefreshKey((k) => k + 1);
+        setConfirmAction(null);
+      } else {
+        setErrorMsg(res.error || "স্ট্যাটাস পরিবর্তন করতে ব্যর্থ হয়েছে।");
+      }
+    } finally {
+      setActionLoading(false);
     }
   }
 
@@ -378,6 +394,23 @@ export default function CriticalCarePage() {
         onTransfer={(adm) => void handleDischargeOrTransfer(adm, "transferred")}
         onDischarge={(adm) => void handleDischargeOrTransfer(adm, "discharged")}
         onAlertUpdated={() => setRefreshKey((k) => k + 1)}
+      />
+
+      {/* Accessible Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!confirmAction}
+        title={confirmAction ? `রোগীর ${confirmAction.label}` : ""}
+        description={
+          confirmAction
+            ? `আপনি কি নিশ্চিত যে রোগী ${confirmAction.adm.patients?.full_name || ""} কে ${confirmAction.label} করতে চান? (বেড স্ট্যাটাস স্বয়ংক্রিয়ভাবে ক্লিনিক্যাল ক্লিনিং-এ স্থানান্তরিত হবে)`
+            : ""
+        }
+        confirmLabel={confirmAction?.newStatus === "discharged" ? "ছাড়পত্র প্রদান করুন" : "স্থানান্তর করুন"}
+        cancelLabel="বাতিল"
+        isDestructive={confirmAction?.newStatus === "discharged"}
+        isLoading={actionLoading}
+        onConfirm={() => void executeDischargeOrTransfer()}
+        onCancel={() => setConfirmAction(null)}
       />
     </div>
   );

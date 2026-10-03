@@ -19,6 +19,7 @@ import Link from "next/link";
 import { BedRecord, CabinRecord, WardRecord } from "@/types/beds-ot";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { vacateBedAction, updateBedStatusAction } from "@/lib/ipd/bed-actions";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface Props {
   isOpen: boolean;
@@ -44,6 +45,7 @@ export function OccupiedBedPanel({
 }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [showDischargeDialog, setShowDischargeDialog] = useState(false);
+  const [showCleaningConfirm, setShowCleaningConfirm] = useState(false);
   const [dischargeNotes, setDischargeNotes] = useState("");
   const [finalDiagnosis, setFinalDiagnosis] = useState("");
 
@@ -84,15 +86,20 @@ export function OccupiedBedPanel({
     }
   };
 
-  const handleMarkCleaning = async () => {
+  const handleMarkCleaning = () => {
     if (!bed && !cabin) return;
-    if (!confirm("বেডটি কি অবিলম্বে জীবাণুমুক্তকরণ ও পরিষ্কারের (CLEANING) জন্য পাঠাবেন?")) return;
+    setShowCleaningConfirm(true);
+  };
+
+  const executeMarkCleaning = async () => {
+    if (!bed && !cabin) return;
     setSubmitting(true);
     try {
       if (bed) {
         await updateBedStatusAction({ bedId: bed.id, status: "CLEANING" });
       }
       setSubmitting(false);
+      setShowCleaningConfirm(false);
       onToast(`${targetIdentifier} হাউসকিপিং ক্লিনিং-এ পাঠানো হয়েছে`, "info");
       onActionComplete();
       onClose();
@@ -331,6 +338,19 @@ export function OccupiedBedPanel({
           </div>
         </div>
       </div>
+
+      {/* Accessible Cleaning Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showCleaningConfirm}
+        title="হাউসকিপিং ক্লিনিং কনফার্মেশন"
+        description={`${targetIdentifier} কি অবিলম্বে জীবাণুমুক্তকরণ ও পরিষ্কারের (CLEANING) জন্য পাঠাবেন? এটি বেডের বর্তমান স্ট্যাটাস 'CLEANING'-এ পরিবর্তন করবে।`}
+        confirmLabel="ক্লিনিং-এ পাঠান"
+        cancelLabel="বাতিল"
+        isDestructive={false}
+        isLoading={submitting}
+        onConfirm={() => void executeMarkCleaning()}
+        onCancel={() => setShowCleaningConfirm(false)}
+      />
     </div>
   );
 }

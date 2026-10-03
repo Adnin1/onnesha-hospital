@@ -30,6 +30,7 @@ import {
   generateSecureTemporaryPassword,
 } from "@/lib/staff/actions";
 import { RoleType } from "@/types";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const CANONICAL_ROLES: { id: RoleType; label: string; desc: string }[] = [
   { id: "super_admin", label: "Super Admin", desc: "Full administrative & system authority" },
@@ -84,6 +85,12 @@ export default function StaffManagementPage() {
   const [resetMode, setResetMode] = useState<"auto" | "custom">("auto");
   const [customResetPassword, setCustomResetPassword] = useState("");
   const [showCustomResetPassword, setShowCustomResetPassword] = useState(false);
+  const [statusConfirmTarget, setStatusConfirmTarget] = useState<{
+    staff: StaffMemberRecord;
+    newStatus: "ACTIVE" | "SUSPENDED" | "DISABLED";
+    message: string;
+  } | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -224,7 +231,7 @@ export default function StaffManagementPage() {
   };
 
   // 3. Toggle Status (Active / Suspended / Disabled)
-  const handleStatusChange = async (
+  const handleStatusChange = (
     staff: StaffMemberRecord,
     newStatus: "ACTIVE" | "SUSPENDED" | "DISABLED"
   ) => {
@@ -235,20 +242,29 @@ export default function StaffManagementPage() {
         ? `আপনি কি নিশ্চিতভাবে ${staff.full_name}-এর অ্যাকাউন্ট স্থায়ীভাবে নিষ্ক্রিয় (DISABLE) করতে চান?`
         : `আপনি কি ${staff.full_name}-এর অ্যাকাউন্ট পুনরায় সক্রিয় (ACTIVATE) করতে চান?`;
 
-    if (!window.confirm(confirmMsg)) return;
+    setStatusConfirmTarget({ staff, newStatus, message: confirmMsg });
+  };
 
+  const executeStatusChange = async () => {
+    if (!statusConfirmTarget) return;
+    const { staff, newStatus } = statusConfirmTarget;
+
+    setIsUpdatingStatus(true);
     setErrorMsg(null);
     try {
       const res = await setStaffStatusAction(staff.id, newStatus);
       if (res.success) {
         fetchDirectory();
         triggerToast(`অ্যাকাউন্ট স্ট্যাটাস সফলভাবে '${newStatus}' করা হয়েছে।`);
+        setStatusConfirmTarget(null);
       } else {
         setErrorMsg("স্ট্যাটাস পরিবর্তন ব্যর্থ: " + (res.error || "Unknown error"));
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error updating status";
       setErrorMsg("ব্যর্থ: " + msg);
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -946,6 +962,31 @@ export default function StaffManagementPage() {
           </div>
         </div>
       )}
+
+      {/* Accessible Status Change Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!statusConfirmTarget}
+        title={
+          statusConfirmTarget?.newStatus === "SUSPENDED"
+            ? "অ্যাকাউন্ট স্থগিত (Suspend)"
+            : statusConfirmTarget?.newStatus === "DISABLED"
+            ? "অ্যাকাউন্ট নিষ্ক্রিয় (Disable)"
+            : "অ্যাকাউন্ট সক্রিয় (Activate)"
+        }
+        description={statusConfirmTarget?.message || ""}
+        confirmLabel={
+          statusConfirmTarget?.newStatus === "SUSPENDED"
+            ? "স্থগিত করুন"
+            : statusConfirmTarget?.newStatus === "DISABLED"
+            ? "নিষ্ক্রিয় করুন"
+            : "সক্রিয় করুন"
+        }
+        cancelLabel="বাতিল"
+        isDestructive={statusConfirmTarget?.newStatus !== "ACTIVE"}
+        isLoading={isUpdatingStatus}
+        onConfirm={() => void executeStatusChange()}
+        onCancel={() => setStatusConfirmTarget(null)}
+      />
     </div>
   );
 }

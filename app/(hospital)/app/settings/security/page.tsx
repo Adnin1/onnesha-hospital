@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { ShieldCheck, KeyRound, QrCode, Trash2, CheckCircle2, AlertTriangle, Plus, RefreshCw, Copy, Check } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase/client";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface Factor {
   id: string;
@@ -28,6 +29,8 @@ export default function SecuritySettingsPage() {
   const [verifyCode, setVerifyCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [copiedSecret, setCopiedSecret] = useState(false);
+  const [unenrollFactorId, setUnenrollFactorId] = useState<string | null>(null);
+  const [isUnenrolling, setIsUnenrolling] = useState(false);
 
   const fetchSecurityState = async () => {
     try {
@@ -164,16 +167,21 @@ export default function SecuritySettingsPage() {
     }
   };
 
-  const handleUnenrollFactor = async (factorIdToUnenroll: string) => {
-    if (!confirm("আপনি কি নিশ্চিত যে এই TOTP Authenticator ফ্যাক্টরটি মুছে ফেলতে চান?")) return;
+  const handleUnenrollFactor = (factorIdToUnenroll: string) => {
+    setUnenrollFactorId(factorIdToUnenroll);
+  };
+
+  const executeUnenrollFactor = async () => {
+    if (!unenrollFactorId) return;
 
     setErrorMessage(null);
     setSuccessMessage(null);
+    setIsUnenrolling(true);
 
     try {
       const supabase = createBrowserClient();
       const { error } = await supabase.auth.mfa.unenroll({
-        factorId: factorIdToUnenroll,
+        factorId: unenrollFactorId,
       });
 
       if (error) {
@@ -182,10 +190,13 @@ export default function SecuritySettingsPage() {
       }
 
       setSuccessMessage("TOTP ফ্যাক্টর সফলভাবে মুছে ফেলা হয়েছে।");
+      setUnenrollFactorId(null);
       void fetchSecurityState();
     } catch (err: unknown) {
       console.error("[SecuritySettingsPage] handleUnenrollFactor error:", err);
       setErrorMessage("ফ্যাক্টর মুছতে সাময়িক ত্রুটি।");
+    } finally {
+      setIsUnenrolling(false);
     }
   };
 
@@ -416,6 +427,19 @@ export default function SecuritySettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Accessible Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!unenrollFactorId}
+        title="TOTP ফ্যাক্টর মুছে ফেলবেন?"
+        description="আপনি কি নিশ্চিত যে এই TOTP Authenticator ফ্যাক্টরটি মুছে ফেলতে চান? এটি মুছে ফেললে লগইনের সময় অতিরিক্ত নিরাপত্তা ধাপটি নিষ্ক্রিয় হয়ে যাবে।"
+        confirmLabel="মুছে ফেলুন"
+        cancelLabel="বাতিল"
+        isDestructive={true}
+        isLoading={isUnenrolling}
+        onConfirm={() => void executeUnenrollFactor()}
+        onCancel={() => setUnenrollFactorId(null)}
+      />
     </div>
   );
 }
