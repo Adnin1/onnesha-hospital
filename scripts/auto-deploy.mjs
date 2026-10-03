@@ -2,29 +2,34 @@ import { execSync } from 'child_process';
 
 console.log('\n🚀 [OHMS PRODUCTION RELEASE & DEPLOY PIPELINE STARTING...]');
 
+const cleanEnv = { ...process.env };
+for (const k of Object.keys(cleanEnv)) {
+  if (k.startsWith('npm_')) delete cleanEnv[k];
+}
+
 try {
   // Step 1: Pre-deployment quality checks
   console.log('\n🔍 Step 1: Running strict TypeScript typecheck...');
-  execSync('npm run typecheck', { stdio: 'inherit' });
+  execSync('npm run typecheck', { stdio: 'inherit', env: cleanEnv });
 
   console.log('\n🔍 Step 2: Running ESLint zero-warning gate...');
-  execSync('npx eslint . --max-warnings 0', { stdio: 'inherit' });
+  execSync('npx eslint . --max-warnings 0', { stdio: 'inherit', env: cleanEnv });
 
   console.log('\n🔒 Step 3: Running dependency security audit (high/critical level)...');
-  execSync('npm audit --audit-level=high', { stdio: 'inherit' });
+  execSync('npm audit --audit-level=high', { stdio: 'inherit', env: cleanEnv });
 
   console.log('\n🧪 Step 4: Running Node unit & integration test suite in strict certification mode...');
-  execSync('npm run test:certification', { stdio: 'inherit' });
+  execSync('npm run test:certification', { stdio: 'inherit', env: cleanEnv });
 
   console.log('\n🗄️ Step 5: Verifying Supabase remote migration parity...');
-  const migrationOutput = execSync('npx supabase migration list', { encoding: 'utf8' });
+  const migrationOutput = execSync('npx supabase migration list', { encoding: 'utf8', env: cleanEnv });
   if (migrationOutput.includes('"remote":null') || migrationOutput.includes('"local":null')) {
     throw new Error('Database migration parity mismatch between local and remote Supabase.');
   }
   console.log('✓ Remote database migrations are 100% in parity with local set.');
 
   console.log('\n🛡️ Step 6: Running Supabase database linting across linked instance...');
-  const lintOutput = execSync('npx supabase db lint --linked', { encoding: 'utf8' });
+  const lintOutput = execSync('npx supabase db lint --linked', { encoding: 'utf8', env: cleanEnv });
   const lintParsed = JSON.parse(lintOutput.substring(lintOutput.indexOf('{')));
   const errors = (lintParsed.results || []).flatMap(r => (r.issues || []).filter(i => i.level && i.level.toLowerCase().includes('error')));
   if (errors.length > 0) {
@@ -33,7 +38,7 @@ try {
   console.log('✓ Database schema, functions, and RLS policies passed lint checks.');
 
   console.log('\n🎭 Step 7: Running Playwright Chromium E2E browser tests...');
-  execSync('npx playwright test --project=chromium', { stdio: 'inherit' });
+  execSync('npx playwright test --project=chromium', { stdio: 'inherit', env: cleanEnv });
 
   // Step 8: Ensure working tree is clean (fail closed if dirty; no auto-commit)
   console.log('\n🐙 Step 8: Verifying Git working tree is clean...');
