@@ -9,23 +9,27 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-04T01:45:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-04T03:48:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.42` | VERIFIED (IMMUTABLE) |
-| **Preserved Release Tags** | `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
-| **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.42` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.42` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.42` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.42` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.42` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.42` | VERIFIED |
+| **Current Head SHA** | `05dfe1e7a560efe461b31835d1f98a8dccd44dba` | VERIFIED |
+| **Active Release Tag** | `v1.1.43` | VERIFIED (IMMUTABLE) |
+| **Preserved Release Tags** | `v1.1.42` (`4a06582db6ba30395bfa90a264a9e7f10519a9f6`), `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Remote Main Synchronization** | `origin/main` (`05dfe1e`) & `ssh-origin/main` (`05dfe1e`) | VERIFIED (100% IN SYNC) |
+| **GitHub Mandatory CI Status** | Run `#37152052397` (tag `v1.1.43`) & Run `#37152052289` (`main`) | SUCCESS (13/13 Steps, 4 Browsers) |
+| **Package Version (`package.json`)** | `1.1.43` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.43` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.43` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.43` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.43` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.43` | VERIFIED |
 | **Database Migrations Count** | `107 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261004040000_align_diagnostic_order_items_and_lab_alerts_schema.sql` | VERIFIED |
-| **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity) | VERIFIED |
+| **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity, 0 fatal lint errors) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting GitHub Actions Windows runner on tag push) | VERIFIED |
+| **Cloudflare Live Version** | `1.1.43` (`build_timestamp`: `2026-10-03T20:30:00Z`) | VERIFIED |
+| **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting Owner Secrets Gate in GitHub Actions; verified fallback to v1.1.4) | VERIFIED (FAIL-CLOSED) |
 | **Prerendered Website Routes** | `61 routes` (59 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
+| **Website Route Acceptance** | `59 / 59 HTML routes PASS` (0 violations) | VERIFIED (`audit:routes`) |
 
 ---
 
