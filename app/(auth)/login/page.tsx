@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, Mail, ArrowRight, ShieldCheck } from "lucide-react";
+import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { mapSafeAuthError, sanitizeRedirectPath } from "@/lib/auth/safe-errors";
 import { createBrowserClient } from "@/lib/supabase/client";
@@ -18,6 +18,7 @@ export default function LoginPage() {
   // Initial fields MUST be blank — zero pre-filled demo emails or passwords
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(
     urlError === "account_deactivated"
@@ -144,6 +145,7 @@ export default function LoginPage() {
                   required
                   autoComplete="username"
                   autoCapitalize="none"
+                  autoCorrect="off"
                   spellCheck={false}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -169,14 +171,22 @@ export default function LoginPage() {
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
                   id="access-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-4 py-2.5 min-h-[44px] bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                  className="w-full pl-9 pr-10 py-2.5 min-h-[44px] bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 focus:outline-none focus:text-slate-200 p-0.5 rounded cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 

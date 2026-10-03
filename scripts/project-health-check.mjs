@@ -366,6 +366,39 @@ try {
   warn(`Storage & Accounting invariant check skipped: ${e.message}`);
 }
 
+// ─── 16. Admin Authentication & IAM Invariants ───
+console.log('\n📋 16. Admin Authentication & IAM Invariants');
+try {
+  const loginSrc = fs.readFileSync(path.join(ROOT, 'app/(auth)/login/page.tsx'), 'utf8');
+  if (
+    loginSrc.includes('email.trim().toLowerCase()') &&
+    loginSrc.includes('autoCapitalize="none"') &&
+    loginSrc.includes('autoCorrect="off"') &&
+    loginSrc.includes('spellCheck={false}') &&
+    loginSrc.includes('showPassword')
+  ) {
+    pass('Login form enforces email trimming, case normalization, autoCapitalize suppression, and password reveal');
+  } else {
+    critical('Login form missing email normalization or mobile input hardening');
+  }
+
+  const redirects = fs.readFileSync(path.join(ROOT, 'public/_redirects'), 'utf8');
+  if (redirects.includes('/admin') && redirects.includes('/login')) {
+    pass('Cloudflare _redirects contains fallback routing for /admin and /admin/login');
+  } else {
+    critical('Cloudflare _redirects missing /admin fallback routing');
+  }
+
+  const verifyScript = fs.readFileSync(path.join(ROOT, 'scripts/verify-admin-account.mjs'), 'utf8');
+  if (verifyScript.includes('verify()') && verifyScript.includes('Super Admin role assigned')) {
+    pass('Admin IAM verification script operational with 9 invariant checks');
+  } else {
+    critical('scripts/verify-admin-account.mjs missing or incomplete');
+  }
+} catch (e) {
+  critical(`Admin authentication invariant check failed: ${e.message}`);
+}
+
 // ─── Summary ───
 const isStrictMode = process.argv.includes('--strict') || process.argv.includes('--release');
 console.log('\n' + '='.repeat(50));

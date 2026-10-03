@@ -147,5 +147,45 @@ describe("OHMS Priority-1 Admin Authentication Test Suite (10 Scenarios)", async
     assert.ok(content.includes("REVOKE ALL ON FUNCTION public.complete_current_user_password_change() FROM PUBLIC"), "Must revoke from PUBLIC");
     assert.ok(content.includes("GRANT EXECUTE ON FUNCTION public.complete_current_user_password_change() TO authenticated"), "Must grant to authenticated");
   });
+
+  test("17. Login form email input enforces autoCapitalize='none', autoCorrect='off', spellCheck={false}, and lowercase trimming", () => {
+    const loginPath = path.join(ROOT, "app/(auth)/login/page.tsx");
+    const content = fs.readFileSync(loginPath, "utf8");
+    assert.ok(content.includes('autoCapitalize="none"'), "autoCapitalize='none' required to prevent uppercase mobile emails");
+    assert.ok(content.includes('autoCorrect="off"'), "autoCorrect='off' required to prevent dictionary auto-corrections");
+    assert.ok(content.includes("spellCheck={false}"), "spellCheck={false} required");
+    assert.ok(content.includes("email.trim().toLowerCase()"), "email.trim().toLowerCase() required on submission");
+  });
+
+  test("18. Login form provides password visibility toggle for mobile input assurance", () => {
+    const loginPath = path.join(ROOT, "app/(auth)/login/page.tsx");
+    const content = fs.readFileSync(loginPath, "utf8");
+    assert.ok(content.includes("showPassword"), "showPassword state required");
+    assert.ok(content.includes("setShowPassword"), "setShowPassword toggle required");
+    assert.ok(content.includes("Eye") && content.includes("EyeOff"), "Eye and EyeOff icons required");
+  });
+
+  test("19. Cloudflare _redirects contains explicit 302 rules mapping /admin and /admin/login to /login", () => {
+    const redirectsPath = path.join(ROOT, "public/_redirects");
+    assert.ok(fs.existsSync(redirectsPath), "public/_redirects must exist");
+    const content = fs.readFileSync(redirectsPath, "utf8");
+    assert.ok(content.includes("/admin           /login          302"), "/admin redirect required");
+    assert.ok(content.includes("/admin/login     /login          302"), "/admin/login redirect required");
+  });
+
+  test("20. verify-admin-account script exists and validates 9 core IAM integrity invariants", () => {
+    const scriptPath = path.join(ROOT, "scripts/verify-admin-account.mjs");
+    assert.ok(fs.existsSync(scriptPath), "scripts/verify-admin-account.mjs must exist");
+    const content = fs.readFileSync(scriptPath, "utf8");
+    assert.ok(content.includes("1. User exists in auth.users"), "auth.users check required");
+    assert.ok(content.includes("2. Email is confirmed"), "email confirmed check required");
+    assert.ok(content.includes("3. User is not banned"), "banned check required");
+    assert.ok(content.includes("4. Profile exists in public.profiles"), "profile check required");
+    assert.ok(content.includes("5. Profile is active"), "active status check required");
+    assert.ok(content.includes("6. Organization ID is bound"), "org ID check required");
+    assert.ok(content.includes("7. No forced password change barrier"), "forced password barrier check required");
+    assert.ok(content.includes("8. Super Admin role assigned"), "super_admin role check required");
+    assert.ok(content.includes("9. Employee record active"), "active employee check required");
+  });
 });
 

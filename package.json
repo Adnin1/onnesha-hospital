@@ -16,6 +16,8 @@
     "test:e2e": "playwright test",
     "audit:assets": "node scripts/website-link-asset-forensics.mjs",
     "health:check": "node scripts/project-health-check.mjs --strict",
+    "admin:verify": "node scripts/verify-admin-account.mjs",
+    "admin:reset": "node scripts/create_admin.mjs",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
     "desktop:check": "tsc --noEmit && eslint . --quiet"
