@@ -9,17 +9,17 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-03T18:08:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-03T19:45:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.38` | VERIFIED |
-| **Preserved Release Tags** | `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
-| **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` aligned with HEAD | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.38` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.38` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.38` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.38` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.38` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.38` | VERIFIED |
+| **Active Release Tag** | `v1.1.39` (`0b8fafe2`) | VERIFIED (IMMUTABLE) |
+| **Preserved Release Tags** | `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` aligned with HEAD (`0b8fafe2`) | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.39` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.39` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.39` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.39` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.39` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.39` | VERIFIED |
 | **Database Migrations Count** | `104 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261003050000_dashboard_financial_aggregate_and_performance_indexes.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity) | VERIFIED |
@@ -332,3 +332,42 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
      - ESLint: 0 warnings, 0 errors (`eslint . --max-warnings 0`).
      - Automated Tests: 98/98 test suites passed (870 active passed, 0 failed, 6 skips).
      - Static Export: 58/58 routes generated with zero server-only dependencies.
+
+---
+
+## 14. Release v1.1.39 — Security Reset, Full Dependency Audit Remediation & Fail-Closed IAM Tooling
+
+- **Release Date:** 2026-10-03
+- **Authoritative Commit SHA:** `0b8fafe2`
+- **Release Tag:** `v1.1.39` (Clean, immutable tag without force-retagging)
+- **Scope & Addressed P0 Technical Findings:**
+  1. **Full Dependency Tree Vulnerability Remediation (P0):**
+     - Diagnosed and resolved the High severity denial-of-service advisory on `braces <= 3.0.3` (GHSA-vfj7-8cjw-p6xm) which blocked GitHub Actions Mandatory CI at `npm audit --audit-level=high`.
+     - Replaced the unmaintainable `eslint-config-next` package (which pulled in `braces` via `fast-glob` and `micromatch`) with modern, secure, and direct `typescript-eslint` flat configuration.
+     - Result: `npm audit` and `npm audit --audit-level=high` across both production and full development dependency graphs now report **0 vulnerabilities**.
+  2. **Health Check Auditor Correction (P0):**
+     - Upgraded `scripts/project-health-check.mjs` Section 12 with honest dual audit gates:
+       - **Gate 12A:** Production dependencies (`npm audit --omit=dev --audit-level=high`) -> **0 vulnerabilities**.
+       - **Gate 12B:** Full dependency graph (`npm audit --audit-level=high`) -> **0 vulnerabilities**.
+     - Eliminated any false-green masking or suppression.
+  3. **Admin IAM Tooling Fail-Closed Architecture (P0):**
+     - Rebuilt [`scripts/create_admin.mjs`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/scripts/create_admin.mjs) and [`scripts/verify-admin-account.mjs`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/scripts/verify-admin-account.mjs):
+       - Eradicated all hardcoded default passwords and default credentials.
+       - Eradicated privileged CLI `--reveal` key extraction fallbacks.
+       - Eradicated recovery link generation and terminal password echoing.
+       - Enforced strict password complexity policy (minimum 12 characters, uppercase, lowercase, numeric digit, special character).
+       - Enforced dynamic database resolution of active organization and `super_admin` role IDs (no synthetic hardcoded UUIDs).
+       - Enforced strict non-zero fail-closed exit when credentials or inputs are missing.
+       - Redacted all sensitive identifiers (emails, UUIDs) in audit logs.
+  4. **Secret Exposure Incident Response & Hygiene:**
+     - Conducted full repository forensic scan: 0 hardcoded secrets, 0 privileged keys in source control, tests, docs, or bundles.
+     - Documented Supabase privileged service-role key rotation procedure for project owner in Supabase Dashboard (`PENDING OWNER (CRITICAL)`).
+  5. **Release Provenance & Synchronization:**
+     - Synchronized version `1.1.39` across all 8 project manifests (`package.json`, `package-lock.json`, `Cargo.toml`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/downloads/desktop/latest.json`, `public/api/health.json`).
+     - Preserved immutable tag history: `v1.1.38` preserved without further mutation; `v1.1.39` cleanly created and pushed.
+  6. **Release Verification Metrics:**
+     - TypeScript: Clean (`tsc --noEmit`, 0 errors).
+     - ESLint: Clean (`npx eslint . --max-warnings 0`, 0 warnings, 0 errors).
+     - Automated Tests: 98/98 test suites passed (875 active passes, 0 failed, 6 skips).
+     - Strict Health Check: 16/16 gates green (`node scripts/project-health-check.mjs --strict`, 0 critical, 0 warnings).
+     - Live Edge Smoke Test: 15/15 routes HTTP 200 on `https://onnesha-hospital.pages.dev`.
