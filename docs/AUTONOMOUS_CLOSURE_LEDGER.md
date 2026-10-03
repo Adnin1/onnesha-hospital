@@ -9,19 +9,19 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-04T01:30:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-04T01:45:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.41` | VERIFIED (IMMUTABLE) |
-| **Preserved Release Tags** | `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.42` | VERIFIED (IMMUTABLE) |
+| **Preserved Release Tags** | `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED |
-| **Package Version (`package.json`)** | `1.1.41` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.41` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.41` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.41` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.41` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.41` | VERIFIED |
-| **Database Migrations Count** | `104 migration files` | VERIFIED |
-| **Latest Applied Migration** | `20261003050000_dashboard_financial_aggregate_and_performance_indexes.sql` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.42` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.42` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.42` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.42` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.42` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.42` | VERIFIED |
+| **Database Migrations Count** | `107 migration files` | VERIFIED |
+| **Latest Applied Migration** | `20261004040000_align_diagnostic_order_items_and_lab_alerts_schema.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting GitHub Actions Windows runner on tag push) | VERIFIED |
@@ -445,4 +445,34 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
      - Static Export: 61/61 static routes compiled (`next build`).
      - Static Link & Asset Forensics: 368 links and 1056 assets verified across 410 files, 0 broken references.
      - npm Audit: 0 vulnerabilities across full dependency tree (`npm audit` & `npm audit --audit-level=high`).
+
+---
+
+## 17. Release v1.1.42 — Zero-Error Remote Database Schema Alignment & Complete Supabase Parity
+
+- **Release Date:** 2026-10-04
+- **Version:** `1.1.42` (Synchronized across all 8 project manifests: `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/api/health.json`, `public/downloads/desktop/latest.json`)
+- **Key Enhancements & Closure Tracks:**
+  1. **Remote Database Fatal Lint Eradication (4 Errors -> 0 Fatal Errors):**
+     - Executed remote Supabase schema linting (`npx supabase db lint --linked`) and identified 4 fatal PL/pgSQL function errors in production:
+       - `admit_patient_to_bed_atomic`: Fixed column-to-expression count mismatch (missing `assigned_at NOW()` in `bed_assignments` INSERT).
+       - `vacate_or_discharge_bed_atomic`: Fixed unassigned `RECORD` variable projection by declaring explicit scalar UUID variables (`v_target_id`, `v_assignment_id`, `v_visit_id`, `v_patient_id`).
+       - `update_hospital_master_profile`: Resolved missing `details` JSONB column on `audit_logs` and added `module` fallback to satisfy audit logging invariants.
+       - `ingest_analyzer_transmission_atomic`: Resolved missing `received_at`, `processed_at`, `organization_id`, and `order_id` columns across `lab_analyzer_transmissions`, `diagnostic_order_items`, and `diagnostic_results`.
+     - Authored and applied 3 forward migrations:
+       - `20261004020000_fix_database_lint_functions_and_schema.sql` (Migration 105)
+       - `20261004030000_align_audit_logs_and_diagnostic_results_schema.sql` (Migration 106)
+       - `20261004040000_align_diagnostic_order_items_and_lab_alerts_schema.sql` (Migration 107)
+     - Applied all pending migrations to remote Supabase database (`iuhtzahuszdkdarhxobx`) via `npx supabase db push`.
+     - Verified `npx supabase db lint --linked` returns **0 fatal errors** across all schemas, functions, and RLS policies.
+     - Verified `npx supabase migration list` returns **100% parity** across all 107 migrations between local and remote environments.
+  2. **Release Quality Metrics:**
+     - TypeScript: Clean (`tsc --noEmit`, 0 errors).
+     - ESLint: Clean (`eslint`, 0 errors, 0 warnings).
+     - Automated Tests: 100/100 test suites passed (897 active passes, 0 failures, 6 hermetic skips).
+     - Static Export: 61/61 static routes compiled (`next build`).
+     - npm Audit: 0 vulnerabilities across full dependency tree (`npm audit` & `npm audit --audit-level=high`).
+     - Supabase Lint: 0 fatal errors on linked remote database.
+     - Migration Parity: 107 / 107 migrations in full sync.
+
 
