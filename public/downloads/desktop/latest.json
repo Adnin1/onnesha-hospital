@@ -1,14 +1,14 @@
 {
-  "version": "1.1.46",
+  "version": "1.1.47",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.46. Grounded desktop publication chain, fail-closed unbuilt redirects, resilient Playwright request context verification, and owner gates reconciliation.",
-  "pub_date": "2026-10-04T05:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.47. Content truth reconciliation, empirical Core Web Vitals telemetry, enriched Schema.org JSON-LD, and fail-closed publication integrity.",
+  "pub_date": "2026-10-05T01:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.46.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.47.exe",
       "installer_exe_sha256": "",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.46.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.47.msi",
       "installer_msi_sha256": "",
       "installer_msi_size": 0,
       "status": "pending_ci_workflow",

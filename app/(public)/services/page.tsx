@@ -66,7 +66,7 @@ export default function ServicesPage() {
               {
                 title: "Inpatient Wards & Cabins",
                 desc: "Hygienic general inpatient wards, AC and non-AC patient cabins with dedicated nursing attention.",
-                points: ["Piped Medical Gas Supply", "Dietary Planning Support", "Daily Inpatient Ward Rounds"],
+                points: ["Bedside Clinical Oxygen Support", "Inpatient Dietary Guidance", "Daily Inpatient Ward Rounds"],
               },
             ].map((srv, idx) => (
               <div key={idx} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">

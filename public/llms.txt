@@ -9,7 +9,7 @@
 
 ## 2. Infrastructure & Cloud Hosting Architecture
 - Platform Tier: Multi-Tenant Cloud Healthcare Architecture
-- Database Architecture: Managed PostgreSQL Relational Database (Supabase Platform; automated daily backups & PITR subject to production tier configuration)
+- Database Architecture: Managed PostgreSQL Relational Database (Supabase Platform; automated daily backups & PITR configured upon production tier upgrade; free tier baseline active)
 - Web Hosting & Edge CDN: Cloudflare Pages Global Anycast CDN for static client assets
 - Document & Scans Storage: Supabase Storage (`medical-documents-vault` bucket with Row-Level Security and time-limited signed URLs)
 - Security Architecture: Strict Row-Level Security (RLS) on all tenant tables, TLS 1.2+ in transit with modern cipher suites, Role-Based Access Control (RBAC), and server-authoritative finance validation
@@ -18,7 +18,7 @@
 ## 3. Application Profile
 - Application Type: Enterprise Hospital Information System (HIS / EMR), Outpatient & Inpatient Clinical Suite
 - Client Subsystems: Cross-Platform Progressive Web App (PWA) & Tauri 2 Native Desktop Client
-- Status: Active Production Deployment
+- Status: Active Production Web & Client Deployment (Unconditional commissioning pending owner operational gates: payment gateway, SMS, and hardware integration)
 
 ## 4. Clinical Capabilities
 - Outpatient Department (OPD): Specialist Doctor Consultation, Digital Token Queue, Online Appointments

@@ -1,9 +1,9 @@
 {
   "service": "Onnesha Hospital Management System (OHMS)",
   "type": "static_deployment_metadata",
-  "version": "1.1.46",
+  "version": "1.1.47",
   "environment": "production",
-  "build_timestamp": "2026-10-04T05:00:00.000Z",
+  "build_timestamp": "2026-10-05T01:30:00.000Z",
   "architecture": "cloudflare_pages_static_export",
   "runtime_monitoring": "not_applicable_for_static_metadata"
 }

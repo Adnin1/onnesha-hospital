@@ -54,8 +54,20 @@ export function HospitalJsonLd() {
     structuredData["address"] = {
       "@type": "PostalAddress",
       "streetAddress": HOSPITAL_METADATA.address,
+      "addressLocality": "Bogura",
+      "addressRegion": "Rajshahi Division",
       "addressCountry": "BD"
     };
+  }
+  if (HOSPITAL_METADATA.ambulanceHotline) {
+    structuredData["contactPoint"] = [
+      {
+        "@type": "ContactPoint",
+        "telephone": HOSPITAL_METADATA.ambulanceHotline,
+        "contactType": "emergency",
+        "availableLanguage": ["bn", "en"]
+      }
+    ];
   }
 
   return (

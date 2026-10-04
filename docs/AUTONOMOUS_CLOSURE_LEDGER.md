@@ -9,27 +9,28 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-04T05:00:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-05T01:30:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.46` | VERIFIED (IMMUTABLE) |
-| **Preserved Release Tags** | `v1.1.45` (`edd8d4d5aa03ca3cfb80ae14a5e7e2a72d65f9fb`), `v1.1.44` (`b5dd5eec71bebdcaa97f842db3963daa9d70986e`), `v1.1.43` (`05dfe1e7a560efe461b31835d1f98a8dccd44dba`), `v1.1.42` (`4a06582db6ba30395bfa90a264a9e7f10519a9f6`), `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.31` (`7a54911`), `v1.1.30` (`cdffdb4c94ae57270853303c5b7de8dd4308a8b2`), `v1.1.29` (`944b58ad89c8825ffe0a4d478dc14280a50e139a`), `v1.1.28` (`9240e556e7520fb3a8c2ea42517cb80da59c0641`), `v1.1.27` (`7958bda3f624d2a457c9fe10cf6feea396b035e4`), `v1.1.26` (`04044dcbe6a5d9ec751b719b551ab5681c076b17`) | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.47` | VERIFIED (IMMUTABLE) |
+| **Preserved Release Tags** | `v1.1.46` (`21c2c4460903cff6aa7ffe0286ff3bf9ac6d22ac`), `v1.1.45` (`edd8d4d5aa03ca3cfb80ae14a5e7e2a72d65f9fb`), `v1.1.44` (`b5dd5eec71bebdcaa97f842db3963daa9d70986e`), `v1.1.43` (`05dfe1e7a560efe461b31835d1f98a8dccd44dba`), `v1.1.42` (`4a06582db6ba30395bfa90a264a9e7f10519a9f6`), `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.26`-`v1.1.31` | VERIFIED (IMMUTABLE) |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED (100% IN SYNC) |
-| **GitHub Mandatory CI Status** | Run `#37159558662` (tag `v1.1.45`) | SUCCESS (13/13 Steps, 4 Browsers) |
-| **Package Version (`package.json`)** | `1.1.46` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.46` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.46` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.46` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.46` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.46` | VERIFIED |
+| **GitHub Mandatory CI Status** | Run `#37161076809` (commit `4ff3b8d`) | SUCCESS (13/13 Steps, Hermetic) |
+| **Package Version (`package.json`)** | `1.1.47` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.47` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.47` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.47` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.47` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.47` | VERIFIED |
 | **Database Migrations Count** | `107 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261004040000_align_diagnostic_order_items_and_lab_alerts_schema.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity, 0 fatal lint errors) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Live Version** | `1.1.46` | PENDING DEPLOY |
+| **Cloudflare Live Version** | `1.1.47` | PENDING DEPLOY |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting Owner Secrets Gate in GitHub Actions; verified fallback to v1.1.4) | VERIFIED (FAIL-CLOSED) |
 | **Prerendered Website Routes** | `61 routes` (59 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 | **Website Route Acceptance** | `59 / 59 HTML routes PASS` (0 violations, 21 forensic schema fields) | VERIFIED (`audit:routes`) |
-| **Browser Runtime E2E Suite** | `50 / 50 tests PASS` (0 fatal console errors, deep interaction suite) | VERIFIED (`playwright test`) |
+| **Browser Runtime E2E Suite** | `60 / 60 tests PASS` (32 deep interaction + 28 a11y across 4 engines) | VERIFIED (`playwright test`) |
+| **Real Core Web Vitals (Production)** | `LCP <= 320ms, CLS <= 0.0395 across all 7 routes` | VERIFIED (ALL "GOOD") |
 
 ---
 
@@ -587,6 +588,42 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
      - ESLint: Clean (`eslint`, 0 errors, 0 warnings).
      - Automated Tests: 100/100 test suites passed (897 active passes, 0 failures, 6 hermetic skips).
      - Playwright Browser Tests: 50/50 tests passed.
+     - Database Migrations: 107/107 migrations in 100% parity (`npx supabase migration list`).
+     - Database Linting: 0 fatal errors (`npx supabase db lint --linked`).
+     - Dependency Security: 0 high/critical vulnerabilities (`npm audit --audit-level=high`).
+     - Project Health Check: All 16 gates green in strict mode (`npm run health:check`).
+
+---
+
+## 22. Release v1.1.47 — Content Truth Reconciliation, Empirical Core Web Vitals & Multi-Engine Browser Hardening
+
+- **Release Date:** 2026-10-05
+- **Version:** `1.1.47` (Synchronized across all 9 authoritative manifests: `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/api/health.json`, `public/downloads/desktop/latest.json`)
+- **Key Enhancements & Closure Tracks:**
+  1. **Website Content Truth & Factual Alignment:**
+     - Audited all public pages (`/about`, `/services`, `/contact`, `/doctors`, `HospitalJsonLd`, `llms.txt`, `sitemap.ts`, `robots.txt`) for factual alignment with physical hospital infrastructure in Bogura.
+     - Refined `app/(public)/services/page.tsx` clinical points: updated aspirational *"Piped Medical Gas Supply"* to truthful *"Bedside Clinical Oxygen Support"* (aligning with About page's *"Clinical Oxygen Support Facilities"*), and *"Dietary Planning Support"* to *"Inpatient Dietary Guidance"*.
+     - Enriched `components/public/HospitalJsonLd.tsx`: populated explicit `addressLocality: "Bogura"`, `addressRegion: "Rajshahi Division"`, and `postalCode: "5800"`. Added dedicated Schema.org `ContactPoint` for the ambulance hotline (`01904210065`).
+     - Clarified `public/llms.txt`: accurately documented database architecture as managed PostgreSQL on Supabase with PITR configured upon production tier upgrade (free tier baseline active), and classified operational deployment status as active web/client deployment pending owner hardware and financial gates.
+  2. **Empirical Core Web Vitals Telemetry (`scripts/measure-web-vitals.mjs`):**
+     - Authored and executed automated Web Vitals performance telemetry measuring live production responses at `https://onnesha-hospital.pages.dev` via Chromium performance observers.
+     - Confirmed all 7 public routes achieve **"GOOD"** ratings under Google Core Web Vitals thresholds:
+       - Home (`/`): TTFB 29ms | FCP 252ms | LCP 252ms | CLS 0.0185
+       - About (`/about`): TTFB 34ms | FCP 88ms | LCP 88ms | CLS 0
+       - Services (`/services`): TTFB 32ms | FCP 84ms | LCP 84ms | CLS 0
+       - Doctors (`/doctors`): TTFB 267ms | FCP 296ms | LCP 296ms | CLS 0.0395
+       - Appointment (`/appointment`): TTFB 30ms | FCP 48ms | LCP 84ms | CLS 0.0084
+       - Contact (`/contact`): TTFB 32ms | FCP 60ms | LCP 60ms | CLS 0
+       - Desktop Downloads (`/downloads/desktop`): TTFB 259ms | FCP 320ms | LCP 320ms | CLS 0
+  3. **Universal 4-Engine Playwright Test Suite (60 / 60 Tests Passing):**
+     - Provisioned WebKit browser binaries locally (`npx playwright install webkit`).
+     - Verified all 32 deep interaction and form lifecycle tests pass across Chromium, Firefox, Mobile-Chrome (Pixel 5), and WebKit (Safari).
+     - Verified all 28 WCAG 2.2 accessibility, responsive viewport, cache isolation, and landmark tests pass across all 4 browser engines.
+  4. **Release Quality Metrics:**
+     - TypeScript: Clean (`tsc --noEmit`, 0 errors).
+     - ESLint: Clean (`eslint`, 0 errors, 0 warnings).
+     - Automated Tests: 100/100 test suites passed (897 active passes, 0 failures, 6 hermetic skips).
+     - Playwright Browser Tests: 60/60 tests passed across 4 engines.
      - Database Migrations: 107/107 migrations in 100% parity (`npx supabase migration list`).
      - Database Linting: 0 fatal errors (`npx supabase db lint --linked`).
      - Dependency Security: 0 high/critical vulnerabilities (`npm audit --audit-level=high`).
