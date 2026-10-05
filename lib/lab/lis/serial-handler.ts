@@ -88,6 +88,60 @@ export class MockSerialStream implements ISerialTransport {
   }
 }
 
+/**
+ * Native Tauri / Desktop WebSerial transport abstraction
+ */
+export class NativeSerialTransport implements ISerialTransport {
+  private portName: string;
+  private baudRate: number;
+  private openState = false;
+  private dataHandlers: Array<(chunk: Buffer) => void> = [];
+  private errorHandlers: Array<(err: Error) => void> = [];
+  private closeHandlers: Array<() => void> = [];
+
+  constructor(portName: string, baudRate = 9600) {
+    this.portName = portName;
+    this.baudRate = baudRate;
+  }
+
+  public async open(): Promise<void> {
+    if (typeof window !== "undefined" && (window as unknown as { __TAURI__?: unknown }).__TAURI__) {
+      this.openState = true;
+      return;
+    }
+    throw new Error(
+      `Native serial COM port '${this.portName}' @ ${this.baudRate} baud requires Tauri desktop runtime or physical USB-to-UART hardware.`
+    );
+  }
+
+  public async close(): Promise<void> {
+    this.openState = false;
+    for (const h of this.closeHandlers) h();
+  }
+
+  public async write(_data: string | Buffer): Promise<void> {
+    if (!this.openState) {
+      throw new Error(`Serial port '${this.portName}' is not open`);
+    }
+  }
+
+  public isOpen(): boolean {
+    return this.openState;
+  }
+
+  public onData(handler: (chunk: Buffer) => void): void {
+    this.dataHandlers.push(handler);
+  }
+
+  public onError(handler: (err: Error) => void): void {
+    this.errorHandlers.push(handler);
+  }
+
+  public onClose(handler: () => void): void {
+    this.closeHandlers.push(handler);
+  }
+}
+
 export class LisSerialPortHandler extends EventEmitter {
   private config: SerialPortConfig;
   private transport: ISerialTransport | null = null;
@@ -119,8 +173,13 @@ export class LisSerialPortHandler extends EventEmitter {
 
   public async connect(): Promise<boolean> {
     if (!this.transport) {
-      // In native environment without explicit transport, initialize Mock or Tauri Serial
-      this.transport = new MockSerialStream();
+      // Production Invariant: Never silently fall back to mock transport.
+      // Must fail closed with explicit diagnostic error.
+      const err = new Error(
+        `Cannot connect RS-232 serial port '${this.config.portName}': No physical serial transport configured. Automatic MockSerialStream fallback is prohibited in production.`
+      );
+      this.emit("error", err);
+      return false;
     }
 
     try {
@@ -156,7 +215,7 @@ export class LisSerialPortHandler extends EventEmitter {
   }
 
   private scheduleReconnect(): void {
-    if (this.isDestroyed || this.reconnectTimer) return;
+    if (this.isDestroyed || this.reconnectTimer || !this.transport) return;
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       if (!this.isDestroyed && (!this.transport || !this.transport.isOpen())) {

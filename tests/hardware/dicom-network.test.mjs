@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+
 import {
   DICOM_SOP_CLASSES,
   DICOM_TRANSFER_SYNTAXES,
@@ -14,10 +18,12 @@ import {
   encodePDataTfPdu,
   decodePduHeader,
   decodePDataTf,
+  decodeAssociateRqPdu,
   encodeDimseCommand,
   decodeDimseCommand,
   PacsBridgeService,
   DicomModalitySimulator,
+  DurableDiskDicomStorage,
   createSyntheticDicomBuffer,
 } from '../../lib/hardware/pacs/dicom-pacs.ts';
 
@@ -153,4 +159,98 @@ test('DICOM 6. End-to-End Modality Simulator execution cycle', async () => {
   assert.ok(report.worklistItemsFound > 0, 'Must query Modality Worklist successfully');
   assert.equal(report.studyUploaded, true, 'Must upload DICOM study instance to PACS');
   assert.ok(report.bytesTransferred > 50000, 'Must transfer valid DICOM imaging bytes');
+});
+
+test('DICOM 7. decodeAssociateRqPdu parses calling/called AE and presentation contexts', () => {
+  const reqPdu = encodeAssociateRqPdu({
+    callingAeTitle: 'GE_VOLUSON_US1',
+    calledAeTitle: 'OHMS_PACS',
+    presentationContexts: [
+      {
+        id: 1,
+        abstractSyntax: DICOM_SOP_CLASSES.US_IMAGE_STORAGE,
+        transferSyntaxes: [DICOM_TRANSFER_SYNTAXES.EXPLICIT_VR_LITTLE_ENDIAN],
+      },
+    ],
+  });
+
+  const parsed = decodeAssociateRqPdu(reqPdu);
+  assert.equal(parsed.callingAeTitle, 'GE_VOLUSON_US1');
+  assert.equal(parsed.calledAeTitle, 'OHMS_PACS');
+  assert.equal(parsed.presentationContexts.length, 1);
+  assert.equal(parsed.presentationContexts[0].id, 1);
+  assert.equal(parsed.presentationContexts[0].abstractSyntax, DICOM_SOP_CLASSES.US_IMAGE_STORAGE);
+});
+
+test('DICOM 8. Association negotiation rejects unauthorized calling AE Titles', async () => {
+  const pacs = new PacsBridgeService({
+    localAeTitle: 'OHMS_PACS',
+    port: 11112,
+    allowedCallingAeTitles: ['AUTHORIZED_MODALITY_1', 'SHIMADZU_RAD1'],
+  });
+
+  // Rejection when calling AE is not in allowedCallingAeTitles
+  await assert.rejects(
+    async () => {
+      await pacs.negotiateAssociation({
+        callingAeTitle: 'ROGUE_SCANNER',
+        calledAeTitle: 'OHMS_PACS',
+        presentationContexts: [
+          {
+            id: 1,
+            abstractSyntax: DICOM_SOP_CLASSES.VERIFICATION,
+            transferSyntaxes: [DICOM_TRANSFER_SYNTAXES.EXPLICIT_VR_LITTLE_ENDIAN],
+          },
+        ],
+      });
+    },
+    /Calling AE Title 'ROGUE_SCANNER' not in allowlist/
+  );
+
+  // Acceptance when calling AE is in allowlist
+  const accepted = await pacs.negotiateAssociation({
+    callingAeTitle: 'SHIMADZU_RAD1',
+    calledAeTitle: 'OHMS_PACS',
+    presentationContexts: [
+      {
+        id: 1,
+        abstractSyntax: DICOM_SOP_CLASSES.VERIFICATION,
+        transferSyntaxes: [DICOM_TRANSFER_SYNTAXES.EXPLICIT_VR_LITTLE_ENDIAN],
+      },
+    ],
+  });
+
+  assert.equal(accepted.callingAeTitle, 'SHIMADZU_RAD1');
+  assert.equal(accepted.presentationContexts[0].result, 0);
+});
+
+test('DICOM 9. DurableDiskDicomStorage persists .dcm and .meta.json files with read verification', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ohms-dicom-test-'));
+  try {
+    const storage = new DurableDiskDicomStorage(tempDir);
+    const phantomBytes = createSyntheticDicomBuffer({
+      patientId: 'ONN-P-99999',
+      patientName: 'TEST^PATIENT',
+      modality: 'DX',
+    });
+
+    const sopUid = '1.2.826.0.1.3680043.8.498.99999';
+    await storage.store(sopUid, phantomBytes, { modality: 'DX', patientId: 'ONN-P-99999' });
+
+    // Verify files on disk
+    const dcmFile = path.join(tempDir, `${sopUid}.dcm`);
+    const metaFile = path.join(tempDir, `${sopUid}.meta.json`);
+    assert.ok(fs.existsSync(dcmFile), 'DCM file must exist on disk');
+    assert.ok(fs.existsSync(metaFile), 'Metadata JSON file must exist on disk');
+
+    const meta = JSON.parse(fs.readFileSync(metaFile, 'utf8'));
+    assert.equal(meta.patientId, 'ONN-P-99999');
+
+    // Retrieve via storage adapter
+    const retrieved = await storage.retrieve(sopUid);
+    assert.ok(retrieved !== null);
+    assert.equal(retrieved.bytes.length, phantomBytes.length);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 });

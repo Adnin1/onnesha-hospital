@@ -11,9 +11,13 @@
  * 6. DicomModalitySimulator: loops back association, worklist query, phantom generation & C-STORE
  */
 
+import net from "node:net";
+import fs from "node:fs";
+import path from "node:path";
 import type {
   IPacsBridgeService,
   DeviceStatus,
+  DeviceConnectionState,
   DicomNode,
   DicomModalityWorklistItem,
   DicomStoreResult,
@@ -430,6 +434,60 @@ export function encodeAssociateAcPdu(ac: AssociationAcceptance): Buffer {
   return pdu;
 }
 
+export function decodeAssociateRqPdu(buf: Buffer): AssociationRequest {
+  if (buf.length < 74) {
+    throw new Error(`Buffer too short for A-ASSOCIATE-RQ: ${buf.length} < 74 bytes`);
+  }
+  const calledAeTitle = buf.subarray(10, 26).toString("ascii").trim();
+  const callingAeTitle = buf.subarray(26, 42).toString("ascii").trim();
+
+  const presentationContexts: PresentationContext[] = [];
+  let offset = 74;
+
+  while (offset + 4 <= buf.length) {
+    const itemType = buf.readUInt8(offset);
+    const itemLength = buf.readUInt16BE(offset + 2);
+    offset += 4;
+
+    if (offset + itemLength > buf.length) break;
+
+    if (itemType === 0x20) {
+      // Presentation Context Item
+      const pcId = buf.readUInt8(offset);
+      let subOffset = offset + 4;
+      let abstractSyntax = "";
+      const transferSyntaxes: string[] = [];
+
+      while (subOffset + 4 <= offset + itemLength) {
+        const subType = buf.readUInt8(subOffset);
+        const subLen = buf.readUInt16BE(subOffset + 2);
+        subOffset += 4;
+
+        if (subType === 0x30) {
+          abstractSyntax = buf.subarray(subOffset, subOffset + subLen).toString("ascii").trim();
+        } else if (subType === 0x40) {
+          transferSyntaxes.push(buf.subarray(subOffset, subOffset + subLen).toString("ascii").trim());
+        }
+        subOffset += subLen;
+      }
+
+      presentationContexts.push({
+        id: pcId,
+        abstractSyntax,
+        transferSyntaxes,
+      });
+    }
+
+    offset += itemLength;
+  }
+
+  return {
+    calledAeTitle,
+    callingAeTitle,
+    presentationContexts,
+  };
+}
+
 export function encodeReleaseRqPdu(): Buffer {
   const pdu = Buffer.alloc(10);
   pdu.writeUInt8(DICOM_PDU_TYPES.A_RELEASE_RQ, 0);
@@ -609,6 +667,236 @@ export function decodeDimseCommand(buf: Buffer): DimseMessage {
 }
 
 // ----------------------------------------------------------------------------
+// PACS Storage Adapters
+// ----------------------------------------------------------------------------
+
+export interface StoredDicomInstance {
+  bytes: Uint8Array;
+  metadata: Record<string, unknown>;
+  storedAt: string;
+}
+
+export interface IPacsStorageAdapter {
+  store(sopInstanceUid: string, bytes: Uint8Array, metadata: Record<string, unknown>): Promise<boolean>;
+  retrieve(sopInstanceUid: string): Promise<StoredDicomInstance | undefined>;
+  has(sopInstanceUid: string): Promise<boolean>;
+  count(): Promise<number>;
+  clear(): Promise<void>;
+}
+
+export class InMemoryDicomStorage implements IPacsStorageAdapter {
+  private instances = new Map<string, StoredDicomInstance>();
+
+  public async store(sopInstanceUid: string, bytes: Uint8Array, metadata: Record<string, unknown>): Promise<boolean> {
+    this.instances.set(sopInstanceUid, {
+      bytes,
+      metadata,
+      storedAt: new Date().toISOString(),
+    });
+    return true;
+  }
+
+  public async retrieve(sopInstanceUid: string): Promise<StoredDicomInstance | undefined> {
+    return this.instances.get(sopInstanceUid);
+  }
+
+  public async has(sopInstanceUid: string): Promise<boolean> {
+    return this.instances.has(sopInstanceUid);
+  }
+
+  public async count(): Promise<number> {
+    return this.instances.size;
+  }
+
+  public async clear(): Promise<void> {
+    this.instances.clear();
+  }
+}
+
+export class DurableDiskDicomStorage implements IPacsStorageAdapter {
+  private storageDir: string;
+
+  constructor(storageDir: string) {
+    this.storageDir = storageDir;
+    if (typeof process !== "undefined" && !fs.existsSync(this.storageDir)) {
+      try {
+        fs.mkdirSync(this.storageDir, { recursive: true });
+      } catch {
+        // Restricted environment fallback
+      }
+    }
+  }
+
+  public async store(sopInstanceUid: string, bytes: Uint8Array, metadata: Record<string, unknown>): Promise<boolean> {
+    try {
+      if (!fs.existsSync(this.storageDir)) {
+        fs.mkdirSync(this.storageDir, { recursive: true });
+      }
+      const dcmPath = path.join(this.storageDir, `${sopInstanceUid}.dcm`);
+      const metaPath = path.join(this.storageDir, `${sopInstanceUid}.meta.json`);
+      fs.writeFileSync(dcmPath, Buffer.from(bytes));
+      fs.writeFileSync(metaPath, JSON.stringify(metadata, null, 2), "utf-8");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  public async retrieve(sopInstanceUid: string): Promise<StoredDicomInstance | undefined> {
+    const dcmPath = path.join(this.storageDir, `${sopInstanceUid}.dcm`);
+    const metaPath = path.join(this.storageDir, `${sopInstanceUid}.meta.json`);
+    if (!fs.existsSync(dcmPath)) return undefined;
+
+    try {
+      const bytes = new Uint8Array(fs.readFileSync(dcmPath));
+      let meta: Record<string, unknown> = {};
+      if (fs.existsSync(metaPath)) {
+        meta = JSON.parse(fs.readFileSync(metaPath, "utf-8")) as Record<string, unknown>;
+      }
+      return {
+        bytes,
+        metadata: meta,
+        storedAt: new Date().toISOString(),
+      };
+    } catch {
+      return undefined;
+    }
+  }
+
+  public async has(sopInstanceUid: string): Promise<boolean> {
+    const dcmPath = path.join(this.storageDir, `${sopInstanceUid}.dcm`);
+    return fs.existsSync(dcmPath);
+  }
+
+  public async count(): Promise<number> {
+    if (!fs.existsSync(this.storageDir)) return 0;
+    return fs.readdirSync(this.storageDir).filter((f) => f.endsWith(".dcm")).length;
+  }
+
+  public async clear(): Promise<void> {
+    if (fs.existsSync(this.storageDir)) {
+      for (const f of fs.readdirSync(this.storageDir)) {
+        try {
+          fs.unlinkSync(path.join(this.storageDir, f));
+        } catch {}
+      }
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// DICOM Network Transports
+// ----------------------------------------------------------------------------
+
+export interface IDicomNetworkTransport {
+  listen(port: number, host?: string): Promise<void>;
+  close(): Promise<void>;
+  isListening(): boolean;
+  onAssociation(handler: (req: AssociationRequest) => Promise<AssociationAcceptance>): void;
+}
+
+export class SimulatorDicomTransport implements IDicomNetworkTransport {
+  private listening = false;
+  private handler: ((req: AssociationRequest) => Promise<AssociationAcceptance>) | null = null;
+
+  public async listen(_port: number, _host?: string): Promise<void> {
+    this.listening = true;
+  }
+
+  public async close(): Promise<void> {
+    this.listening = false;
+  }
+
+  public isListening(): boolean {
+    return this.listening;
+  }
+
+  public onAssociation(handler: (req: AssociationRequest) => Promise<AssociationAcceptance>): void {
+    this.handler = handler;
+  }
+
+  public async triggerAssociation(req: AssociationRequest): Promise<AssociationAcceptance> {
+    if (!this.handler) {
+      throw new Error("No association handler registered on simulator transport");
+    }
+    return this.handler(req);
+  }
+}
+
+export class NodeTcpDicomTransport implements IDicomNetworkTransport {
+  private server: net.Server | null = null;
+  private listening = false;
+  private handler: ((req: AssociationRequest) => Promise<AssociationAcceptance>) | null = null;
+
+  public async listen(port: number, host = "0.0.0.0"): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.server = net.createServer((socket) => {
+        socket.on("data", async (buf) => {
+          try {
+            const header = decodePduHeader(buf);
+            if (header.pduType === DICOM_PDU_TYPES.A_ASSOCIATE_RQ) {
+              const req = decodeAssociateRqPdu(buf);
+              if (this.handler) {
+                try {
+                  const ac = await this.handler(req);
+                  socket.write(encodeAssociateAcPdu(ac));
+                } catch {
+                  // Reject association
+                  const rjBuf = Buffer.from([
+                    DICOM_PDU_TYPES.A_ASSOCIATE_RJ,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x04,
+                    0x00,
+                    0x01,
+                    0x01,
+                    0x01,
+                  ]);
+                  socket.write(rjBuf);
+                }
+              }
+            } else if (header.pduType === DICOM_PDU_TYPES.A_RELEASE_RQ) {
+              socket.write(encodeReleaseRpPdu());
+              socket.end();
+            }
+          } catch {
+            socket.destroy();
+          }
+        });
+      });
+
+      this.server.listen(port, host, () => {
+        this.listening = true;
+        resolve();
+      });
+
+      this.server.on("error", (err) => {
+        this.listening = false;
+        reject(err);
+      });
+    });
+  }
+
+  public async close(): Promise<void> {
+    this.listening = false;
+    if (this.server) {
+      this.server.close();
+      this.server = null;
+    }
+  }
+
+  public isListening(): boolean {
+    return this.listening;
+  }
+
+  public onAssociation(handler: (req: AssociationRequest) => Promise<AssociationAcceptance>): void {
+    this.handler = handler;
+  }
+}
+
+// ----------------------------------------------------------------------------
 // PACS Bridge Service
 // ----------------------------------------------------------------------------
 
@@ -617,6 +905,8 @@ export interface PacsBridgeConfig {
   port: number;
   organizationId?: string;
   storageVaultDir?: string;
+  allowedCallingAeTitles?: string[];
+  maxAssociations?: number;
 }
 
 export class PacsBridgeService implements IPacsBridgeService {
@@ -629,14 +919,37 @@ export class PacsBridgeService implements IPacsBridgeService {
 
   private worklistItems: Map<string, DicomModalityWorklistItem> = new Map();
   private storedInstances: Map<string, { bytes: Uint8Array; metadata: unknown }> = new Map();
+  private storage: IPacsStorageAdapter;
+  private transport: IDicomNetworkTransport | null = null;
+  private isSimulatedTransport = true;
 
-  constructor(config: Partial<PacsBridgeConfig> = {}) {
+  constructor(
+    config: Partial<PacsBridgeConfig> = {},
+    storage?: IPacsStorageAdapter,
+    transport?: IDicomNetworkTransport
+  ) {
     this.config = {
       localAeTitle: config.localAeTitle || "OHMS_PACS",
       port: config.port || 11112,
       organizationId: config.organizationId,
       storageVaultDir: config.storageVaultDir || "diagnostics-vault",
+      allowedCallingAeTitles: config.allowedCallingAeTitles,
+      maxAssociations: config.maxAssociations || 10,
     };
+
+    this.storage = storage || new InMemoryDicomStorage();
+    if (transport) {
+      this.transport = transport;
+      this.isSimulatedTransport = transport instanceof SimulatorDicomTransport;
+    } else {
+      this.transport = new SimulatorDicomTransport();
+      this.isSimulatedTransport = true;
+    }
+
+    if (this.transport) {
+      this.transport.onAssociation(this.negotiateAssociation.bind(this));
+    }
+
     this.seedDefaultWorklist();
   }
 
@@ -679,12 +992,24 @@ export class PacsBridgeService implements IPacsBridgeService {
   }
 
   public getStatus(): DeviceStatus {
+    const isListening = this.transport ? this.transport.isListening() : false;
+    let state: DeviceConnectionState = "UNCONFIGURED";
+    if (!this.transport) {
+      state = "UNCONFIGURED";
+    } else if (this.isRunning && isListening) {
+      state = "CONNECTED";
+    } else if (this.isRunning) {
+      state = "CONNECTED";
+    } else {
+      state = "DISCONNECTED";
+    }
+
     return {
       deviceClass: "PACS_MODALITY",
       deviceId: `PACS_${this.config.localAeTitle}`,
       name: `PACS Bridge (${this.config.localAeTitle}:${this.config.port})`,
-      state: this.isRunning ? "CONNECTED" : "DISCONNECTED",
-      isSimulated: false,
+      state,
+      isSimulated: this.isSimulatedTransport,
       lastSeenAt: this.lastSeenAt,
       errorMessage: this.lastError,
       telemetry: {
@@ -693,22 +1018,82 @@ export class PacsBridgeService implements IPacsBridgeService {
         storedStudiesCount: this.storedStudiesCount,
         activeAssociationsCount: this.activeAssociationsCount,
         activeWorklistCount: this.worklistItems.size,
+        transport: this.isSimulatedTransport ? "LOOPBACK_SIMULATOR" : "TCP_LISTENER",
+        allowedCallingAeTitles: this.config.allowedCallingAeTitles || ["*"],
       },
     };
   }
 
   public async start(): Promise<void> {
     this.isRunning = true;
+    if (this.transport) {
+      await this.transport.listen(this.config.port);
+    }
     this.lastSeenAt = new Date().toISOString();
   }
 
   public async stop(): Promise<void> {
     this.isRunning = false;
+    if (this.transport) {
+      await this.transport.close();
+    }
   }
 
   public async echo(_targetNode: DicomNode): Promise<boolean> {
     this.lastSeenAt = new Date().toISOString();
     return true;
+  }
+
+  public async negotiateAssociation(req: AssociationRequest): Promise<AssociationAcceptance> {
+    if (
+      this.config.allowedCallingAeTitles &&
+      this.config.allowedCallingAeTitles.length > 0 &&
+      !this.config.allowedCallingAeTitles.includes("*")
+    ) {
+      if (!this.config.allowedCallingAeTitles.includes(req.callingAeTitle)) {
+        throw new Error(
+          `DICOM Association rejected: Calling AE Title '${req.callingAeTitle}' not in allowlist`
+        );
+      }
+    }
+
+    const acceptedPcs: PresentationContext[] = [];
+    const supportedSyntaxes = Object.values(DICOM_SOP_CLASSES) as string[];
+
+    for (const pc of req.presentationContexts) {
+      const isSyntaxSupported = supportedSyntaxes.includes(pc.abstractSyntax);
+      if (!isSyntaxSupported) {
+        acceptedPcs.push({
+          id: pc.id,
+          abstractSyntax: pc.abstractSyntax,
+          transferSyntaxes: [],
+          result: 3, // Abstract syntax not supported
+        });
+        continue;
+      }
+
+      const validSyntaxes: readonly string[] = Object.values(DICOM_TRANSFER_SYNTAXES);
+      const acceptedTransferSyntax =
+        pc.transferSyntaxes.find((ts) => validSyntaxes.includes(ts)) ||
+        DICOM_TRANSFER_SYNTAXES.EXPLICIT_VR_LITTLE_ENDIAN;
+
+      acceptedPcs.push({
+        id: pc.id,
+        abstractSyntax: pc.abstractSyntax,
+        transferSyntaxes: [acceptedTransferSyntax],
+        result: 0, // Acceptance
+      });
+    }
+
+    this.activeAssociationsCount++;
+    this.lastSeenAt = new Date().toISOString();
+
+    return {
+      callingAeTitle: req.callingAeTitle,
+      calledAeTitle: this.config.localAeTitle,
+      presentationContexts: acceptedPcs,
+      maxPduLength: req.maxPduLength || DEFAULT_MAX_PDU_LENGTH,
+    };
   }
 
   public async queryWorklist(
@@ -757,6 +1142,8 @@ export class PacsBridgeService implements IPacsBridgeService {
           ? DICOM_SOP_CLASSES.US_IMAGE_STORAGE
           : DICOM_SOP_CLASSES.DX_IMAGE_STORAGE;
 
+      await this.storage.store(sopInstanceUid, dicomBytes, parsed as Record<string, unknown>);
+
       this.storedInstances.set(sopInstanceUid, {
         bytes: dicomBytes,
         metadata: parsed,
@@ -789,6 +1176,14 @@ export class PacsBridgeService implements IPacsBridgeService {
 
   public getStoredCount(): number {
     return this.storedStudiesCount;
+  }
+
+  public getStorageAdapter(): IPacsStorageAdapter {
+    return this.storage;
+  }
+
+  public getNetworkTransport(): IDicomNetworkTransport | null {
+    return this.transport;
   }
 }
 

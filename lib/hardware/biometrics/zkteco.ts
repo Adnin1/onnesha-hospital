@@ -10,6 +10,7 @@
  * 5. ZkTecoSimulatorSocket loopback simulator for contract testing without physical hardware
  */
 
+import net from "node:net";
 import type {
   IBiometricService,
   DeviceStatus,
@@ -32,6 +33,8 @@ export const ZK_COMMANDS = {
   CMD_SET_TIME: 202,
   CMD_GET_VERSION: 1100,
   CMD_DEVICE: 11,
+  CMD_SET_USER: 8,          // Write user info / employee sync
+  CMD_DELETE_USER: 18,      // Delete user info
   CMD_USERTEMP_RRQ: 9,      // Request user templates / list
   CMD_ATTLOG_RRQ: 13,        // Request attendance logs
   CMD_CLEAR_ATTLOG: 14,      // Clear attendance log
@@ -285,6 +288,49 @@ export function formatZk40ByteAttendanceRecord(
   return buf;
 }
 
+export function formatZkUserRecord(employee: EmployeeBiometricProfile): Buffer {
+  const buf = Buffer.alloc(72, 0);
+  const numericPin = parseInt(employee.badgeNumber.replace(/\D/g, ""), 10) || 1;
+  buf.writeUInt16LE(numericPin & 0xffff, 0);
+  buf.writeUInt8(employee.role === "ADMIN" || employee.role === "DIRECTOR" ? 14 : 0, 2);
+  if (employee.cardPin) {
+    const pinStr = employee.cardPin.slice(0, 8);
+    buf.write(pinStr, 3, pinStr.length, "ascii");
+  }
+  const nameBytes = Buffer.from(employee.fullName.slice(0, 24), "utf-8");
+  nameBytes.copy(buf, 11, 0, Math.min(24, nameBytes.length));
+  buf.writeUInt32LE(0, 35); // Card number
+  buf.writeUInt8(1, 39);    // Group number
+  buf.writeUInt16LE(0, 40); // Timezone
+  const badgeBytes = Buffer.from(employee.badgeNumber.slice(0, 24), "ascii");
+  badgeBytes.copy(buf, 48, 0, Math.min(24, badgeBytes.length));
+  return buf;
+}
+
+export function parseZkUserRecord(buf: Buffer): EmployeeBiometricProfile {
+  if (buf.length < 24) {
+    throw new Error(`Buffer too short for ZK user record: ${buf.length} < 24 bytes`);
+  }
+  const privilege = buf.readUInt8(2);
+  const nameEnd = buf.indexOf(0, 11) !== -1 ? buf.indexOf(0, 11) : 35;
+  const fullName = buf.subarray(11, Math.min(nameEnd, 35)).toString("utf-8").trim();
+  let badgeNumber = "";
+  if (buf.length >= 72) {
+    const badgeEnd = buf.indexOf(0, 48) !== -1 ? buf.indexOf(0, 48) : 72;
+    badgeNumber = buf.subarray(48, Math.min(badgeEnd, 72)).toString("ascii").trim();
+  }
+  if (!badgeNumber) {
+    const pin = buf.readUInt16LE(0);
+    badgeNumber = `EMP-${pin}`;
+  }
+  return {
+    badgeNumber,
+    fullName: fullName || badgeNumber,
+    role: privilege === 14 ? "ADMIN" : "STAFF",
+    isEnabled: true,
+  };
+}
+
 // ----------------------------------------------------------------------------
 // Network Socket Interface & Biometric Service
 // ----------------------------------------------------------------------------
@@ -293,6 +339,68 @@ export interface ZkNetworkSocket {
   send(packet: Buffer): Promise<Buffer>;
   close(): Promise<void>;
   isConnected(): boolean;
+}
+
+export class ZkTecoTcpSocket implements ZkNetworkSocket {
+  private socket: net.Socket | null = null;
+  private host: string;
+  private port: number;
+  private timeoutMs: number;
+  private isConnectedState = false;
+
+  constructor(host: string, port = 4370, timeoutMs = 5000) {
+    this.host = host;
+    this.port = port;
+    this.timeoutMs = timeoutMs;
+  }
+
+  public isConnected(): boolean {
+    return this.isConnectedState && this.socket !== null && !this.socket.destroyed;
+  }
+
+  public async close(): Promise<void> {
+    this.isConnectedState = false;
+    if (this.socket) {
+      this.socket.destroy();
+      this.socket = null;
+    }
+  }
+
+  public async send(packet: Buffer): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const sock = new net.Socket();
+      this.socket = sock;
+      let timer: NodeJS.Timeout | null = null;
+
+      const cleanup = () => {
+        if (timer) clearTimeout(timer);
+      };
+
+      timer = setTimeout(() => {
+        cleanup();
+        sock.destroy();
+        this.isConnectedState = false;
+        reject(new Error(`ZKTeco TCP connection timeout to ${this.host}:${this.port} (${this.timeoutMs}ms)`));
+      }, this.timeoutMs);
+
+      sock.connect(this.port, this.host, () => {
+        this.isConnectedState = true;
+        sock.write(packet);
+      });
+
+      sock.once("data", (data) => {
+        cleanup();
+        this.isConnectedState = true;
+        resolve(data);
+      });
+
+      sock.once("error", (err) => {
+        cleanup();
+        this.isConnectedState = false;
+        reject(err);
+      });
+    });
+  }
 }
 
 export class ZkTecoBiometricService implements IBiometricService {
@@ -323,18 +431,24 @@ export class ZkTecoBiometricService implements IBiometricService {
   }
 
   public async getStatus(): Promise<DeviceStatus> {
+    const isSim = this.socket instanceof ZkTecoSimulatorSocket;
     return {
       deviceClass: "BIOMETRIC",
       deviceId: `ZK_${this.config.host}_${this.config.port}`,
       name: `ZKTeco Biometric Terminal (${this.config.host})`,
-      state: this.isConnectedState ? "CONNECTED" : "DISCONNECTED",
-      isSimulated: false,
+      state: !this.socket
+        ? "UNCONFIGURED"
+        : this.isConnectedState
+        ? "CONNECTED"
+        : "DISCONNECTED",
+      isSimulated: isSim,
       lastSeenAt: this.lastSeenAt,
       errorMessage: this.lastError,
       telemetry: {
         host: this.config.host,
         port: this.config.port,
         sessionId: this.sessionId,
+        transport: isSim ? "LOOPBACK_SIMULATOR" : this.socket ? "TCP_SOCKET" : "NONE",
       },
     };
   }
@@ -507,7 +621,54 @@ export class ZkTecoBiometricService implements IBiometricService {
   public async syncEmployees(
     employees: EmployeeBiometricProfile[]
   ): Promise<{ synced: number; failed: number }> {
-    return { synced: employees.length, failed: 0 };
+    if (!this.isConnectedState) {
+      const ok = await this.connect();
+      if (!ok || !this.socket) {
+        // Fail-closed: Zero false-green when disconnected
+        return { synced: 0, failed: employees.length };
+      }
+    }
+
+    if (!this.socket) {
+      return { synced: 0, failed: employees.length };
+    }
+
+    if (employees.length === 0) {
+      return { synced: 0, failed: 0 };
+    }
+
+    let synced = 0;
+    let failed = 0;
+
+    for (const emp of employees) {
+      if (!emp || !emp.badgeNumber || !emp.fullName) {
+        failed++;
+        continue;
+      }
+
+      try {
+        const userBuf = formatZkUserRecord(emp);
+        const reqPacket = createZkPacket(
+          ZK_COMMANDS.CMD_SET_USER,
+          this.sessionId,
+          ++this.replyId,
+          userBuf
+        );
+
+        const resBuf = await this.socket.send(reqPacket);
+        const decoded = decodeZkPacket(resBuf);
+        if (decoded.isOk && decoded.header.commandId === ZK_COMMANDS.CMD_ACK_OK) {
+          synced++;
+        } else {
+          failed++;
+        }
+      } catch {
+        failed++;
+      }
+    }
+
+    this.lastSeenAt = new Date().toISOString();
+    return { synced, failed };
   }
 
   public async syncDeviceTime(referenceTime: Date = new Date()): Promise<boolean> {
@@ -548,6 +709,7 @@ export class ZkTecoSimulatorSocket implements ZkNetworkSocket {
   private activeSessionId = 0x42fa;
   private connected = false;
   private punches: SimulatedPunch[] = [];
+  private simulatedUsers: Map<string, EmployeeBiometricProfile> = new Map();
 
   constructor() {
     this.seedDefaultHospitalPunches();
@@ -594,6 +756,14 @@ export class ZkTecoSimulatorSocket implements ZkNetworkSocket {
     this.punches = [];
   }
 
+  public getSimulatedUsers(): EmployeeBiometricProfile[] {
+    return Array.from(this.simulatedUsers.values());
+  }
+
+  public clearSimulatedUsers(): void {
+    this.simulatedUsers.clear();
+  }
+
   public isConnected(): boolean {
     return this.connected;
   }
@@ -637,6 +807,34 @@ export class ZkTecoSimulatorSocket implements ZkNetworkSocket {
       }
 
       case ZK_COMMANDS.CMD_SET_TIME: {
+        return createZkPacket(
+          ZK_COMMANDS.CMD_ACK_OK,
+          sessionId,
+          replyId
+        );
+      }
+
+      case ZK_COMMANDS.CMD_SET_USER: {
+        try {
+          const user = parseZkUserRecord(decoded.payload);
+          this.simulatedUsers.set(user.badgeNumber, user);
+          return createZkPacket(
+            ZK_COMMANDS.CMD_ACK_OK,
+            sessionId,
+            replyId
+          );
+        } catch {
+          return createZkPacket(
+            ZK_COMMANDS.CMD_ACK_ERROR,
+            sessionId,
+            replyId
+          );
+        }
+      }
+
+      case ZK_COMMANDS.CMD_DELETE_USER: {
+        const pin = decoded.payload.length >= 2 ? decoded.payload.readUInt16LE(0) : 0;
+        this.simulatedUsers.delete(`EMP-${pin}`);
         return createZkPacket(
           ZK_COMMANDS.CMD_ACK_OK,
           sessionId,

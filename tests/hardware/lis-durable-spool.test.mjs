@@ -152,3 +152,21 @@ test('LIS Spool 5. LocalLisBridge Write-Before-ACK and TCP IP allowlist security
   assert.ok(code.includes('LisSerialPortHandler'), 'Must integrate LisSerialPortHandler');
   assert.ok(code.includes('startSerialListener'), 'Must implement startSerialListener');
 });
+
+test('LIS Spool 6. Production fail-closed invariant: unconfigured serial transport fails without silent mock fallback', async () => {
+  const handlerWithoutTransport = new LisSerialPortHandler({ portName: 'COM1', baudRate: 9600 });
+
+  let errorEmitted = null;
+  handlerWithoutTransport.on('error', (err) => {
+    errorEmitted = err;
+  });
+
+  const connected = await handlerWithoutTransport.connect();
+  assert.equal(connected, false, 'Connection without transport must return false');
+  assert.equal(handlerWithoutTransport.isConnected(), false);
+  assert.ok(errorEmitted !== null, 'Must emit error when no transport is configured');
+  assert.match(errorEmitted.message, /Automatic MockSerialStream fallback is prohibited/i);
+
+  await handlerWithoutTransport.stop();
+});
+

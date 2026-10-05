@@ -9,8 +9,11 @@ import {
   decodeZkTimestamp,
   formatZk40ByteAttendanceRecord,
   parseZkAttendancePayload,
+  formatZkUserRecord,
+  parseZkUserRecord,
   ZkTecoBiometricService,
   ZkTecoSimulatorSocket,
+  ZkTecoTcpSocket,
   ZK_COMMANDS,
 } from '../../lib/hardware/biometrics/zkteco.ts';
 
@@ -130,3 +133,62 @@ test('ZKTeco 5. Attendance log pull, duplicate punch debounce, and clear logs', 
 
   await service.disconnect();
 });
+
+test('ZKTeco 6. User record 72-byte payload binary formatting and parsing roundtrip', () => {
+  const profile = {
+    badgeNumber: 'DOC-1052',
+    fullName: 'Dr. Nazmul Huda',
+    cardPin: '8842',
+    role: 'ADMIN',
+    isEnabled: true,
+  };
+
+  const buffer = formatZkUserRecord(profile);
+  assert.equal(buffer.length, 72, 'User record must be exactly 72 bytes');
+
+  const parsed = parseZkUserRecord(buffer);
+  assert.equal(parsed.badgeNumber, 'DOC-1052');
+  assert.equal(parsed.fullName, 'Dr. Nazmul Huda');
+  assert.equal(parsed.role, 'ADMIN');
+  assert.equal(parsed.isEnabled, true);
+});
+
+test('ZKTeco 7. syncEmployees actually provisions profiles to device and tracks synced vs failed', async () => {
+  const simulator = new ZkTecoSimulatorSocket();
+  simulator.clearSimulatedUsers();
+  const service = new ZkTecoBiometricService({ host: '127.0.0.1', port: 4370 }, simulator);
+
+  await service.connect();
+
+  const employees = [
+    { badgeNumber: 'DOC-101', fullName: 'Dr. Afia Siddika', role: 'STAFF', isEnabled: true },
+    { badgeNumber: 'NURSE-202', fullName: 'Sister Rehana', role: 'STAFF', isEnabled: true },
+    { badgeNumber: '', fullName: 'Invalid No Badge', role: 'STAFF', isEnabled: true }, // Invalid badge
+  ];
+
+  const result = await service.syncEmployees(employees);
+  assert.equal(result.synced, 2, 'Must successfully sync 2 valid employees');
+  assert.equal(result.failed, 1, 'Must record 1 failed employee due to empty badge');
+
+  const storedInSimulator = simulator.getSimulatedUsers();
+  assert.equal(storedInSimulator.length, 2);
+  assert.equal(storedInSimulator[0].badgeNumber, 'DOC-101');
+  assert.equal(storedInSimulator[1].badgeNumber, 'NURSE-202');
+
+  await service.disconnect();
+});
+
+test('ZKTeco 8. syncEmployees fails closed without fake success when terminal is disconnected', async () => {
+  // Service created without active socket connection
+  const disconnectedService = new ZkTecoBiometricService({ host: '10.255.255.1', port: 4370 });
+
+  const employees = [
+    { badgeNumber: 'DOC-999', fullName: 'Ghost Doctor', role: 'STAFF', isEnabled: true },
+  ];
+
+  const result = await disconnectedService.syncEmployees(employees);
+  // Zero False-Green: MUST NOT return synced: 1
+  assert.equal(result.synced, 0, 'Disconnected terminal must never report false-green synced=1');
+  assert.equal(result.failed, 1, 'Disconnected terminal must report failure');
+});
+
