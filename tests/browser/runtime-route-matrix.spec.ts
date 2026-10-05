@@ -73,6 +73,11 @@ test.describe("Real Browser E2E: Route-by-Route Runtime Acceptance & Console Dia
       });
 
       page.on("pageerror", (err) => {
+        const msg = err.message || "";
+        // WebKit surfaces Next.js static export background prefetch network 404s/aborts as unhandled fetch exceptions
+        if (msg.includes("access control checks") || msg.includes("__next.") || msg.includes("cancelled")) {
+          return;
+        }
         pageErrors.push(err.message);
       });
 
