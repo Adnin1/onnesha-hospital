@@ -1,0 +1,20 @@
+# CodeRabbit Configuration for OHMS
+version: 2
+language: "en-US"
+tone_instructions: "Be precise, critical, and focus on security, data privacy (PHI/HIPAA), and zero false-green invariants."
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "supabase/migrations/**"
+      instructions: "Ensure Row Level Security (RLS) is enabled and debits equal credits in double-entry transactions."
+    - path: "lib/patient/**"
+      instructions: "Strictly verify tenant isolation (organization_id) and session authorization before mutating patient clinical data."
+    - path: "public/**"
+      instructions: "Enforce static export compatibility and strict CSP without unsafe-eval."

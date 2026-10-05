@@ -11,6 +11,7 @@ export default tseslint.config(
       "node_modules/**",
       "scripts/**",
       "tests/**",
+      ".agents/**",
     ],
   },
   ...tseslint.configs.recommended,
