@@ -24,12 +24,14 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 In adherence to strict zero-false-green Git governance:
 - **Release Tag `v1.1.47`:** Anchored immutably to commit `b92c3d11d1e2e0f2391e5465b7b3efc464b6bc47`. Under no circumstances was `git tag -a -f` invoked to mutate historical release tags.
 - **Mainline Descendant:** Current `main` HEAD is a verified fast-forward descendant of `v1.1.47^{commit}` via `git merge-base --is-ancestor`.
-- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `7cb6fa51a4242f54f63e4b6c82ac1ec4aaaa4ff2`.
-- **Cloudflare Edge Deployed SHA:** Synchronized with mainline HEAD commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (`52115e1d.onnesha-hospital.pages.dev`).
+- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `2b55a1be339e79f6a60f106ea708121aae8dc4ce`.
+- **Cloudflare Edge Deployed SHA:** Synchronized with mainline HEAD commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (`6cb29013.onnesha-hospital.pages.dev`).
 
 ### Commit Lineage
 ```
-* 7cb6fa5 (HEAD -> main, origin/main, ssh-origin/main) feat(hardware): harden ZKTeco employee sync, DICOM network PACS boundary, and LIS fail-closed serial transport
+* 2b55a1b (HEAD -> main, origin/main, ssh-origin/main) feat(security): harden Permissions-Policy for WebUSB/WebSerial, sanitize llms.txt, and add social metadata
+* 4a64585 docs: synchronize CURRENT_STATE with commit 7cb6fa5, 963 passed tests, and hardened hardware protocols
+* 7cb6fa5 feat(hardware): harden ZKTeco employee sync, DICOM network PACS boundary, and LIS fail-closed serial transport
 * 4050b4d feat(skills): register native slash commands /godmode /auto-pilot /swarm /ship /auto /apex /nije-koro and Banglish triggers
 * 86fe67b feat(governance): activate SWARM GODMODE v5.0 and universal shortcut trigger matrix
 * 51a84c7 docs(queue): track live Phase 2 execution queue
