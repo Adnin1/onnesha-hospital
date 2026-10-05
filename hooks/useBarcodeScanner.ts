@@ -18,6 +18,8 @@ export interface UseBarcodeScannerOptions {
   ignoreInInputs?: boolean;
   playAudioBeep?: boolean;
   enabled?: boolean;
+  duplicateDebounceMs?: number; // sliding window suppression for accidental double-triggers (default: 500ms)
+  suffix?: "Enter" | "Tab" | "Both"; // termination character (default: Both)
 }
 
 /**
@@ -95,10 +97,14 @@ export function useBarcodeScanner({
   ignoreInInputs = true,
   playAudioBeep = true,
   enabled = true,
+  duplicateDebounceMs = 500,
+  suffix = "Both",
 }: UseBarcodeScannerOptions = {}) {
   const bufferRef = useRef<string>("");
   const timestampsRef = useRef<number[]>([]);
   const onScanRef = useRef(onScan);
+  const lastScanCodeRef = useRef<string>("");
+  const lastScanTimeRef = useRef<number>(0);
 
   useEffect(() => {
     onScanRef.current = onScan;
@@ -119,10 +125,17 @@ export function useBarcodeScanner({
       const lastTime = timestampsRef.current[timestampsRef.current.length - 1] || 0;
       const diff = now - lastTime;
 
-      // Handle barcode completion on 'Enter'
-      if (e.key === "Enter" || e.keyCode === 13) {
+      // Handle barcode completion on 'Enter' or 'Tab'
+      const isEnter = e.key === "Enter" || e.keyCode === 13;
+      const isTab = e.key === "Tab" || e.keyCode === 9;
+      const matchesSuffix =
+        (suffix === "Enter" && isEnter) ||
+        (suffix === "Tab" && isTab) ||
+        (suffix === "Both" && (isEnter || isTab));
+
+      if (matchesSuffix) {
         const barcode = bufferRef.current.trim();
-        const timestamps = timestampsRef.current;
+        const timestamps = [...timestampsRef.current];
 
         // Reset buffers
         bufferRef.current = "";
@@ -136,12 +149,24 @@ export function useBarcodeScanner({
           }
           const avgDiff = timestamps.length > 1 ? totalDiff / (timestamps.length - 1) : 0;
 
-          // If typed too slowly (human typing) and currently in an input, don't hijack Enter
+          // If typed too slowly (human typing) and currently in an input, don't hijack Enter/Tab
           if (isInput && avgDiff > maxInterKeyDelayMs) {
             return;
           }
 
-          // Hardware scanner confirmed: prevent form submission
+          // Sliding window duplicate scan debounce
+          const currentTimeMs = Date.now();
+          if (
+            barcode === lastScanCodeRef.current &&
+            currentTimeMs - lastScanTimeRef.current < duplicateDebounceMs
+          ) {
+            return; // Duplicate scan suppressed
+          }
+
+          lastScanCodeRef.current = barcode;
+          lastScanTimeRef.current = currentTimeMs;
+
+          // Hardware scanner confirmed: prevent form submission or focus loss
           e.preventDefault();
           e.stopPropagation();
 
@@ -149,7 +174,7 @@ export function useBarcodeScanner({
           const scanEvent: BarcodeScanEvent = {
             barcode,
             category,
-            timestamp: Date.now(),
+            timestamp: currentTimeMs,
             interKeyAverageMs: avgDiff,
           };
 
@@ -195,7 +220,7 @@ export function useBarcodeScanner({
       bufferRef.current += e.key;
       timestampsRef.current.push(now);
     },
-    [enabled, ignoreInInputs, maxInterKeyDelayMs, minBarcodeLength, playAudioBeep]
+    [duplicateDebounceMs, enabled, ignoreInInputs, maxInterKeyDelayMs, minBarcodeLength, playAudioBeep, suffix]
   );
 
   useEffect(() => {

@@ -68,12 +68,56 @@ export default function QueueDisplayPage() {
   const [lastCalledToken, setLastCalledToken] = useState<string>("");
   const [currentTime, setCurrentTime] = useState<string>("");
   const [audioEnabled, setAudioEnabled] = useState<boolean>(false);
+  const [audioBlocked, setAudioBlocked] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isBangla, setIsBangla] = useState<boolean>(true);
   const [wakeLockActive, setWakeLockActive] = useState<boolean>(false);
+  const [staleSeconds, setStaleSeconds] = useState<number>(0);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const wakeLockRef = useRef<unknown>(null);
+  const lastSuccessRef = useRef<number>(Date.now());
+
+  // User gesture handler to unblock AudioContext on restrictive TV browsers
+  const unblockAudio = useCallback(() => {
+    if (!audioCtxRef.current) {
+      try {
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtx) {
+          audioCtxRef.current = new AudioCtx();
+        }
+      } catch {
+        // Safe ignore
+      }
+    }
+
+    if (audioCtxRef.current) {
+      audioCtxRef.current
+        .resume()
+        .then(() => {
+          setAudioBlocked(false);
+          setAudioEnabled(true);
+          playQueueChime(audioCtxRef.current);
+        })
+        .catch(() => {
+          setAudioBlocked(true);
+        });
+    }
+  }, []);
+
+  // Listen for user tap anywhere on screen to unblock audio if currently suspended
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleUserGesture = () => {
+      if (audioBlocked) {
+        unblockAudio();
+      }
+    };
+    window.addEventListener("pointerdown", handleUserGesture, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", handleUserGesture);
+    };
+  }, [audioBlocked, unblockAudio]);
 
   // Initialize Web Audio Context upon user toggle
   const toggleAudio = () => {
@@ -83,13 +127,17 @@ export default function QueueDisplayPage() {
         if (AudioCtx) {
           audioCtxRef.current = new AudioCtx();
           if (audioCtxRef.current.state === "suspended") {
-            audioCtxRef.current.resume();
+            audioCtxRef.current.resume().catch(() => {
+              setAudioBlocked(true);
+            });
           }
           playQueueChime(audioCtxRef.current);
           setAudioEnabled(true);
+          setAudioBlocked(false);
         }
       } catch (err) {
         console.error("Audio initialization error:", err);
+        setAudioBlocked(true);
       }
     } else {
       if (audioCtxRef.current) {
@@ -97,6 +145,7 @@ export default function QueueDisplayPage() {
         audioCtxRef.current = null;
       }
       setAudioEnabled(false);
+      setAudioBlocked(false);
     }
   };
 
@@ -145,7 +194,7 @@ export default function QueueDisplayPage() {
     }
   };
 
-  // Clock Ticker (Bangladesh Standard Time, GMT+6)
+  // Clock Ticker & Stale Watchdog (Auto-refresh after 3 minutes disconnect)
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -158,6 +207,15 @@ export default function QueueDisplayPage() {
           timeZone: "Asia/Dhaka",
         })
       );
+
+      const elapsed = Math.floor((Date.now() - lastSuccessRef.current) / 1000);
+      setStaleSeconds(elapsed);
+
+      // Watchdog: If disconnected or frozen for > 3 minutes (180s), reload page to revive connection
+      if (elapsed >= 180 && typeof window !== "undefined") {
+        console.warn("[Queue Watchdog] Stale duration > 180s. Triggering auto-recovery reload.");
+        window.location.reload();
+      }
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
@@ -169,6 +227,9 @@ export default function QueueDisplayPage() {
     try {
       const res = await getLiveWaitingQueueAction();
       if (res.success && res.queue) {
+        lastSuccessRef.current = Date.now();
+        setStaleSeconds(0);
+
         const mapped: QueueItem[] = res.queue.map((q) => ({
           id: q.id,
           token_number: q.token_number,
@@ -267,6 +328,38 @@ export default function QueueDisplayPage() {
           </button>
         </div>
       </header>
+
+      {/* Audio Autoplay Unblock Banner */}
+      {audioBlocked && (
+        <button
+          onClick={unblockAudio}
+          className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer z-50 shrink-0"
+        >
+          <Volume2 className="w-4 h-4" />
+          <span>
+            {isBangla
+              ? "অডিও ঘোষণা বাজাতে স্ক্রিনের যেকোনো স্থানে স্পর্শ করুন (Click/Tap anywhere to unblock announcement sound)"
+              : "Audio announcement blocked by browser policy. Click or tap anywhere to unblock."}
+          </span>
+        </button>
+      )}
+
+      {/* Stale Connection Warning Banner */}
+      {staleSeconds > 30 && (
+        <div className="w-full bg-rose-600/90 text-white px-4 py-1.5 text-xs font-semibold flex items-center justify-between z-40 shrink-0 px-6">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+            <span>
+              {isBangla
+                ? `সংযোগ বিঘ্নিত — সর্বশেষ আপডেট ${staleSeconds} সেকেন্ড আগে`
+                : `Connection disrupted — Last updated ${staleSeconds}s ago`}
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-rose-200">
+            {isBangla ? "স্বয়ংক্রিয় পুনঃসংযোগ চলমান..." : "Watchdog Reconnecting..."}
+          </span>
+        </div>
+      )}
 
       {/* Main Display Grid */}
       <main className="grow p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
@@ -405,7 +498,7 @@ export default function QueueDisplayPage() {
             : "Please proceed to your assigned consultation room when your token is called. Emergency Hotline: 01718835623"}
         </div>
         <div className="text-slate-500 font-mono text-[11px]">
-          OHMS v1.1.40
+          OHMS v1.1.47
         </div>
       </footer>
     </div>

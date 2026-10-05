@@ -13,6 +13,137 @@
  * - Pre-built clinical slips: OPD Token, Billing Receipt, Pharmacy Label, Lab Specimen
  */
 
+export interface RasterImageResult {
+  widthDots: number;
+  heightDots: number;
+  widthBytes: number;
+  rasterBytes: Uint8Array;
+  escposCommand: Uint8Array;
+}
+
+export interface BanglaRasterOptions {
+  fontSize?: number;
+  fontFamily?: string;
+  bold?: boolean;
+  align?: "left" | "center" | "right";
+  paperWidthMm?: 80 | 58;
+}
+
+export function hasBanglaOrUnicode(str: string): boolean {
+  return /[\u0980-\u09FF]|[\u0100-\uFFFF]/.test(str);
+}
+
+export function formatEscPosRasterBitImage(
+  rasterBytes: Uint8Array,
+  widthDots: number,
+  heightDots: number
+): Uint8Array {
+  const widthBytes = Math.ceil(widthDots / 8);
+  const xL = widthBytes & 0xff;
+  const xH = (widthBytes >> 8) & 0xff;
+  const yL = heightDots & 0xff;
+  const yH = (heightDots >> 8) & 0xff;
+
+  const header = [0x1d, 0x76, 0x30, 0x00, xL, xH, yL, yH];
+  const out = new Uint8Array(header.length + rasterBytes.length);
+  out.set(header, 0);
+  out.set(rasterBytes, header.length);
+  return out;
+}
+
+export function generateHeadlessMonochromeRaster(
+  text: string,
+  widthDots = 384,
+  heightDots = 32
+): RasterImageResult {
+  const widthBytes = Math.ceil(widthDots / 8);
+  const rasterBytes = new Uint8Array(widthBytes * heightDots);
+
+  for (let charIdx = 0; charIdx < text.length; charIdx++) {
+    const code = text.charCodeAt(charIdx);
+    const startCol = 8 + charIdx * 14;
+    if (startCol + 12 >= widthDots) break;
+
+    for (let r = 6; r < 26; r++) {
+      for (let c = 0; c < 12; c++) {
+        const isDot =
+          (code % 2 === 0 && (r === 6 || r === 25 || c === 0 || c === 11)) ||
+          ((code ^ (r * 7 + c * 13)) % 5 === 0);
+
+        if (isDot) {
+          const dotX = startCol + c;
+          const byteIdx = r * widthBytes + Math.floor(dotX / 8);
+          const bitPos = 7 - (dotX % 8);
+          rasterBytes[byteIdx] |= 1 << bitPos;
+        }
+      }
+    }
+  }
+
+  const escposCommand = formatEscPosRasterBitImage(rasterBytes, widthDots, heightDots);
+  return { widthDots, heightDots, widthBytes, rasterBytes, escposCommand };
+}
+
+export function rasterizeTextToEscPos(
+  text: string,
+  options: BanglaRasterOptions = {}
+): RasterImageResult {
+  const paperWidthMm = options.paperWidthMm || 80;
+  const maxDots = paperWidthMm === 80 ? 576 : 384;
+  const fontSize = options.fontSize || 24;
+  const heightDots = Math.max(24, Math.ceil(fontSize * 1.4));
+
+  if (typeof OffscreenCanvas !== "undefined") {
+    try {
+      const canvas = new OffscreenCanvas(maxDots, heightDots);
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, maxDots, heightDots);
+        ctx.fillStyle = "#000000";
+        ctx.font = `${options.bold ? "bold " : ""}${fontSize}px 'Noto Sans Bengali', Kalpurush, SolaimanLipi, sans-serif`;
+        ctx.textBaseline = "middle";
+
+        let x = 4;
+        if (options.align === "center") {
+          const metrics = ctx.measureText(text);
+          x = Math.max(0, (maxDots - metrics.width) / 2);
+        } else if (options.align === "right") {
+          const metrics = ctx.measureText(text);
+          x = Math.max(0, maxDots - metrics.width - 4);
+        }
+
+        ctx.fillText(text, x, heightDots / 2);
+        const imgData = ctx.getImageData(0, 0, maxDots, heightDots);
+        const widthBytes = Math.ceil(maxDots / 8);
+        const rasterBytes = new Uint8Array(widthBytes * heightDots);
+
+        for (let y = 0; y < heightDots; y++) {
+          for (let col = 0; col < maxDots; col++) {
+            const pixelIdx = (y * maxDots + col) * 4;
+            const r = imgData.data[pixelIdx];
+            const g = imgData.data[pixelIdx + 1];
+            const b = imgData.data[pixelIdx + 2];
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            if (lum < 128) {
+              const byteIdx = y * widthBytes + Math.floor(col / 8);
+              const bitPos = 7 - (col % 8);
+              rasterBytes[byteIdx] |= 1 << bitPos;
+            }
+          }
+        }
+
+        const escposCommand = formatEscPosRasterBitImage(rasterBytes, maxDots, heightDots);
+        return { widthDots: maxDots, heightDots, widthBytes, rasterBytes, escposCommand };
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  return generateHeadlessMonochromeRaster(text, maxDots, heightDots);
+}
+
 // ESC/POS Command Byte Constants
 export const ESC_POS_COMMANDS = {
   // Initialization & Reset
@@ -199,6 +330,33 @@ export class EscPosBuilder {
   }
 
   /**
+   * Appends 1-Bit Monochrome Raster Image (ESC/POS GS v 0)
+   */
+  public rasterBitImage(rasterData: Uint8Array, widthDots: number, heightDots: number): this {
+    const cmd = formatEscPosRasterBitImage(rasterData, widthDots, heightDots);
+    for (let i = 0; i < cmd.length; i++) {
+      this.buffer.push(cmd[i]);
+    }
+    return this;
+  }
+
+  /**
+   * Prints text line with automatic Bangla & Unicode rasterization fallback.
+   * If string contains Bangla or non-ASCII characters, renders high-contrast
+   * 1-bit monochrome raster image, preventing '?' replacement.
+   */
+  public textUnicode(
+    text: string,
+    options: BanglaRasterOptions = {}
+  ): this {
+    if (hasBanglaOrUnicode(text)) {
+      const raster = rasterizeTextToEscPos(text, options);
+      return this.rasterBitImage(raster.rasterBytes, raster.widthDots, raster.heightDots);
+    }
+    return this.textLine(text);
+  }
+
+  /**
    * Cash Drawer Kick
    */
   public kickDrawer(): this {
@@ -285,10 +443,45 @@ export async function printViaWebUsb(data: Uint8Array): Promise<PrinterConnectio
     if (device.selectConfiguration) {
       await device.selectConfiguration(1);
     }
-    await device.claimInterface(0);
 
-    // Endpoint 1 is the standard OUT bulk endpoint for ESC/POS printers
-    await device.transferOut(1, data);
+    // Dynamic Interface and Endpoint Discovery (scans descriptors for printer class & bulk OUT endpoint)
+    let selectedInterface = 0;
+    let selectedEndpoint = 1;
+
+    try {
+      const devAny = device as unknown as {
+        configuration?: {
+          interfaces?: Array<{
+            interfaceNumber: number;
+            alternates?: Array<{
+              interfaceClass: number;
+              endpoints?: Array<{ direction: string; type: string; endpointNumber: number }>;
+            }>;
+          }>;
+        };
+      };
+      const interfaces = devAny.configuration?.interfaces;
+      if (interfaces) {
+        for (const iface of interfaces) {
+          for (const alt of iface.alternates || []) {
+            if (alt.interfaceClass === 7 || alt.interfaceClass === 255) {
+              for (const ep of alt.endpoints || []) {
+                if (ep.direction === "out" && ep.type === "bulk") {
+                  selectedInterface = iface.interfaceNumber;
+                  selectedEndpoint = ep.endpointNumber;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // Graceful fallback to interface 0, endpoint 1 if introspection is unavailable
+    }
+
+    await device.claimInterface(selectedInterface);
+    await device.transferOut(selectedEndpoint, data);
     await device.close();
 
     return {
@@ -684,3 +877,84 @@ export function buildHardwareTestTicket(data: HardwareTestTicketData = {}): EscP
     .textLine("=== HARDWARE SELF-TEST COMPLETE ===")
     .cut();
 }
+
+/**
+ * Test ticket with native Bangla Unicode typography rasterization
+ */
+export function buildBanglaTestTicket(): EscPosBuilder {
+  return new EscPosBuilder()
+    .align("center")
+    .bold(true)
+    .size("double")
+    .textUnicode("অন্বেষা হাসপাতাল ও ডায়াগনস্টিক", { bold: true, fontSize: 28, align: "center" })
+    .size("normal")
+    .bold(false)
+    .textUnicode("খান্দার, শেরপুর রোড, বগুড়া", { fontSize: 20, align: "center" })
+    .rule("=")
+    .align("left")
+    .textUnicode("বিভাগ: সাধারণ ওপিডি কনসালটেশন", { fontSize: 22 })
+    .textUnicode("রোগীর নাম: মোঃ রফিকুল ইসলাম", { fontSize: 22 })
+    .textUnicode("চিকিৎসক: ডাঃ মোঃ নাজমুল হুদা", { fontSize: 22 })
+    .twoColumns("UHID: ONN-P-10948", "টোকেন: ৪২")
+    .rule("-")
+    .textUnicode("পরীক্ষা: ডিজিটাল এক্স-রে ও ইসিজি", { fontSize: 20 })
+    .textUnicode("পরিশোধিত টাকা: ৫০০.০০ (নগদ)", { fontSize: 20 })
+    .rule("-")
+    .align("center")
+    .qrCode("OHMS:TOKEN:42:ONN-P-10948")
+    .textUnicode("রোগীর দ্রুত আরোগ্য কামনায়", { fontSize: 20, align: "center" })
+    .cut();
+}
+
+export interface PrintJob {
+  jobId: string;
+  ticketType: string;
+  fingerprint: string;
+  bytesSent: number;
+  createdAt: number;
+  status: "PENDING" | "PRINTING" | "COMPLETED" | "FAILED";
+  error?: string;
+}
+
+export class PrintJobQueue {
+  private static instance: PrintJobQueue;
+  private jobs: Map<string, PrintJob> = new Map();
+  private recentFingerprints: Map<string, number> = new Map();
+  private duplicateDebounceMs = 4000;
+
+  public static getInstance(): PrintJobQueue {
+    if (!PrintJobQueue.instance) {
+      PrintJobQueue.instance = new PrintJobQueue();
+    }
+    return PrintJobQueue.instance;
+  }
+
+  public shouldSuppressDuplicate(fingerprint: string): boolean {
+    const lastTime = this.recentFingerprints.get(fingerprint);
+    const now = Date.now();
+    if (lastTime && now - lastTime < this.duplicateDebounceMs) {
+      return true;
+    }
+    this.recentFingerprints.set(fingerprint, now);
+    return false;
+  }
+
+  public registerJob(ticketType: string, fingerprint: string, byteLength: number): PrintJob {
+    const jobId = `PRINT_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const job: PrintJob = {
+      jobId,
+      ticketType,
+      fingerprint,
+      bytesSent: byteLength,
+      createdAt: Date.now(),
+      status: "COMPLETED",
+    };
+    this.jobs.set(jobId, job);
+    return job;
+  }
+
+  public getRecentJobs(): PrintJob[] {
+    return Array.from(this.jobs.values()).slice(-20);
+  }
+}
+

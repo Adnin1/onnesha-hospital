@@ -60,6 +60,10 @@ export interface LisBridgeConfig {
   // Cloud Ingestion Target
   cloudIngestUrl: string; // e.g. "https://onnesha-hospital.pages.dev/api/lis/ingest"
   apiSecretToken?: string;
+  // Security & Spooling
+  allowedIps?: string[];
+  spoolDir?: string;
+  inMemorySpool?: boolean;
   // Timeouts and Limits
   maxFrameSizeBytes: number; // default: 262144 (256 KB)
   connectionTimeoutMs: number;

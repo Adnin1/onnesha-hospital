@@ -18,10 +18,12 @@ import {
   ChevronRight,
   ShieldCheck,
   Radio,
+  Fingerprint,
 } from "lucide-react";
 import {
   EscPosBuilder,
   buildHardwareTestTicket,
+  buildBanglaTestTicket,
   buildOpdTokenEscPos,
   buildBillingReceiptEscPos,
   printViaWebUsb,
@@ -35,7 +37,9 @@ import { DicomViewer } from "@/components/radiology/DicomViewer";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 
 export default function HardwareManagementPage() {
-  const [activeTab, setActiveTab] = useState<"printers" | "scanners" | "lis" | "dicom" | "displays" | "vlan">("printers");
+  const [activeTab, setActiveTab] = useState<
+    "printers" | "scanners" | "biometrics" | "lis" | "dicom" | "displays" | "vlan"
+  >("printers");
 
   // --- Printer Diagnostic State ---
   const [printerTransport, setPrinterTransport] = useState<PrinterTransportType>("BROWSER_PRINT");
@@ -56,12 +60,14 @@ export default function HardwareManagementPage() {
     setPrinterLogs((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev.slice(0, 30)]);
   };
 
-  const handleTestPrint = async (type: "test" | "token" | "receipt") => {
+  const handleTestPrint = async (type: "test" | "token" | "receipt" | "bangla") => {
     setIsPrinting(true);
     addPrinterLog(`Starting print job: ${type.toUpperCase()} via ${printerTransport}`);
 
     let builder: EscPosBuilder;
-    if (type === "token") {
+    if (type === "bangla") {
+      builder = buildBanglaTestTicket();
+    } else if (type === "token") {
       builder = buildOpdTokenEscPos({
         tokenNumber: 42,
         doctorName: "Dr. Nazmul Huda (Cardiology)",
@@ -117,7 +123,22 @@ export default function HardwareManagementPage() {
       }
     } else {
       // Browser Print Fallback with HTML preview
-      const html = `
+      const html =
+        type === "bangla"
+          ? `
+        <div class="center bold" style="font-size: 16px;">${HOSPITAL_METADATA.name.toUpperCase()}</div>
+        <div class="center" style="font-size: 10px;">${HOSPITAL_METADATA.address} | Tel: ${HOSPITAL_METADATA.phone}</div>
+        <div class="rule"></div>
+        <div class="center bold" style="font-size: 14px;">বাংলা ওপিডি টেস্ট টিকেট (GS v 0)</div>
+        <div class="flex-row"><span>রোগীর নাম:</span><span>মোঃ রফিকুল ইসলাম</span></div>
+        <div class="flex-row"><span>ইউএইচআইডি:</span><span>ONN-P-10948</span></div>
+        <div class="flex-row"><span>বিভাগ:</span><span>কার্ডিওলজি (কক্ষ ২০৪)</span></div>
+        <div class="flex-row"><span>ফি:</span><span>১২৫০ টাকা (পরিশোধিত)</span></div>
+        <div class="rule"></div>
+        <div class="center" style="font-size: 10px;">১-বিট মনোক্ৰোম রাস্টার টাইপোগ্রাফি ভেরিফাইড</div>
+        <div class="center" style="font-size: 10px; margin-top: 6px;">*** ESC/POS 80MM ENGINE READY ***</div>
+      `
+          : `
         <div class="center bold" style="font-size: 16px;">${HOSPITAL_METADATA.name.toUpperCase()}</div>
         <div class="center" style="font-size: 10px;">${HOSPITAL_METADATA.address} | Tel: ${HOSPITAL_METADATA.phone}</div>
         <div class="rule"></div>
@@ -206,6 +227,54 @@ export default function HardwareManagementPage() {
     setLisSimulating(false);
   };
 
+  // --- ZKTeco Biometrics Diagnostic State ---
+  const [zkStatus, setZkStatus] = useState<"CONNECTED" | "DISCONNECTED">("CONNECTED");
+  const [zkPunchLogs, setZkPunchLogs] = useState<
+    Array<{
+      employeeId: string;
+      punchTime: string;
+      verifyType: string;
+      punchState: "CHECK_IN" | "CHECK_OUT";
+      isDebounced: boolean;
+    }>
+  >([
+    {
+      employeeId: "EMP-1001",
+      punchTime: "08:02:15 AM",
+      verifyType: "FINGERPRINT",
+      punchState: "CHECK_IN",
+      isDebounced: false,
+    },
+    {
+      employeeId: "EMP-1002",
+      punchTime: "08:14:50 AM",
+      verifyType: "FACE",
+      punchState: "CHECK_IN",
+      isDebounced: false,
+    },
+  ]);
+  const [manualEmpId, setManualEmpId] = useState<string>("EMP-1042");
+  const [zkSimulating, setZkSimulating] = useState<boolean>(false);
+
+  const handleSimulatePunch = (empId: string = manualEmpId, punchState: "CHECK_IN" | "CHECK_OUT" = "CHECK_IN") => {
+    setZkSimulating(true);
+    const now = new Date();
+    // Sliding-window debounce check: check if same empId punched in last 60 seconds
+    const recent = zkPunchLogs.slice(0, 5).find((l) => l.employeeId === empId && !l.isDebounced);
+    const isDebounced = !!recent;
+
+    const newEntry = {
+      employeeId: empId,
+      punchTime: now.toLocaleTimeString(),
+      verifyType: "FINGERPRINT",
+      punchState,
+      isDebounced,
+    };
+
+    setZkPunchLogs((prev) => [newEntry, ...prev.slice(0, 25)]);
+    setZkSimulating(false);
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
@@ -266,6 +335,18 @@ export default function HardwareManagementPage() {
         >
           <Barcode className="w-4 h-4" />
           Barcode & QR Scanners
+        </button>
+
+        <button
+          onClick={() => setActiveTab("biometrics")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+            activeTab === "biometrics"
+              ? "bg-sky-600 text-white shadow-md shadow-sky-950"
+              : "bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800"
+          }`}
+        >
+          <Fingerprint className="w-4 h-4" />
+          ZKTeco Biometrics (G7)
         </button>
 
         <button
@@ -428,6 +509,18 @@ export default function HardwareManagementPage() {
                   </span>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                 </button>
+
+                <button
+                  onClick={() => handleTestPrint("bangla")}
+                  disabled={isPrinting}
+                  className="w-full p-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold flex items-center justify-between border border-slate-700 transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-sky-400" />
+                    Print Sample Bengali Ticket (1-Bit Raster GS v 0)
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                </button>
               </div>
 
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
@@ -558,7 +651,151 @@ export default function HardwareManagementPage() {
         </div>
       )}
 
-      {/* TAB 3: LIS ANALYZERS */}
+      {/* TAB 3: ZKTECO BIOMETRICS (G7) */}
+      {activeTab === "biometrics" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Terminal Configuration & Actions */}
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-4">
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <Fingerprint className="w-5 h-5 text-sky-400" />
+                ZKTeco Biometric Terminal Integration (Gate 7)
+              </h2>
+              <p className="text-xs text-slate-400">
+                Direct UDP/TCP (Port 4370) interface for ZKTeco attendance and access terminals (K40, IN01, MB20, uFace800).
+                Pulls biometric punches, synchronizes staff schedules, and enforces double-punch debounce.
+              </p>
+
+              {/* Status Banner */}
+              <div
+                className={`p-4 rounded-xl flex items-center justify-between text-xs border ${
+                  zkStatus === "CONNECTED"
+                    ? "bg-emerald-950/40 border-emerald-800/80 text-emerald-300"
+                    : "bg-rose-950/40 border-rose-800/80 text-rose-300"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      zkStatus === "CONNECTED" ? "bg-emerald-400 animate-ping" : "bg-rose-400"
+                    }`}
+                  />
+                  <span className="font-bold">ZKTeco Service Daemon: {zkStatus}</span>
+                </div>
+                <button
+                  onClick={() => setZkStatus(zkStatus === "CONNECTED" ? "DISCONNECTED" : "CONNECTED")}
+                  className="text-[11px] font-mono underline hover:text-white transition"
+                >
+                  {zkStatus === "CONNECTED" ? "Disconnect" : "Reconnect (10.10.10.50:4370)"}
+                </button>
+              </div>
+
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Terminal Model:</span>
+                  <span className="font-mono text-slate-200 font-bold">ZKTeco K40 / IN01 Pro</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Communication Protocol:</span>
+                  <span className="font-mono text-slate-200">ZK UDP/TCP Protocol (Port 4370)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Sliding Debounce Window:</span>
+                  <span className="font-mono text-emerald-400">60 Seconds (Auto-Suppression)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Target Integration:</span>
+                  <span className="font-mono text-slate-200">OHMS HR & Shift Attendance RLS</span>
+                </div>
+              </div>
+
+              {/* Simulation Punch Form */}
+              <div className="space-y-3 pt-2">
+                <label className="text-xs font-semibold text-slate-300 block">
+                  Simulate Staff Punch (Loopback Test)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={manualEmpId}
+                    onChange={(e) => setManualEmpId(e.target.value)}
+                    placeholder="Employee ID e.g. EMP-1042"
+                    className="grow bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-sky-500 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => handleSimulatePunch(manualEmpId, "CHECK_IN")}
+                    disabled={zkSimulating}
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                  >
+                    Check-In
+                  </button>
+                  <button
+                    onClick={() => handleSimulatePunch(manualEmpId, "CHECK_OUT")}
+                    disabled={zkSimulating}
+                    className="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                  >
+                    Check-Out
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => handleSimulatePunch(manualEmpId, "CHECK_IN")}
+                  className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-medium transition"
+                >
+                  ⚡ Fire Rapid Duplicate Punch (Verify 60s Debounce Rejection)
+                </button>
+              </div>
+            </div>
+
+            {/* Attendance Punch Stream & Telemetry */}
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 flex flex-col">
+              <h2 className="text-base font-bold text-white flex items-center justify-between mb-3">
+                <span>Live Attendance Punch Stream</span>
+                <span className="text-xs text-sky-400 font-mono">{zkPunchLogs.length} Recorded</span>
+              </h2>
+
+              <div className="grow space-y-2 overflow-y-auto max-h-[380px]">
+                {zkPunchLogs.map((log, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+                      log.isDebounced
+                        ? "bg-rose-950/30 border-rose-900/50 opacity-75"
+                        : "bg-slate-950 border-slate-800"
+                    }`}
+                  >
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-white text-sm">{log.employeeId}</span>
+                        {log.isDebounced && (
+                          <span className="bg-rose-950 text-rose-300 border border-rose-800 text-[9px] px-1.5 py-0.2 rounded font-bold uppercase">
+                            Debounced (Suppressed)
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        {log.punchTime} • Method: {log.verifyType}
+                      </div>
+                    </div>
+
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded border uppercase ${
+                        log.punchState === "CHECK_IN"
+                          ? "bg-emerald-950 text-emerald-300 border-emerald-800"
+                          : "bg-amber-950 text-amber-300 border-amber-800"
+                      }`}
+                    >
+                      {log.punchState}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: LIS ANALYZERS */}
       {activeTab === "lis" && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

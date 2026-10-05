@@ -1,10 +1,15 @@
 /**
  * Onnesha Hospital Management System (OHMS)
- * Laboratory Information System (LIS) — Native Local Bridge Service
+ * Laboratory Information System (LIS) — Native Local Bridge Service (Gate 9)
  * 
  * Runs on hospital lab workstation or embedded within the Tauri 2 desktop client.
- * Connects to physical hospital analyzers via TCP/IP socket or RS-232 serial COM port,
- * accumulates protocol stream frames, sends hardware ACKs, and forwards to OHMS Cloud over HTTPS.
+ * Connects to physical hospital analyzers via TCP/IP socket or RS-232 serial COM port.
+ *
+ * Hardened Features:
+ * - Write-Before-ACK Guarantee: synchronously spools incoming frame to durable storage before issuing hardware ACK
+ * - Background queue delivery worker with exponential retry and dead-letter protection
+ * - RS-232 serial COM port handler with reconnect watchdog
+ * - TCP server client IP allowlisting & unauthorized connection rejection
  */
 
 import net from "node:net";
@@ -15,11 +20,14 @@ import {
   extractProtocolFrame,
   generateHardwareResponse,
 } from "./transport";
+import { DurableLisSpool, SpooledRecord } from "./durable-spool";
+import { LisSerialPortHandler, ISerialTransport } from "./serial-handler";
 
 export interface BridgeTelemetry {
   framesReceived: number;
   framesForwarded: number;
   checksumErrors: number;
+  pendingSpoolCount: number;
   lastTransmissionAt: string | null;
   connectionState: BridgeConnectionState;
 }
@@ -30,18 +38,21 @@ export class LocalLisBridge extends EventEmitter {
   private clientSocket: net.Socket | null = null;
   private buffer = "";
   private state: BridgeConnectionState = "DISCONNECTED";
-  private reconnectTimer: NodeJS.Timeout | null = null;
   private isDestroyed = false;
+
+  private spool: DurableLisSpool;
+  private serialHandler: LisSerialPortHandler | null = null;
 
   private telemetry: BridgeTelemetry = {
     framesReceived: 0,
     framesForwarded: 0,
     checksumErrors: 0,
+    pendingSpoolCount: 0,
     lastTransmissionAt: null,
     connectionState: "DISCONNECTED",
   };
 
-  constructor(config: LisBridgeConfig) {
+  constructor(config: LisBridgeConfig, serialTransport?: ISerialTransport) {
     super();
     this.config = {
       ...config,
@@ -49,6 +60,25 @@ export class LocalLisBridge extends EventEmitter {
       connectionTimeoutMs: config.connectionTimeoutMs ?? 15000,
       reconnectIntervalMs: config.reconnectIntervalMs ?? 5000,
     };
+
+    this.spool = new DurableLisSpool({
+      storageDir: config.spoolDir,
+      inMemoryOnly: config.inMemorySpool,
+    });
+
+    if (config.transportType === "SERIAL_RS232") {
+      this.serialHandler = new LisSerialPortHandler(
+        {
+          portName: config.serialPort || "COM1",
+          baudRate: config.baudRate || 9600,
+          dataBits: config.dataBits,
+          stopBits: config.stopBits,
+          parity: config.parity,
+          reconnectIntervalMs: config.reconnectIntervalMs,
+        },
+        serialTransport
+      );
+    }
   }
 
   public getState(): BridgeConnectionState {
@@ -56,7 +86,23 @@ export class LocalLisBridge extends EventEmitter {
   }
 
   public getTelemetry(): BridgeTelemetry {
-    return { ...this.telemetry, connectionState: this.state };
+    return {
+      ...this.telemetry,
+      pendingSpoolCount: this.spool.getPendingCount(),
+      connectionState: this.state,
+    };
+  }
+
+  public getPendingSpoolCount(): number {
+    return this.spool.getPendingCount();
+  }
+
+  public getDeadLetterRecords(): SpooledRecord[] {
+    return this.spool.getDeadLetterRecords();
+  }
+
+  public replayDeadLetterQueue(): number {
+    return this.spool.replayDeadLetterQueue();
   }
 
   private setState(newState: BridgeConnectionState) {
@@ -78,13 +124,12 @@ export class LocalLisBridge extends EventEmitter {
     if (this.config.transportType === "TCP_IP") {
       await this.startTcpListener();
     } else {
-      // RS-232 Serial Port implementation
-      this.startSerialListener();
+      await this.startSerialListener();
     }
   }
 
   /**
-   * Starts TCP Server listening for inbound analyzer connections
+   * Starts TCP Server listening for inbound analyzer connections with client IP allowlist
    */
   private startTcpListener(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -94,9 +139,20 @@ export class LocalLisBridge extends EventEmitter {
       this.setState("CONNECTING");
 
       this.server = net.createServer((socket) => {
+        const remote = socket.remoteAddress ? socket.remoteAddress.replace(/^::ffff:/, "") : "";
+
+        // Client IP Allowlist Security Check
+        if (this.config.allowedIps && this.config.allowedIps.length > 0) {
+          if (!this.config.allowedIps.includes(remote)) {
+            this.emit("unauthorized_client_rejected", { remoteAddress: remote });
+            socket.destroy();
+            return;
+          }
+        }
+
         this.clientSocket = socket;
         this.setState("CONNECTED");
-        this.emit("client_connected", socket.remoteAddress);
+        this.emit("client_connected", remote);
 
         socket.setTimeout(this.config.connectionTimeoutMs);
 
@@ -137,7 +193,30 @@ export class LocalLisBridge extends EventEmitter {
   /**
    * Starts Serial RS-232 bridge
    */
-  private startSerialListener(): void {
+  private async startSerialListener(): Promise<void> {
+    if (!this.serialHandler) {
+      this.serialHandler = new LisSerialPortHandler({
+        portName: this.config.serialPort || "COM1",
+        baudRate: this.config.baudRate || 9600,
+        dataBits: this.config.dataBits,
+        stopBits: this.config.stopBits,
+        parity: this.config.parity,
+      });
+    }
+
+    this.serialHandler.on("data", (chunk: string) => {
+      this.handleIncomingData(chunk, {
+        write: (ack: string) => {
+          void this.serialHandler?.write(ack);
+        },
+      });
+    });
+
+    this.serialHandler.on("error", (err) => {
+      this.emit("serial_error", err);
+    });
+
+    await this.serialHandler.start();
     this.setState("LISTENING");
     this.emit("listening", {
       port: this.config.serialPort || "COM1",
@@ -147,6 +226,7 @@ export class LocalLisBridge extends EventEmitter {
 
   /**
    * Ingest raw chunk from analyzer socket / port
+   * WRITE-BEFORE-ACK: Synchronously spools frame to durable storage BEFORE sending ACK
    */
   public handleIncomingData(chunk: string, responder?: { write: (data: string) => void }): void {
     this.buffer += chunk;
@@ -185,7 +265,14 @@ export class LocalLisBridge extends EventEmitter {
         continue;
       }
 
-      // Valid frame: Send hardware ACK immediately to release instrument buffer
+      // Step 1: Synchronously write to durable spool BEFORE issuing hardware ACK
+      const spooled = this.spool.spoolSync(
+        this.config.analyzerCode,
+        extraction.frameProtocol === "ASTM_1394" ? "ASTM_1394" : "HL7_V2",
+        extraction.rawPayload
+      );
+
+      // Step 2: Now that frame is durably saved, issue hardware ACK to release analyzer buffer
       if (responder) {
         const ack = generateHardwareResponse(
           extraction.frameProtocol === "ASTM_1394" ? "ASTM_1394" : "HL7_V2",
@@ -197,11 +284,21 @@ export class LocalLisBridge extends EventEmitter {
       this.emit("frame", {
         protocol: extraction.frameProtocol,
         rawPayload: extraction.rawPayload,
+        spoolId: spooled.id,
       });
 
-      // Forward to cloud asynchronously with backpressure tracking
-      void this.forwardPayloadToCloud(extraction.rawPayload);
+      // Step 3: Trigger background spool processor to deliver to cloud
+      void this.dispatchSpooledQueue();
     }
+  }
+
+  /**
+   * Processes the durable spool queue by dispatching records to OHMS Cloud
+   */
+  public async dispatchSpooledQueue(): Promise<{ delivered: number; failed: number }> {
+    return this.spool.processQueue(async (record) => {
+      return this.forwardPayloadToCloud(record.rawPayload);
+    });
   }
 
   /**
@@ -256,9 +353,10 @@ export class LocalLisBridge extends EventEmitter {
    */
   public async stop(): Promise<void> {
     this.isDestroyed = true;
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
+
+    if (this.serialHandler) {
+      await this.serialHandler.stop();
+      this.serialHandler = null;
     }
 
     if (this.clientSocket) {
@@ -273,6 +371,7 @@ export class LocalLisBridge extends EventEmitter {
       this.server = null;
     }
 
+    this.spool.destroy();
     this.buffer = "";
     this.setState("DISCONNECTED");
   }
