@@ -82,7 +82,7 @@ export function PublicNavbar() {
             </div>
             <div>
               <span className="text-xl font-bold text-slate-900 tracking-tight block">
-                ONNESHA HOSPITAL
+                {(HOSPITAL_METADATA.shortName || "ONNESHA HOSPITAL").toUpperCase()}
               </span>
               <span className="text-[11px] font-medium text-sky-700 tracking-wider block">
                 {HOSPITAL_METADATA.banglaName}

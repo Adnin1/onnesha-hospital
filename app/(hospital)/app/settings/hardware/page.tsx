@@ -32,6 +32,7 @@ import {
 import { useBarcodeScanner, BarcodeScanEvent, playScannerBeep } from "@/hooks/useBarcodeScanner";
 import { parseASTM1394Message, parseHL7V2Message } from "@/lib/lab/lis/parser";
 import { DicomViewer } from "@/components/radiology/DicomViewer";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 
 export default function HardwareManagementPage() {
   const [activeTab, setActiveTab] = useState<"printers" | "scanners" | "lis" | "dicom" | "displays" | "vlan">("printers");
@@ -117,8 +118,8 @@ export default function HardwareManagementPage() {
     } else {
       // Browser Print Fallback with HTML preview
       const html = `
-        <div class="center bold" style="font-size: 16px;">ANNESHA HOSPITAL & DIAGNOSTIC</div>
-        <div class="center" style="font-size: 10px;">Khandar, Bogura | Tel: 01718835623</div>
+        <div class="center bold" style="font-size: 16px;">${HOSPITAL_METADATA.name.toUpperCase()}</div>
+        <div class="center" style="font-size: 10px;">${HOSPITAL_METADATA.address} | Tel: ${HOSPITAL_METADATA.phone}</div>
         <div class="rule"></div>
         <div class="center bold" style="font-size: 14px;">DIAGNOSTIC TEST PRINT</div>
         <div class="center token-num">#${type === "token" ? "42" : "PASS"}</div>

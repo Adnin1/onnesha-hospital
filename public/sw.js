@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_VERSION = 'ohms-static-v5';
+const CACHE_VERSION = 'ohms-static-v5-1.1.47';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -182,7 +182,7 @@ const PUBLIC_CACHE_ALLOWLIST = new Set([
     const cleanPath = urlObj.pathname.replace(/\/$/, '') || '/';
     if (PUBLIC_CACHE_ALLOWLIST.has(cleanPath)) {
       event.respondWith(
-        fetch(request)
+        fetch(request, { cache: 'no-cache' })
           .then(response => {
             if (response.ok && !shouldNeverCache(request) && isResponseCacheable(response)) {
               const clone = response.clone();

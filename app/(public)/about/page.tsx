@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import React from "react";
-import { Award, ShieldCheck, Heart, CheckCircle2 } from "lucide-react";
+import { Award, ShieldCheck, Heart, CheckCircle2, MapPin, Phone } from "lucide-react";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 
 export const metadata: Metadata = {
   title: "About Us | Onnesha Hospital & Diagnostic Complex",
@@ -124,6 +125,46 @@ export default function AboutPage() {
               <p>
                 হাসপাতালের অফিসিয়াল ডিজিটাল সিস্টেম প্রাতিষ্ঠানিক রোল-বেসড অ্যাক্সেস কন্ট্রোল (RBAC) এবং পোস্টগ্রেসকিউএল রো-লেভেল সিকিউরিটির (RLS) মাধ্যমে পরিচালিত। রোগীর সমস্ত স্বাস্থ্য তথ্য অনুমোদিত ব্যবহারকারী ব্যতীত কঠোরভাবে সংরক্ষিত।
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Hospital Location & Clinical Desk — Authoritative NAP from config/hospital.ts */}
+        {/* Tagged: CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-xs mb-12">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <span className="text-xs uppercase tracking-wider font-semibold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-md">
+                Hospital Headquarters & Desk
+              </span>
+              <h2 className="text-xl font-bold text-slate-900 mt-2">
+                ক্লিনিক্যাল লোকেশন ও যোগাযোগ তথ্য
+              </h2>
+            </div>
+            <div className="text-xs bg-emerald-50 text-emerald-800 font-semibold px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
+              <span>DGHS Facility ID: {HOSPITAL_METADATA.dghsFacilityId}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-600">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+              <span className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
+                <MapPin className="w-4 h-4 text-sky-600" />
+                ঠিকানা (Physical Address)
+              </span>
+              <p className="text-slate-700">{HOSPITAL_METADATA.address}</p>
+            </div>
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+              <span className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
+                <Phone className="w-4 h-4 text-emerald-600" />
+                জরুরি হটলাইন ও তথ্য
+              </span>
+              <p className="text-slate-700">হটলাইন: {HOSPITAL_METADATA.phone || HOSPITAL_METADATA.emergencyHotline}</p>
+              <p className="text-slate-700">অ্যাম্বুলেন্স: {HOSPITAL_METADATA.ambulanceHotline}</p>
+            </div>
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+              <span className="font-bold text-slate-900 block text-sm">প্রাতিষ্ঠানিক পরিচয়</span>
+              <p className="text-slate-700 font-medium">{HOSPITAL_METADATA.name}</p>
+              <p className="text-slate-500 text-[11px]">{HOSPITAL_METADATA.banglaName}</p>
             </div>
           </div>
         </div>

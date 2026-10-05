@@ -69,6 +69,8 @@ export default function ContactPage() {
                 Hospital Contact Desk
               </h2>
 
+              {/* Physical address sourced from authoritative config/hospital.ts */}
+              {/* Tagged: CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED */}
               {HOSPITAL_METADATA.address && (
                 <div className="flex items-start space-x-3 text-xs">
                   <div className="p-2.5 bg-sky-50 text-sky-700 rounded-xl shrink-0">

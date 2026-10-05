@@ -2,12 +2,26 @@
 
 > This document defines the official technical architecture and clinical profile for Onnesha Hospital & Diagnostic Complex.
 
-## 1. Domain & Digital Identity
+## 1. Organization Identity & NAP (Name, Address, Phone) Content Truth
+- Single Authoritative Source of Truth: `config/hospital.ts`
+- Primary Legal & ERP Registered Name: Annesha Hospital and Diagnostic Center
+- Bengali Canonical Name: অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার
+- Public Web Portal Brand: Onnesha Hospital & Diagnostic Complex (Short Name: Onnesha Hospital)
+- DGHS Facility Registry: ANNESHA HOSPITAL / অন্বেষা হাসপাতাল, Bogura (Facility ID: 10022715)
+- Official Hotlines: 01718835623 (Reception & Emergency), 01904210065 (Ambulance Desk)
+- Official Email: aaih.apon@gmail.com
+- Physical Address (Repo Baseline): সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া (In front of Sonali Bank, Khandar, Bogura)
+- External Directory Reference: Mofiz Paglar Mor, Sherpur Road, Bogura
+- Content Truth Verification Status: [CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED]
+  * Physical Address Discrepancy: Khandar (Sonali Bank) vs Mofiz Paglar Mor (Sherpur Road) requires owner/board confirmation.
+  * Transliteration Discrepancy: "Annesha" (DGHS/ERP registry) vs "Onnesha" (public digital portal branding) requires owner sign-off.
+
+## 2. Domain & Digital Identity
 - Primary Production Domain: https://onnesha-hospital.pages.dev
 - Future Custom Apex Domain (Deferred — Inactive): https://onneshahospital.com
 - Domain Classification: High-Performance Edge Domain with Cloudflare Pages Global Anycast CDN
 
-## 2. Infrastructure & Cloud Hosting Architecture
+## 3. Infrastructure & Cloud Hosting Architecture
 - Platform Tier: Multi-Tenant Cloud Healthcare Architecture
 - Database Architecture: Managed PostgreSQL Relational Database (Supabase Free Plan baseline; automated backups and Point-In-Time-Recovery [PITR] are not enabled on this tier and require project upgrade to Pro tier under Owner Gate G11)
 - Web Hosting & Edge CDN: Cloudflare Pages Global Anycast CDN for static client assets
@@ -15,12 +29,12 @@
 - Security Architecture: Strict Row-Level Security (RLS) on all tenant tables, TLS 1.2+ in transit with modern cipher suites, Role-Based Access Control (RBAC), and server-authoritative finance validation
 - Operational Model: Production Health Monitoring, Sanitized Error Telemetry, and Fail-Closed Staging CI Deployment Gates
 
-## 3. Application Profile
+## 4. Application Profile
 - Application Type: Enterprise Hospital Information System (HIS / EMR), Outpatient & Inpatient Clinical Suite
 - Client Subsystems: Cross-Platform Progressive Web App (PWA) & Tauri 2 Native Desktop Client
 - Status: Active Production Web & Client Deployment (Unconditional commissioning pending owner operational gates: payment gateway, SMS, and hardware integration)
 
-## 4. Clinical Capabilities
+## 5. Clinical Capabilities
 - Outpatient Department (OPD): Specialist Doctor Consultation, Digital Token Queue, Online Appointments
 - Inpatient Department (IPD): Bed Management, Ward/Cabin Admission, Discharge Summaries
 - Diagnostics & Pathology: Structured Lab Test Reporting with Pathologist Sign-Off Verification, Printable Token Reports

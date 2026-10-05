@@ -12,7 +12,7 @@ export const dynamic = "force-static";
  */
 const ROUTE_CONTENT_LASTMOD: Record<string, string> = {
   "": "2026-10-01T03:00:00.000Z", // Homepage — Bogura emergency hotline, ambulance, and hospital profile updates
-  "/about": "2026-10-01T03:00:00.000Z", // About — Official hospital address (সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া)
+  "/about": "2026-10-01T03:00:00.000Z", // About — Hospital profile & physical address verification (CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED)
   "/doctors": "2026-09-29T03:00:00.000Z", // Doctors directory — Specialist schedule & department roster
   "/services": "2026-09-29T03:00:00.000Z", // Services — Diagnostic pathology & imaging tariff catalog
   "/appointment": "2026-10-01T03:00:00.000Z", // Appointment — Atomic OPD booking wizard & doctor preselection

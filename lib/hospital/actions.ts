@@ -28,6 +28,10 @@ export interface HospitalMasterData {
   updatedAt?: string;
 }
 
+// Baseline approved master profile aligned with authoritative config/hospital.ts
+// [CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED]
+// Physical address (Khandar vs Sherpur Road) and English brand name transliteration
+// ("Annesha" vs "Onnesha") require final owner verification.
 export const APPROVED_HOSPITAL_DATA: HospitalMasterData = {
   id: HOSPITAL_METADATA.id,
   name: "Annesha Hospital and Diagnostic Center",

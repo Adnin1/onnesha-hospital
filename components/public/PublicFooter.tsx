@@ -15,7 +15,7 @@ export function PublicFooter() {
                 OH
               </div>
               <span className="text-lg font-bold text-white tracking-wide">
-                ONNESHA HOSPITAL
+                {(HOSPITAL_METADATA.shortName || "ONNESHA HOSPITAL").toUpperCase()}
               </span>
             </div>
             <p className="text-xs leading-relaxed text-slate-400 mb-4">
@@ -24,7 +24,7 @@ export function PublicFooter() {
             {HOSPITAL_METADATA.regNo ? (
               <div className="flex items-center text-xs text-sky-400 font-medium">
                 <ShieldCheck className="w-4 h-4 mr-1.5" />
-                {HOSPITAL_METADATA.regNo}
+                DGHS Facility ID: {HOSPITAL_METADATA.regNo}
               </div>
             ) : null}
           </div>
@@ -104,6 +104,8 @@ export function PublicFooter() {
               Hospital Contact Lines
             </h3>
             <ul className="space-y-3 text-xs">
+              {/* Sourced from single authoritative config/hospital.ts */}
+              {/* Tagged: CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED */}
               {HOSPITAL_METADATA.address && (
                 <li className="flex items-start">
                   <MapPin className="w-4 h-4 mr-2 text-sky-400 shrink-0 mt-0.5" />
@@ -165,7 +167,7 @@ export function PublicFooter() {
 
         {/* Bottom copyright */}
         <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-300 gap-2">
-          <p>© 2026 Onnesha Hospital. All rights reserved.</p>
+          <p>© 2026 {HOSPITAL_METADATA.shortName || "Onnesha Hospital"}. All rights reserved.</p>
           <p className="flex items-center">
             Built with <Heart className="w-3.5 h-3.5 text-rose-500 mx-1 inline" /> for compassionate healthcare
           </p>
