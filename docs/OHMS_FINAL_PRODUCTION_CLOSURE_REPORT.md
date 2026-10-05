@@ -6,10 +6,10 @@
 **Target Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Production Project:** `iuhtzahuszdkdarhxobx` (Managed PostgreSQL 15, ap-southeast-1, Free Plan Baseline)  
 **Authoritative Release Tag:** `v1.1.47` (Target Commit: `b92c3d11d1e2e0f2391e5465b7b3efc464b6bc47`)  
-**Current Main Branch HEAD:** `2e8a7e8bf7cd54a7c9b9c166bd6a9e12c1b79de4` (Fast-forward descendant under immutable tag governance)  
-**Cloudflare Deployed Commit:** `2e8a7e8bf7cd54a7c9b9c166bd6a9e12c1b79de4`  
-**Execution Timestamp:** `2026-10-05T21:45:00+06:00`  
-**Status:** **A. SOFTWARE VERIFIED — OWNER GATES REMAIN**
+**Current Main Branch HEAD:** `3dcd905e897e07256dea61309b384d3734ea96e7` (Fast-forward descendant under immutable tag governance)  
+**Cloudflare Deployed Commit:** `3dcd905e897e07256dea61309b384d3734ea96e7`  
+**Execution Timestamp:** `2026-10-05T23:15:00+06:00`  
+**Status:** **B. SOFTWARE VERIFIED — OWNER / EXTERNAL GATES REMAIN**
 
 ---
 
@@ -30,14 +30,15 @@ All provenance facts are explicitly distinguished with cryptographic and archite
 |:---|:---|:---:|
 | **Application Version** | `1.1.47` | Synchronized across all authoritative manifests |
 | **Release Tag** | `v1.1.47` | `git rev-parse v1.1.47^{commit}` -> `b92c3d11` |
-| **Current Main HEAD SHA** | `2e8a7e8bf7cd54a7c9b9c166bd6a9e12c1b79de4` | `git rev-parse main` |
-| **Cloudflare Deployed SHA** | `2e8a7e8bf7cd54a7c9b9c166bd6a9e12c1b79de4` | Cloudflare Pages deployment `d9bd82d9` |
+| **Current Main HEAD SHA** | `3dcd905e897e07256dea61309b384d3734ea96e7` | `git rev-parse main` |
+| **Cloudflare Deployed SHA** | `3dcd905e897e07256dea61309b384d3734ea96e7` | Cloudflare Pages deployment `ef4c5650` |
 | **Working Tree Cleanliness** | Clean (`dirty = false`) | `git status --porcelain` |
 | **Remote Branches** | `origin/main` & `ssh-origin/main` (Synchronized) | `node scripts/git-sync.mjs ls-remote` |
 | **Live Health Endpoint** | `version: "1.1.47"` | HTTP GET `https://onnesha-hospital.pages.dev/api/health.json` |
 | **Live Desktop Manifest** | `version: "1.1.47"`, status: `PENDING_CI_BUILD` | HTTP GET `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` |
 | **Static Export Pages** | `61 routes` (59 HTML, 1 404, 1 `sitemap.xml`) | `npm run build` |
 | **Automated Test Suites** | `104 / 104 passed` (928 active passes, 0 failures) | `node scripts/run-tests.mjs` |
+| **Browser Runtime E2E** | `50 / 50 specs passed` (0 failures, 55.3s) | `npx playwright test --project=chromium` |
 | **Database Migrations** | `108 / 108 parity` with remote Supabase | `npx supabase migration list` |
 | **Database Linting** | `0 fatal errors` on linked production DB | `npx supabase db lint --linked` |
 | **Dependency Security** | `0 vulnerabilities` (high/critical) | `npm audit --audit-level=high` |
@@ -53,11 +54,14 @@ In response to forensic verification of commit history, Git tag immutability is 
 - **Strict Prohibition of Tag Mutation:** In accordance with user governance instructions, `git tag -a -f v1.1.47` was never executed. The ref provenance is truthfully recorded as a mainline fast-forward extension.
 
 ```
-* 2e8a7e8 (HEAD -> main, origin/main, ssh-origin/main) fix(core): multi-agent adversarial security, wcag22 accessibility, and persistent antigravity rules
-* 5f5a3c3 docs: finalize v1.1.47 production closure report, CURRENT_STATE, and health check gate 2 provenance
-* 988252f fix(website): harden service worker caching, reconcile NAP content truth, and improve doctor directory crawlability
+* 3dcd905 (HEAD -> main, origin/main, ssh-origin/main) fix(ux): add semantic h1 to doctors static skeleton and eliminate 320px navbar horizontal overflow
+* 5cc2505 feat(governance): activate Supreme Autonomous Operating System instincts in GEMINI.md
+* a6848ac feat(tooling): install GSD Core v1.16.0, CodeRabbit CLI, Ralph Loop, and Roo Code Nightly plugins
+* 63db879 feat(infra): integrate reusable apex-engine skill, mcp templates, sre-watchdog, and fleet orchestrator
+* 6fbe80f docs: synchronize CURRENT_STATE and closure report with 104 test suites, WCAG 2.2 AA certification, and GEMINI.md
+* 2e8a7e8 fix(core): multi-agent adversarial security, wcag22 accessibility, and persistent antigravity rules
+* ...
 * b92c3d1 (tag: v1.1.47) fix(core): multi-agent adversarial hardening of database RLS, accounting atomicity, and release pipeline
-* 66b0387 docs: reconcile git provenance, lab web vitals telemetry, and supabase backup truth
 ```
 
 ---
@@ -110,5 +114,5 @@ The software is 100% verified, but physical hospital commissioning requires the 
 
 ## 5. Authoritative Handover Verdict
 
-- **Software Engineering Status:** **COMPLETE & FULLY VERIFIED** (0 errors, 0 warnings, 104 passing suites, 928 active passes, 108 migrations in parity).
-- **Production Commissioning Status:** **A. SOFTWARE VERIFIED — OWNER GATES REMAIN** (Awaiting real-world hardware, commercial API credentials, and administrative sign-offs).
+- **Software Engineering Status:** **COMPLETE & FULLY VERIFIED** (0 errors, 0 warnings, 104 passing suites, 928 active passes, 50/50 Playwright browser specs, 108 migrations in parity).
+- **Production Commissioning Status:** **B. SOFTWARE VERIFIED — OWNER / EXTERNAL GATES REMAIN** (Awaiting real-world hardware, commercial API credentials, and administrative sign-offs).

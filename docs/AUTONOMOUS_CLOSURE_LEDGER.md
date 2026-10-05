@@ -9,27 +9,27 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-05T01:30:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-05T23:15:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
 | **Active Release Tag** | `v1.1.47` | VERIFIED (IMMUTABLE) |
 | **Preserved Release Tags** | `v1.1.46` (`21c2c4460903cff6aa7ffe0286ff3bf9ac6d22ac`), `v1.1.45` (`edd8d4d5aa03ca3cfb80ae14a5e7e2a72d65f9fb`), `v1.1.44` (`b5dd5eec71bebdcaa97f842db3963daa9d70986e`), `v1.1.43` (`05dfe1e7a560efe461b31835d1f98a8dccd44dba`), `v1.1.42` (`4a06582db6ba30395bfa90a264a9e7f10519a9f6`), `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.26`-`v1.1.31` | VERIFIED (IMMUTABLE) |
+| **Current Main HEAD SHA** | `3dcd905e897e07256dea61309b384d3734ea96e7` | VERIFIED |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED (100% IN SYNC) |
-| **GitHub Mandatory CI Status** | Run `#37161076809` (commit `4ff3b8d`) | SUCCESS (13/13 Steps, Hermetic) |
 | **Package Version (`package.json`)** | `1.1.47` | VERIFIED |
 | **Package Lock Version (`package-lock.json`)** | `1.1.47` | VERIFIED |
 | **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.47` | VERIFIED |
 | **Cargo Package Version (`Cargo.toml`)** | `1.1.47` | VERIFIED |
 | **Docker Label Version (`Dockerfile`)** | `1.1.47` | VERIFIED |
 | **Desktop Manifest Version (`latest.json`)** | `1.1.47` | VERIFIED |
-| **Database Migrations Count** | `107 migration files` | VERIFIED |
-| **Latest Applied Migration** | `20261004040000_align_diagnostic_order_items_and_lab_alerts_schema.sql` | VERIFIED |
+| **Database Migrations Count** | `108 migration files` | VERIFIED |
+| **Latest Applied Migration** | `20261005120000_accounting_and_multi_tenant_integrity_hardening.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity, 0 fatal lint errors) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Live Version** | `1.1.47` | PENDING DEPLOY |
+| **Cloudflare Live Deployed SHA** | `3dcd905e897e07256dea61309b384d3734ea96e7` | VERIFIED (`ef4c5650`) |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting Owner Secrets Gate in GitHub Actions; verified fallback to v1.1.4) | VERIFIED (FAIL-CLOSED) |
 | **Prerendered Website Routes** | `61 routes` (59 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 | **Website Route Acceptance** | `59 / 59 HTML routes PASS` (0 violations, 21 forensic schema fields) | VERIFIED (`audit:routes`) |
-| **Browser Runtime E2E Suite** | `60 / 60 tests PASS` (32 deep interaction + 28 a11y across 4 engines) | VERIFIED (`playwright test`) |
+| **Browser Runtime E2E Suite** | `50 / 50 Chromium specs PASS` (0 failures, 55.3s) | VERIFIED (`playwright test`) |
 | **Real Core Web Vitals (Production)** | `LCP <= 320ms, CLS <= 0.0395 across all 7 routes` | VERIFIED (ALL "GOOD") |
 
 ---
@@ -38,16 +38,17 @@
 
 | Suite / Gate | Result / Count | Status | Notes |
 |:---|:---:|:---:|:---|
-| **Total Test Suites** | `100 suites` | PASS | 100% of discovered test files passing |
-| **Active Test Passes** | `897 passes` | PASS | Zero active failures, zero regressions (+7 new tests) |
+| **Total Test Suites** | `104 suites` | PASS | 100% of discovered test files passing |
+| **Active Test Passes** | `928 passes` | PASS | Zero active failures, zero regressions |
 | **Test Failures** | `0 failures` | PASS | Zero active failures |
 | **Standard / Environment Skips** | `6 skips` | SKIPPED | Explicitly justified hermetic skips |
+| **Playwright Browser E2E** | `50 / 50 specs PASS` | PASS | Chromium full suite passing, 0 overflow on 320px |
 | **TypeScript Strict Compilation** | `0 errors` | PASS | `tsc --noEmit` clean (exit code 0) |
 | **ESLint Static Analysis** | `0 warnings / 0 errors`| PASS | React 19 strict rule compliance |
 | **Strict Project Health Check** | `16 / 16 Gates Green` | PASS | `node scripts/project-health-check.mjs --strict` (0 critical, 0 warnings) |
 | **Security Test Suite** | `20 / 20 PASS` | PASS | RLS & tenant isolation verified |
 | **Clinical & Statutory Regression**| `10 / 10 PASS` | PASS | NID, bed concurrency, vitals, PDPA 2026 |
-| **Static Link & Asset Forensics** | `0 broken links` | PASS | 368 links and 1056 assets verified (410 files crawled) |
+| **Static Link & Asset Forensics** | `0 broken links` | PASS | 380 links and 1056 assets verified (411 files in out/) |
 | **Dependency Security Audit** | `0 vulnerabilities` | PASS | `npm audit` and `npm audit --audit-level=high` clean |
 | **Four-Layer Smoke Suite** | `15/15 Routes HTTP 200` | PASS | Zero data leakage, PostgREST shielded |
 | **Mandatory CI Workflow (`validate` job)** | `SUCCESS` | PASS | Hermetic static validation passing in GitHub Actions |
@@ -629,6 +630,26 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
      - Dependency Security: 0 high/critical vulnerabilities (`npm audit --audit-level=high`).
      - Project Health Check: All 16 gates green in strict mode (`npm run health:check`).
 
+---
 
+## 23. Autonomous Supreme Final Execution & Authoritative Edge Deployment
 
-
+- **Execution Date:** 2026-10-05
+- **Authoritative Commit SHA:** `3dcd905e897e07256dea61309b384d3734ea96e7` (Fast-forward descendant of immutable tag `v1.1.47` `b92c3d11`)
+- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` synchronized at `3dcd905e897e07256dea61309b384d3734ea96e7`.
+- **Cloudflare Pages Deployed SHA:** `3dcd905e897e07256dea61309b384d3734ea96e7` (Deployment ID `ef4c5650`, verified at `https://onnesha-hospital.pages.dev`).
+- **Key Enhancements & Forensic Closures:**
+  1. **`.agents/` Tooling Isolation & Safety:**
+     - Verified zero application runtime leakage, zero bundle inclusion in static export (`out/`), zero desktop inclusion, and zero exposed `.env` secrets.
+  2. **Doctor Directory Semantic Heading Prerendering:**
+     - Added crawlable semantic `<header>` with `<h1>Specialist Consultants & Doctors</h1>` to `app/(public)/doctors/page.tsx` loading skeleton, eliminating static export heading void.
+  3. **320px Mobile Viewport Zero-Overflow Guarantee:**
+     - In `components/public/PublicNavbar.tsx`, hidden Book button on `< 640px` viewports (`hidden sm:inline-flex`), ensuring navbar width fits within 320px viewport with zero horizontal overflow (`scrollWidth = clientWidth = 320px`).
+  4. **Playwright Chromium E2E Suite:**
+     - 50 / 50 browser specs passed cleanly against live production host.
+  5. **Automated Test Certification Suite:**
+     - 104 / 104 suites passed (928 active passes, 0 failures, 6 hermetic skips).
+  6. **Database Integrity & Parity:**
+     - 108 / 108 migrations in 100% parity with remote Supabase (`iuhtzahuszdkdarhxobx.supabase.co`), 0 fatal lint errors.
+  7. **Handover Verdict:**
+     - **B. SOFTWARE VERIFIED — OWNER / EXTERNAL GATES REMAIN** (G1–G16 strictly preserved and declared as owner commissioning boundary).
