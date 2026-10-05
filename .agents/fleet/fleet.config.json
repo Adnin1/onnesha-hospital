@@ -1,0 +1,31 @@
+{
+  "fleet_name": "Onnesha Hospital Multi-Service Fleet",
+  "version": "1.0.0",
+  "services": [
+    {
+      "name": "web-portal",
+      "path": ".",
+      "type": "nextjs-static",
+      "role": "Public Portal & Cloudflare Edge EMR",
+      "health_check": "node scripts/sre-watchdog.mjs",
+      "test_command": "node scripts/run-tests.mjs",
+      "status": "ACTIVE_PRODUCTION"
+    },
+    {
+      "name": "desktop-client",
+      "path": "./src-tauri",
+      "type": "tauri-rust",
+      "role": "Windows Native Clinical Desktop Shell",
+      "health_check": "cargo check",
+      "status": "LOCAL_VERIFIED_PENDING_CI_BUILD"
+    },
+    {
+      "name": "database-backend",
+      "path": "./supabase",
+      "type": "supabase-postgresql",
+      "role": "PostgreSQL 15 Multi-Tenant Database & RLS",
+      "health_check": "npx supabase migration list",
+      "status": "PARITY_SYNCHRONIZED"
+    }
+  ]
+}

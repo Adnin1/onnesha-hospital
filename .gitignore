@@ -56,3 +56,5 @@ public/downloads/desktop/*.exe
 .clinerules
 
 public/downloads/desktop/*.zip
+/logs/
+*.log

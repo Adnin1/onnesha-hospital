@@ -1,0 +1,30 @@
+{
+  "description": "Ready-to-use MCP (Model Context Protocol) configurations for Antigravity",
+  "configurations": {
+    "memory": {
+      "command": "cmd.exe",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
+      "description": "Persistent knowledge graph memory across agent sessions."
+    },
+    "postgres_supabase": {
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres:[YOUR-PASSWORD]@db.iuhtzahuszdkdarhxobx.supabase.co:5432/postgres"
+      ],
+      "description": "Direct SQL query execution and schema inspection over live Supabase PostgreSQL."
+    },
+    "cloudflare": {
+      "command": "cmd.exe",
+      "args": ["/c", "npx", "-y", "@cloudflare/mcp-server-cloudflare"],
+      "env": {
+        "CLOUDFLARE_API_TOKEN": "YOUR_CLOUDFLARE_API_TOKEN",
+        "CLOUDFLARE_ACCOUNT_ID": "YOUR_CLOUDFLARE_ACCOUNT_ID"
+      },
+      "description": "Native Cloudflare Pages and DNS management without shell scripts."
+    }
+  }
+}
