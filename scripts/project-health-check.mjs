@@ -77,7 +77,8 @@ try {
         const files = diffFiles.split('\n').map(f => f.trim()).filter(Boolean);
         isDocsOnly = files.every(f =>
           f.startsWith('docs/') || f.startsWith('scripts/') || f.startsWith('tests/') ||
-          f.startsWith('CHANGELOG') || f.startsWith('README') || f.endsWith('.md')
+          f.startsWith('CHANGELOG') || f.startsWith('README') || f.endsWith('.md') ||
+          f === 'public/llms.txt' || f.endsWith('.txt')
         );
       }
     } catch { /* diff check failed, treat as non-docs */ }

@@ -9,7 +9,7 @@
 
 ## 2. Infrastructure & Cloud Hosting Architecture
 - Platform Tier: Multi-Tenant Cloud Healthcare Architecture
-- Database Architecture: Managed PostgreSQL Relational Database (Supabase Platform; automated daily backups & PITR configured upon production tier upgrade; free tier baseline active)
+- Database Architecture: Managed PostgreSQL Relational Database (Supabase Free Plan baseline; automated backups and Point-In-Time-Recovery [PITR] are not enabled on this tier and require project upgrade to Pro tier under Owner Gate G11)
 - Web Hosting & Edge CDN: Cloudflare Pages Global Anycast CDN for static client assets
 - Document & Scans Storage: Supabase Storage (`medical-documents-vault` bucket with Row-Level Security and time-limited signed URLs)
 - Security Architecture: Strict Row-Level Security (RLS) on all tenant tables, TLS 1.2+ in transit with modern cipher suites, Role-Based Access Control (RBAC), and server-authoritative finance validation

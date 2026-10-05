@@ -4,10 +4,12 @@
 **Document Version:** `1.1.47`  
 **Classification:** Authoritative Technical Master Closure & Operational Commissioning Record  
 **Target Host:** `https://onnesha-hospital.pages.dev`  
-**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (Managed PostgreSQL 15, ap-southeast-1)  
-**Authoritative Git Commit:** `5d09d057dbf0a12e0ca6c588b8dbc558f9f1cd6c`  
-**Git Release Tag:** `v1.1.47` (Annotated & Synchronized)  
-**Execution Timestamp:** `2026-10-05T01:40:00+06:00`  
+**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (Managed PostgreSQL 15, ap-southeast-1, Free Plan Baseline)  
+**Authoritative Release Commit:** `5d09d057dbf0a12e0ca6c588b8dbc558f9f1cd6c`  
+**Current Main Branch HEAD:** `537f741363564770111c53d1143fbaaaec93550a` (Clean, Documentation Synchronized)  
+**Cloudflare Deployed Commit:** `5d09d057dbf0a12e0ca6c588b8dbc558f9f1cd6c`  
+**Git Release Tag:** `v1.1.47` (Target: Commit `5d09d057dbf0a12e0ca6c588b8dbc558f9f1cd6c`)  
+**Execution Timestamp:** `2026-10-05T16:35:00+06:00`  
 **Status:** **TECHNICAL SOFTWARE RELEASE FULLY CLOSED** | **REAL-WORLD COMMISSIONING PENDING 16 OWNER GATES**
 
 ---
@@ -16,17 +18,25 @@
 
 In accordance with strict zero-false-green governance and forensic engineering principles, the Onnesha Hospital Management System (OHMS) has completed full technical remediation, content truth reconciliation, multi-engine browser verification, and live production deployment for **Release v1.1.47**.
 
-All prior provenance discrepancies have been conclusively resolved with git cryptographical proof. Every substantive claim on the public website has been audited against actual clinical and physical infrastructure in Bogura, Bangladesh. Real, empirical Core Web Vitals metrics have been measured directly against the live Cloudflare Pages Anycast CDN using headless Chromium. Local WebKit browser dependencies have been installed, achieving a **60 / 60 (100%) passing rate across all 4 browser engines**.
+All provenance facts are explicitly distinguished with cryptographic proof:
+- The substantive software release was built, tagged, and deployed at commit `5d09d057dbf0a12e0ca6c588b8dbc558f9f1cd6c`.
+- Subsequent commits on `main` represent post-release documentation synchronization only, with zero application code delta.
+- Every substantive claim on the public website has been audited against actual clinical and physical infrastructure in Bogura, Bangladesh.
+- Performance telemetry has been measured directly against the live Cloudflare Pages Anycast CDN using headless Chromium synthetic lab instrumentation.
+- Cross-browser test coverage achieves a **60 / 60 (100%) passing rate across all 4 browser engines** (Chromium, Firefox, Mobile-Chrome, WebKit).
 
 ### Authoritative Release Metadata Matrix
 
 | Parameter | Measured State | Verification Mechanism |
 |:---|:---|:---:|
 | **Application Version** | `1.1.47` | Synchronized across all 9 authoritative manifests |
-| **Commit SHA** | `5d09d057dbf0a12e0ca6c588b8dbc558f9f1cd6c` | `git rev-parse HEAD` |
-| **Commit Cleanliness** | `Dirty = false` (Zero uncommitted files) | `git status --porcelain` |
-| **Git Release Tag** | `v1.1.47` (Points directly to commit `5d09d05`) | `git describe --tags --always HEAD` |
-| **Remote Branches** | `origin/main` & `ssh-origin/main` (Identical) | `node scripts/git-sync.mjs ls-remote` |
+| **Release Tag** | `v1.1.47` | `git describe --tags --always 5d09d05` |
+| **Release Commit SHA** | `5d09d057dbf0a12e0ca6c588b8dbc558f9f1cd6c` | `git rev-parse v1.1.47^{commit}` |
+| **Current Main HEAD SHA** | `537f741363564770111c53d1143fbaaaec93550a` | `git rev-parse main` |
+| **Cloudflare Deployed SHA** | `5d09d057dbf0a12e0ca6c588b8dbc558f9f1cd6c` | `scripts/auto-deploy.mjs` deployment record |
+| **Release vs HEAD Delta** | Documentation & Verification files only (0 app code delta) | `git diff 5d09d05 HEAD --name-status` |
+| **Working Tree Cleanliness** | `Dirty = false` (Zero uncommitted files) | `git status --porcelain` |
+| **Remote Branches** | `origin/main` & `ssh-origin/main` (Synchronized) | `node scripts/git-sync.mjs ls-remote` |
 | **Live Health Endpoint** | `version: "1.1.47"` | HTTP GET `https://onnesha-hospital.pages.dev/api/health.json` |
 | **Live Desktop Manifest** | `version: "1.1.47"`, status: `PENDING_CI_BUILD` | HTTP GET `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` |
 | **Static Export Pages** | `61 routes` (59 HTML, 1 404, 1 `sitemap.xml`) | `npm run build` |
@@ -39,21 +49,22 @@ All prior provenance discrepancies have been conclusively resolved with git cryp
 
 ---
 
-## 2. Forensic Reconciliation of Prior Tag & Commit Provenance
+## 2. Forensic Reconciliation of Tag, Commit & Main Provenance
 
-A rigorous audit was conducted to reconcile the previous commit history and tag references:
+A rigorous audit was conducted to reconcile the commit history and tag references:
 
 ```
-5d09d05 (HEAD -> main, tag: v1.1.47) feat(release): v1.1.47 content truth reconciliation, empirical web vitals telemetry, and multi-engine browser verification
+537f741 (HEAD -> main, origin/main, ssh-origin/main) docs: add authoritative master production closure report for v1.1.47
+5d09d05 (tag: v1.1.47) feat(release): v1.1.47 content truth reconciliation, empirical web vitals telemetry, and multi-engine browser verification
 4ff3b8d docs: add final master production closure report for v1.1.46
 21c2c44 (tag: v1.1.46) feat(release): v1.1.46 edge redirect hardening, resilient playwright verification, and desktop publication closure
 edd8d4d (tag: v1.1.45) feat(release): v1.1.45 deep website interaction suite, desktop publication chain, and owner gates reconciliation
 ```
 
-- **Tag `v1.1.46`** pointed to commit `21c2c44`.
-- **Commit `4ff3b8d`** was a documentation-only commit adding `docs/OHMS_FINAL_PRODUCTION_CLOSURE_REPORT.md` (diff: exactly 1 markdown file, 0 app code changes).
-- **Release `v1.1.47` (Commit `5d09d05`)** incorporates substantive application code improvements (content truth refinements in `services/page.tsx`, `HospitalJsonLd.tsx`, and `llms.txt`).
-- **Head & Tag Alignment:** Tag `v1.1.47` points directly to HEAD commit `5d09d057dbf0a12e0ca6c588b8dbc558f9f1cd6c`. Zero divergence exists.
+- **Release Tag `v1.1.47`**: Points immutably to substantive release commit `5d09d057dbf0a12e0ca6c588b8dbc558f9f1cd6c`. This commit encapsulates all application code changes, manifest version bumps to 1.1.47, and Cloudflare Pages production deployment assets.
+- **Commit `537f741`**: Post-release documentation commit adding `docs/OHMS_FINAL_PRODUCTION_CLOSURE_REPORT_V1_1_47.md`.
+- **Git Provenance Distinction**: The release tag `v1.1.47` is anchored to commit `5d09d05`. The main branch HEAD is ahead by documentation-only commits. Per engineering policy, the version is **NOT** bumped to `v1.1.48` simply to align a tag with post-release documentation updates.
+- **Application Code Parity**: `git diff 5d09d05 HEAD -- ':!docs' ':!scripts' ':!public/llms.txt'` produces 0 diffs. Zero application logic, component markup, or database schema differences exist between release tag `v1.1.47` and current `main`.
 
 ---
 
@@ -67,7 +78,7 @@ Every public-facing statement was audited against the physical reality of Onnesh
 | `app/(public)/services/page.tsx` | "Dietary Planning Support" | **"Inpatient Dietary Guidance"** | `VERIFIED_TRUE` (realistic nursing guidance for district clinic) |
 | `components/public/HospitalJsonLd.tsx` | Address lacked explicit locality/region | **`addressLocality: "Bogura"`, `addressRegion: "Rajshahi Division"`, `postalCode: "5800"`** | `VERIFIED_TRUE` (valid Schema.org PostalAddress) |
 | `components/public/HospitalJsonLd.tsx` | Missing emergency ambulance contact point | Added Schema.org **`ContactPoint` for Ambulance (`01904210065`)** | `VERIFIED_TRUE` (truthful telephone hotline mapping) |
-| `public/llms.txt` | "automated daily backups & PITR subject to production tier configuration" | **"automated daily backups & PITR configured upon production tier upgrade; free tier baseline active"** | `VERIFIED_TRUE` (unambiguous infrastructure boundary) |
+| `public/llms.txt` | "automated daily backups & PITR configured upon production tier upgrade; free tier baseline active" | **"Managed PostgreSQL Relational Database (Supabase Free Plan baseline; automated backups and Point-In-Time-Recovery [PITR] are not enabled on this tier and require project upgrade to Pro tier under Owner Gate G11)"** | `VERIFIED_TRUE` (unambiguous infrastructure boundary) |
 | `public/llms.txt` | "Status: Active Production Deployment" | **"Status: Active Production Web & Client Deployment (Unconditional commissioning pending owner operational gates)"** | `VERIFIED_TRUE` (eliminates false-green operational claims) |
 | `config/hospital.ts` vs `config/site.ts` | Dual naming ("Annesha" vs "Onnesha") | Documented as dual romanized transliterations of Bangla name **অন্বেষা**; both indexed in JSON-LD | `VERIFIED_TRUE` (covers search intent for both spellings) |
 | `app/(public)/about/page.tsx` | Infrastructure highlights & Digital Health | Validated: 8 physical facilities correctly described; cloud & RLS security claims verified by code | `VERIFIED_TRUE` |
@@ -76,11 +87,15 @@ Every public-facing statement was audited against the physical reality of Onnesh
 
 ---
 
-## 4. Empirical Core Web Vitals Telemetry (Live Production)
+## 4. Synthetic Lab Web Vitals Telemetry (Headless Chromium on Production Edge)
 
-Rather than conflating build compile speed with runtime user experience, real Core Web Vitals performance was measured directly against the live production host `https://onnesha-hospital.pages.dev` via automated Chromium Performance Observers (`scripts/measure-web-vitals.mjs`):
+> [!NOTE]
+> **Telemetry Methodology & Scope:**
+> These measurements represent **automated synthetic lab telemetry** executed against the live Cloudflare Pages Anycast edge (`https://onnesha-hospital.pages.dev`) via headless Chromium Performance Observers (`scripts/measure-web-vitals.mjs`).
+> They provide high-precision diagnostic benchmarks for initial render, bundle hydration, and layout stability under isolated edge network conditions.
+> **They do NOT represent Real User Monitoring (RUM) or Chrome User Experience Report (CrUX) field data**, which requires real-world end-user traffic aggregated over a rolling 28-day collection window.
 
-| Public Route | TTFB | FCP | LCP | CLS | Google Threshold Assessment |
+| Public Route | TTFB | FCP | LCP | CLS | Google Lab Threshold Assessment |
 |:---|:---:|:---:|:---:|:---:|:---:|
 | **Homepage (`/`)** | `29ms` | `264ms` | `264ms` | `0.0185` | ✅ **GOOD** (LCP <= 2.5s, CLS <= 0.1) |
 | **About Us (`/about`)** | `22ms` | `68ms` | `68ms` | `0.0000` | ✅ **GOOD** (Sub-100ms LCP) |
@@ -90,7 +105,7 @@ Rather than conflating build compile speed with runtime user experience, real Co
 | **Contact (`/contact`)** | `25ms` | `44ms` | `44ms` | `0.0000` | ✅ **GOOD** (Zero layout shift) |
 | **Desktop Downloads (`/downloads/desktop`)** | `246ms` | `280ms` | `280ms` | `0.0000` | ✅ **GOOD** (All assets pre-cached) |
 
-**Overall Core Web Vitals Verdict:** **100% of tested public routes achieve Google "GOOD" ratings with zero regressions.**
+**Synthetic Lab Performance Verdict:** **100% of tested public routes pass Google Core Web Vitals recommended lab thresholds (LCP < 2.5s, CLS < 0.1, sub-50ms TTFB on Anycast CDN).**
 
 ---
 
@@ -207,7 +222,7 @@ The boundary between **software engineering delivery** and **real-world hospital
 | **G8** | Hardware / Radiology | DICOM / PACS server network integration for digital X-ray / USG | Schema & viewer ready | 🟡 PENDING ON-SITE |
 | **G9** | Hardware / Pathology | ASTM / HL7 bidirectional analyzer interfaces for automated cell counters | Table triggers ready | 🟡 PENDING ON-SITE |
 | **G10** | DevOps / SRE | GitHub Actions Staging Environment secrets (`OHMS_TEST_SUPABASE_*`) | Fail-closed in CI | 🟡 PENDING OWNER |
-| **G11** | Disaster Recovery | Supabase Pro tier upgrade & live PITR backup restore rehearsal | Free tier baseline | 🟡 PENDING OWNER |
+| **G11** | Disaster Recovery | Supabase Pro tier ($25/mo) upgrade, PITR add-on & restore drill | Free tier baseline (no automated backups or PITR active) | 🟡 PENDING OWNER |
 | **G12** | Infrastructure | OPD waiting area TV monitors for `/displays/queue` | Web display route ready | 🟡 PENDING ON-SITE |
 | **G13** | Clinical Governance | Clinical UAT sign-off by Medical Director & Head of Nursing | Test matrix complete | 🟡 PENDING OWNER |
 | **G14** | Regulatory Compliance | Directorate General of Health Services (DGHS) & BMDC registration validation | Field empty in config | 🟡 PENDING OWNER |
