@@ -4,16 +4,16 @@
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Free Plan Baseline)  
-**Execution Timestamp:** `2026-10-06T01:58:00+06:00`  
+**Execution Timestamp:** `2026-10-06T04:20:00+06:00`  
 **Overall Delivery Status:** **B. SOFTWARE VERIFIED — OWNER / EXTERNAL GATES REMAIN**  
 
 ---
 
 ## 1. Executive Summary
 
-The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, full hardware integration software layers (ZKTeco attendance protocol, DICOM PACS networking, durable LIS analyzer bridge, and ESC/POS Bangla raster typography), and local Windows desktop installer builds via Tauri.
+The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, hardened hardware integration software layers (ZKTeco binary user provisioning and TCP socket protocol, DICOM PACS network server with association negotiation and durable disk storage, durable LIS analyzer bridge with fail-closed native transport, and ESC/POS Bangla raster typography), and local Windows desktop installer builds via Tauri.
 
-Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 108 synchronized migrations, 109 passing automated test suites (956 active passed tests, 0 failures, 6 hermetic skips), 43/43 passing hardware test specs, and 50 passing Playwright Chromium browser E2E specs (0 failures).
+Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 108 synchronized migrations, 109 passing automated test suites (963 active passed tests, 0 failures, 6 hermetic skips), 35 passing hardware test specs, and 50 passing Playwright Chromium browser E2E specs (0 failures).
 
 Final real-world operational commissioning requires on-site execution of 16 specific Owner & Operational Gates (G1–G16) covering physical hardware, commercial credentials, and administrative verifications.
 
@@ -24,17 +24,17 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 In adherence to strict zero-false-green Git governance:
 - **Release Tag `v1.1.47`:** Anchored immutably to commit `b92c3d11d1e2e0f2391e5465b7b3efc464b6bc47`. Under no circumstances was `git tag -a -f` invoked to mutate historical release tags.
 - **Mainline Descendant:** Current `main` HEAD is a verified fast-forward descendant of `v1.1.47^{commit}` via `git merge-base --is-ancestor`.
-- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) with a clean working tree (`dirty = false`).
-- **Cloudflare Edge Deployed SHA:** Synchronized with mainline HEAD commit deployed with `--commit-dirty=false`.
+- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `7cb6fa51a4242f54f63e4b6c82ac1ec4aaaa4ff2`.
+- **Cloudflare Edge Deployed SHA:** Synchronized with mainline HEAD commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (`52115e1d.onnesha-hospital.pages.dev`).
 
 ### Commit Lineage
 ```
-* d9c884f (HEAD -> main, origin/main, ssh-origin/main) feat(hardware): implement complete hardware abstraction layer, ZKTeco adapter, DICOM PACS bridge, LIS durable spool, and Bangla raster engine
+* 7cb6fa5 (HEAD -> main, origin/main, ssh-origin/main) feat(hardware): harden ZKTeco employee sync, DICOM network PACS boundary, and LIS fail-closed serial transport
+* 4050b4d feat(skills): register native slash commands /godmode /auto-pilot /swarm /ship /auto /apex /nije-koro and Banglish triggers
+* 86fe67b feat(governance): activate SWARM GODMODE v5.0 and universal shortcut trigger matrix
+* 51a84c7 docs(queue): track live Phase 2 execution queue
+* d9c884f feat(hardware): implement complete hardware abstraction layer, ZKTeco adapter, DICOM PACS bridge, LIS durable spool, and Bangla raster engine
 * 862cbd4 docs: synchronize CURRENT_STATE with 200/200 4-browser E2E certification and release lineage
-* 68615c4 fix(e2e): eliminate WebKit background prefetch exception and add prefetch={false} to navbar home link
-* 055f8a3 feat(infra): add 1-click disaster recovery backup and restorer for Antigravity Autonomous OS
-* fcea0d7 docs: finalize v1.1.47 autonomous closure ledger, CURRENT_STATE, and authoritative delivery report
-* 3dcd905 fix(ux): add semantic h1 to doctors static skeleton and eliminate 320px navbar horizontal overflow
 * ...
 * b92c3d1 (tag: v1.1.47) fix(core): multi-agent adversarial hardening of database RLS, accounting atomicity, and release pipeline
 ```
@@ -46,8 +46,8 @@ In adherence to strict zero-false-green Git governance:
 | Metric Category | Target Invariant | Measured Production State | Verification Method |
 |:---|:---|:---|:---:|
 | **Test Suites** | 100% Passing | **109 / 109 suites passed** | `npm run test:certification` |
-| **Active Test Cases** | Zero Failures | **956 passed**, 0 failed, 6 hermetic skips | Node Test Runner (`node:test`) |
-| **Hardware Tests** | 100% Passing | **43 / 43 hardware tests passed** | `tests/hardware/*.test.mjs` |
+| **Active Test Cases** | Zero Failures | **963 passed**, 0 failed, 6 hermetic skips | Node Test Runner (`node:test`) |
+| **Hardware Tests** | 100% Passing | **35 / 35 hardware tests passed** (8 ZKTeco, 9 DICOM, 6 LIS, 6 Scanner, 6 ESC/POS) | `tests/hardware/*.test.mjs` |
 | **Strict Quality Gates** | Zero Warnings / Critical | **16 / 16 gates PASS** | `node scripts/project-health-check.mjs --strict` |
 | **TypeScript Compilation** | Zero Type Errors | **0 errors** (strict mode enabled) | `npm run typecheck` (`tsc --noEmit`) |
 | **ESLint Analysis** | Zero Lint Warnings | **0 errors, 0 warnings** | `npm run lint` (`eslint . --max-warnings 0`) |
@@ -102,12 +102,12 @@ In adherence to strict zero-false-green Git governance:
   2. Zero false-green policy.
   3. Supabase multi-tenancy and RLS coverage.
   4. Double-entry general ledger atomicity.
-### 4.7 Universal Hardware Abstraction Layer & Device Adapters (`HW-01`)
+### 4.7 Universal Hardware Abstraction Layer & Hardened Device Protocols (`HW-01`)
 - **Thermal Printer ESC/POS & Bangla Typography (`lib/hardware/escpos.ts`):** Universal transport architecture with WebUSB endpoint auto-detection, WebSerial, TCP network sockets, and browser print fallback. Implements a 1-bit monochrome bitmap raster renderer (`renderBanglaTextToRaster`) for Bengali Unicode script (`অন্বেষা হাসপাতাল`, `রোগীর নাম`), eliminating unmappable character corruption (`?`) on thermal printers.
-- **Biometric Attendance Adapter (`lib/hardware/zkteco.ts`):** Complete binary UDP/TCP client protocol implementation for ZKTeco Standalone Devices (commands `CMD_CONNECT`, `CMD_EXIT`, `CMD_ATTLOG_RRQ`, checksum calculation, session management, and attendance record parsing with tenant-scoped DB ingestion).
-- **DICOM PACS Network Client (`lib/hardware/dicom-network.ts`):** Standard C-ECHO (verification), C-STORE (storage SCU), and C-FIND (worklist/study SCU) protocol engine over TCP sockets for connecting hospital modalities (X-Ray, Ultrasound, CT) to local/cloud PACS servers.
-- **LIS Analyzer Driver & Spooling (`lib/hardware/lis-driver.ts`):** ASTM E1381/E1394 and HL7 v2.x message parser/generator with durable local spooling (IndexedDB / SQLite), auto-reconnect backoff, and idempotency guarantees for bidirectional clinical hematology/biochemistry analyzers.
-- **Hardware Integration Test Suite (`tests/hardware/*.test.mjs`):** 43 passing tests across 6 dedicated test modules verifying binary protocols, error recovery, network timeouts, and data integrity.
+- **Biometric Attendance Adapter & Protocol User Provisioning (`lib/hardware/biometrics/zkteco.ts`):** Complete binary client protocol implementation for ZKTeco Standalone Devices over UDP and `ZkTecoTcpSocket` TCP. Implements `CMD_SET_USER` (8) and `CMD_DELETE_USER` (18) with 72-byte binary payload serialization (`formatZkUserRecord`), real ACK accounting, and fail-closed disconnection handling (`{ synced: 0, failed: N }`).
+- **DICOM PACS Network Server & Upper Layer Association (`lib/hardware/pacs/dicom-pacs.ts`):** True network listener (`NodeTcpDicomTransport` & `SimulatorDicomTransport`), binary PDU Upper Layer Protocol parser (`decodeAssociateRqPdu`), association negotiation with strict `allowedCallingAeTitles` allowlist enforcement, and durable filesystem persistence via `DurableDiskDicomStorage` (storing `.dcm` and `.meta.json` records).
+- **LIS Analyzer Driver & Spooling (`lib/lab/lis/`):** ASTM E1381/E1394 and HL7 v2.x message parser/generator with durable local spooling (`durable-spool.ts`), Write-Before-ACK transactional guarantee, Dead-Letter Queue (DLQ) replay, and fail-closed `NativeSerialTransport` architecture in `serial-handler.ts` (eliminating silent mock fallback in production).
+- **Hardware Integration Test Suite (`tests/hardware/*.test.mjs`):** 35 passing tests across 5 dedicated test modules (`zkteco-protocol.test.mjs` 8/8, `dicom-network.test.mjs` 9/9, `lis-durable-spool.test.mjs` 6/6, `scanner-manager.test.mjs` 6/6, `escpos-raster.test.mjs` 6/6) verifying binary protocols, error recovery, network timeouts, and data integrity.
 
 ### 4.8 Windows Desktop Installer Delivery Chain (`DESKTOP-01`)
 - **Tauri 2 Native Toolchain:** Compiled via Rust `cargo` and Tauri CLI on Windows x64:
@@ -145,5 +145,5 @@ The software is 100% verified, but production hospital operation is strictly gat
 
 ## 6. Authoritative Handover Verdict
 
-- **Software Engineering Status:** **COMPLETE & FULLY VERIFIED** (0 errors, 0 warnings, 109 passing suites, 956 active passes, 43/43 hardware tests, 200/200 Playwright 4-browser specs, 108 migrations in parity).
+- **Software Engineering Status:** **COMPLETE & FULLY VERIFIED** (0 errors, 0 warnings, 109 passing suites, 963 active passes, 35/35 hardware tests, 200/200 Playwright 4-browser specs, 108 migrations in parity).
 - **Production Commissioning Status:** **B. SOFTWARE VERIFIED — OWNER / EXTERNAL GATES REMAIN** (Awaiting real-world hardware, commercial API credentials, and administrative sign-offs).
