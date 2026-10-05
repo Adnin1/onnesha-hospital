@@ -24,12 +24,14 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 In adherence to strict zero-false-green Git governance:
 - **Release Tag `v1.1.47`:** Anchored immutably to commit `b92c3d11d1e2e0f2391e5465b7b3efc464b6bc47`. Under no circumstances was `git tag -a -f` invoked to mutate historical release tags.
 - **Mainline Descendant:** Current `main` HEAD is a verified fast-forward descendant of `v1.1.47^{commit}` via `git merge-base --is-ancestor`.
-- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `ba8e479b75329e8ac0f8c18c6a7d5051e7252d88`.
-- **Cloudflare Edge Deployed SHA:** Synchronized with mainline HEAD commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (`57252cf2.onnesha-hospital.pages.dev`).
+- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `217479add46ae255a113121822a96356fb8b708c`.
+- **Cloudflare Edge Deployed SHA:** Synchronized with mainline HEAD commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (`3759111d.onnesha-hospital.pages.dev`).
 
 ### Commit Lineage
 ```
-* ba8e479 (HEAD -> main, origin/main, ssh-origin/main) fix(lis): enforce fail-closed atomic ingestion and eliminate non-atomic fallback
+* 217479a (HEAD -> main, origin/main, ssh-origin/main) docs: add authoritative OHMS_FINAL_DELIVERY_REPORT for v1.1.47
+* efa8284 docs: synchronize CURRENT_STATE and CLOSURE_LEDGER with commit ba8e479 deployment
+* ba8e479 fix(lis): enforce fail-closed atomic ingestion and eliminate non-atomic fallback
 * 06177f3 docs: synchronize CURRENT_STATE and CLOSURE_LEDGER with commit 2b55a1b deployment
 * 2b55a1b feat(security): harden Permissions-Policy for WebUSB/WebSerial, sanitize llms.txt, and add social metadata
 * 4a64585 docs: synchronize CURRENT_STATE with commit 7cb6fa5, 963 passed tests, and hardened hardware protocols

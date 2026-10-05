@@ -6,7 +6,7 @@
 **Authoritative Verdict:** **B. SOFTWARE VERIFIED — OWNER / PHYSICAL HARDWARE / EXTERNAL GATES REMAIN**  
 **Execution Timestamp:** `2026-10-06T04:52:00+06:00`  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
-**Cloudflare Deployment Preview:** `https://57252cf2.onnesha-hospital.pages.dev`  
+**Cloudflare Deployment Preview:** `https://3759111d.onnesha-hospital.pages.dev`  
 **Live Supabase Database:** `https://iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, 108 migrations synchronized)  
 
 ---
@@ -15,13 +15,13 @@
 
 | Dimension | Measured Production Ground Truth | Verification Command / Evidence |
 |:---|:---|:---:|
-| **Synchronized Git HEAD** | `efa8284e68e4c76395b24479e0a02013149a46dc` | `git rev-parse HEAD` |
-| **Immediate Parent Commit** | `ba8e479b75329e8ac0f8c18c6a7d5051e7252d88` | `git log -1 --pretty=%P` |
-| **Deployed Code Commit** | `ba8e479b75329e8ac0f8c18c6a7d5051e7252d88` | Wrangler Deployment Record (`--commit-dirty=false`) |
+| **Synchronized Git HEAD** | `217479add46ae255a113121822a96356fb8b708c` | `git rev-parse HEAD` |
+| **Immediate Parent Commit** | `efa8284e68e4c76395b24479e0a02013149a46dc` | `git log -1 --pretty=%P` |
+| **Deployed Code Commit** | `217479add46ae255a113121822a96356fb8b708c` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Immutable Release Anchor**| `v1.1.47` (`b92c3d11d1e2e0f2391e5465b7b3efc464b6bc47`) | `git merge-base --is-ancestor` (Verified mainline descendant) |
 | **Remote Parity** | `origin/main` & `ssh-origin/main` in 100% sync | `git branch -vv` (0 ahead, 0 behind) |
-| **Cloudflare Deployment ID**| `57252cf2` | Wrangler Cloudflare Pages deployment API |
-| **Observed GitHub Actions** | Run ID `37385110399` (`efa8284`) / Run ID `37384957341` (`ba8e479`) | GitHub Actions REST API |
+| **Cloudflare Deployment ID**| `3759111d` | Wrangler Cloudflare Pages deployment API |
+| **Observed GitHub Actions** | Run ID `37385274500` (`217479a`) / Run ID `37384957341` (`ba8e479`) | GitHub Actions REST API |
 | **CI Staging Gate Behavior** | Fail-Closed at Gate G10 (`OHMS_TEST_SUPABASE_URL` / Service Key missing) | Security Invariant Verified |
 
 ---
