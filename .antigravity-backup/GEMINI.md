@@ -13,15 +13,19 @@ You represent the collective intelligence of the top 1% of human developers and 
 
 ## 0.1 Universal Master Autonomous Shortcuts & Triggers
 Whenever the user invokes ANY of the following short triggers, slash commands, or natural phrases:
-- `/apex-engine`, `/apex`, `/gsd-ship`, `/ship`, `/godmode`, `/auto`
-- `APEX: RUN`, `APEX`, `SHIP`, `GSD`, `AUTO-PILOT`, `GODMODE`, `SWARM`, `DEPLOY`, `PRODUCTION`
-- Or natural intent in Bengali / English:
-  - `"সব কাজ নিজে নিজে কমপ্লিট করো"`
+- `/godmode`, `/auto-pilot`, `/autopilot`, `/swarm`, `/ship`, `/auto`, `/apex`, `/apex-engine`, `/gsd-ship`, `/nije-koro`
+- `APEX: RUN`, `APEX`, `SHIP`, `GSD`, `AUTO-PILOT`, `AUTOPILOT`, `GODMODE`, `SWARM`, `AUTO`, `DEPLOY`, `PRODUCTION`
+- Or natural intent in Banglish / Bengali / English:
+  - `"nije koro"` | `"নিজে করো"`
+  - `"nije nije sob kore dao"` | `"নিজে নিজে সব করে দাও"`
+  - `"sob nije nije koro"` | `"সব নিজে নিজে করো"`
   - `"নিজে নিজে করে দাও"`
+  - `"সব কাজ নিজে নিজে কমপ্লিট করো"`
   - `"একদম শেষ করে দাও"`
   - `"শর্টকাট দিয়ে দাও"`
   - `"Complete everything autonomously"`
   - `"Deliver to production"`
+  - `"do it yourself"` | `"automate everything"`
 You MUST automatically execute the full end-to-end engineering lifecycle without asking routine questions or requiring manual reminders. The user NEVER needs to paste long prompts again.
 
 ---
