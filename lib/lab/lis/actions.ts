@@ -497,152 +497,21 @@ export async function ingestAnalyzerTransmissionAction(params: {
         };
       }
     } else {
-      // Fallback if RPC function is missing (e.g. mock test environment)
-      // Perform database-level unique check on payload_fingerprint
-      const { data: existingTx } = await supabase
-        .from("lab_analyzer_transmissions")
-        .select("id")
-        .eq("organization_id", session.organizationId)
-        .eq("analyzer_id", analyzer.id)
-        .eq("payload_fingerprint", fingerprint)
-        .limit(1);
+      // Fail closed if RPC function is missing or returns error
+      const errDetail = rpcErr ? rpcErr.message : "Empty response from atomic ingestion procedure";
+      console.error("[ingestAnalyzerTransmissionAction] Atomic RPC failed — failing closed:", errDetail);
+      return {
+        success: false,
+        error: `Atomic transmission ingestion failed: ${errDetail}`,
+      };
+    }
 
-      if (existingTx && existingTx.length > 0) {
-        return {
-          success: true,
-          data: {
-            transmissionId: existingTx[0].id,
-            sampleBarcode: barcode,
-            resultsAppliedCount: 0,
-            panicValuesDetected: 0,
-            parsedMessage: parsed,
-            isSimulation,
-            unmappedAnalytes: [],
-            isDuplicate: true,
-          },
-        };
-      }
-
-      // Insert transmission record with database-level uniqueness
-      const { data: txRow, error: txErr } = await supabase
-        .from("lab_analyzer_transmissions")
-        .insert({
-          organization_id: session.organizationId,
-          analyzer_id: analyzer.id,
-          sample_barcode: barcode,
-          raw_message: params.rawPacket,
-          protocol: parsed.protocol,
-          message_type: parsed.message_type,
-          parsed_results: parsed,
-          payload_fingerprint: fingerprint,
-          status: isSimulation
-            ? "PARSED"
-            : targetOrderItemId && resultValues.length > 0
-            ? "APPLIED"
-            : targetOrderItemId
-            ? "MATCHED"
-            : "RECEIVED",
-          is_simulation: isSimulation,
-          order_id: matchedOrderId || null,
-        })
-        .select("id")
-        .single();
-
-      if (txErr) {
-        if (txErr.code === "23505") {
-          // Unique constraint violation (concurrent duplicate)
-          return {
-            success: true,
-            data: {
-              transmissionId: "DUPLICATE",
-              sampleBarcode: barcode,
-              resultsAppliedCount: 0,
-              panicValuesDetected: 0,
-              parsedMessage: parsed,
-              isSimulation,
-              unmappedAnalytes: [],
-              isDuplicate: true,
-            },
-          };
-        }
-        return {
-          success: false,
-          error: `Database insert failed: ${txErr.message}`,
-        };
-      }
-
-      transmissionId = txRow.id;
-
-      // Apply clinical results if not simulation
-      if (!isSimulation && targetOrderItemId) {
-        const { data: existingResult } = await supabase
-          .from("diagnostic_results")
-          .select("id")
-          .eq("order_item_id", targetOrderItemId)
-          .limit(1);
-
-        let resultId = existingResult && existingResult.length > 0 ? existingResult[0].id : null;
-        if (!resultId) {
-          const { data: newResult, error: crErr } = await supabase
-            .from("diagnostic_results")
-            .insert({
-              order_item_id: targetOrderItemId,
-              descriptive_findings: `[AUTO-LIS] Ingested from ${params.analyzerCode} (${parsed.protocol}) on ${new Date().toISOString()}`,
-              technician_id: session.userId,
-            })
-            .select("id")
-            .single();
-
-          if (crErr) {
-            return {
-              success: false,
-              error: `Failed to create clinical diagnostic result: ${crErr.message}`,
-            };
-          }
-          resultId = newResult.id;
-        }
-
-        for (const rv of resultValues) {
-          const { error: upsertErr } = await supabase.from("diagnostic_result_values").upsert(
-            {
-              result_id: resultId,
-              parameter_id: rv.parameter_id,
-              observed_value: rv.observed_value,
-              is_abnormal: rv.is_abnormal,
-            },
-            { onConflict: "result_id,parameter_id" }
-          );
-
-          if (upsertErr) {
-            return {
-              success: false,
-              error: `Failed to record clinical result value: ${upsertErr.message}`,
-            };
-          }
-          resultsAppliedCount++;
-        }
-
-        // Insert durable critical alerts
-        for (const pa of panicAlerts) {
-          await supabase.from("lab_critical_alerts").insert({
-            organization_id: session.organizationId,
-            transmission_id: transmissionId,
-            order_id: matchedOrderId,
-            sample_barcode: barcode,
-            analyte_code: pa.analyte_code,
-            observed_value: pa.observed_value,
-            abnormal_flag: pa.abnormal_flag,
-            status: "PENDING_ACK",
-          });
-        }
-
-        if (matchedOrderId) {
-          await supabase
-            .from("diagnostic_orders")
-            .update({ status: "PROCESSING", updated_at: new Date().toISOString() })
-            .eq("id", matchedOrderId);
-        }
-      }
+    if (matchedOrderId && !isSimulation) {
+      await supabase
+        .from("diagnostic_orders")
+        .update({ status: "PROCESSING", updated_at: new Date().toISOString() })
+        .eq("id", matchedOrderId)
+        .eq("organization_id", session.organizationId);
     }
 
     // 6. Record Forensic Audit Log

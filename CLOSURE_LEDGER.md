@@ -75,6 +75,11 @@
    - *Fix:* Replaced mock fallback with `NativeSerialTransport` abstraction; unconfigured serial connections fail closed and return `false`.
    - *Verification:* 6/6 unit tests passing in `tests/hardware/lis-durable-spool.test.mjs`.
 
+7. **`HW-LIS-02` (LIS Ingestion Non-Atomic Fallback Elimination & Fail-Closed Enforcement):**
+   - *Problem:* `lib/lab/lis/actions.ts` previously had a non-atomic multi-step fallback if the atomic ingestion RPC returned an error, risking partial writes and out-of-order state.
+   - *Fix:* Removed the non-atomic fallback; `ingestAnalyzerTransmissionAction` now strictly fails closed if `ingest_analyzer_transmission_atomic` RPC fails or returns empty data, and guards the order update with explicit `organization_id` boundary checks.
+   - *Verification:* Verified against `tests/lis-analyzer-integration.test.mjs` (20/20 scenarios pass).
+
 ---
 
 ## 4. Unconditional Operational Commissioning Gates (G1–G16)
