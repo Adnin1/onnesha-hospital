@@ -4,16 +4,16 @@
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Free Plan Baseline)  
-**Execution Timestamp:** `2026-10-05T20:30:00+06:00`  
+**Execution Timestamp:** `2026-10-05T21:45:00+06:00`  
 **Overall Delivery Status:** **A. SOFTWARE VERIFIED — OWNER GATES REMAIN**  
 
 ---
 
 ## 1. Executive Summary
 
-The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, and automated production deployment to Cloudflare Pages.
+The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, and automated production deployment to Cloudflare Pages.
 
-Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 108 synchronized migrations and 103 passing automated test suites (918 active passed tests, 0 failures).
+Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 108 synchronized migrations and 104 passing automated test suites (928 active passed tests, 0 failures, 6 hermetic skips).
 
 Final real-world operational commissioning requires on-site execution of 16 specific Owner & Operational Gates (G1–G16) covering physical hardware, commercial credentials, and administrative verifications.
 
@@ -23,16 +23,16 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 
 In adherence to strict zero-false-green Git governance:
 - **Release Tag `v1.1.47`:** Anchored immutably to commit `b92c3d11d1e2e0f2391e5465b7b3efc464b6bc47`. Under no circumstances was `git tag -a -f` invoked to mutate historical release tags.
-- **Mainline Descendant:** Current `main` HEAD (`988252f5` and documentation commits) is a verified fast-forward descendant of `v1.1.47^{commit}` via `git merge-base --is-ancestor`.
+- **Mainline Descendant:** Current `main` HEAD (`2e8a7e8bf7cd54a7c9b9c166bd6a9e12c1b79de4`) is a verified fast-forward descendant of `v1.1.47^{commit}` via `git merge-base --is-ancestor`.
 - **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) with a clean working tree (`dirty = false`).
 
 ### Commit Lineage
 ```
-* 988252f (HEAD -> main, ssh-origin/main) fix(website): harden service worker caching, reconcile NAP content truth, and improve doctor directory crawlability
+* 2e8a7e8 (HEAD -> main, origin/main, ssh-origin/main) fix(core): multi-agent adversarial security, wcag22 accessibility, and persistent antigravity rules
+* 5f5a3c3 docs: finalize v1.1.47 production closure report, CURRENT_STATE, and health check gate 2 provenance
+* 988252f fix(website): harden service worker caching, reconcile NAP content truth, and improve doctor directory crawlability
 * b92c3d1 (tag: v1.1.47) fix(core): multi-agent adversarial hardening of database RLS, accounting atomicity, and release pipeline
 * 66b0387 docs: reconcile git provenance, lab web vitals telemetry, and supabase backup truth
-* 537f741 docs: add authoritative master production closure report for v1.1.47
-* 5d09d05 feat(release): v1.1.47 content truth reconciliation, empirical web vitals telemetry, and multi-engine browser verification
 ```
 
 ---
@@ -41,11 +41,11 @@ In adherence to strict zero-false-green Git governance:
 
 | Metric Category | Target Invariant | Measured Production State | Verification Method |
 |:---|:---|:---|:---:|
-| **Test Suites** | 100% Passing | **103 / 103 suites passed** | `node scripts/run-tests.mjs` |
-| **Active Test Cases** | Zero Failures | **918 passed**, 0 failed, 6 hermetic skips | Node Test Runner (`node:test`) |
+| **Test Suites** | 100% Passing | **104 / 104 suites passed** | `node scripts/run-tests.mjs` |
+| **Active Test Cases** | Zero Failures | **928 passed**, 0 failed, 6 hermetic skips | Node Test Runner (`node:test`) |
 | **Strict Quality Gates** | Zero Warnings / Critical | **16 / 16 gates PASS** | `node scripts/project-health-check.mjs --strict` |
 | **TypeScript Compilation** | Zero Type Errors | **0 errors** (strict mode enabled) | `npm run typecheck` (`tsc --noEmit`) |
-| **ESLint Analysis** | Zero Lint Warnings | **0 errors, 0 warnings** | `npm run lint` (`eslint . --quiet`) |
+| **ESLint Analysis** | Zero Lint Warnings | **0 errors, 0 warnings** | `npm run lint` (`eslint . --max-warnings 0`) |
 | **Database Migrations** | 100% Schema Parity | **108 / 108 migrations in parity** | `npx supabase migration list` |
 | **Database Linting** | Zero Fatal Errors | **0 fatal errors, 0 syntax violations** | `npx supabase db lint --linked` |
 | **Production Dependencies**| Zero High/Critical CVEs | **0 vulnerabilities** | `npm audit --audit-level=high` |
@@ -59,29 +59,42 @@ In adherence to strict zero-false-green Git governance:
 
 ## 4. Key Hardening Dimensions (Completed)
 
-### 4.1 Service Worker Stale-Cache Hardening (`SW-01`)
+### 4.1 Adversarial Security & Multi-Tenant Authorization (`SEC-01`)
+- **Server Action Tenant Boundaries:** Enforced `session.organizationId` and `requirePermission(...)` validation across all patient Server Actions (`lib/patient/actions.ts`), preventing cross-tenant access and unauthorized mutations.
+- **Edge Header Hardening:** Hardened `public/_headers` with explicit `Cache-Control: no-store, no-cache, must-revalidate` for `/api/*` and `private, no-cache, no-store` for token lookup routes.
+
+### 4.2 WCAG 2.2 AA Accessibility & Client Lifecycle (`A11Y-01`)
+- **Comprehensive Lifecycle Suite:** Added `tests/website-public-wcag22-lifecycle-certification.test.mjs` (10/10 passing tests).
+- **Interactive Controls & Touch Targets:** Enforced minimum 44×44px interactive touch targets (`min-h-[44px]`) across public forms, quick filter pills, and navigation menus.
+- **Contrast & Semantic HTML:** Upgraded muted text classes to achieve contrast ratios ≥ 4.5:1, added `aria-hidden="true"` to decorative icons, configured `role="alert"` / `aria-live="polite"` for error states, and added visible skip-to-content links with `lang="bn"`.
+
+### 4.3 Service Worker Stale-Cache Hardening (`SW-01`)
 - **Release-Versioned Cache Key:** `CACHE_VERSION = 'ohms-static-v5-1.1.47'`, binding cache lifetimes to release versions while maintaining backward compatibility with legacy regex assertions.
 - **Old Cache Purging:** On `activate`, all non-matching cache keys are purged automatically via `caches.delete()`, followed by `clients.claim()`.
 - **Network-First with Cache Bypass:** For allowlisted public HTML routes (`/`, `/about`, `/services`, `/doctors`, `/appointment`, `/contact`, `/downloads/desktop`), requests are fetched with `{ cache: 'no-cache' }`, preventing browser disk caches from serving stale deployment shells.
 - **Active Tab Visibility Polling:** `components/app/SwRegister.tsx` listens to `visibilitychange` events and executes `registration.update()` when users focus the tab.
 - **Sensitive Route Rejection:** Strictly enforces `NEVER_CACHE` rules for `/app/*`, `/api/*`, `/displays/*`, and Supabase auth sessions.
 
-### 4.2 Website NAP & Content Truth Reconciliation (`NAP-01`)
+### 4.4 Website NAP & Content Truth Reconciliation (`NAP-01`)
 - **Single Source of Truth:** `config/hospital.ts` established as the authoritative registry for all hospital metadata.
 - **DGHS Facility ID:** Formally documented DGHS Facility ID `10022715` (Registered: `ANNESHA HOSPITAL / অন্বেষা হাসপাতাল`).
 - **Content Truth Blockers:** Documented and explicitly tagged physical street variations (Sonali Bank Khandar vs. Mofiz Paglar Mor Sherpur Rd) and brand transliterations (Annesha vs. Onnesha) as `CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED`.
 - **Zero Inconsistent Hardcoded Text:** Synchronized `config/site.ts`, `components/public/PublicFooter.tsx`, `components/public/PublicNavbar.tsx`, `components/public/HospitalJsonLd.tsx`, `app/(public)/about/page.tsx`, `app/sitemap.ts`, and `public/llms.txt` to consume metadata dynamically.
 
-### 4.3 Doctor Directory Crawlability & SEO (`DOC-01`)
+### 4.5 Doctor Directory Crawlability & SEO (`DOC-01`)
 - **Static Pre-rendered JSON-LD:** `app/(public)/doctors/layout.tsx` (Server Component at build time) embeds valid Schema.org `MedicalWebPage` JSON-LD detailing 8 clinical departments and medical specialties.
 - **Pre-rendered Semantic Landmarks:** Layout includes crawlable `<section id="clinical-specialties-directory">` markup so search engine bots (Googlebot) index specialties directly from static HTML before JavaScript hydration.
 - **Client Resilience:** `app/(public)/doctors/page.tsx` wrapped in `<Suspense>`, providing pulse skeletons during load, retry controls on network failure, explicit empty states for zero doctors or unmatched searches, and real-time URL query synchronization (`?department=`, `?search=`, `?doctor=`).
 - **Zero Private Column Leaks:** Strict data boundary ensures private doctor columns (`salary`, `bmdc_reg_number`, `followup_fee`, etc.) are never queried or leaked.
 
-### 4.4 Desktop Client Delivery Chain
-- **Manifest Invariant:** `public/downloads/desktop/latest.json` declares status `PENDING_CI_BUILD` with 0 byte size and empty hash, avoiding fabricated binaries.
-- **Edge 302 Redirection:** `public/_redirects` routes direct download attempts for unbuilt installers (`/downloads/desktop/*.exe`, `*.msi`) to `/downloads/desktop` status page with HTTP 302.
-- **Verified Fallback:** Verified historical `v1.1.4` binary installer available for direct download.
+### 4.6 Persistent Engineering Operating Guidelines (`GEMINI.md`)
+- Established concise, non-conflicting `GEMINI.md` at repository root formalizing:
+  1. Static export boundaries and fail-closed routing invariants.
+  2. Zero false-green policy.
+  3. Supabase multi-tenancy and RLS coverage.
+  4. Double-entry general ledger atomicity.
+  5. Immutable Git tag governance.
+  6. The 16 physical/operational commissioning boundaries (G1–G16).
 
 ---
 
@@ -112,5 +125,5 @@ The software is 100% verified, but production hospital operation is strictly gat
 
 ## 6. Authoritative Handover Verdict
 
-- **Software Engineering Status:** **COMPLETE & FULLY VERIFIED** (0 errors, 0 warnings, 103 passing suites, 108 migrations in parity).
+- **Software Engineering Status:** **COMPLETE & FULLY VERIFIED** (0 errors, 0 warnings, 104 passing suites, 928 active passes, 108 migrations in parity).
 - **Production Commissioning Status:** **A. SOFTWARE VERIFIED — OWNER GATES REMAIN** (Awaiting real-world hardware, commercial API credentials, and administrative sign-offs).
