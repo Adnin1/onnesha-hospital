@@ -823,7 +823,7 @@ export class DicomModalitySimulator {
     };
     this.pacsNode = {
       aeTitle: pacsNode.aeTitle || "OHMS_PACS",
-      host: pacsNode.host || "127.0.0.1",
+      host: pacsNode.host || "192.168.1.200",
       port: pacsNode.port || 11112,
     };
     this.pacsService = pacsService || new PacsBridgeService({

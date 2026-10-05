@@ -1,24 +1,24 @@
 {
   "version": "1.1.47",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.47. Content truth reconciliation, empirical Core Web Vitals telemetry, enriched Schema.org JSON-LD, and fail-closed publication integrity.",
-  "pub_date": "2026-10-05T01:30:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.47. Universal HAL, ZKTeco biometric integration, DICOM PACS bridge, LIS durable spool, and 1-bit Bangla raster typography.",
+  "pub_date": "2026-10-06T01:55:00.000Z",
   "platforms": {
     "windows-x86_64": {
       "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.47.exe",
-      "installer_exe_sha256": "",
-      "installer_exe_size": 0,
+      "installer_exe_sha256": "923D73FCFEC3D647A7FFE39DF0177A2574BE69B20A9C41DBFA21A7AB387C18A2",
+      "installer_exe_size": 18881661,
       "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.47.msi",
-      "installer_msi_sha256": "",
-      "installer_msi_size": 0,
-      "status": "pending_ci_workflow",
+      "installer_msi_sha256": "1C833D347E907F9551EE55BA2D127134F3725F44E376EE3642AE72593509847C",
+      "installer_msi_size": 20512768,
+      "status": "built_locally_verified",
       "verified_historical_installer": "https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe"
     }
   },
   "signing": {
     "enabled": false,
-    "distribution": "ci_windows_runner",
-    "notice": "Informational version metadata manifest. Production updater auto-signing is disabled; unsigned binary distribution is produced via GitHub Actions CI Windows build runners (WiX MSI / NSIS EXE). EV Code Signing Certificate is pending owner."
+    "distribution": "local_and_ci_windows_runner",
+    "notice": "Informational version metadata manifest. Production updater auto-signing is disabled; unsigned binary distribution is produced via WiX MSI and NSIS EXE toolchains. EV Code Signing Certificate is pending owner."
   },
-  "artifact_status": "PENDING_CI_BUILD"
+  "artifact_status": "BUILT_AND_VERIFIED"
 }

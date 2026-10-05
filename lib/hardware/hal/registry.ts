@@ -170,10 +170,10 @@ export class HardwareDeviceRegistry {
         config: {
           transportType: "TCP_IP",
           port: 5100,
-          host: "127.0.0.1",
+          host: "192.168.1.50",
           serialPort: "COM1",
           baudRate: 9600,
-          allowedIps: ["127.0.0.1", "192.168.1.100", "192.168.1.101"],
+          allowedIps: ["192.168.1.50", "192.168.1.100", "192.168.1.101"],
         },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
