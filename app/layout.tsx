@@ -35,11 +35,21 @@ export const metadata: Metadata = {
     siteName: SITE_CONFIG.shortName,
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: `${SITE_CONFIG.canonicalUrl}/logo.png`,
+        width: 512,
+        height: 512,
+        alt: "Onnesha Hospital & Diagnostic Complex",
+        type: "image/png",
+      },
+    ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: SITE_CONFIG.name,
     description: SITE_CONFIG.description,
+    images: [`${SITE_CONFIG.canonicalUrl}/logo.png`],
   },
   manifest: "/manifest.json",
   generator: "Onnesha Hospital HIS/EMR",
