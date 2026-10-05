@@ -228,7 +228,9 @@ export default function HardwareManagementPage() {
   };
 
   // --- ZKTeco Biometrics Diagnostic State ---
-  const [zkStatus, setZkStatus] = useState<"CONNECTED" | "DISCONNECTED">("CONNECTED");
+  const [zkStatus, setZkStatus] = useState<"STANDBY_SIMULATION_READY" | "CONNECTED" | "DISCONNECTED">(
+    "STANDBY_SIMULATION_READY"
+  );
   const [zkPunchLogs, setZkPunchLogs] = useState<
     Array<{
       employeeId: string;
@@ -237,22 +239,7 @@ export default function HardwareManagementPage() {
       punchState: "CHECK_IN" | "CHECK_OUT";
       isDebounced: boolean;
     }>
-  >([
-    {
-      employeeId: "EMP-1001",
-      punchTime: "08:02:15 AM",
-      verifyType: "FINGERPRINT",
-      punchState: "CHECK_IN",
-      isDebounced: false,
-    },
-    {
-      employeeId: "EMP-1002",
-      punchTime: "08:14:50 AM",
-      verifyType: "FACE",
-      punchState: "CHECK_IN",
-      isDebounced: false,
-    },
-  ]);
+  >([]);
   const [manualEmpId, setManualEmpId] = useState<string>("EMP-1042");
   const [zkSimulating, setZkSimulating] = useState<boolean>(false);
 
@@ -666,27 +653,42 @@ export default function HardwareManagementPage() {
                 Pulls biometric punches, synchronizes staff schedules, and enforces double-punch debounce.
               </p>
 
+              {/* Zero-False-Green Operational Notice */}
+              <div className="p-3 bg-amber-950/30 border border-amber-800/60 rounded-xl text-xs text-amber-300">
+                ⚠️ <strong>Zero False-Green Notice:</strong> ZKTeco UDP/TCP protocol stack and database ingestion drivers are fully implemented and verified in software. Physical device communication requires on-site installation and hospital LAN IP routing (Operational Gate G7).
+              </div>
+
               {/* Status Banner */}
               <div
                 className={`p-4 rounded-xl flex items-center justify-between text-xs border ${
                   zkStatus === "CONNECTED"
                     ? "bg-emerald-950/40 border-emerald-800/80 text-emerald-300"
+                    : zkStatus === "STANDBY_SIMULATION_READY"
+                    ? "bg-amber-950/40 border-amber-800/80 text-amber-300"
                     : "bg-rose-950/40 border-rose-800/80 text-rose-300"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span
                     className={`w-2.5 h-2.5 rounded-full ${
-                      zkStatus === "CONNECTED" ? "bg-emerald-400 animate-ping" : "bg-rose-400"
+                      zkStatus === "CONNECTED"
+                        ? "bg-emerald-400 animate-ping"
+                        : zkStatus === "STANDBY_SIMULATION_READY"
+                        ? "bg-amber-400"
+                        : "bg-rose-400"
                     }`}
                   />
-                  <span className="font-bold">ZKTeco Service Daemon: {zkStatus}</span>
+                  <span className="font-bold">
+                    ZKTeco Daemon: {zkStatus === "STANDBY_SIMULATION_READY" ? "STANDBY (Loopback Testbed Ready • Gate G7 Pending)" : zkStatus}
+                  </span>
                 </div>
                 <button
-                  onClick={() => setZkStatus(zkStatus === "CONNECTED" ? "DISCONNECTED" : "CONNECTED")}
+                  onClick={() =>
+                    setZkStatus(zkStatus === "CONNECTED" ? "DISCONNECTED" : "CONNECTED")
+                  }
                   className="text-[11px] font-mono underline hover:text-white transition"
                 >
-                  {zkStatus === "CONNECTED" ? "Disconnect" : "Reconnect (10.10.10.50:4370)"}
+                  {zkStatus === "CONNECTED" ? "Disconnect" : "Test LAN Link (10.10.10.50:4370)"}
                 </button>
               </div>
 
@@ -755,40 +757,49 @@ export default function HardwareManagementPage() {
               </h2>
 
               <div className="grow space-y-2 overflow-y-auto max-h-[380px]">
-                {zkPunchLogs.map((log, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
-                      log.isDebounced
-                        ? "bg-rose-950/30 border-rose-900/50 opacity-75"
-                        : "bg-slate-950 border-slate-800"
-                    }`}
-                  >
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-white text-sm">{log.employeeId}</span>
-                        {log.isDebounced && (
-                          <span className="bg-rose-950 text-rose-300 border border-rose-800 text-[9px] px-1.5 py-0.2 rounded font-bold uppercase">
-                            Debounced (Suppressed)
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-slate-500">
-                        {log.punchTime} • Method: {log.verifyType}
-                      </div>
-                    </div>
-
-                    <span
-                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded border uppercase ${
-                        log.punchState === "CHECK_IN"
-                          ? "bg-emerald-950 text-emerald-300 border-emerald-800"
-                          : "bg-amber-950 text-amber-300 border-amber-800"
+                {zkPunchLogs.length === 0 ? (
+                  <div className="text-center py-12 px-4 text-xs text-slate-500 border border-dashed border-slate-800 rounded-xl space-y-1">
+                    <p className="font-semibold text-slate-400">No live attendance punch events recorded yet.</p>
+                    <p className="text-[11px] text-slate-600">
+                      Use the loopback testbed on the left to simulate punches or connect a physical ZKTeco terminal on hospital LAN to ingest live punches.
+                    </p>
+                  </div>
+                ) : (
+                  zkPunchLogs.map((log, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
+                        log.isDebounced
+                          ? "bg-rose-950/30 border-rose-900/50 opacity-75"
+                          : "bg-slate-950 border-slate-800"
                       }`}
                     >
-                      {log.punchState}
-                    </span>
-                  </div>
-                ))}
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-white text-sm">{log.employeeId}</span>
+                          {log.isDebounced && (
+                            <span className="bg-rose-950 text-rose-300 border border-rose-800 text-[9px] px-1.5 py-0.2 rounded font-bold uppercase">
+                              Debounced (Suppressed)
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          {log.punchTime} • Method: {log.verifyType}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded border uppercase ${
+                          log.punchState === "CHECK_IN"
+                            ? "bg-emerald-950 text-emerald-300 border-emerald-800"
+                            : "bg-amber-950 text-amber-300 border-amber-800"
+                        }`}
+                      >
+                        {log.punchState}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

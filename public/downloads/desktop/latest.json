@@ -20,5 +20,5 @@
     "distribution": "local_and_ci_windows_runner",
     "notice": "Informational version metadata manifest. Production updater auto-signing is disabled; unsigned binary distribution is produced via WiX MSI and NSIS EXE toolchains. EV Code Signing Certificate is pending owner."
   },
-  "artifact_status": "BUILT_AND_VERIFIED"
+  "artifact_status": "PENDING_CI_BUILD"
 }
