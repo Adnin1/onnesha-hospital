@@ -44,11 +44,19 @@ function DoctorsLoadingSkeleton() {
   return (
     <div className="py-12 bg-slate-50 min-h-[80vh]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Skeleton */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <div className="h-9 w-72 bg-slate-200 rounded-xl mx-auto animate-pulse" />
-          <div className="h-4 w-96 bg-slate-200 rounded-lg mx-auto mt-3 animate-pulse" />
-        </div>
+        {/* Semantic Header with h1 for Static Export & Screen Readers */}
+        <header className="text-center max-w-2xl mx-auto mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100/80 text-sky-800 text-xs font-semibold uppercase tracking-wider mb-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-sky-600" aria-hidden="true" />
+            <span>Verified Consultants &amp; Specialists</span>
+          </div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">
+            Specialist Consultants &amp; Doctors
+          </h1>
+          <p className="text-sm text-slate-600 mt-2">
+            Find the right medical specialist, review OPD chamber visiting hours, and book your outpatient serial token online.
+          </p>
+        </header>
 
         {/* Filter Skeleton */}
         <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-4 mb-8 flex flex-col md:flex-row gap-4 justify-between items-center animate-pulse">

@@ -129,7 +129,7 @@ export function PublicNavbar() {
             <Link
               href="/appointment"
               prefetch={false}
-              className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-3 py-2 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="hidden sm:inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-3 py-2 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               <Calendar className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
               Book
