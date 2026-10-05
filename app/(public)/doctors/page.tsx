@@ -333,7 +333,7 @@ function DoctorsDirectoryContent() {
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="inline-flex items-center text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline min-h-[36px] px-2"
+                className="inline-flex items-center text-xs font-medium text-sky-700 hover:text-sky-900 hover:underline min-h-[44px] px-2.5 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
                 <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                 Reset all filters

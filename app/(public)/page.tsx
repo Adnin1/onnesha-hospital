@@ -84,15 +84,15 @@ export default function HomePage() {
               {/* Quick stats strip */}
               <div className="grid grid-cols-3 gap-4 pt-6 border-t border-sky-700/60 max-w-lg">
                 <div>
-                  <div className="text-2xl font-bold text-white">OPD &amp; IPD</div>
+                  <div className="text-xl sm:text-2xl font-bold text-white">OPD &amp; IPD</div>
                   <div className="text-xs text-sky-200">Consultant Care</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-white">Modern</div>
+                  <div className="text-xl sm:text-2xl font-bold text-white">Modern</div>
                   <div className="text-xs text-sky-200">Beds &amp; Cabins</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-emerald-400">Emergency</div>
+                  <div className="text-xl sm:text-2xl font-bold text-emerald-400">Emergency</div>
                   <div className="text-xs text-sky-200">Triage &amp; Lab</div>
                 </div>
               </div>

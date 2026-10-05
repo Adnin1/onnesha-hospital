@@ -164,7 +164,7 @@ export default function CheckTokenPage() {
 
           {/* Search Result Feedback */}
           {hasSearched && (
-            <div className="mt-4 p-4 rounded-xl border transition">
+            <div className="mt-4 p-4 rounded-xl border transition" aria-live="polite">
               {isSearching ? (
                 <div className="bg-slate-800 border border-slate-700 p-4 rounded-xl text-slate-300 text-xs flex items-center justify-center space-x-2">
                   <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
@@ -229,16 +229,16 @@ export default function CheckTokenPage() {
                   </p>
                 </div>
               ) : searchResult?.has_other_date ? (
-                <div className="bg-slate-800 border border-amber-600/40 p-4 rounded-xl text-amber-300 text-xs flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                <div role="alert" className="bg-slate-800 border border-amber-600/40 p-4 rounded-xl text-amber-300 text-xs flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
                   <span>
                     Token &quot;{searchToken}&quot; is scheduled for a different date:{" "}
                     <strong>{searchResult.scheduled_date}</strong>.
                   </span>
                 </div>
               ) : (
-                <div className="bg-slate-800 border border-slate-700 p-4 rounded-xl text-slate-400 text-xs flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                <div role="alert" className="bg-slate-800 border border-slate-700 p-4 rounded-xl text-slate-300 text-xs flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
                   <span>
                     Token &quot;{searchToken}&quot; was not found in the active waiting queue for today.
                   </span>
@@ -260,7 +260,7 @@ export default function CheckTokenPage() {
               </p>
             </div>
             <div className="flex items-center space-x-2 text-xs text-emerald-400 font-mono">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
               <span>LIVE REFRESHING</span>
             </div>
           </div>
@@ -275,7 +275,7 @@ export default function CheckTokenPage() {
           {!loading && queue.length === 0 && (
             <div className="text-center py-16 text-slate-400">
               <p className="text-sm font-semibold text-slate-300">No active patient tokens in queue right now.</p>
-              <p className="text-xs mt-1 text-slate-500">New tokens will appear here automatically as doctor chambers open.</p>
+              <p className="text-xs mt-1 text-slate-400">New tokens will appear here automatically as doctor chambers open.</p>
             </div>
           )}
 
@@ -320,7 +320,7 @@ export default function CheckTokenPage() {
                     </div>
 
                     <div className="my-4 text-center py-4 bg-slate-950/80 rounded-xl border border-slate-800">
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block">
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
                         Current Token
                       </span>
                       <span
@@ -339,7 +339,7 @@ export default function CheckTokenPage() {
                     <div className="text-[11px] text-slate-400 flex justify-between items-center">
                       <span className="text-emerald-400 font-medium">● Chamber Active</span>
                       {item.called_at && (
-                        <span className="font-mono text-slate-500">{item.called_at}</span>
+                        <span className="font-mono text-slate-400">{item.called_at}</span>
                       )}
                     </div>
                   </div>

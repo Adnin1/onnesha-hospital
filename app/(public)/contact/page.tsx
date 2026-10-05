@@ -167,8 +167,8 @@ export default function ContactPage() {
               </p>
 
               {submitted ? (
-                <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-3">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+                <div role="status" aria-live="polite" className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-3">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" aria-hidden="true" />
                   <h3 className="font-bold text-base text-emerald-950">
                     Message Received Successfully
                   </h3>
@@ -184,7 +184,7 @@ export default function ContactPage() {
                       setSubject("");
                       setMessage("");
                     }}
-                    className="mt-2 text-xs text-emerald-700 hover:text-emerald-900 font-semibold underline"
+                    className="mt-2 text-xs text-emerald-700 hover:text-emerald-900 font-semibold underline min-h-[44px] inline-flex items-center justify-center px-4 py-2 rounded-lg hover:bg-emerald-100/60 transition focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     Send Another Message
                   </button>
@@ -192,8 +192,8 @@ export default function ContactPage() {
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4 text-xs">
                   {errorMessage && (
-                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center space-x-2">
-                      <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                    <div role="alert" className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center space-x-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-600" aria-hidden="true" />
                       <span>{errorMessage}</span>
                     </div>
                   )}
@@ -268,7 +268,7 @@ export default function ContactPage() {
                       <label htmlFor="contact-message" className="block font-semibold text-slate-700">
                         Your Message / Inquiry *
                       </label>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-500 font-medium">
                         {message.length} / 2000
                       </span>
                     </div>
@@ -298,7 +298,7 @@ export default function ContactPage() {
                     ) : (
                       <>
                         <span>Submit Inquiry</span>
-                        <Send className="w-3.5 h-3.5 ml-2" />
+                        <Send className="w-3.5 h-3.5 ml-2" aria-hidden="true" />
                       </>
                     )}
                   </button>

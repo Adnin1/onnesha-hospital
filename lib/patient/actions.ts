@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
+import { requirePermission, hasPermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { normalizeBDPhone, isValidNormalizedBDPhone } from "./phone";
@@ -212,6 +212,13 @@ export async function searchPatientsAction(params: {
     return { success: false, error: "Unauthorized session." };
   }
 
+  try {
+    await requirePermission("patients.view");
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
   const page = params.page || 1;
   const pageSize = params.pageSize || 15;
   const offset = (page - 1) * pageSize;
@@ -404,6 +411,17 @@ export async function registerOpdEncounterAction(params: {
   try {
     const supabase = await createClient();
 
+    const { data: pCheck, error: pErr } = await supabase
+      .from("patients")
+      .select("id")
+      .eq("id", params.patientId)
+      .eq("organization_id", session.organizationId)
+      .single();
+
+    if (pErr || !pCheck) {
+      return { success: false, error: "Patient not found in your organization." };
+    }
+
     // Generate atomic visit number
     const { data: visitNoData, error: visitErr } = await supabase.rpc("generate_visit_number", {
       p_organization_id: session.organizationId,
@@ -516,6 +534,17 @@ export async function registerEmergencyEncounterAction(params: {
         return { success: false, error: tempErr?.message || "Failed to create temporary emergency patient." };
       }
       targetPatientId = tempPatient.id;
+    } else {
+      const { data: pCheck, error: pErr } = await supabase
+        .from("patients")
+        .select("id")
+        .eq("id", targetPatientId)
+        .eq("organization_id", session.organizationId)
+        .single();
+
+      if (pErr || !pCheck) {
+        return { success: false, error: "Patient not found in your organization." };
+      }
     }
 
     // Generate Emergency Visit Number
@@ -599,6 +628,15 @@ export async function recordVitalsAction(params: {
     return { success: false, error: "Unauthorized session." };
   }
 
+  const canRecordVitals =
+    (await hasPermission("patients.edit")) ||
+    (await hasPermission("nursing.manage")) ||
+    (await hasPermission("opd.consult")) ||
+    (await hasPermission("patients.view"));
+  if (!canRecordVitals) {
+    return { success: false, error: "403 Forbidden: Insufficient permissions to record vitals." };
+  }
+
   // Validate Ranges
   if (params.systolicBp && (params.systolicBp < 40 || params.systolicBp > 300)) {
     return { success: false, error: "Systolic BP out of valid physiological range (40-300 mmHg)." };
@@ -670,6 +708,15 @@ export async function recordDiagnosisAction(params: {
     return { success: false, error: "Unauthorized session." };
   }
 
+  const canDiagnose =
+    (await hasPermission("opd.consult")) ||
+    (await hasPermission("ipd.manage")) ||
+    (await hasPermission("doctors.manage")) ||
+    (await hasPermission("patients.edit"));
+  if (!canDiagnose) {
+    return { success: false, error: "403 Forbidden: Clinical consultation permission required." };
+  }
+
   if (!params.diagnosisName || params.diagnosisName.trim().length < 2) {
     return { success: false, error: "Diagnosis name is required." };
   }
@@ -731,6 +778,15 @@ export async function createClinicalNoteAction(params: {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "Unauthorized session." };
+  }
+
+  const canNote =
+    (await hasPermission("opd.consult")) ||
+    (await hasPermission("nursing.manage")) ||
+    (await hasPermission("ipd.manage")) ||
+    (await hasPermission("patients.edit"));
+  if (!canNote) {
+    return { success: false, error: "403 Forbidden: Clinical note authoring permission required." };
   }
 
   if (!params.noteContent || params.noteContent.trim().length < 2) {
@@ -798,7 +854,13 @@ export async function createIpdAdmissionAction(params: {
   }
 
   try {
-    await requirePermission("ipd.view");
+    const canAdmit =
+      (await hasPermission("ipd.admit")) ||
+      (await hasPermission("ipd.manage")) ||
+      (await hasPermission("ipd.view"));
+    if (!canAdmit) {
+      return { success: false, error: "403 Forbidden: IPD admission permission required." };
+    }
   } catch (permErr: unknown) {
     const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
     return { success: false, error: msg };
@@ -806,6 +868,17 @@ export async function createIpdAdmissionAction(params: {
 
   try {
     const supabase = await createClient();
+
+    const { data: pCheck, error: pErr } = await supabase
+      .from("patients")
+      .select("id")
+      .eq("id", params.patientId)
+      .eq("organization_id", session.organizationId)
+      .single();
+
+    if (pErr || !pCheck) {
+      return { success: false, error: "Patient not found in your organization." };
+    }
 
     // Generate atomic visit number
     const { data: visitNoData, error: vNumErr } = await supabase.rpc("generate_visit_number", {
@@ -902,6 +975,14 @@ export async function dischargePatientAction(params: {
     return { success: false, error: "Unauthorized session." };
   }
 
+  const canDischarge =
+    (await hasPermission("ipd.discharge")) ||
+    (await hasPermission("ipd.manage")) ||
+    (await hasPermission("doctors.manage"));
+  if (!canDischarge) {
+    return { success: false, error: "403 Forbidden: Insufficient permissions to discharge patient." };
+  }
+
   if (!params.finalDiagnosis || params.finalDiagnosis.trim().length < 2) {
     return { success: false, error: "Final diagnosis is mandatory for patient discharge." };
   }
@@ -953,7 +1034,8 @@ export async function dischargePatientAction(params: {
         status: "DISCHARGED",
         discharged_at: new Date().toISOString(),
       })
-      .eq("id", params.visitId);
+      .eq("id", params.visitId)
+      .eq("organization_id", session.organizationId);
 
     // 4. Release Bed Assignment if any
     const { data: bedAssign } = await supabase
@@ -1034,6 +1116,18 @@ export async function transferPatientAction(params: {
 
   try {
     const supabase = await createClient();
+
+    // Verify visit belongs to organization
+    const { data: vCheck, error: vErr } = await supabase
+      .from("patient_visits")
+      .select("id, patient_id")
+      .eq("id", params.visitId)
+      .eq("organization_id", session.organizationId)
+      .single();
+
+    if (vErr || !vCheck || vCheck.patient_id !== params.patientId) {
+      return { success: false, error: "Active visit not found in your organization." };
+    }
 
     // Verify Destination Bed Availability (no two active patients can occupy one bed)
     const { data: targetBed, error: tbErr } = await supabase

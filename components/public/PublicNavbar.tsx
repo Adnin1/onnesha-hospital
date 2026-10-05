@@ -44,7 +44,7 @@ export function PublicNavbar() {
               </a>
             ) : (
               <Link href="/contact" prefetch={false} className="flex items-center text-sky-200 hover:text-white transition">
-                <Phone className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+                <Phone className="w-3.5 h-3.5 mr-1 text-emerald-400" aria-hidden="true" />
                 Emergency: <strong className="ml-1 text-white underline">Emergency Desk</strong>
               </Link>
             )}
@@ -57,7 +57,7 @@ export function PublicNavbar() {
           </div>
           <div className="flex items-center space-x-4">
             <span className="hidden md:flex items-center text-sky-200">
-              <Clock className="w-3.5 h-3.5 mr-1 text-amber-300" />
+              <Clock className="w-3.5 h-3.5 mr-1 text-amber-300" aria-hidden="true" />
               Emergency & Diagnostic Services
             </span>
             <Link
@@ -65,7 +65,7 @@ export function PublicNavbar() {
               prefetch={false}
               className="inline-flex items-center text-xs bg-sky-800 hover:bg-sky-700 text-white px-2.5 py-0.5 rounded transition font-medium"
             >
-              <LogIn className="w-3 h-3 mr-1" />
+              <LogIn className="w-3 h-3 mr-1" aria-hidden="true" />
               Staff Login
             </Link>
           </div>
@@ -77,14 +77,14 @@ export function PublicNavbar() {
         <div className="flex justify-between items-center h-18">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-600 text-white font-bold flex items-center justify-center text-xl shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-sky-600 text-white font-bold flex items-center justify-center text-xl shadow-md shrink-0">
               OH
             </div>
-            <div>
-              <span className="text-xl font-bold text-slate-900 tracking-tight block">
+            <div className="min-w-0">
+              <span className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight block truncate max-w-[150px] sm:max-w-none">
                 {(HOSPITAL_METADATA.shortName || "ONNESHA HOSPITAL").toUpperCase()}
               </span>
-              <span className="text-[11px] font-medium text-sky-700 tracking-wider block">
+              <span className="text-[11px] font-medium text-sky-700 tracking-wider block truncate max-w-[150px] sm:max-w-none">
                 {HOSPITAL_METADATA.banglaName}
               </span>
             </div>
@@ -119,7 +119,7 @@ export function PublicNavbar() {
               prefetch={false}
               className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm px-4 py-2.5 rounded-lg shadow-sm transition"
             >
-              <Calendar className="w-4 h-4 mr-2" />
+              <Calendar className="w-4 h-4 mr-2" aria-hidden="true" />
               Get Appointment
             </Link>
           </div>
@@ -131,7 +131,7 @@ export function PublicNavbar() {
               prefetch={false}
               className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-3 py-2 rounded-lg min-h-[44px] focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
-              <Calendar className="w-3.5 h-3.5 mr-1" />
+              <Calendar className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
               Book
             </Link>
             <button
@@ -142,7 +142,7 @@ export function PublicNavbar() {
               aria-expanded={mobileOpen}
               aria-controls="mobile-nav-menu"
             >
-              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileOpen ? <X className="w-6 h-6" aria-hidden="true" /> : <Menu className="w-6 h-6" aria-hidden="true" />}
             </button>
           </div>
         </div>
@@ -182,7 +182,7 @@ export function PublicNavbar() {
               onClick={() => setMobileOpen(false)}
               className="w-full text-center py-3 text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl min-h-[48px] flex items-center justify-center shadow-xs focus:outline-none focus:ring-2 focus:ring-sky-500 gap-2"
             >
-              <LogIn className="w-4 h-4 text-sky-400" />
+              <LogIn className="w-4 h-4 text-sky-400" aria-hidden="true" />
               <span>Hospital Staff &amp; Doctor ERP Login</span>
             </Link>
           </div>

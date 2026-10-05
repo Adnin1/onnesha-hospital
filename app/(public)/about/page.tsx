@@ -41,7 +41,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
             <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center mb-4">
-              <Heart className="w-5 h-5" />
+              <Heart className="w-5 h-5" aria-hidden="true" />
             </div>
             <h3 className="font-bold text-base text-slate-900 mb-2">Our Mission</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
@@ -51,7 +51,7 @@ export default function AboutPage() {
 
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
             <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4">
-              <Award className="w-5 h-5" />
+              <Award className="w-5 h-5" aria-hidden="true" />
             </div>
             <h3 className="font-bold text-base text-slate-900 mb-2">Our Vision</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
@@ -61,7 +61,7 @@ export default function AboutPage() {
 
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
             <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-4">
-              <ShieldCheck className="w-5 h-5" />
+              <ShieldCheck className="w-5 h-5" aria-hidden="true" />
             </div>
             <h3 className="font-bold text-base text-slate-900 mb-2">Clinical Governance</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
@@ -148,14 +148,14 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-600">
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
               <span className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
-                <MapPin className="w-4 h-4 text-sky-600" />
+                <MapPin className="w-4 h-4 text-sky-600" aria-hidden="true" />
                 ঠিকানা (Physical Address)
               </span>
               <p className="text-slate-700">{HOSPITAL_METADATA.address}</p>
             </div>
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
               <span className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
-                <Phone className="w-4 h-4 text-emerald-600" />
+                <Phone className="w-4 h-4 text-emerald-600" aria-hidden="true" />
                 জরুরি হটলাইন ও তথ্য
               </span>
               <p className="text-slate-700">হটলাইন: {HOSPITAL_METADATA.phone || HOSPITAL_METADATA.emergencyHotline}</p>
@@ -164,7 +164,7 @@ export default function AboutPage() {
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
               <span className="font-bold text-slate-900 block text-sm">প্রাতিষ্ঠানিক পরিচয়</span>
               <p className="text-slate-700 font-medium">{HOSPITAL_METADATA.name}</p>
-              <p className="text-slate-500 text-[11px]">{HOSPITAL_METADATA.banglaName}</p>
+              <p className="text-slate-600 text-[11px]">{HOSPITAL_METADATA.banglaName}</p>
             </div>
           </div>
         </div>

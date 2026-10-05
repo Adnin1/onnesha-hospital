@@ -59,7 +59,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900">
-        <a href="#main-content" className="skip-to-content">মূল বিষয়বস্তুতে যান</a>
+        <a href="#main-content" className="skip-to-content" lang="bn">মূল বিষয়বস্তুতে যান</a>
         <NetworkStatus />
         <div className="flex-1 flex flex-col">
           {children}

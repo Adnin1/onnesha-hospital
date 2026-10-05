@@ -344,7 +344,7 @@ export default function DoctorsLayout({ children }: { children: React.ReactNode 
                       <div className="w-12 h-12 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
                         <Icon className="w-6 h-6" aria-hidden="true" />
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded">
                         {spec.code}
                       </span>
                     </div>
@@ -367,14 +367,14 @@ export default function DoctorsLayout({ children }: { children: React.ReactNode 
                     </ul>
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                  <div className="mt-5 pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-600">
                     <span className="flex items-center">
                       <MapPin className="w-3 h-3 text-sky-600 mr-1" aria-hidden="true" />
                       {spec.chamberInfo}
                     </span>
                     <Link
                       href={`/doctors?department=${spec.slug}`}
-                      className="text-sky-700 hover:text-sky-900 font-semibold inline-flex items-center"
+                      className="text-sky-700 hover:text-sky-900 font-semibold min-h-[44px] inline-flex items-center px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
                       aria-label={`View ${spec.name} specialists in directory`}
                     >
                       Filter &rarr;

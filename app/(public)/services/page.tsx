@@ -95,12 +95,12 @@ export default function ServicesPage() {
                 <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 px-2 py-0.5 rounded">
                   {DIAGNOSTIC_TARIFF_CONFIG.tariffStatus.replace("_", " ")}
                 </span>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-slate-500">
                   Last reviewed: {DIAGNOSTIC_TARIFF_CONFIG.lastAuditedDate}
                 </span>
               </div>
               <h2 className="text-xl font-bold text-slate-900 flex items-center">
-                <Microscope className="w-5 h-5 mr-2 text-sky-600" />
+                <Microscope className="w-5 h-5 mr-2 text-sky-600" aria-hidden="true" />
                 Indicative Diagnostic & Laboratory Tariffs
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -109,9 +109,9 @@ export default function ServicesPage() {
             </div>
             <Link
               href="/appointment"
-              className="inline-flex items-center bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-xs transition"
+              className="inline-flex items-center bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs px-4 py-2.5 min-h-[44px] rounded-xl shadow-xs transition focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
-              <Calendar className="w-3.5 h-3.5 mr-1.5" />
+              <Calendar className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
               Book Consultation First
             </Link>
           </div>
@@ -119,7 +119,7 @@ export default function ServicesPage() {
           {/* Bilingual Disclaimer */}
           <div className="mb-6 p-4 bg-amber-50/80 border border-amber-200/80 rounded-xl space-y-2 text-xs text-amber-900">
             <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" aria-hidden="true" />
               <div className="space-y-1">
                 <p><strong>Notice:</strong> {DIAGNOSTIC_TARIFF_CONFIG.disclaimerEn}</p>
                 <p className="text-[11px] text-amber-800">{DIAGNOSTIC_TARIFF_CONFIG.disclaimerBn}</p>
@@ -127,14 +127,14 @@ export default function ServicesPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto table-responsive">
+            <table className="w-full text-left text-xs border-collapse" aria-label="Indicative Diagnostic & Laboratory Tariffs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-4 font-bold">Investigation / Test Name</th>
-                  <th className="py-3 px-4 font-bold">Category</th>
-                  <th className="py-3 px-4 font-bold">Turnaround Window*</th>
-                  <th className="py-3 px-4 font-bold text-right">Indicative Fee*</th>
+                  <th scope="col" className="py-3 px-4 font-bold">Investigation / Test Name</th>
+                  <th scope="col" className="py-3 px-4 font-bold">Category</th>
+                  <th scope="col" className="py-3 px-4 font-bold">Turnaround Window*</th>
+                  <th scope="col" className="py-3 px-4 font-bold text-right">Indicative Fee*</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -144,7 +144,7 @@ export default function ServicesPage() {
                     <td className="py-3 px-4 text-slate-500">{t.category}</td>
                     <td className="py-3 px-4">
                       <span className="inline-flex items-center text-sky-800 bg-sky-50 px-2 py-0.5 rounded font-medium text-[11px]">
-                        <Clock className="w-3 h-3 mr-1 text-sky-600" />
+                        <Clock className="w-3 h-3 mr-1 text-sky-600" aria-hidden="true" />
                         {t.standardTurnaround}
                       </span>
                     </td>
@@ -156,7 +156,7 @@ export default function ServicesPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-[11px] text-slate-400 mt-4 italic">
+          <p className="text-[11px] text-slate-600 mt-4 italic">
             * All fees and turnaround windows are reference indicators subject to clinician instructions and urgent processing options.
           </p>
         </div>

@@ -104,7 +104,7 @@ export function LiveQueueWidget() {
         )}
 
         {loadState === "error" && (
-          <div className="flex items-center justify-center gap-2 py-4 bg-amber-50 rounded-xl border border-amber-100 text-xs text-amber-700">
+          <div role="alert" className="flex items-center justify-center gap-2 py-4 bg-amber-50 rounded-xl border border-amber-100 text-xs text-amber-700">
             <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>Unable to load queue right now. Refreshing...</span>
           </div>
@@ -135,7 +135,7 @@ export function LiveQueueWidget() {
               <span className="inline-block px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-md">
                 Token: {q.token_number}
               </span>
-              <span className="block text-[10px] text-slate-400 capitalize mt-0.5">
+              <span className="block text-[10px] text-slate-600 font-medium capitalize mt-0.5">
                 {q.status}
               </span>
             </div>
@@ -146,7 +146,7 @@ export function LiveQueueWidget() {
       <div className="mt-5 pt-4 border-t border-slate-100">
         <Link
           href="/check-token"
-          className="flex items-center justify-center text-xs font-semibold text-sky-700 hover:text-sky-800 w-full py-2 bg-sky-50 rounded-lg hover:bg-sky-100 transition"
+          className="flex items-center justify-center text-xs font-semibold text-sky-700 hover:text-sky-800 w-full min-h-[44px] py-2 bg-sky-50 rounded-lg hover:bg-sky-100 transition focus:outline-none focus:ring-2 focus:ring-sky-500"
         >
           View All Doctor Chambers & Queues
           <ArrowRight className="w-3.5 h-3.5 ml-1.5" aria-hidden="true" />
