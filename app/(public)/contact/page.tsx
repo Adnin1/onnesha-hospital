@@ -17,22 +17,32 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     setLoading(true);
     setErrorMessage(null);
 
-    const res = await submitContactInquiryAction({
-      name,
-      phone,
-      email,
-      subject,
-      message,
-    });
+    try {
+      const res = await submitContactInquiryAction({
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        subject: subject.trim(),
+        message: message.trim(),
+      });
 
-    setLoading(false);
-    if (res.success) {
-      setSubmitted(true);
-    } else {
-      setErrorMessage(res.error || "Failed to submit enquiry. Please try again or call our hotline.");
+      if (res.success) {
+        setSubmitted(true);
+      } else {
+        setErrorMessage(res.error || "Failed to submit enquiry. Please try again or call our hotline.");
+      }
+    } catch (err: unknown) {
+      console.error("[contact-form] Network or runtime error:", err);
+      setErrorMessage(
+        "নেটওয়ার্ক ত্রুটি: মেসেজ পাঠানো সম্ভব হয়নি। দয়া করে ইন্টারনেট সংযোগ পরীক্ষা করুন অথবা সরাসরি হটলাইনে কল করুন। (Network error. Please call our hotline.)"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 

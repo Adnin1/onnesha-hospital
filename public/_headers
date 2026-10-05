@@ -13,6 +13,10 @@
   Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate
   X-Robots-Tag: noindex, nofollow, noarchive
 
+/app
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate
+  X-Robots-Tag: noindex, nofollow, noarchive
+
 /login*
   Cache-Control: no-store, no-cache, must-revalidate
   X-Robots-Tag: noindex, nofollow
@@ -33,6 +37,10 @@
   Cache-Control: no-store, no-cache, must-revalidate
   X-Robots-Tag: noindex, nofollow
 
+/auth
+  Cache-Control: no-store, no-cache, must-revalidate
+  X-Robots-Tag: noindex, nofollow
+
 /check-token*
   Cache-Control: public, max-age=0, must-revalidate
   X-Robots-Tag: noindex, nofollow
@@ -42,4 +50,3 @@
 
 /downloads/desktop/*
   Cache-Control: no-cache, no-store, must-revalidate
-

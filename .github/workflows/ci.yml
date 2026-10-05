@@ -165,8 +165,12 @@ jobs:
             echo "::error title=Deployment Gate Blocked::CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required for production deployment."
             exit 1
           fi
-          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ] && [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
-            echo "::error title=Deployment Gate Blocked::Real Supabase credentials are required for production deployment. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY as GitHub secrets."
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+            echo "::error title=Deployment Gate Blocked::NEXT_PUBLIC_SUPABASE_URL is required for production deployment."
+            exit 1
+          fi
+          if [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ] && [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
+            echo "::error title=Deployment Gate Blocked::Real Supabase credentials are required for production deployment. Set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY as GitHub secrets."
             exit 1
           fi
           echo "Production secrets verified."
@@ -215,7 +219,8 @@ jobs:
   tauri-windows-build:
     name: Tauri Windows Desktop Build & Release
     runs-on: windows-latest
-    needs: validate
+    needs: [validate, live-security-test]
+    environment: production
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write

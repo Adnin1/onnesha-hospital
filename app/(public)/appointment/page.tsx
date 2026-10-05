@@ -146,29 +146,38 @@ function AppointmentBookingContent() {
       return;
     }
 
+    if (bookingLoading) return;
+
     setBookingLoading(true);
     setBookingError(null);
 
     const parsedAge = age.trim() ? parseInt(age, 10) : undefined;
-    const res = await bookOnlineAppointmentAction({
-      doctorId: selectedDoctor?.id || selectedDoctorId,
-      scheduleId: activeScheduleId,
-      appointmentDate,
-      patientName: fullName.trim(),
-      patientPhone: phone.trim(),
-      patientGender: (gender as "MALE" | "FEMALE" | "OTHER") || "OTHER",
-      patientAge: isNaN(parsedAge as number) ? undefined : parsedAge,
-      notes: notes || (guardianName ? `Guardian: ${guardianName}` : undefined),
-    });
+    try {
+      const res = await bookOnlineAppointmentAction({
+        doctorId: selectedDoctor?.id || selectedDoctorId,
+        scheduleId: activeScheduleId,
+        appointmentDate,
+        patientName: fullName.trim(),
+        patientPhone: phone.trim(),
+        patientGender: (gender as "MALE" | "FEMALE" | "OTHER") || "OTHER",
+        patientAge: isNaN(parsedAge as number) ? undefined : parsedAge,
+        notes: notes || (guardianName ? `Guardian: ${guardianName}` : undefined),
+      });
 
-    setBookingLoading(false);
-
-    if (res.success && res.data) {
-      setConfirmedSlotLabel(activeSlotLabel);
-      setConfirmedData(res.data);
-      setStep(4);
-    } else {
-      setBookingError(res.error || "Online booking slot unavailable.");
+      if (res.success && res.data) {
+        setConfirmedSlotLabel(activeSlotLabel);
+        setConfirmedData(res.data);
+        setStep(4);
+      } else {
+        setBookingError(res.error || "Online booking slot unavailable.");
+      }
+    } catch (err: unknown) {
+      console.error("[appointment-booking] Network or runtime error:", err);
+      setBookingError(
+        "নেটওয়ার্ক ত্রুটি: বুকিং সম্পন্ন করা যায়নি। দয়া করে ইন্টারনেট সংযোগ পরীক্ষা করে পুনরায় চেষ্টা করুন। (Network connection failed. Please try again.)"
+      );
+    } finally {
+      setBookingLoading(false);
     }
   };
 
@@ -644,7 +653,11 @@ function AppointmentBookingContent() {
                   setStep(1);
                   setFullName("");
                   setPhone("");
+                  setAge("");
+                  setGender("MALE");
+                  setGuardianName("");
                   setConfirmedData(null);
+                  setBookingError(null);
                 }}
                 className="text-xs text-slate-600 hover:text-slate-900 font-medium"
               >

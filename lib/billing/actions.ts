@@ -409,20 +409,19 @@ export async function voidInvoiceAction(params: {
   try {
     const supabase = await createClient();
 
-    const { error } = await supabase
-      .from("invoices")
-      .update({
-        is_voided: true,
-        status: "VOID",
-        void_reason: params.reason,
-        voided_by: session.userId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", params.invoiceId)
-      .eq("organization_id", session.organizationId);
+    const { data: rpcResult, error: rpcErr } = await supabase.rpc("void_invoice_and_reverse_gl_atomic", {
+      p_org_id: session.organizationId,
+      p_invoice_id: params.invoiceId,
+      p_reason: params.reason.trim(),
+    });
 
-    if (error) {
-      return { success: false, error: error.message };
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message };
+    }
+
+    const rpcRes = rpcResult as { success?: boolean; error?: string };
+    if (rpcRes && rpcRes.success === false) {
+      return { success: false, error: rpcRes.error || "Failed to void invoice" };
     }
 
     await recordAuditLog({

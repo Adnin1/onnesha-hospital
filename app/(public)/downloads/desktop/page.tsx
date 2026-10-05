@@ -23,7 +23,7 @@ export default function DesktopDownloadPage() {
   const coreVersion = pkg.version;
   const desktopVersion = latestManifest.version || coreVersion;
   const artifactStatus = latestManifest.artifact_status || "PENDING_CI_BUILD";
-  const isArtifactReady = artifactStatus === "VERIFIED_RELEASE";
+  const isArtifactReady = artifactStatus === "VERIFIED_RELEASE" || artifactStatus === "BUILT_VERIFIED";
   const historicalVersion = "1.1.4";
   const historicalExeUrl = "https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe";
 

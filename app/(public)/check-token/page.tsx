@@ -149,6 +149,7 @@ export default function CheckTokenPage() {
               aria-label="Enter your token number"
               placeholder="Enter your token number (e.g. 101, A-01)..."
               value={searchToken}
+              maxLength={20}
               onChange={(e) => setSearchToken(e.target.value)}
               className="grow bg-transparent px-3 min-h-[44px] text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 rounded-lg uppercase font-mono"
             />
