@@ -14,13 +14,13 @@
 
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
-| **Current Local / Remote HEAD** | `79411193a6e8b3e68312dbf5f866990ff28c7df4` | `git rev-parse HEAD` |
-| **Immediate Parent Commit** | `d9017c9cc9fd141a26599753a9b160fa08b5c888` | `git log -1 --pretty=%P` |
+| **Current Local / Remote HEAD** | `3879e08d00dc9faf4663868d5e11668be05dd44b` | `git rev-parse HEAD` |
+| **Immediate Parent Commit** | `def59829cc206ae2c64e10fc59b02b4154334f3a` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push --dry-run` / `git-sync.mjs` |
-| **Cloudflare Deployed SHA** | `79411193a6e8b3e68312dbf5f866990ff28c7df4` | Wrangler Deployment Record (`--commit-dirty=false`) |
+| **Cloudflare Deployed SHA** | `3879e08d00dc9faf4663868d5e11668be05dd44b` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK) |
-| **Cloudflare Deployment Preview** | `https://df37c336.onnesha-hospital.pages.dev` | Direct Edge Verification |
-| **Observed GitHub Actions Run** | Run ID `37471726412` (`7941119`) / Run ID `37385883517` (`d9017c9`) | GitHub Actions API |
+| **Cloudflare Deployment Preview** | `https://bd6f2e3b.onnesha-hospital.pages.dev` | Direct Edge Verification |
+| **Observed GitHub Actions Run** | Run ID `37472310167` (`def5982`) / Run ID `37471726412` (`7941119`) | GitHub Actions API |
 | **GitHub Actions Conclusion** | Mandatory CI passed; fail-closed at Staging Gate (G10) | Automated Gate Policy |
 
 ---
@@ -83,6 +83,11 @@
 8. **`SEC-CVE-01` (Upstream Dependency Advisory GHSA-68fv-2mgg-jv7q Remediated):**
    - *Problem:* `source-map-js` versions 1.0.0 through 1.2.1 flagged with high-severity event-loop denial of service vulnerability via indexed source-map section offsets (`GHSA-68fv-2mgg-jv7q`), triggering failure in Health Check Gate 12.
    - *Fix:* Upgraded `source-map-js` to `1.2.2` via `npm audit fix`, resolving vulnerability completely and restoring `npm audit --audit-level=high` to 0 vulnerabilities.
+   - *Verification:* Verified via `npm audit --audit-level=high` (0 vulnerabilities) and `node scripts/project-health-check.mjs --strict` (16/16 gates green).
+
+9. **`SEC-CVE-02` (Upstream Dependency Advisory GHSA-wq5f-xc86-pv6w in sharp Remediated):**
+   - *Problem:* `sharp` versions < 0.35.5 flagged with high-severity vulnerability in underlying librsvg dependency (`CVE-2026-96889` / `GHSA-wq5f-xc86-pv6w`), triggering failure in Health Check Gate 12.
+   - *Fix:* Upgraded `sharp` to `0.35.5` via `npm audit fix`, resolving vulnerability completely and restoring `npm audit --audit-level=high` to 0 vulnerabilities.
    - *Verification:* Verified via `npm audit --audit-level=high` (0 vulnerabilities) and `node scripts/project-health-check.mjs --strict` (16/16 gates green).
 
 ---

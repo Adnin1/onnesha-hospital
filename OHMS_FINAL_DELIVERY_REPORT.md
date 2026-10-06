@@ -6,7 +6,7 @@
 **Authoritative Verdict:** **B. SOFTWARE VERIFIED — OWNER / PHYSICAL HARDWARE / EXTERNAL GATES REMAIN**  
 **Execution Timestamp:** `2026-10-06T04:52:00+06:00`  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
-**Cloudflare Deployment Preview:** `https://df37c336.onnesha-hospital.pages.dev`  
+**Cloudflare Deployment Preview:** `https://bd6f2e3b.onnesha-hospital.pages.dev`  
 **Live Supabase Database:** `https://iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, 108 migrations synchronized)  
 
 ---
@@ -15,13 +15,13 @@
 
 | Dimension | Measured Production Ground Truth | Verification Command / Evidence |
 |:---|:---|:---:|
-| **Synchronized Git HEAD** | `79411193a6e8b3e68312dbf5f866990ff28c7df4` | `git rev-parse HEAD` |
-| **Immediate Parent Commit** | `d9017c9cc9fd141a26599753a9b160fa08b5c888` | `git log -1 --pretty=%P` |
-| **Deployed Code Commit** | `79411193a6e8b3e68312dbf5f866990ff28c7df4` | Wrangler Deployment Record (`--commit-dirty=false`) |
+| **Synchronized Git HEAD** | `3879e08d00dc9faf4663868d5e11668be05dd44b` | `git rev-parse HEAD` |
+| **Immediate Parent Commit** | `def59829cc206ae2c64e10fc59b02b4154334f3a` | `git log -1 --pretty=%P` |
+| **Deployed Code Commit** | `3879e08d00dc9faf4663868d5e11668be05dd44b` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Immutable Release Anchor**| `v1.1.47` (`b92c3d11d1e2e0f2391e5465b7b3efc464b6bc47`) | `git merge-base --is-ancestor` (Verified mainline descendant) |
 | **Remote Parity** | `origin/main` & `ssh-origin/main` in 100% sync | `git branch -vv` (0 ahead, 0 behind) |
-| **Cloudflare Deployment ID**| `df37c336` | Wrangler Cloudflare Pages deployment API |
-| **Observed GitHub Actions** | Run ID `37471726412` (`7941119`) / Run ID `37385883517` (`d9017c9`) | GitHub Actions REST API |
+| **Cloudflare Deployment ID**| `bd6f2e3b` | Wrangler Cloudflare Pages deployment API |
+| **Observed GitHub Actions** | Run ID `37472310167` (`def5982`) / Run ID `37471726412` (`7941119`) | GitHub Actions REST API |
 | **CI Staging Gate Behavior** | Fail-Closed at Gate G10 (`OHMS_TEST_SUPABASE_URL` / Service Key missing) | Security Invariant Verified |
 
 ---
@@ -76,6 +76,9 @@
 
 8. **`SEC-CVE-01` (Upstream Dependency Advisory GHSA-68fv-2mgg-jv7q Remediated):**
    - *Fix:* Upgraded `source-map-js` from 1.2.1 to 1.2.2 via `npm audit fix`, resolving high-severity event-loop denial of service vulnerability and restoring strict Health Check Gate 12 to 0 vulnerabilities.
+
+9. **`SEC-CVE-02` (Upstream Dependency Advisory GHSA-wq5f-xc86-pv6w in sharp Remediated):**
+   - *Fix:* Upgraded `sharp` from 0.35.4 to 0.35.5 via `npm audit fix`, eliminating high-severity librsvg vulnerability (`CVE-2026-96889`) and restoring Gate 12 to 0 vulnerabilities.
 
 ---
 
