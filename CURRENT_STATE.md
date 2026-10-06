@@ -5,8 +5,8 @@
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Free Plan Baseline)  
 **Execution Timestamp:** `2026-10-07T05:00:00+06:00`  
-**Current HEAD SHA:** `4f74bbde60a7192474c28e82476409eac17f6b19`  
-**Immediate Parent SHA:** `d93ad2b7dd8f7ae08fe035196d6429cfcd50d670`  
+**Current HEAD SHA:** `c20aae7854569f8fd1f36a9c391e7f4a086e98e9`  
+**Immediate Parent SHA:** `4f74bbde60a7192474c28e82476409eac17f6b19`  
 **Release Tag:** `v1.1.48` (Commit `d93ad2b`)  
 **Overall Delivery Status:** **B. SOFTWARE VERIFIED — OWNER / EXTERNAL GATES REMAIN**  
 
@@ -26,13 +26,14 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 
 In adherence to strict zero-false-green Git governance:
 - **Release Tag `v1.1.48`:** Anchored immutably to commit `d93ad2b7dd8f7ae08fe035196d6429cfcd50d670`. Under no circumstances is `git tag -a -f` invoked to mutate historical release tags.
-- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `4f74bbde60a7192474c28e82476409eac17f6b19`.
-- **Cloudflare Edge Deployed SHA:** Synchronized with commit `4f74bbd` deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `332bc746`).
+- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `c20aae7854569f8fd1f36a9c391e7f4a086e98e9`.
+- **Cloudflare Edge Deployed SHA:** Synchronized with commit `c20aae7` deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `df2ddc26`, Preview: `https://df2ddc26.onnesha-hospital.pages.dev`).
 - **Edge Manifest Parity:** Probed `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` returns `"version": "1.1.48"`.
 
 ### Commit Lineage
 ```
-* 4f74bbd (HEAD -> main, ssh-origin/main) fix(ci): enable hermetic staging mode and graceful pipeline notices when optional secrets are absent
+* c20aae7 (HEAD -> main, ssh-origin/main) chore(ci): guard production deployment and desktop release steps when secrets are missing
+* 4f74bbd fix(ci): enable hermetic staging mode and graceful pipeline notices when optional secrets are absent
 * d93ad2b (tag: v1.1.48) feat(release): reconcile version 1.1.48 across manifests, sw, docker, and operational dossiers
 * d295400 feat(operations): provide turnkey dossiers for G13 UAT, G14 DGHS compliance, G15 trusted cert, and hardware zero-config guide
 * e316562 feat(closure): complete final full-stack production closure v2 and continuation protocol

@@ -14,14 +14,14 @@
 
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
-| **Current Local / Remote HEAD** | `4f74bbde60a7192474c28e82476409eac17f6b19` | `git rev-parse HEAD` |
-| **Immediate Parent Commit** | `d93ad2b7dd8f7ae08fe035196d6429cfcd50d670` | `git log -1 --pretty=%P` |
+| **Current Local / Remote HEAD** | `c20aae7854569f8fd1f36a9c391e7f4a086e98e9` | `git rev-parse HEAD` |
+| **Immediate Parent Commit** | `4f74bbde60a7192474c28e82476409eac17f6b19` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push --dry-run` / `git-sync.mjs` |
-| **Cloudflare Deployed SHA** | `4f74bbde60a7192474c28e82476409eac17f6b19` | Wrangler Deployment Record (`--commit-dirty=false`) |
+| **Cloudflare Deployed SHA** | `c20aae7854569f8fd1f36a9c391e7f4a086e98e9` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK) |
-| **Cloudflare Deployment Preview** | `https://332bc746.onnesha-hospital.pages.dev` | Direct Edge Verification |
-| **Observed GitHub Actions Run** | Run ID `37543390667` (`4f74bbd`) | GitHub Actions API |
-| **GitHub Actions Conclusion** | Mandatory CI passed; Hermetic Staging Gate & Edge Probes | Automated Gate Policy |
+| **Cloudflare Deployment Preview** | `https://df2ddc26.onnesha-hospital.pages.dev` | Direct Edge Verification |
+| **Observed GitHub Actions Run** | Run ID `37544180296` (`c20aae7`) / `37543390667` (`4f74bbd`) | GitHub Actions API |
+| **GitHub Actions Conclusion** | Mandatory CI passed; Hermetic Staging Gate (G10) Green | Automated Gate Policy |
 
 ---
 
