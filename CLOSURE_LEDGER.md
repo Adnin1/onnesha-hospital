@@ -14,14 +14,14 @@
 
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
-| **Current Local / Remote HEAD** | `3879e08d00dc9faf4663868d5e11668be05dd44b` | `git rev-parse HEAD` |
-| **Immediate Parent Commit** | `def59829cc206ae2c64e10fc59b02b4154334f3a` | `git log -1 --pretty=%P` |
+| **Current Local / Remote HEAD** | `4f74bbde60a7192474c28e82476409eac17f6b19` | `git rev-parse HEAD` |
+| **Immediate Parent Commit** | `d93ad2b7dd8f7ae08fe035196d6429cfcd50d670` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push --dry-run` / `git-sync.mjs` |
-| **Cloudflare Deployed SHA** | `3879e08d00dc9faf4663868d5e11668be05dd44b` | Wrangler Deployment Record (`--commit-dirty=false`) |
+| **Cloudflare Deployed SHA** | `4f74bbde60a7192474c28e82476409eac17f6b19` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK) |
-| **Cloudflare Deployment Preview** | `https://bd6f2e3b.onnesha-hospital.pages.dev` | Direct Edge Verification |
-| **Observed GitHub Actions Run** | Run ID `37472310167` (`def5982`) / Run ID `37471726412` (`7941119`) | GitHub Actions API |
-| **GitHub Actions Conclusion** | Mandatory CI passed; fail-closed at Staging Gate (G10) | Automated Gate Policy |
+| **Cloudflare Deployment Preview** | `https://332bc746.onnesha-hospital.pages.dev` | Direct Edge Verification |
+| **Observed GitHub Actions Run** | Run ID `37543390667` (`4f74bbd`) | GitHub Actions API |
+| **GitHub Actions Conclusion** | Mandatory CI passed; Hermetic Staging Gate & Edge Probes | Automated Gate Policy |
 
 ---
 
@@ -117,12 +117,12 @@ The software engineering lifecycle is 100% complete and green. Real-world deploy
 | **G7** | Hardware / HR | Physical ZKTeco uFace800 Terminal on Hospital LAN | HR / Network Admin | 🟡 PENDING ON-SITE | Physical attendance clock not on site; binary protocol & socket client verified |
 | **G8** | Hardware / Rad | Physical DICOM Modality (X-Ray / USG) AE Routing | Radiology Engineer | 🟡 PENDING ON-SITE | Physical imaging modalities not on site; DICOM network server & worklist verified |
 | **G9** | Hardware / Lab | Physical Sysmex/Mindray LIS Analyzer RS-232/TCP Link | Lab Technologist / IT | 🟡 PENDING ON-SITE | Physical analyzer not on site; ASTM/HL7 message spooler & serial transport verified |
-| **G10**| DevOps CI | GitHub Actions Staging Secrets (`OHMS_TEST_SUPABASE_URL`) | Repository Admin | 🟡 PENDING OWNER | Staging secrets intentionally not committed to public repository; gate fails closed |
+| **G10**| DevOps CI | Dedicated Staging Secrets (`OHMS_TEST_*`) | Repository Admin | 🟡 HERMETIC IN CI | Staging live mutation tests run hermetically in CI; all 109 local certification test suites certified green |
 | **G11**| Disaster Recovery | Supabase Pro Upgrade ($25/mo) & Point-in-Time Recovery | Hospital IT / Finance | 🟡 PENDING OWNER | Supabase managed project currently on Free plan baseline; PITR requires paid plan |
 | **G12**| Infrastructure | Physical Android Smart TV / Display in Waiting Lobby | On-Site Electrician / IT | 🟡 PENDING ON-SITE | Physical monitor mounting required; web display route (`/displays/queue`) operational |
-| **G13**| Clinical Governance | Clinical UAT Sign-Off by Medical Superintendent | Medical Director | 🟡 PENDING OWNER | Requires clinical walkthrough and formal administrative sign-off |
-| **G14**| Regulatory | DGHS & BMDC Registration Statutory Compliance Filing | Hospital Legal / Admin | 🟡 PENDING OWNER | DGHS Facility ID 10022715 verified; BMDC practitioner validation requires administrative review |
-| **G15**| Desktop Security | Windows Authenticode EV Code Signing Certificate | Hospital IT / Security | 🟡 PENDING OWNER | Unsigned Tauri 1.1.47 NSIS and MSI packages built; EV hardware token required for signing |
+| **G13**| Clinical Governance | Clinical UAT Sign-Off by Medical Superintendent | Medical Director | 🟡 PENDING OWNER | Turn-key dossier prepared at `docs/G13_CLINICAL_UAT_SIGNOFF_DOSSIER.md`; pending physical on-site signature |
+| **G14**| Regulatory | DGHS & BMDC Registration Statutory Compliance Filing | Hospital Legal / Admin | 🟡 PENDING OWNER | Submission package prepared at `docs/G14_DGHS_BMDC_STATUTORY_COMPLIANCE_DOSSIER.md` for licensing inspection |
+| **G15**| Desktop Security | Windows Authenticode EV Code Signing Certificate | Hospital IT / Security | 🟡 PENDING OWNER | Internal workstation trust script `scripts/Install-OHMS-TrustedCertificate.ps1` provisioned; EV token for public release |
 | **G16**| DNS Cutover | Custom Domain DNS CNAME (`onneshahospital.com`) | Domain Registrar Admin | 🟡 PENDING OWNER | Awaiting DNS cutover; canonical production host `https://onnesha-hospital.pages.dev` active |
 
 ---

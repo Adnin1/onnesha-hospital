@@ -158,39 +158,44 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - name: Verify Production Deployment Pipeline
+        id: check_deploy
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "::notice title=Direct Edge Deployment Mode::Production edge deployment is continuously managed directly via Wrangler CLI from authenticated workstation. GitHub Actions deploy step cleanly completed."
-            exit 0
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+            echo "::notice title=Direct Edge Deployment Mode::Cloudflare deploy credentials or Supabase URL not configured in GitHub Secrets. Edge deployment is continuously managed directly via Wrangler CLI from authenticated workstation. Running live edge health smoke verification."
+            echo "can_deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "can_deploy=true" >> "$GITHUB_OUTPUT"
+            echo "Production secrets verified."
           fi
-          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
-            echo "::notice title=Deployment Notice::NEXT_PUBLIC_SUPABASE_URL not configured in GitHub Secrets. Skipping duplicate edge deployment."
-            exit 0
-          fi
-          echo "Production secrets verified."
 
       - name: Checkout repository
+        if: steps.check_deploy.outputs.can_deploy == 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node.js 22
+        if: steps.check_deploy.outputs.can_deploy == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
+        if: steps.check_deploy.outputs.can_deploy == 'true'
         run: npm ci
 
       - name: Create Production Environment File
+        if: steps.check_deploy.outputs.can_deploy == 'true'
         run: |
           echo "NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}" >> .env.local
           echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}" >> .env.local
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}" >> .env.local
 
       - name: Next.js static production export
+        if: steps.check_deploy.outputs.can_deploy == 'true'
         run: npm run build
 
       - name: Assert production bundle uses real Supabase URL
+        if: steps.check_deploy.outputs.can_deploy == 'true'
         run: |
           echo "Asserting CI placeholder URL not in production bundle..."
           if grep -r "ci-hermetic-build-placeholder" out/ --include="*.js" --include="*.html" -l 2>/dev/null | head -1; then
@@ -200,6 +205,7 @@ jobs:
           echo "✅ Production bundle uses real Supabase credentials."
 
       - name: Deploy to Cloudflare Pages
+        if: steps.check_deploy.outputs.can_deploy == 'true'
         run: npx wrangler pages deploy out --project-name=onnesha-hospital --branch=main --commit-hash=${{ github.sha }} --commit-dirty=false
 
       - name: Post-Deployment Edge Smoke Verification
@@ -226,29 +232,37 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
     steps:
       - name: Verify Desktop Production Configuration
+        id: check_desktop
         shell: powershell
         run: |
           if (-not $env:NEXT_PUBLIC_SUPABASE_URL -or (-not $env:NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY -and -not $env:NEXT_PUBLIC_SUPABASE_ANON_KEY)) {
             Write-Host "::notice title=Desktop Build Notice::Desktop release secrets not configured in GitHub Secrets. CI desktop build step cleanly skipped (desktop installers are produced on host workstation)."
-            exit 0
+            "can_build=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            "can_build=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
 
       - name: Checkout repository
+        if: steps.check_desktop.outputs.can_build == 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node.js 22
+        if: steps.check_desktop.outputs.can_build == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
 
       - name: Install Rust stable
+        if: steps.check_desktop.outputs.can_build == 'true'
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
+        if: steps.check_desktop.outputs.can_build == 'true'
         run: npm ci
 
       - name: Create Desktop Environment File
+        if: steps.check_desktop.outputs.can_build == 'true'
         shell: powershell
         run: |
           "NEXT_PUBLIC_SUPABASE_URL=$env:NEXT_PUBLIC_SUPABASE_URL" | Out-File -FilePath .env.local -Encoding utf8 -Append
@@ -256,9 +270,11 @@ jobs:
           "NEXT_PUBLIC_SUPABASE_ANON_KEY=$env:NEXT_PUBLIC_SUPABASE_ANON_KEY" | Out-File -FilePath .env.local -Encoding utf8 -Append
 
       - name: Next.js static production export
+        if: steps.check_desktop.outputs.can_build == 'true'
         run: npm run build
 
       - name: Assert desktop bundle uses real Supabase URL
+        if: steps.check_desktop.outputs.can_build == 'true'
         shell: powershell
         run: |
           $found = Get-ChildItem -Recurse -Path out -Include "*.js","*.html" | Select-String "ci-hermetic-build-placeholder" -ErrorAction SilentlyContinue
@@ -269,6 +285,7 @@ jobs:
           Write-Host "Desktop bundle uses real Supabase credentials."
 
       - name: Install WiX Toolset & NSIS
+        if: steps.check_desktop.outputs.can_build == 'true'
         shell: powershell
         run: |
           choco install wixtoolset nsis --allow-downgrade --no-progress
@@ -280,9 +297,11 @@ jobs:
           }
 
       - name: Build Tauri Desktop Executable and Installer Bundles
+        if: steps.check_desktop.outputs.can_build == 'true'
         run: npx tauri build --ci
 
       - name: Validate Generated Desktop and Installer Artifacts
+        if: steps.check_desktop.outputs.can_build == 'true'
         shell: powershell
         run: |
           $exe = Get-Item "src-tauri/target/release/*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -299,6 +318,7 @@ jobs:
           Write-Host "  • NSIS Setup:         $($nsis.Name) ($($nsis.Length) bytes)"
 
       - name: Compute Artifact Cryptographic Hashes and Update Manifest
+        if: steps.check_desktop.outputs.can_build == 'true'
         shell: powershell
         run: |
           $ver = (Get-Content package.json | ConvertFrom-Json).version
@@ -328,6 +348,7 @@ jobs:
           Write-Host "Updated $manifestPath with verified CI build artifacts."
 
       - name: Upload Windows Desktop Artifact
+        if: steps.check_desktop.outputs.can_build == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: tauri-windows-desktop
@@ -337,6 +358,7 @@ jobs:
           if-no-files-found: error
 
       - name: Determine and Validate Release Version Provenance
+        if: steps.check_desktop.outputs.can_build == 'true'
         shell: powershell
         run: |
           $ver = (Get-Content package.json | ConvertFrom-Json).version
@@ -353,7 +375,7 @@ jobs:
           "OHMS_RELEASE_NAME=Onnesha Hospital Desktop v$ver (Windows)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Publish GitHub Release with Desktop Installers
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        if: (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') && steps.check_desktop.outputs.can_build == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.OHMS_RELEASE_TAG }}
@@ -369,7 +391,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Attest Desktop Binary Build Provenance
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        if: (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') && steps.check_desktop.outputs.can_build == 'true'
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: |
