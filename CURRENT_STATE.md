@@ -24,12 +24,14 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 In adherence to strict zero-false-green Git governance:
 - **Release Tag `v1.1.47`:** Anchored immutably to commit `b92c3d11d1e2e0f2391e5465b7b3efc464b6bc47`. Under no circumstances was `git tag -a -f` invoked to mutate historical release tags.
 - **Mainline Descendant:** Current `main` HEAD is a verified fast-forward descendant of `v1.1.47^{commit}` via `git merge-base --is-ancestor`.
-- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `217479add46ae255a113121822a96356fb8b708c`.
-- **Cloudflare Edge Deployed SHA:** Synchronized with mainline HEAD commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (`3759111d.onnesha-hospital.pages.dev`).
+- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `79411193a6e8b3e68312dbf5f866990ff28c7df4`.
+- **Cloudflare Edge Deployed SHA:** Synchronized with mainline HEAD commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (`df37c336.onnesha-hospital.pages.dev`).
 
 ### Commit Lineage
 ```
-* 217479a (HEAD -> main, origin/main, ssh-origin/main) docs: add authoritative OHMS_FINAL_DELIVERY_REPORT for v1.1.47
+* 7941119 (HEAD -> main, origin/main, ssh-origin/main) fix(deps): bump source-map-js to 1.2.2 resolving GHSA-68fv-2mgg-jv7q
+* d9017c9 docs: finalize deployment evidence for SHA 217479a and preview 3759111d
+* 217479a docs: add authoritative OHMS_FINAL_DELIVERY_REPORT for v1.1.47
 * efa8284 docs: synchronize CURRENT_STATE and CLOSURE_LEDGER with commit ba8e479 deployment
 * ba8e479 fix(lis): enforce fail-closed atomic ingestion and eliminate non-atomic fallback
 * 06177f3 docs: synchronize CURRENT_STATE and CLOSURE_LEDGER with commit 2b55a1b deployment

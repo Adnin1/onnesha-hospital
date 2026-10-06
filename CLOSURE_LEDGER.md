@@ -14,14 +14,14 @@
 
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
-| **Current Local / Remote HEAD** | `217479add46ae255a113121822a96356fb8b708c` | `git rev-parse HEAD` |
-| **Immediate Parent Commit** | `efa8284e68e4c76395b24479e0a02013149a46dc` | `git log -1 --pretty=%P` |
+| **Current Local / Remote HEAD** | `79411193a6e8b3e68312dbf5f866990ff28c7df4` | `git rev-parse HEAD` |
+| **Immediate Parent Commit** | `d9017c9cc9fd141a26599753a9b160fa08b5c888` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push --dry-run` / `git-sync.mjs` |
-| **Cloudflare Deployed SHA** | `217479add46ae255a113121822a96356fb8b708c` | Wrangler Deployment Record |
+| **Cloudflare Deployed SHA** | `79411193a6e8b3e68312dbf5f866990ff28c7df4` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK) |
-| **Cloudflare Deployment Preview** | `https://3759111d.onnesha-hospital.pages.dev` | Direct Edge Verification |
-| **Observed GitHub Actions Run** | Run ID `37385274500` | GitHub Actions API |
-| **GitHub Actions Conclusion** | `fail-closed` at Staging Security Gate (G10) | Automated Gate Policy |
+| **Cloudflare Deployment Preview** | `https://df37c336.onnesha-hospital.pages.dev` | Direct Edge Verification |
+| **Observed GitHub Actions Run** | Run ID `37471726412` (`7941119`) / Run ID `37385883517` (`d9017c9`) | GitHub Actions API |
+| **GitHub Actions Conclusion** | Mandatory CI passed; fail-closed at Staging Gate (G10) | Automated Gate Policy |
 
 ---
 
@@ -79,6 +79,11 @@
    - *Problem:* `lib/lab/lis/actions.ts` previously had a non-atomic multi-step fallback if the atomic ingestion RPC returned an error, risking partial writes and out-of-order state.
    - *Fix:* Removed the non-atomic fallback; `ingestAnalyzerTransmissionAction` now strictly fails closed if `ingest_analyzer_transmission_atomic` RPC fails or returns empty data, and guards the order update with explicit `organization_id` boundary checks.
    - *Verification:* Verified against `tests/lis-analyzer-integration.test.mjs` (20/20 scenarios pass).
+
+8. **`SEC-CVE-01` (Upstream Dependency Advisory GHSA-68fv-2mgg-jv7q Remediated):**
+   - *Problem:* `source-map-js` versions 1.0.0 through 1.2.1 flagged with high-severity event-loop denial of service vulnerability via indexed source-map section offsets (`GHSA-68fv-2mgg-jv7q`), triggering failure in Health Check Gate 12.
+   - *Fix:* Upgraded `source-map-js` to `1.2.2` via `npm audit fix`, resolving vulnerability completely and restoring `npm audit --audit-level=high` to 0 vulnerabilities.
+   - *Verification:* Verified via `npm audit --audit-level=high` (0 vulnerabilities) and `node scripts/project-health-check.mjs --strict` (16/16 gates green).
 
 ---
 
