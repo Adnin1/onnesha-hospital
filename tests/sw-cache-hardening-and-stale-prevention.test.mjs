@@ -14,7 +14,7 @@ describe("OHMS Service Worker Cache Hardening & Stale Prevention", () => {
   const pkg = JSON.parse(fs.readFileSync(PKG_PATH, "utf8"));
   const expectedVersion = `ohms-static-v5-${pkg.version}`;
 
-  test("1. CACHE_VERSION binds to ohms-static-v5-1.1.47 and passes both 'ohms-static-v' and 'ohms-static-v5' tests", () => {
+  test(`1. CACHE_VERSION binds to ohms-static-v5-${pkg.version} and passes both 'ohms-static-v' and 'ohms-static-v5' tests`, () => {
     assert.ok(
       swCode.includes(`const CACHE_VERSION = '${expectedVersion}';`),
       `public/sw.js must define CACHE_VERSION as '${expectedVersion}'`

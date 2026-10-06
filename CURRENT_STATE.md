@@ -1,10 +1,10 @@
 # OHMS — Current Production State & Technical Verification Record
 
-**Document Version:** `1.1.47`  
+**Document Version:** `1.1.48`  
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Free Plan Baseline)  
-**Execution Timestamp:** `2026-10-06T04:20:00+06:00`  
+**Execution Timestamp:** `2026-10-07T04:40:00+06:00`  
 **Overall Delivery Status:** **B. SOFTWARE VERIFIED — OWNER / EXTERNAL GATES REMAIN**  
 
 ---

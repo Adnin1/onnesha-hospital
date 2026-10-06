@@ -1,8 +1,9 @@
 # ONNESHA HOSPITAL & DIAGNOSTIC CENTER, BOGURA
 ## CLINICAL & INSTITUTIONAL USER ACCEPTANCE TESTING (UAT) SIGNOFF DOSSIER
 **Document Ref:** OHMS-UAT-2026-V1  
-**Target Release:** OHMS v1.1.48 / Release Baseline `e316562`  
+**Target Release:** OHMS v1.1.48  
 **Governing Standard:** DGHS Hospital Licensing Guidelines & BMDC Code of Medical Ethics  
+**Status:** Software Implementation: ✅ Pre-Verified (109 Suites Green) | Clinical Institutional Sign-Off: ⚠️ Pending On-Site Review (Gate G13)  
 
 ---
 

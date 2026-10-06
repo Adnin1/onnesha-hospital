@@ -1,14 +1,14 @@
 {
-  "version": "1.1.47",
+  "version": "1.1.48",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.47. Universal HAL, ZKTeco biometric integration, DICOM PACS bridge, LIS durable spool, and 1-bit Bangla raster typography.",
-  "pub_date": "2026-10-06T01:55:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.48. Universal HAL, ZKTeco biometric integration, DICOM PACS bridge, LIS durable spool, and 1-bit Bangla raster typography.",
+  "pub_date": "2026-10-07T04:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.47.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.48.exe",
       "installer_exe_sha256": "923D73FCFEC3D647A7FFE39DF0177A2574BE69B20A9C41DBFA21A7AB387C18A2",
       "installer_exe_size": 18881661,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.47.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.48.msi",
       "installer_msi_sha256": "1C833D347E907F9551EE55BA2D127134F3725F44E376EE3642AE72593509847C",
       "installer_msi_size": 20512768,
       "status": "built_locally_verified",

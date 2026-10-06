@@ -68,17 +68,19 @@ $pubStore.Add($cert)
 $pubStore.Close()
 
 Write-Host "Installed into LocalMachine\Root and LocalMachine\TrustedPublisher!" -ForegroundColor Green
-Write-Host "Windows Defender and SmartScreen will now trust OHMS Desktop executables 100%!" -ForegroundColor Green
+Write-Host "Local Windows environment now trusts OHMS Desktop binaries signed with this institutional certificate." -ForegroundColor Green
 
 # 3. Sign Binary if Provided
 if ($BinaryPath -and (Test-Path $BinaryPath)) {
     Write-Host "`n[3/3] Signing application binary: $BinaryPath..." -ForegroundColor Cyan
     Set-AuthenticodeSignature -FilePath $BinaryPath -Certificate $cert -HashAlgorithm SHA256 -TimestampServer "http://timestamp.digicert.com"
-    Write-Host "Signature successfully applied to $BinaryPath!" -ForegroundColor Green
+    Write-Host "Institutional signature successfully applied to $BinaryPath!" -ForegroundColor Green
 } else {
-    Write-Host "`n[3/3] System is ready. Any OHMS Tauri desktop build signed with this certificate will launch without prompts." -ForegroundColor Cyan
+    Write-Host "`n[3/3] System is ready. Hospital internal managed PCs with this certificate will trust local OHMS builds." -ForegroundColor Cyan
 }
 
 Write-Host "`n==========================================================" -ForegroundColor Green
-Write-Host "  SUCCESS: OHMS DESKTOP GATE G15 FULLY RESOLVED!         " -ForegroundColor Green
+Write-Host "  SUCCESS: INTERNAL MANAGED WORKSTATION TRUST PROVISIONED " -ForegroundColor Green
+Write-Host "  NOTICE: Gate G15 (Public EV Authenticode) remains an     " -ForegroundColor Yellow
+Write-Host "          external owner prerequisite for public builds.   " -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Green
