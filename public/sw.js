@@ -15,6 +15,7 @@ const NEVER_CACHE_EXACT_PATHS = new Set([
   '/forgot-password',
   '/reset-password',
   '/auth',
+  '/recovery',
 ]);
 
 // Sensitive query parameter keys that MUST bypass cache completely
@@ -34,9 +35,11 @@ const SENSITIVE_QUERY_PARAMS = new Set([
 const NEVER_CACHE_PATTERNS = [
   /\/app(\/|$)/,
   /\/api\//,
+  /\/displays(\/|$)/,         // TV queue/triage lobby displays — live streaming, never cache
   /supabase\.co/,
   /\.supabase\./,
   /\/auth(\/|$)/,
+  /\/recovery(\/|$)/,
   /patient/i,
   /prescription/i,
   /diagnosis/i,

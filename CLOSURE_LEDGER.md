@@ -90,6 +90,16 @@
    - *Fix:* Upgraded `sharp` to `0.35.5` via `npm audit fix`, resolving vulnerability completely and restoring `npm audit --audit-level=high` to 0 vulnerabilities.
    - *Verification:* Verified via `npm audit --audit-level=high` (0 vulnerabilities) and `node scripts/project-health-check.mjs --strict` (16/16 gates green).
 
+10. **`SEC-SW-01` (Service Worker NEVER_CACHE Hardening for Displays & Recovery):**
+    - *Problem:* While `/displays/queue` and `/displays/triage` were not in `PUBLIC_CACHE_ALLOWLIST`, explicit `NEVER_CACHE_PATTERNS` regex and `NEVER_CACHE_EXACT_PATHS` omitted `/displays` and `/recovery`, risking potential client-side caching if allowlist rules evolved.
+    - *Fix:* Explicitly added `/\/displays(\/|$)/` and `/\/recovery(\/|$)/` to `NEVER_CACHE_PATTERNS`, and added `'/recovery'` to `NEVER_CACHE_EXACT_PATHS` in `public/sw.js`.
+    - *Verification:* Verified via regression test assertions in `tests/sw-cache-hardening-and-stale-prevention.test.mjs` (6/6 tests passing).
+
+11. **`ARCH-PROV-01` (Unified Continuation Protocol & Single Authoritative Deployment Lock):**
+    - *Problem:* Post-deployment documentation updates historically produced secondary commits that left runtime deployment SHAs out of direct textual sync with documentation commits.
+    - *Fix:* Established `docs/CONTINUATION_PROTOCOL.md` and enforced the strict atomic invariant `FINAL_HEAD == REMOTE_HEAD == BUILD_HEAD == DEPLOYMENT_HEAD`, synchronizing all ledgers before final static export build and edge deployment.
+    - *Verification:* Verified via `scripts/auto-deploy.mjs`, git remote parity, and Cloudflare Pages edge deployment.
+
 ---
 
 ## 4. Unconditional Operational Commissioning Gates (G1–G16)

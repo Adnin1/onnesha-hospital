@@ -216,6 +216,11 @@ describe("OHMS Service Worker Cache Hardening & Stale Prevention", () => {
     assert.equal(shouldNeverCache("https://onneshahospital.com/book-appointment"), true);
     assert.equal(shouldNeverCache("https://onneshahospital.com/confirm"), true);
 
+    // Lobby displays and recovery routes
+    assert.equal(shouldNeverCache("https://onneshahospital.com/displays/queue"), true);
+    assert.equal(shouldNeverCache("https://onneshahospital.com/displays/triage"), true);
+    assert.equal(shouldNeverCache("https://onneshahospital.com/recovery"), true);
+
     // Clinical and financial keywords
     assert.equal(shouldNeverCache("https://onneshahospital.com/invoice/print"), true);
     assert.equal(shouldNeverCache("https://onneshahospital.com/prescription/view"), true);

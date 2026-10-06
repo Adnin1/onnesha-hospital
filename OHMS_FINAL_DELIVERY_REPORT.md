@@ -80,6 +80,12 @@
 9. **`SEC-CVE-02` (Upstream Dependency Advisory GHSA-wq5f-xc86-pv6w in sharp Remediated):**
    - *Fix:* Upgraded `sharp` from 0.35.4 to 0.35.5 via `npm audit fix`, eliminating high-severity librsvg vulnerability (`CVE-2026-96889`) and restoring Gate 12 to 0 vulnerabilities.
 
+10. **`SEC-SW-01` (Service Worker NEVER_CACHE Hardening for Displays & Recovery):**
+    - *Fix:* Hardened `public/sw.js` by explicitly registering `/\/displays(\/|$)/` and `/\/recovery(\/|$)/` into `NEVER_CACHE_PATTERNS` and `/recovery` into `NEVER_CACHE_EXACT_PATHS`. Verified via automated regression suite in `tests/sw-cache-hardening-and-stale-prevention.test.mjs`.
+
+11. **`ARCH-PROV-01` (Unified Continuation Protocol & Single Authoritative Deployment Lock):**
+    - *Fix:* Established `docs/CONTINUATION_PROTOCOL.md` and enforced strict atomic invariant `FINAL_HEAD == REMOTE_HEAD == BUILD_HEAD == DEPLOYMENT_HEAD`, eliminating post-deployment documentation drift.
+
 ---
 
 ## 4. Live Four-Layer Production Smoke Verification
