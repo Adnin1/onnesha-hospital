@@ -135,7 +135,12 @@ jobs:
       - name: Verify Staging Secrets & Execute Live Staging Suite if Configured
         run: |
           if [ -z "$OHMS_TEST_SUPABASE_URL" ] || [ -z "$OHMS_TEST_SERVICE_ROLE_KEY" ]; then
-            echo "::notice title=G10 Live Staging Gate Skipped (Owner Prerequisite)::Dedicated staging Supabase secrets (OHMS_TEST_*) not configured in GitHub repository secrets for the staging environment. Live mutating cross-tenant tests against an isolated staging instance cannot run in this CI pipeline without owner-provisioned staging credentials. Note: Hermetic quality, security, and integration coverage (109 suites, 963 active passes, 20 security scenarios) is 100% certified in Job 1."
+            echo "=========================================================================="
+            echo "::warning title=G10 Staging Security Gate: NOT CONFIGURED (Owner Action Required)::Dedicated staging Supabase credentials (OHMS_TEST_*) are not provisioned in GitHub Secrets."
+            echo "STATUS: NOT CONFIGURED — OWNER ACTION REQUIRED (Gate G10)"
+            echo "Live mutating cross-tenant tests against an isolated staging instance cannot execute without owner-provisioned staging credentials."
+            echo "Hermetic quality, security, and integration coverage is validated in Mandatory CI Job."
+            echo "=========================================================================="
             exit 0
           fi
           echo "Executing live authenticated cross-tenant security suite against staging instance..."

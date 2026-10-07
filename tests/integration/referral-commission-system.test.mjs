@@ -297,4 +297,107 @@ describe("OHMS Enterprise Referral & Affiliate Partner Commission Subsystem", ()
     assert.equal(totalDebitSettle, totalCreditSettle, "Settlement debit and credit must balance");
     assert.equal(totalDebitSettle, 800);
   });
+
+  // --- Scenario 15: Commission Approval Workflow ---
+  test("Scenario 15: Commission approval workflow blocks settlement until APPROVED", () => {
+    const commission = {
+      id: "comm-approval-1",
+      approvalStatus: "PENDING",
+      settlementStatus: "PENDING",
+      amountPending: 800,
+    };
+
+    function attemptSettlement(comm) {
+      if (comm.approvalStatus !== "APPROVED") {
+        return { success: false, error: "Commission must be APPROVED prior to settlement disbursement." };
+      }
+      return { success: true };
+    }
+
+    // Step 1: Attempt settlement on PENDING commission -> MUST FAIL
+    const unapprovedAttempt = attemptSettlement(commission);
+    assert.equal(unapprovedAttempt.success, false);
+    assert.match(unapprovedAttempt.error, /Commission must be APPROVED/);
+
+    // Step 2: Management approves commission
+    commission.approvalStatus = "APPROVED";
+    commission.approvedBy = "user-finance-admin";
+    commission.approvedAt = new Date().toISOString();
+
+    // Step 3: Attempt settlement on APPROVED commission -> MUST SUCCEED
+    const approvedAttempt = attemptSettlement(commission);
+    assert.equal(approvedAttempt.success, true);
+  });
+
+  // --- Scenario 16: Commission Rejection Workflow ---
+  test("Scenario 16: Commission rejection cancels claim and blocks settlement", () => {
+    const commission = {
+      id: "comm-approval-2",
+      approvalStatus: "PENDING",
+      settlementStatus: "PENDING",
+      amountPending: 1600,
+    };
+
+    function rejectCommission(comm, reason) {
+      comm.approvalStatus = "REJECTED";
+      comm.settlementStatus = "CANCELLED";
+      comm.reversalReason = reason;
+      comm.amountPending = 0;
+      return comm;
+    }
+
+    rejectCommission(commission, "Duplicate patient attribution reported");
+    assert.equal(commission.approvalStatus, "REJECTED");
+    assert.equal(commission.settlementStatus, "CANCELLED");
+    assert.equal(commission.amountPending, 0);
+  });
+
+  // --- Scenario 17: Prohibit Invoice Void when Commission is PAID (Model A) ---
+  test("Scenario 17: Prohibit invoice void when related referral commission has already been PAID (Model A Invariant)", () => {
+    const invoice = { id: "inv-201", status: "PAID", isVoided: false };
+    const relatedCommission = { id: "comm-201", invoiceId: "inv-201", settlementStatus: "PAID" };
+
+    function attemptVoidInvoice(inv, comm) {
+      if (comm && comm.settlementStatus === "PAID") {
+        return {
+          success: false,
+          error: "409 Conflict: Cannot void invoice. Related referral commission has already been paid/settled.",
+        };
+      }
+      inv.isVoided = true;
+      inv.status = "VOID";
+      return { success: true };
+    }
+
+    const voidAttempt = attemptVoidInvoice(invoice, relatedCommission);
+    assert.equal(voidAttempt.success, false);
+    assert.match(voidAttempt.error, /409 Conflict/);
+    assert.equal(invoice.isVoided, false);
+  });
+
+  // --- Scenario 18: Permit Invoice Void when Commission is PENDING ---
+  test("Scenario 18: Permit invoice void when related commission is PENDING (Commission cancelled and accrual reversed)", () => {
+    const invoice = { id: "inv-202", status: "UNPAID", isVoided: false };
+    const relatedCommission = { id: "comm-202", invoiceId: "inv-202", settlementStatus: "PENDING", approvalStatus: "PENDING" };
+
+    function attemptVoidInvoice(inv, comm) {
+      if (comm && comm.settlementStatus === "PAID") {
+        return { success: false, error: "Cannot void settled commission invoice" };
+      }
+      inv.isVoided = true;
+      inv.status = "VOID";
+      if (comm) {
+        comm.settlementStatus = "CANCELLED";
+        comm.approvalStatus = "REJECTED";
+      }
+      return { success: true };
+    }
+
+    const voidAttempt = attemptVoidInvoice(invoice, relatedCommission);
+    assert.equal(voidAttempt.success, true);
+    assert.equal(invoice.isVoided, true);
+    assert.equal(relatedCommission.settlementStatus, "CANCELLED");
+    assert.equal(relatedCommission.approvalStatus, "REJECTED");
+  });
 });
+

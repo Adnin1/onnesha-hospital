@@ -35,6 +35,8 @@ import {
   settleReferralCommissionsAction,
   getReferralSettlementsAction,
   getReferralSummaryMetricsAction,
+  approveCommissionAction,
+  rejectCommissionAction,
 } from "@/lib/referrals/actions";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -105,6 +107,9 @@ export default function ReferralManagementPage() {
   const [loadingPendingComms, setLoadingPendingComms] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
+  const [commToApprove, setCommToApprove] = useState<ReferralCommission | null>(null);
+  const [commToReject, setCommToReject] = useState<ReferralCommission | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [alertError, setAlertError] = useState<string | null>(null);
   const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
 
@@ -172,11 +177,15 @@ export default function ReferralManagementPage() {
         limit: 100,
       });
       if (res.success && res.data) {
-        setPendingCommissionsForAgent(res.data);
-        // Pre-select all pending
+        // Enforce Authoritative Rule: Only APPROVED commissions can be settled
+        const approvedPending = res.data.filter(
+          (c) => c.approval_status === "APPROVED" && c.settlement_status === "PENDING"
+        );
+        setPendingCommissionsForAgent(approvedPending);
+        // Pre-select all approved
         setSettleForm((prev) => ({
           ...prev,
-          selectedCommissionIds: res.data!.map((c) => c.id),
+          selectedCommissionIds: approvedPending.map((c) => c.id),
         }));
       }
     } catch (err) {
@@ -663,12 +672,14 @@ export default function ReferralManagementPage() {
                   <th className="p-3 text-center">Rate</th>
                   <th className="p-3 text-right">Commission</th>
                   <th className="p-3 text-center">Settlement</th>
+                  <th className="p-3 text-center">Approval</th>
+                  <th className="p-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {commissions.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-12 text-center text-slate-400">
+                    <td colSpan={12} className="p-12 text-center text-slate-400">
                       No commission records generated yet.
                     </td>
                   </tr>
@@ -721,6 +732,50 @@ export default function ReferralManagementPage() {
                         >
                           {comm.settlement_status}
                         </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        <span
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                            comm.approval_status === "APPROVED"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : comm.approval_status === "REJECTED"
+                              ? "bg-rose-50 text-rose-700 border border-rose-200"
+                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                          }`}
+                        >
+                          {comm.approval_status || "PENDING"}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        {comm.approval_status === "PENDING" && comm.settlement_status === "PENDING" ? (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => setCommToApprove(comm)}
+                              className="px-2 py-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded transition"
+                              title="Authorize commission"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCommToReject(comm);
+                                setRejectReason("");
+                              }}
+                              className="px-2 py-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded transition"
+                              title="Reject commission"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">
+                            {comm.approval_status === "APPROVED"
+                              ? "Authorized"
+                              : comm.approval_status === "REJECTED"
+                              ? "Rejected"
+                              : "Locked"}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -1517,6 +1572,109 @@ export default function ReferralManagementPage() {
         }}
         onCancel={() => setAgentToArchive(null)}
       />
+
+      {/* ACCESSIBLE CONFIRM DIALOG: APPROVE COMMISSION */}
+      <ConfirmDialog
+        isOpen={!!commToApprove}
+        title="Authorize Referral Commission"
+        description={
+          commToApprove
+            ? `Authorize commission of ${formatCurrencyBDT(commToApprove.commission_amount)} (${commToApprove.commission_rate_percent}%) for ${commToApprove.referral_name_snapshot} (${commToApprove.referral_code_snapshot}) on Invoice ${commToApprove.invoices?.invoice_number || ""}? Once approved, it becomes eligible for treasury settlement disbursement.`
+            : ""
+        }
+        confirmLabel="Approve Commission"
+        cancelLabel="Cancel"
+        isDestructive={false}
+        isLoading={submitting}
+        onConfirm={async () => {
+          if (!commToApprove) return;
+          setSubmitting(true);
+          try {
+            const res = await approveCommissionAction(commToApprove.id);
+            if (res.success) {
+              setAlertSuccess(`Commission ${commToApprove.id.slice(0, 8)} approved successfully.`);
+              setCommToApprove(null);
+              await refreshAll();
+            } else {
+              setAlertError(res.error || "Failed to approve commission.");
+            }
+          } catch {
+            setAlertError("An unexpected error occurred while approving commission.");
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+        onCancel={() => setCommToApprove(null)}
+      />
+
+      {/* ACCESSIBLE MODAL: REJECT COMMISSION */}
+      {commToReject && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="font-bold text-slate-800 text-sm">Reject Commission Claim</h3>
+              <button
+                onClick={() => setCommToReject(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4 text-xs">
+              <p className="text-slate-600">
+                Rejecting this commission will cancel the accrual and prevent any payout for partner{" "}
+                <span className="font-bold">{commToReject.referral_name_snapshot}</span>.
+              </p>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                  Rejection Reason *
+                </label>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Enter supervisory reason for rejection..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setCommToReject(null)}
+                  className="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting || rejectReason.trim().length < 3}
+                  onClick={async () => {
+                    setSubmitting(true);
+                    try {
+                      const res = await rejectCommissionAction(commToReject.id, rejectReason.trim());
+                      if (res.success) {
+                        setAlertSuccess("Commission rejected.");
+                        setCommToReject(null);
+                        setRejectReason("");
+                        await refreshAll();
+                      } else {
+                        setAlertError(res.error || "Failed to reject commission.");
+                      }
+                    } catch {
+                      setAlertError("An unexpected error occurred while rejecting commission.");
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="px-4 py-2 font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-lg transition"
+                >
+                  Confirm Rejection
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -574,3 +574,81 @@ export async function getReferralSummaryMetricsAction(): Promise<{
     return { success: false, error: msg };
   }
 }
+
+export async function approveCommissionAction(
+  commissionId: string,
+  notes?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Authentication required");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", user.id)
+      .single();
+
+    const orgId = profile?.organization_id;
+    if (!orgId) throw new Error("Organization profile not resolved");
+
+    const { data: res, error } = await supabase.rpc("approve_referral_commission_atomic", {
+      p_org_id: orgId,
+      p_commission_id: commissionId,
+      p_notes: notes?.trim() || null,
+    });
+
+    if (error) throw error;
+    const resObj = res as { success: boolean; error?: string };
+    if (!resObj.success) {
+      return { success: false, error: resObj.error || "Failed to approve commission" };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to approve commission";
+    return { success: false, error: msg };
+  }
+}
+
+export async function rejectCommissionAction(
+  commissionId: string,
+  reason: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!reason || reason.trim().length < 3) {
+      return { success: false, error: "Rejection reason is required (minimum 3 characters)." };
+    }
+
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Authentication required");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", user.id)
+      .single();
+
+    const orgId = profile?.organization_id;
+    if (!orgId) throw new Error("Organization profile not resolved");
+
+    const { data: res, error } = await supabase.rpc("reject_referral_commission_atomic", {
+      p_org_id: orgId,
+      p_commission_id: commissionId,
+      p_reason: reason.trim(),
+    });
+
+    if (error) throw error;
+    const resObj = res as { success: boolean; error?: string };
+    if (!resObj.success) {
+      return { success: false, error: resObj.error || "Failed to reject commission" };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to reject commission";
+    return { success: false, error: msg };
+  }
+}

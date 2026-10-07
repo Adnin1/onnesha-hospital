@@ -158,4 +158,78 @@ describe("OHMS Live Supabase Database & Real RLS Penetration Certification", () 
     assert.ok(error, "Must return authentication error");
     assert.equal(error.status, 400, "Auth service must reject invalid probe with status 400");
   });
+
+  test("9. REAL RPC DENIAL: Anonymous execute of approve_referral_commission_atomic is strictly blocked (42501)", async (t) => {
+    if (!isConfigured) {
+      t.skip("Live database not configured or running in hermetic CI.");
+      return;
+    }
+    const client = createClient(supabaseUrl, anonKey);
+    const { data, error } = await client.rpc("approve_referral_commission_atomic", {
+      p_org_id: "00000000-0000-0000-0000-000000000000",
+      p_commission_id: "00000000-0000-0000-0000-000000000000",
+    });
+
+    assert.equal(data, null, "Anonymous caller must NOT execute approve RPC");
+    assert.ok(error, "Anonymous execute must return error");
+    assert.equal(error.code, "42501", "PostgreSQL error code must be 42501");
+    assert.match(error.message, /permission denied/i);
+  });
+
+  test("10. REAL RPC DENIAL: Anonymous execute of reject_referral_commission_atomic is strictly blocked (42501)", async (t) => {
+    if (!isConfigured) {
+      t.skip("Live database not configured or running in hermetic CI.");
+      return;
+    }
+    const client = createClient(supabaseUrl, anonKey);
+    const { data, error } = await client.rpc("reject_referral_commission_atomic", {
+      p_org_id: "00000000-0000-0000-0000-000000000000",
+      p_commission_id: "00000000-0000-0000-0000-000000000000",
+      p_reason: "Test rejection",
+    });
+
+    assert.equal(data, null, "Anonymous caller must NOT execute reject RPC");
+    assert.ok(error, "Anonymous execute must return error");
+    assert.equal(error.code, "42501", "PostgreSQL error code must be 42501");
+    assert.match(error.message, /permission denied/i);
+  });
+
+  test("11. REAL RPC DENIAL: Anonymous execute of create_referral_agent_atomic is strictly blocked (42501)", async (t) => {
+    if (!isConfigured) {
+      t.skip("Live database not configured or running in hermetic CI.");
+      return;
+    }
+    const client = createClient(supabaseUrl, anonKey);
+    const { data, error } = await client.rpc("create_referral_agent_atomic", {
+      p_org_id: "00000000-0000-0000-0000-000000000000",
+      p_full_name: "Attacker Agent",
+      p_agent_type: "COMMUNITY_PC",
+      p_phone: "01700000000",
+      p_commission_rate: 10.00,
+    });
+
+    assert.equal(data, null, "Anonymous caller must NOT execute create agent RPC");
+    assert.ok(error, "Anonymous execute must return error");
+    assert.equal(error.code, "42501", "PostgreSQL error code must be 42501");
+    assert.match(error.message, /permission denied/i);
+  });
+
+  test("12. REAL RPC DENIAL: Anonymous execute of admit_patient_to_bed_atomic is strictly blocked (42501)", async (t) => {
+    if (!isConfigured) {
+      t.skip("Live database not configured or running in hermetic CI.");
+      return;
+    }
+    const client = createClient(supabaseUrl, anonKey);
+    const { data, error } = await client.rpc("admit_patient_to_bed_atomic", {
+      p_organization_id: "00000000-0000-0000-0000-000000000000",
+      p_patient_id: "00000000-0000-0000-0000-000000000000",
+      p_bed_id: "00000000-0000-0000-0000-000000000000",
+    });
+
+    assert.equal(data, null, "Anonymous caller must NOT execute admission RPC");
+    assert.ok(error, "Anonymous execute must return error");
+    assert.equal(error.code, "42501", "PostgreSQL error code must be 42501");
+    assert.match(error.message, /permission denied/i);
+  });
 });
+
