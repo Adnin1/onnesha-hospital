@@ -1153,11 +1153,11 @@ BEGIN
     IF v_paid > 0 THEN
         v_receipt_number := public.generate_receipt_number(p_org_id);
         INSERT INTO public.payments (
-            organization_id, invoice_id, patient_id, amount,
-            payment_method, transaction_reference, cashier_id,
+            organization_id, invoice_id, amount,
+            payment_method, gateway_transaction_id, cashier_id,
             receipt_number, payment_date, created_at
         ) VALUES (
-            p_org_id, v_invoice_id, p_patient_id, v_paid,
+            p_org_id, v_invoice_id, v_paid,
             UPPER(COALESCE(p_payment_method, 'CASH')), p_gateway_transaction_id, v_cashier_uuid,
             v_receipt_number, NOW(), NOW()
         ) RETURNING id INTO v_payment_id;
@@ -1643,14 +1643,13 @@ BEGIN
     SET is_voided = TRUE,
         status = 'VOID',
         voided_by = v_calling_user_id,
-        voided_at = NOW(),
         void_reason = p_reason,
         updated_at = NOW()
     WHERE id = p_invoice_id;
 
     -- Reverse General Ledger Billing Journal Entry
     SELECT * INTO v_je FROM public.journal_entries
-    WHERE reference_type = 'INVOICE' AND reference_id = p_invoice_id AND organization_id = p_org_id AND is_reversed = FALSE
+    WHERE reference_type = 'INVOICE' AND reference_id = p_invoice_id AND organization_id = p_org_id AND status = 'POSTED'
     LIMIT 1;
 
     IF v_je.id IS NOT NULL THEN
@@ -1679,7 +1678,7 @@ BEGIN
 
         -- Reverse Commission GL Journal Entry
         SELECT * INTO v_je FROM public.journal_entries
-        WHERE reference_type = 'REFERRAL_COMMISSION' AND reference_id = v_comm.id AND organization_id = p_org_id AND is_reversed = FALSE
+        WHERE reference_type = 'REFERRAL_COMMISSION' AND reference_id = v_comm.id AND organization_id = p_org_id AND status = 'POSTED'
         LIMIT 1;
 
         IF v_je.id IS NOT NULL THEN
