@@ -847,6 +847,7 @@ export async function createIpdAdmissionAction(params: {
   wardId?: string;
   bedId?: string;
   provisionalDiagnosis: string;
+  referralAgentId?: string;
 }): Promise<ActionResult<{ visit: PatientVisit }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
@@ -937,6 +938,30 @@ export async function createIpdAdmissionAction(params: {
       diagnosisName: params.provisionalDiagnosis,
       diagnosisType: "PROVISIONAL",
     });
+
+    // Assign Referral Attribution if referralAgentId provided
+    if (params.referralAgentId) {
+      const { data: agent } = await supabase
+        .from("referral_agents")
+        .select("id, agent_code, full_name, is_active")
+        .eq("id", params.referralAgentId)
+        .eq("organization_id", session.organizationId)
+        .maybeSingle();
+
+      if (agent && agent.is_active) {
+        await supabase.from("patient_referral_attributions").insert({
+          organization_id: session.organizationId,
+          patient_id: params.patientId,
+          visit_id: newVisit.id,
+          referral_agent_id: agent.id,
+          referral_code_snapshot: agent.agent_code,
+          referral_name_snapshot: agent.full_name,
+          assigned_by: session.userId,
+          status: "ACTIVE",
+          notes: "Attributed during IPD admission",
+        });
+      }
+    }
 
     await recordAuditLog({
       userId: session.userId,

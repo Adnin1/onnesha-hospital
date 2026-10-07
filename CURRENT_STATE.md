@@ -13,9 +13,9 @@
 
 ## 1. Executive Summary
 
-The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, hardened hardware integration software layers (ZKTeco binary user provisioning and TCP socket protocol, DICOM PACS network server with association negotiation and durable disk storage, durable LIS analyzer bridge with fail-closed native transport, and ESC/POS Bangla raster typography), and unified versioning across all configurations at **`1.1.48`**.
+The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, hardened hardware integration software layers (ZKTeco binary user provisioning and TCP socket protocol, DICOM PACS network server with association negotiation and durable disk storage, durable LIS analyzer bridge with fail-closed native transport, and ESC/POS Bangla raster typography), and the complete implementation of the **Enterprise Referral & Affiliate Partner Commission Subsystem** across database, server actions, accounting general ledger coupling, and management UI at **`1.1.48`**.
 
-Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 108 synchronized migrations, 109 passing automated test suites (963 active passed tests, 0 failures, 6 hermetic skips), 35 passing hardware test specs, 59 audited static physical routes, and zero broken assets across 1056 validated resources.
+Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 109 synchronized migrations, 111 passing automated test suites (983 active passed tests, 0 failures, 6 hermetic skips), 35 passing hardware test specs, 59 audited static physical routes, and zero broken assets across 1056 validated resources.
 
 Final real-world operational commissioning requires on-site execution of 16 specific Owner & Operational Gates (G1–G16) covering physical hardware, commercial credentials, and administrative verifications.
 
@@ -45,13 +45,13 @@ In adherence to strict zero-false-green Git governance:
 | Metric Category | Target Invariant | Measured Production State | Verification Method |
 |:---|:---|:---|:---:|
 | **Application Version** | Exact Parity | **`1.1.48` across all 6 core manifests & configs** | Node manifest check |
-| **Test Suites** | 100% Passing | **109 / 109 suites passed** | `npm run test:certification` |
-| **Active Test Cases** | Zero Failures | **963 passed**, 0 failed, 6 hermetic skips | Node Test Runner (`node:test`) |
+| **Test Suites** | 100% Passing | **111 / 111 suites passed** | `npm run test:certification` |
+| **Active Test Cases** | Zero Failures | **983 passed**, 0 failed, 6 hermetic skips | Node Test Runner (`node:test`) |
 | **Hardware Tests** | 100% Passing | **35 / 35 hardware tests passed** (8 ZKTeco, 9 DICOM, 6 LIS, 6 Scanner, 6 ESC/POS) | `tests/hardware/*.test.mjs` |
 | **Strict Quality Gates** | Zero Warnings / Critical | **16 / 16 gates PASS** | `node scripts/project-health-check.mjs --strict` |
 | **TypeScript Compilation** | Zero Type Errors | **0 errors** (strict mode enabled) | `npm run typecheck` (`tsc --noEmit`) |
 | **ESLint Analysis** | Zero Lint Warnings | **0 errors, 0 warnings** | `npm run lint` (`eslint . --max-warnings 0`) |
-| **Database Migrations** | 100% Schema Parity | **108 / 108 migrations in parity** | `npx supabase migration list` |
+| **Database Migrations** | 100% Schema Parity | **109 / 109 migrations in parity** | `npx supabase migration list` |
 | **Database Linting** | Zero Fatal Errors | **0 fatal errors, 0 syntax violations** | `npx supabase db lint --linked` |
 | **Production Dependencies**| Zero High/Critical CVEs | **0 vulnerabilities** | `npm audit --audit-level=high` |
 | **Secret Scanning** | Zero Leaked Tokens | **0 hardcoded secrets** in production source | Regex scan in health check Gate 3 |
@@ -84,6 +84,16 @@ In adherence to strict zero-false-green Git governance:
 - **Manifest:** `public/downloads/desktop/latest.json` synchronized to version `1.1.48`.
 - **Internal Managed-PC Trust:** `scripts/Install-OHMS-TrustedCertificate.ps1` provisioned for local hospital workstation trust without SmartScreen interruptions.
 - **Public Authenticode Gate:** G15 formally isolated pending owner EV hardware token.
+
+### 4.5 Enterprise Referral & Affiliate Partner Commission Subsystem
+- **Authoritative Database Migration:** `supabase/migrations/20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 109/109 local-to-remote parity and 0 fatal lint errors.
+- **Sequential Partner & Settlement Sequences:** `referral_agent_code_seq` (`REF-10001`+) and `referral_settlement_seq` (`SET-001001`+) eliminating brittle timestamp-based codes.
+- **1%–40% Commission Invariant:** Enforced at database schema level via CHECK constraint (`commission_rate_percent >= 1.00 AND commission_rate_percent <= 40.00`).
+- **Discount-Aware Net Base:** Commission calculated strictly on final net patient bill after hospital discounts (`commission_base = grand_total`, `commission_amount = ROUND(grand_total * rate / 100, 2)`).
+- **Encounter-Scoped Patient Attribution:** Integrated into IPD admissions via `admit_patient_to_bed_atomic` and visit attributions with zero cashier/patient receipt exposure.
+- **Double-Entry General Ledger Coupling:** Accrual posts Dr 5400 (Commission Expense) / Cr 2030 (Commissions Payable); settlement posts Dr 2030 (Commissions Payable) / Cr 1010/1020 (Cash/Bank) with balanced debits and credits.
+- **Confidentiality & Privacy Shield:** `search_active_referral_agents` RPC masks all financial rates; patient-facing A4 and thermal invoices strictly hide commission data.
+- **Comprehensive Verification:** 14 integration test scenarios and 6 RBAC/privacy security test scenarios (20 total scenarios) 100% passing.
 
 ---
 

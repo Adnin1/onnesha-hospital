@@ -29,13 +29,13 @@
 
 | Metric | Target | Measured Ground Truth | Status |
 |:---|:---:|:---|:---:|
-| **Test Suites** | 100% | **109 / 109 suites passing** | ✅ PASS |
-| **Active Test Cases** | Zero Failures | **963 passed**, 0 failed, 6 hermetic skips | ✅ PASS |
+| **Test Suites** | 100% | **111 / 111 suites passing** | ✅ PASS |
+| **Active Test Cases** | Zero Failures | **983 passed**, 0 failed, 6 hermetic skips | ✅ PASS |
 | **Hardware Tests** | 100% | **35 / 35 tests passing** (8 ZKTeco, 9 DICOM, 6 LIS, 6 Scanner, 6 ESC/POS) | ✅ PASS |
 | **Strict Health Check Gates** | 16 / 16 | **16 / 16 gates passed** (`project-health-check.mjs --strict`) | ✅ PASS |
 | **TypeScript Strict Mode** | 0 Errors | **0 errors** (`tsc --noEmit`) | ✅ PASS |
 | **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint . --max-warnings 0`) | ✅ PASS |
-| **Supabase Remote Migrations** | 100% | **108 / 108 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
+| **Supabase Remote Migrations** | 100% | **109 / 109 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
 | **Database Linting** | 0 Fatal Errors | **0 fatal errors** (14 informational unused-param warnings) | ✅ PASS |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ PASS |
 | **Playwright Chromium E2E** | 100% | **50 / 50 browser specs passed** (59.6s, 0 failures) | ✅ PASS |
@@ -101,6 +101,11 @@
     - *Problem:* Post-deployment documentation updates historically produced secondary commits that left runtime deployment SHAs out of direct textual sync with documentation commits.
     - *Fix:* Established `docs/CONTINUATION_PROTOCOL.md` and enforced the strict atomic invariant `FINAL_HEAD == REMOTE_HEAD == BUILD_HEAD == DEPLOYMENT_HEAD`, synchronizing all ledgers before final static export build and edge deployment.
     - *Verification:* Verified via `scripts/auto-deploy.mjs`, git remote parity, and Cloudflare Pages edge deployment.
+
+12. **`FEAT-REF-01` (Enterprise Referral & Affiliate Partner Commission Subsystem):**
+    - *Scope:* Delivered complete partner referral module featuring 1%–40% commission bounds, discount-aware net billing base (`commission_base = grand_total`), non-retroactive rate change history, multi-invoice payout settlements, double-entry General Ledger coupling (Accounts 2030 & 5400), cashier/patient invoice confidentiality, and IPD admission attribution.
+    - *Database:* Migration `20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 109/109 parity and 0 fatal lint errors.
+    - *Verification:* Verified via `tests/integration/referral-commission-system.test.mjs` (14/14 tests passing) and `tests/security/referral-rbac-and-isolation.test.mjs` (6/6 tests passing); total 111 suites passing (983 tests passed).
 
 ---
 

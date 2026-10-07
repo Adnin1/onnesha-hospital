@@ -18,6 +18,7 @@ import {
   dischargePatientAction,
   transferPatientAction,
 } from "@/lib/patient/actions";
+import { searchReferralAgentsAction } from "@/lib/referrals/actions";
 import { getCurrentUserSession } from "@/lib/auth/session";
 
 interface InpatientRecord {
@@ -62,7 +63,11 @@ export default function IPDAdmissionsPage() {
     patientCodeOrId: "",
     provisionalDiagnosis: "",
     bedId: "",
+    referralAgentId: "",
   });
+  const [availableReferrals, setAvailableReferrals] = useState<
+    { id: string; agent_code: string; full_name: string }[]
+  >([]);
 
   const [transferForm, setTransferForm] = useState({
     toBedId: "",
@@ -211,6 +216,16 @@ export default function IPDAdmissionsPage() {
           }));
           setAvailableBeds(mappedBeds);
         }
+
+        // Fetch active referral partners
+        try {
+          const refRes = await searchReferralAgentsAction();
+          if (refRes.success && refRes.data) {
+            setAvailableReferrals(refRes.data);
+          }
+        } catch {
+          // Non-blocking for IPD load
+        }
       } catch (err: unknown) {
         console.error("[IPD loadData] error:", err);
         setActionError("Failed to load IPD patient and bed directory.");
@@ -254,6 +269,7 @@ export default function IPDAdmissionsPage() {
         patientId: patient.id,
         bedId: admissionForm.bedId || undefined,
         provisionalDiagnosis: admissionForm.provisionalDiagnosis,
+        referralAgentId: admissionForm.referralAgentId || undefined,
       });
 
       if (!res.success) {
@@ -261,7 +277,12 @@ export default function IPDAdmissionsPage() {
       } else {
         setActionSuccess("Patient successfully admitted to IPD.");
         setShowAdmissionModal(false);
-        setAdmissionForm({ patientCodeOrId: "", provisionalDiagnosis: "", bedId: "" });
+        setAdmissionForm({
+          patientCodeOrId: "",
+          provisionalDiagnosis: "",
+          bedId: "",
+          referralAgentId: "",
+        });
         setRefreshIndex((prev) => prev + 1);
       }
     } catch (err: unknown) {
@@ -580,6 +601,24 @@ export default function IPDAdmissionsPage() {
                   {availableBeds.map((b) => (
                     <option key={b.id} value={b.id} disabled={b.status === "OCCUPIED"}>
                       {b.bed_number} ({b.ward_name}) - {b.status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Referred By / Partner (Optional)
+                </label>
+                <select
+                  value={admissionForm.referralAgentId}
+                  onChange={(e) => setAdmissionForm({ ...admissionForm, referralAgentId: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden bg-white"
+                >
+                  <option value="">-- Direct Hospital Admission (No Referral) --</option>
+                  {availableReferrals.map((ref) => (
+                    <option key={ref.id} value={ref.id}>
+                      {ref.agent_code} - {ref.full_name}
                     </option>
                   ))}
                 </select>
