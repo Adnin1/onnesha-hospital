@@ -8,7 +8,7 @@
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (112 Migrations in 100% Parity)  
+**Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (114 Migrations in 100% Parity)  
 **Release Governance State:** `SOFTWARE VERIFIED — 16 OWNER GATES REMAIN (G1–G16)`  
 
 ---
@@ -24,12 +24,12 @@ This state ledger provides the persistent, authoritative single source of truth 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
 | **Repository Version** | `1.1.50` | Synchronized across project manifests | ✅ Synchronized |
-| **Total Test Suites** | `114 suites` | 100% of discovered test files passing | ✅ 114 / 114 Passing |
-| **Active Test Passes** | `1018 tests` | 0 failures, 0 regressions | ✅ 1018 Active Passes |
+| **Total Test Suites** | `115 suites` | 100% of discovered test files passing | ✅ 115 / 115 Passing |
+| **Active Test Passes** | `1022 tests` | 0 failures, 0 regressions | ✅ 1022 Active Passes |
 | **Standard Skips** | `7 tests` | Explicitly justified environmental/destructive skips | ✅ 7 Standard Skips |
-| **Disaster Recovery & Restore** | `Multi-Tier Model` | 112 Migrations in Git, Service-role snapshot utility, DB SSL active, WAL-G verified | ✅ Certified Ready |
+| **Disaster Recovery & Restore** | `Multi-Tier Model` | 114 Migrations in Git, Service-role snapshot utility, DB SSL active, WAL-G verified | ✅ Certified Ready |
 | **Browser Matrix E2E Tests** | `200 specs` | 100% pass across 4 browser engines | ✅ 200 / 200 Passing |
-| **Database Migrations** | `112 files` | Idempotent, sequential, fail-closed SQL | ✅ 112 Migrations (100% Remote Parity) |
+| **Database Migrations** | `114 files` | Idempotent, sequential, fail-closed SQL | ✅ 114 Migrations (100% Remote Parity) |
 | **TypeScript (tsc)** | `0 errors` | `tsc --noEmit` clean exit code 0 | ✅ Zero Errors |
 | **ESLint** | `0 warnings` | `eslint . --max-warnings 0` exit code 0 | ✅ Zero Warnings |
 | **Static Next.js Build** | `output: "export"` | 61 compilation units prerendered cleanly | ✅ Clean Build |
@@ -54,7 +54,7 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | # | Gate Name | Technical & Governance Mandate | Current Measured State | Status |
 |:---|:---|:---|:---|:---|
-| **1** | **Mandatory CI Quality & Security** | Hermetic `Mandatory CI` passing with zero errors (typecheck, lint, audit, build, 114 suites, Playwright matrix) | `Mandatory CI` = SUCCESS (114 Suites, 1018 Active Passes, 0 Failures, 7 Skips) | ✅ CERTIFIED GREEN |
+| **1** | **Mandatory CI Quality & Security** | Hermetic `Mandatory CI` passing with zero errors (typecheck, lint, audit, build, 115 suites, Playwright matrix) | `Mandatory CI` = SUCCESS (115 Suites, 1022 Active Passes, 0 Failures, 7 Skips) | ✅ CERTIFIED GREEN |
 | **2** | **Dedicated Staging Live Security Gate (G10)** | Dedicated staging Supabase project execution with `OHMS_TEST_*` credentials | Secrets not provisioned in GitHub repo; isolated as external prerequisite | 🟡 OWNER GATE (Staging Secrets) |
 | **3** | **Referral & Commission Subsystem** | Partner directory, code generation, attribution, rate immutability, approval workflow, Model A void, admission attribution, billing auto-suggestion | 32/32 referral & billing integration tests pass, in-database auth enforced, management RLS active | ✅ CERTIFIED GREEN |
 | **4** | **Edge Production Deployment** | Live edge deployment with full security headers and route integrity | Deployed to Cloudflare Pages (`https://onnesha-hospital.pages.dev`), 200 OK | ✅ LIVE DEPLOYED |

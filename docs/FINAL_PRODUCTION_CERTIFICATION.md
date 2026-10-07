@@ -8,7 +8,7 @@
 **Prior Release Tag:** `v1.1.49` (Immutable anchor preserved)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (112 Migrations in Full Parity)  
+**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (114 Migrations in Full Parity)  
 
 ---
 
@@ -18,12 +18,12 @@
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
 | **Referral & Affiliate Subsystem** | **CERTIFIED COMPLETE** | Master directory, 1%-40% bounds, approval workflow, in-db auth, Model A void |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 114/114 Test Suites Passed (1018 Active Passes, 0 Failures, 7 Hermetic Skips) |
-| **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 112 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 115/115 Test Suites Passed (1022 Active Passes, 0 Failures, 7 Hermetic Skips) |
+| **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 114 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
 | **Real Browser Matrix E2E** | **CERTIFIED COMPLETE** | 200/200 Specs Passing across Chromium, Firefox, WebKit, Mobile Chrome |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 61 Units Prerendered, 0 Broken Links / 0 Broken Assets |
 | **Live Production Smoke** | **CERTIFIED COMPLETE** | Root & /app/referrals 200 OK, full CSP, HSTS, X-Frame-Options on Edge |
-| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 112 Migrations Applied Remotely, RLS Enabled on All Tables, 0 Anon Leaks |
+| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 114 Migrations Applied Remotely, RLS Enabled on All Tables, 0 Anon Leaks |
 | **CI/CD Security Gating** | **CERTIFIED COMPLETE** | Mandatory CI passed, G10 Staging Gate classified as Owner Prerequisite |
 | **Hospital Physical Commissioning** | **OWNER GATES PENDING** | Requires Hardware, Live Merchant Keys, Staff UAT & Statutory Sign-offs (G1–G16) |
 
@@ -50,12 +50,12 @@
 ========================================
            OHMS TEST SUMMARY            
 ========================================
-Total Test Suites:    114
-Passed Suites:        114
+Total Test Suites:    115
+Passed Suites:        115
 Failed Suites:        0
 ----------------------------------------
-Total Test Cases:     1025
-  • ACTIVE_PASS:      1018
+Total Test Cases:     1029
+  • ACTIVE_PASS:      1022
   • ACTIVE_FAIL:      0
   • SKIPPED / OTHER:  7
     - STANDARD_SKIP:  7 (Explicitly justified environmental/service role/destructive restore skips)
@@ -93,7 +93,7 @@ Total Test Cases:     1025
 4. **Model A Invoice Privacy & Suppression:**
    - Added explicit cashier override ("No Referral" / suppression ID `00000000-0000-0000-0000-000000000000`) and patient-facing commission invisibility.
 5. **Database Migration Parity Reconciliation:**
-   - 112 local migrations confirmed (`npx supabase migration list` parity).
+   - 114 local migrations confirmed (`npx supabase migration list` parity).
 
 ---
 
@@ -104,11 +104,11 @@ RELEASE_VERSION=1.1.50
 RELEASE_TAG=v1.1.50
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
-SUITES_DISCOVERED=114
-SUITES_PASSED=114
+SUITES_DISCOVERED=115
+SUITES_PASSED=115
 SUITES_FAILED=0
-ACTIVE_TESTS=1018
-ACTIVE_PASS=1018
+ACTIVE_TESTS=1022
+ACTIVE_PASS=1022
 ACTIVE_FAIL=0
 SKIPPED=7
 CANCELLED=0
@@ -122,8 +122,8 @@ LINT=PASS
 NPM_AUDIT=PASS
 SECURITY_TEST=PASS
 LIVE_DB_TEST=PASS (12/12)
-DATABASE_MIGRATIONS=112
-DATABASE_PARITY=100% (112/112)
+DATABASE_MIGRATIONS=114
+DATABASE_PARITY=100% (114/114)
 RLS=PASS
 SECURITY_DEFINER=PASS
 ACCOUNTING_INTEGRITY=PASS
