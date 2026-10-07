@@ -101,6 +101,8 @@ export function UnifiedPatientIntakeModal({
   const [ipdCabinId, setIpdCabinId] = useState("");
   const [ipdDiagnosis, setIpdDiagnosis] = useState("");
   const [referralAgentId, setReferralAgentId] = useState("");
+  const [admissionDiscountAmount, setAdmissionDiscountAmount] = useState<number | "">("");
+  const [admissionDiscountReason, setAdmissionDiscountReason] = useState("");
 
   const [criticalUnitId, setCriticalUnitId] = useState("");
   const [criticalBedNumber, setCriticalBedNumber] = useState("");
@@ -133,31 +135,36 @@ export function UnifiedPatientIntakeModal({
     let alive = true;
     async function loadOptions() {
       setLoadingOptions(true);
-      const supabase = createClient();
-      const [depRes, docRes, bedRes, cabinRes, unitRes, refRes] = await Promise.all([
-        supabase.from("departments").select("id, name").eq("is_active", true).order("name"),
-        supabase.from("doctors").select("id, full_name, opd_fee, specialization").eq("is_active", true).order("full_name"),
-        supabase.from("beds").select("id, bed_number, status, daily_rate, wards(name)").eq("is_active", true).order("bed_number"),
-        supabase.from("cabins").select("id, cabin_number, status, daily_rate, cabin_type").order("cabin_number"),
-        supabase.from("critical_care_units").select("id, unit_name, unit_type, daily_charge").eq("is_active", true).order("unit_name"),
-        searchReferralAgentsAction(""),
-      ]);
-      if (!alive) return;
-      if (depRes.data) setDepartments(depRes.data as Option[]);
-      if (docRes.data) setDoctors(docRes.data as DoctorOption[]);
-      if (bedRes.data) {
-        setBeds((bedRes.data as unknown as Array<BedOption & { wards?: { name?: string } | null }>).map((b) => ({
-          ...b,
-          daily_rate: Number(b.daily_rate || 0),
-          ward_name: b.wards?.name,
-        })));
+      try {
+        const supabase = createClient();
+        const [depRes, docRes, bedRes, cabinRes, unitRes, refRes] = await Promise.allSettled([
+          supabase.from("departments").select("id, name").eq("is_active", true).order("name"),
+          supabase.from("doctors").select("id, full_name, opd_fee, specialization").eq("is_active", true).order("full_name"),
+          supabase.from("beds").select("id, bed_number, status, daily_rate, wards(name)").eq("is_active", true).order("bed_number"),
+          supabase.from("cabins").select("id, cabin_number, status, daily_rate, cabin_type").order("cabin_number"),
+          supabase.from("critical_care_units").select("id, unit_name, unit_type, daily_charge").eq("is_active", true).order("unit_name"),
+          searchReferralAgentsAction(""),
+        ]);
+        if (!alive) return;
+        if (depRes.status === "fulfilled" && depRes.value.data) setDepartments(depRes.value.data as Option[]);
+        if (docRes.status === "fulfilled" && docRes.value.data) setDoctors(docRes.value.data as DoctorOption[]);
+        if (bedRes.status === "fulfilled" && bedRes.value.data) {
+          setBeds((bedRes.value.data as unknown as Array<BedOption & { wards?: { name?: string } | null }>).map((b) => ({
+            ...b,
+            daily_rate: Number(b.daily_rate || 0),
+            ward_name: b.wards?.name,
+          })));
+        }
+        if (cabinRes.status === "fulfilled" && cabinRes.value.data) setCabins((cabinRes.value.data as CabinOption[]).map((c) => ({ ...c, daily_rate: Number(c.daily_rate || 0) })));
+        if (unitRes.status === "fulfilled" && unitRes.value.data) setUnits((unitRes.value.data as UnitOption[]).map((u) => ({ ...u, daily_charge: Number(u.daily_charge || 0) })));
+        if (refRes.status === "fulfilled" && refRes.value.success && refRes.value.data) {
+          setReferrals(refRes.value.data.map((r) => ({ id: r.id, agent_code: r.agent_code, full_name: r.full_name })));
+        }
+      } catch (err) {
+        console.error("Failed to load intake options:", err);
+      } finally {
+        if (alive) setLoadingOptions(false);
       }
-      if (cabinRes.data) setCabins((cabinRes.data as CabinOption[]).map((c) => ({ ...c, daily_rate: Number(c.daily_rate || 0) })));
-      if (unitRes.data) setUnits((unitRes.data as UnitOption[]).map((u) => ({ ...u, daily_charge: Number(u.daily_charge || 0) })));
-      if (refRes.success && refRes.data) {
-        setReferrals(refRes.data.map((r) => ({ id: r.id, agent_code: r.agent_code, full_name: r.full_name })));
-      }
-      setLoadingOptions(false);
     }
     void loadOptions();
     return () => { alive = false; };
@@ -225,6 +232,9 @@ export function UnifiedPatientIntakeModal({
     setEmergencyName("");
     setEmergencyRelation("Father");
     setEmergencyPhone("");
+    setAdmissionDiscountAmount("");
+    setAdmissionDiscountReason("");
+    setReferralAgentId("");
   }
 
   async function submit(bypass = false, servicesOverride?: UnifiedPatientIntakePayload["services"]) {
@@ -262,6 +272,9 @@ export function UnifiedPatientIntakeModal({
     const payload: UnifiedPatientIntakePayload = {
       existingPatientId: selectedExisting?.id,
       encounterAt: toDhakaIso(encounterAt),
+      referralAgentId: referralAgentId || undefined,
+      admissionDiscountAmount: admissionDiscountAmount !== "" ? Number(admissionDiscountAmount) : undefined,
+      admissionDiscountReason: admissionDiscountReason.trim() || undefined,
       patient: mode === "NEW"
         ? {
             fullName,
@@ -440,10 +453,49 @@ export function UnifiedPatientIntakeModal({
             </section>
           )}
 
-          <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
-            <div className="flex items-center gap-2 mb-2"><Clock3 className="w-4 h-4 text-amber-700" /><h3 className="font-black text-slate-900 text-sm">Admission / Encounter Date & Time</h3></div>
-            <input type="datetime-local" value={encounterAt} onChange={(e) => setEncounterAt(e.target.value)} className={inputCls + " max-w-sm bg-white"} />
-            <p className="text-[11px] text-slate-500 mt-2">This is stored as the actual clinical start time (Asia/Dhaka). Created-at timestamps remain separate.</p>
+          <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Clock3 className="w-4 h-4 text-amber-700" />
+              <h3 className="font-black text-slate-900 text-sm">Admission, Referral & Intake Settings</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Field label="Admission / Encounter Date & Time">
+                <input type="datetime-local" value={encounterAt} onChange={(e) => setEncounterAt(e.target.value)} className={inputCls + " bg-white"} />
+              </Field>
+              <Field label="Referral Agent (Top-Level & IPD Sync)">
+                <select value={referralAgentId} onChange={(e) => setReferralAgentId(e.target.value)} className={inputCls + " bg-white"}>
+                  <option value="">No referral agent</option>
+                  {referrals.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.agent_code} — {r.full_name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Admission Discount (BDT)">
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0.00"
+                  value={admissionDiscountAmount}
+                  onChange={(e) => setAdmissionDiscountAmount(e.target.value === "" ? "" : Number(e.target.value))}
+                  className={inputCls + " bg-white font-mono"}
+                />
+              </Field>
+            </div>
+            {admissionDiscountAmount !== "" && Number(admissionDiscountAmount) > 0 && (
+              <Field label="Admission Discount Reason / Authorization">
+                <input
+                  value={admissionDiscountReason}
+                  onChange={(e) => setAdmissionDiscountReason(e.target.value)}
+                  placeholder="e.g. Director approval, poor patient concession, staff relative..."
+                  className={inputCls + " bg-white"}
+                />
+              </Field>
+            )}
+            <p className="text-[11px] text-slate-500">
+              Admission time is stored in Asia/Dhaka time. Referral agent and admission discounts automatically carry into episode billing.
+            </p>
           </section>
 
           <section className="space-y-3">

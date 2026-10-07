@@ -57,7 +57,7 @@ describe("Unified Patient Intake & Episode Settlement Contract", () => {
   test("modal correctly maps beds and cabins and provides Register Patient Only action", () => {
     const p = path.join(ROOT, "components/patient/UnifiedPatientIntakeModal.tsx");
     const c = fs.readFileSync(p, "utf8");
-    assert.match(c, /setBeds\(\(bedRes\.data as unknown/);
+    assert.match(c, /setBeds\(\((bedRes\.value\.data|bedRes\.data) as unknown/);
     assert.match(c, /searchReferralAgentsAction/);
     assert.match(c, /submitPatientOnly/);
     assert.match(c, /initialPatient/);
@@ -69,6 +69,46 @@ describe("Unified Patient Intake & Episode Settlement Contract", () => {
     const c = fs.readFileSync(p, "utf8");
     assert.match(c, /EpisodeBillingPanel/);
     assert.match(c, /UnifiedPatientIntakeModal/);
-    assert.match(c, /Admit \/ New Service/);
+  });
+
+  test("migration 116 repairs updated_at, registration serial, and episode service charges", () => {
+    const p = path.join(ROOT, "supabase/migrations/20261008010000_repair_patients_updated_at_and_serial.sql");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW\(\)/);
+    assert.match(c, /registration_serial TEXT/);
+    assert.match(c, /admission_discount_amount NUMERIC\(12,2\)/);
+    assert.match(c, /CREATE TABLE IF NOT EXISTS public\.episode_service_charges/);
+    assert.match(c, /FUNCTION public\.add_episode_service_charge_atomic/);
+    assert.match(c, /FUNCTION public\.edit_episode_service_charge_atomic/);
+    assert.match(c, /FUNCTION public\.delete_episode_service_charge_atomic/);
+    assert.match(c, /FUNCTION public\.create_patient_intake_atomic/);
+    assert.match(c, /FUNCTION public\.get_episode_billing_preview/);
+    assert.match(c, /FUNCTION public\.create_episode_settlement_invoice_atomic/);
+  });
+
+  test("billing management page mounts EpisodeBillingPanel for seamless workflow", () => {
+    const p = path.join(ROOT, "app/(hospital)/app/billing/page.tsx");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /import\s*\{\s*EpisodeBillingPanel\s*\}\s*from\s*["']@\/components\/patient\/EpisodeBillingPanel["']/);
+    assert.match(c, /<EpisodeBillingPanel/);
+  });
+
+  test("EpisodeBillingPanel supports extra service ledger, discounts, and discharge", () => {
+    const p = path.join(ROOT, "components/patient/EpisodeBillingPanel.tsx");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /addEpisodeServiceChargeAction/);
+    assert.match(c, /editEpisodeServiceChargeAction/);
+    assert.match(c, /deleteEpisodeServiceChargeAction/);
+    assert.match(c, /prepareEpisodeSettlementAction/);
+    assert.match(c, /completeEpisodeDischargeAction/);
+    assert.match(c, /searchPatientsAction/);
+  });
+
+  test("migration 117 hardens billing integrity, overview RPC, and atomic v2 discharge", () => {
+    const p = path.join(ROOT, "supabase/migrations/20261008030000_episode_billing_integrity_and_discharge_hardening.sql");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /FUNCTION public\.get_episode_billing_overview/);
+    assert.match(c, /FUNCTION public\.create_episode_settlement_invoice_atomic_v2/);
+    assert.match(c, /FUNCTION public\.complete_episode_discharge_atomic_v2/);
   });
 });

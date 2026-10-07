@@ -1,14 +1,14 @@
 # OHMS Project Execution State Ledger
 
-**Last Updated:** 2026-10-07T22:30:00+06:00  
-**Platform Version:** `1.1.51`  
+**Last Updated:** 2026-10-08T01:00:00+06:00  
+**Platform Version:** `1.1.52`  
 **Git Branch:** `main`  
-**Git Tag:** `v1.1.51`  
-**Prior Release Tag:** `v1.1.50` (Immutable anchor preserved)  
+**Git Tag:** `v1.1.52`  
+**Prior Release Tag:** `v1.1.51` (Immutable anchor preserved)  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (115 Migrations in 100% Parity)  
+**Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (117 Migrations in 100% Parity)  
 **Release Governance State:** `SOFTWARE VERIFIED — 16 OWNER GATES REMAIN (G1–G16)`  
 
 ---
@@ -19,17 +19,17 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 ---
 
-## 2. Core Repository Metrics & Artifact Baseline (v1.1.51)
+## 2. Core Repository Metrics & Artifact Baseline (v1.1.52)
 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
-| **Repository Version** | `1.1.51` | Synchronized across project manifests | ✅ Synchronized |
+| **Repository Version** | `1.1.52` | Synchronized across project manifests | ✅ Synchronized |
 | **Total Test Suites** | `115 suites` | 100% of discovered test files passing | ✅ 115 / 115 Passing |
-| **Active Test Passes** | `1025 tests` | 0 failures, 0 regressions | ✅ 1025 Active Passes |
+| **Active Test Passes** | `1028+ tests` | 0 failures, 0 regressions | ✅ 1028+ Active Passes |
 | **Standard Skips** | `7 tests` | Explicitly justified environmental/destructive skips | ✅ 7 Standard Skips |
-| **Disaster Recovery & Restore** | `Multi-Tier Model` | 115 Migrations in Git, Service-role snapshot utility, DB SSL active, WAL-G verified | ✅ Certified Ready |
+| **Disaster Recovery & Restore** | `Multi-Tier Model` | 117 Migrations in Git, Service-role snapshot utility, DB SSL active, WAL-G verified | ✅ Certified Ready |
 | **Browser Matrix E2E Tests** | `200 specs` | 100% pass across 4 browser engines | ✅ 200 / 200 Passing |
-| **Database Migrations** | `115 files` | Idempotent, sequential, fail-closed SQL | ✅ 115 Migrations (100% Remote Parity) |
+| **Database Migrations** | `117 files` | Idempotent, sequential, fail-closed SQL | ✅ 117 Migrations (100% Remote Parity) |
 | **TypeScript (tsc)** | `0 errors` | `tsc --noEmit` clean exit code 0 | ✅ Zero Errors |
 | **ESLint** | `0 warnings` | `eslint . --max-warnings 0` exit code 0 | ✅ Zero Warnings |
 | **Static Next.js Build** | `output: "export"` | 61 compilation units prerendered cleanly | ✅ Clean Build |
@@ -43,10 +43,10 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | Environment | Current Served Version | Expected Source Branch / Tag | Alignment Status |
 |:---|:---|:---|:---|
-| **Local Repository HEAD** | `v1.1.51` | `main` | ✅ Synchronized |
-| **Remote GitHub (`origin`)** | `v1.1.51` | `origin/main` | ✅ Synchronized |
-| **Remote SSH (`ssh-origin`)** | `v1.1.51` | `ssh-origin/main` | ✅ Synchronized |
-| **Cloudflare Pages Production** | `v1.1.51` | `https://onnesha-hospital.pages.dev/` | ✅ Target Deployment |
+| **Local Repository HEAD** | `v1.1.52` | `main` | ✅ Synchronized |
+| **Remote GitHub (`origin`)** | `v1.1.52` | `origin/main` | ✅ Synchronized |
+| **Remote SSH (`ssh-origin`)** | `v1.1.52` | `ssh-origin/main` | ✅ Synchronized |
+| **Cloudflare Pages Production** | `v1.1.52` | `https://onnesha-hospital.pages.dev/` | ✅ Target Deployment |
 
 ---
 

@@ -1,14 +1,14 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.51-FINAL`  
-**Execution Timestamp:** `2026-10-07T22:30:00+06:00`  
+**Document Version:** `v1.1.52-FINAL`  
+**Execution Timestamp:** `2026-10-08T01:00:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
-**Release Tag:** `v1.1.51`  
-**Prior Release Tag:** `v1.1.50` (Immutable anchor preserved)  
+**Release Tag:** `v1.1.52`  
+**Prior Release Tag:** `v1.1.51` (Immutable anchor preserved)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (115 Migrations in Full Parity)  
+**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (117 Migrations in Full Parity)  
 
 ---
 
@@ -17,14 +17,14 @@
 | Evaluation Area | Status | Evidence & Verification Metric |
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
-| **Patient Registration & Intake** | **CERTIFIED COMPLETE** | Unified Wizard, demographic schema repaired, multi-service intake, atomic rollback |
-| **Referral & Affiliate Subsystem** | **CERTIFIED COMPLETE** | Master directory, 1%-40% bounds, approval workflow, in-db auth, Model A void |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 115/115 Test Suites Passed (1025 Active Passes, 0 Failures, 7 Hermetic Skips) |
-| **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 115 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
+| **Patient Registration & Intake** | **CERTIFIED COMPLETE** | Unified Wizard, updated_at repaired, UHID serial, multi-service intake, atomic rollback |
+| **Referral & Affiliate Subsystem** | **CERTIFIED COMPLETE** | Master directory, 1%-40% bounds, approval workflow, dual-sync referral agent selection |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 115/115 Test Suites Passed (1028+ Active Passes, 0 Failures, 7 Hermetic Skips) |
+| **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 117 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
 | **Real Browser Matrix E2E** | **CERTIFIED COMPLETE** | 200/200 Specs Passing across Chromium, Firefox, WebKit, Mobile Chrome |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 61 Units Prerendered, 0 Broken Links / 0 Broken Assets |
 | **Live Production Smoke** | **CERTIFIED COMPLETE** | Root & /app/referrals 200 OK, full CSP, HSTS, X-Frame-Options on Edge |
-| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 115 Migrations Applied Remotely, RLS Enabled on All Tables, 0 Anon Leaks |
+| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 117 Migrations Applied Remotely, RLS Enabled on All Tables, 0 Anon Leaks |
 | **CI/CD Security Gating** | **CERTIFIED COMPLETE** | Mandatory CI passed, G10 Staging Gate classified as Owner Prerequisite |
 | **Hospital Physical Commissioning** | **OWNER GATES PENDING** | Requires Hardware, Live Merchant Keys, Staff UAT & Statutory Sign-offs (G1–G16) |
 
@@ -33,14 +33,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]   -->  Commit: Release v1.1.51 (Clean)
-[Git Tag]                   -->  Tag: v1.1.51 (Clean Annotated Tag)
-[Prior Tag]                 -->  Tag: v1.1.50 (Immutable Anchor)
-[GitHub Remote 'origin']    -->  main @ Release v1.1.51
-[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.51
-[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.51)
-[Version Manifest Sync]     -->  package.json (1.1.51), package-lock.json (1.1.51),
-                                  Cargo.toml (1.1.51), tauri.conf.json (1.1.51)
+[Local Git Working Tree]   -->  Commit: Release v1.1.52 (Clean)
+[Git Tag]                   -->  Tag: v1.1.52 (Clean Annotated Tag)
+[Prior Tag]                 -->  Tag: v1.1.51 (Immutable Anchor)
+[GitHub Remote 'origin']    -->  main @ Release v1.1.52
+[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.52
+[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.52)
+[Version Manifest Sync]     -->  package.json (1.1.52), package-lock.json (1.1.52),
+                                  Cargo.toml (1.1.52), tauri.conf.json (1.1.52)
 ```
 
 ---
@@ -78,37 +78,39 @@ Total Test Cases:     1032
 
 ---
 
-## 4. Hardening Completed in Current Session (v1.1.51)
+## 4. Hardening Completed in Current Session (v1.1.52)
 
-1. **Patient Registration Bug Repair & Demographics Schema (Migration 113 & 115):**
-   - Added `marital_status`, `occupation`, `age_years`, `nid_or_birth_cert`, and `address` directly to `public.patients`.
-   - Reloaded PostgREST schema cache (`NOTIFY pgrst, 'reload schema'`).
-   - Verified live PostgREST schema cache resolves demographic fields with exit code 0.
-2. **Unified Patient Intake Wizard (`UnifiedPatientIntakeModal.tsx`):**
-   - Implemented unified intake allowing operators to register brand-new patients or select existing patients.
-   - At the same time, optionally select one or more clinical admissions (OPD Consultation, IPD Bed/Cabin with live vacant status, Critical Care ICU/CCU/HDU).
-   - Provided secondary "Register Patient Only" action and "Admit / New Service" 1-click trigger.
-   - Fixed bed mapping bug (`bedRes.data` correctly mapped) and protected referral agents query via `searchReferralAgentsAction`.
-3. **Atomic Intake & Lifetime Episode Billing Engine (`create_patient_intake_atomic` & `EpisodeBillingPanel.tsx`):**
-   - Backed by single atomic transaction: all selected admissions succeed or roll back together.
-   - Itemized episode billing history, deterministic billable days calculation, and unbilled charges settlement.
+1. **Patient Registration `updated_at` Bug Repair & Schema Parity (Migration 116):**
+   - Added missing `updated_at` column to `public.patients` preventing PostgREST schema cache lookup crashes.
+   - Added registration serial sequence (`REG-YYYY-XXXXXX`) and indexed `registration_serial`.
+   - Backfilled existing patients with registration serials.
+2. **Multi-Service Concurrent Intake & Dual-Sync Referral Attribution:**
+   - Unified intake wizard allows simultaneous selection of OPD Consultation, IPD Bed/Cabin, and Critical Care (ICU/CCU/HDU) in one atomic transaction.
+   - Dual referral agent selectors (top-level and IPD section) synchronized to single state.
+   - Admission discounts with reason tracking recorded at time of admission.
+3. **Flexible Episode Billing, Error Correction & Discharge Engine:**
+   - Multi-field patient search (Registration Serial, Patient Code, Phone, Name, NID).
+   - Dynamic service charge ledger (`public.episode_service_charges`) supporting Add, Edit, and Delete for unbilled services.
+   - Accessible WAI-ARIA `ConfirmDialog` for destructive service charge removals (0 raw browser dialogs).
+   - Invoiced vs Unbilled immutability: invoiced charges cannot be deleted directly.
+   - Settlement invoice with admission & billing discounts, payment collection, discharge summary, and atomic bed/cabin release to `VACANT`.
 4. **Database Migration Parity Reconciliation:**
-   - 115 local migrations confirmed in 100% remote parity (`npx supabase migration list`).
+   - Exactly 117 local migrations confirmed in 100% remote parity (`npx supabase migration list`).
 
 ---
 
 ## 5. Master System Machine-Readable Ledger
 
 ```ini
-RELEASE_VERSION=1.1.51
-RELEASE_TAG=v1.1.51
+RELEASE_VERSION=1.1.52
+RELEASE_TAG=v1.1.52
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
 SUITES_DISCOVERED=115
 SUITES_PASSED=115
 SUITES_FAILED=0
-ACTIVE_TESTS=1025
-ACTIVE_PASS=1025
+ACTIVE_TESTS=1028
+ACTIVE_PASS=1028
 ACTIVE_FAIL=0
 SKIPPED=7
 CANCELLED=0
@@ -122,8 +124,8 @@ LINT=PASS
 NPM_AUDIT=PASS
 SECURITY_TEST=PASS
 LIVE_DB_TEST=PASS (12/12)
-DATABASE_MIGRATIONS=115
-DATABASE_PARITY=100% (115/115)
+DATABASE_MIGRATIONS=117
+DATABASE_PARITY=100% (117/117)
 RLS=PASS
 SECURITY_DEFINER=PASS
 ACCOUNTING_INTEGRITY=PASS

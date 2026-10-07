@@ -240,7 +240,7 @@ export async function searchPatientsAction(params: {
       if (sanitized) {
         const normPhone = normalizeBDPhone(sanitized);
         query = query.or(
-          `patient_code.ilike.%${sanitized}%,full_name.ilike.%${sanitized}%,phone.ilike.%${sanitized}%,normalized_phone.ilike.%${normPhone}%`
+          `registration_serial.ilike.%${sanitized}%,patient_code.ilike.%${sanitized}%,full_name.ilike.%${sanitized}%,phone.ilike.%${sanitized}%,normalized_phone.ilike.%${normPhone}%,nid_or_birth_cert.ilike.%${sanitized}%`
         );
       }
     }
@@ -1389,6 +1389,9 @@ export interface UnifiedPatientIntakePayload {
       ventilatorRequired?: boolean;
     };
   };
+  referralAgentId?: string;
+  admissionDiscountAmount?: number;
+  admissionDiscountReason?: string;
   bypassDuplicateWarning?: boolean;
 }
 
@@ -1511,6 +1514,9 @@ export async function createUnifiedPatientIntakeAction(
       user_id: session.userId,
       existing_patient_id: payload.existingPatientId || null,
       encounter_at: encounterAt.toISOString(),
+      referral_agent_id: payload.referralAgentId || payload.services.ipd?.referralAgentId || null,
+      admission_discount_amount: payload.admissionDiscountAmount || 0,
+      admission_discount_reason: payload.admissionDiscountReason || null,
       patient: payload.patient
         ? {
             ...payload.patient,
@@ -1520,6 +1526,8 @@ export async function createUnifiedPatientIntakeAction(
             emergency_name: payload.patient.emergencyName,
             emergency_phone: payload.patient.emergencyPhone,
             emergency_relation: payload.patient.emergencyRelation,
+            admission_discount_amount: payload.admissionDiscountAmount || 0,
+            admission_discount_reason: payload.admissionDiscountReason || null,
           }
         : null,
       services: {

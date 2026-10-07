@@ -34,7 +34,9 @@ export interface PatientMaster {
   deceased_at?: string;
   deceased_reason?: string;
   is_deleted: boolean;
-  merged_into_patient_id?: UUID;
+  registration_serial?: string;
+  admission_discount_amount?: number;
+  admission_discount_reason?: string;
   created_at: string;
   updated_at: string;
   created_by?: UUID;

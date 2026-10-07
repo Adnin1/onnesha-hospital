@@ -524,6 +524,8 @@ export async function getCashRegisterSummaryAction(): Promise<
 
 export interface EpisodeBillingLine {
   reference_id: string;
+  charge_id?: string | null;
+  is_custom_charge?: boolean;
   service_category: string;
   item_name: string;
   unit_price: number;
@@ -595,11 +597,9 @@ export interface EpisodeInvoiceHistory {
   }>;
 }
 
-export async function getEpisodeBillingPreviewAction(params: {
-  patientId: string;
+export interface EpisodeBillingPreviewData {
   episodeId?: string;
-}): Promise<ActionResult<{
-  episodeId?: string;
+  episodeNumber?: string;
   primaryVisitId?: string;
   lines: EpisodeBillingLine[];
   encounters: EpisodeEncounterHistory[];
@@ -607,13 +607,21 @@ export async function getEpisodeBillingPreviewAction(params: {
   criticalCare: EpisodeCriticalCareHistory[];
   invoiceHistory: EpisodeInvoiceHistory[];
   total: number;
+  admissionDiscountAmount: number;
+  admissionDiscountReason?: string | null;
+  referralAgentId?: string | null;
   previousInvoiced: number;
   previousPaid: number;
   previousDue: number;
   episodeInvoiced: number;
   episodePaid: number;
   episodeDue: number;
-}>> {
+}
+
+export async function getEpisodeBillingPreviewAction(params: {
+  patientId: string;
+  episodeId?: string;
+}): Promise<ActionResult<EpisodeBillingPreviewData>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) return { success: false, error: "401 Unauthorized" };
 
@@ -639,6 +647,7 @@ export async function getEpisodeBillingPreviewAction(params: {
     const result = data as {
       success?: boolean;
       episode_id?: string | null;
+      episode_number?: string | null;
       primary_visit_id?: string | null;
       lines?: EpisodeBillingLine[];
       encounters?: EpisodeEncounterHistory[];
@@ -646,6 +655,9 @@ export async function getEpisodeBillingPreviewAction(params: {
       critical_care?: EpisodeCriticalCareHistory[];
       invoice_history?: EpisodeInvoiceHistory[];
       total?: number;
+      admission_discount_amount?: number;
+      admission_discount_reason?: string | null;
+      referral_agent_id?: string | null;
       previous_invoiced?: number;
       previous_paid?: number;
       previous_due?: number;
@@ -663,9 +675,12 @@ export async function getEpisodeBillingPreviewAction(params: {
       success: true,
       data: {
         episodeId: result.episode_id || undefined,
+        episodeNumber: result.episode_number || undefined,
         primaryVisitId: result.primary_visit_id || undefined,
         lines: (result.lines || []).map((line) => ({
           reference_id: String(line.reference_id),
+          charge_id: line.charge_id || null,
+          is_custom_charge: !!line.is_custom_charge,
           service_category: String(line.service_category),
           item_name: String(line.item_name),
           unit_price: Number(line.unit_price || 0),
@@ -694,6 +709,9 @@ export async function getEpisodeBillingPreviewAction(params: {
         })),
         invoiceHistory: result.invoice_history || [],
         total: Number(result.total || 0),
+        admissionDiscountAmount: Number(result.admission_discount_amount || 0),
+        admissionDiscountReason: result.admission_discount_reason || null,
+        referralAgentId: result.referral_agent_id || null,
         previousInvoiced: Number(result.previous_invoiced || 0),
         previousPaid: Number(result.previous_paid || 0),
         previousDue: Number(result.previous_due || 0),
@@ -707,9 +725,161 @@ export async function getEpisodeBillingPreviewAction(params: {
   }
 }
 
+export async function addEpisodeServiceChargeAction(params: {
+  patientId: string;
+  episodeId: string;
+  category: string;
+  itemName: string;
+  quantity: number;
+  unitPrice: number;
+  notes?: string;
+}): Promise<ActionResult<{ chargeId: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("billing.manage");
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.manage required" };
+  }
+
+  if (!params.itemName?.trim()) {
+    return { success: false, error: "Service or item name is required." };
+  }
+
+  if (params.quantity <= 0) {
+    return { success: false, error: "Quantity must be greater than zero." };
+  }
+
+  if (params.unitPrice < 0) {
+    return { success: false, error: "Unit price cannot be negative." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("add_episode_service_charge_atomic", {
+      p_org_id: session.organizationId,
+      p_episode_id: params.episodeId,
+      p_patient_id: params.patientId,
+      p_category: params.category,
+      p_item_name: params.itemName.trim(),
+      p_quantity: Number(params.quantity),
+      p_unit_price: Number(params.unitPrice),
+      p_notes: params.notes?.trim() || null,
+    });
+
+    if (error) return { success: false, error: error.message };
+
+    const res = data as { success?: boolean; charge_id?: string; error?: string };
+    if (!res?.success || !res?.charge_id) {
+      return { success: false, error: res?.error || "Failed to add unbilled service charge." };
+    }
+
+    return { success: true, data: { chargeId: res.charge_id } };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to add unbilled service charge." };
+  }
+}
+
+export async function editEpisodeServiceChargeAction(params: {
+  chargeId: string;
+  itemName: string;
+  quantity: number;
+  unitPrice: number;
+  notes?: string;
+}): Promise<ActionResult<{ chargeId: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("billing.manage");
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.manage required" };
+  }
+
+  if (!params.itemName?.trim()) {
+    return { success: false, error: "Service or item name is required." };
+  }
+
+  if (params.quantity <= 0) {
+    return { success: false, error: "Quantity must be greater than zero." };
+  }
+
+  if (params.unitPrice < 0) {
+    return { success: false, error: "Unit price cannot be negative." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("edit_episode_service_charge_atomic", {
+      p_org_id: session.organizationId,
+      p_charge_id: params.chargeId,
+      p_item_name: params.itemName.trim(),
+      p_quantity: Number(params.quantity),
+      p_unit_price: Number(params.unitPrice),
+      p_notes: params.notes?.trim() || null,
+    });
+
+    if (error) return { success: false, error: error.message };
+
+    const res = data as { success?: boolean; charge_id?: string; error?: string };
+    if (!res?.success) {
+      return { success: false, error: res?.error || "Failed to edit unbilled service charge." };
+    }
+
+    return { success: true, data: { chargeId: res.charge_id || params.chargeId } };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to edit unbilled service charge." };
+  }
+}
+
+export async function deleteEpisodeServiceChargeAction(params: {
+  chargeId: string;
+}): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("billing.manage");
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.manage required" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("delete_episode_service_charge_atomic", {
+      p_org_id: session.organizationId,
+      p_charge_id: params.chargeId,
+    });
+
+    if (error) return { success: false, error: error.message };
+
+    const res = data as { success?: boolean; error?: string };
+    if (!res?.success) {
+      return { success: false, error: res?.error || "Failed to remove unbilled service charge." };
+    }
+
+    return { success: true, data: { success: true } };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to remove unbilled service charge." };
+  }
+}
+
 export async function prepareEpisodeSettlementAction(params: {
   patientId: string;
   episodeId: string;
+  discountAmount?: number;
+  discountReason?: string;
+  initialPaymentAmount?: number;
+  paymentMethod?: PaymentRecord["payment_method"];
+  referralAgentId?: string;
+  notes?: string;
 }): Promise<ActionResult<{
   invoiceId?: string;
   invoiceNumber?: string;
@@ -734,6 +904,12 @@ export async function prepareEpisodeSettlementAction(params: {
       p_patient_id: params.patientId,
       p_episode_id: params.episodeId,
       p_cashier_id: session.userId,
+      p_discount_amount: Number(params.discountAmount || 0),
+      p_discount_reason: params.discountReason?.trim() || null,
+      p_initial_payment_amount: Number(params.initialPaymentAmount || 0),
+      p_payment_method: params.paymentMethod || "CASH",
+      p_referral_agent_id: params.referralAgentId || null,
+      p_notes: params.notes?.trim() || null,
     });
 
     if (error) return { success: false, error: error.message };

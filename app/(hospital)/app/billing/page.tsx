@@ -37,6 +37,7 @@ import { PatientMaster } from "@/types/clinical";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 import { Toast } from "@/components/ui/Toast";
+import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
 
 export default function BillingManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -443,6 +444,7 @@ export default function BillingManagementPage() {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
+          <EpisodeBillingPanel />
           <button
             onClick={() => setIsCreatingNew(true)}
             className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center shadow-xs"
