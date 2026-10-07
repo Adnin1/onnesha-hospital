@@ -6,7 +6,6 @@ import {
   Search,
   PlusCircle,
   FileText,
-  X,
   ChevronRight,
   Loader2,
   RefreshCw,
@@ -17,13 +16,12 @@ import { InvoiceRecord } from "@/types/billing";
 import { PrescriptionRecord, DiagnosticOrderRecord } from "@/types/clinical-emr";
 import {
   getPatientsAction,
-  registerPatientAction,
   getPatient360Action,
 } from "@/lib/patient/actions";
 import { getInvoicesAction } from "@/lib/billing/actions";
 import { getPrescriptionsAction } from "@/lib/prescriptions/actions";
 import { getDiagnosticOrdersAction } from "@/lib/lab/actions";
-import { formatCurrencyBDT, formatDateBDT, calculateAgeFromDOB } from "@/lib/utils";
+import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { Toast } from "@/components/ui/Toast";
 import { UnifiedPatientIntakeModal } from "@/components/patient/UnifiedPatientIntakeModal";
 import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
