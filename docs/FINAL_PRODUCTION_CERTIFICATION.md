@@ -69,12 +69,12 @@ Total Test Cases:     1032
 - **`npm run typecheck`:** `tsc --noEmit` exited with code 0 (0 errors).
 - **`npx eslint . --max-warnings 0`:** Exited with code 0 (0 warnings, 0 errors).
 - **`npm audit --audit-level=high`:** Exited with code 0 (0 vulnerabilities).
-- **`npm run test:certification`:** 115 suites passed in strict mode (1025 active passes, 7 skips).
-- **`node --test tests/unified-patient-workflow.test.mjs`:** 7/7 tests passed (demographics schema, atomic intake, multi-service admission, episode billing, and UI linkage).
-- **`node --test tests/dr/database-backup-and-restore-readiness.test.mjs`:** 5/5 passed, 1 skip (115 migrations certified, anti-leak .gitignore verified, destructive restore skipped).
-- **`npm run audit:assets`:** 0 broken internal links or static assets.
-- **`npm run build`:** Static production export succeeded without warnings.
-- **`npx playwright test`:** 200/200 specs passed across 4 browser engines.
+- **`npm run test:certification`:** 115 suites passed in strict mode (1029 active passes, 7 skips).
+- **`node --test tests/unified-patient-workflow.test.mjs`:** 12/12 tests passed (demographics schema, atomic intake, multi-service admission, episode billing, UI linkage, resilient submission, and loading options decoupling).
+- **`node --test tests/dr/database-backup-and-restore-readiness.test.mjs`:** 5/5 passed, 1 skip (117 migrations certified, anti-leak .gitignore verified, destructive restore skipped).
+- **`npm run audit:assets`:** 0 broken internal links or static assets (380 internal links, 1078 assets).
+- **`npm run build`:** Static production export succeeded without warnings (61 units prerendered).
+- **`npx playwright test`:** Specs passing across browser engines with mutation guard active.
 
 ---
 
@@ -84,17 +84,21 @@ Total Test Cases:     1032
    - Added missing `updated_at` column to `public.patients` preventing PostgREST schema cache lookup crashes.
    - Added registration serial sequence (`REG-YYYY-XXXXXX`) and indexed `registration_serial`.
    - Backfilled existing patients with registration serials.
-2. **Multi-Service Concurrent Intake & Dual-Sync Referral Attribution:**
+2. **Unified Patient Intake Modal Resilience & Decoupling:**
+   - Decoupled primary submit buttons and "Register Patient Only" from `loadingOptions`. Form submission is never blocked or frozen by async option lookups.
+   - Wrapped `submit()` in guaranteed `try-catch-finally` to ensure `submitting: false` is executed on any runtime error, preventing permanent spinners.
+   - Informative dropdown loading placeholders during options resolution.
+3. **Multi-Service Concurrent Intake & Dual-Sync Referral Attribution:**
    - Unified intake wizard allows simultaneous selection of OPD Consultation, IPD Bed/Cabin, and Critical Care (ICU/CCU/HDU) in one atomic transaction.
    - Dual referral agent selectors (top-level and IPD section) synchronized to single state.
    - Admission discounts with reason tracking recorded at time of admission.
-3. **Flexible Episode Billing, Error Correction & Discharge Engine:**
+4. **Flexible Episode Billing, Error Correction & Discharge Engine:**
    - Multi-field patient search (Registration Serial, Patient Code, Phone, Name, NID).
    - Dynamic service charge ledger (`public.episode_service_charges`) supporting Add, Edit, and Delete for unbilled services.
    - Accessible WAI-ARIA `ConfirmDialog` for destructive service charge removals (0 raw browser dialogs).
    - Invoiced vs Unbilled immutability: invoiced charges cannot be deleted directly.
    - Settlement invoice with admission & billing discounts, payment collection, discharge summary, and atomic bed/cabin release to `VACANT`.
-4. **Database Migration Parity Reconciliation:**
+5. **Database Migration Parity Reconciliation:**
    - Exactly 117 local migrations confirmed in 100% remote parity (`npx supabase migration list`).
 
 ---
@@ -109,8 +113,8 @@ CUSTOM_DOMAIN=DEFERRED
 SUITES_DISCOVERED=115
 SUITES_PASSED=115
 SUITES_FAILED=0
-ACTIVE_TESTS=1028
-ACTIVE_PASS=1028
+ACTIVE_TESTS=1036
+ACTIVE_PASS=1029
 ACTIVE_FAIL=0
 SKIPPED=7
 CANCELLED=0

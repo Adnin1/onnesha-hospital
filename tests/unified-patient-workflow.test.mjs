@@ -111,4 +111,11 @@ describe("Unified Patient Intake & Episode Settlement Contract", () => {
     assert.match(c, /FUNCTION public\.create_episode_settlement_invoice_atomic_v2/);
     assert.match(c, /FUNCTION public\.complete_episode_discharge_atomic_v2/);
   });
+
+  test("UnifiedPatientIntakeModal guarantees resilient submission and decoupling from option lookups", () => {
+    const p = path.join(ROOT, "components/patient/UnifiedPatientIntakeModal.tsx");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /finally\s*\{\s*setSubmitting\(false\);\s*\}/);
+    assert.doesNotMatch(c, /disabled=\{\s*submitting\s*\|\|\s*loadingOptions\s*\}/);
+  });
 });

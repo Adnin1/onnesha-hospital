@@ -297,35 +297,40 @@ export function UnifiedPatientIntakeModal({
       bypassDuplicateWarning: bypass,
     };
 
-    const result = await createUnifiedPatientIntakeAction(payload);
-    setSubmitting(false);
-
-    if (!result.success) {
-      if (result.duplicateWarning?.hasDuplicate && !bypass) {
-        setDuplicateWarning(
-          "Potential duplicate patient detected (" +
-          result.duplicateWarning.confidence +
-          "). Please select the existing patient or explicitly continue."
-        );
-        setDuplicateMatches(payload);
+    try {
+      const result = await createUnifiedPatientIntakeAction(payload);
+      if (!result.success) {
+        if (result.duplicateWarning?.hasDuplicate && !bypass) {
+          setDuplicateWarning(
+            "Potential duplicate patient detected (" +
+            result.duplicateWarning.confidence +
+            "). Please select the existing patient or explicitly continue."
+          );
+          setDuplicateMatches(payload);
+          return;
+        }
+        setErrorMsg(result.error || "Patient intake failed. No partial admission should have been committed.");
         return;
       }
-      setErrorMsg(result.error || "Patient intake failed. No partial admission should have been committed.");
-      return;
-    }
 
-    if (result.data) {
-      onSuccess?.({
-        patient: result.data.patient,
-        episodeId: result.data.episodeId,
-        episodeNumber: result.data.episodeNumber,
-      });
+      if (result.data) {
+        onSuccess?.({
+          patient: result.data.patient,
+          episodeId: result.data.episodeId,
+          episodeNumber: result.data.episodeNumber,
+        });
+      }
+      resetNewPatientFields();
+      setOpdEnabled(false);
+      setIpdEnabled(false);
+      setCriticalEnabled(false);
+      onClose();
+    } catch (err: unknown) {
+      console.error("Intake action error:", err);
+      setErrorMsg(err instanceof Error ? err.message : "An unexpected error occurred during patient intake.");
+    } finally {
+      setSubmitting(false);
     }
-    resetNewPatientFields();
-    setOpdEnabled(false);
-    setIpdEnabled(false);
-    setCriticalEnabled(false);
-    onClose();
   }
 
   function submitPatientOnly() {
@@ -464,7 +469,7 @@ export function UnifiedPatientIntakeModal({
               </Field>
               <Field label="Referral Agent (Top-Level & IPD Sync)">
                 <select value={referralAgentId} onChange={(e) => setReferralAgentId(e.target.value)} className={inputCls + " bg-white"}>
-                  <option value="">No referral agent</option>
+                  <option value="">{loadingOptions ? "Loading referral agents..." : "No referral agent"}</option>
                   {referrals.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.agent_code} — {r.full_name}
@@ -510,8 +515,8 @@ export function UnifiedPatientIntakeModal({
               <div className="rounded-2xl border border-sky-200 bg-sky-50/40 p-4 space-y-3">
                 <h4 className="font-bold text-slate-900 text-sm">OPD Consultation Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <Field label="Department"><select value={opdDepartmentId} onChange={(e) => setOpdDepartmentId(e.target.value)} className={inputCls}><option value="">Select department</option>{departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
-                  <Field label="Doctor"><select value={opdDoctorId} onChange={(e) => setOpdDoctorId(e.target.value)} className={inputCls}><option value="">Select doctor</option>{doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name} — {d.specialization || "Consultant"}</option>)}</select></Field>
+                  <Field label="Department"><select value={opdDepartmentId} onChange={(e) => setOpdDepartmentId(e.target.value)} className={inputCls}><option value="">{loadingOptions ? "Loading departments..." : "Select department"}</option>{departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
+                  <Field label="Doctor"><select value={opdDoctorId} onChange={(e) => setOpdDoctorId(e.target.value)} className={inputCls}><option value="">{loadingOptions ? "Loading doctors..." : "Select doctor"}</option>{doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name} — {d.specialization || "Consultant"}</option>)}</select></Field>
                   <Field label="Priority"><select value={opdPriority} onChange={(e) => setOpdPriority(e.target.value as "NORMAL" | "URGENT" | "CRITICAL")} className={inputCls}><option>NORMAL</option><option>URGENT</option><option>CRITICAL</option></select></Field>
                 </div>
                 <Field label="Chief Complaint / Reason"><input value={opdComplaint} onChange={(e) => setOpdComplaint(e.target.value)} className={inputCls} /></Field>
@@ -522,26 +527,26 @@ export function UnifiedPatientIntakeModal({
               <div className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 space-y-3">
                 <div className="flex items-center gap-2"><Bed className="w-4 h-4 text-indigo-700" /><h4 className="font-bold text-slate-900 text-sm">IPD / Bed / Cabin Details</h4></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <Field label="Department"><select value={ipdDepartmentId} onChange={(e) => setIpdDepartmentId(e.target.value)} className={inputCls}><option value="">Select department</option>{departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
-                  <Field label="Attending Doctor"><select value={ipdDoctorId} onChange={(e) => setIpdDoctorId(e.target.value)} className={inputCls}><option value="">Select doctor</option>{doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}</select></Field>
-                  <Field label="Referral Agent"><select value={referralAgentId} onChange={(e) => setReferralAgentId(e.target.value)} className={inputCls}><option value="">None</option>{referrals.map((r) => <option key={r.id} value={r.id}>{r.agent_code} — {r.full_name}</option>)}</select></Field>
+                  <Field label="Department"><select value={ipdDepartmentId} onChange={(e) => setIpdDepartmentId(e.target.value)} className={inputCls}><option value="">{loadingOptions ? "Loading departments..." : "Select department"}</option>{departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
+                  <Field label="Attending Doctor"><select value={ipdDoctorId} onChange={(e) => setIpdDoctorId(e.target.value)} className={inputCls}><option value="">{loadingOptions ? "Loading doctors..." : "Select doctor"}</option>{doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}</select></Field>
+                  <Field label="Referral Agent"><select value={referralAgentId} onChange={(e) => setReferralAgentId(e.target.value)} className={inputCls}><option value="">{loadingOptions ? "Loading referral agents..." : "None"}</option>{referrals.map((r) => <option key={r.id} value={r.id}>{r.agent_code} — {r.full_name}</option>)}</select></Field>
                 </div>
                 {availableBeds.length === 0 && availableCabins.length === 0 && (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <span>No vacant beds or cabins are currently available in IPD.</span>
+                    <span>{loadingOptions ? "Loading bed and cabin availability..." : "No vacant beds or cabins are currently available in IPD."}</span>
                   </div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Field label="Available Bed">
                     <select value={ipdBedId} onChange={(e) => { setIpdBedId(e.target.value); setIpdCabinId(""); }} className={inputCls}>
-                      <option value="">{availableBeds.length === 0 ? "No available beds" : "Select available bed"}</option>
+                      <option value="">{loadingOptions ? "Loading beds..." : availableBeds.length === 0 ? "No available beds" : "Select available bed"}</option>
                       {availableBeds.map((b) => <option key={b.id} value={b.id}>{b.bed_number} • {b.ward_name || "Ward"} • {b.daily_rate} BDT/day</option>)}
                     </select>
                   </Field>
                   <Field label="Available Cabin">
                     <select value={ipdCabinId} onChange={(e) => { setIpdCabinId(e.target.value); setIpdBedId(""); }} className={inputCls}>
-                      <option value="">{availableCabins.length === 0 ? "No available cabins" : "Select available cabin"}</option>
+                      <option value="">{loadingOptions ? "Loading cabins..." : availableCabins.length === 0 ? "No available cabins" : "Select available cabin"}</option>
                       {availableCabins.map((c) => <option key={c.id} value={c.id}>{c.cabin_number} • {c.cabin_type || "Cabin"} • {c.daily_rate} BDT/day</option>)}
                     </select>
                   </Field>
@@ -554,14 +559,14 @@ export function UnifiedPatientIntakeModal({
               <div className="rounded-2xl border border-rose-200 bg-rose-50/40 p-4 space-y-3">
                 <h4 className="font-bold text-slate-900 text-sm">Critical Care Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <Field label="Unit"><select value={criticalUnitId} onChange={(e) => { setCriticalUnitId(e.target.value); setCriticalBedNumber(""); }} className={inputCls}><option value="">Select unit</option>{units.map((u) => <option key={u.id} value={u.id}>{u.unit_name} • {u.daily_charge} BDT/day</option>)}</select></Field>
+                  <Field label="Unit"><select value={criticalUnitId} onChange={(e) => { setCriticalUnitId(e.target.value); setCriticalBedNumber(""); }} className={inputCls}><option value="">{loadingOptions ? "Loading units..." : "Select unit"}</option>{units.map((u) => <option key={u.id} value={u.id}>{u.unit_name} • {u.daily_charge} BDT/day</option>)}</select></Field>
                   <Field label="Critical-Care Bed">
                     <select value={criticalBedNumber} onChange={(e) => setCriticalBedNumber(e.target.value)} className={inputCls}>
-                      <option value="">Select available bed</option>
+                      <option value="">{loadingOptions ? "Loading beds..." : "Select available bed"}</option>
                       {availableBeds.filter((b) => /ICU|CCU|ICCU|SICU|MICU|PICU/i.test((b.ward_name || "") + " " + b.bed_number)).map((b) => <option key={b.id} value={b.bed_number}>{b.bed_number} • {b.ward_name || "Critical Care"}</option>)}
                     </select>
                   </Field>
-                  <Field label="Admitting Doctor"><select value={criticalDoctorId} onChange={(e) => setCriticalDoctorId(e.target.value)} className={inputCls}><option value="">Select doctor</option>{doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}</select></Field>
+                  <Field label="Admitting Doctor"><select value={criticalDoctorId} onChange={(e) => setCriticalDoctorId(e.target.value)} className={inputCls}><option value="">{loadingOptions ? "Loading doctors..." : "Select doctor"}</option>{doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}</select></Field>
                 </div>
                 <Field label="Initial Diagnosis"><input value={criticalDiagnosis} onChange={(e) => setCriticalDiagnosis(e.target.value)} className={inputCls} /></Field>
                 <label className="flex items-center gap-2 text-xs font-bold text-slate-700"><input type="checkbox" checked={ventilatorRequired} onChange={(e) => setVentilatorRequired(e.target.checked)} /> Ventilator required</label>
@@ -627,14 +632,14 @@ export function UnifiedPatientIntakeModal({
             {mode === "NEW" && (opdEnabled || ipdEnabled || criticalEnabled) && (
               <button
                 type="button"
-                disabled={submitting || loadingOptions}
+                disabled={submitting}
                 onClick={submitPatientOnly}
                 className="px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs disabled:opacity-50"
               >
                 Register Patient Only
               </button>
             )}
-            <button type="submit" disabled={submitting || loadingOptions} className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs disabled:opacity-50 flex items-center justify-center shadow-sm">
+            <button type="submit" disabled={submitting} className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs disabled:opacity-50 flex items-center justify-center shadow-sm">
               {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
               {mode === "EXISTING"
                 ? "Admit / Create Selected Services"
