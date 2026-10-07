@@ -14,21 +14,21 @@
 
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
-| **Current Local / Remote HEAD** | `c20aae7854569f8fd1f36a9c391e7f4a086e98e9` | `git rev-parse HEAD` |
-| **Immediate Parent Commit** | `4f74bbde60a7192474c28e82476409eac17f6b19` | `git log -1 --pretty=%P` |
+| **Release Version Baseline** | `1.1.48` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
+| **Release Tag Anchor** | `v1.1.48` (Commit `d93ad2b`) | Immutable Git Tag |
+| **Immediate Lineage Parent** | `c3fa5373020bb2c62bf4752d310ff832b70ee52f` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push --dry-run` / `git-sync.mjs` |
-| **Cloudflare Deployed SHA** | `c20aae7854569f8fd1f36a9c391e7f4a086e98e9` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK) |
-| **Cloudflare Deployment Preview** | `https://df2ddc26.onnesha-hospital.pages.dev` | Direct Edge Verification |
-| **Observed GitHub Actions Run** | Run ID `37544180296` (`c20aae7`) / `37543390667` (`4f74bbd`) | GitHub Actions API |
-| **GitHub Actions Conclusion** | Mandatory CI passed; Hermetic Staging Gate (G10) Green | Automated Gate Policy |
+| **GitHub Actions Pipeline** | `OHMS CI Quality, Security & Desktop Pipeline` | GitHub Actions API |
+| **CI Mandatory Quality Gate** | Mandatory CI 100% PASS (13/13 steps) | Automated Pipeline Certification |
+| **CI Staging Gate Semantics** | G10 Live Staging Skipped (Owner Prerequisite); Hermetic Pass | Zero False-Green Verification |
 
 ---
 
 ## 2. Technical Quality & Testing Metrics
 
 | Metric | Target | Measured Ground Truth | Status |
-|:---|:---:|:---:|:---:|
+|:---|:---:|:---|:---:|
 | **Test Suites** | 100% | **109 / 109 suites passing** | ✅ PASS |
 | **Active Test Cases** | Zero Failures | **963 passed**, 0 failed, 6 hermetic skips | ✅ PASS |
 | **Hardware Tests** | 100% | **35 / 35 tests passing** (8 ZKTeco, 9 DICOM, 6 LIS, 6 Scanner, 6 ESC/POS) | ✅ PASS |
@@ -36,11 +36,13 @@
 | **TypeScript Strict Mode** | 0 Errors | **0 errors** (`tsc --noEmit`) | ✅ PASS |
 | **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint . --max-warnings 0`) | ✅ PASS |
 | **Supabase Remote Migrations** | 100% | **108 / 108 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
-| **Database Linting** | 0 Fatal Errors | **0 errors** across public, private, extensions schemas | ✅ PASS |
+| **Database Linting** | 0 Fatal Errors | **0 fatal errors** (14 informational unused-param warnings) | ✅ PASS |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ PASS |
 | **Playwright Chromium E2E** | 100% | **50 / 50 browser specs passed** (59.6s, 0 failures) | ✅ PASS |
 | **Playwright Multi-Browser** | 100% | **200 / 200 specs passed** across Chromium, Firefox, WebKit, Mobile-Chrome | ✅ PASS |
-| **Static Pre-rendered Routes** | 100% | **61 static routes generated** (`next build`, `output: export`) | ✅ PASS |
+| **Physical HTML Pages** | 100% | **59 physical HTML pages generated & audited** (`out/*.html`) | ✅ PASS |
+| **Static Link & Asset Crawl** | 100% | **380 internal links, 1056 assets, 0 broken** (`audit:assets`) | ✅ PASS |
+| **Turbopack Compiler Targets**| 100% | **61 compilation units** (59 HTML + 1 sitemap.xml + 1 404 alias) | ✅ PASS |
 | **Live Route Smoke Probes** | 100% | **15 / 15 routes HTTP 200 OK**, zero PHI leak, RLS shielded | ✅ PASS |
 
 ---

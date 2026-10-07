@@ -4,9 +4,8 @@
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Free Plan Baseline)  
-**Execution Timestamp:** `2026-10-07T05:00:00+06:00`  
-**Current HEAD SHA:** `c20aae7854569f8fd1f36a9c391e7f4a086e98e9`  
-**Immediate Parent SHA:** `4f74bbde60a7192474c28e82476409eac17f6b19`  
+**Execution Timestamp:** `2026-10-07T06:05:00+06:00`  
+**Immediate Parent SHA:** `c3fa5373020bb2c62bf4752d310ff832b70ee52f`  
 **Release Tag:** `v1.1.48` (Commit `d93ad2b`)  
 **Overall Delivery Status:** **B. SOFTWARE VERIFIED — OWNER / EXTERNAL GATES REMAIN**  
 
@@ -26,23 +25,17 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 
 In adherence to strict zero-false-green Git governance:
 - **Release Tag `v1.1.48`:** Anchored immutably to commit `d93ad2b7dd8f7ae08fe035196d6429cfcd50d670`. Under no circumstances is `git tag -a -f` invoked to mutate historical release tags.
-- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `c20aae7854569f8fd1f36a9c391e7f4a086e98e9`.
-- **Cloudflare Edge Deployed SHA:** Synchronized with commit `c20aae7` deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `df2ddc26`, Preview: `https://df2ddc26.onnesha-hospital.pages.dev`).
+- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`).
+- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev`.
 - **Edge Manifest Parity:** Probed `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` returns `"version": "1.1.48"`.
 
 ### Commit Lineage
 ```
-* c20aae7 (HEAD -> main, ssh-origin/main) chore(ci): guard production deployment and desktop release steps when secrets are missing
+* c3fa537 docs: synchronize CURRENT_STATE and CLOSURE_LEDGER with commit c20aae7 and Cloudflare deployment df2ddc26
+* c20aae7 chore(ci): guard production deployment and desktop release steps when secrets are missing
 * 4f74bbd fix(ci): enable hermetic staging mode and graceful pipeline notices when optional secrets are absent
 * d93ad2b (tag: v1.1.48) feat(release): reconcile version 1.1.48 across manifests, sw, docker, and operational dossiers
 * d295400 feat(operations): provide turnkey dossiers for G13 UAT, G14 DGHS compliance, G15 trusted cert, and hardware zero-config guide
-* e316562 feat(closure): complete final full-stack production closure v2 and continuation protocol
-* 2114101 docs: synchronize CURRENT_STATE and CLOSURE_LEDGER with commit 3879e08 deployment
-* 3879e08 fix(deps): bump sharp to 0.35.5 resolving GHSA-wq5f-xc86-pv6w (CVE-2026-96889)
-* def5982 docs: synchronize CURRENT_STATE and CLOSURE_LEDGER with commit 7941119 deployment
-* 7941119 fix(deps): bump source-map-js to 1.2.2 resolving GHSA-68fv-2mgg-jv7q
-* ...
-* b92c3d1 (tag: v1.1.47) fix(core): multi-agent adversarial hardening of database RLS, accounting atomicity, and release pipeline
 ```
 
 ---
