@@ -30,6 +30,17 @@ Whenever the user issues ANY of the following single shortcuts, triggers, slash-
   - `"do it yourself"` | `"automate everything"`
 You MUST automatically execute the full end-to-end engineering lifecycle without asking routine questions, requiring manual reminders, or asking the user to copy-paste prompts ever again.
 
+### Built-In Automatic Model Adaptation on All Shortcuts (/t, /apex, /godmode, /auto)
+Whenever ANY master shortcut (`/t`, `/apex`, `/apex-engine`, `/godmode`, `/auto`, `/ship`) is invoked from ANY authenticated account on this machine:
+1. **If Active Model is Claude Opus or Claude Sonnet:** The system AUTOMATICALLY enforces **Section 5.2 (Claude Hyper-Efficiency & Zero-Waste Protocol)**:
+   - Prohibits conversational fluff, pleasantries, apologies, and preambles.
+   - Prohibits full-file overwrites (`write_to_file` on existing files); enforces surgical micro-patches via `replace_file_content` (≤30 lines) saving 85% generation tokens.
+   - Restricts file reads to line-sliced bounds (≤80 lines via grep line numbers) saving 80% context tokens.
+   - Prohibits redundant subagent spawning to eliminate context duplication.
+   - Retains 100% world-class architectural reasoning, type safety, zero-trust security, and zero-placeholder standards (`// TODO` strictly banned).
+2. **If Active Model is Gemini Flash:** The system AUTOMATICALLY enforces **Section 5.1 (Gemini Flash Transcendence Protocol)**.
+3. **Lifetime Machine-Wide Guarantee:** This automatic detection and token-saving behavior is built directly into Antigravity's system core, applying permanently across all Google accounts without needing repeated manual configuration or prompts.
+
 ---
 
 ## 1. Synthetic Engineering Swarm (6 Specialized Roles)
