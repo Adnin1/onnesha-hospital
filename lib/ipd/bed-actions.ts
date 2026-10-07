@@ -186,6 +186,7 @@ export async function assignBedAction(params: {
   admissionReason?: string;
   admissionType?: string;
   dailyCharge: number;
+  referralAgentId?: string;
 }): Promise<ActionResult<{ assignmentId: string }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
@@ -226,6 +227,7 @@ export async function assignBedAction(params: {
       p_admission_type: params.admissionType || "IPD",
       p_daily_charge: params.dailyCharge || 0,
       p_assigned_by: userId,
+      p_referral_agent_id: params.referralAgentId || null,
     });
 
     if (!rpcErr && atomicRes && (atomicRes as { success?: boolean }).success) {
@@ -310,6 +312,30 @@ export async function assignBedAction(params: {
     }
 
     const assignmentId = assignment.id;
+
+    // Optional Referral Attribution in fallback
+    if (params.referralAgentId) {
+      const { data: refAgent } = await supabase
+        .from("referral_agents")
+        .select("id, agent_code, full_name, is_active")
+        .eq("id", params.referralAgentId)
+        .eq("organization_id", orgId)
+        .maybeSingle();
+
+      if (refAgent && refAgent.is_active) {
+        await supabase.from("patient_referral_attributions").insert({
+          organization_id: orgId,
+          patient_id: params.patientId,
+          visit_id: effectiveVisitId || null,
+          referral_agent_id: refAgent.id,
+          referral_code_snapshot: refAgent.agent_code,
+          referral_name_snapshot: refAgent.full_name,
+          assigned_by: userId,
+          status: "ACTIVE",
+          notes: "Attributed during IPD admission",
+        });
+      }
+    }
 
     // Audit log
     await recordAuditLog({

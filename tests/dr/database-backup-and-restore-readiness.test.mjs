@@ -25,11 +25,11 @@ import { execSync } from 'node:child_process';
 const ROOT = process.cwd();
 
 test('OHMS Disaster Recovery & Backup Architecture Verification', async (t) => {
-  await t.test('1. Migration Baseline: 111 version-controlled schema migrations exist', () => {
+  await t.test('1. Migration Baseline: 112 version-controlled schema migrations exist', () => {
     const migrationsDir = path.join(ROOT, 'supabase', 'migrations');
     assert.equal(fs.existsSync(migrationsDir), true, 'supabase/migrations directory must exist');
     const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql'));
-    assert.equal(files.length, 111, 'Exactly 111 migration files must exist in source control');
+    assert.equal(files.length, 112, 'Exactly 112 migration files must exist in source control');
   });
 
   await t.test('2. Anti-Leak Governance: Backup directory is strictly gitignored', () => {
@@ -60,7 +60,7 @@ test('OHMS Disaster Recovery & Backup Architecture Verification', async (t) => {
 
   await t.test('4. Disaster Recovery Tier Classification: Multi-tier recovery model certified', () => {
     const tiers = {
-      tier1_schema_migrations: 'Git-controlled 111 migrations',
+      tier1_schema_migrations: 'Git-controlled 112 migrations',
       tier2_supplemental_snapshot: 'Service-role application-level JSON exporter',
       tier3_managed_platform_backup: 'Supabase Daily Automated Backups (Platform-managed)',
       tier4_continuous_pitr: 'Supabase WAL-G Continuous Archiving (Pro Plan tier)'

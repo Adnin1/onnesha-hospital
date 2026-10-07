@@ -121,6 +121,9 @@ export async function createInvoiceAction(params: {
   initialPaymentAmount?: number;
   paymentMethod?: PaymentRecord["payment_method"];
   gatewayTransactionId?: string;
+  referralAgentId?: string;
+  referralCommissionRate?: number;
+  noReferral?: boolean;
 }): Promise<ActionResult<{ invoice: InvoiceRecord }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
@@ -165,7 +168,11 @@ export async function createInvoiceAction(params: {
       total_price: it.unitPrice * it.quantity,
     }));
 
-    const { data: rpcResult, error: rpcErr } = await supabase.rpc("create_invoice_and_post_gl_atomic", {
+    const effectiveReferralAgentId = params.noReferral
+      ? "00000000-0000-0000-0000-000000000000"
+      : params.referralAgentId || null;
+
+    const rpcPayload: Record<string, unknown> = {
       p_org_id: session.organizationId,
       p_patient_id: params.patientId,
       p_visit_id: params.visitId || null,
@@ -177,7 +184,16 @@ export async function createInvoiceAction(params: {
       p_gateway_transaction_id: params.gatewayTransactionId || null,
       p_cashier_id: session.userId,
       p_notes: "Initial payment at invoice creation",
-    });
+    };
+
+    if (effectiveReferralAgentId) {
+      rpcPayload.p_referral_agent_id = effectiveReferralAgentId;
+    }
+    if (params.referralCommissionRate !== undefined && params.referralCommissionRate !== null) {
+      rpcPayload.p_referral_commission_rate = params.referralCommissionRate;
+    }
+
+    const { data: rpcResult, error: rpcErr } = await supabase.rpc("create_invoice_and_post_gl_atomic", rpcPayload);
 
     if (rpcErr) {
       console.error("[Billing & GL Posting Error] Atomic invoice creation and GL posting failed:", rpcErr.message);

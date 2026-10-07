@@ -652,3 +652,245 @@ export async function rejectCommissionAction(
     return { success: false, error: msg };
   }
 }
+
+/**
+ * Auto-lookup active referral attribution for a patient/admission for Billing
+ */
+export async function getPatientReferralAttributionAction(
+  patientId: string,
+  visitId?: string
+): Promise<{
+  success: boolean;
+  data?: {
+    attributionId?: string;
+    referralAgentId: string;
+    agentCode: string;
+    fullName: string;
+    agentType: string;
+    commissionRatePercent: number;
+    source: "ADMISSION" | "REGISTRATION";
+    isEligible: boolean;
+    visitId?: string | null;
+  } | null;
+  error?: string;
+}> {
+  try {
+    if (!patientId || !patientId.trim()) {
+      return { success: true, data: null };
+    }
+
+    const supabase = createClient();
+
+    // 1. Try atomic RPC lookup
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc(
+      "get_patient_referral_attribution_for_billing",
+      {
+        p_patient_id: patientId.trim(),
+        p_visit_id: visitId?.trim() || null,
+      }
+    );
+
+    if (!rpcErr && rpcRes && typeof rpcRes === "object") {
+      const parsed = rpcRes as {
+        success?: boolean;
+        found?: boolean;
+        attribution_id?: string;
+        referral_agent_id?: string;
+        agent_code?: string;
+        full_name?: string;
+        agent_type?: string;
+        commission_rate_percent?: number;
+        is_commission_eligible?: boolean;
+        source?: "ADMISSION" | "REGISTRATION";
+        visit_id?: string | null;
+        error?: string;
+      };
+
+      if (parsed.success && parsed.found && parsed.referral_agent_id) {
+        return {
+          success: true,
+          data: {
+            attributionId: parsed.attribution_id,
+            referralAgentId: parsed.referral_agent_id,
+            agentCode: parsed.agent_code || "",
+            fullName: parsed.full_name || "",
+            agentType: parsed.agent_type || "DOCTOR",
+            commissionRatePercent: Number(parsed.commission_rate_percent || 10),
+            source: parsed.source || (parsed.visit_id ? "ADMISSION" : "REGISTRATION"),
+            isEligible: parsed.is_commission_eligible !== false,
+            visitId: parsed.visit_id || null,
+          },
+        };
+      }
+
+      if (parsed.success && !parsed.found) {
+        return { success: true, data: null };
+      }
+    }
+
+    // 2. Direct fallback query
+    if (visitId?.trim()) {
+      const { data: vData } = await supabase
+        .from("patient_referral_attributions")
+        .select("*, referral_agents(*)")
+        .eq("visit_id", visitId.trim())
+        .eq("status", "ACTIVE")
+        .maybeSingle();
+
+      if (vData && vData.referral_agent_id) {
+        const agent = vData.referral_agents as ReferralAgent | null;
+        return {
+          success: true,
+          data: {
+            attributionId: vData.id,
+            referralAgentId: vData.referral_agent_id,
+            agentCode: agent?.agent_code || vData.referral_code_snapshot || "",
+            fullName: agent?.full_name || vData.referral_name_snapshot || "",
+            agentType: agent?.agent_type || "DOCTOR",
+            commissionRatePercent: Number(agent?.commission_rate_percent || 10),
+            source: "ADMISSION",
+            isEligible: agent?.is_commission_eligible !== false,
+            visitId: vData.visit_id,
+          },
+        };
+      }
+    }
+
+    const { data: directData, error: dirErr } = await supabase
+      .from("patient_referral_attributions")
+      .select("*, referral_agents(*)")
+      .eq("patient_id", patientId.trim())
+      .eq("status", "ACTIVE")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (dirErr) throw dirErr;
+
+    if (directData && directData.referral_agent_id) {
+      const agent = directData.referral_agents as ReferralAgent | null;
+      return {
+        success: true,
+        data: {
+          attributionId: directData.id,
+          referralAgentId: directData.referral_agent_id,
+          agentCode: agent?.agent_code || directData.referral_code_snapshot || "",
+          fullName: agent?.full_name || directData.referral_name_snapshot || "",
+          agentType: agent?.agent_type || "DOCTOR",
+          commissionRatePercent: Number(agent?.commission_rate_percent || 10),
+          source: directData.visit_id ? "ADMISSION" : "REGISTRATION",
+          isEligible: agent?.is_commission_eligible !== false,
+          visitId: directData.visit_id,
+        },
+      };
+    }
+
+    return { success: true, data: null };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load patient referral attribution";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Authoritative referral agent search for Billing checkout with commission rates
+ */
+export async function searchReferralAgentsForBillingAction(query?: string): Promise<{
+  success: boolean;
+  data?: Array<{
+    id: string;
+    agent_code: string;
+    full_name: string;
+    agent_type: string;
+    phone: string;
+    commission_rate_percent: number;
+    is_commission_eligible: boolean;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Authentication required");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", user.id)
+      .single();
+
+    const orgId = profile?.organization_id;
+    if (!orgId) throw new Error("Organization profile not resolved");
+
+    // 1. Try search_referral_agents_for_billing RPC
+    const { data: rpcData, error: rpcErr } = await supabase.rpc("search_referral_agents_for_billing", {
+      p_org_id: orgId,
+      p_query: query || null,
+    });
+
+    if (!rpcErr && rpcData) {
+      return {
+        success: true,
+        data: (rpcData as Array<{
+          id: string;
+          agent_code: string;
+          full_name: string;
+          agent_type: string;
+          phone: string;
+          commission_rate_percent: number;
+          is_commission_eligible: boolean;
+        }>),
+      };
+    }
+
+    // 2. Fallback to direct query on referral_agents table
+    let q = supabase
+      .from("referral_agents")
+      .select("id, agent_code, full_name, agent_type, phone, commission_rate_percent, is_commission_eligible")
+      .eq("organization_id", orgId)
+      .eq("is_active", true)
+      .is("archived_at", null)
+      .order("full_name", { ascending: true })
+      .limit(50);
+
+    if (query?.trim()) {
+      const trimmed = query.trim();
+      q = q.or(`agent_code.ilike.%${trimmed}%,full_name.ilike.%${trimmed}%,phone.ilike.%${trimmed}%`);
+    }
+
+    const { data: fallbackData, error: fbErr } = await q;
+    if (fbErr) {
+      // 3. Fallback to safe search_active_referral_agents RPC if direct table select is restricted
+      const { data: safeAgents } = await supabase.rpc("search_active_referral_agents", {
+        p_org_id: orgId,
+        p_query: query || null,
+      });
+
+      return {
+        success: true,
+        data: ((safeAgents || []) as Array<{ id: string; agent_code: string; full_name: string; agent_type: string; phone: string }>).map((a) => ({
+          ...a,
+          commission_rate_percent: 10,
+          is_commission_eligible: true,
+        })),
+      };
+    }
+
+    return {
+      success: true,
+      data: (fallbackData || []).map((r) => ({
+        id: r.id,
+        agent_code: r.agent_code,
+        full_name: r.full_name,
+        agent_type: r.agent_type,
+        phone: r.phone,
+        commission_rate_percent: Number(r.commission_rate_percent || 10),
+        is_commission_eligible: r.is_commission_eligible !== false,
+      })),
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to search referral agents for billing";
+    return { success: false, error: msg };
+  }
+}
+

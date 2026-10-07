@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, UserPlus, Search, Check, Loader2, Stethoscope, FileText, Calendar, DollarSign } from "lucide-react";
+import { X, UserPlus, Search, Check, Loader2, Stethoscope, FileText, Calendar, DollarSign, UserCheck } from "lucide-react";
 import { BedRecord, CabinRecord } from "@/types/beds-ot";
 import { PatientMaster } from "@/types/clinical";
 import { searchPatientsAction } from "@/lib/patient/actions";
 import { assignBedAction } from "@/lib/ipd/bed-actions";
+import { searchReferralAgentsAction } from "@/lib/referrals/actions";
 
 interface Props {
   isOpen: boolean;
@@ -35,6 +36,22 @@ export function AssignBedModal({
   const [customDailyRate, setCustomDailyRate] = useState<string | null>(null);
   const dailyRate = customDailyRate !== null ? customDailyRate : defaultRate;
   const [submitting, setSubmitting] = useState(false);
+  const [referralAgents, setReferralAgents] = useState<{ id: string; agent_code: string; full_name: string; agent_type: string; phone: string }[]>([]);
+  const [selectedReferralAgentId, setSelectedReferralAgentId] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    async function fetchReferrals() {
+      const res = await searchReferralAgentsAction();
+      if (active && res.success && res.data) {
+        setReferralAgents(res.data);
+      }
+    }
+    fetchReferrals();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -79,6 +96,7 @@ export function AssignBedModal({
       admissionType: admissionType,
       admissionReason: admissionReason.trim(),
       doctorName: consultantName.trim(),
+      referralAgentId: selectedReferralAgentId || undefined,
     });
     setSubmitting(false);
 
@@ -214,6 +232,40 @@ export function AssignBedModal({
               placeholder="Dr. Consultant Name, MBBS, FCPS"
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
+          </div>
+
+          {/* Reference / Referral Partner */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                রেফারেন্স / কার মাধ্যমে ভর্তি (Referred By / Reference) (ঐচ্ছিক)
+              </span>
+              {selectedReferralAgentId && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedReferralAgentId("")}
+                  className="text-[10px] text-rose-500 hover:underline font-semibold"
+                >
+                  মুছে ফেলুন (Clear)
+                </button>
+              )}
+            </label>
+            <select
+              value={selectedReferralAgentId}
+              onChange={(e) => setSelectedReferralAgentId(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+            >
+              <option value="">সরাসরি ভর্তি / কোনো রেফারেন্স নেই (Direct Admission / None)</option>
+              {referralAgents.map((ag) => (
+                <option key={ag.id} value={ag.id}>
+                  {ag.full_name} ({ag.agent_code}) — {ag.agent_type === "DOCTOR" ? "ডাক্তার" : ag.agent_type === "COMMUNITY_PC" ? "পিসি / সিপিসি" : ag.agent_type}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-slate-400 mt-1">
+              * এখানে রেফারেন্স নির্বাচন করলে বিলিংয়ের সময় স্বয়ংক্রিয়ভাবে তার কমিশন হিসাব ও নাম সাজেস্ট করবে।
+            </p>
           </div>
 
           {/* Admission Reason / Diagnosis */}

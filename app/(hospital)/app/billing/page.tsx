@@ -12,6 +12,8 @@ import {
   Wallet,
   X,
   AlertTriangle,
+  UserCheck,
+  Check,
 } from "lucide-react";
 import {
   InvoiceRecord,
@@ -26,6 +28,12 @@ import {
   voidInvoiceAction,
   getCashRegisterSummaryAction,
 } from "@/lib/billing/actions";
+import { searchPatientsAction } from "@/lib/patient/actions";
+import {
+  getPatientReferralAttributionAction,
+  searchReferralAgentsForBillingAction,
+} from "@/lib/referrals/actions";
+import { PatientMaster } from "@/types/clinical";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 import { Toast } from "@/components/ui/Toast";
@@ -66,6 +74,31 @@ export default function BillingManagementPage() {
   const [initialPaymentAmount, setInitialPaymentAmount] = useState(500);
   const [paymentMethod, setPaymentMethod] = useState<PaymentRecord["payment_method"]>("CASH");
   const [formLoading, setFormLoading] = useState(false);
+
+  // New Invoice Patient Search & Referral State
+  const [patientSearchQuery, setPatientSearchQuery] = useState("");
+  const [searchedPatients, setSearchedPatients] = useState<PatientMaster[]>([]);
+  const [loadingPatients, setLoadingPatients] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<PatientMaster | null>(null);
+  const [billingReferralAgents, setBillingReferralAgents] = useState<
+    Array<{
+      id: string;
+      agent_code: string;
+      full_name: string;
+      agent_type: string;
+      phone: string;
+      commission_rate_percent: number;
+      is_commission_eligible: boolean;
+    }>
+  >([]);
+  const [selectedReferralAgentId, setSelectedReferralAgentId] = useState("");
+  const [referralCommissionRate, setReferralCommissionRate] = useState<number>(10);
+  const [isAttributionSuggested, setIsAttributionSuggested] = useState(false);
+  const [attributionSource, setAttributionSource] = useState<string>("");
+  const [attributionAgentName, setAttributionAgentName] = useState<string>("");
+  const [attributionAgentCode, setAttributionAgentCode] = useState<string>("");
+  const [checkingAttribution, setCheckingAttribution] = useState(false);
+  const [noReferral, setNoReferral] = useState(false);
 
   // Collect Payment Modal
   const [paymentModalInv, setPaymentModalInv] = useState<InvoiceRecord | null>(null);
@@ -136,10 +169,108 @@ export default function BillingManagementPage() {
     };
   }, [statusFilter]);
 
+  // Fetch referral agents when invoice modal opens
+  useEffect(() => {
+    let active = true;
+    if (isCreatingNew) {
+      async function loadAgents() {
+        const res = await searchReferralAgentsForBillingAction();
+        if (active && res.success && res.data) {
+          setBillingReferralAgents(res.data);
+        }
+      }
+      loadAgents();
+    }
+    return () => {
+      active = false;
+    };
+  }, [isCreatingNew]);
+
+  // Debounced search for patients in invoice modal
+  useEffect(() => {
+    let active = true;
+    if (!isCreatingNew || !patientSearchQuery.trim()) {
+      setSearchedPatients([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setLoadingPatients(true);
+      const res = await searchPatientsAction({ query: patientSearchQuery.trim(), pageSize: 8 });
+      if (active && res.success && res.data?.patients) {
+        setSearchedPatients(res.data.patients);
+      }
+      if (active) setLoadingPatients(false);
+    }, 250);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [patientSearchQuery, isCreatingNew]);
+
+  // Check referral attribution whenever patient ID changes
+  const checkAttributionForPatient = async (patientId: string) => {
+    if (!patientId || !patientId.trim()) {
+      setIsAttributionSuggested(false);
+      setSelectedReferralAgentId("");
+      setAttributionSource("");
+      setAttributionAgentName("");
+      setAttributionAgentCode("");
+      return;
+    }
+    setCheckingAttribution(true);
+    try {
+      const res = await getPatientReferralAttributionAction(patientId.trim());
+      if (res.success && res.data) {
+        setSelectedReferralAgentId(res.data.referralAgentId);
+        setReferralCommissionRate(res.data.commissionRatePercent || 10);
+        setIsAttributionSuggested(true);
+        setAttributionSource(res.data.source);
+        setAttributionAgentName(res.data.fullName);
+        setAttributionAgentCode(res.data.agentCode);
+        setNoReferral(false);
+      } else {
+        setIsAttributionSuggested(false);
+        setAttributionSource("");
+        setAttributionAgentName("");
+        setAttributionAgentCode("");
+      }
+    } catch (err) {
+      console.error("[checkAttributionForPatient] err:", err);
+    } finally {
+      setCheckingAttribution(false);
+    }
+  };
+
+  const handleSelectPatient = (p: PatientMaster) => {
+    setSelectedPatient(p);
+    setPatientIdInput(p.id);
+    setPatientSearchQuery("");
+    setSearchedPatients([]);
+    checkAttributionForPatient(p.id);
+  };
+
+  const handleReferralAgentChange = (agentId: string) => {
+    if (!agentId) {
+      setSelectedReferralAgentId("");
+      setNoReferral(true);
+      setIsAttributionSuggested(false);
+      return;
+    }
+    setSelectedReferralAgentId(agentId);
+    setNoReferral(false);
+    const found = billingReferralAgents.find((a) => a.id === agentId);
+    if (found) {
+      setReferralCommissionRate(found.commission_rate_percent || 10);
+    }
+  };
+
   // Calculations for new invoice
   const subtotal = items.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
   const netTotal = Math.max(0, subtotal - discountAmount);
   const dueAmount = Math.max(0, netTotal - initialPaymentAmount);
+  const estimatedCommission = selectedReferralAgentId && !noReferral
+    ? Math.round(((netTotal * (referralCommissionRate || 0)) / 100) * 100) / 100
+    : 0;
 
   const addItemRow = (category: InvoiceItemRecord["service_category"], name: string, price: number) => {
     const next = [...items, { category, itemName: name, unitPrice: price, quantity: 1 }];
@@ -152,6 +283,33 @@ export default function BillingManagementPage() {
     if (items.length <= 1) return;
     const next = items.filter((_, i) => i !== idx);
     setItems(next);
+  };
+
+  const resetInvoiceModal = () => {
+    setIsCreatingNew(false);
+    setPatientIdInput("");
+    setPatientSearchQuery("");
+    setSearchedPatients([]);
+    setSelectedPatient(null);
+    setSelectedReferralAgentId("");
+    setReferralCommissionRate(10);
+    setIsAttributionSuggested(false);
+    setAttributionSource("");
+    setAttributionAgentName("");
+    setAttributionAgentCode("");
+    setNoReferral(false);
+    setItems([
+      {
+        category: "CONSULTATION",
+        itemName: "General OPD Consultation",
+        unitPrice: 500,
+        quantity: 1,
+      },
+    ]);
+    setDiscountAmount(0);
+    setDiscountReason("");
+    setInitialPaymentAmount(500);
+    setPaymentMethod("CASH");
   };
 
   const handleCreateInvoice = async (e: React.FormEvent) => {
@@ -170,23 +328,13 @@ export default function BillingManagementPage() {
         discountReason: discountReason.trim() || undefined,
         initialPaymentAmount: Number(initialPaymentAmount),
         paymentMethod,
+        referralAgentId: !noReferral && selectedReferralAgentId ? selectedReferralAgentId : undefined,
+        referralCommissionRate: !noReferral && selectedReferralAgentId ? Number(referralCommissionRate) : undefined,
+        noReferral: noReferral || !selectedReferralAgentId,
       });
 
       if (res.success && res.data) {
-        setIsCreatingNew(false);
-        setPatientIdInput("");
-        setItems([
-          {
-            category: "CONSULTATION",
-            itemName: "General OPD Consultation",
-            unitPrice: 500,
-            quantity: 1,
-          },
-        ]);
-        setDiscountAmount(0);
-        setDiscountReason("");
-        setInitialPaymentAmount(500);
-        setPaymentMethod("CASH");
+        resetInvoiceModal();
         await loadBillingData();
         setSelectedInvoice(res.data.invoice);
         setToast({ message: `Invoice ${res.data.invoice.invoice_number} created successfully!`, type: "success" });
@@ -611,16 +759,94 @@ export default function BillingManagementPage() {
             <p className="text-slate-500 mb-4">Add consultation, diagnostic, bed, or surgery charges.</p>
 
             <form onSubmit={handleCreateInvoice} className="space-y-4">
+              {/* Patient Selector */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Patient UUID or Reference *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Enter patient ID"
-                  value={patientIdInput}
-                  onChange={(e) => setPatientIdInput(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-xl bg-slate-50 font-semibold"
-                />
+                <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>রোগী নির্বাচন (Select Patient) *</span>
+                  {selectedPatient && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPatient(null);
+                        setPatientIdInput("");
+                        checkAttributionForPatient("");
+                      }}
+                      className="text-[10px] text-rose-500 hover:underline font-semibold"
+                    >
+                      পরিবর্তন করুন (Change)
+                    </button>
+                  )}
+                </label>
+
+                {selectedPatient ? (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-emerald-950">{selectedPatient.full_name}</p>
+                      <p className="text-[10px] text-emerald-700 font-mono">
+                        {selectedPatient.patient_code} • {selectedPatient.gender} • {selectedPatient.phone}
+                      </p>
+                    </div>
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="রোগীর নাম বা মোবাইল বা OH-ID দিয়ে খুঁজুন..."
+                        value={patientSearchQuery}
+                        onChange={(e) => setPatientSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 border rounded-xl bg-slate-50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    {/* Patient search results dropdown */}
+                    {loadingPatients ? (
+                      <div className="p-3 text-center text-xs text-slate-400 bg-white border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 shadow-lg">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                        <span>রোগী খোঁজা হচ্ছে...</span>
+                      </div>
+                    ) : searchedPatients.length > 0 ? (
+                      <div className="max-h-36 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white shadow-lg">
+                        {searchedPatients.map((pat) => (
+                          <div
+                            key={pat.id}
+                            onClick={() => handleSelectPatient(pat)}
+                            className="p-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between transition text-xs"
+                          >
+                            <div>
+                              <p className="font-bold text-slate-800">{pat.full_name}</p>
+                              <p className="text-[10px] text-slate-500 font-mono">
+                                {pat.patient_code} • {pat.phone}
+                              </p>
+                            </div>
+                            <span className="text-[10px] text-emerald-600 font-semibold">নির্বাচন করুন</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    <input
+                      type="text"
+                      required
+                      placeholder="বা সরাসরি Patient UUID বসান"
+                      value={patientIdInput}
+                      onChange={(e) => {
+                        setPatientIdInput(e.target.value);
+                        if (e.target.value.length >= 30) {
+                          checkAttributionForPatient(e.target.value);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (patientIdInput.trim()) {
+                          checkAttributionForPatient(patientIdInput.trim());
+                        }
+                      }}
+                      className="w-full px-3 py-1.5 border rounded-xl bg-slate-50 text-[11px] font-mono"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Preset quick buttons */}
@@ -782,6 +1008,87 @@ export default function BillingManagementPage() {
                     </select>
                   </div>
                 </div>
+              </div>
+
+              {/* REFERRAL ATTRIBUTION & COMMISSION CONFIGURATION */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-emerald-600" />
+                    রেফারেন্স ও কমিশন ব্যবস্থাপনা (Referral & Commission)
+                  </span>
+                  {checkingAttribution ? (
+                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin text-emerald-600" />
+                      রেফারেন্স যাচাই হচ্ছে...
+                    </span>
+                  ) : isAttributionSuggested ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      ✓ {attributionSource === "ADMISSION" ? "ভর্তি থেকে স্বয়ংক্রিয় প্রাপ্ত" : "রেজিস্ট্রেশন থেকে প্রাপ্ত"}
+                      {attributionAgentName ? `: ${attributionAgentName}` : ""}
+                      {attributionAgentCode ? ` (${attributionAgentCode})` : ""}
+                    </span>
+                  ) : null}
+                </div>
+
+                {/* Reference Partner Selector */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      রেফারেন্স পার্টনার (Reference Partner)
+                    </label>
+                    <select
+                      value={selectedReferralAgentId}
+                      onChange={(e) => handleReferralAgentChange(e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl bg-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <option value="">কোনো রেফারেন্স নেই (No Referral / Direct)</option>
+                      {billingReferralAgents.map((ag) => (
+                        <option key={ag.id} value={ag.id}>
+                          {ag.full_name} ({ag.agent_code}) — {ag.commission_rate_percent}%
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Commission Rate (%) Input */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1 flex items-center justify-between">
+                      <span>কমিশন শতকরা হার (Commission Rate %) *</span>
+                      <span className="text-[9px] text-slate-400">সীমা: ১% - ৪০%</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="40"
+                        step="0.5"
+                        disabled={!selectedReferralAgentId || noReferral}
+                        value={referralCommissionRate}
+                        onChange={(e) => setReferralCommissionRate(Number(e.target.value))}
+                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl bg-white text-xs font-mono font-bold text-emerald-700 disabled:bg-slate-100 disabled:text-slate-400"
+                      />
+                      <span className="font-bold text-slate-500 text-xs">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Commission Estimate Preview */}
+                {selectedReferralAgentId && !noReferral && (
+                  <div className="p-2.5 bg-emerald-50/90 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-emerald-950 font-bold block">
+                        প্রাক্কলিত কমিশন (Estimated Commission):
+                      </span>
+                      <span className="text-[10px] text-emerald-700">
+                        {referralCommissionRate}% on Net {formatCurrencyBDT(netTotal)} (Subtotal - Discount)
+                      </span>
+                    </div>
+                    <span className="font-mono font-black text-emerald-800 text-base">
+                      {formatCurrencyBDT(estimatedCommission)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs flex justify-between font-bold">

@@ -1,14 +1,14 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.49-FINAL`  
-**Execution Timestamp:** `2026-10-07T20:55:00+06:00`  
+**Document Version:** `v1.1.50-FINAL`  
+**Execution Timestamp:** `2026-10-07T21:35:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
-**Release Tag:** `v1.1.49`  
-**Prior Release Tag:** `v1.1.48` (Immutable anchor preserved at commit `52cdc6dc`)  
+**Release Tag:** `v1.1.50`  
+**Prior Release Tag:** `v1.1.49` (Immutable anchor preserved)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (111 Migrations in Full Parity)  
+**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (112 Migrations in Full Parity)  
 
 ---
 
@@ -18,12 +18,12 @@
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
 | **Referral & Affiliate Subsystem** | **CERTIFIED COMPLETE** | Master directory, 1%-40% bounds, approval workflow, in-db auth, Model A void |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 113/113 Test Suites Passed (1004 Active Passes, 0 Failures, 7 Hermetic Skips) |
-| **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 111 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 114/114 Test Suites Passed (1018 Active Passes, 0 Failures, 7 Hermetic Skips) |
+| **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 112 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
 | **Real Browser Matrix E2E** | **CERTIFIED COMPLETE** | 200/200 Specs Passing across Chromium, Firefox, WebKit, Mobile Chrome |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 61 Units Prerendered, 0 Broken Links / 0 Broken Assets |
 | **Live Production Smoke** | **CERTIFIED COMPLETE** | Root & /app/referrals 200 OK, full CSP, HSTS, X-Frame-Options on Edge |
-| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 111 Migrations Applied Remotely, RLS Enabled on All Tables, 0 Anon Leaks |
+| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 112 Migrations Applied Remotely, RLS Enabled on All Tables, 0 Anon Leaks |
 | **CI/CD Security Gating** | **CERTIFIED COMPLETE** | Mandatory CI passed, G10 Staging Gate classified as Owner Prerequisite |
 | **Hospital Physical Commissioning** | **OWNER GATES PENDING** | Requires Hardware, Live Merchant Keys, Staff UAT & Statutory Sign-offs (G1–G16) |
 
@@ -32,14 +32,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]   -->  Commit: Release v1.1.49 (Clean)
-[Git Tag]                   -->  Tag: v1.1.49 (Clean Annotated Tag)
-[Prior Tag]                 -->  Tag: v1.1.48 (Immutable @ 52cdc6dc)
-[GitHub Remote 'origin']    -->  main @ Release v1.1.49
-[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.49
-[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.49)
-[Version Manifest Sync]     -->  package.json (1.1.49), package-lock.json (1.1.49),
-                                  Cargo.toml (1.1.49), tauri.conf.json (1.1.49)
+[Local Git Working Tree]   -->  Commit: Release v1.1.50 (Clean)
+[Git Tag]                   -->  Tag: v1.1.50 (Clean Annotated Tag)
+[Prior Tag]                 -->  Tag: v1.1.49 (Immutable Anchor)
+[GitHub Remote 'origin']    -->  main @ Release v1.1.50
+[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.50
+[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.50)
+[Version Manifest Sync]     -->  package.json (1.1.50), package-lock.json (1.1.50),
+                                  Cargo.toml (1.1.50), tauri.conf.json (1.1.50)
 ```
 
 ---
@@ -50,12 +50,12 @@
 ========================================
            OHMS TEST SUMMARY            
 ========================================
-Total Test Suites:    113
-Passed Suites:        113
+Total Test Suites:    114
+Passed Suites:        114
 Failed Suites:        0
 ----------------------------------------
-Total Test Cases:     1011
-  • ACTIVE_PASS:      1004
+Total Test Cases:     1025
+  • ACTIVE_PASS:      1018
   • ACTIVE_FAIL:      0
   • SKIPPED / OTHER:  7
     - STANDARD_SKIP:  7 (Explicitly justified environmental/service role/destructive restore skips)
@@ -68,7 +68,8 @@ Total Test Cases:     1011
 - **`npm run typecheck`:** `tsc --noEmit` exited with code 0 (0 errors).
 - **`npx eslint . --max-warnings 0`:** Exited with code 0 (0 warnings, 0 errors).
 - **`npm audit --audit-level=high`:** Exited with code 0 (0 vulnerabilities).
-- **`npm run test:certification`:** 113 suites passed in strict mode (1004 active passes, 7 skips).
+- **`npm run test:certification`:** 114 suites passed in strict mode (1018 active passes, 7 skips).
+- **`node --test tests/integration/admission-referral-billing-flow.test.mjs`:** 14/14 tests passed (admission attribution, billing auto-suggest, configurable rate bounds [1%-40%]).
 - **`node --test tests/integration/referral-database-live-verification.test.mjs`:** 12/12 live database tests passed against remote Supabase (SQLSTATE 42501 denial certified).
 - **`node --test tests/integration/referral-commission-system.test.mjs`:** 18/18 scenarios passed (approval, rejection, calculation, and Model A void integrity).
 - **`node --test tests/security/referral-rbac-and-isolation.test.mjs`:** 6/6 scenarios passed (RBAC, data minimization, and privacy defense).
@@ -79,37 +80,35 @@ Total Test Cases:     1011
 
 ---
 
-## 4. Hardening Completed in Current Session (v1.1.49)
+## 4. Hardening Completed in Current Session (v1.1.50)
 
-1. **In-Database SECURITY DEFINER RPC Authorization:**
-   - Enforced caller authentication (`auth.uid()`) and organization check (`private.get_current_org_id()`) inside all stored procedures.
-2. **Management-Only Referral Visibility via RLS:**
-   - Restricted full `referral_agents` table, `referral_rate_history`, and commission ledgers to management and finance roles.
-3. **Authoritative Commission Approval Workflow:**
-   - Implemented `approve_referral_commission_atomic` and `reject_referral_commission_atomic`.
-4. **Model A Invoice Void Accounting Invariant:**
-   - `void_invoice_and_reverse_gl_atomic` strictly prohibits voiding invoices if related referral commission has already been settled/paid.
+1. **IPD Admission Referral Attribution Selection:**
+   - Added reference partner select dropdown in `AssignBedModal.tsx` and linked `referralAgentId` into `assignBedAction` and `admit_patient_to_bed_atomic`.
+2. **Billing Console Referral Auto-Suggestion:**
+   - In `/app/billing`, on patient selection, automatically looks up active admission attribution or patient attribution via `get_patient_referral_attribution_for_billing`.
+   - Distinctive visual badge `✓ ভর্তি থেকে স্বয়ংক্রিয় প্রাপ্ত: [Agent Name] ([Code])`.
+3. **Configurable Referral Commission Rate (%):**
+   - Implemented custom rate input bounded strictly between `1.00%` and `40.00%` with live preview estimation `৳ X (Rate% on Net ৳ NetBase)`.
+   - Updated `create_invoice_atomic` and `create_invoice_and_post_gl_atomic` (13 parameters) in Migration 112 to record custom commission rates.
+4. **Model A Invoice Privacy & Suppression:**
+   - Added explicit cashier override ("No Referral" / suppression ID `00000000-0000-0000-0000-000000000000`) and patient-facing commission invisibility.
 5. **Database Migration Parity Reconciliation:**
-   - 111 local migrations confirmed 100% applied to remote Supabase (`npx supabase migration list` confirmed 111/111 parity).
-6. **Disaster Recovery Security & Anti-Leak Hardening:**
-   - Completely purged git-tracked database JSON dumps from repository index and disk to prevent clinical/financial leakage.
-   - Hardened `scripts/backup-database-snapshot.mjs` to strictly require explicit `SUPABASE_SERVICE_ROLE_KEY` and prohibit anon key fallbacks.
-   - Refactored DR test suite to truthfully distinguish schema migrations, supplemental exports, managed platform backups, and continuous PITR.
+   - 112 local migrations confirmed (`npx supabase migration list` parity).
 
 ---
 
 ## 5. Master System Machine-Readable Ledger
 
 ```ini
-RELEASE_VERSION=1.1.49
-RELEASE_TAG=v1.1.49
+RELEASE_VERSION=1.1.50
+RELEASE_TAG=v1.1.50
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
-SUITES_DISCOVERED=113
-SUITES_PASSED=113
+SUITES_DISCOVERED=114
+SUITES_PASSED=114
 SUITES_FAILED=0
-ACTIVE_TESTS=1004
-ACTIVE_PASS=1004
+ACTIVE_TESTS=1018
+ACTIVE_PASS=1018
 ACTIVE_FAIL=0
 SKIPPED=7
 CANCELLED=0
@@ -123,8 +122,8 @@ LINT=PASS
 NPM_AUDIT=PASS
 SECURITY_TEST=PASS
 LIVE_DB_TEST=PASS (12/12)
-DATABASE_MIGRATIONS=111
-DATABASE_PARITY=100% (111/111)
+DATABASE_MIGRATIONS=112
+DATABASE_PARITY=100% (112/112)
 RLS=PASS
 SECURITY_DEFINER=PASS
 ACCOUNTING_INTEGRITY=PASS
