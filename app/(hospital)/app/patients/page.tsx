@@ -38,6 +38,8 @@ export default function PatientsManagementPage() {
   const [selectedPatient, setSelectedPatient] = useState<PatientMaster | null>(null);
   const [activeTab, setActiveTab] = useState<"history" | "bills" | "lab" | "rx">("history");
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [registerInitialMode, setRegisterInitialMode] = useState<"NEW" | "EXISTING">("NEW");
+  const [registerInitialPatient, setRegisterInitialPatient] = useState<PatientMaster | null>(null);
 
   // Patient 360 sub-records
   const [subLoading, setSubLoading] = useState(false);
@@ -173,7 +175,11 @@ export default function PatientsManagementPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
           <button
-            onClick={() => setIsRegisterModalOpen(true)}
+            onClick={() => {
+              setRegisterInitialMode("NEW");
+              setRegisterInitialPatient(null);
+              setIsRegisterModalOpen(true);
+            }}
             className="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition flex items-center shadow-xs"
           >
             <PlusCircle className="w-4 h-4 mr-1.5" />
@@ -266,14 +272,27 @@ export default function PatientsManagementPage() {
                   </p>
                 </div>
 
-                <Link
-                  href={`/app/patients/${selectedPatient.id}`}
-                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center shadow-xs"
-                >
-                  <FileText className="w-3.5 h-3.5 mr-1" />
-                  Full Patient 360 File
-                </Link>
-                <EpisodeBillingPanel patientId={selectedPatient.id} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setRegisterInitialMode("EXISTING");
+                      setRegisterInitialPatient(selectedPatient);
+                      setIsRegisterModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center shadow-xs"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5 mr-1" />
+                    Admit / New Service
+                  </button>
+                  <Link
+                    href={`/app/patients/${selectedPatient.id}`}
+                    className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center shadow-xs"
+                  >
+                    <FileText className="w-3.5 h-3.5 mr-1" />
+                    Full Patient 360 File
+                  </Link>
+                  <EpisodeBillingPanel patientId={selectedPatient.id} />
+                </div>
               </div>
 
               {/* TABS */}
@@ -460,6 +479,8 @@ export default function PatientsManagementPage() {
 
       <UnifiedPatientIntakeModal
         isOpen={isRegisterModalOpen}
+        initialMode={registerInitialMode}
+        initialPatient={registerInitialPatient}
         onClose={() => setIsRegisterModalOpen(false)}
         onSuccess={({ patient }) => {
           setPatients((prev) => [patient, ...prev.filter((p) => p.id !== patient.id)]);

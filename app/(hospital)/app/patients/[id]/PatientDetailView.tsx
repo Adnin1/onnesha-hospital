@@ -15,6 +15,7 @@ import {
   HeartPulse,
   Stethoscope,
   AlertCircle,
+  PlusCircle,
 } from "lucide-react";
 import { getPatient360Action, getPatientsAction } from "@/lib/patient/actions";
 import {
@@ -30,10 +31,13 @@ import {
 import { formatBDPhoneDisplay } from "@/lib/patient/phone";
 import { formatDateBDT } from "@/lib/utils";
 import { HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
+import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
+import { UnifiedPatientIntakeModal } from "@/components/patient/UnifiedPatientIntakeModal";
 
 export default function PatientDetailView({ patientId }: { patientId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmissionModalOpen, setIsAdmissionModalOpen] = useState(false);
 
   const [patient, setPatient] = useState<PatientMaster | null>(null);
   const [allergies, setAllergies] = useState<PatientAllergy[]>([]);
@@ -154,7 +158,15 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
           <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to Patient Directory
         </Link>
 
-        <div className="flex items-center space-x-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setIsAdmissionModalOpen(true)}
+            className="inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition"
+          >
+            <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
+            Admit / New Service
+          </button>
+          <EpisodeBillingPanel patientId={patient.id} />
           <button
             onClick={handlePrint}
             className="inline-flex items-center px-3.5 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-2xs transition"
@@ -581,6 +593,24 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
       <div className="hidden print:block mt-8">
         <HospitalPrintFooter />
       </div>
+
+      <UnifiedPatientIntakeModal
+        isOpen={isAdmissionModalOpen}
+        initialMode="EXISTING"
+        initialPatient={patient}
+        onClose={() => setIsAdmissionModalOpen(false)}
+        onSuccess={() => {
+          if (patientId && patientId !== "preview") {
+            void getPatient360Action(patientId).then((res) => {
+              if (res.success && res.data) {
+                setPatient(res.data.patient);
+                setVisits(res.data.visits);
+                setTimeline(res.data.timeline);
+              }
+            });
+          }
+        }}
+      />
     </div>
   );
 }

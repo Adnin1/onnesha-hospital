@@ -118,6 +118,7 @@ export async function registerPatientAction(formData: {
       .from("patients")
       .insert({
         organization_id: session.organizationId,
+        patient_id: patientCode,
         patient_code: patientCode,
         full_name: formData.fullName.trim(),
         phone: formData.phone.trim(),
@@ -128,6 +129,8 @@ export async function registerPatientAction(formData: {
         blood_group: formData.bloodGroup || "UNKNOWN",
         marital_status: formData.maritalStatus || null,
         occupation: formData.occupation || null,
+        nid_or_birth_cert: formData.nid?.trim() || null,
+        address: formData.address?.trim() || null,
         created_by: session.userId,
       })
       .select("*")

@@ -9,6 +9,7 @@ import {
   UnifiedPatientIntakePayload,
 } from "@/lib/patient/actions";
 import { searchPatientsAction } from "@/lib/patient/actions";
+import { searchReferralAgentsAction } from "@/lib/referrals/actions";
 import { PatientMaster } from "@/types/clinical";
 
 type Props = {
@@ -19,6 +20,8 @@ type Props = {
     episodeId?: string;
     episodeNumber?: string;
   }) => void;
+  initialMode?: "NEW" | "EXISTING";
+  initialPatient?: PatientMaster | null;
 };
 
 type Option = { id: string; name: string };
@@ -45,11 +48,17 @@ function toDhakaIso(value: string) {
   return new Date(value + ":00+06:00").toISOString();
 }
 
-export function UnifiedPatientIntakeModal({ isOpen, onClose, onSuccess }: Props) {
-  const [mode, setMode] = useState<"NEW" | "EXISTING">("NEW");
+export function UnifiedPatientIntakeModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  initialMode = "NEW",
+  initialPatient = null,
+}: Props) {
+  const [mode, setMode] = useState<"NEW" | "EXISTING">(initialPatient ? "EXISTING" : initialMode);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<PatientMaster[]>([]);
-  const [selectedExisting, setSelectedExisting] = useState<PatientMaster | null>(null);
+  const [selectedExisting, setSelectedExisting] = useState<PatientMaster | null>(initialPatient);
   const [loadingSearch, setLoadingSearch] = useState(false);
 
   const [fullName, setFullName] = useState("");
@@ -110,7 +119,16 @@ export function UnifiedPatientIntakeModal({ isOpen, onClose, onSuccess }: Props)
     setErrorMsg(null);
     setDuplicateWarning(null);
     setDuplicateMatches(null);
-    setSelectedExisting(null);
+
+    if (initialPatient) {
+      setMode("EXISTING");
+      setSelectedExisting(initialPatient);
+      setSearch(initialPatient.patient_code + " • " + initialPatient.full_name);
+    } else {
+      setMode(initialMode || "NEW");
+      setSelectedExisting(null);
+      setSearch("");
+    }
 
     let alive = true;
     async function loadOptions() {
@@ -122,13 +140,13 @@ export function UnifiedPatientIntakeModal({ isOpen, onClose, onSuccess }: Props)
         supabase.from("beds").select("id, bed_number, status, daily_rate, wards(name)").eq("is_active", true).order("bed_number"),
         supabase.from("cabins").select("id, cabin_number, status, daily_rate, cabin_type").order("cabin_number"),
         supabase.from("critical_care_units").select("id, unit_name, unit_type, daily_charge").eq("is_active", true).order("unit_name"),
-        supabase.from("referral_agents").select("id, agent_code, full_name").eq("is_active", true).order("full_name"),
+        searchReferralAgentsAction(""),
       ]);
       if (!alive) return;
       if (depRes.data) setDepartments(depRes.data as Option[]);
       if (docRes.data) setDoctors(docRes.data as DoctorOption[]);
       if (bedRes.data) {
-        setBeds((docRes.data as unknown as Array<BedOption & { wards?: { name?: string } | null }>).map((b) => ({
+        setBeds((bedRes.data as unknown as Array<BedOption & { wards?: { name?: string } | null }>).map((b) => ({
           ...b,
           daily_rate: Number(b.daily_rate || 0),
           ward_name: b.wards?.name,
@@ -136,12 +154,14 @@ export function UnifiedPatientIntakeModal({ isOpen, onClose, onSuccess }: Props)
       }
       if (cabinRes.data) setCabins((cabinRes.data as CabinOption[]).map((c) => ({ ...c, daily_rate: Number(c.daily_rate || 0) })));
       if (unitRes.data) setUnits((unitRes.data as UnitOption[]).map((u) => ({ ...u, daily_charge: Number(u.daily_charge || 0) })));
-      if (refRes.data) setReferrals(refRes.data as { id: string; agent_code: string; full_name: string }[]);
+      if (refRes.success && refRes.data) {
+        setReferrals(refRes.data.map((r) => ({ id: r.id, agent_code: r.agent_code, full_name: r.full_name })));
+      }
       setLoadingOptions(false);
     }
     void loadOptions();
     return () => { alive = false; };
-  }, [isOpen]);
+  }, [isOpen, initialMode, initialPatient]);
 
   useEffect(() => {
     if (!isOpen || mode !== "EXISTING" || search.trim().length < 2) {
@@ -207,10 +227,37 @@ export function UnifiedPatientIntakeModal({ isOpen, onClose, onSuccess }: Props)
     setEmergencyPhone("");
   }
 
-  async function submit(bypass = false) {
+  async function submit(bypass = false, servicesOverride?: UnifiedPatientIntakePayload["services"]) {
     setSubmitting(true);
     setErrorMsg(null);
     setDuplicateWarning(null);
+
+    const activeServices = servicesOverride ?? {
+      opd: {
+        enabled: opdEnabled,
+        departmentId: opdDepartmentId || undefined,
+        doctorId: opdDoctorId || undefined,
+        chiefComplaint: opdComplaint || undefined,
+        priority: opdPriority,
+      },
+      ipd: {
+        enabled: ipdEnabled,
+        departmentId: ipdDepartmentId || undefined,
+        doctorId: ipdDoctorId || undefined,
+        bedId: ipdBedId || undefined,
+        cabinId: ipdCabinId || undefined,
+        provisionalDiagnosis: ipdDiagnosis || undefined,
+        referralAgentId: referralAgentId || undefined,
+      },
+      criticalCare: {
+        enabled: criticalEnabled,
+        unitId: criticalUnitId || undefined,
+        bedNumber: criticalBedNumber || undefined,
+        doctorId: criticalDoctorId || undefined,
+        initialDiagnosis: criticalDiagnosis || undefined,
+        ventilatorRequired,
+      },
+    };
 
     const payload: UnifiedPatientIntakePayload = {
       existingPatientId: selectedExisting?.id,
@@ -233,32 +280,7 @@ export function UnifiedPatientIntakeModal({ isOpen, onClose, onSuccess }: Props)
             emergencyRelation: emergencyRelation || undefined,
           }
         : undefined,
-      services: {
-        opd: {
-          enabled: opdEnabled,
-          departmentId: opdDepartmentId || undefined,
-          doctorId: opdDoctorId || undefined,
-          chiefComplaint: opdComplaint || undefined,
-          priority: opdPriority,
-        },
-        ipd: {
-          enabled: ipdEnabled,
-          departmentId: ipdDepartmentId || undefined,
-          doctorId: ipdDoctorId || undefined,
-          bedId: ipdBedId || undefined,
-          cabinId: ipdCabinId || undefined,
-          provisionalDiagnosis: ipdDiagnosis || undefined,
-          referralAgentId: referralAgentId || undefined,
-        },
-        criticalCare: {
-          enabled: criticalEnabled,
-          unitId: criticalUnitId || undefined,
-          bedNumber: criticalBedNumber || undefined,
-          doctorId: criticalDoctorId || undefined,
-          initialDiagnosis: criticalDiagnosis || undefined,
-          ventilatorRequired,
-        },
-      },
+      services: activeServices,
       bypassDuplicateWarning: bypass,
     };
 
@@ -291,6 +313,18 @@ export function UnifiedPatientIntakeModal({ isOpen, onClose, onSuccess }: Props)
     setIpdEnabled(false);
     setCriticalEnabled(false);
     onClose();
+  }
+
+  function submitPatientOnly() {
+    if (mode === "NEW" && (!fullName.trim() || !phone.trim())) {
+      setErrorMsg("Patient name and primary phone are required.");
+      return;
+    }
+    void submit(false, {
+      opd: { enabled: false },
+      ipd: { enabled: false },
+      criticalCare: { enabled: false },
+    });
   }
 
   function validateBeforeSubmit(e: React.FormEvent) {
@@ -440,16 +474,22 @@ export function UnifiedPatientIntakeModal({ isOpen, onClose, onSuccess }: Props)
                   <Field label="Attending Doctor"><select value={ipdDoctorId} onChange={(e) => setIpdDoctorId(e.target.value)} className={inputCls}><option value="">Select doctor</option>{doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}</select></Field>
                   <Field label="Referral Agent"><select value={referralAgentId} onChange={(e) => setReferralAgentId(e.target.value)} className={inputCls}><option value="">None</option>{referrals.map((r) => <option key={r.id} value={r.id}>{r.agent_code} — {r.full_name}</option>)}</select></Field>
                 </div>
+                {availableBeds.length === 0 && availableCabins.length === 0 && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>No vacant beds or cabins are currently available in IPD.</span>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Field label="Available Bed">
                     <select value={ipdBedId} onChange={(e) => { setIpdBedId(e.target.value); setIpdCabinId(""); }} className={inputCls}>
-                      <option value="">No bed selected</option>
+                      <option value="">{availableBeds.length === 0 ? "No available beds" : "Select available bed"}</option>
                       {availableBeds.map((b) => <option key={b.id} value={b.id}>{b.bed_number} • {b.ward_name || "Ward"} • {b.daily_rate} BDT/day</option>)}
                     </select>
                   </Field>
                   <Field label="Available Cabin">
                     <select value={ipdCabinId} onChange={(e) => { setIpdCabinId(e.target.value); setIpdBedId(""); }} className={inputCls}>
-                      <option value="">No cabin selected</option>
+                      <option value="">{availableCabins.length === 0 ? "No available cabins" : "Select available cabin"}</option>
                       {availableCabins.map((c) => <option key={c.id} value={c.id}>{c.cabin_number} • {c.cabin_type || "Cabin"} • {c.daily_rate} BDT/day</option>)}
                     </select>
                   </Field>
@@ -530,11 +570,25 @@ export function UnifiedPatientIntakeModal({ isOpen, onClose, onSuccess }: Props)
 
         <form onSubmit={validateBeforeSubmit} className="border-t border-slate-200 px-5 py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="text-[11px] text-slate-500">One submission = one atomic transaction. A failure must roll back all selected admissions.</div>
-          <div className="flex gap-2 justify-end">
+          <div className="flex flex-wrap gap-2 justify-end items-center">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-xs">Cancel</button>
-            <button type="submit" disabled={submitting || loadingOptions} className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs disabled:opacity-50 flex items-center justify-center">
+            {mode === "NEW" && (opdEnabled || ipdEnabled || criticalEnabled) && (
+              <button
+                type="button"
+                disabled={submitting || loadingOptions}
+                onClick={submitPatientOnly}
+                className="px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs disabled:opacity-50"
+              >
+                Register Patient Only
+              </button>
+            )}
+            <button type="submit" disabled={submitting || loadingOptions} className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs disabled:opacity-50 flex items-center justify-center shadow-sm">
               {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
-              {opdEnabled || ipdEnabled || criticalEnabled ? "Register & Create Admissions" : "Register Patient"}
+              {mode === "EXISTING"
+                ? "Admit / Create Selected Services"
+                : opdEnabled || ipdEnabled || criticalEnabled
+                ? "Register & Create Admissions"
+                : "Register Patient"}
             </button>
           </div>
         </form>

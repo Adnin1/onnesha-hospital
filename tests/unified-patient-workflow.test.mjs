@@ -39,5 +39,36 @@ describe("Unified Patient Intake & Episode Settlement Contract", () => {
     const c = fs.readFileSync(p, "utf8");
     assert.match(c, /UnifiedPatientIntakeModal/);
     assert.match(c, /EpisodeBillingPanel/);
+    assert.match(c, /Admit \/ New Service/);
+  });
+
+  test("migration 115 guarantees complete demographic fields and upgraded atomic intake", () => {
+    const p = path.join(ROOT, "supabase/migrations/20261007220000_unified_patient_intake_and_demographics_polish.sql");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /marital_status VARCHAR\(20\)/);
+    assert.match(c, /occupation VARCHAR\(100\)/);
+    assert.match(c, /age_years INTEGER/);
+    assert.match(c, /nid_or_birth_cert TEXT/);
+    assert.match(c, /address TEXT/);
+    assert.match(c, /CREATE OR REPLACE FUNCTION public\.create_patient_intake_atomic/);
+    assert.match(c, /idx_patients_org_phone_norm/);
+  });
+
+  test("modal correctly maps beds and cabins and provides Register Patient Only action", () => {
+    const p = path.join(ROOT, "components/patient/UnifiedPatientIntakeModal.tsx");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /setBeds\(\(bedRes\.data as unknown/);
+    assert.match(c, /searchReferralAgentsAction/);
+    assert.match(c, /submitPatientOnly/);
+    assert.match(c, /initialPatient/);
+    assert.match(c, /initialMode/);
+  });
+
+  test("PatientDetailView mounts EpisodeBillingPanel and UnifiedPatientIntakeModal", () => {
+    const p = path.join(ROOT, "app/(hospital)/app/patients/[id]/PatientDetailView.tsx");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /EpisodeBillingPanel/);
+    assert.match(c, /UnifiedPatientIntakeModal/);
+    assert.match(c, /Admit \/ New Service/);
   });
 });
