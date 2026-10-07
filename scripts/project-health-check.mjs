@@ -153,8 +153,8 @@ for (const file of prodFiles) {
       // Skip comments
       if (line.trim().startsWith('//') || line.trim().startsWith('*') || line.trim().startsWith('/*')) return;
       if (/localhost|127\.0\.0\.1/.test(line)) {
-        // Allow documented container healthcheck, devUrl, and CORS development origins
-        if (/devUrl|sandbox|tauri\.conf|docker-compose\.yml|ALLOWED_ORIGINS|payment-callback|payment-initiate/.test(relPath) || /tauri:\/\/localhost|localhost\/healthz/.test(line)) {
+        // Allow documented container healthcheck, devUrl, playwright config, and CORS development origins
+        if (/devUrl|sandbox|tauri\.conf|docker-compose\.yml|playwright\.config|ALLOWED_ORIGINS|payment-callback|payment-initiate/.test(relPath) || /tauri:\/\/localhost|localhost\/healthz/.test(line)) {
           return;
         }
         warn(`localhost reference in ${relPath}:${i + 1}`);

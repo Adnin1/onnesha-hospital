@@ -1,17 +1,17 @@
 {
-  "version": "1.1.54",
+  "version": "1.1.55",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.54. Referral analytics mathematical join repair, yearly/all-history unbounded intervals, BMDC medical ethics gate, and CI hermetic webserver.",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.55. Version synchronization fix (Dockerfile + service worker), CI blocker resolution from v1.1.54.",
   "pub_date": "2026-10-08T07:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.54.exe",
-      "installer_exe_sha256": "923D73FCFEC3D647A7FFE39DF0177A2574BE69B20A9C41DBFA21A7AB387C18A2",
-      "installer_exe_size": 18881661,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.54.msi",
-      "installer_msi_sha256": "1C833D347E907F9551EE55BA2D127134F3725F44E376EE3642AE72593509847C",
-      "installer_msi_size": 20512768,
-      "status": "built_locally_verified",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.55.exe",
+      "installer_exe_sha256": "PENDING_BUILD",
+      "installer_exe_size": 0,
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.55.msi",
+      "installer_msi_sha256": "PENDING_BUILD",
+      "installer_msi_size": 0,
+      "status": "pending_ci_build",
       "verified_historical_installer": "https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe"
     }
   },
