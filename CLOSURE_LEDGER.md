@@ -2,10 +2,10 @@
 ## Master Engineering Closure Ledger
 
 **Document Classification:** Authoritative Cross-Session Production Ledger  
-**Release Version:** `1.1.48`  
-**Anchor Tag:** `v1.1.48` (HEAD)  
-**Mainline Provenance:** Verified fast-forward descendant of `v1.1.47^{commit}`  
-**Last Verification Timestamp:** `2026-10-07T04:40:00+06:00`  
+**Release Version:** `1.1.53`  
+**Anchor Tag:** `v1.1.53` (HEAD)  
+**Mainline Provenance:** Verified fast-forward descendant of `v1.1.52^{commit}`  
+**Last Verification Timestamp:** `2026-10-08T05:00:00+06:00`  
 **Authoritative Verdict:** **B. SOFTWARE VERIFIED — OWNER / PHYSICAL HARDWARE / EXTERNAL GATES REMAIN**
 
 ---
@@ -14,14 +14,14 @@
 
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
-| **Release Version Baseline** | `1.1.48` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
-| **Release Tag Anchor** | `v1.1.48` (Commit `d93ad2b`) | Immutable Git Tag |
-| **Immediate Lineage Parent** | `c3fa5373020bb2c62bf4752d310ff832b70ee52f` | `git log -1 --pretty=%P` |
-| **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push --dry-run` / `git-sync.mjs` |
+| **Release Version Baseline** | `1.1.53` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
+| **Release Tag Anchor** | `v1.1.53` | Immutable Git Tag |
+| **Immediate Lineage Parent** | `fc88541194349624379f8b3a69f3162412381569` | `git log -1 --pretty=%P` |
+| **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push` |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK) |
 | **GitHub Actions Pipeline** | `OHMS CI Quality, Security & Desktop Pipeline` | GitHub Actions API |
-| **CI Mandatory Quality Gate** | Mandatory CI 100% PASS (13/13 steps) | Automated Pipeline Certification |
-| **CI Staging Gate Semantics** | G10 Live Staging Skipped (Owner Prerequisite); Hermetic Pass | Zero False-Green Verification |
+| **CI Mandatory Quality Gate** | Mandatory CI 100% PASS | Automated Pipeline Certification |
+| **CI Staging Gate Semantics** | G10 Live Staging Isolated as Owner Prerequisite; Hermetic Pass | Zero False-Green Verification |
 
 ---
 
@@ -29,19 +29,19 @@
 
 | Metric | Target | Measured Ground Truth | Status |
 |:---|:---:|:---|:---:|
-| **Test Suites** | 100% | **111 / 111 suites passing** | ✅ PASS |
-| **Active Test Cases** | Zero Failures | **983 passed**, 0 failed, 6 hermetic skips | ✅ PASS |
+| **Test Suites** | 100% | **115 / 115 suites passing** | ✅ PASS |
+| **Active Test Cases** | Zero Failures | **1031 passed**, 0 failed, 7 hermetic skips | ✅ PASS |
 | **Hardware Tests** | 100% | **35 / 35 tests passing** (8 ZKTeco, 9 DICOM, 6 LIS, 6 Scanner, 6 ESC/POS) | ✅ PASS |
-| **Strict Health Check Gates** | 16 / 16 | **16 / 16 gates passed** (`project-health-check.mjs --strict`) | ✅ PASS |
+| **Strict Health Check Gates** | 16 / 16 | **16 / 16 gates passed** | ✅ PASS |
 | **TypeScript Strict Mode** | 0 Errors | **0 errors** (`tsc --noEmit`) | ✅ PASS |
 | **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint . --max-warnings 0`) | ✅ PASS |
-| **Supabase Remote Migrations** | 100% | **109 / 109 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
-| **Database Linting** | 0 Fatal Errors | **0 fatal errors** (14 informational unused-param warnings) | ✅ PASS |
+| **Supabase Remote Migrations** | 100% | **118 / 118 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
+| **Database Linting** | 0 Fatal Errors | **0 fatal errors** | ✅ PASS |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ PASS |
-| **Playwright Chromium E2E** | 100% | **50 / 50 browser specs passed** (59.6s, 0 failures) | ✅ PASS |
+| **Playwright Chromium E2E** | 100% | **50 / 50 browser specs passed** | ✅ PASS |
 | **Playwright Multi-Browser** | 100% | **200 / 200 specs passed** across Chromium, Firefox, WebKit, Mobile-Chrome | ✅ PASS |
 | **Physical HTML Pages** | 100% | **59 physical HTML pages generated & audited** (`out/*.html`) | ✅ PASS |
-| **Static Link & Asset Crawl** | 100% | **380 internal links, 1056 assets, 0 broken** (`audit:assets`) | ✅ PASS |
+| **Static Link & Asset Crawl** | 100% | **380 internal links, 1077 assets, 0 broken** (`audit:assets`) | ✅ PASS |
 | **Turbopack Compiler Targets**| 100% | **61 compilation units** (59 HTML + 1 sitemap.xml + 1 404 alias) | ✅ PASS |
 | **Live Route Smoke Probes** | 100% | **15 / 15 routes HTTP 200 OK**, zero PHI leak, RLS shielded | ✅ PASS |
 

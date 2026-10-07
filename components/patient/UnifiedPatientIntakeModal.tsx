@@ -26,7 +26,7 @@ type Props = {
 
 type Option = { id: string; name: string };
 type DoctorOption = { id: string; full_name: string; opd_fee: number; specialization?: string };
-type BedOption = { id: string; bed_number: string; status: string; daily_rate: number; ward_name?: string };
+type BedOption = { id: string; bed_number: string; status: string; daily_rate: number; ward_name?: string; critical_care_unit_id?: string | null };
 type CabinOption = { id: string; cabin_number: string; status: string; daily_rate: number; cabin_type?: string };
 type UnitOption = { id: string; unit_name: string; unit_type: string; daily_charge: number };
 
@@ -140,7 +140,7 @@ export function UnifiedPatientIntakeModal({
         const [depRes, docRes, bedRes, cabinRes, unitRes, refRes] = await Promise.allSettled([
           supabase.from("departments").select("id, name").eq("is_active", true).order("name"),
           supabase.from("doctors").select("id, full_name, opd_fee, specialization").eq("is_active", true).order("full_name"),
-          supabase.from("beds").select("id, bed_number, status, daily_rate, wards(name)").eq("is_active", true).order("bed_number"),
+          supabase.from("beds").select("id, bed_number, status, daily_rate, critical_care_unit_id, wards(name)").eq("is_active", true).order("bed_number"),
           supabase.from("cabins").select("id, cabin_number, status, daily_rate, cabin_type").order("cabin_number"),
           supabase.from("critical_care_units").select("id, unit_name, unit_type, daily_charge").eq("is_active", true).order("unit_name"),
           searchReferralAgentsAction(""),
@@ -153,6 +153,7 @@ export function UnifiedPatientIntakeModal({
             ...b,
             daily_rate: Number(b.daily_rate || 0),
             ward_name: b.wards?.name,
+            critical_care_unit_id: b.critical_care_unit_id,
           })));
         }
         if (cabinRes.status === "fulfilled" && cabinRes.value.data) setCabins((cabinRes.value.data as CabinOption[]).map((c) => ({ ...c, daily_rate: Number(c.daily_rate || 0) })));
@@ -563,7 +564,20 @@ export function UnifiedPatientIntakeModal({
                   <Field label="Critical-Care Bed">
                     <select value={criticalBedNumber} onChange={(e) => setCriticalBedNumber(e.target.value)} className={inputCls}>
                       <option value="">{loadingOptions ? "Loading beds..." : "Select available bed"}</option>
-                      {availableBeds.filter((b) => /ICU|CCU|ICCU|SICU|MICU|PICU/i.test((b.ward_name || "") + " " + b.bed_number)).map((b) => <option key={b.id} value={b.bed_number}>{b.bed_number} • {b.ward_name || "Critical Care"}</option>)}
+                      {availableBeds
+                        .filter((b) => {
+                          if (criticalUnitId && b.critical_care_unit_id === criticalUnitId) return true;
+                          if (selectedUnit && (
+                            (b.ward_name && b.ward_name.toLowerCase().includes(selectedUnit.unit_type.toLowerCase())) ||
+                            b.bed_number.toLowerCase().includes(selectedUnit.unit_type.toLowerCase())
+                          )) return true;
+                          return /ICU|CCU|ICCU|SICU|MICU|PICU/i.test((b.ward_name || "") + " " + b.bed_number);
+                        })
+                        .map((b) => (
+                          <option key={b.id} value={b.bed_number}>
+                            {b.bed_number} • {b.ward_name || "Critical Care"}
+                          </option>
+                        ))}
                     </select>
                   </Field>
                   <Field label="Admitting Doctor"><select value={criticalDoctorId} onChange={(e) => setCriticalDoctorId(e.target.value)} className={inputCls}><option value="">{loadingOptions ? "Loading doctors..." : "Select doctor"}</option>{doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}</select></Field>

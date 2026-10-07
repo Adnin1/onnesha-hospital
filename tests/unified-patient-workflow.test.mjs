@@ -112,6 +112,15 @@ describe("Unified Patient Intake & Episode Settlement Contract", () => {
     assert.match(c, /FUNCTION public\.complete_episode_discharge_atomic_v2/);
   });
 
+  test("migration 118 introduces critical care bed binding, bmdc ethics, and referral analytics", () => {
+    const p = path.join(ROOT, "supabase/migrations/20261008050000_referral_performance_and_critical_care_authority.sql");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /critical_care_unit_id/);
+    assert.match(c, /bmdc_ethics_acknowledged/);
+    assert.match(c, /FUNCTION public\.get_referral_performance_analytics/);
+    assert.match(c, /FUNCTION public\.get_referral_agents_safe_directory/);
+  });
+
   test("UnifiedPatientIntakeModal guarantees resilient submission and decoupling from option lookups", () => {
     const p = path.join(ROOT, "components/patient/UnifiedPatientIntakeModal.tsx");
     const c = fs.readFileSync(p, "utf8");

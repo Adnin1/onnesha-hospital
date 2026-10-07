@@ -20,6 +20,8 @@ export interface ReferralAgent {
   total_commission_settled: number;
   is_commission_eligible: boolean;
   compliance_approved: boolean;
+  bmdc_ethics_acknowledged?: boolean;
+  compliance_notes?: string | null;
   notes?: string | null;
   is_active: boolean;
   archived_at?: string | null;
@@ -252,6 +254,8 @@ export async function createReferralAgentAction(params: {
   address?: string;
   professional_registration_no?: string;
   is_commission_eligible?: boolean;
+  bmdc_ethics_acknowledged?: boolean;
+  compliance_notes?: string;
   notes?: string;
   agent_code?: string; // Kept for backward compatibility
 }): Promise<{ success: boolean; data?: ReferralAgent; error?: string }> {
@@ -295,6 +299,17 @@ export async function createReferralAgentAction(params: {
     const resObj = rpcRes as { success: boolean; agent_id?: string; agent_code?: string; error?: string };
     if (!resObj.success || !resObj.agent_id) {
       return { success: false, error: resObj.error || "Failed to create agent" };
+    }
+
+    // Persist BMDC ethics acknowledgment and compliance notes if provided
+    if (params.bmdc_ethics_acknowledged !== undefined || params.compliance_notes !== undefined) {
+      await supabase
+        .from("referral_agents")
+        .update({
+          bmdc_ethics_acknowledged: params.bmdc_ethics_acknowledged ?? false,
+          compliance_notes: params.compliance_notes?.trim() || null,
+        })
+        .eq("id", resObj.agent_id);
     }
 
     // Fetch newly created agent
@@ -890,6 +905,154 @@ export async function searchReferralAgentsForBillingAction(query?: string): Prom
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to search referral agents for billing";
+    return { success: false, error: msg };
+  }
+}
+
+export interface ReferralPerformanceSummary {
+  total_referred_patients: number;
+  total_admissions: number;
+  opd_referrals: number;
+  ipd_referrals: number;
+  critical_care_referrals: number;
+  gross_revenue: number;
+  total_discount: number;
+  net_revenue: number;
+  commission_earned: number;
+  commission_approved: number;
+  commission_paid: number;
+  commission_outstanding: number;
+}
+
+export interface ReferralMonthlyPerformance {
+  year_month: string;
+  year: number;
+  month: number;
+  month_name: string;
+  referred_patients: number;
+  gross_revenue: number;
+  discount_amount: number;
+  net_revenue: number;
+  commission_earned: number;
+  commission_paid: number;
+}
+
+export interface ReferralYearlyPerformance {
+  year: number;
+  referred_patients: number;
+  gross_revenue: number;
+  discount_amount: number;
+  net_revenue: number;
+  commission_earned: number;
+  commission_paid: number;
+}
+
+export interface ReferralTopAgent {
+  agent_id: string;
+  agent_code: string;
+  full_name: string;
+  agent_type: string;
+  patient_count: number;
+  net_revenue: number;
+  commission_earned: number;
+  commission_paid: number;
+  compliance_approved: boolean;
+  bmdc_ethics_acknowledged: boolean;
+}
+
+export interface ReferralPerformanceAnalyticsData {
+  time_window: { start: string; end: string };
+  summary: ReferralPerformanceSummary;
+  monthly: ReferralMonthlyPerformance[];
+  yearly: ReferralYearlyPerformance[];
+  top_agents: ReferralTopAgent[];
+}
+
+export interface SafeReferralAgent {
+  id: string;
+  agent_code: string;
+  full_name: string;
+  agent_type: string;
+  phone: string;
+  email?: string | null;
+  is_active: boolean;
+  compliance_approved: boolean;
+  bmdc_ethics_acknowledged: boolean;
+  created_at: string;
+}
+
+export async function getReferralPerformanceAnalyticsAction(params?: {
+  agentId?: string;
+  startDate?: string;
+  endDate?: string;
+}): Promise<{
+  success: boolean;
+  data?: ReferralPerformanceAnalyticsData;
+  error?: string;
+}> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Authentication required");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", user.id)
+      .single();
+
+    const orgId = profile?.organization_id;
+    if (!orgId) throw new Error("Organization profile not resolved");
+
+    const { data, error } = await supabase.rpc("get_referral_performance_analytics", {
+      p_org_id: orgId,
+      p_agent_id: params?.agentId || null,
+      p_start_date: params?.startDate || null,
+      p_end_date: params?.endDate || null,
+    });
+
+    if (error) throw error;
+    return {
+      success: true,
+      data: data as ReferralPerformanceAnalyticsData,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load referral performance analytics";
+    return { success: false, error: msg };
+  }
+}
+
+export async function getReferralAgentsSafeDirectoryAction(query?: string): Promise<{
+  success: boolean;
+  data?: SafeReferralAgent[];
+  error?: string;
+}> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Authentication required");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", user.id)
+      .single();
+
+    const orgId = profile?.organization_id;
+    if (!orgId) throw new Error("Organization profile not resolved");
+
+    const { data, error } = await supabase.rpc("get_referral_agents_safe_directory", {
+      p_org_id: orgId,
+      p_query: query?.trim() || null,
+    });
+
+    if (error) throw error;
+    return {
+      success: true,
+      data: (data || []) as SafeReferralAgent[],
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load referral directory";
     return { success: false, error: msg };
   }
 }
