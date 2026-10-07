@@ -1333,3 +1333,286 @@ export async function getEmergencyCasesAction() {
   }
 }
 
+
+
+/**
+ * Unified patient intake:
+ * one patient registration/reuse operation may create OPD, IPD and/or critical-care
+ * services in the same database transaction.
+ */
+export interface UnifiedPatientIntakePayload {
+  existingPatientId?: string;
+  encounterAt: string;
+  patient?: {
+    fullName: string;
+    phone: string;
+    alternatePhone?: string;
+    email?: string;
+    gender: "MALE" | "FEMALE" | "OTHER";
+    dob?: string;
+    bloodGroup?: string;
+    maritalStatus?: string;
+    occupation?: string;
+    nid?: string;
+    address?: string;
+    emergencyName?: string;
+    emergencyPhone?: string;
+    emergencyRelation?: string;
+  };
+  services: {
+    opd?: {
+      enabled: boolean;
+      departmentId?: string;
+      doctorId?: string;
+      chiefComplaint?: string;
+      priority?: "NORMAL" | "URGENT" | "CRITICAL";
+    };
+    ipd?: {
+      enabled: boolean;
+      departmentId?: string;
+      doctorId?: string;
+      wardId?: string;
+      bedId?: string;
+      cabinId?: string;
+      provisionalDiagnosis?: string;
+      referralAgentId?: string;
+    };
+    criticalCare?: {
+      enabled: boolean;
+      unitId?: string;
+      bedNumber?: string;
+      doctorId?: string;
+      initialDiagnosis?: string;
+      ventilatorRequired?: boolean;
+    };
+  };
+  bypassDuplicateWarning?: boolean;
+}
+
+export async function createUnifiedPatientIntakeAction(
+  payload: UnifiedPatientIntakePayload
+): Promise<ActionResult<{
+  patient: PatientMaster;
+  episodeId?: string;
+  episodeNumber?: string;
+  opdVisitId?: string;
+  ipdVisitId?: string;
+  ipdAssignmentId?: string;
+  criticalCareAdmissionId?: string;
+  encounterAt: string;
+}>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized: Valid hospital session required." };
+  }
+
+  try {
+    await requirePermission("patients.create");
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: patients.create required." };
+  }
+
+  const opdEnabled = !!payload.services?.opd?.enabled;
+  const ipdEnabled = !!payload.services?.ipd?.enabled;
+  const criticalEnabled = !!payload.services?.criticalCare?.enabled;
+
+  if (!opdEnabled && !ipdEnabled && !criticalEnabled) {
+    // Patient-only registration is intentionally supported.
+  }
+
+  if (ipdEnabled) {
+    const canAdmit =
+      (await hasPermission("ipd.admit")) ||
+      (await hasPermission("ipd.manage")) ||
+      (await hasPermission("ipd.view"));
+    if (!canAdmit) {
+      return { success: false, error: "403 Forbidden: IPD admission permission required." };
+    }
+  }
+
+  if (opdEnabled) {
+    const canOpd =
+      (await hasPermission("opd.manage")) ||
+      (await hasPermission("opd.view")) ||
+      (await hasPermission("appointments.manage"));
+    if (!canOpd) {
+      return { success: false, error: "403 Forbidden: OPD permission required." };
+    }
+  }
+
+  if (criticalEnabled) {
+    const canCritical =
+      (await hasPermission("critical_care.manage")) ||
+      (await hasPermission("ipd.manage"));
+    if (!canCritical) {
+      return { success: false, error: "403 Forbidden: Critical Care management permission required." };
+    }
+  }
+
+  const services = payload.services || {};
+  const firstIpd = services.ipd;
+  const firstCritical = services.criticalCare;
+
+  if (ipdEnabled && !firstIpd?.bedId && !firstIpd?.cabinId) {
+    return { success: false, error: "IPD admission requires an available bed or cabin." };
+  }
+
+  if (criticalEnabled && (!firstCritical?.unitId || !firstCritical?.bedNumber)) {
+    return { success: false, error: "Critical Care admission requires a unit and bed." };
+  }
+
+  const encounterAt = new Date(payload.encounterAt);
+  if (Number.isNaN(encounterAt.getTime())) {
+    return { success: false, error: "Invalid admission/encounter date and time." };
+  }
+
+  if (!payload.existingPatientId) {
+    const patient = payload.patient;
+    if (!patient) {
+      return { success: false, error: "Patient demographic data is required for a new registration." };
+    }
+    if (!patient.fullName?.trim() || patient.fullName.trim().length < 2) {
+      return { success: false, error: "Patient full name is required." };
+    }
+    const normalizedPhone = normalizeBDPhone(patient.phone || "");
+    if (!isValidNormalizedBDPhone(normalizedPhone)) {
+      return { success: false, error: "A valid 11-digit Bangladeshi mobile number is required." };
+    }
+
+    if (!payload.bypassDuplicateWarning) {
+      const dupResult = await detectDuplicatePatients({
+        organizationId: session.organizationId,
+        fullName: patient.fullName,
+        phone: patient.phone,
+        dob: patient.dob,
+        gender: patient.gender,
+        nid: patient.nid,
+        emergencyPhone: patient.emergencyPhone,
+      });
+
+      if (dupResult.hasDuplicate && (dupResult.confidence === "HIGH" || dupResult.confidence === "MEDIUM")) {
+        return {
+          success: false,
+          error: "Potential duplicate patient detected.",
+          duplicateWarning: dupResult,
+        };
+      }
+    }
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const rpcRequest = {
+      organization_id: session.organizationId,
+      user_id: session.userId,
+      existing_patient_id: payload.existingPatientId || null,
+      encounter_at: encounterAt.toISOString(),
+      patient: payload.patient
+        ? {
+            ...payload.patient,
+            full_name: payload.patient.fullName,
+            alternate_phone: payload.patient.alternatePhone,
+            marital_status: payload.patient.maritalStatus,
+            emergency_name: payload.patient.emergencyName,
+            emergency_phone: payload.patient.emergencyPhone,
+            emergency_relation: payload.patient.emergencyRelation,
+          }
+        : null,
+      services: {
+        opd: {
+          ...(payload.services.opd || {}),
+          department_id: payload.services.opd?.departmentId || null,
+          doctor_id: payload.services.opd?.doctorId || null,
+          chief_complaint: payload.services.opd?.chiefComplaint || null,
+        },
+        ipd: {
+          ...(payload.services.ipd || {}),
+          department_id: payload.services.ipd?.departmentId || null,
+          doctor_id: payload.services.ipd?.doctorId || null,
+          ward_id: payload.services.ipd?.wardId || null,
+          bed_id: payload.services.ipd?.bedId || null,
+          cabin_id: payload.services.ipd?.cabinId || null,
+          provisional_diagnosis: payload.services.ipd?.provisionalDiagnosis || null,
+          referral_agent_id: payload.services.ipd?.referralAgentId || null,
+        },
+        critical_care: {
+          ...(payload.services.criticalCare || {}),
+          enabled: !!payload.services.criticalCare?.enabled,
+          unit_id: payload.services.criticalCare?.unitId || null,
+          bed_number: payload.services.criticalCare?.bedNumber || null,
+          doctor_id: payload.services.criticalCare?.doctorId || null,
+          initial_diagnosis: payload.services.criticalCare?.initialDiagnosis || null,
+          ventilator_required: !!payload.services.criticalCare?.ventilatorRequired,
+        },
+      },
+    };
+
+    const { data, error } = await supabase.rpc("create_patient_intake_atomic", {
+      p_request: rpcRequest,
+    });
+
+    if (error) {
+      const message = error.message || "Unified patient intake transaction failed.";
+      const readable =
+        message.includes("MARITAL_STATUS") ? "Patient registration schema is not fully updated. Apply the latest forward migration and refresh the API schema." :
+        message.includes("BED_UNAVAILABLE") || message.includes("DOUBLE_ASSIGNMENT_PREVENTED") ? "Selected bed/cabin is no longer available. Refresh availability and select another." :
+        message.includes("CRITICAL_CARE_BED_UNAVAILABLE") || message.includes("CRITICAL_CARE_DOUBLE_ASSIGNMENT") ? "Selected critical-care bed is no longer available." :
+        message.includes("PATIENT_NOT_FOUND") ? "The selected patient no longer exists in this hospital organization." :
+        message.includes("OPD_DOCTOR_NOT_FOUND") || message.includes("IPD_DOCTOR_NOT_FOUND") ? "Selected doctor is inactive or unavailable." :
+        message.includes("OPD_DEPARTMENT_NOT_FOUND") || message.includes("IPD_DEPARTMENT_NOT_FOUND") ? "Selected department is inactive or unavailable." :
+        message.includes("TENANT_CONTEXT_MISMATCH") ? "Hospital organization context could not be verified." :
+        message.includes("CALLER_MISMATCH") ? "Authenticated user context changed. Please refresh and retry." :
+        message;
+      return { success: false, error: readable };
+    }
+
+    const result = data as {
+      success?: boolean;
+      patient_id?: string;
+      patient_code?: string;
+      episode_id?: string;
+      episode_number?: string;
+      opd_visit_id?: string;
+      ipd_visit_id?: string;
+      ipd_assignment_id?: string;
+      critical_care_admission_id?: string;
+      encounter_at?: string;
+      error?: string;
+    };
+
+    if (!result?.success || !result.patient_id) {
+      return { success: false, error: result?.error || "Unified patient intake did not complete." };
+    }
+
+    const { data: patientRow, error: patientError } = await supabase
+      .from("patients")
+      .select("*")
+      .eq("id", result.patient_id)
+      .eq("organization_id", session.organizationId)
+      .single();
+
+    if (patientError || !patientRow) {
+      return { success: false, error: "Transaction completed but the patient record could not be reloaded." };
+    }
+
+    return {
+      success: true,
+      data: {
+        patient: patientRow as unknown as PatientMaster,
+        episodeId: result.episode_id,
+        episodeNumber: result.episode_number,
+        opdVisitId: result.opd_visit_id,
+        ipdVisitId: result.ipd_visit_id,
+        ipdAssignmentId: result.ipd_assignment_id,
+        criticalCareAdmissionId: result.critical_care_admission_id,
+        encounterAt: result.encounter_at || encounterAt.toISOString(),
+      },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Unified patient intake transaction failed.",
+    };
+  }
+}
