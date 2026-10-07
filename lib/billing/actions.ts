@@ -703,7 +703,7 @@ export async function completeEpisodeDischargeAction(params: {
     await recordAuditLog({
       organizationId: session.organizationId,
       userId: session.userId,
-      action: "DISCHARGE",
+      action: "UPDATE",
       module: "BILLING",
       entityType: "patient_care_episode",
       entityId: params.episodeId,
