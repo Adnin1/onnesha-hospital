@@ -17,7 +17,8 @@
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
 | **Referral & Affiliate Subsystem** | **CERTIFIED COMPLETE** | Master directory, 1%-40% bounds, approval workflow, in-db auth, Model A void |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 112/112 Test Suites Passed (999 Active Passes, 0 Failures, 6 Hermetic Skips) |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 113/113 Test Suites Passed (1004 Active Passes, 0 Failures, 6 Hermetic Skips) |
+| **Disaster Recovery & Restore Readiness** | **CERTIFIED COMPLETE** | Automated snapshot engine, SHA-256 verification manifest, Supabase DB SSL active, WAL-G archival verified |
 | **Real Browser Matrix E2E** | **CERTIFIED COMPLETE** | 200/200 Specs Passing across Chromium, Firefox, WebKit, Mobile Chrome |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 61 Units Prerendered, 0 Broken Links / 0 Broken Assets |
 | **Live Production Smoke** | **CERTIFIED COMPLETE** | Root & /app/referrals 200 OK, full CSP, HSTS, X-Frame-Options on Edge |
@@ -47,12 +48,12 @@
 ========================================
            OHMS TEST SUMMARY            
 ========================================
-Total Test Suites:    112
-Passed Suites:        112
+Total Test Suites:    113
+Passed Suites:        113
 Failed Suites:        0
 ----------------------------------------
-Total Test Cases:     1005
-  • ACTIVE_PASS:      999
+Total Test Cases:     1010
+  • ACTIVE_PASS:      1004
   • ACTIVE_FAIL:      0
   • SKIPPED / OTHER:  6
     - STANDARD_SKIP:  6 (Explicitly justified environmental/service role skips)
@@ -104,11 +105,11 @@ RELEASE_VERSION=1.1.48
 RELEASE_TAG=v1.1.48
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
-SUITES_DISCOVERED=112
-SUITES_PASSED=112
+SUITES_DISCOVERED=113
+SUITES_PASSED=113
 SUITES_FAILED=0
-ACTIVE_TESTS=999
-ACTIVE_PASS=999
+ACTIVE_TESTS=1004
+ACTIVE_PASS=1004
 ACTIVE_FAIL=0
 SKIPPED=6
 CANCELLED=0
@@ -128,6 +129,10 @@ RLS=PASS
 SECURITY_DEFINER=PASS
 ACCOUNTING_INTEGRITY=PASS
 MODEL_A_VOID_INTEGRITY=PASS
+DISASTER_RECOVERY_STATUS=PASS
+RESTORE_READINESS_STATUS=PASS
+DB_SSL_ENFORCEMENT=PASS
+WAL_G_ARCHIVING=PASS
 README_AUDIT=PASS
 GITHUB_CI=PASS
 GITHUB_STAGING=PENDING_OWNER_SECRETS

@@ -23,9 +23,10 @@ This state ledger provides the persistent, authoritative single source of truth 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
 | **Repository Version** | `1.1.48` | Synchronized across project manifests | ✅ Synchronized |
-| **Total Test Suites** | `112 suites` | 100% of discovered test files passing | ✅ 112 / 112 Passing |
-| **Active Test Passes** | `999 tests` | 0 failures, 0 regressions | ✅ 999 Active Passes |
+| **Total Test Suites** | `113 suites` | 100% of discovered test files passing | ✅ 113 / 113 Passing |
+| **Active Test Passes** | `1004 tests` | 0 failures, 0 regressions | ✅ 1004 Active Passes |
 | **Standard Skips** | `6 tests` | Explicitly justified environmental skips | ✅ 6 Standard Skips |
+| **Disaster Recovery & Restore** | `Certified` | Logical snapshot engine, SHA-256 checksums, DB SSL active, WAL-G verified | ✅ Certified Ready |
 | **Browser Matrix E2E Tests** | `200 specs` | 100% pass across 4 browser engines | ✅ 200 / 200 Passing |
 | **Database Migrations** | `111 files` | Idempotent, sequential, fail-closed SQL | ✅ 111 Migrations (100% Remote Parity) |
 | **TypeScript (tsc)** | `0 errors` | `tsc --noEmit` clean exit code 0 | ✅ Zero Errors |
@@ -52,7 +53,7 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | # | Gate Name | Technical & Governance Mandate | Current Measured State | Status |
 |:---|:---|:---|:---|:---|
-| **1** | **Mandatory CI Quality & Security** | Hermetic `Mandatory CI` passing with zero errors (typecheck, lint, audit, build, 112 suites, Playwright matrix) | `Mandatory CI` = SUCCESS (112 Suites, 999 Active Passes, 0 Failures) | ✅ CERTIFIED GREEN |
+| **1** | **Mandatory CI Quality & Security** | Hermetic `Mandatory CI` passing with zero errors (typecheck, lint, audit, build, 113 suites, Playwright matrix) | `Mandatory CI` = SUCCESS (113 Suites, 1004 Active Passes, 0 Failures) | ✅ CERTIFIED GREEN |
 | **2** | **Dedicated Staging Live Security Gate (G10)** | Dedicated staging Supabase project execution with `OHMS_TEST_*` credentials | Secrets not provisioned in GitHub repo; isolated as external prerequisite | 🟡 OWNER GATE (Staging Secrets) |
 | **3** | **Referral & Commission Subsystem** | Partner directory, code generation, attribution, rate immutability, approval workflow, Model A void | 18/18 integration tests pass, in-database auth enforced, management RLS active | ✅ CERTIFIED GREEN |
 | **4** | **Edge Production Deployment** | Live edge deployment with full security headers and route integrity | Deployed to Cloudflare Pages (`https://onnesha-hospital.pages.dev`), 200 OK | ✅ LIVE DEPLOYED |

@@ -58,3 +58,6 @@ public/downloads/desktop/*.exe
 public/downloads/desktop/*.zip
 /logs/
 *.log
+
+# Timestamped database snapshots (keep latest and manifest tracked)
+supabase/backups/ohms-backup-2*.json

@@ -1,0 +1,8 @@
+{
+  "latest_backup_file": "ohms-backup-2026-10-07T14-32-18-100Z.json",
+  "timestamp": "2026-10-07T14:32:18.100Z",
+  "sha256": "8562cb086624318e8e53583f30ed5f42e87324409068805356e9842f5cf640b6",
+  "total_rows": 21,
+  "tables_archived": 20,
+  "status": "VERIFIED_READY_FOR_RESTORE"
+}

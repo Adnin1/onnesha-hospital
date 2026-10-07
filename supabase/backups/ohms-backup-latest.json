@@ -1,0 +1,450 @@
+{
+  "metadata": {
+    "timestamp": "2026-10-07T14:32:18.100Z",
+    "target_host": "https://iuhtzahuszdkdarhxobx.supabase.co",
+    "engine_version": "PostgreSQL 17.6 (Supabase ap-southeast-1)",
+    "format": "OHMS-DR-SNAPSHOT-V1",
+    "total_tables": 20,
+    "total_rows": 21,
+    "sha256": "e633293bc715ebc3dc2a32d232ba975b94be6e4fa3b14f889e6a2d07148a5a3c"
+  },
+  "tables": {
+    "organizations": {
+      "count": 1,
+      "rows": [
+        {
+          "id": "a0000000-0000-0000-0000-000000000001",
+          "name": "Annesha Hospital and Diagnostic Center",
+          "code": "OH",
+          "phone": "01718835623",
+          "email": "aaih.apon@gmail.com",
+          "address": "সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া",
+          "is_active": true,
+          "created_at": "2026-09-12T13:29:20.45238+00:00",
+          "slug": "oh",
+          "status": "ACTIVE",
+          "is_canonical_public": true,
+          "updated_at": "2026-10-01T20:27:49.952364+00:00"
+        }
+      ],
+      "status": "SNAPSHOT_OK"
+    },
+    "organization_settings": {
+      "count": 0,
+      "rows": [],
+      "status": "SNAPSHOT_OK"
+    },
+    "profiles": {
+      "count": 0,
+      "rows": [],
+      "status": "SHIELDED_OR_EMPTY",
+      "error_code": "42501"
+    },
+    "patients": {
+      "count": 0,
+      "rows": [],
+      "status": "SNAPSHOT_OK"
+    },
+    "patient_visits": {
+      "count": 0,
+      "rows": [],
+      "status": "SNAPSHOT_OK"
+    },
+    "doctors": {
+      "count": 5,
+      "rows": [
+        {
+          "id": "d0000000-0000-0000-0000-000000000001",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_code": "DOC-001",
+          "full_name": "Prof. Dr. M. A. Rahman",
+          "specialization": "Medicine Specialist",
+          "designation": "Senior Consultant",
+          "degrees": "MBBS, FCPS",
+          "bmdc_reg_number": "A-12490",
+          "department_id": "b0000000-0000-0000-0000-000000000001",
+          "opd_fee": 800,
+          "commission_rate": 20,
+          "room_number": "Room 101",
+          "is_active": true,
+          "created_at": "2026-09-12T13:29:20.45238+00:00",
+          "public_bio": null,
+          "is_public": true,
+          "experience_years": 10,
+          "followup_fee": 400,
+          "report_fee": 0,
+          "avatar_url": null,
+          "bio": null
+        },
+        {
+          "id": "d0000000-0000-0000-0000-000000000002",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_code": "DOC-002",
+          "full_name": "Dr. Farhana Yasmin",
+          "specialization": "Gynecologist & Obstetrician",
+          "designation": "Associate Professor",
+          "degrees": "MBBS, DGO, FCPS",
+          "bmdc_reg_number": "A-23812",
+          "department_id": "b0000000-0000-0000-0000-000000000003",
+          "opd_fee": 700,
+          "commission_rate": 20,
+          "room_number": "Room 102",
+          "is_active": true,
+          "created_at": "2026-09-12T13:29:20.45238+00:00",
+          "public_bio": null,
+          "is_public": true,
+          "experience_years": 10,
+          "followup_fee": 400,
+          "report_fee": 0,
+          "avatar_url": null,
+          "bio": null
+        },
+        {
+          "id": "d0000000-0000-0000-0000-000000000003",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_code": "DOC-CARD-001",
+          "full_name": "Dr. K. M. Tariqul Islam",
+          "specialization": "Cardiologist & Heart Specialist",
+          "designation": "Associate Professor & Senior Consultant",
+          "degrees": "MBBS, MD (Cardiology), NICVD, FACC",
+          "bmdc_reg_number": "A-42198",
+          "department_id": "b0000000-0000-0000-0000-000000000002",
+          "opd_fee": 1000,
+          "commission_rate": 20,
+          "room_number": "Room 103",
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "public_bio": "Specialist in Interventional Cardiology, Hypertension, Echocardiography, and Heart Disease Management.",
+          "is_public": true,
+          "experience_years": 16,
+          "followup_fee": 600,
+          "report_fee": 300,
+          "avatar_url": null,
+          "bio": null
+        },
+        {
+          "id": "d0000000-0000-0000-0000-000000000004",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_code": "DOC-PED-001",
+          "full_name": "Dr. Nusrat Jahan",
+          "specialization": "Pediatrician & Neonatologist",
+          "designation": "Consultant Pediatrician",
+          "degrees": "MBBS, FCPS (Pediatrics), DCH",
+          "bmdc_reg_number": "A-51204",
+          "department_id": "70380b1b-898c-4ac5-ba3b-b84185194f7b",
+          "opd_fee": 800,
+          "commission_rate": 20,
+          "room_number": "Room 104",
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "public_bio": "Dedicated child health expert specializing in newborn care, child development, immunization, and pediatric infections.",
+          "is_public": true,
+          "experience_years": 12,
+          "followup_fee": 500,
+          "report_fee": 200,
+          "avatar_url": null,
+          "bio": null
+        },
+        {
+          "id": "d0000000-0000-0000-0000-000000000005",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_code": "DOC-ORTH-001",
+          "full_name": "Dr. Md. Ashraful Alam",
+          "specialization": "Orthopedic Surgeon",
+          "designation": "Assistant Professor (Orthopedics)",
+          "degrees": "MBBS, MS (Orthopedic Surgery), NITOR",
+          "bmdc_reg_number": "A-39812",
+          "department_id": "2cec0bcb-4e0f-4a33-a256-90b129907fe5",
+          "opd_fee": 900,
+          "commission_rate": 20,
+          "room_number": "Room 105",
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "public_bio": "Specialist in joint replacement, trauma reconstruction, arthroscopy, and spine care.",
+          "is_public": true,
+          "experience_years": 14,
+          "followup_fee": 500,
+          "report_fee": 250,
+          "avatar_url": null,
+          "bio": null
+        }
+      ],
+      "status": "SNAPSHOT_OK"
+    },
+    "doctor_schedules": {
+      "count": 15,
+      "rows": [
+        {
+          "id": "f61ea0b5-1a2a-48f2-af82-e65da6ba28a4",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000001",
+          "day_of_week": "TUESDAY",
+          "start_time": "09:00:00",
+          "end_time": "13:00:00",
+          "max_tokens": 30,
+          "avg_consultation_minutes": 15,
+          "is_active": true,
+          "created_at": "2026-09-17T20:12:40.093359+00:00",
+          "room_number": "Room 101"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000011",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000002",
+          "day_of_week": "SATURDAY",
+          "start_time": "16:00:00",
+          "end_time": "20:00:00",
+          "max_tokens": 30,
+          "avg_consultation_minutes": 15,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 102"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000012",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000002",
+          "day_of_week": "SUNDAY",
+          "start_time": "16:00:00",
+          "end_time": "20:00:00",
+          "max_tokens": 30,
+          "avg_consultation_minutes": 15,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 102"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000013",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000002",
+          "day_of_week": "TUESDAY",
+          "start_time": "16:00:00",
+          "end_time": "20:00:00",
+          "max_tokens": 30,
+          "avg_consultation_minutes": 15,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 102"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000014",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000002",
+          "day_of_week": "WEDNESDAY",
+          "start_time": "16:00:00",
+          "end_time": "20:00:00",
+          "max_tokens": 30,
+          "avg_consultation_minutes": 15,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 102"
+        },
+        {
+          "id": "fa9627fa-c398-486b-afe1-bbdd25ca6813",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000001",
+          "day_of_week": "MONDAY",
+          "start_time": "09:00:00",
+          "end_time": "13:00:00",
+          "max_tokens": 30,
+          "avg_consultation_minutes": 15,
+          "is_active": true,
+          "created_at": "2026-09-17T20:14:58.851114+00:00",
+          "room_number": "Room 101"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000021",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000003",
+          "day_of_week": "SATURDAY",
+          "start_time": "09:00:00",
+          "end_time": "13:00:00",
+          "max_tokens": 25,
+          "avg_consultation_minutes": 20,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 103"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000022",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000003",
+          "day_of_week": "MONDAY",
+          "start_time": "09:00:00",
+          "end_time": "13:00:00",
+          "max_tokens": 25,
+          "avg_consultation_minutes": 20,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 103"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000023",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000003",
+          "day_of_week": "THURSDAY",
+          "start_time": "09:00:00",
+          "end_time": "13:00:00",
+          "max_tokens": 25,
+          "avg_consultation_minutes": 20,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 103"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000031",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000004",
+          "day_of_week": "SUNDAY",
+          "start_time": "10:00:00",
+          "end_time": "14:00:00",
+          "max_tokens": 30,
+          "avg_consultation_minutes": 15,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 104"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000032",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000004",
+          "day_of_week": "TUESDAY",
+          "start_time": "10:00:00",
+          "end_time": "14:00:00",
+          "max_tokens": 30,
+          "avg_consultation_minutes": 15,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 104"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000033",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000004",
+          "day_of_week": "WEDNESDAY",
+          "start_time": "10:00:00",
+          "end_time": "14:00:00",
+          "max_tokens": 30,
+          "avg_consultation_minutes": 15,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 104"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000041",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000005",
+          "day_of_week": "SATURDAY",
+          "start_time": "16:00:00",
+          "end_time": "20:00:00",
+          "max_tokens": 25,
+          "avg_consultation_minutes": 20,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 105"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000042",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000005",
+          "day_of_week": "MONDAY",
+          "start_time": "16:00:00",
+          "end_time": "20:00:00",
+          "max_tokens": 25,
+          "avg_consultation_minutes": 20,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 105"
+        },
+        {
+          "id": "e0000000-0000-0000-0000-000000000043",
+          "organization_id": "a0000000-0000-0000-0000-000000000001",
+          "doctor_id": "d0000000-0000-0000-0000-000000000005",
+          "day_of_week": "WEDNESDAY",
+          "start_time": "16:00:00",
+          "end_time": "20:00:00",
+          "max_tokens": 25,
+          "avg_consultation_minutes": 20,
+          "is_active": true,
+          "created_at": "2026-09-27T20:52:11.015202+00:00",
+          "room_number": "Room 105"
+        }
+      ],
+      "status": "SNAPSHOT_OK"
+    },
+    "beds": {
+      "count": 0,
+      "rows": [],
+      "status": "SHIELDED_OR_EMPTY",
+      "error_code": "42501"
+    },
+    "admissions": {
+      "count": 0,
+      "rows": [],
+      "status": "SHIELDED_OR_EMPTY",
+      "error_code": "PGRST205"
+    },
+    "referral_agents": {
+      "count": 0,
+      "rows": [],
+      "status": "SHIELDED_OR_EMPTY",
+      "error_code": "42501"
+    },
+    "referral_rate_history": {
+      "count": 0,
+      "rows": [],
+      "status": "SHIELDED_OR_EMPTY",
+      "error_code": "42501"
+    },
+    "patient_referral_attributions": {
+      "count": 0,
+      "rows": [],
+      "status": "SHIELDED_OR_EMPTY",
+      "error_code": "42501"
+    },
+    "invoices": {
+      "count": 0,
+      "rows": [],
+      "status": "SNAPSHOT_OK"
+    },
+    "invoice_items": {
+      "count": 0,
+      "rows": [],
+      "status": "SNAPSHOT_OK"
+    },
+    "payments": {
+      "count": 0,
+      "rows": [],
+      "status": "SNAPSHOT_OK"
+    },
+    "referral_commissions": {
+      "count": 0,
+      "rows": [],
+      "status": "SHIELDED_OR_EMPTY",
+      "error_code": "42501"
+    },
+    "referral_commission_settlements": {
+      "count": 0,
+      "rows": [],
+      "status": "SHIELDED_OR_EMPTY",
+      "error_code": "42501"
+    },
+    "general_ledger_entries": {
+      "count": 0,
+      "rows": [],
+      "status": "SHIELDED_OR_EMPTY",
+      "error_code": "PGRST205"
+    },
+    "journal_entries": {
+      "count": 0,
+      "rows": [],
+      "status": "SHIELDED_OR_EMPTY",
+      "error_code": "42501"
+    },
+    "audit_logs": {
+      "count": 0,
+      "rows": [],
+      "status": "SNAPSHOT_OK"
+    }
+  }
+}
