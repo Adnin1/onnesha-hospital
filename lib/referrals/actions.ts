@@ -142,7 +142,12 @@ export async function getReferralAgentsAction(): Promise<{
       .is("archived_at", null)
       .order("full_name", { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === "42501" || error.message?.includes("policy") || error.message?.includes("permission")) {
+        throw new Error("403 Forbidden: Management authority required to view full financial referral agent profiles. Use safe directory for non-financial intake.");
+      }
+      throw error;
+    }
     return { success: true, data: (data as ReferralAgent[]) || [] };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to load referral agents";
@@ -169,7 +174,12 @@ export async function getReferralAgentByIdAction(agentId: string): Promise<{
       .eq("id", agentId)
       .single();
 
-    if (aErr || !agent) throw aErr || new Error("Referral agent not found");
+    if (aErr || !agent) {
+      if (aErr?.code === "42501" || aErr?.message?.includes("policy") || aErr?.message?.includes("permission")) {
+        throw new Error("403 Forbidden: Management authority required to view agent detail profile and financial ledger.");
+      }
+      throw aErr || new Error("Referral agent not found");
+    }
 
     const [commissionsRes, settlementsRes, ratesRes, attribRes] = await Promise.all([
       supabase

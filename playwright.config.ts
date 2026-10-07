@@ -17,10 +17,16 @@ export default defineConfig({
   workers: 1,
   reporter: [["html", { open: "never" }], ["list"]],
   use: {
-    baseURL: process.env.E2E_BASE_URL || "https://onnesha-hospital.pages.dev",
+    baseURL: process.env.E2E_BASE_URL || "http://127.0.0.1:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
+  },
+  webServer: process.env.E2E_BASE_URL ? undefined : {
+    command: "npx --yes serve out -l 3000 -c serve.json",
+    url: "http://127.0.0.1:3000",
+    reuseExistingServer: !process.env.CI,
+    timeout: 60 * 1000,
   },
   projects: [
     {

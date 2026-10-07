@@ -83,7 +83,9 @@ export default function ReferralManagementPage() {
   // Performance Analytics State
   const [performanceData, setPerformanceData] = useState<ReferralPerformanceAnalyticsData | null>(null);
   const [loadingPerformance, setLoadingPerformance] = useState(false);
-  const [perfDateRange, setPerfDateRange] = useState<"THIS_MONTH" | "LAST_MONTH" | "THIS_YEAR" | "LAST_YEAR" | "ALL">("THIS_MONTH");
+  const [perfDateRange, setPerfDateRange] = useState<"THIS_MONTH" | "LAST_MONTH" | "THIS_YEAR" | "LAST_YEAR" | "ALL" | "CUSTOM">("THIS_MONTH");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
   const [selectedPerfAgentId, setSelectedPerfAgentId] = useState<string>("ALL");
 
   // Form States for Add Agent
@@ -137,16 +139,24 @@ export default function ReferralManagementPage() {
 
       if (perfDateRange === "THIS_MONTH") {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
       } else if (perfDateRange === "LAST_MONTH") {
         startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-        endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString();
+        endDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       } else if (perfDateRange === "THIS_YEAR") {
         startDate = new Date(now.getFullYear(), 0, 1).toISOString();
-        endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59).toISOString();
+        endDate = new Date(now.getFullYear() + 1, 0, 1).toISOString();
       } else if (perfDateRange === "LAST_YEAR") {
         startDate = new Date(now.getFullYear() - 1, 0, 1).toISOString();
-        endDate = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59).toISOString();
+        endDate = new Date(now.getFullYear(), 0, 1).toISOString();
+      } else if (perfDateRange === "CUSTOM" && customStartDate && customEndDate) {
+        startDate = new Date(`${customStartDate}T00:00:00.000Z`).toISOString();
+        const nextDay = new Date(`${customEndDate}T00:00:00.000Z`);
+        nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+        endDate = nextDay.toISOString();
+      } else if (perfDateRange === "ALL") {
+        startDate = undefined;
+        endDate = undefined;
       }
 
       const res = await getReferralPerformanceAnalyticsAction({
@@ -163,7 +173,7 @@ export default function ReferralManagementPage() {
     } finally {
       setLoadingPerformance(false);
     }
-  }, [perfDateRange, selectedPerfAgentId]);
+  }, [perfDateRange, selectedPerfAgentId, customStartDate, customEndDate]);
 
   const refreshAll = useCallback(async () => {
     setLoading(true);
@@ -946,7 +956,7 @@ export default function ReferralManagementPage() {
               </div>
               <select
                 value={perfDateRange}
-                onChange={(e) => setPerfDateRange(e.target.value as "THIS_MONTH" | "LAST_MONTH" | "THIS_YEAR" | "LAST_YEAR" | "ALL")}
+                onChange={(e) => setPerfDateRange(e.target.value as "THIS_MONTH" | "LAST_MONTH" | "THIS_YEAR" | "LAST_YEAR" | "ALL" | "CUSTOM")}
                 className="text-xs px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg outline-hidden font-medium"
               >
                 <option value="THIS_MONTH">This Month</option>
@@ -954,7 +964,46 @@ export default function ReferralManagementPage() {
                 <option value="THIS_YEAR">This Calendar Year</option>
                 <option value="LAST_YEAR">Previous Year</option>
                 <option value="ALL">All Available History</option>
+                <option value="CUSTOM">Custom Date Range</option>
               </select>
+
+              {perfDateRange === "CUSTOM" && (
+                <div className="flex items-center gap-2 bg-slate-100/80 px-2 py-1 rounded-lg border border-slate-200">
+                  <span className="text-[11px] text-slate-500 font-medium">From:</span>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="text-xs px-2 py-1 bg-white border border-slate-200 rounded text-slate-700 outline-hidden"
+                  />
+                  <span className="text-[11px] text-slate-500 font-medium">To:</span>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="text-xs px-2 py-1 bg-white border border-slate-200 rounded text-slate-700 outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => loadPerformanceData()}
+                    disabled={!customStartDate || !customEndDate || customStartDate > customEndDate}
+                    className="text-xs px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded font-medium disabled:opacity-50 transition"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomStartDate("");
+                      setCustomEndDate("");
+                      setPerfDateRange("THIS_MONTH");
+                    }}
+                    className="text-xs px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded font-medium transition"
+                  >
+                    Reset
+                  </button>
+                </div>
+              )}
 
               <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold ml-2">
                 <Users className="w-4 h-4 text-sky-600" />

@@ -1,14 +1,14 @@
 {
-  "version": "1.1.53",
+  "version": "1.1.54",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.53. Unified patient intake wizard, referral performance analytics, BMDC medical ethics governance, authoritative critical-care bed binding, and 1-bit Bangla raster typography.",
-  "pub_date": "2026-10-08T05:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.54. Referral analytics mathematical join repair, yearly/all-history unbounded intervals, BMDC medical ethics gate, and CI hermetic webserver.",
+  "pub_date": "2026-10-08T07:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.53.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.54.exe",
       "installer_exe_sha256": "923D73FCFEC3D647A7FFE39DF0177A2574BE69B20A9C41DBFA21A7AB387C18A2",
       "installer_exe_size": 18881661,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.53.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.54.msi",
       "installer_msi_sha256": "1C833D347E907F9551EE55BA2D127134F3725F44E376EE3642AE72593509847C",
       "installer_msi_size": 20512768,
       "status": "built_locally_verified",

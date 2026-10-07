@@ -92,7 +92,7 @@ function findSpecFiles(dir: string): string[] {
 
 export default async function globalSetup() {
   const baseURL =
-    process.env.E2E_BASE_URL ?? "https://onnesha-hospital.pages.dev";
+    process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000";
 
   let hostname: string;
   try {
