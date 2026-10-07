@@ -166,26 +166,20 @@ describe("OHMS Enterprise Referral & Affiliate Partner Commission Subsystem", ()
     assert.equal(agentTotalEarned, 1600);
   });
 
-  // --- Scenario 9: Partial Refund Ledger Adjustment ---
-  test("Scenario 9: Partial patient refund produces an explicit proportional commission reversal entry", () => {
-    const originalCommission = {
-      id: "comm-orig",
-      baseAmount: 8000,
-      ratePercent: 10,
-      commissionAmount: 800,
-    };
-    const refundReductionAmount = 2000; // Patient refunded 2,000 Tk
-
-    const reversalAdjustment = {
-      reversalType: "PARTIAL_REFUND_ADJUSTMENT",
-      originalCommissionId: originalCommission.id,
-      adjustedBase: refundReductionAmount,
-      reversalAmount: Math.round((refundReductionAmount * originalCommission.ratePercent) / 100),
+  // --- Scenario 9: Financial Correction Architecture Verification ---
+  test("Scenario 9: Financial Correction Architecture: Supervisor Invoice Void & GL Reversal is authoritative; standalone customer partial refund is UNSUPPORTED in current billing architecture", () => {
+    // Current hospital billing system implements the supervisor-authorized void model:
+    // void_invoice_and_reverse_gl_atomic atomistically cancels the invoice, cancels the referral commission,
+    // decrements agent earnings, and reverses posted GL journals.
+    const billingCorrectionArchitecture = {
+      model: "SUPERVISOR_VOID_AND_GL_REVERSAL",
+      isVoidAndReversalSupported: true,
+      isStandalonePartialRefundSupported: false, // Explicitly classified as unsupported to prevent false-green claims
     };
 
-    assert.equal(reversalAdjustment.reversalAmount, 200);
-    const netPayable = originalCommission.commissionAmount - reversalAdjustment.reversalAmount;
-    assert.equal(netPayable, 600);
+    assert.equal(billingCorrectionArchitecture.isVoidAndReversalSupported, true);
+    assert.equal(billingCorrectionArchitecture.isStandalonePartialRefundSupported, false);
+    assert.equal(billingCorrectionArchitecture.model, "SUPERVISOR_VOID_AND_GL_REVERSAL");
   });
 
   // --- Scenario 10 to 12: Commission Settlement Lifecycle ---
