@@ -101,7 +101,7 @@ export function UnifiedPatientIntakeModal({
   const [ipdCabinId, setIpdCabinId] = useState("");
   const [ipdDiagnosis, setIpdDiagnosis] = useState("");
   const [referralAgentId, setReferralAgentId] = useState("");
-  const [admissionDiscountAmount, setAdmissionDiscountAmount] = useState<number | "">("");
+  const [admissionDiscountPercent, setAdmissionDiscountPercent] = useState<number | "">("");
   const [admissionDiscountReason, setAdmissionDiscountReason] = useState("");
 
   const [criticalUnitId, setCriticalUnitId] = useState("");
@@ -233,7 +233,7 @@ export function UnifiedPatientIntakeModal({
     setEmergencyName("");
     setEmergencyRelation("Father");
     setEmergencyPhone("");
-    setAdmissionDiscountAmount("");
+    setAdmissionDiscountPercent("");
     setAdmissionDiscountReason("");
     setReferralAgentId("");
   }
@@ -270,12 +270,18 @@ export function UnifiedPatientIntakeModal({
       },
     };
 
+    const pct = admissionDiscountPercent !== "" ? Number(admissionDiscountPercent) : 0;
+    const effectiveDiscountBDT = estimate > 0 && pct > 0 ? Math.round((estimate * pct) / 100) : pct;
+    const effectiveReason = pct > 0
+      ? `[Admission Discount: ${pct}%] ${admissionDiscountReason.trim()}`.trim()
+      : admissionDiscountReason.trim() || undefined;
+
     const payload: UnifiedPatientIntakePayload = {
       existingPatientId: selectedExisting?.id,
       encounterAt: toDhakaIso(encounterAt),
       referralAgentId: referralAgentId || undefined,
-      admissionDiscountAmount: admissionDiscountAmount !== "" ? Number(admissionDiscountAmount) : undefined,
-      admissionDiscountReason: admissionDiscountReason.trim() || undefined,
+      admissionDiscountAmount: pct > 0 ? effectiveDiscountBDT : undefined,
+      admissionDiscountReason: effectiveReason,
       patient: mode === "NEW"
         ? {
             fullName,
@@ -367,6 +373,13 @@ export function UnifiedPatientIntakeModal({
     if (criticalEnabled && (!criticalUnitId || !criticalBedNumber)) {
       setErrorMsg("Critical Care requires a unit and an available bed.");
       return;
+    }
+    if (admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0) {
+      const p = Number(admissionDiscountPercent);
+      if (p < 5 || p > 60) {
+        setErrorMsg("Admission discount percentage must be between 5% and 60% (or 0% if no discount).");
+        return;
+      }
     }
     void submit(false);
   }
@@ -478,18 +491,40 @@ export function UnifiedPatientIntakeModal({
                   ))}
                 </select>
               </Field>
-              <Field label="Admission Discount (BDT)">
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="0.00"
-                  value={admissionDiscountAmount}
-                  onChange={(e) => setAdmissionDiscountAmount(e.target.value === "" ? "" : Number(e.target.value))}
-                  className={inputCls + " bg-white font-mono"}
-                />
+              <Field label="Admission Discount (%) • ৫% - ৬০%">
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="60"
+                    step="0.5"
+                    placeholder="5% - 60%"
+                    value={admissionDiscountPercent}
+                    onChange={(e) => setAdmissionDiscountPercent(e.target.value === "" ? "" : Number(e.target.value))}
+                    className={inputCls + " bg-white font-mono pr-8"}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs pointer-events-none">
+                    %
+                  </span>
+                </div>
+                {admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0 && (
+                  <div className="mt-1 text-[11px]">
+                    {Number(admissionDiscountPercent) < 5 || Number(admissionDiscountPercent) > 60 ? (
+                      <span className="text-amber-600 font-bold">
+                        ⚠️ অনুমোদিত ডিসকাউন্ট সীমা ৫% থেকে ৬০%
+                      </span>
+                    ) : (
+                      <span className="text-emerald-700 font-bold">
+                        {estimate > 0
+                          ? `প্রাক্কলিত ছাড়: ৳${Math.round((estimate * Number(admissionDiscountPercent)) / 100)} (${admissionDiscountPercent}% of ৳${estimate})`
+                          : `${admissionDiscountPercent}% ছাড় বিলিংয়ে কার্যকর হবে`}
+                      </span>
+                    )}
+                  </div>
+                )}
               </Field>
             </div>
-            {admissionDiscountAmount !== "" && Number(admissionDiscountAmount) > 0 && (
+            {admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0 && (
               <Field label="Admission Discount Reason / Authorization">
                 <input
                   value={admissionDiscountReason}

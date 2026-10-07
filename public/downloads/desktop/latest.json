@@ -1,14 +1,14 @@
 {
-  "version": "1.1.55",
+  "version": "1.1.56",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.55. Version synchronization fix (Dockerfile + service worker), CI blocker resolution from v1.1.54.",
-  "pub_date": "2026-10-08T07:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.56. Comprehensive billing service catalog, dynamic lab tests adder, 5%-60% percentage discount, and instant print receipt slip.",
+  "pub_date": "2026-10-08T08:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.55.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.56.exe",
       "installer_exe_sha256": "PENDING_BUILD",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.55.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.56.msi",
       "installer_msi_sha256": "PENDING_BUILD",
       "installer_msi_size": 0,
       "status": "pending_ci_build",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Plus,
   Trash2,
@@ -38,6 +38,12 @@ import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 import { Toast } from "@/components/ui/Toast";
 import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
+import {
+  getAllHospitalServices,
+  MASTER_HOSPITAL_SERVICES,
+  HospitalServiceItem,
+} from "@/lib/billing/serviceCatalog";
+import { getDiagnosticTestsCatalogAction } from "@/lib/lab/actions";
 
 export default function BillingManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -70,11 +76,16 @@ export default function BillingManagementPage() {
       quantity: 1,
     },
   ]);
-  const [discountAmount, setDiscountAmount] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState<number | "">("");
   const [discountReason, setDiscountReason] = useState("");
   const [initialPaymentAmount, setInitialPaymentAmount] = useState(500);
   const [paymentMethod, setPaymentMethod] = useState<PaymentRecord["payment_method"]>("CASH");
   const [formLoading, setFormLoading] = useState(false);
+
+  // Quick Service Adder & Dynamic Tests State
+  const [allServices, setAllServices] = useState<HospitalServiceItem[]>(MASTER_HOSPITAL_SERVICES);
+  const [serviceFilterGroup, setServiceFilterGroup] = useState<string>("ALL");
+  const [serviceSearchTerm, setServiceSearchTerm] = useState<string>("");
 
   // New Invoice Patient Search & Referral State
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
@@ -170,17 +181,27 @@ export default function BillingManagementPage() {
     };
   }, [statusFilter]);
 
-  // Fetch referral agents when invoice modal opens
+  // Fetch referral agents and lab tests catalog when invoice modal opens
   useEffect(() => {
     let active = true;
     if (isCreatingNew) {
-      async function loadAgents() {
-        const res = await searchReferralAgentsForBillingAction();
-        if (active && res.success && res.data) {
-          setBillingReferralAgents(res.data);
+      async function loadAgentsAndCatalog() {
+        try {
+          const [agentRes, diagRes] = await Promise.allSettled([
+            searchReferralAgentsForBillingAction(),
+            getDiagnosticTestsCatalogAction(),
+          ]);
+          if (active && agentRes.status === "fulfilled" && agentRes.value.success && agentRes.value.data) {
+            setBillingReferralAgents(agentRes.value.data);
+          }
+          if (active && diagRes.status === "fulfilled" && diagRes.value.success && diagRes.value.data?.tests) {
+            setAllServices(getAllHospitalServices(diagRes.value.data.tests));
+          }
+        } catch (err) {
+          console.error("Failed loading billing catalog/agents:", err);
         }
       }
-      loadAgents();
+      loadAgentsAndCatalog();
     }
     return () => {
       active = false;
@@ -267,24 +288,58 @@ export default function BillingManagementPage() {
 
   // Calculations for new invoice
   const subtotal = items.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
-  const netTotal = Math.max(0, subtotal - discountAmount);
+  const calculatedDiscountAmount = discountPercent !== "" && Number(discountPercent) > 0
+    ? Math.round((subtotal * Number(discountPercent)) / 100)
+    : 0;
+  const netTotal = Math.max(0, subtotal - calculatedDiscountAmount);
   const dueAmount = Math.max(0, netTotal - initialPaymentAmount);
   const estimatedCommission = selectedReferralAgentId && !noReferral
     ? Math.round(((netTotal * (referralCommissionRate || 0)) / 100) * 100) / 100
     : 0;
 
   const addItemRow = (category: InvoiceItemRecord["service_category"], name: string, price: number) => {
-    const next = [...items, { category, itemName: name, unitPrice: price, quantity: 1 }];
+    const existingIndex = items.findIndex((it) => it.itemName.toLowerCase() === name.toLowerCase());
+    let next: typeof items;
+    if (existingIndex >= 0) {
+      next = [...items];
+      next[existingIndex] = {
+        ...next[existingIndex],
+        quantity: next[existingIndex].quantity + 1,
+      };
+    } else {
+      next = [...items, { category, itemName: name, unitPrice: price, quantity: 1 }];
+    }
     setItems(next);
     const newSub = next.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
-    setInitialPaymentAmount(Math.max(0, newSub - discountAmount));
+    const newDisc = discountPercent !== "" && Number(discountPercent) > 0
+      ? Math.round((newSub * Number(discountPercent)) / 100)
+      : 0;
+    setInitialPaymentAmount(Math.max(0, newSub - newDisc));
   };
 
   const removeItemRow = (idx: number) => {
     if (items.length <= 1) return;
     const next = items.filter((_, i) => i !== idx);
     setItems(next);
+    const newSub = next.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
+    const newDisc = discountPercent !== "" && Number(discountPercent) > 0
+      ? Math.round((newSub * Number(discountPercent)) / 100)
+      : 0;
+    setInitialPaymentAmount(Math.max(0, newSub - newDisc));
   };
+
+  const filteredServices = useMemo(() => {
+    return allServices.filter((s) => {
+      const matchesGroup = serviceFilterGroup === "ALL" || s.group === serviceFilterGroup;
+      const term = serviceSearchTerm.trim().toLowerCase();
+      if (!term) return matchesGroup;
+      return (
+        s.name.toLowerCase().includes(term) ||
+        s.category.toLowerCase().includes(term) ||
+        (s.description ? s.description.toLowerCase().includes(term) : false)
+      );
+    });
+  }, [allServices, serviceFilterGroup, serviceSearchTerm]);
 
   const resetInvoiceModal = () => {
     setIsCreatingNew(false);
@@ -299,6 +354,8 @@ export default function BillingManagementPage() {
     setAttributionAgentName("");
     setAttributionAgentCode("");
     setNoReferral(false);
+    setServiceFilterGroup("ALL");
+    setServiceSearchTerm("");
     setItems([
       {
         category: "CONSULTATION",
@@ -307,7 +364,7 @@ export default function BillingManagementPage() {
         quantity: 1,
       },
     ]);
-    setDiscountAmount(0);
+    setDiscountPercent("");
     setDiscountReason("");
     setInitialPaymentAmount(500);
     setPaymentMethod("CASH");
@@ -320,13 +377,26 @@ export default function BillingManagementPage() {
       return;
     }
 
+    if (discountPercent !== "" && Number(discountPercent) > 0) {
+      const p = Number(discountPercent);
+      if (p < 5 || p > 60) {
+        setToast({
+          message: "ডিসকাউন্ট ৫% থেকে ৬০% এর মধ্যে হতে হবে (বা ০% কোন ছাড় না থাকলে)।",
+          type: "error",
+        });
+        return;
+      }
+    }
+
     setFormLoading(true);
     try {
       const res = await createInvoiceAction({
         patientId: patientIdInput.trim(),
         items,
-        discountAmount: Number(discountAmount),
-        discountReason: discountReason.trim() || undefined,
+        discountAmount: calculatedDiscountAmount,
+        discountReason: discountPercent !== "" && Number(discountPercent) > 0
+          ? `[Discount: ${discountPercent}%] ${discountReason.trim()}`.trim()
+          : discountReason.trim() || undefined,
         initialPaymentAmount: Number(initialPaymentAmount),
         paymentMethod,
         referralAgentId: !noReferral && selectedReferralAgentId ? selectedReferralAgentId : undefined,
@@ -339,6 +409,10 @@ export default function BillingManagementPage() {
         await loadBillingData();
         setSelectedInvoice(res.data.invoice);
         setToast({ message: `Invoice ${res.data.invoice.invoice_number} created successfully!`, type: "success" });
+        // Automatically trigger print dialog for official invoice paper
+        setTimeout(() => {
+          window.print();
+        }, 350);
       } else {
         setToast({ message: res.error || "Failed to generate invoice", type: "error" });
       }
@@ -423,7 +497,7 @@ export default function BillingManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
         <div>
           <span className="text-xs font-bold text-sky-600 uppercase tracking-wider">
             Revenue Cycle & Cash Counter
@@ -456,14 +530,14 @@ export default function BillingManagementPage() {
       </div>
 
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold print:hidden">
           {errorMsg}
         </div>
       )}
 
       {/* CASH COUNTER SUMMARY STRIP */}
       {registerSummary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print:hidden">
           <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-2xs">
             <span className="text-[11px] font-bold text-slate-500 uppercase">Today&apos;s Invoiced</span>
             <div className="text-2xl font-black text-slate-900 mt-1">
@@ -499,7 +573,7 @@ export default function BillingManagementPage() {
       )}
 
       {/* FILTER & SEARCH */}
-      <div className="flex flex-col sm:flex-row justify-between gap-3 items-center">
+      <div className="flex flex-col sm:flex-row justify-between gap-3 items-center print:hidden">
         <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
           {["ALL", "UNPAID", "PARTIAL", "PAID", "VOID"].map((status) => (
             <button
@@ -527,9 +601,9 @@ export default function BillingManagementPage() {
       </div>
 
       {/* MAIN LAYOUT: INVOICES LIST & DETAILS */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start print:block print:w-full">
         {/* LEFT COLUMN: INVOICE TABLE */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs print:hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
@@ -602,10 +676,10 @@ export default function BillingManagementPage() {
         </div>
 
         {/* RIGHT COLUMN: INVOICE PREVIEW / PRINT SLIP */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4 print:col-span-12 print:border-none print:p-0 print:shadow-none print:w-full print:block">
           {selectedInvoice ? (
             <div>
-              <div className="flex justify-between items-center pb-4 border-b border-slate-200">
+              <div className="flex justify-between items-center pb-4 border-b border-slate-200 print:hidden">
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase">Official Invoice</span>
                   <h3 className="text-base font-black text-slate-900 font-mono">{selectedInvoice.invoice_number}</h3>
@@ -755,8 +829,8 @@ export default function BillingManagementPage() {
 
       {/* GENERATE INVOICE MODAL */}
       {isCreatingNew && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 text-xs max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 print:hidden">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-slate-100 text-xs max-h-[92vh] overflow-y-auto">
             <h3 className="text-base font-black text-slate-900 mb-1">Generate Patient Invoice</h3>
             <p className="text-slate-500 mb-4">Add consultation, diagnostic, bed, or surgery charges.</p>
 
@@ -851,46 +925,136 @@ export default function BillingManagementPage() {
                 )}
               </div>
 
-              {/* Preset quick buttons */}
-              <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1.5">
-                  Quick Service Adder:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => addItemRow("CONSULTATION", "Consultant Specialist OPD", 800)}
-                    className="px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-200 text-sky-800 font-bold text-[11px]"
-                  >
-                    + Consultation (800)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addItemRow("LAB", "Complete Blood Count (CBC)", 450)}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-[11px]"
-                  >
-                    + CBC Lab (450)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addItemRow("BED", "General Ward Bed Daily Tariff", 1000)}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 font-bold text-[11px]"
-                  >
-                    + Ward Bed (1000)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => addItemRow("OT", "Major Surgical Theater Charge", 6000)}
-                    className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 font-bold text-[11px]"
-                  >
-                    + OT Charge (6000)
-                  </button>
+              {/* Preset quick buttons & Comprehensive Hospital Service Catalog */}
+              <div className="space-y-2 border-t border-slate-100 pt-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[11px] font-extrabold text-slate-800 uppercase flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      হাসপাতাল সেবা ও প্যাথলজি টেস্ট ক্যাটালগ (Hospital Service & Diagnostic Catalog)
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      যেকোনো টেস্ট বা সার্ভিসে ক্লিক করলেই স্বয়ংক্রিয়ভাবে ইনভয়েসে যুক্ত হবে ({allServices.length}টি মোট সার্ভিস)
+                    </span>
+                  </div>
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="সার্ভিস বা টেস্ট খুঁজুন (CBC, USG, Cabin, OT)..."
+                      value={serviceSearchTerm}
+                      onChange={(e) => setServiceSearchTerm(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1 text-[11px] border rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Category Filter Pills */}
+                <div className="flex gap-1.5 overflow-x-auto pb-1 text-[10px] font-bold scrollbar-none">
+                  {[
+                    { id: "ALL", label: `সকল সেবা (${allServices.length})` },
+                    { id: "LAB", label: "ল্যাব ও প্যাথলজি টেস্ট" },
+                    { id: "IMAGING", label: "এক্স-রে / USG / ECG" },
+                    { id: "CONSULTATION", label: "ডাক্তার কনসাল্টেশন" },
+                    { id: "BED_CABIN", label: "বেড ও কেবিন (IPD)" },
+                    { id: "CRITICAL_CARE", label: "ICU / CCU / HDU" },
+                    { id: "OT_SURGERY", label: "অপারেশন ও OT" },
+                    { id: "EMERGENCY_NURSING", label: "ইমার্জেন্সি ও নার্সিং" },
+                  ].map((grp) => (
+                    <button
+                      key={grp.id}
+                      type="button"
+                      onClick={() => setServiceFilterGroup(grp.id)}
+                      className={`px-2.5 py-1 rounded-lg shrink-0 transition ${
+                        serviceFilterGroup === grp.id
+                          ? "bg-emerald-700 text-white shadow-xs font-black"
+                          : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      {grp.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Service Cards Grid (Scrollable Quick Adder) */}
+                <div className="max-h-48 overflow-y-auto pr-1 border border-slate-200 rounded-xl p-2 bg-slate-50/60 divide-y divide-slate-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
+                    {filteredServices.map((srv) => (
+                      <button
+                        key={srv.id}
+                        type="button"
+                        onClick={() => addItemRow(srv.category, srv.name, srv.price)}
+                        className="text-left p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 hover:shadow-2xs transition group flex items-start justify-between gap-1.5"
+                        title={srv.description || srv.name}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <span
+                            className={`text-[9px] font-bold px-1 py-0.2 rounded inline-block mb-0.5 ${
+                              srv.group === "LAB"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : srv.group === "IMAGING"
+                                ? "bg-indigo-100 text-indigo-800"
+                                : srv.group === "CONSULTATION"
+                                ? "bg-sky-100 text-sky-800"
+                                : srv.group === "BED_CABIN"
+                                ? "bg-amber-100 text-amber-800"
+                                : srv.group === "CRITICAL_CARE"
+                                ? "bg-rose-100 text-rose-800"
+                                : srv.group === "OT_SURGERY"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-teal-100 text-teal-800"
+                            }`}
+                          >
+                            {srv.category}
+                          </span>
+                          <p className="text-[11px] font-bold text-slate-800 truncate group-hover:text-emerald-950">
+                            {srv.name}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[11px] font-mono font-black text-emerald-700 block">
+                            {formatCurrencyBDT(srv.price)}
+                          </span>
+                          <span className="text-[9px] font-bold text-slate-400 group-hover:text-emerald-700">
+                            + যোগ করুন
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                    {filteredServices.length === 0 && (
+                      <div className="col-span-full py-4 text-center text-slate-400 text-xs">
+                        কোনো সার্ভিস বা টেস্ট পাওয়া যায়নি। অনুগ্রহ করে সার্চ ফিল্টার পরিবর্তন করুন।
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Items List */}
               <div className="space-y-2 border-t border-slate-100 pt-3">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block">Invoice Line Items:</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">
+                    ইনভয়েস আইটেম তালিকা (Invoice Line Items - {items.length}টি):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => addItemRow("MISC", "Custom Medical Service", 100)}
+                    className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    + নতুন কাস্টম আইটেম যোগ করুন
+                  </button>
+                </div>
+
+                {/* Autocomplete Datalist */}
+                <datalist id="all-hospital-services-datalist">
+                  {allServices.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.category} • {formatCurrencyBDT(s.price)}
+                    </option>
+                  ))}
+                </datalist>
+
                 {items.map((it, idx) => (
                   <div key={idx} className="flex gap-2 items-center">
                     <select
@@ -909,17 +1073,36 @@ export default function BillingManagementPage() {
                       <option value="BED">Bed</option>
                       <option value="OT">OT</option>
                       <option value="PHARMACY">Pharmacy</option>
+                      <option value="AMBULANCE">Ambulance</option>
                       <option value="MISC">Misc</option>
                     </select>
 
                     <input
                       type="text"
+                      list="all-hospital-services-datalist"
                       required
+                      placeholder="সার্ভিস বা টেস্টের নাম"
                       value={it.itemName}
                       onChange={(e) => {
+                        const val = e.target.value;
                         const next = [...items];
-                        next[idx].itemName = e.target.value;
+                        const matched = allServices.find((s) => s.name.toLowerCase() === val.toLowerCase());
+                        if (matched) {
+                          next[idx] = {
+                            ...next[idx],
+                            itemName: matched.name,
+                            category: matched.category,
+                            unitPrice: matched.price,
+                          };
+                        } else {
+                          next[idx].itemName = val;
+                        }
                         setItems(next);
+                        const newSub = next.reduce((acc, x) => acc + x.unitPrice * x.quantity, 0);
+                        const newDisc = discountPercent !== "" && Number(discountPercent) > 0
+                          ? Math.round((newSub * Number(discountPercent)) / 100)
+                          : 0;
+                        setInitialPaymentAmount(Math.max(0, newSub - newDisc));
                       }}
                       className="flex-1 px-2.5 py-1.5 border rounded-lg bg-slate-50 font-semibold text-[11px]"
                     />
@@ -932,6 +1115,11 @@ export default function BillingManagementPage() {
                         const next = [...items];
                         next[idx].quantity = Number(e.target.value);
                         setItems(next);
+                        const newSub = next.reduce((acc, x) => acc + x.unitPrice * x.quantity, 0);
+                        const newDisc = discountPercent !== "" && Number(discountPercent) > 0
+                          ? Math.round((newSub * Number(discountPercent)) / 100)
+                          : 0;
+                        setInitialPaymentAmount(Math.max(0, newSub - newDisc));
                       }}
                       className="w-16 px-2 py-1.5 border rounded-lg bg-slate-50 font-mono text-center text-[11px]"
                     />
@@ -944,6 +1132,11 @@ export default function BillingManagementPage() {
                         const next = [...items];
                         next[idx].unitPrice = Number(e.target.value);
                         setItems(next);
+                        const newSub = next.reduce((acc, x) => acc + x.unitPrice * x.quantity, 0);
+                        const newDisc = discountPercent !== "" && Number(discountPercent) > 0
+                          ? Math.round((newSub * Number(discountPercent)) / 100)
+                          : 0;
+                        setInitialPaymentAmount(Math.max(0, newSub - newDisc));
                       }}
                       className="w-24 px-2 py-1.5 border rounded-lg bg-slate-50 font-mono text-right text-[11px]"
                     />
@@ -963,23 +1156,54 @@ export default function BillingManagementPage() {
               <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
                 <div className="space-y-2">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Discount (BDT)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={discountAmount}
-                      onChange={(e) => setDiscountAmount(Number(e.target.value))}
-                      className="w-full px-3 py-1.5 border rounded-xl bg-slate-50 font-mono"
-                    />
+                    <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+                      <span>ডিসকাউন্ট (Discount %) *</span>
+                      <span className="text-[10px] text-slate-400">অনুমোদিত সীমা: ৫% - ৬০%</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="60"
+                        step="0.5"
+                        placeholder="5% - 60%"
+                        value={discountPercent}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : Number(e.target.value);
+                          setDiscountPercent(val);
+                          const disc = val !== "" && Number(val) > 0
+                            ? Math.round((subtotal * Number(val)) / 100)
+                            : 0;
+                          setInitialPaymentAmount(Math.max(0, subtotal - disc));
+                        }}
+                        className="w-full px-3 py-1.5 border rounded-xl bg-slate-50 font-mono font-bold pr-8 text-xs"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs pointer-events-none">
+                        %
+                      </span>
+                    </div>
+                    {discountPercent !== "" && Number(discountPercent) > 0 && (
+                      <div className="mt-1 text-[11px]">
+                        {Number(discountPercent) < 5 || Number(discountPercent) > 60 ? (
+                          <span className="text-amber-600 font-bold">
+                            ⚠️ অনুমোদিত ডিসকাউন্ট শতকরা সীমা ৫% থেকে ৬০%
+                          </span>
+                        ) : (
+                          <span className="text-emerald-700 font-bold">
+                            ছাড়: {formatCurrencyBDT(calculatedDiscountAmount)} BDT ({discountPercent}% of Subtotal {formatCurrencyBDT(subtotal)})
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Discount Reason</label>
+                    <label className="block font-bold text-slate-700 mb-1">ডিসকাউন্ট এর কারণ (Discount Reason)</label>
                     <input
                       type="text"
-                      placeholder="e.g. Director waiver"
+                      placeholder="e.g. Director waiver / Poor patient subsidy"
                       value={discountReason}
                       onChange={(e) => setDiscountReason(e.target.value)}
-                      className="w-full px-3 py-1.5 border rounded-xl bg-slate-50"
+                      className="w-full px-3 py-1.5 border rounded-xl bg-slate-50 text-xs"
                     />
                   </div>
                 </div>
@@ -1122,7 +1346,7 @@ export default function BillingManagementPage() {
 
       {/* COLLECT PAYMENT MODAL */}
       {paymentModalInv && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 print:hidden">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-xs">
             <h3 className="text-base font-black text-slate-900 mb-1">Collect Due Payment</h3>
             <p className="text-slate-500 mb-4">
@@ -1195,7 +1419,7 @@ export default function BillingManagementPage() {
 
       {/* VOID INVOICE MODAL */}
       {voidModalInv && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 print:hidden">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
