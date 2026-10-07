@@ -529,6 +529,70 @@ export interface EpisodeBillingLine {
   unit_price: number;
   quantity: number;
   total_price: number;
+  started_at?: string;
+}
+
+export interface EpisodeEncounterHistory {
+  id: string;
+  visit_number?: string | null;
+  visit_type: string;
+  status: string;
+  admitted_at: string;
+  discharged_at?: string | null;
+  doctor_name?: string | null;
+  department_name?: string | null;
+  chief_complaint?: string | null;
+  opd_fee_snapshot?: number;
+}
+
+export interface EpisodeResourceHistory {
+  id: string;
+  resource_type: "BED" | "CABIN";
+  resource_number?: string | null;
+  ward_name?: string | null;
+  assigned_at: string;
+  vacated_at?: string | null;
+  status: string;
+  daily_charge: number;
+}
+
+export interface EpisodeCriticalCareHistory {
+  id: string;
+  unit_name?: string | null;
+  unit_type?: string | null;
+  bed_number: string;
+  admission_time: string;
+  discharge_time?: string | null;
+  status: string;
+  daily_charge: number;
+  ventilator_required: boolean;
+  doctor_name?: string | null;
+  initial_diagnosis?: string | null;
+}
+
+export interface EpisodeInvoiceHistory {
+  id: string;
+  invoice_number: string;
+  created_at: string;
+  grand_total: number;
+  paid_amount: number;
+  due_amount: number;
+  status: string;
+  is_episode_settlement: boolean;
+  items: Array<{
+    service_category: string;
+    item_name: string;
+    unit_price: number;
+    quantity: number;
+    total_price: number;
+    reference_id?: string | null;
+  }>;
+  payments: Array<{
+    receipt_number: string;
+    amount: number;
+    payment_method: string;
+    payment_date: string;
+  }>;
 }
 
 export async function getEpisodeBillingPreviewAction(params: {
@@ -536,16 +600,22 @@ export async function getEpisodeBillingPreviewAction(params: {
   episodeId?: string;
 }): Promise<ActionResult<{
   episodeId?: string;
+  primaryVisitId?: string;
   lines: EpisodeBillingLine[];
+  encounters: EpisodeEncounterHistory[];
+  resources: EpisodeResourceHistory[];
+  criticalCare: EpisodeCriticalCareHistory[];
+  invoiceHistory: EpisodeInvoiceHistory[];
   total: number;
   previousInvoiced: number;
   previousPaid: number;
   previousDue: number;
+  episodeInvoiced: number;
+  episodePaid: number;
+  episodeDue: number;
 }>> {
   const session = await getCurrentUserSession();
-  if (!session.userId || !session.organizationId) {
-    return { success: false, error: "401 Unauthorized" };
-  }
+  if (!session.userId || !session.organizationId) return { success: false, error: "401 Unauthorized" };
 
   try {
     await requirePermission("billing.view");
@@ -557,7 +627,7 @@ export async function getEpisodeBillingPreviewAction(params: {
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc("get_episode_billing_preview", {
+    const { data, error } = await supabase.rpc("get_episode_billing_overview", {
       p_org_id: session.organizationId,
       p_patient_id: params.patientId,
       p_episode_id: params.episodeId || null,
@@ -568,21 +638,32 @@ export async function getEpisodeBillingPreviewAction(params: {
 
     const result = data as {
       success?: boolean;
-      episode_id?: string;
+      episode_id?: string | null;
+      primary_visit_id?: string | null;
       lines?: EpisodeBillingLine[];
+      encounters?: EpisodeEncounterHistory[];
+      resources?: EpisodeResourceHistory[];
+      critical_care?: EpisodeCriticalCareHistory[];
+      invoice_history?: EpisodeInvoiceHistory[];
       total?: number;
       previous_invoiced?: number;
       previous_paid?: number;
       previous_due?: number;
+      episode_invoiced?: number;
+      episode_paid?: number;
+      episode_due?: number;
       error?: string;
     };
 
-    if (!result?.success) return { success: false, error: result?.error || "Unable to calculate episode billing preview." };
+    if (!result?.success) {
+      return { success: false, error: result?.error || "Unable to calculate episode billing preview." };
+    }
 
     return {
       success: true,
       data: {
         episodeId: result.episode_id || undefined,
+        primaryVisitId: result.primary_visit_id || undefined,
         lines: (result.lines || []).map((line) => ({
           reference_id: String(line.reference_id),
           service_category: String(line.service_category),
@@ -590,11 +671,35 @@ export async function getEpisodeBillingPreviewAction(params: {
           unit_price: Number(line.unit_price || 0),
           quantity: Number(line.quantity || 0),
           total_price: Number(line.total_price || 0),
+          started_at: line.started_at || undefined,
         })),
+        encounters: (result.encounters || []).map((item) => ({
+          ...item,
+          admitted_at: String(item.admitted_at),
+          discharged_at: item.discharged_at || null,
+          opd_fee_snapshot: Number(item.opd_fee_snapshot || 0),
+        })),
+        resources: (result.resources || []).map((item) => ({
+          ...item,
+          assigned_at: String(item.assigned_at),
+          vacated_at: item.vacated_at || null,
+          daily_charge: Number(item.daily_charge || 0),
+        })),
+        criticalCare: (result.critical_care || []).map((item) => ({
+          ...item,
+          admission_time: String(item.admission_time),
+          discharge_time: item.discharge_time || null,
+          daily_charge: Number(item.daily_charge || 0),
+          ventilator_required: Boolean(item.ventilator_required),
+        })),
+        invoiceHistory: result.invoice_history || [],
         total: Number(result.total || 0),
         previousInvoiced: Number(result.previous_invoiced || 0),
         previousPaid: Number(result.previous_paid || 0),
         previousDue: Number(result.previous_due || 0),
+        episodeInvoiced: Number(result.episode_invoiced || 0),
+        episodePaid: Number(result.episode_paid || 0),
+        episodeDue: Number(result.episode_due || 0),
       },
     };
   } catch (err: unknown) {
@@ -614,9 +719,7 @@ export async function prepareEpisodeSettlementAction(params: {
   status: string;
 }>> {
   const session = await getCurrentUserSession();
-  if (!session.userId || !session.organizationId) {
-    return { success: false, error: "401 Unauthorized" };
-  }
+  if (!session.userId || !session.organizationId) return { success: false, error: "401 Unauthorized" };
 
   try {
     await requirePermission("billing.manage");
@@ -626,7 +729,7 @@ export async function prepareEpisodeSettlementAction(params: {
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc("create_episode_settlement_invoice_atomic", {
+    const { data, error } = await supabase.rpc("create_episode_settlement_invoice_atomic_v2", {
       p_org_id: session.organizationId,
       p_patient_id: params.patientId,
       p_episode_id: params.episodeId,
@@ -674,27 +777,19 @@ export async function completeEpisodeDischargeAction(params: {
   followupInstructions?: string;
 }): Promise<ActionResult<{ dischargedAt: string; episodeId: string }>> {
   const session = await getCurrentUserSession();
-  if (!session.userId || !session.organizationId) {
-    return { success: false, error: "401 Unauthorized" };
-  }
+  if (!session.userId || !session.organizationId) return { success: false, error: "401 Unauthorized" };
 
   const canDischarge =
     (await requirePermission("ipd.discharge").then(() => true).catch(() => false)) ||
     (await requirePermission("ipd.manage").then(() => true).catch(() => false)) ||
     (await requirePermission("billing.manage").then(() => true).catch(() => false));
 
-  if (!canDischarge) {
-    return { success: false, error: "403 Forbidden: Discharge permission required." };
-  }
-
-  if (!params.finalDiagnosis?.trim()) {
-    return { success: false, error: "Final diagnosis is required before discharge." };
-  }
+  if (!canDischarge) return { success: false, error: "403 Forbidden: Discharge permission required." };
+  if (!params.finalDiagnosis?.trim()) return { success: false, error: "Final diagnosis is required before discharge." };
 
   try {
     const supabase = await createClient();
-
-    const { data, error } = await supabase.rpc("complete_episode_discharge_atomic", {
+    const { data, error } = await supabase.rpc("complete_episode_discharge_atomic_v2", {
       p_org_id: session.organizationId,
       p_episode_id: params.episodeId,
       p_discharge_type: params.dischargeType,
@@ -707,8 +802,11 @@ export async function completeEpisodeDischargeAction(params: {
 
     if (error) {
       const message = error.message || "Episode discharge failed.";
-      if (message.includes("SETTLEMENT_DUE")) {
-        return { success: false, error: "Final settlement is still due. Collect the outstanding amount before discharge." };
+      if (message.includes("UNBILLED_EPISODE_CHARGES")) {
+        return { success: false, error: "New unbilled charges were detected. Prepare the final settlement again before discharge." };
+      }
+      if (message.includes("EPISODE_PAYMENT_DUE")) {
+        return { success: false, error: "Episode has an outstanding balance. Collect payment before discharge." };
       }
       return { success: false, error: message };
     }
