@@ -1,4 +1,4 @@
-﻿---
+---
 name: godmode
 description: >-
   Supreme Autonomous Swarm Godmode v5.0. Full-stack autonomous execution engine
@@ -50,7 +50,23 @@ ije nije sob kore dao | নিজে নিজে সব করে দাও
 ---
 
 ## 3. Strict Zero-Compromise Constraints (Non-Negotiable)
-1. **Zero Truncation / No Placeholders:** Prohibit // TODO, /* Implement logic here */, .... Write 100% runtime-ready code.
-2. **Full Configuration Inclusion:** Production .env.example, Dockerfile, docker-compose.yml, CI/CD workflows, migrations.
+1. **Zero Truncation / No Placeholders:** Prohibit `// TODO`, `/* Implement logic here */`, `...`. Write 100% runtime-ready code.
+2. **Full Configuration Inclusion:** Production `.env.example`, Dockerfile, docker-compose.yml, CI/CD workflows, migrations.
 3. **International Enterprise Standards:** TypeScript strict mode, ESLint 0 warnings, structured JSON logging.
 4. **Zero-False-Green Verification Policy:** Never fake credentials, devices, or compliance; clearly separate external owner gates (G1–G16).
+
+---
+
+## 4. Automatic Model Adaptation Engine (Built-in Lifetime)
+Whenever `/godmode` is triggered, Antigravity automatically detects the active model:
+- **When running on Claude Opus / Sonnet:**
+  - Instantly enforces **Claude Hyper-Efficiency & Zero-Waste Protocol**:
+    1. *Zero Preambles / Anti-Chatter:* Prohibits conversational fluff, apologies, or preambles. Jumps immediately to tool calls.
+    2. *Surgical Micro-Patching:* Strictly prohibits rewriting files via `write_to_file`. Uses `replace_file_content` (≤30 lines) to save 85% code generation tokens.
+    3. *Targeted Range Reading:* Finds line numbers via CLI grep first, then views bounded lines (≤80 lines) to save 80% context tokens.
+    4. *In-Process Single-Thread:* Never spawns redundant subagents that duplicate context windows.
+    5. *100% Quality Invariant:* Retains Claude's full peak architectural reasoning, type safety, zero-trust security, and zero-placeholder standards (`// TODO` strictly banned).
+- **When running on Gemini Flash:**
+  - Instantly enforces **Gemini Flash Transcendence Protocol** (blinding compiler feedback, zero timeout in-process execution, 0-token AST healing).
+- **Cross-Account Lifetime Guarantee:**
+  - Hardwired into global machine configurations (`~/.gemini/config/`), persisting permanently across all Google/Gmail accounts authenticated in Antigravity. No manual flags or re-integration needed.

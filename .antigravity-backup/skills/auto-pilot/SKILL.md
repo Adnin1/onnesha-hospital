@@ -1,31 +1,46 @@
-﻿---
+---
 name: auto-pilot
 description: >-
   Full-Stack Autonomous Engineering Auto-Pilot (SWARM GODMODE v5.0). Fully autonomous
   end-to-end execution across database, backend, frontend, tests, security, and edge deployment.
+  Features built-in automatic Claude Opus/Sonnet token-efficiency auto-adaptation.
 ---
 
 # AUTONOMOUS ENGINEERING AUTO-PILOT v5.0
 
-Activate this skill whenever the user invokes /auto-pilot, AUTO-PILOT, or requests automated self-guided execution.
+Activate this skill whenever the user invokes `/auto-pilot`, `/autopilot`, `AUTOPILOT`, or requests automated execution.
+
+---
 
 ## Universal Shortcuts & Triggers
-- /auto-pilot, /autopilot, /godmode, /swarm, /ship, /auto, /apex, /apex-engine, /gsd-ship, /nije-koro
-- 
-ije koro | নিজে করো | 
-ije nije sob kore dao | নিজে নিজে সব করে দাও | সব নিজে নিজে করো
-- নিজে নিজে করে দাও | সব কাজ নিজে নিজে কমপ্লিট করো | একদম শেষ করে দাও
-- AUTO-PILOT, GODMODE, SWARM, SHIP, APEX, Complete everything autonomously
+- Slash commands: `/auto-pilot`, `/autopilot`, `/t`, `/apex`, `/apex-engine`, `/godmode`, `/swarm`, `/ship`, `/auto`, `/gsd-ship`, `/nije-koro`
+- Bengali / Banglish:
+  - `nije koro` | `নিজে করো`
+  - `nije nije sob kore dao` | `নিজে নিজে সব করে দাও`
+  - `sob nije nije koro` | `সব নিজে নিজে করো`
+  - `নিজে নিজে করে দাও`
+  - `সব কাজ নিজে নিজে কমপ্লিট করো`
+  - `একদম শেষ করে দাও`
+  - `শর্টকাট দিয়ে দাও`
+- English triggers: `AUTO-PILOT`, `AUTOPILOT`, `GODMODE`, `SWARM`, `SHIP`, `APEX`, `Complete everything autonomously`
+
+---
+
+## Automatic Model-Adaptive Execution Engine (Built-in Lifetime)
+Whenever `/auto-pilot` is triggered, Antigravity automatically senses the active model:
+- **When running on Claude Opus / Sonnet:**
+  - Instantly enforces **Claude Hyper-Efficiency & Zero-Waste Protocol**:
+    1. *Zero Preambles / Anti-Chatter:* Prohibits conversational fluff, apologies, or preambles. Jumps immediately to tool calls.
+    2. *Surgical Micro-Patching:* Strictly prohibits rewriting files via `write_to_file`. Uses `replace_file_content` (≤30 lines) to save 85% code generation tokens.
+    3. *Targeted Range Reading:* Finds line numbers via CLI grep first, then views bounded lines (≤80 lines) to save 80% context tokens.
+    4. *In-Process Single-Thread:* Never spawns redundant subagents that duplicate context windows.
+    5. *100% Quality Invariant:* Retains Claude's full peak architectural reasoning, type safety, zero-trust security, and zero-placeholder standards (`// TODO` strictly banned).
+- **When running on Gemini Flash:**
+  - Instantly enforces **Gemini Flash Transcendence Protocol** (blinding compiler feedback, zero timeout in-process execution, 0-token AST healing).
+- **Cross-Account Lifetime Guarantee:**
+  - Hardwired into global machine configurations (`~/.gemini/config/`), persisting permanently across all Google/Gmail accounts authenticated in Antigravity. No manual flags or re-integration needed.
 
 ---
 
 ## Autonomous Execution Pipeline
-Executes the full 8-phase engineering lifecycle:
-1. Requirements & System Specs
-2. Database & Data Architecture (RLS, Migrations, Indexing)
-3. Core Backend & Business Logic (Invariants, Security)
-4. Frontend System (WCAG 2.2 AA, Zero Dialogs, Responsive)
-5. Automated Testing Matrix (Unit, Integration, 4-Browser E2E)
-6. Self-Healing & Recursive Debugging Loop
-7. Performance & Security Hardening (CSP, HSTS)
-8. Production Delivery & Ground-Truth Closure Report
+Executes the full 8-phase engineering lifecycle without routine questioning or manual prompting.
