@@ -6,7 +6,6 @@ import {
   Search,
   PlusCircle,
   FileText,
-  X,
   ChevronRight,
   Loader2,
   RefreshCw,
@@ -17,14 +16,15 @@ import { InvoiceRecord } from "@/types/billing";
 import { PrescriptionRecord, DiagnosticOrderRecord } from "@/types/clinical-emr";
 import {
   getPatientsAction,
-  registerPatientAction,
   getPatient360Action,
 } from "@/lib/patient/actions";
 import { getInvoicesAction } from "@/lib/billing/actions";
 import { getPrescriptionsAction } from "@/lib/prescriptions/actions";
 import { getDiagnosticOrdersAction } from "@/lib/lab/actions";
-import { formatCurrencyBDT, formatDateBDT, calculateAgeFromDOB } from "@/lib/utils";
+import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { Toast } from "@/components/ui/Toast";
+import { UnifiedPatientIntakeModal } from "@/components/patient/UnifiedPatientIntakeModal";
+import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
 
 export default function PatientsManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -45,20 +45,6 @@ export default function PatientsManagementPage() {
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [prescriptions, setPrescriptions] = useState<PrescriptionRecord[]>([]);
   const [labOrders, setLabOrders] = useState<DiagnosticOrderRecord[]>([]);
-
-  // New Patient Form State
-  const [newFullName, setNewFullName] = useState("");
-  const [newDob, setNewDob] = useState("");
-  const [newGender, setNewGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
-  const [newBloodGroup, setNewBloodGroup] = useState("O+");
-  const [newPhone, setNewPhone] = useState("");
-  const [newNid, setNewNid] = useState("");
-  const [newAddress, setNewAddress] = useState("");
-  const [newEmergencyName, setNewEmergencyName] = useState("");
-  const [newEmergencyPhone, setNewEmergencyPhone] = useState("");
-  const [newRelation, setNewRelation] = useState("Father");
-  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
-  const [registerLoading, setRegisterLoading] = useState(false);
 
   const loadPatients = async () => {
     setLoading(true);
@@ -151,71 +137,7 @@ export default function PatientsManagementPage() {
     return () => {
       isMounted = false;
     };
-  }, [selectedPatient]);
-
-  useEffect(() => {
-    if (!isRegisterModalOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsRegisterModalOpen(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isRegisterModalOpen]);
-
-  const handleRegisterPatient = async (e: React.FormEvent, bypass = false) => {
-    e.preventDefault();
-    setRegisterLoading(true);
-    setDuplicateWarning(null);
-
-    try {
-      const res = await registerPatientAction({
-        fullName: newFullName,
-        phone: newPhone,
-        gender: newGender,
-        dob: newDob || undefined,
-        bloodGroup: newBloodGroup,
-        nid: newNid || undefined,
-        address: newAddress,
-        emergencyName: newEmergencyName || undefined,
-        emergencyPhone: newEmergencyPhone || undefined,
-        emergencyRelation: newRelation,
-        bypassDuplicateWarning: bypass,
-      });
-
-      if (!res.success) {
-        if (res.duplicateWarning?.hasDuplicate && !bypass) {
-          setDuplicateWarning(
-            `Potential duplicate detected (${res.duplicateWarning.confidence} confidence): ${res.duplicateWarning.reasons.join(", ")}`
-          );
-          setRegisterLoading(false);
-          return;
-        }
-        showToast(res.error || "Registration failed.", "error");
-        setRegisterLoading(false);
-        return;
-      }
-
-      if (res.data?.patient) {
-        const created = res.data.patient;
-        setPatients([created, ...patients]);
-        selectPatient(created);
-        setIsRegisterModalOpen(false);
-        setNewFullName("");
-        setNewDob("");
-        setNewPhone("");
-        setNewAddress("");
-        setNewNid("");
-        setNewEmergencyName("");
-        setNewEmergencyPhone("");
-        showToast(`Patient ${created.full_name} (${created.patient_code}) registered successfully!`, "success");
-      }
-    } catch (err: unknown) {
-      console.error("[handleRegisterPatient] error:", err);
-      showToast("Error saving patient registration to database", "error");
-    } finally {
-      setRegisterLoading(false);
-    }
-  };
+  }, []);
 
   const filteredPatients = patients.filter((p) => {
     const q = searchQuery.toLowerCase();
@@ -351,6 +273,7 @@ export default function PatientsManagementPage() {
                   <FileText className="w-3.5 h-3.5 mr-1" />
                   Full Patient 360 File
                 </Link>
+                <EpisodeBillingPanel patientId={selectedPatient.id} />
               </div>
 
               {/* TABS */}
@@ -535,216 +458,18 @@ export default function PatientsManagementPage() {
         </div>
       </div>
 
-      {/* REGISTRATION MODAL */}
-      {isRegisterModalOpen && (
-        <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4"
-          onClick={() => setIsRegisterModalOpen(false)}
-        >
-          <div
-            className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto text-xs"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-4">
-              <div>
-                <h3 className="text-lg font-black text-slate-900">
-                  New Patient Registration (OH-ID Generator)
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Creates permanent electronic medical record (EMR) with lifelong patient ID.
-                </p>
-              </div>
-              <button
-                onClick={() => setIsRegisterModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-700"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {duplicateWarning && (
-              <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl mb-4 text-amber-900 space-y-2">
-                <div className="flex items-center space-x-2 font-bold">
-                  <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <span>Duplicate Patient Advisory</span>
-                </div>
-                <p className="text-[11px]">{duplicateWarning}</p>
-                <div className="pt-2 flex justify-end space-x-2">
-                  <button
-                    type="button"
-                    onClick={(e) => handleRegisterPatient(e, true)}
-                    className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs"
-                  >
-                    Bypass & Register Anyway (e.g. Family Phone Sharing)
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleRegisterPatient} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Patient Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Md. Shahidul Alam"
-                    value={newFullName}
-                    onChange={(e) => setNewFullName(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Primary Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="017XXXXXXXX"
-                    value={newPhone}
-                    onChange={(e) => setNewPhone(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Date of Birth {newDob && <span className="text-sky-600 font-bold ml-1">({calculateAgeFromDOB(newDob)} Yrs)</span>}
-                  </label>
-                  <input
-                    type="date"
-                    value={newDob}
-                    onChange={(e) => setNewDob(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1 flex items-center justify-between">
-                    <span>NID / জন্ম নিবন্ধন নম্বর</span>
-                    <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">ঐচ্ছিক (Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="ঐচ্ছিক — না থাকলে ফাঁকা রাখুন (১০, ১৩ বা ১৭ ডিজিট)"
-                    value={newNid}
-                    onChange={(e) => setNewNid(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Gender *</label>
-                  <select
-                    value={newGender}
-                    onChange={(e) => setNewGender(e.target.value as "MALE" | "FEMALE" | "OTHER")}
-                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
-                  >
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Blood Group</label>
-                  <select
-                    value={newBloodGroup}
-                    onChange={(e) => setNewBloodGroup(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
-                  >
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Emergency Contact Name</label>
-                  <input
-                    type="text"
-                    placeholder="Guardian / Spouse"
-                    value={newEmergencyName}
-                    onChange={(e) => setNewEmergencyName(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Relationship</label>
-                  <select
-                    value={newRelation}
-                    onChange={(e) => setNewRelation(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
-                  >
-                    <option value="Father">Father</option>
-                    <option value="Mother">Mother</option>
-                    <option value="Spouse">Spouse</option>
-                    <option value="Son">Son</option>
-                    <option value="Daughter">Daughter</option>
-                    <option value="Brother">Brother</option>
-                    <option value="Sister">Sister</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Emergency Phone</label>
-                  <input
-                    type="tel"
-                    placeholder="01XXXXXXXXX"
-                    value={newEmergencyPhone}
-                    onChange={(e) => setNewEmergencyPhone(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Address</label>
-                <input
-                  type="text"
-                  placeholder="Street / Village, Thana, District"
-                  value={newAddress}
-                  onChange={(e) => setNewAddress(e.target.value)}
-                  className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsRegisterModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={registerLoading}
-                  className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl disabled:opacity-50 flex items-center"
-                >
-                  {registerLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
-                  Confirm Registration
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <UnifiedPatientIntakeModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onSuccess={({ patient }) => {
+          setPatients((prev) => [patient, ...prev.filter((p) => p.id !== patient.id)]);
+          void selectPatient(patient);
+          showToast(
+            "Patient " + patient.full_name + " (" + patient.patient_code + ") registered and selected admissions created successfully.",
+            "success"
+          );
+        }}
+      />
 
       {toast && (
         <Toast

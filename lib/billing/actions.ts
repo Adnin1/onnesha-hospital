@@ -520,3 +520,224 @@ export async function getCashRegisterSummaryAction(): Promise<
     return { success: false, error: msg };
   }
 }
+
+
+export interface EpisodeBillingLine {
+  reference_id: string;
+  service_category: string;
+  item_name: string;
+  unit_price: number;
+  quantity: number;
+  total_price: number;
+}
+
+export async function getEpisodeBillingPreviewAction(params: {
+  patientId: string;
+  episodeId?: string;
+}): Promise<ActionResult<{
+  episodeId?: string;
+  lines: EpisodeBillingLine[];
+  total: number;
+  previousInvoiced: number;
+  previousPaid: number;
+  previousDue: number;
+}>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("billing.view");
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.view required" };
+  }
+
+  if (!params.patientId) return { success: false, error: "Patient ID is required." };
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("get_episode_billing_preview", {
+      p_org_id: session.organizationId,
+      p_patient_id: params.patientId,
+      p_episode_id: params.episodeId || null,
+      p_as_of: new Date().toISOString(),
+    });
+
+    if (error) return { success: false, error: error.message };
+
+    const result = data as {
+      success?: boolean;
+      episode_id?: string;
+      lines?: EpisodeBillingLine[];
+      total?: number;
+      previous_invoiced?: number;
+      previous_paid?: number;
+      previous_due?: number;
+      error?: string;
+    };
+
+    if (!result?.success) return { success: false, error: result?.error || "Unable to calculate episode billing preview." };
+
+    return {
+      success: true,
+      data: {
+        episodeId: result.episode_id || undefined,
+        lines: (result.lines || []).map((line) => ({
+          reference_id: String(line.reference_id),
+          service_category: String(line.service_category),
+          item_name: String(line.item_name),
+          unit_price: Number(line.unit_price || 0),
+          quantity: Number(line.quantity || 0),
+          total_price: Number(line.total_price || 0),
+        })),
+        total: Number(result.total || 0),
+        previousInvoiced: Number(result.previous_invoiced || 0),
+        previousPaid: Number(result.previous_paid || 0),
+        previousDue: Number(result.previous_due || 0),
+      },
+    };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Episode billing preview failed." };
+  }
+}
+
+export async function prepareEpisodeSettlementAction(params: {
+  patientId: string;
+  episodeId: string;
+}): Promise<ActionResult<{
+  invoiceId?: string;
+  invoiceNumber?: string;
+  grandTotal: number;
+  paidAmount: number;
+  dueAmount: number;
+  status: string;
+}>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("billing.manage");
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.manage required" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("create_episode_settlement_invoice_atomic", {
+      p_org_id: session.organizationId,
+      p_patient_id: params.patientId,
+      p_episode_id: params.episodeId,
+      p_cashier_id: session.userId,
+    });
+
+    if (error) return { success: false, error: error.message };
+
+    const result = data as {
+      success?: boolean;
+      invoice_id?: string;
+      invoice_number?: string;
+      grand_total?: number;
+      paid_amount?: number;
+      due_amount?: number;
+      status?: string;
+      error?: string;
+    };
+
+    if (!result?.success) return { success: false, error: result?.error || "Final settlement invoice creation failed." };
+
+    return {
+      success: true,
+      data: {
+        invoiceId: result.invoice_id || undefined,
+        invoiceNumber: result.invoice_number || undefined,
+        grandTotal: Number(result.grand_total || 0),
+        paidAmount: Number(result.paid_amount || 0),
+        dueAmount: Number(result.due_amount || 0),
+        status: result.status || "UNPAID",
+      },
+    };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Final settlement preparation failed." };
+  }
+}
+
+export async function completeEpisodeDischargeAction(params: {
+  patientId: string;
+  episodeId: string;
+  dischargeType: "NORMAL" | "DOR" | "LAMA" | "REFERRED" | "DECEASED";
+  finalDiagnosis: string;
+  hospitalCourse?: string;
+  dischargeAdvice?: string;
+  followupInstructions?: string;
+}): Promise<ActionResult<{ dischargedAt: string; episodeId: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  const canDischarge =
+    (await requirePermission("ipd.discharge").then(() => true).catch(() => false)) ||
+    (await requirePermission("ipd.manage").then(() => true).catch(() => false)) ||
+    (await requirePermission("billing.manage").then(() => true).catch(() => false));
+
+  if (!canDischarge) {
+    return { success: false, error: "403 Forbidden: Discharge permission required." };
+  }
+
+  if (!params.finalDiagnosis?.trim()) {
+    return { success: false, error: "Final diagnosis is required before discharge." };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase.rpc("complete_episode_discharge_atomic", {
+      p_org_id: session.organizationId,
+      p_episode_id: params.episodeId,
+      p_discharge_type: params.dischargeType,
+      p_final_diagnosis: params.finalDiagnosis.trim(),
+      p_hospital_course: params.hospitalCourse || null,
+      p_discharge_advice: params.dischargeAdvice || null,
+      p_followup_instructions: params.followupInstructions || null,
+      p_actor: session.userId,
+    });
+
+    if (error) {
+      const message = error.message || "Episode discharge failed.";
+      if (message.includes("SETTLEMENT_DUE")) {
+        return { success: false, error: "Final settlement is still due. Collect the outstanding amount before discharge." };
+      }
+      return { success: false, error: message };
+    }
+
+    const result = data as { success?: boolean; episode_id?: string; discharged_at?: string; error?: string };
+    if (!result?.success) return { success: false, error: result?.error || "Episode discharge could not be completed." };
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "BILLING",
+      entityType: "patient_care_episode",
+      entityId: params.episodeId,
+      newValues: {
+        patient_id: params.patientId,
+        discharge_type: params.dischargeType,
+        final_diagnosis: params.finalDiagnosis,
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        dischargedAt: result.discharged_at || new Date().toISOString(),
+        episodeId: result.episode_id || params.episodeId,
+      },
+    };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Episode discharge failed." };
+  }
+}
