@@ -60,7 +60,6 @@ export function EpisodeBillingPanel({ patientId }: Props) {
     const res = await getEpisodeBillingPreviewAction({ patientId });
     if (res.success && res.data) {
       setPreview(res.data);
-      setInvoiceDue(0);
     } else {
       setActionError(res.error || "Unable to load current episode billing.");
       setPreview(null);
