@@ -1,9 +1,17 @@
 /**
- * OHMS Automated Database Backup & Disaster Recovery Snapshot Engine
+ * OHMS Application-Level Supplemental Snapshot Utility
  * 
- * Takes an authoritative logical snapshot of all core operational, financial, and clinical data
- * from the live Supabase database, calculates SHA-256 integrity checksums, and archives
- * the snapshot for Disaster Recovery and Restore Verification.
+ * IMPORTANT ARCHITECTURAL DISTINCTION:
+ * 1. Migration/Schema Baseline: Version-controlled in Git (111 SQL migration files).
+ * 2. Full Production Database Backups: Managed platform-level daily backups / PostgreSQL pg_dump.
+ * 3. Point-in-Time Recovery (PITR): Managed continuous physical WAL-G recovery (Supabase Pro plan tier).
+ * 4. This Script: Supplemental application-level selective snapshot export.
+ * 
+ * SECURITY MANDATE:
+ * - Requires explicit, uncommitted SUPABASE_SERVICE_ROLE_KEY from external environment.
+ * - NEVER falls back to public/publishable anon keys (which fail RLS and emit partial/empty data).
+ * - Output files are strictly ignored by .gitignore and must NEVER be committed to Git.
+ * - Sensitive patient, financial, or clinical records are never emitted to logs.
  */
 
 import fs from 'node:fs';
@@ -11,15 +19,15 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iuhtzahuszdkdarhxobx.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_OPiG-7uhoIlnysXKrpErsw_rdXEJ4rs';
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iuhtzahuszdkdarhxobx.supabase.co';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.OHMS_BACKUP_SERVICE_ROLE_KEY;
 
 const BACKUP_DIR = path.resolve('supabase', 'backups');
 if (!fs.existsSync(BACKUP_DIR)) {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
 }
 
-// Canonical tables subject to disaster recovery archiving
+// Canonical application tables for selective snapshot
 const AUDITED_TABLES = [
   'organizations',
   'organization_settings',
@@ -43,100 +51,89 @@ const AUDITED_TABLES = [
   'audit_logs'
 ];
 
-async function takeBackupSnapshot() {
-  console.log(`[OHMS BACKUP ENGINE] Connecting to Supabase: ${SUPABASE_URL}`);
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+async function takeSelectiveSnapshot() {
+  if (!SERVICE_ROLE_KEY) {
+    console.error('========================================================================');
+    console.error('❌ [OHMS SNAPSHOT UTILITY] AUTHENTICATION REQUIRED');
+    console.error('========================================================================');
+    console.error('SUPABASE_SERVICE_ROLE_KEY environment variable is required to take an');
+    console.error('authorized application-level data snapshot.');
+    console.error('');
+    console.error('Security Enforcement:');
+    console.error('• Public/publishable keys are strictly prohibited for database backups.');
+    console.error('• Using public keys fails RLS boundary checks (SQLSTATE 42501).');
+    console.error('• Full production disaster recovery relies on Supabase Managed Backups / PITR.');
+    console.error('========================================================================');
+    process.exit(1);
+  }
+
+  console.log(`[OHMS SNAPSHOT UTILITY] Connecting to Supabase Host: ${SUPABASE_URL}`);
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupData = {
+  const snapshotData = {
     metadata: {
+      type: 'SUPPLEMENTAL_APPLICATION_LEVEL_SNAPSHOT',
+      description: 'Selective application-level logical export. Not a substitute for managed physical backups/PITR.',
       timestamp: new Date().toISOString(),
       target_host: SUPABASE_URL,
-      engine_version: 'PostgreSQL 17.6 (Supabase ap-southeast-1)',
-      format: 'OHMS-DR-SNAPSHOT-V1',
-      total_tables: AUDITED_TABLES.length
+      tables_requested: AUDITED_TABLES.length
     },
     tables: {}
   };
 
-  let totalRows = 0;
+  let totalArchivedRows = 0;
 
   for (const table of AUDITED_TABLES) {
     try {
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from(table)
-        .select('*', { count: 'exact' });
+        .select('*');
 
       if (error) {
-        // Table might be empty, RLS restricted, or no rows yet
-        backupData.tables[table] = {
+        snapshotData.tables[table] = {
           count: 0,
-          rows: [],
-          status: 'SHIELDED_OR_EMPTY',
+          status: 'ERROR',
           error_code: error.code || error.message
         };
       } else {
         const rows = data || [];
-        backupData.tables[table] = {
+        snapshotData.tables[table] = {
           count: rows.length,
           rows: rows,
-          status: 'SNAPSHOT_OK'
+          status: 'EXPORTED'
         };
-        totalRows += rows.length;
+        totalArchivedRows += rows.length;
       }
     } catch (err) {
-      backupData.tables[table] = {
+      snapshotData.tables[table] = {
         count: 0,
-        rows: [],
-        status: 'QUERY_FAILED',
+        status: 'EXCEPTION',
         error: err.message
       };
     }
   }
 
-  backupData.metadata.total_rows = totalRows;
-  // Compute final SHA256 of the payload content
-  const finalContent = JSON.stringify(backupData, null, 2);
-  const sha256 = crypto.createHash('sha256').update(finalContent).digest('hex');
-  backupData.metadata.sha256 = sha256;
-  const contentWithSha = JSON.stringify(backupData, null, 2);
-  // Re-hash the definitive written file
-  const fileHash = crypto.createHash('sha256').update(contentWithSha).digest('hex');
-  backupData.metadata.sha256 = fileHash;
-  const definitiveContent = JSON.stringify(backupData, null, 2);
+  snapshotData.metadata.total_rows = totalArchivedRows;
+  const serialized = JSON.stringify(snapshotData, null, 2);
+  const sha256 = crypto.createHash('sha256').update(serialized).digest('hex');
+  snapshotData.metadata.sha256 = sha256;
 
-  const fileName = `ohms-backup-${timestamp}.json`;
-  const latestName = `ohms-backup-latest.json`;
+  const fileName = `ohms-snapshot-${timestamp}.json`;
   const filePath = path.join(BACKUP_DIR, fileName);
-  const latestPath = path.join(BACKUP_DIR, latestName);
 
-  fs.writeFileSync(filePath, definitiveContent, 'utf-8');
-  fs.writeFileSync(latestPath, definitiveContent, 'utf-8');
+  fs.writeFileSync(filePath, JSON.stringify(snapshotData, null, 2), 'utf-8');
 
-  // Verify the written file hash directly from disk
-  const diskHash = crypto.createHash('sha256').update(fs.readFileSync(latestPath)).digest('hex');
-
-  // Also write an integrity verification manifest
-  const manifest = {
-    latest_backup_file: fileName,
-    timestamp: backupData.metadata.timestamp,
-    sha256: diskHash,
-    total_rows: totalRows,
-    tables_archived: Object.keys(backupData.tables).length,
-    status: 'VERIFIED_READY_FOR_RESTORE'
-  };
-  fs.writeFileSync(path.join(BACKUP_DIR, 'backup-manifest.json'), JSON.stringify(manifest, null, 2), 'utf-8');
-
-  console.log(`[OHMS BACKUP ENGINE] Snapshot created: ${fileName}`);
-  console.log(`[OHMS BACKUP ENGINE] SHA-256 Checksum: ${sha256}`);
-  console.log(`[OHMS BACKUP ENGINE] Total Tables Archived: ${AUDITED_TABLES.length}`);
-  console.log(`[OHMS BACKUP ENGINE] Disaster Recovery Status: SUCCESS`);
-  return manifest;
+  console.log(`[OHMS SNAPSHOT UTILITY] Selective snapshot saved locally to: ${fileName}`);
+  console.log(`[OHMS SNAPSHOT UTILITY] SHA-256 Checksum: ${sha256}`);
+  console.log(`[OHMS SNAPSHOT UTILITY] Tables Processed: ${AUDITED_TABLES.length}`);
+  console.log(`[OHMS SNAPSHOT UTILITY] Total Rows Archived: ${totalArchivedRows}`);
+  console.log(`[OHMS SNAPSHOT UTILITY] Status: SUCCESS (Local Uncommitted File)`);
 }
 
-takeBackupSnapshot()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error('Backup failed:', err);
-    process.exit(1);
-  });
+takeSelectiveSnapshot().catch((err) => {
+  console.error('[OHMS SNAPSHOT UTILITY] Unexpected failure:', err);
+  process.exit(1);
+});
