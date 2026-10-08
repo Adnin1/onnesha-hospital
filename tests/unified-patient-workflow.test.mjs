@@ -144,5 +144,14 @@ describe("Unified Patient Intake & Episode Settlement Contract", () => {
     const c = fs.readFileSync(p, "utf8");
     assert.match(c, /if\s*\(bedAssign\.cabin_id\)\s*\{\s*await supabase\s*\.from\("cabins"\)\s*\.update\(\{\s*status:\s*"VACANT"\s*\}\)/);
   });
+
+  test("migration 121 repairs critical_care_admissions_status_check and wires emergency visit for OT", () => {
+    const p = path.join(ROOT, "supabase/migrations/20261008180000_fix_critical_care_admissions_status_and_atomic_intake.sql");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /ALTER TABLE public\.critical_care_admissions/);
+    assert.match(c, /DROP CONSTRAINT IF EXISTS critical_care_admissions_status_check/);
+    assert.match(c, /CHECK\s*\(status IN \('admitted', 'transferred', 'discharged', 'deceased', 'ACTIVE'/);
+    assert.match(c, /critical_care_visit_id/);
+  });
 });
 

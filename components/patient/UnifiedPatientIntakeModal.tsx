@@ -394,21 +394,21 @@ export function UnifiedPatientIntakeModal({
       return;
     }
     if (ipdEnabled && !ipdBedId && !ipdCabinId) {
-      setErrorMsg("IPD requires one available bed or cabin.");
+      setErrorMsg("আইপিডি ভর্তির জন্য একটি খালি বেড বা কেবিন নির্বাচন করুন (IPD requires one available bed or cabin).");
       return;
     }
     if (ipdEnabled && ipdBedId && ipdCabinId) {
-      setErrorMsg("Select either IPD bed OR cabin, not both.");
+      setErrorMsg("বেড অথবা কেবিনের যেকোনো একটি নির্বাচন করুন, উভয়টি নয় (Select either IPD bed OR cabin, not both).");
       return;
     }
     if (criticalEnabled && (!criticalUnitId || !criticalBedNumber)) {
-      setErrorMsg("Critical Care requires a unit and an available bed.");
+      setErrorMsg("ক্রিটিক্যাল কেয়ারের জন্য একটি ইউনিট এবং খালি বেড নির্বাচন করুন (Critical Care requires a unit and an available bed).");
       return;
     }
     if (admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0) {
       const p = Number(admissionDiscountPercent);
       if (p < 5 || p > 60) {
-        setErrorMsg("Admission discount percentage must be between 5% and 60% (or 0% if no discount).");
+        setErrorMsg("অ্যাডমিশন ডিসকাউন্ট ৫% থেকে ৬০% এর মধ্যে হতে হবে (Admission discount percentage must be between 5% and 60%).");
         return;
       }
     }
@@ -631,20 +631,22 @@ export function UnifiedPatientIntakeModal({
                   <Field label="Critical-Care Bed">
                     <select value={criticalBedNumber} onChange={(e) => setCriticalBedNumber(e.target.value)} className={inputCls}>
                       <option value="">{loadingOptions ? "Loading beds..." : "Select available bed"}</option>
-                      {availableBeds
-                        .filter((b) => {
+                      {(() => {
+                        const filtered = availableBeds.filter((b) => {
                           if (criticalUnitId && b.critical_care_unit_id === criticalUnitId) return true;
                           if (selectedUnit && (
                             (b.ward_name && b.ward_name.toLowerCase().includes(selectedUnit.unit_type.toLowerCase())) ||
                             b.bed_number.toLowerCase().includes(selectedUnit.unit_type.toLowerCase())
                           )) return true;
                           return /ICU|CCU|ICCU|SICU|MICU|PICU/i.test((b.ward_name || "") + " " + b.bed_number);
-                        })
-                        .map((b) => (
+                        });
+                        const list = filtered.length > 0 ? filtered : availableBeds;
+                        return list.map((b) => (
                           <option key={b.id} value={b.bed_number}>
                             {b.bed_number} • {b.ward_name || "Critical Care"}
                           </option>
-                        ))}
+                        ));
+                      })()}
                     </select>
                   </Field>
                   <Field label="Admitting Doctor"><select value={criticalDoctorId} onChange={(e) => setCriticalDoctorId(e.target.value)} className={inputCls}><option value="">{loadingOptions ? "Loading doctors..." : "Select doctor"}</option>{doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}</select></Field>

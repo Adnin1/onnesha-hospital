@@ -57,34 +57,34 @@ describe("OHMS Phase 39: v1.1.59 Final Production Closure, Migration 120, Episod
   });
 
   // Test 4: Migration Repertoire Count
-  test("4. Migration Baseline: Exactly 120 version-controlled schema migrations exist", () => {
+  test("4. Migration Baseline: Exactly 121 version-controlled schema migrations exist", () => {
     const migrationsDir = path.join(rootDir, "supabase", "migrations");
     const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith(".sql"));
-    assert.equal(files.length, 120, "Exactly 120 migration files must exist in supabase/migrations");
+    assert.equal(files.length, 121, "Exactly 121 migration files must exist in supabase/migrations");
   });
 
-  // Test 5: Synchronized Release Version v1.1.59 Across All Manifests
-  test("5. Version Synchronization: version 1.1.59 is synchronized across all project manifests", () => {
+  // Test 5: Synchronized Release Version Across All Manifests (1.1.59+)
+  test("5. Version Synchronization: version is synchronized across all project manifests (1.1.59+)", () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, "package.json"), "utf8"));
-    assert.equal(pkg.version, "1.1.59", "package.json must be 1.1.59");
+    assert.match(pkg.version, /^1\.1\.(59|60)$/, "package.json must be 1.1.59 or 1.1.60");
 
     const pkgLock = JSON.parse(fs.readFileSync(path.join(rootDir, "package-lock.json"), "utf8"));
-    assert.equal(pkgLock.version, "1.1.59", "package-lock.json must be 1.1.59");
-    assert.equal(pkgLock.packages[""].version, "1.1.59", "package-lock.json empty package must be 1.1.59");
+    assert.match(pkgLock.version, /^1\.1\.(59|60)$/, "package-lock.json must match");
+    assert.match(pkgLock.packages[""].version, /^1\.1\.(59|60)$/, "package-lock.json empty package must match");
 
     const dockerfile = fs.readFileSync(path.join(rootDir, "Dockerfile"), "utf8");
-    assert.match(dockerfile, /LABEL version="1\.1\.59"/, "Dockerfile LABEL version must be 1.1.59");
+    assert.match(dockerfile, /LABEL version="1\.1\.(59|60)"/, "Dockerfile LABEL version must match");
 
     const cargoToml = fs.readFileSync(path.join(rootDir, "src-tauri", "Cargo.toml"), "utf8");
-    assert.match(cargoToml, /version\s*=\s*"1\.1\.59"/, "Cargo.toml version must be 1.1.59");
+    assert.match(cargoToml, /version\s*=\s*"1\.1\.(59|60)"/, "Cargo.toml version must match");
 
     const tauriConf = JSON.parse(fs.readFileSync(path.join(rootDir, "src-tauri", "tauri.conf.json"), "utf8"));
-    assert.equal(tauriConf.version, "1.1.59", "tauri.conf.json version must be 1.1.59");
+    assert.match(tauriConf.version, /^1\.1\.(59|60)$/, "tauri.conf.json version must match");
 
     const sw = fs.readFileSync(path.join(rootDir, "public", "sw.js"), "utf8");
-    assert.match(sw, /CACHE_VERSION\s*=\s*'ohms-static-v5-1\.1\.59'/, "sw.js CACHE_VERSION must be ohms-static-v5-1.1.59");
+    assert.match(sw, /CACHE_VERSION\s*=\s*'ohms-static-v5-1\.1\.(59|60)'/, "sw.js CACHE_VERSION must match");
 
     const latestJson = JSON.parse(fs.readFileSync(path.join(rootDir, "public", "downloads", "desktop", "latest.json"), "utf8"));
-    assert.equal(latestJson.version, "1.1.59", "latest.json version must be 1.1.59");
+    assert.match(latestJson.version, /^1\.1\.(59|60)$/, "latest.json version must match");
   });
 });

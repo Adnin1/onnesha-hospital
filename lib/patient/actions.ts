@@ -1421,6 +1421,7 @@ export async function createUnifiedPatientIntakeAction(
   ipdVisitId?: string;
   ipdAssignmentId?: string;
   criticalCareAdmissionId?: string;
+  criticalCareVisitId?: string;
   otBookingId?: string;
   encounterAt: string;
 }>> {
@@ -1627,7 +1628,10 @@ export async function createUnifiedPatientIntakeAction(
     let otBookingId: string | undefined;
     if (payload.services?.ot?.enabled) {
       const ot = payload.services.ot;
-      const visitId = result.ipd_visit_id || result.opd_visit_id;
+      const visitId =
+        result.ipd_visit_id ||
+        result.opd_visit_id ||
+        (result as { critical_care_visit_id?: string }).critical_care_visit_id;
       if (visitId && ot.roomId && ot.surgeonId) {
         try {
           const start = ot.scheduledStart ? new Date(ot.scheduledStart).toISOString() : encounterAt.toISOString();
@@ -1668,6 +1672,7 @@ export async function createUnifiedPatientIntakeAction(
         ipdVisitId: result.ipd_visit_id,
         ipdAssignmentId: result.ipd_assignment_id,
         criticalCareAdmissionId: result.critical_care_admission_id,
+        criticalCareVisitId: (result as { critical_care_visit_id?: string }).critical_care_visit_id,
         otBookingId,
         encounterAt: result.encounter_at || encounterAt.toISOString(),
       },

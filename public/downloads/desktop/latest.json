@@ -1,14 +1,14 @@
 {
-  "version": "1.1.59",
+  "version": "1.1.60",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.59. Migration 120 episode billing scoping, cabin release on discharge, Bed & Cabin matrix CRUD, Critical Care tariffs, OT intake, and financial reporting verification.",
-  "pub_date": "2026-10-08T18:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.60. Critical Care status check repair, Emergency visit anchor for OT bookings, Migration 121, Episode billing scoping, and Bed/Cabin matrix controls.",
+  "pub_date": "2026-10-08T18:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.59.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.60.exe",
       "installer_exe_sha256": "PENDING_BUILD",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.59.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.60.msi",
       "installer_msi_sha256": "PENDING_BUILD",
       "installer_msi_size": 0,
       "status": "pending_ci_build",
