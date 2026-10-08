@@ -154,4 +154,17 @@ describe("Patient Intake Atomic Resilience & End-to-End Database Invariants", ()
     assert.match(code, /receptionist:\s*\[[\s\S]*?PERMISSIONS\.CRITICAL_CARE_VIEW/);
     assert.match(code, /receptionist:\s*\[[\s\S]*?PERMISSIONS\.CRITICAL_CARE_MANAGE/);
   });
+
+  test("8. Migration 123 guarantees dual-column 'nid' and 'nid_or_birth_cert' schema compatibility and repair", () => {
+    const migrationPath = path.join(ROOT, "supabase/migrations/20261008220000_add_nid_column_and_repair_patient_intake.sql");
+    assert.ok(fs.existsSync(migrationPath), "Migration 123 file must exist");
+    const sql = fs.readFileSync(migrationPath, "utf8");
+
+    assert.match(sql, /ADD COLUMN IF NOT EXISTS nid TEXT/);
+    assert.match(sql, /ADD COLUMN IF NOT EXISTS nid_or_birth_cert TEXT/);
+    assert.match(sql, /SET nid = nid_or_birth_cert/);
+    assert.match(sql, /idx_patients_org_nid/);
+    assert.match(sql, /CREATE OR REPLACE FUNCTION public\.create_patient_intake_atomic/);
+    assert.match(sql, /nid, nid_or_birth_cert/);
+  });
 });

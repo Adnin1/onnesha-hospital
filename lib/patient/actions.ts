@@ -129,6 +129,7 @@ export async function registerPatientAction(formData: {
         blood_group: formData.bloodGroup || "UNKNOWN",
         marital_status: formData.maritalStatus || null,
         occupation: formData.occupation || null,
+        nid: formData.nid?.trim() || null,
         nid_or_birth_cert: formData.nid?.trim() || null,
         address: formData.address?.trim() || null,
         created_by: session.userId,

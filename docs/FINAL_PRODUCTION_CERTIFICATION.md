@@ -1,14 +1,14 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.62-FINAL`  
-**Execution Timestamp:** `2026-10-08T18:45:00+06:00`  
+**Document Version:** `v1.1.63-FINAL`  
+**Execution Timestamp:** `2026-10-08T19:07:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
-**Release Tag:** `v1.1.62`  
-**Prior Release Tag:** `v1.1.61` (Immutable anchor preserved)  
+**Release Tag:** `v1.1.63`  
+**Prior Release Tag:** `v1.1.62` (Immutable anchor preserved)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (122 Migrations in Full Parity)  
+**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (123 Migrations in Full Parity)  
 
 ---
 
@@ -105,16 +105,16 @@ Total Test Cases:     1032
 ## 5. Master System Machine-Readable Ledger
 
 ```ini
-RELEASE_VERSION=1.1.62
-RELEASE_TAG=v1.1.62
-RELEASE_COMMIT=dd0113aa0e71948676567df1beb7f1175b0d61e8
+RELEASE_VERSION=1.1.63
+RELEASE_TAG=v1.1.63
+RELEASE_COMMIT=PENDING_COMMIT
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
 SUITES_DISCOVERED=121
 SUITES_PASSED=121
 SUITES_FAILED=0
-ACTIVE_TESTS=1084
-ACTIVE_PASS=1077
+ACTIVE_TESTS=1085
+ACTIVE_PASS=1078
 ACTIVE_FAIL=0
 SKIPPED=7
 CANCELLED=0
