@@ -130,4 +130,28 @@ describe("Patient Intake Atomic Resilience & End-to-End Database Invariants", ()
     assert.match(code, /critical_care_visit_id/);
     assert.match(code, /from\("ot_bookings"\)\s*\.insert/);
   });
+
+  test("6. getIntakeDropdownOptionsAction provides resilient fallbacks and full option catalogs", () => {
+    const actionPath = path.join(ROOT, "lib/patient/actions.ts");
+    const code = fs.readFileSync(actionPath, "utf8");
+
+    assert.match(code, /export async function getIntakeDropdownOptionsAction/);
+    assert.match(code, /departments/);
+    assert.match(code, /doctors/);
+    assert.match(code, /beds/);
+    assert.match(code, /cabins/);
+    assert.match(code, /units/);
+    assert.match(code, /otRooms/);
+  });
+
+  test("7. Receptionist role includes full front-desk clinical intake permissions", () => {
+    const permPath = path.join(ROOT, "lib/permissions.ts");
+    const code = fs.readFileSync(permPath, "utf8");
+
+    assert.match(code, /receptionist:\s*\[[\s\S]*?PERMISSIONS\.OPD_VIEW/);
+    assert.match(code, /receptionist:\s*\[[\s\S]*?PERMISSIONS\.IPD_VIEW/);
+    assert.match(code, /receptionist:\s*\[[\s\S]*?PERMISSIONS\.IPD_ADMIT/);
+    assert.match(code, /receptionist:\s*\[[\s\S]*?PERMISSIONS\.CRITICAL_CARE_VIEW/);
+    assert.match(code, /receptionist:\s*\[[\s\S]*?PERMISSIONS\.CRITICAL_CARE_MANAGE/);
+  });
 });

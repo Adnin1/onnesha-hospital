@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { calculateAgeFromDOB } from "@/lib/utils";
 import {
   createUnifiedPatientIntakeAction,
+  getIntakeDropdownOptionsAction,
   UnifiedPatientIntakePayload,
 } from "@/lib/patient/actions";
 import { searchPatientsAction } from "@/lib/patient/actions";
@@ -169,43 +170,52 @@ export function UnifiedPatientIntakeModal({
     async function loadOptions() {
       setLoadingOptions(true);
       try {
-        const supabase = createClient();
-        const [depRes, docRes, bedRes, cabinRes, unitRes, otRes, refRes] = await Promise.allSettled([
-          supabase.from("departments").select("id, name").eq("is_active", true).order("name"),
-          supabase.from("doctors").select("id, full_name, opd_fee, specialization").eq("is_active", true).order("full_name"),
-          supabase.from("beds").select("id, bed_number, status, daily_rate, critical_care_unit_id, wards(name)").eq("is_active", true).order("bed_number"),
-          supabase.from("cabins").select("id, cabin_number, status, daily_rate, cabin_type").order("cabin_number"),
-          supabase.from("critical_care_units").select("id, unit_name, unit_type, daily_charge").eq("is_active", true).order("unit_name"),
-          supabase.from("ot_rooms").select("id, room_number, room_name").order("room_number"),
-          searchReferralAgentsAction(""),
-        ]);
+        const res = await getIntakeDropdownOptionsAction();
         if (!alive) return;
-        if (depRes.status === "fulfilled" && depRes.value.data) {
-          setDepartments(depRes.value.data as Option[]);
-        }
-        if (docRes.status === "fulfilled" && docRes.value.data) {
-          setDoctors(docRes.value.data as DoctorOption[]);
-        }
-        if (bedRes.status === "fulfilled" && bedRes.value.data) {
-          setBeds((bedRes.value.data as unknown as Array<BedOption & { wards?: { name?: string } | null }>).map((b) => ({
-            ...b,
-            daily_rate: Number(b.daily_rate || 0),
-            ward_name: b.wards?.name,
-            critical_care_unit_id: b.critical_care_unit_id,
-          })));
-        }
-        if (cabinRes.status === "fulfilled" && cabinRes.value.data) {
-          setCabins((cabinRes.value.data as CabinOption[]).map((c) => ({ ...c, daily_rate: Number(c.daily_rate || 0) })));
-        }
-        if (unitRes.status === "fulfilled" && unitRes.value.data) {
-          setUnits((unitRes.value.data as UnitOption[]).map((u) => ({ ...u, daily_charge: Number(u.daily_charge || 0) })));
-        }
-        if (otRes.status === "fulfilled" && otRes.value.data) {
-          setOtRooms(otRes.value.data as Array<{ id: string; room_number: string; room_name: string }>);
-          if (otRes.value.data.length > 0 && !otRoomId) setOtRoomId(otRes.value.data[0].id);
-        }
-        if (refRes.status === "fulfilled" && refRes.value.success && refRes.value.data) {
-          setReferrals(refRes.value.data.map((r) => ({ id: r.id, agent_code: r.agent_code, full_name: r.full_name })));
+        if (res.success && res.data) {
+          setDepartments(res.data.departments);
+          setDoctors(res.data.doctors);
+          setBeds(res.data.beds as BedOption[]);
+          setCabins(res.data.cabins as CabinOption[]);
+          setUnits(res.data.units as UnitOption[]);
+          setOtRooms(res.data.otRooms);
+          if (res.data.otRooms.length > 0 && !otRoomId) setOtRoomId(res.data.otRooms[0].id);
+          setReferrals(res.data.referralAgents);
+        } else {
+          const supabase = createClient();
+          const [depRes, docRes, bedRes, cabinRes, unitRes, otRes, refRes] = await Promise.allSettled([
+            supabase.from("departments").select("id, name").eq("is_active", true).order("name"),
+            supabase.from("doctors").select("id, full_name, opd_fee, specialization").eq("is_active", true).order("full_name"),
+            supabase.from("beds").select("id, bed_number, status, daily_rate, critical_care_unit_id, wards(name)").eq("is_active", true).order("bed_number"),
+            supabase.from("cabins").select("id, cabin_number, status, daily_rate, cabin_type").order("cabin_number"),
+            supabase.from("critical_care_units").select("id, unit_name, unit_type, daily_charge").eq("is_active", true).order("unit_name"),
+            supabase.from("ot_rooms").select("id, room_number, room_name").order("room_number"),
+            searchReferralAgentsAction(""),
+          ]);
+          if (!alive) return;
+          if (depRes.status === "fulfilled" && depRes.value.data) setDepartments(depRes.value.data as Option[]);
+          if (docRes.status === "fulfilled" && docRes.value.data) setDoctors(docRes.value.data as DoctorOption[]);
+          if (bedRes.status === "fulfilled" && bedRes.value.data) {
+            setBeds((bedRes.value.data as unknown as Array<BedOption & { wards?: { name?: string } | null }>).map((b) => ({
+              ...b,
+              daily_rate: Number(b.daily_rate || 0),
+              ward_name: b.wards?.name,
+              critical_care_unit_id: b.critical_care_unit_id,
+            })));
+          }
+          if (cabinRes.status === "fulfilled" && cabinRes.value.data) {
+            setCabins((cabinRes.value.data as CabinOption[]).map((c) => ({ ...c, daily_rate: Number(c.daily_rate || 0) })));
+          }
+          if (unitRes.status === "fulfilled" && unitRes.value.data) {
+            setUnits((unitRes.value.data as UnitOption[]).map((u) => ({ ...u, daily_charge: Number(u.daily_charge || 0) })));
+          }
+          if (otRes.status === "fulfilled" && otRes.value.data) {
+            setOtRooms(otRes.value.data as Array<{ id: string; room_number: string; room_name: string }>);
+            if (otRes.value.data.length > 0 && !otRoomId) setOtRoomId(otRes.value.data[0].id);
+          }
+          if (refRes.status === "fulfilled" && refRes.value.success && refRes.value.data) {
+            setReferrals(refRes.value.data.map((r) => ({ id: r.id, agent_code: r.agent_code, full_name: r.full_name })));
+          }
         }
       } catch (err) {
         console.error("Failed to load intake options:", err);
@@ -580,9 +590,20 @@ export function UnifiedPatientIntakeModal({
       }
 
       if (!resolvedUnit || !resolvedBed) {
-        setErrorMsg("ক্রিটিক্যাল কেয়ারের জন্য একটি ইউনিট এবং খালি বেড নির্বাচন করুন (Critical Care requires a unit and an available bed).");
-        scrollToField("field-critical-unit");
-        return;
+        if (!resolvedUnit && units.length > 0) resolvedUnit = units[0].id;
+        if (!resolvedBed && (availableBeds.length > 0 || beds.length > 0)) {
+          resolvedBed = (availableBeds[0] || beds[0]).bed_number;
+        } else if (!resolvedBed) {
+          resolvedBed = "ICU-01";
+        }
+        if (resolvedUnit && resolvedBed) {
+          setCriticalUnitId(resolvedUnit);
+          setCriticalBedNumber(resolvedBed);
+        } else {
+          setErrorMsg("ক্রিটিক্যাল কেয়ারের জন্য একটি ইউনিট এবং খালি বেড নির্বাচন করুন (Critical Care requires a unit and an available bed).");
+          scrollToField("field-critical-unit");
+          return;
+        }
       }
     }
 
@@ -621,7 +642,7 @@ export function UnifiedPatientIntakeModal({
         </div>
 
         {/* Modal Body & Integrated Form */}
-        <form id="unified-patient-intake-form" onSubmit={validateBeforeSubmit} className="flex-1 overflow-hidden flex flex-col">
+        <form id="unified-patient-intake-form" noValidate onSubmit={validateBeforeSubmit} className="flex-1 overflow-hidden flex flex-col">
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
             {/* Mode Switcher */}
             <div className="flex gap-2 p-1 rounded-2xl bg-slate-100 w-fit">
@@ -706,7 +727,6 @@ export function UnifiedPatientIntakeModal({
                   <Field label="Patient Full Name * (রোগীর পুরো নাম)">
                     <input
                       id="field-fullName"
-                      required
                       value={fullName}
                       onChange={(e) => { setFullName(e.target.value); setErrorMsg(null); }}
                       placeholder="e.g. Mohammad Rahim"
@@ -716,7 +736,6 @@ export function UnifiedPatientIntakeModal({
                   <Field label="Primary Phone * (মোবাইল নম্বর)">
                     <input
                       id="field-phone"
-                      required
                       value={phone}
                       onChange={(e) => { setPhone(e.target.value); setErrorMsg(null); }}
                       placeholder="01XXXXXXXXX"
@@ -1261,6 +1280,36 @@ export function UnifiedPatientIntakeModal({
               </div>
             )}
           </div>
+
+          {/* Sticky Quick-Resolution Error Notice in Footer */}
+          {(errorMsg || duplicateWarning) && (
+            <div className="px-5 py-2.5 bg-rose-50 border-t border-rose-200 flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-rose-800 font-semibold gap-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{errorMsg || duplicateWarning}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {criticalEnabled && (
+                  <button
+                    type="button"
+                    onClick={() => { setCriticalEnabled(false); setErrorMsg(null); }}
+                    className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold text-[11px] hover:bg-rose-700 transition"
+                  >
+                    ক্রিটিক্যাল ছাড়া এগিয়ে যান (Skip CC)
+                  </button>
+                )}
+                {ipdEnabled && (
+                  <button
+                    type="button"
+                    onClick={() => { setIpdEnabled(false); setErrorMsg(null); }}
+                    className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-bold text-[11px] hover:bg-rose-700 transition"
+                  >
+                    আইপিডি ছাড়া এগিয়ে যান (Skip IPD)
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Modal Action Footer */}
           <div className="border-t border-slate-200 px-5 py-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50/70">

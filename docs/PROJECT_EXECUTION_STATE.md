@@ -1,10 +1,10 @@
 # OHMS Project Execution State Ledger
 
-**Last Updated:** 2026-10-08T18:15:00+06:00  
-**Platform Version:** `1.1.61`  
+**Last Updated:** 2026-10-08T18:45:00+06:00  
+**Platform Version:** `1.1.62`  
 **Git Branch:** `main`  
-**Git Tag:** `v1.1.61`  
-**Prior Release Tag:** `v1.1.60` (Immutable anchor preserved)  
+**Git Tag:** `v1.1.62`  
+**Prior Release Tag:** `v1.1.61` (Immutable anchor preserved)  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
 **Cloudflare Pages Project:** `onnesha-hospital`  
@@ -19,13 +19,13 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 ---
 
-## 2. Core Repository Metrics & Artifact Baseline (v1.1.61)
+## 2. Core Repository Metrics & Artifact Baseline (v1.1.62)
 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
-| **Repository Version** | `1.1.61` | Synchronized across project manifests | ✅ Synchronized |
+| **Repository Version** | `1.1.62` | Synchronized across project manifests | ✅ Synchronized |
 | **Total Test Suites** | `121 suites` | 100% of discovered test files passing | ✅ 121 / 121 Passing |
-| **Active Test Passes** | `1075 tests` | 0 failures, 0 regressions | ✅ 1075 Active Passes |
+| **Active Test Passes** | `1077 tests` | 0 failures, 0 regressions | ✅ 1077 Active Passes |
 | **Standard Skips** | `7 tests` | Explicitly justified environmental/destructive skips | ✅ 7 Standard Skips |
 | **Disaster Recovery & Restore** | `Multi-Tier Model` | 122 Migrations in Git, Service-role snapshot utility, DB SSL active, WAL-G verified | ✅ Certified Ready |
 | **Browser Matrix E2E Tests** | `208 specs` | 100% pass across 4 browser engines | ✅ 208 / 208 Passing |

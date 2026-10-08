@@ -1,14 +1,14 @@
 {
-  "version": "1.1.61",
+  "version": "1.1.62",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.61. Migration 122 Resilient Bed Lookup, 1-Click Patient Only Registration, Critical Care auto-defaults, and validation deadlock elimination.",
-  "pub_date": "2026-10-08T20:30:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.62. Complete resilient dropdown lookups, receptionist admission role permissions, zero-friction patient registration, and 121/121 certified test suite.",
+  "pub_date": "2026-10-08T22:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.61.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.62.exe",
       "installer_exe_sha256": "PENDING_BUILD",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.61.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.62.msi",
       "installer_msi_sha256": "PENDING_BUILD",
       "installer_msi_size": 0,
       "status": "pending_ci_build",
