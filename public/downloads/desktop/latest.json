@@ -1,14 +1,14 @@
 {
-  "version": "1.1.69",
+  "version": "1.1.70",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.69. Final production delivery certification: 27-step Admission -> Referral -> Billing -> Payment -> Discharge automated test suite, conservative structured data, CI gate hardening, and verified edge release.",
-  "pub_date": "2026-10-09T02:50:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.70. Final production delivery certification: WCAG 2.2 focus not obscured scroll padding, mobile drawer body scroll locking, conservative structured data, CI gate hardening, and verified edge release.",
+  "pub_date": "2026-10-09T03:50:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.69.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.70.exe",
       "installer_exe_sha256": "PENDING_BUILD",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.69.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.70.msi",
       "installer_msi_sha256": "PENDING_BUILD",
       "installer_msi_size": 0,
       "status": "pending_ci_build",

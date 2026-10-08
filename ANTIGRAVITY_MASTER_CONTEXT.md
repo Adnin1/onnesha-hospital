@@ -4,7 +4,7 @@
 **Repository:** `Adnin1/onnesha-hospital` (Git remotes: `origin` & `ssh-origin` -> `git@github.com:Adnin1/onnesha-hospital.git`)  
 **Production Edge:** [`https://onnesha-hospital.pages.dev`](https://onnesha-hospital.pages.dev) (Cloudflare Pages Project: `onnesha-hospital`)  
 **Database (Supabase Production Ref):** `iuhtzahuszdkdarhxobx` (PostgreSQL 15+, 127/127 Migrations Synchronized)  
-**Current Certified Release:** `v1.1.69`  
+**Current Certified Release:** `v1.1.70`  
 **Primary Git Branch:** `main`  
 
 ---
@@ -34,7 +34,7 @@ In any Antigravity session, resolve facts strictly in this precedence order:
 ## 3. Strict Non-Destructive Git Rules (Rule 0.3)
 
 - **Absolute Ban on Force Pushes:** Never execute `git push --force` or `git reset --hard` on published commits.
-- **Tag Immutability:** Never overwrite, delete, or move historical release tags (`v1.1.4`, `v1.1.58` through `v1.1.69`).
+- **Tag Immutability:** Never overwrite, delete, or move historical release tags (`v1.1.4`, `v1.1.58` through `v1.1.70`).
 - **Synchronized Remotes:** Always push commits and tags to both `origin` and `ssh-origin`.
 
 ---
