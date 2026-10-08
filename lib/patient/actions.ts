@@ -112,6 +112,12 @@ export async function registerPatientAction(formData: {
       return { success: false, error: codeErr?.message || "Failed to generate atomic patient identifier." };
     }
     const patientCode = codeData;
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const serialSuffix = patientCode.replace(/^OH-/, "");
+    const registrationSerial = `${yy}${mm}${dd}-${serialSuffix}`;
 
     // Insert Patient Master
     const { data: newPatient, error: insertErr } = await supabase
@@ -120,6 +126,7 @@ export async function registerPatientAction(formData: {
         organization_id: session.organizationId,
         patient_id: patientCode,
         patient_code: patientCode,
+        registration_serial: registrationSerial,
         full_name: formData.fullName.trim(),
         phone: formData.phone.trim(),
         normalized_phone: normalizedPhone,

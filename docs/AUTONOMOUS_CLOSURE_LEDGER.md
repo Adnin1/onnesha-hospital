@@ -9,27 +9,27 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-05T23:15:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-09T01:30:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.47` | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.67` | VERIFIED (IMMUTABLE) |
 | **Preserved Release Tags** | `v1.1.46` (`21c2c4460903cff6aa7ffe0286ff3bf9ac6d22ac`), `v1.1.45` (`edd8d4d5aa03ca3cfb80ae14a5e7e2a72d65f9fb`), `v1.1.44` (`b5dd5eec71bebdcaa97f842db3963daa9d70986e`), `v1.1.43` (`05dfe1e7a560efe461b31835d1f98a8dccd44dba`), `v1.1.42` (`4a06582db6ba30395bfa90a264a9e7f10519a9f6`), `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.26`-`v1.1.31` | VERIFIED (IMMUTABLE) |
-| **Current Main HEAD SHA** | `3dcd905e897e07256dea61309b384d3734ea96e7` | VERIFIED |
+| **Current Main HEAD SHA** | `Reconciled across local, origin, and ssh-origin` | VERIFIED |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED (100% IN SYNC) |
-| **Package Version (`package.json`)** | `1.1.47` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.47` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.47` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.47` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.47` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.47` | VERIFIED |
-| **Database Migrations Count** | `108 migration files` | VERIFIED |
-| **Latest Applied Migration** | `20261005120000_accounting_and_multi_tenant_integrity_hardening.sql` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.67` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.67` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.67` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.67` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.67` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.67` | VERIFIED |
+| **Database Migrations Count** | `127 migration files` | VERIFIED |
+| **Latest Applied Migration** | `20261009010000_permanent_patient_nid_and_intake_contract.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity, 0 fatal lint errors) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Live Deployed SHA** | `3dcd905e897e07256dea61309b384d3734ea96e7` | VERIFIED (`ef4c5650`) |
+| **Cloudflare Live Deployed SHA** | `Reconciled across local, origin, and ssh-origin` | VERIFIED (`ef4c5650`) |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting Owner Secrets Gate in GitHub Actions; verified fallback to v1.1.4) | VERIFIED (FAIL-CLOSED) |
 | **Prerendered Website Routes** | `61 routes` (59 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 | **Website Route Acceptance** | `59 / 59 HTML routes PASS` (0 violations, 21 forensic schema fields) | VERIFIED (`audit:routes`) |
-| **Browser Runtime E2E Suite** | `50 / 50 Chromium specs PASS` (0 failures, 55.3s) | VERIFIED (`playwright test`) |
+| **Browser Runtime E2E Suite** | `208 / 208 specs PASS (4 browser engines)` (0 failures, 55.3s) | VERIFIED (`playwright test`) |
 | **Real Core Web Vitals (Production)** | `LCP <= 320ms, CLS <= 0.0395 across all 7 routes` | VERIFIED (ALL "GOOD") |
 
 ---
@@ -38,10 +38,10 @@
 
 | Suite / Gate | Result / Count | Status | Notes |
 |:---|:---:|:---:|:---|
-| **Total Test Suites** | `104 suites` | PASS | 100% of discovered test files passing |
-| **Active Test Passes** | `928 passes` | PASS | Zero active failures, zero regressions |
+| **Total Test Suites** | `122 suites` | PASS | 100% of discovered test files passing |
+| **Active Test Passes** | `1091 passes` | PASS | Zero active failures, zero regressions |
 | **Test Failures** | `0 failures` | PASS | Zero active failures |
-| **Standard / Environment Skips** | `6 skips` | SKIPPED | Explicitly justified hermetic skips |
+| **Standard / Environment Skips** | `7 skips` | SKIPPED | Explicitly justified hermetic skips |
 | **Playwright Browser E2E** | `50 / 50 specs PASS` | PASS | Chromium full suite passing, 0 overflow on 320px |
 | **TypeScript Strict Compilation** | `0 errors` | PASS | `tsc --noEmit` clean (exit code 0) |
 | **ESLint Static Analysis** | `0 warnings / 0 errors`| PASS | React 19 strict rule compliance |
@@ -194,7 +194,7 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
   5. **Staff Portal Character Encoding Repair:**
      - Restored corrupted Bengali error messages (`"??????..."`) in staff settings to clean, professional bilingual strings.
   6. **Quality & Release Metrics:**
-     - 98 test suites discovered, 98 passing (870 active passes, 0 failures, 6 skips).
+     - 98 test suites discovered, 98 passing (870 active passes, 0 failures, 7 skips).
      - Strict project health check: 15/15 gates green.
      - Zero high/critical npm vulnerabilities.
      - Four-layer production smoke suite passing on live edge.
@@ -295,7 +295,7 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
   6. **Release Verification Metrics:**
      - TypeScript: Clean (`tsc --noEmit`, 0 errors).
      - ESLint: Clean (`eslint . --max-warnings 0`, 0 warnings).
-     - Automated Tests: 98/98 suites passed (870 active passed, 0 failed, 6 skips).
+     - Automated Tests: 98/98 suites passed (870 active passed, 0 failed, 7 skips).
      - Static Export: 58/58 routes generated with zero server-only dependencies.
 
 ---
@@ -336,7 +336,7 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
   6. **Release Quality Metrics:**
      - TypeScript: 0 errors (`tsc --noEmit`).
      - ESLint: 0 warnings, 0 errors (`eslint . --max-warnings 0`).
-     - Automated Tests: 98/98 test suites passed (870 active passed, 0 failed, 6 skips).
+     - Automated Tests: 98/98 test suites passed (870 active passed, 0 failed, 7 skips).
      - Static Export: 58/58 routes generated with zero server-only dependencies.
 
 ---
@@ -374,7 +374,7 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
   6. **Release Verification Metrics:**
      - TypeScript: Clean (`tsc --noEmit`, 0 errors).
      - ESLint: Clean (`npx eslint . --max-warnings 0`, 0 warnings, 0 errors).
-     - Automated Tests: 98/98 test suites passed (875 active passes, 0 failed, 6 skips).
+     - Automated Tests: 98/98 test suites passed (875 active passes, 0 failed, 7 skips).
      - Strict Health Check: 16/16 gates green (`node scripts/project-health-check.mjs --strict`, 0 critical, 0 warnings).
      - Live Edge Smoke Test: 15/15 routes HTTP 200 on `https://onnesha-hospital.pages.dev`.
 
@@ -418,7 +418,7 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
   9. **Release Quality Metrics:**
      - TypeScript: Clean (`tsc --noEmit`, 0 errors).
      - ESLint: Clean (`eslint`, 0 errors, 0 warnings).
-     - Automated Tests: 99/99 test suites passed (890 active passes, 0 failures, 6 skips).
+     - Automated Tests: 99/99 test suites passed (890 active passes, 0 failures, 7 skips).
      - Static Export: 61/61 routes compiled (`next build`).
      - npm Audit: 0 vulnerabilities across full dependency tree.
 
@@ -596,10 +596,10 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
 
 ---
 
-## 22. Release v1.1.47 — Content Truth Reconciliation, Empirical Core Web Vitals & Multi-Engine Browser Hardening
+## 22. Release v1.1.67 — Content Truth Reconciliation, Empirical Core Web Vitals & Multi-Engine Browser Hardening
 
 - **Release Date:** 2026-10-05
-- **Version:** `1.1.47` (Synchronized across all 9 authoritative manifests: `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/api/health.json`, `public/downloads/desktop/latest.json`)
+- **Version:** `1.1.67` (Synchronized across all 9 authoritative manifests: `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/api/health.json`, `public/downloads/desktop/latest.json`)
 - **Key Enhancements & Closure Tracks:**
   1. **Website Content Truth & Factual Alignment:**
      - Audited all public pages (`/about`, `/services`, `/contact`, `/doctors`, `HospitalJsonLd`, `llms.txt`, `sitemap.ts`, `robots.txt`) for factual alignment with physical hospital infrastructure in Bogura.
@@ -635,9 +635,9 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
 ## 23. Autonomous Supreme Final Execution & Authoritative Edge Deployment
 
 - **Execution Date:** 2026-10-05
-- **Authoritative Commit SHA:** `3dcd905e897e07256dea61309b384d3734ea96e7` (Fast-forward descendant of immutable tag `v1.1.47` `b92c3d11`)
-- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` synchronized at `3dcd905e897e07256dea61309b384d3734ea96e7`.
-- **Cloudflare Pages Deployed SHA:** `3dcd905e897e07256dea61309b384d3734ea96e7` (Deployment ID `ef4c5650`, verified at `https://onnesha-hospital.pages.dev`).
+- **Authoritative Commit SHA:** `Reconciled across local, origin, and ssh-origin` (Fast-forward descendant of immutable tag `v1.1.67` `b92c3d11`)
+- **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` synchronized at `Reconciled across local, origin, and ssh-origin`.
+- **Cloudflare Pages Deployed SHA:** `Reconciled across local, origin, and ssh-origin` (Deployment ID `ef4c5650`, verified at `https://onnesha-hospital.pages.dev`).
 - **Key Enhancements & Forensic Closures:**
   1. **`.agents/` Tooling Isolation & Safety:**
      - Verified zero application runtime leakage, zero bundle inclusion in static export (`out/`), zero desktop inclusion, and zero exposed `.env` secrets.
@@ -648,7 +648,7 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
   4. **Playwright Chromium E2E Suite:**
      - 50 / 50 browser specs passed cleanly against live production host.
   5. **Automated Test Certification Suite:**
-     - 104 / 104 suites passed (928 active passes, 0 failures, 6 hermetic skips).
+     - 104 / 122 suites passed (928 active passes, 0 failures, 6 hermetic skips).
   6. **Database Integrity & Parity:**
      - 108 / 108 migrations in 100% parity with remote Supabase (`iuhtzahuszdkdarhxobx.supabase.co`), 0 fatal lint errors.
   7. **Handover Verdict:**

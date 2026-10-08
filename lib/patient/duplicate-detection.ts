@@ -97,6 +97,34 @@ export async function detectDuplicatePatients(
           }
         });
       }
+
+      // Check direct nid_or_birth_cert column on patients table
+      const { data: directNidMatches } = await supabase
+        .from("patients")
+        .select("id, patient_code, full_name, phone, gender, dob, organization_id, nid_or_birth_cert")
+        .eq("organization_id", input.organizationId)
+        .eq("is_deleted", false)
+        .eq("nid_or_birth_cert", normNid);
+
+      if (directNidMatches && directNidMatches.length > 0) {
+        directNidMatches.forEach((directMatch) => {
+          if (
+            directMatch.id !== input.excludePatientId &&
+            !matchedPatients.some((m) => m.id === directMatch.id)
+          ) {
+            reasons.push(`Exact National ID (NID) match: ${directMatch.nid_or_birth_cert || normNid}`);
+            matchedPatients.push({
+              id: directMatch.id,
+              patient_code: directMatch.patient_code,
+              full_name: directMatch.full_name,
+              phone: directMatch.phone,
+              gender: directMatch.gender,
+              dob: directMatch.dob,
+              matchSignal: "HIGH: Exact NID",
+            });
+          }
+        });
+      }
     }
 
     // 2. Check Signal 2 & 3: Phone Match & Emergency Phone Match
@@ -198,6 +226,7 @@ export function matchPatientRecords(
     phone: string;
     normalized_phone?: string;
     nid?: string;
+    nid_or_birth_cert?: string;
     dob?: string;
   }>
 ): DuplicateCheckResult {
@@ -208,10 +237,11 @@ export function matchPatientRecords(
 
   for (const p of existingRecords) {
     // 1. NID Match
-    if (normNid && p.nid) {
-      const pNid = p.nid.trim().replace(/[\s-]/g, "");
+    const pNidRaw = p.nid_or_birth_cert || p.nid;
+    if (normNid && pNidRaw) {
+      const pNid = pNidRaw.trim().replace(/[\s-]/g, "");
       if (normNid === pNid) {
-        reasons.push(`Exact National ID (NID) match: ${p.nid}`);
+        reasons.push(`Exact National ID (NID) match: ${pNidRaw}`);
         matchedPatients.push({
           id: p.id,
           patient_code: "OH-EXISTING",

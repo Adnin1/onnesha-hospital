@@ -1,7 +1,7 @@
 # Onnesha Hospital Management System (OHMS) — Final Operational Commissioning Status
 
-**Document Version:** `v1.1.65-OPERATIONAL-GATES`  
-**Execution Timestamp:** `2026-10-08T20:00:00+06:00`  
+**Document Version:** `v1.1.67-OPERATIONAL-GATES`  
+**Execution Timestamp:** `2026-10-09T01:30:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Current Governance State:** `SOFTWARE COMPLETE — 16 OWNER GATES PENDING PHYSICAL ACTION (G1–G16)`  
 

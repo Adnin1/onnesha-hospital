@@ -1,11 +1,11 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.66-FINAL`  
+**Document Version:** `v1.1.67-FINAL`  
 **Execution Timestamp:** `2026-10-09T01:30:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
-**Release Tag:** `v1.1.66`  
-**Prior Release Tag:** `v1.1.65` (Immutable anchor preserved)  
+**Release Tag:** `v1.1.67`  
+**Prior Release Tag:** `v1.1.66` (Immutable anchor preserved)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
 **Supabase Production Project:** `iuhtzahuszdkdarhxobx` (127 Migrations in Full Parity)  
@@ -17,12 +17,12 @@
 | Evaluation Area | Status | Evidence & Verification Metric |
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
-| **Patient Registration & Intake** | **CERTIFIED COMPLETE** | Standardized `nid_or_birth_cert` contract, bidirectional sync trigger, reactive unit/bed auto-defaulting, UHID serial, multi-service atomic rollback |
+| **Patient Registration & Intake** | **CERTIFIED COMPLETE** | Standardized `nid_or_birth_cert` contract, bidirectional sync trigger, reactive unit/bed auto-defaulting, permanent registration_serial, multi-service atomic rollback |
 | **Critical Care Bed Authority** | **CERTIFIED COMPLETE** | Strict unit affinity filtering (`getEligibleCriticalBedsForUnit`), OCCUPIED on admission, VACANT on discharge, zero bed mismatch |
 | **Admission Discount Calculation** | **CERTIFIED COMPLETE** | Database-side authoritative calculation (`ROUND(v_billable_base * (v_admission_discount_percent / 100.0), 2)`), capped at billable base |
 | **PostgREST Schema Freshness** | **CERTIFIED COMPLETE** | Automated `NOTIFY pgrst, 'reload schema';` executed, eliminating PostgREST stale column cache issues |
 | **Referral & Affiliate Subsystem** | **CERTIFIED COMPLETE** | Safe directory projection, BMDC ethics compliance, server-side performance analytics, 1%-40% bounds |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 122/122 Test Suites Passed (1089 Active Passes, 0 Failures, 7 Hermetic Skips) |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 122/122 Test Suites Passed (1091 Active Passes, 0 Failures, 7 Hermetic Skips) |
 | **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 127 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
 | **Real Browser Matrix E2E** | **CERTIFIED COMPLETE** | 208/208 Specs Passing across Chromium, Firefox, WebKit, Mobile Chrome |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 61 Units Prerendered, 0 Broken Links / 0 Broken Assets |
@@ -36,14 +36,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]   -->  Commit: Release v1.1.66 (Clean)
-[Git Tag]                   -->  Tag: v1.1.66 (Clean Annotated Tag)
-[Prior Tag]                 -->  Tag: v1.1.65 (Immutable Anchor)
-[GitHub Remote 'origin']    -->  main @ Release v1.1.66
-[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.66
-[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.66)
-[Version Manifest Sync]     -->  package.json (1.1.66), package-lock.json (1.1.66),
-                                  Cargo.toml (1.1.66), tauri.conf.json (1.1.66)
+[Local Git Working Tree]   -->  Commit: Release v1.1.67 (Clean)
+[Git Tag]                   -->  Tag: v1.1.67 (Clean Annotated Tag)
+[Prior Tag]                 -->  Tag: v1.1.66 (Immutable Anchor)
+[GitHub Remote 'origin']    -->  main @ Release v1.1.67
+[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.67
+[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.67)
+[Version Manifest Sync]     -->  package.json (1.1.67), package-lock.json (1.1.67),
+                                  Cargo.toml (1.1.67), tauri.conf.json (1.1.67)
 ```
 
 ---
@@ -58,8 +58,8 @@ Total Test Suites:    122
 Passed Suites:        122
 Failed Suites:        0
 ----------------------------------------
-Total Test Cases:     1096
-  • ACTIVE_PASS:      1089
+Total Test Cases:     1098
+  • ACTIVE_PASS:      1091
   • ACTIVE_FAIL:      0
   • SKIPPED / OTHER:  7
     - DEFERRED:       0 (e.g. pending external merchant activation)
@@ -67,12 +67,12 @@ Total Test Cases:     1096
     - BLOCKED:        0
     - STANDARD_SKIP:  7
 ========================================
-✅ CERTIFICATION PASS: All 122 suites passed (1089 active passes, 0 failures, 0 blocked).
+✅ CERTIFICATION PASS: All 122 suites passed (1091 active passes, 0 failures, 0 blocked).
 ```
 
 ---
 
-## 4. Hardening Completed in Production Closure (v1.1.66)
+## 4. Hardening Completed in Production Closure (v1.1.67)
 
 1. **Permanent Patient NID Contract & Bidirectional Schema Sync (Migration 127):**
    - Standardized `create_patient_intake_atomic` to use `public.patients.nid_or_birth_cert` as the canonical column.
@@ -86,24 +86,31 @@ Total Test Cases:     1096
    - Implemented `getEligibleCriticalBedsForUnit` strictly matching unit IDs or specialized CC ward names.
    - Added reactive `useEffect` auto-defaulting active unit and eligible bed when options finish loading.
    - Replaced general bed fallbacks with explicit feedback when a Critical Care unit has zero vacant beds.
-4. **Dedicated Regression Test Suite (`tests/patient-nid-and-critical-care-contract.test.mjs`):**
-   - Implemented and certified all Tests A–G covering null NID, valid NID, duplicate NID, reactive CC defaulting, CC+OT combinations, 4-service intake, and atomic rollbacks.
+4. **Permanent Registration Serial & Multi-Signal Duplicate Detection:**
+   - Single Patient Registration action (`createPatientAction`) authoritatively generates and assigns permanent `registration_serial`.
+   - Multi-signal duplicate detection engine validates both `nid` and `nid_or_birth_cert` columns directly against `patients` and `patient_identifications`.
+5. **Fail-Closed CI/CD Gate Dependency Semantics:**
+   - Separated Mandatory Hermetic CI from Staging Live Security Suite.
+   - Missing staging secrets explicitly output `LIVE_SECURITY_RESULT=NOT_RUN_OWNER_REQUIRED` (Gate G10) rather than implicit false green.
+   - Automated deployment outputs `AUTOMATED_DEPLOYMENT=BLOCKED` when owner secrets are not present in CI.
+6. **Dedicated Regression Test Suite (`tests/patient-nid-and-critical-care-contract.test.mjs`):**
+   - Implemented and certified all Tests A–J covering null NID, valid NID, duplicate NID, reactive CC defaulting, CC+OT combinations, 4-service intake, atomic rollbacks, registration serials, and dual NID lookups.
 
 ---
 
 ## 5. Master System Machine-Readable Ledger
 
 ```ini
-RELEASE_VERSION=1.1.66
-RELEASE_TAG=v1.1.66
+RELEASE_VERSION=1.1.67
+RELEASE_TAG=v1.1.67
 RELEASE_COMMIT=HEAD
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
 SUITES_DISCOVERED=122
 SUITES_PASSED=122
 SUITES_FAILED=0
-ACTIVE_TESTS=1096
-ACTIVE_PASS=1089
+ACTIVE_TESTS=1098
+ACTIVE_PASS=1091
 ACTIVE_FAIL=0
 SKIPPED=7
 CANCELLED=0

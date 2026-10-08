@@ -133,4 +133,18 @@ describe("OHMS Permanent Patient NID Contract & Critical Care Intake Hardening (
     assert.match(sql, /RAISE EXCEPTION 'CRITICAL_CARE_BED_NOT_VACANT:%', v_bed_number;/);
     assert.match(sql, /RAISE EXCEPTION 'IPD_BED_NOT_VACANT';/);
   });
+
+  test("Test I: Single Patient Registration assigns permanent registration_serial", () => {
+    const actionsPath = path.join(rootDir, "lib", "patient", "actions.ts");
+    const actionsContent = fs.readFileSync(actionsPath, "utf8");
+    assert.match(actionsContent, /registration_serial:\s*registrationSerial/);
+    assert.match(actionsContent, /const registrationSerial = `\$\{yy\}\$\{mm\}\$\{dd\}-\$\{serialSuffix\}`/);
+  });
+
+  test("Test J: Multi-signal duplicate detection matches both nid and nid_or_birth_cert", () => {
+    const dupPath = path.join(rootDir, "lib", "patient", "duplicate-detection.ts");
+    const dupContent = fs.readFileSync(dupPath, "utf8");
+    assert.match(dupContent, /const pNidRaw = p\.nid_or_birth_cert \|\| p\.nid;/);
+    assert.match(dupContent, /\.eq\("nid_or_birth_cert", normNid\)/);
+  });
 });
