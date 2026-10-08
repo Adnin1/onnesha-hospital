@@ -1,14 +1,14 @@
 {
-  "version": "1.1.64",
+  "version": "1.1.65",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.64. Migrations 124-126 emergency contact schema sync, episode sequence authority, patient_episodes bidirectional compatibility, bed/cabin assignment patient_id constraint fix, and 121/121 certified test suite.",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.65. Full production closure, CI gate truthfulness, and documentation reconciliation.",
   "pub_date": "2026-10-08T23:55:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.64.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.65.exe",
       "installer_exe_sha256": "PENDING_BUILD",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.64.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.65.msi",
       "installer_msi_sha256": "PENDING_BUILD",
       "installer_msi_size": 0,
       "status": "pending_ci_build",

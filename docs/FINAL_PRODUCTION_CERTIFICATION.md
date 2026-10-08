@@ -1,11 +1,11 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.64-FINAL`  
-**Execution Timestamp:** `2026-10-08T19:35:00+06:00`  
+**Document Version:** `v1.1.65-FINAL`  
+**Execution Timestamp:** `2026-10-08T20:00:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
-**Release Tag:** `v1.1.64`  
-**Prior Release Tag:** `v1.1.63` (Immutable anchor preserved)  
+**Release Tag:** `v1.1.65`  
+**Prior Release Tag:** `v1.1.64` (Immutable anchor preserved)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
 **Supabase Production Project:** `iuhtzahuszdkdarhxobx` (126 Migrations in Full Parity)  
@@ -34,14 +34,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]   -->  Commit: Release v1.1.64 (Clean)
-[Git Tag]                   -->  Tag: v1.1.64 (Clean Annotated Tag)
-[Prior Tag]                 -->  Tag: v1.1.63 (Immutable Anchor)
-[GitHub Remote 'origin']    -->  main @ Release v1.1.64
-[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.64
-[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.64)
-[Version Manifest Sync]     -->  package.json (1.1.64), package-lock.json (1.1.64),
-                                  Cargo.toml (1.1.64), tauri.conf.json (1.1.64)
+[Local Git Working Tree]   -->  Commit: Release v1.1.65 (Clean)
+[Git Tag]                   -->  Tag: v1.1.65 (Clean Annotated Tag)
+[Prior Tag]                 -->  Tag: v1.1.64 (Immutable Anchor)
+[GitHub Remote 'origin']    -->  main @ Release v1.1.65
+[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.65
+[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.65)
+[Version Manifest Sync]     -->  package.json (1.1.65), package-lock.json (1.1.65),
+                                  Cargo.toml (1.1.65), tauri.conf.json (1.1.65)
 ```
 
 ---
@@ -80,25 +80,24 @@ Total Test Cases:     1088
 
 ---
 
-## 4. Hardening Completed in Current Session (v1.1.53)
+## 4. Hardening Completed in Production Closure (v1.1.65)
 
-1. **Critical Care Bed Authoritative Affinity & Status Locking (Migration 118):**
-   - Added `critical_care_unit_id` column to `public.beds` with foreign key and index.
-   - Upgraded `create_patient_intake_atomic` to authoritatively bind bed to unit and update bed status to `OCCUPIED` with patient attribution and admitted_at timestamp.
-   - Backfilled and verified ICU/CCU bed assignments across wards.
-2. **Referral Performance Analytics RPC & UI (Migration 118):**
-   - Implemented `get_referral_performance_analytics(p_org_id, p_agent_id, p_start_date, p_end_date)` returning server-side summary KPIs, monthly breakdown array, yearly comparison array, and top performing agents.
-   - Added `Performance & Analytics` tab to `/app/referrals` UI with date-range selector, monthly financial trajectory, annual breakdown, and top partner rankings.
-3. **Doctor Referral BMDC Ethics Governance (Migration 118):**
-   - Added `bmdc_ethics_acknowledged` and `compliance_notes` columns to `public.referral_agents`.
-   - Embedded BMDC medical ethics compliance acknowledgment in Doctor registration modal and agent badges.
-4. **Safe Referral Directory Projection (Migration 118):**
-   - Implemented `get_referral_agents_safe_directory` RPC returning non-financial agent attributes for reception/intake personnel with zero commission exposure.
-5. **CI Staging Gate Transparency & Fail-Closed Support:**
-   - Isolated Gate G10 in `.github/workflows/ci.yml` with `$GITHUB_STEP_SUMMARY` logging and explicit `ENFORCE_STAGING_FAIL_CLOSED` toggle, completely preventing false greens.
-6. **Release Provenance & Historical Tag Immutability:**
-   - Bumped to release `v1.1.53` without mutating or altering historical tag `v1.1.52`. All manifests synchronized across package.json, Cargo, and Tauri.
-7. **Database Migration Parity:**
+1. **Permanent Patient Intake & Care Episode Schema Repair (Migrations 124–126):**
+   - Implemented `public.generate_episode_number(UUID)` bound to sequence `public.patient_care_episode_seq`.
+   - Created bidirectional `patient_care_episodes` ↔ `patient_episodes` compatibility view with `INSTEAD OF INSERT/UPDATE` triggers and column aliases (`start_time` → `started_at`, `end_time` → `ended_at`).
+   - Added `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relation`, `total_visits`, and `last_visit_date` to `public.patients` with bidirectional synchronization.
+   - Enforced `patient_id` in both bed and cabin assignment insert queries within `create_patient_intake_atomic`.
+   - Synchronized `episode_service_charges` (`item_name` ↔ `description`, `status` ↔ `is_billed`) and resolved `GENERATED ALWAYS AS (quantity * unit_price) STORED` conflict in `get_episode_billing_preview`.
+   - Added `is_active BOOLEAN NOT NULL DEFAULT TRUE` and index to `public.cabins`.
+2. **Resilient Front-Desk Patient Intake & Receptionist IAM:**
+   - Decoupled "Register Patient Only" flow from bed, doctor, cabin, or unit lookups for zero-friction intake.
+   - Included clinical intake and admission permissions in Receptionist role.
+   - Added 1-click service removal and auto-default bed/unit selection in `UnifiedPatientIntakeModal`.
+3. **CI/CD Staging Gate Transparency (Gate G10):**
+   - Isolated Gate G10 in `.github/workflows/ci.yml` with explicit `NOT_RUN / OWNER_REQUIRED` classification when staging secrets are absent, prohibiting false greens.
+4. **Release Provenance & Historical Tag Immutability:**
+   - Authoritative release `v1.1.64` anchored to commit `747e109d2524ff72e49c2a414a5491cfcd676cff`. Historical tags `v1.1.62` and `v1.1.63` preserved immutably.
+5. **Database Migration Parity:**
    - Exactly 126 local migrations confirmed in 100% remote parity (`npx supabase migration list`).
 
 ---
@@ -106,16 +105,16 @@ Total Test Cases:     1088
 ## 5. Master System Machine-Readable Ledger
 
 ```ini
-RELEASE_VERSION=1.1.64
-RELEASE_TAG=v1.1.64
-RELEASE_COMMIT=33744cf927290a01571604a00fcfede99ef70512
+RELEASE_VERSION=1.1.65
+RELEASE_TAG=v1.1.65
+RELEASE_COMMIT=747e109d2524ff72e49c2a414a5491cfcd676cff
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
 SUITES_DISCOVERED=121
 SUITES_PASSED=121
 SUITES_FAILED=0
-ACTIVE_TESTS=1085
-ACTIVE_PASS=1078
+ACTIVE_TESTS=1088
+ACTIVE_PASS=1081
 ACTIVE_FAIL=0
 SKIPPED=7
 CANCELLED=0
@@ -129,8 +128,8 @@ LINT=PASS
 NPM_AUDIT=PASS
 SECURITY_TEST=PASS
 LIVE_DB_TEST=PASS (12/12)
-DATABASE_MIGRATIONS=122
-DATABASE_PARITY=100% (122/122)
+DATABASE_MIGRATIONS=126
+DATABASE_PARITY=100% (126/126)
 RLS=PASS
 SECURITY_DEFINER=PASS
 ACCOUNTING_INTEGRITY=PASS
@@ -141,7 +140,7 @@ DB_SSL_ENFORCEMENT=PASS
 WAL_G_ARCHIVING=PASS
 README_AUDIT=PASS
 GITHUB_CI=PASS
-GITHUB_STAGING=PENDING_OWNER_SECRETS
+GITHUB_STAGING=NOT_RUN_OWNER_REQUIRED
 CLOUDFLARE=PASS
 DEPLOYMENT_PROVENANCE=VERIFIED
 BKASH=OWNER_GATE_PENDING
