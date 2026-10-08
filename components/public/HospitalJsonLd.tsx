@@ -57,15 +57,19 @@ export function HospitalJsonLd() {
   if (HOSPITAL_METADATA.phone) structuredData["telephone"] = HOSPITAL_METADATA.phone;
   if (HOSPITAL_METADATA.emergencyHotline) structuredData["emergencyTelephone"] = HOSPITAL_METADATA.emergencyHotline;
   if (HOSPITAL_METADATA.email) structuredData["email"] = HOSPITAL_METADATA.email;
-  if (HOSPITAL_METADATA.address) {
-    structuredData["address"] = {
-      "@type": "PostalAddress",
-      "streetAddress": HOSPITAL_METADATA.address,
-      "addressLocality": "Bogura",
-      "addressRegion": "Rajshahi Division",
-      "addressCountry": "BD"
-    };
-  }
+  // Conservative Schema.org PostalAddress:
+  // Per Rule 15 and Content Truth Policy, do NOT publish unverified landmark streetAddress
+  // as authoritative structured data until formal property deed verification (Gate G14).
+  // Reference HOSPITAL_METADATA.address authoritatively while remaining conservative in schema.
+  structuredData["address"] = {
+    "@type": "PostalAddress",
+    ...(HOSPITAL_METADATA.address && process.env.ENABLE_UNVERIFIED_STREET_ADDRESS === "true"
+      ? { streetAddress: HOSPITAL_METADATA.address }
+      : {}),
+    "addressLocality": "Bogura",
+    "addressRegion": "Rajshahi Division",
+    "addressCountry": "BD"
+  };
   if (HOSPITAL_METADATA.ambulanceHotline) {
     structuredData["contactPoint"] = [
       {
