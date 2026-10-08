@@ -12,6 +12,7 @@ import {
   Stethoscope,
   LogOut,
   ArrowRightLeft,
+  Settings,
 } from "lucide-react";
 import {
   getCriticalCareAdmissionsAction,
@@ -23,6 +24,7 @@ import {
 import { CriticalCareAdmissionModal } from "@/components/critical-care/CriticalCareAdmissionModal";
 import { CriticalCareVitalsModal } from "@/components/critical-care/CriticalCareVitalsModal";
 import { CriticalCarePatientPanel } from "@/components/critical-care/CriticalCarePatientPanel";
+import { CriticalCareUnitModal } from "@/components/critical-care/CriticalCareUnitModal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export default function CriticalCarePage() {
@@ -36,6 +38,7 @@ export default function CriticalCarePage() {
 
   // Modals & Drawers
   const [isAdmissionModalOpen, setIsAdmissionModalOpen] = useState(false);
+  const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
   const [vitalsModalAdmission, setVitalsModalAdmission] = useState<CriticalCareAdmission | null>(null);
   const [selectedPatientAdmission, setSelectedPatientAdmission] = useState<CriticalCareAdmission | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -150,14 +153,24 @@ export default function CriticalCarePage() {
             Unified High-Dependency & Critical Care Unit Management (ICU / ICCU / CCU / SICU / MICU / PICU)
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsAdmissionModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors cursor-pointer"
-        >
-          <UserPlus className="h-4 w-4" />
-          + Critical Care Admission
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsUnitModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border border-slate-200 transition-colors cursor-pointer"
+          >
+            <Settings className="h-4 w-4 text-slate-600" />
+            <span>ইউনিট ও ট্যারিফ কন্ট্রোল (Units & Tariffs)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsAdmissionModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            <UserPlus className="h-4 w-4" />
+            + Critical Care Admission
+          </button>
+        </div>
       </div>
 
       {/* Unit Selector Tabs */}
@@ -411,6 +424,14 @@ export default function CriticalCarePage() {
         isLoading={actionLoading}
         onConfirm={() => void executeDischargeOrTransfer()}
         onCancel={() => setConfirmAction(null)}
+      />
+
+      {/* Critical Care Unit & Tariff Management Modal */}
+      <CriticalCareUnitModal
+        isOpen={isUnitModalOpen}
+        onClose={() => setIsUnitModalOpen(false)}
+        onToast={showSuccess}
+        onUpdated={() => setRefreshKey((k) => k + 1)}
       />
     </div>
   );

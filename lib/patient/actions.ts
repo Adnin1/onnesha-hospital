@@ -1388,6 +1388,15 @@ export interface UnifiedPatientIntakePayload {
       initialDiagnosis?: string;
       ventilatorRequired?: boolean;
     };
+    ot?: {
+      enabled: boolean;
+      roomId?: string;
+      surgeonId?: string;
+      procedureName?: string;
+      estimatedCharge?: number;
+      anesthesiaType?: string;
+      scheduledStart?: string;
+    };
   };
   referralAgentId?: string;
   admissionDiscountAmount?: number;
@@ -1405,6 +1414,7 @@ export async function createUnifiedPatientIntakeAction(
   ipdVisitId?: string;
   ipdAssignmentId?: string;
   criticalCareAdmissionId?: string;
+  otBookingId?: string;
   encounterAt: string;
 }>> {
   const session = await getCurrentUserSession();
@@ -1607,6 +1617,40 @@ export async function createUnifiedPatientIntakeAction(
       return { success: false, error: "Transaction completed but the patient record could not be reloaded." };
     }
 
+    let otBookingId: string | undefined;
+    if (payload.services?.ot?.enabled) {
+      const ot = payload.services.ot;
+      const visitId = result.ipd_visit_id || result.opd_visit_id;
+      if (visitId && ot.roomId && ot.surgeonId) {
+        try {
+          const start = ot.scheduledStart ? new Date(ot.scheduledStart).toISOString() : encounterAt.toISOString();
+          const end = new Date(new Date(start).getTime() + 2.5 * 60 * 60 * 1000).toISOString();
+          const { data: otData } = await supabase
+            .from("ot_bookings")
+            .insert({
+              organization_id: session.organizationId,
+              visit_id: visitId,
+              ot_room_id: ot.roomId,
+              procedure_name: ot.procedureName || "General Surgery / Procedure",
+              lead_surgeon_id: ot.surgeonId,
+              anesthesia_type: ot.anesthesiaType || "GENERAL",
+              scheduled_start: start,
+              scheduled_end: end,
+              ot_charge: Number(ot.estimatedCharge || 6000),
+              status: "SCHEDULED",
+            })
+            .select("id")
+            .maybeSingle();
+
+          if (otData?.id) {
+            otBookingId = otData.id;
+          }
+        } catch (otErr) {
+          console.error("[createUnifiedPatientIntakeAction] OT booking error:", otErr);
+        }
+      }
+    }
+
     return {
       success: true,
       data: {
@@ -1617,6 +1661,7 @@ export async function createUnifiedPatientIntakeAction(
         ipdVisitId: result.ipd_visit_id,
         ipdAssignmentId: result.ipd_assignment_id,
         criticalCareAdmissionId: result.critical_care_admission_id,
+        otBookingId,
         encounterAt: result.encounter_at || encounterAt.toISOString(),
       },
     };

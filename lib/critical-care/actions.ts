@@ -591,3 +591,208 @@ export async function dischargeCriticalCareAdmissionAction(params: {
     return { success: false, error: msg };
   }
 }
+
+/**
+ * 9. Create New Critical Care Unit
+ */
+export async function createCriticalCareUnitAction(payload: {
+  unit_name: string;
+  unit_type: "ICU" | "ICCU" | "CCU" | "SICU" | "MICU" | "PICU";
+  floor?: string;
+  total_beds: number;
+  daily_charge: number;
+}): Promise<{ success: boolean; data?: CriticalCareUnit; error?: string }> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("critical_care.manage");
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("critical_care_units")
+      .insert({
+        organization_id: session.organizationId,
+        unit_name: payload.unit_name.trim(),
+        unit_type: payload.unit_type,
+        floor: payload.floor || "3rd Floor",
+        total_beds: Number(payload.total_beds) || 1,
+        daily_charge: Number(payload.daily_charge) || 8000,
+        is_active: true,
+      })
+      .select("*")
+      .single();
+
+    if (error || !data) {
+      return { success: false, error: error?.message || "Failed to create critical care unit" };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "CREATE",
+      module: "IPD",
+      entityType: "critical_care_unit",
+      entityId: data.id,
+      newValues: payload,
+    });
+
+    return { success: true, data: data as CriticalCareUnit };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to create unit" };
+  }
+}
+
+/**
+ * 10. Update Critical Care Unit & Daily Tariff
+ */
+export async function updateCriticalCareUnitAction(payload: {
+  unitId: string;
+  unit_name?: string;
+  unit_type?: "ICU" | "ICCU" | "CCU" | "SICU" | "MICU" | "PICU";
+  floor?: string;
+  total_beds?: number;
+  daily_charge?: number;
+  is_active?: boolean;
+}): Promise<{ success: boolean; error?: string }> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("critical_care.manage");
+
+  try {
+    const supabase = await createClient();
+    const updateFields: Record<string, unknown> = {};
+    if (payload.unit_name?.trim()) updateFields.unit_name = payload.unit_name.trim();
+    if (payload.unit_type) updateFields.unit_type = payload.unit_type;
+    if (payload.floor) updateFields.floor = payload.floor;
+    if (payload.total_beds !== undefined) updateFields.total_beds = Number(payload.total_beds);
+    if (payload.daily_charge !== undefined) updateFields.daily_charge = Number(payload.daily_charge);
+    if (payload.is_active !== undefined) updateFields.is_active = payload.is_active;
+
+    const { error } = await supabase
+      .from("critical_care_units")
+      .update(updateFields)
+      .eq("id", payload.unitId)
+      .eq("organization_id", session.organizationId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "IPD",
+      entityType: "critical_care_unit",
+      entityId: payload.unitId,
+      newValues: updateFields,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to update unit" };
+  }
+}
+
+/**
+ * 11. Delete or Deactivate Critical Care Unit
+ */
+export async function deleteCriticalCareUnitAction(unitId: string): Promise<{ success: boolean; error?: string }> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("critical_care.manage");
+
+  try {
+    const supabase = await createClient();
+
+    // Check for active admissions
+    const { data: activeAdm } = await supabase
+      .from("critical_care_admissions")
+      .select("id")
+      .eq("unit_id", unitId)
+      .eq("organization_id", session.organizationId)
+      .in("status", ["admitted", "ACTIVE"])
+      .maybeSingle();
+
+    if (activeAdm) {
+      return {
+        success: false,
+        error: "Cannot delete unit while patients are actively admitted. Transfer or discharge patients first.",
+      };
+    }
+
+    const { error: delErr } = await supabase
+      .from("critical_care_units")
+      .delete()
+      .eq("id", unitId)
+      .eq("organization_id", session.organizationId);
+
+    if (delErr) {
+      const { error: updErr } = await supabase
+        .from("critical_care_units")
+        .update({ is_active: false })
+        .eq("id", unitId)
+        .eq("organization_id", session.organizationId);
+
+      if (updErr) {
+        return { success: false, error: updErr.message };
+      }
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "DELETE",
+      module: "IPD",
+      entityType: "critical_care_unit",
+      entityId: unitId,
+      newValues: { deleted_or_deactivated: true },
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to delete unit" };
+  }
+}
+
+/**
+ * 12. Add Critical Care Bed to Unit
+ */
+export async function addCriticalCareBedAction(payload: {
+  unitId: string;
+  bed_number: string;
+  daily_rate: number;
+}): Promise<{ success: boolean; error?: string }> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("critical_care.manage");
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.from("beds").insert({
+      organization_id: session.organizationId,
+      critical_care_unit_id: payload.unitId,
+      bed_number: payload.bed_number.trim(),
+      daily_rate: Number(payload.daily_rate) || 8000,
+      status: "VACANT",
+      is_active: true,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to add bed" };
+  }
+}
+

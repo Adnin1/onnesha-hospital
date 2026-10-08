@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Plus,
   ShieldAlert,
+  Edit2,
 } from "lucide-react";
 import { BedRecord, CabinRecord, WardRecord } from "@/types/beds-ot";
 import {
@@ -21,6 +22,7 @@ import {
 // Clinical bed vacating and discharge is orchestrated via vacateBedAction in OccupiedBedPanel
 import { formatCurrencyBDT } from "@/lib/utils";
 import { AddBedOrCabinModal } from "@/components/beds/AddBedOrCabinModal";
+import { EditBedOrCabinModal } from "@/components/beds/EditBedOrCabinModal";
 import { AssignBedModal } from "@/components/beds/AssignBedModal";
 import { OccupiedBedPanel } from "@/components/beds/OccupiedBedPanel";
 import { TransferBedModal } from "@/components/beds/TransferBedModal";
@@ -39,6 +41,8 @@ export default function BedManagementPage() {
 
   // Modals & Panels
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editTargetBed, setEditTargetBed] = useState<BedRecord | null>(null);
+  const [editTargetCabin, setEditTargetCabin] = useState<CabinRecord | null>(null);
   const [assignTargetBed, setAssignTargetBed] = useState<BedRecord | null>(null);
   const [assignTargetCabin, setAssignTargetCabin] = useState<CabinRecord | null>(null);
   const [occupiedBed, setOccupiedBed] = useState<BedRecord | null>(null);
@@ -440,19 +444,32 @@ export default function BedManagementPage() {
                                 <span className="text-[10px] font-bold text-slate-500 uppercase">
                                   {bed.bed_type?.name || "General"}
                                 </span>
-                                <span
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                                    isVacant
-                                      ? "bg-emerald-100 text-emerald-800"
-                                      : isOccupied
-                                      ? "bg-rose-100 text-rose-800"
-                                      : isCleaning
-                                      ? "bg-amber-100 text-amber-800"
-                                      : "bg-slate-200 text-slate-800"
-                                  }`}
-                                >
-                                  {isVacant ? "🟢 VACANT" : isOccupied ? "🔴 OCCUPIED" : isCleaning ? "🟡 CLEANING" : "⚫ MAINT"}
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditTargetBed(bed);
+                                    }}
+                                    className="p-1 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                                    title="বেড পরিবর্তন বা ডিলিট করুন (Edit/Delete Bed)"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <span
+                                    className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                                      isVacant
+                                        ? "bg-emerald-100 text-emerald-800"
+                                        : isOccupied
+                                        ? "bg-rose-100 text-rose-800"
+                                        : isCleaning
+                                        ? "bg-amber-100 text-amber-800"
+                                        : "bg-slate-200 text-slate-800"
+                                    }`}
+                                  >
+                                    {isVacant ? "🟢 VACANT" : isOccupied ? "🔴 OCCUPIED" : isCleaning ? "🟡 CLEANING" : "⚫ MAINT"}
+                                  </span>
+                                </div>
                               </div>
 
                               <div className="flex items-center space-x-2 my-2">
@@ -573,17 +590,30 @@ export default function BedManagementPage() {
                             <span className="text-[10px] font-bold text-slate-500 uppercase">
                               Floor {cabin.floor_number} • {cabin.cabin_type}
                             </span>
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                                isVacant
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : isOccupied
-                                  ? "bg-rose-100 text-rose-800"
-                                  : "bg-amber-100 text-amber-800"
-                              }`}
-                            >
-                              {isVacant ? "🟢 VACANT" : isOccupied ? "🔴 OCCUPIED" : "🟡 CLEANING"}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditTargetCabin(cabin);
+                                }}
+                                className="p-1 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                                title="কেবিন পরিবর্তন বা ডিলিট করুন (Edit/Delete Cabin)"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                                  isVacant
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : isOccupied
+                                    ? "bg-rose-100 text-rose-800"
+                                    : "bg-amber-100 text-amber-800"
+                                }`}
+                              >
+                                {isVacant ? "🟢 VACANT" : isOccupied ? "🔴 OCCUPIED" : "🟡 CLEANING"}
+                              </span>
+                            </div>
                           </div>
 
                           <div className="flex items-center space-x-2 my-2">
@@ -738,6 +768,22 @@ export default function BedManagementPage() {
         onAdded={reloadData}
         onToast={showToast}
       />
+
+      {/* EDIT BED/CABIN MODAL */}
+      {(editTargetBed || editTargetCabin) && (
+        <EditBedOrCabinModal
+          isOpen={true}
+          onClose={() => {
+            setEditTargetBed(null);
+            setEditTargetCabin(null);
+          }}
+          bed={editTargetBed}
+          cabin={editTargetCabin}
+          wards={wards}
+          onUpdated={reloadData}
+          onToast={showToast}
+        />
+      )}
     </div>
   );
 }

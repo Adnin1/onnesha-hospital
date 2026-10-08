@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Bed, Check, Clock3, Loader2, Search, Stethoscope, UserPlus, X } from "lucide-react";
+import { AlertTriangle, Bed, Check, Clock3, Loader2, Search, Stethoscope, UserPlus, X, Scissors } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { calculateAgeFromDOB } from "@/lib/utils";
 import {
@@ -81,12 +81,14 @@ export function UnifiedPatientIntakeModal({
   const [opdEnabled, setOpdEnabled] = useState(false);
   const [ipdEnabled, setIpdEnabled] = useState(false);
   const [criticalEnabled, setCriticalEnabled] = useState(false);
+  const [otEnabled, setOtEnabled] = useState(false);
 
   const [departments, setDepartments] = useState<Option[]>([]);
   const [doctors, setDoctors] = useState<DoctorOption[]>([]);
   const [beds, setBeds] = useState<BedOption[]>([]);
   const [cabins, setCabins] = useState<CabinOption[]>([]);
   const [units, setUnits] = useState<UnitOption[]>([]);
+  const [otRooms, setOtRooms] = useState<Array<{ id: string; room_number: string; room_name: string }>>([]);
   const [referrals, setReferrals] = useState<{ id: string; agent_code: string; full_name: string }[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
 
@@ -109,6 +111,14 @@ export function UnifiedPatientIntakeModal({
   const [criticalDoctorId, setCriticalDoctorId] = useState("");
   const [criticalDiagnosis, setCriticalDiagnosis] = useState("");
   const [ventilatorRequired, setVentilatorRequired] = useState(false);
+
+  // OT Surgery Details
+  const [otRoomId, setOtRoomId] = useState("");
+  const [otDoctorId, setOtDoctorId] = useState("");
+  const [otProcedure, setOtProcedure] = useState("Caesarean Section (C-Section)");
+  const [otCharge, setOtCharge] = useState<number>(6000);
+  const [otAnesthesia, setOtAnesthesia] = useState("GENERAL");
+  const [otScheduledAt, setOtScheduledAt] = useState(dhakaDateTimeLocal());
 
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [duplicateMatches, setDuplicateMatches] = useState<UnifiedPatientIntakePayload | null>(null);
@@ -137,12 +147,13 @@ export function UnifiedPatientIntakeModal({
       setLoadingOptions(true);
       try {
         const supabase = createClient();
-        const [depRes, docRes, bedRes, cabinRes, unitRes, refRes] = await Promise.allSettled([
+        const [depRes, docRes, bedRes, cabinRes, unitRes, otRes, refRes] = await Promise.allSettled([
           supabase.from("departments").select("id, name").eq("is_active", true).order("name"),
           supabase.from("doctors").select("id, full_name, opd_fee, specialization").eq("is_active", true).order("full_name"),
           supabase.from("beds").select("id, bed_number, status, daily_rate, critical_care_unit_id, wards(name)").eq("is_active", true).order("bed_number"),
           supabase.from("cabins").select("id, cabin_number, status, daily_rate, cabin_type").order("cabin_number"),
           supabase.from("critical_care_units").select("id, unit_name, unit_type, daily_charge").eq("is_active", true).order("unit_name"),
+          supabase.from("ot_rooms").select("id, room_number, room_name").order("room_number"),
           searchReferralAgentsAction(""),
         ]);
         if (!alive) return;
@@ -158,6 +169,10 @@ export function UnifiedPatientIntakeModal({
         }
         if (cabinRes.status === "fulfilled" && cabinRes.value.data) setCabins((cabinRes.value.data as CabinOption[]).map((c) => ({ ...c, daily_rate: Number(c.daily_rate || 0) })));
         if (unitRes.status === "fulfilled" && unitRes.value.data) setUnits((unitRes.value.data as UnitOption[]).map((u) => ({ ...u, daily_charge: Number(u.daily_charge || 0) })));
+        if (otRes.status === "fulfilled" && otRes.value.data) {
+          setOtRooms(otRes.value.data as Array<{ id: string; room_number: string; room_name: string }>);
+          if (otRes.value.data.length > 0 && !otRoomId) setOtRoomId(otRes.value.data[0].id);
+        }
         if (refRes.status === "fulfilled" && refRes.value.success && refRes.value.data) {
           setReferrals(refRes.value.data.map((r) => ({ id: r.id, agent_code: r.agent_code, full_name: r.full_name })));
         }
@@ -209,8 +224,9 @@ export function UnifiedPatientIntakeModal({
     if (opdEnabled && selectedOpdDoctor) total += Number(selectedOpdDoctor.opd_fee || 0);
     if (ipdEnabled) total += Number(selectedBed?.daily_rate || selectedCabin?.daily_rate || 0);
     if (criticalEnabled) total += Number(selectedUnit?.daily_charge || 0);
+    if (otEnabled) total += Number(otCharge || 6000);
     return total;
-  }, [opdEnabled, ipdEnabled, criticalEnabled, selectedOpdDoctor, selectedBed, selectedCabin, selectedUnit]);
+  }, [opdEnabled, ipdEnabled, criticalEnabled, otEnabled, otCharge, selectedOpdDoctor, selectedBed, selectedCabin, selectedUnit]);
 
   function selectExisting(patient: PatientMaster) {
     setSelectedExisting(patient);
@@ -243,6 +259,13 @@ export function UnifiedPatientIntakeModal({
     setErrorMsg(null);
     setDuplicateWarning(null);
 
+    const pct = admissionDiscountPercent !== "" ? Number(admissionDiscountPercent) : 0;
+    if (pct > 0 && (pct < 5 || pct > 60)) {
+      setErrorMsg("অনুমোদিত অ্যাডমিশন ডিসকাউন্ট সীমা ৫% থেকে ৬০% এর মধ্যে হতে হবে (বা ০% কোন ছাড় না থাকলে)।");
+      setSubmitting(false);
+      return;
+    }
+
     const activeServices = servicesOverride ?? {
       opd: {
         enabled: opdEnabled,
@@ -268,10 +291,18 @@ export function UnifiedPatientIntakeModal({
         initialDiagnosis: criticalDiagnosis || undefined,
         ventilatorRequired,
       },
+      ot: {
+        enabled: otEnabled,
+        roomId: otRoomId || undefined,
+        surgeonId: otDoctorId || undefined,
+        procedureName: otProcedure || undefined,
+        estimatedCharge: Number(otCharge || 6000),
+        anesthesiaType: otAnesthesia,
+        scheduledStart: toDhakaIso(otScheduledAt),
+      },
     };
 
-    const pct = admissionDiscountPercent !== "" ? Number(admissionDiscountPercent) : 0;
-    const effectiveDiscountBDT = estimate > 0 && pct > 0 ? Math.round((estimate * pct) / 100) : pct;
+    const effectiveDiscountBDT = estimate > 0 && pct > 0 ? Math.round((estimate * pct) / 100) : 0;
     const effectiveReason = pct > 0
       ? `[Admission Discount: ${pct}%] ${admissionDiscountReason.trim()}`.trim()
       : admissionDiscountReason.trim() || undefined;
@@ -541,10 +572,11 @@ export function UnifiedPatientIntakeModal({
 
           <section className="space-y-3">
             <div className="flex items-center gap-2"><Stethoscope className="w-4 h-4 text-sky-600" /><h3 className="font-black text-slate-900 text-sm">Select Services / Admissions</h3></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <ServiceCard title="OPD Consultation" enabled={opdEnabled} onClick={() => setOpdEnabled(!opdEnabled)} subtitle={selectedOpdDoctor ? "Fee " + selectedOpdDoctor.opd_fee + " BDT" : "Consultation"} />
               <ServiceCard title="IPD Admission" enabled={ipdEnabled} onClick={() => setIpdEnabled(!ipdEnabled)} subtitle={selectedBed ? selectedBed.bed_number : selectedCabin ? selectedCabin.cabin_number : "Bed / Cabin"} />
               <ServiceCard title="Critical Care" enabled={criticalEnabled} onClick={() => setCriticalEnabled(!criticalEnabled)} subtitle={selectedUnit ? selectedUnit.unit_type + " • " + selectedUnit.daily_charge + " BDT/day" : "ICU / CCU / HDU"} />
+              <ServiceCard title="Operation Theatre (OT)" enabled={otEnabled} onClick={() => setOtEnabled(!otEnabled)} subtitle={otProcedure ? `${otProcedure.slice(0, 15)} • ৳${otCharge}` : "Surgery / Procedure"} />
             </div>
 
             {opdEnabled && (
@@ -621,14 +653,71 @@ export function UnifiedPatientIntakeModal({
                 <label className="flex items-center gap-2 text-xs font-bold text-slate-700"><input type="checkbox" checked={ventilatorRequired} onChange={(e) => setVentilatorRequired(e.target.checked)} /> Ventilator required</label>
               </div>
             )}
+
+            {otEnabled && (
+              <div className="rounded-2xl border border-purple-200 bg-purple-50/40 p-4 space-y-3">
+                <div className="flex items-center gap-2"><Scissors className="w-4 h-4 text-purple-700" /><h4 className="font-bold text-slate-900 text-sm">Operation Theatre (OT) Booking & Surgery Details</h4></div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Field label="OT Room / Suite">
+                    <select value={otRoomId} onChange={(e) => setOtRoomId(e.target.value)} className={inputCls}>
+                      <option value="">{loadingOptions ? "Loading OT rooms..." : "Select OT room / theatre"}</option>
+                      {otRooms.map((r) => <option key={r.id} value={r.id}>{r.room_name} ({r.room_number})</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Primary Surgeon">
+                    <select value={otDoctorId} onChange={(e) => setOtDoctorId(e.target.value)} className={inputCls}>
+                      <option value="">{loadingOptions ? "Loading surgeons..." : "Select lead surgeon"}</option>
+                      {doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name} — {d.specialization || "Surgeon"}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Anesthesia Type">
+                    <select value={otAnesthesia} onChange={(e) => setOtAnesthesia(e.target.value)} className={inputCls}>
+                      <option value="GENERAL">General Anesthesia (GA)</option>
+                      <option value="SPINAL">Spinal Anesthesia</option>
+                      <option value="EPIDURAL">Epidural Anesthesia</option>
+                      <option value="LOCAL">Local Anesthesia (LA)</option>
+                      <option value="SEDATION">IV Sedation / MAC</option>
+                    </select>
+                  </Field>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <Field label="Surgery / Procedure Name">
+                    <input
+                      value={otProcedure}
+                      onChange={(e) => setOtProcedure(e.target.value)}
+                      placeholder="e.g. Laparoscopic Cholecystectomy, Appendectomy, Cesarean Section..."
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Scheduled Start Time">
+                    <input
+                      type="datetime-local"
+                      value={otScheduledAt}
+                      onChange={(e) => setOtScheduledAt(e.target.value)}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Estimated OT & Surgery Charge (BDT)">
+                    <input
+                      type="number"
+                      min="0"
+                      step="500"
+                      value={otCharge}
+                      onChange={(e) => setOtCharge(Math.max(0, Number(e.target.value) || 0))}
+                      className={inputCls + " font-mono font-bold text-purple-700"}
+                    />
+                  </Field>
+                </div>
+              </div>
+            )}
           </section>
 
-          {(opdEnabled || ipdEnabled || criticalEnabled) && (
+          {(opdEnabled || ipdEnabled || criticalEnabled || otEnabled) && (
             <section className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-black text-slate-900 text-sm">Initial Charge Preview</h3>
-                  <p className="text-[11px] text-slate-500">IPD/Critical Care preview is one configured daily unit; final billing is calculated from exact start/end time.</p>
+                  <p className="text-[11px] text-slate-500">IPD/Critical Care preview is one configured daily unit; OT and OPD are booked procedures; final billing is calculated from exact items.</p>
                 </div>
                 <div className="text-right">
                   <div className="text-[11px] text-slate-500">Estimated starting charges</div>
@@ -639,6 +728,7 @@ export function UnifiedPatientIntakeModal({
                 {opdEnabled && <span className="px-2 py-1 rounded-lg bg-white border">OPD</span>}
                 {ipdEnabled && <span className="px-2 py-1 rounded-lg bg-white border">IPD</span>}
                 {criticalEnabled && <span className="px-2 py-1 rounded-lg bg-white border">Critical Care</span>}
+                {otEnabled && <span className="px-2 py-1 rounded-lg bg-white border text-purple-700 border-purple-200">OT Surgery</span>}
               </div>
             </section>
           )}
@@ -678,7 +768,7 @@ export function UnifiedPatientIntakeModal({
           <div className="text-[11px] text-slate-500">One submission = one atomic transaction. A failure must roll back all selected admissions.</div>
           <div className="flex flex-wrap gap-2 justify-end items-center">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-xs">Cancel</button>
-            {mode === "NEW" && (opdEnabled || ipdEnabled || criticalEnabled) && (
+            {mode === "NEW" && (opdEnabled || ipdEnabled || criticalEnabled || otEnabled) && (
               <button
                 type="button"
                 disabled={submitting}
@@ -692,7 +782,7 @@ export function UnifiedPatientIntakeModal({
               {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
               {mode === "EXISTING"
                 ? "Admit / Create Selected Services"
-                : opdEnabled || ipdEnabled || criticalEnabled
+                : opdEnabled || ipdEnabled || criticalEnabled || otEnabled
                 ? "Register & Create Admissions"
                 : "Register Patient"}
             </button>

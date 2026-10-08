@@ -744,3 +744,252 @@ export async function addCabinAction(payload: {
     return { success: false, error: msg };
   }
 }
+
+/**
+ * 9. Update Bed Details & Daily Tariff
+ */
+export async function updateBedDetailsAction(payload: {
+  bedId: string;
+  bed_number?: string;
+  daily_rate?: number;
+  ward_id?: string;
+  status?: "VACANT" | "OCCUPIED" | "CLEANING" | "MAINTENANCE";
+  is_active?: boolean;
+}): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("ipd.manage");
+  const orgId = session.organizationId;
+
+  try {
+    const supabase = await createClient();
+
+    const updateFields: Record<string, unknown> = {};
+    if (payload.bed_number?.trim()) updateFields.bed_number = payload.bed_number.trim();
+    if (payload.daily_rate !== undefined && !Number.isNaN(Number(payload.daily_rate))) {
+      updateFields.daily_rate = Number(payload.daily_rate);
+    }
+    if (payload.ward_id) updateFields.ward_id = payload.ward_id;
+    if (payload.status) updateFields.status = payload.status;
+    if (payload.is_active !== undefined) updateFields.is_active = payload.is_active;
+
+    const { error } = await supabase
+      .from("beds")
+      .update(updateFields)
+      .eq("id", payload.bedId)
+      .eq("organization_id", orgId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    await recordAuditLog({
+      organizationId: orgId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "IPD",
+      entityType: "bed",
+      entityId: payload.bedId,
+      newValues: updateFields,
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to update bed details";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 10. Delete or Deactivate Bed
+ */
+export async function deleteBedAction(bedId: string): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("ipd.manage");
+  const orgId = session.organizationId;
+
+  try {
+    const supabase = await createClient();
+
+    // Check if bed is currently occupied
+    const { data: activeAsg } = await supabase
+      .from("bed_assignments")
+      .select("id")
+      .eq("bed_id", bedId)
+      .eq("organization_id", orgId)
+      .eq("status", "ACTIVE")
+      .maybeSingle();
+
+    if (activeAsg) {
+      return {
+        success: false,
+        error: "Cannot delete an actively occupied bed. Please vacate or discharge the patient first.",
+      };
+    }
+
+    // Try deleting first; fallback to deactivation if historical records exist
+    const { error: delErr } = await supabase
+      .from("beds")
+      .delete()
+      .eq("id", bedId)
+      .eq("organization_id", orgId);
+
+    if (delErr) {
+      // Historical references exist: soft-delete / deactivate
+      const { error: updateErr } = await supabase
+        .from("beds")
+        .update({ is_active: false, status: "MAINTENANCE" })
+        .eq("id", bedId)
+        .eq("organization_id", orgId);
+
+      if (updateErr) {
+        return { success: false, error: updateErr.message };
+      }
+    }
+
+    await recordAuditLog({
+      organizationId: orgId,
+      userId: session.userId,
+      action: "DELETE",
+      module: "IPD",
+      entityType: "bed",
+      entityId: bedId,
+      newValues: { deleted_or_deactivated: true },
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to delete bed";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 11. Update Cabin Details & Daily Tariff
+ */
+export async function updateCabinDetailsAction(payload: {
+  cabinId: string;
+  cabin_number?: string;
+  cabin_type?: "AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE" | string;
+  floor_number?: string;
+  daily_rate?: number;
+  status?: "VACANT" | "OCCUPIED" | "CLEANING" | "MAINTENANCE";
+  amenities?: string;
+}): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("ipd.manage");
+  const orgId = session.organizationId;
+
+  try {
+    const supabase = await createClient();
+
+    const updateFields: Record<string, unknown> = {};
+    if (payload.cabin_number?.trim()) updateFields.cabin_number = payload.cabin_number.trim();
+    if (payload.cabin_type) updateFields.cabin_type = payload.cabin_type;
+    if (payload.floor_number) updateFields.floor_number = payload.floor_number;
+    if (payload.daily_rate !== undefined && !Number.isNaN(Number(payload.daily_rate))) {
+      updateFields.daily_rate = Number(payload.daily_rate);
+    }
+    if (payload.status) updateFields.status = payload.status;
+    if (payload.amenities !== undefined) updateFields.amenities = payload.amenities;
+
+    const { error } = await supabase
+      .from("cabins")
+      .update(updateFields)
+      .eq("id", payload.cabinId)
+      .eq("organization_id", orgId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    await recordAuditLog({
+      organizationId: orgId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "IPD",
+      entityType: "cabin",
+      entityId: payload.cabinId,
+      newValues: updateFields,
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to update cabin details";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 12. Delete or Deactivate Cabin
+ */
+export async function deleteCabinAction(cabinId: string): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  await requirePermission("ipd.manage");
+  const orgId = session.organizationId;
+
+  try {
+    const supabase = await createClient();
+
+    // Check if cabin is currently occupied
+    const { data: activeAsg } = await supabase
+      .from("bed_assignments")
+      .select("id")
+      .eq("cabin_id", cabinId)
+      .eq("organization_id", orgId)
+      .eq("status", "ACTIVE")
+      .maybeSingle();
+
+    if (activeAsg) {
+      return {
+        success: false,
+        error: "Cannot delete an actively occupied cabin. Please vacate or discharge the patient first.",
+      };
+    }
+
+    // Try deleting first; fallback to maintenance if historical records exist
+    const { error: delErr } = await supabase
+      .from("cabins")
+      .delete()
+      .eq("id", cabinId)
+      .eq("organization_id", orgId);
+
+    if (delErr) {
+      const { error: updateErr } = await supabase
+        .from("cabins")
+        .update({ status: "MAINTENANCE" })
+        .eq("id", cabinId)
+        .eq("organization_id", orgId);
+
+      if (updateErr) {
+        return { success: false, error: updateErr.message };
+      }
+    }
+
+    await recordAuditLog({
+      organizationId: orgId,
+      userId: session.userId,
+      action: "DELETE",
+      module: "IPD",
+      entityType: "cabin",
+      entityId: cabinId,
+      newValues: { deleted_or_deactivated: true },
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to delete cabin";
+    return { success: false, error: msg };
+  }
+}

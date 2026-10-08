@@ -142,12 +142,13 @@ export default function PatientsManagementPage() {
   }, []);
 
   const filteredPatients = patients.filter((p) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      p.full_name.toLowerCase().includes(q) ||
-      p.patient_code.toLowerCase().includes(q) ||
-      p.phone.includes(q)
-    );
+    if (!p) return false;
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    const name = (p.full_name || "").toLowerCase();
+    const code = (p.patient_code || "").toLowerCase();
+    const phone = p.phone || "";
+    return name.includes(q) || code.includes(q) || phone.includes(q);
   });
 
   return (
@@ -238,12 +239,12 @@ export default function PatientsManagementPage() {
                     <div>
                       <div className="flex items-center space-x-2">
                         <span className="font-mono font-bold text-xs text-sky-900">
-                          {p.patient_code}
+                          {p.patient_code || "N/A"}
                         </span>
-                        <span className="text-xs font-bold text-slate-900">{p.full_name}</span>
+                        <span className="text-xs font-bold text-slate-900">{p.full_name || "Patient"}</span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-1">
-                        Ph: {p.phone} • {p.gender} • Blood: {p.blood_group || "N/A"}
+                        Ph: {p.phone || "N/A"} • {p.gender || "N/A"} • Blood: {p.blood_group || "N/A"}
                       </p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -358,9 +359,9 @@ export default function PatientsManagementPage() {
                             className="p-3 rounded-xl border border-slate-100 bg-slate-50 text-xs space-y-1"
                           >
                             <div className="flex justify-between font-bold text-slate-900">
-                              <span>{ev.title}</span>
+                              <span>{ev.title || "Clinical Encounter"}</span>
                               <span className="font-mono text-[10px] text-slate-500">
-                                {new Date(ev.date).toLocaleDateString()}
+                                {formatDateBDT(ev.date)}
                               </span>
                             </div>
                             <p className="text-slate-600 text-[11px]">{ev.description}</p>
