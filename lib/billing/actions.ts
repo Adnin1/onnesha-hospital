@@ -616,6 +616,9 @@ export interface EpisodeBillingPreviewData {
   episodeInvoiced: number;
   episodePaid: number;
   episodeDue: number;
+  lifetimeInvoiced: number;
+  lifetimePaid: number;
+  lifetimeDue: number;
 }
 
 export async function getEpisodeBillingPreviewAction(params: {
@@ -664,6 +667,9 @@ export async function getEpisodeBillingPreviewAction(params: {
       episode_invoiced?: number;
       episode_paid?: number;
       episode_due?: number;
+      lifetime_invoiced?: number;
+      lifetime_paid?: number;
+      lifetime_due?: number;
       error?: string;
     };
 
@@ -718,6 +724,9 @@ export async function getEpisodeBillingPreviewAction(params: {
         episodeInvoiced: Number(result.episode_invoiced || 0),
         episodePaid: Number(result.episode_paid || 0),
         episodeDue: Number(result.episode_due || 0),
+        lifetimeInvoiced: Number(result.lifetime_invoiced ?? result.previous_invoiced ?? 0),
+        lifetimePaid: Number(result.lifetime_paid ?? result.previous_paid ?? 0),
+        lifetimeDue: Number(result.lifetime_due ?? result.previous_due ?? 0),
       },
     };
   } catch (err: unknown) {

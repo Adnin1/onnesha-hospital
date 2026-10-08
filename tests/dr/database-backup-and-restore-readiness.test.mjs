@@ -25,11 +25,11 @@ import { execSync } from 'node:child_process';
 const ROOT = process.cwd();
 
 test('OHMS Disaster Recovery & Backup Architecture Verification', async (t) => {
-  await t.test('1. Migration Baseline: 119 version-controlled schema migrations exist', () => {
+  await t.test('1. Migration Baseline: 120 version-controlled schema migrations exist', () => {
     const migrationsDir = path.join(ROOT, 'supabase', 'migrations');
     assert.equal(fs.existsSync(migrationsDir), true, 'supabase/migrations directory must exist');
     const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql'));
-    assert.equal(files.length, 119, 'Exactly 119 migration files must exist in source control');
+    assert.equal(files.length, 120, 'Exactly 120 migration files must exist in source control');
   });
 
   await t.test('2. Anti-Leak Governance: Backup directory is strictly gitignored', () => {

@@ -127,4 +127,22 @@ describe("Unified Patient Intake & Episode Settlement Contract", () => {
     assert.match(c, /finally\s*\{\s*setSubmitting\(false\);\s*\}/);
     assert.doesNotMatch(c, /disabled=\{\s*submitting\s*\|\|\s*loadingOptions\s*\}/);
   });
+
+  test("migration 120 strictly scopes current episode billing history and separates lifetime totals", () => {
+    const p = path.join(ROOT, "supabase/migrations/20261008120000_billing_history_scoping_and_financial_integrity.sql");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /current_episode_invoiced/);
+    assert.match(c, /current_episode_paid/);
+    assert.match(c, /current_episode_due/);
+    assert.match(c, /lifetime_invoiced/);
+    assert.match(c, /lifetime_paid/);
+    assert.match(c, /lifetime_due/);
+  });
+
+  test("dischargePatientAction releases both bed and cabin assignments to VACANT", () => {
+    const p = path.join(ROOT, "lib/patient/actions.ts");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /if\s*\(bedAssign\.cabin_id\)\s*\{\s*await supabase\s*\.from\("cabins"\)\s*\.update\(\{\s*status:\s*"VACANT"\s*\}\)/);
+  });
 });
+

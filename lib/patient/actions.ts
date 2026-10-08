@@ -1065,14 +1065,14 @@ export async function dischargePatientAction(params: {
       .eq("id", params.visitId)
       .eq("organization_id", session.organizationId);
 
-    // 4. Release Bed Assignment if any
+    // 4. Release Bed or Cabin Assignment if any
     const { data: bedAssign } = await supabase
       .from("bed_assignments")
-      .select("id, bed_id")
+      .select("id, bed_id, cabin_id")
       .eq("visit_id", params.visitId)
       .eq("organization_id", session.organizationId)
       .eq("status", "ACTIVE")
-      .single();
+      .maybeSingle();
 
     if (bedAssign) {
       await supabase
@@ -1087,6 +1087,13 @@ export async function dischargePatientAction(params: {
           .update({ status: "VACANT" })
           .eq("organization_id", session.organizationId)
           .eq("id", bedAssign.bed_id);
+      }
+      if (bedAssign.cabin_id) {
+        await supabase
+          .from("cabins")
+          .update({ status: "VACANT" })
+          .eq("organization_id", session.organizationId)
+          .eq("id", bedAssign.cabin_id);
       }
     }
 
