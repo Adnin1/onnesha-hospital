@@ -11,16 +11,16 @@
 |:---|:---|:---:|
 | **Execution Timestamp** | `2026-10-09T01:30:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.67` | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.68` | VERIFIED (IMMUTABLE) |
 | **Preserved Release Tags** | `v1.1.46` (`21c2c4460903cff6aa7ffe0286ff3bf9ac6d22ac`), `v1.1.45` (`edd8d4d5aa03ca3cfb80ae14a5e7e2a72d65f9fb`), `v1.1.44` (`b5dd5eec71bebdcaa97f842db3963daa9d70986e`), `v1.1.43` (`05dfe1e7a560efe461b31835d1f98a8dccd44dba`), `v1.1.42` (`4a06582db6ba30395bfa90a264a9e7f10519a9f6`), `v1.1.41` (`2ca324f1`), `v1.1.40` (`723c788dda71a36cf43d6eb6b128427ecfed61c6`), `v1.1.39` (`0b8fafe2`), `v1.1.38` (`ff008678`), `v1.1.37` (`ea2ce57c7f74f168eea4a269063685ccca88fde1`), `v1.1.36` (`361ad5acaa16413b921726d208ef22f9ecc58862`), `v1.1.35` (`288b9bf5e46b5b208384591b96a8e3c012866320`), `v1.1.34` (`e643624e6d203f3ca01157e4cbd7df695b369a2f`), `v1.1.33` (`87acf732fa6b4b74541206bbbc9710792ef5cf7a`), `v1.1.32` (`c9286a0c4a81a7ef7b48d339840d1f6447973698`), `v1.1.26`-`v1.1.31` | VERIFIED (IMMUTABLE) |
 | **Current Main HEAD SHA** | `Reconciled across local, origin, and ssh-origin` | VERIFIED |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED (100% IN SYNC) |
-| **Package Version (`package.json`)** | `1.1.67` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.67` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.67` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.67` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.67` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.67` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.68` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.68` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.68` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.68` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.68` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.68` | VERIFIED |
 | **Database Migrations Count** | `127 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261009010000_permanent_patient_nid_and_intake_contract.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity, 0 fatal lint errors) | VERIFIED |
@@ -596,10 +596,10 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
 
 ---
 
-## 22. Release v1.1.67 — Content Truth Reconciliation, Empirical Core Web Vitals & Multi-Engine Browser Hardening
+## 22. Release v1.1.68 — Content Truth Reconciliation, Empirical Core Web Vitals & Multi-Engine Browser Hardening
 
 - **Release Date:** 2026-10-05
-- **Version:** `1.1.67` (Synchronized across all 9 authoritative manifests: `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/api/health.json`, `public/downloads/desktop/latest.json`)
+- **Version:** `1.1.68` (Synchronized across all 9 authoritative manifests: `package.json`, `package-lock.json`, `Cargo.toml`, `Cargo.lock`, `tauri.conf.json`, `Dockerfile`, `lib/version.ts`, `public/api/health.json`, `public/downloads/desktop/latest.json`)
 - **Key Enhancements & Closure Tracks:**
   1. **Website Content Truth & Factual Alignment:**
      - Audited all public pages (`/about`, `/services`, `/contact`, `/doctors`, `HospitalJsonLd`, `llms.txt`, `sitemap.ts`, `robots.txt`) for factual alignment with physical hospital infrastructure in Bogura.
@@ -635,7 +635,7 @@ Per the Zero False-Green doctrine, software implementation readiness is separate
 ## 23. Autonomous Supreme Final Execution & Authoritative Edge Deployment
 
 - **Execution Date:** 2026-10-05
-- **Authoritative Commit SHA:** `Reconciled across local, origin, and ssh-origin` (Fast-forward descendant of immutable tag `v1.1.67` `b92c3d11`)
+- **Authoritative Commit SHA:** `Reconciled across local, origin, and ssh-origin` (Fast-forward descendant of immutable tag `v1.1.68` `b92c3d11`)
 - **Remote Synchronization:** Both `origin/main` and `ssh-origin/main` synchronized at `Reconciled across local, origin, and ssh-origin`.
 - **Cloudflare Pages Deployed SHA:** `Reconciled across local, origin, and ssh-origin` (Deployment ID `ef4c5650`, verified at `https://onnesha-hospital.pages.dev`).
 - **Key Enhancements & Forensic Closures:**

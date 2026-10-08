@@ -1,10 +1,10 @@
 # OHMS Project Execution State Ledger
 
-**Last Updated:** 2026-10-09T01:30:00+06:00  
-**Platform Version:** `1.1.67`  
+**Last Updated:** 2026-10-09T02:00:00+06:00  
+**Platform Version:** `1.1.68`  
 **Git Branch:** `main`  
-**Git Tag:** `v1.1.67`  
-**Prior Release Tag:** `v1.1.66` (Immutable anchor preserved)  
+**Git Tag:** `v1.1.68`  
+**Prior Release Tag:** `v1.1.67` (Immutable anchor preserved)  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
 **Cloudflare Pages Project:** `onnesha-hospital`  
@@ -19,13 +19,13 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 ---
 
-## 2. Core Repository Metrics & Artifact Baseline (v1.1.67)
+## 2. Core Repository Metrics & Artifact Baseline (v1.1.68)
 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
-| **Repository Version** | `1.1.67` | Synchronized across project manifests | ✅ Synchronized |
-| **Total Test Suites** | `122 suites` | 100% of discovered test files passing | ✅ 122 / 122 Passing |
-| **Active Test Passes** | `1091 tests` | 0 failures, 0 regressions | ✅ 1091 Active Passes |
+| **Repository Version** | `1.1.68` | Synchronized across project manifests | ✅ Synchronized |
+| **Total Test Suites** | `123 suites` | 100% of discovered test files passing | ✅ 123 / 123 Passing |
+| **Active Test Passes** | `1112 tests` | 0 failures, 0 regressions | ✅ 1112 Active Passes |
 | **Standard Skips** | `7 tests` | Explicitly justified environmental/destructive skips | ✅ 7 Standard Skips |
 | **Disaster Recovery & Restore** | `Multi-Tier Model` | 127 Migrations in Git, Service-role snapshot utility, DB SSL active, WAL-G verified | ✅ Certified Ready |
 | **Browser Matrix E2E Tests** | `208 specs` | 100% pass across 4 browser engines | ✅ 208 / 208 Passing |
@@ -43,10 +43,10 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 | Environment | Current Served Version | Expected Source Branch / Tag | Alignment Status |
 |:---|:---|:---|:---|
-| **Local Repository HEAD** | `v1.1.66` | `main` | ✅ Synchronized |
-| **Remote GitHub (`origin`)** | `v1.1.66` | `origin/main` | ✅ Synchronized |
-| **Remote SSH (`ssh-origin`)** | `v1.1.66` | `ssh-origin/main` | ✅ Synchronized |
-| **Cloudflare Pages Production** | `v1.1.66` | `https://onnesha-hospital.pages.dev/` | ✅ Target Deployment |
+| **Local Repository HEAD** | `v1.1.68` | `main` | ✅ Synchronized |
+| **Remote GitHub (`origin`)** | `v1.1.68` | `origin/main` | ✅ Synchronized |
+| **Remote SSH (`ssh-origin`)** | `v1.1.68` | `ssh-origin/main` | ✅ Synchronized |
+| **Cloudflare Pages Production** | `v1.1.68` | `https://onnesha-hospital.pages.dev/` | ✅ Target Deployment |
 
 ---
 

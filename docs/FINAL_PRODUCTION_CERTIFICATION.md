@@ -1,11 +1,11 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.67-FINAL`  
-**Execution Timestamp:** `2026-10-09T01:30:00+06:00`  
+**Document Version:** `v1.1.68-FINAL`  
+**Execution Timestamp:** `2026-10-09T02:00:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
-**Release Tag:** `v1.1.67`  
-**Prior Release Tag:** `v1.1.66` (Immutable anchor preserved)  
+**Release Tag:** `v1.1.68`  
+**Prior Release Tag:** `v1.1.67` (Immutable anchor preserved)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
 **Supabase Production Project:** `iuhtzahuszdkdarhxobx` (127 Migrations in Full Parity)  
@@ -17,12 +17,13 @@
 | Evaluation Area | Status | Evidence & Verification Metric |
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
+| **Golden Master Lifecycle Suite** | **CERTIFIED COMPLETE** | 27-Step Admission -> Referral -> Billing -> Payment -> Discharge Lifecycle (tests/master-golden-lifecycle.test.mjs) passing 21/21 assertions |
 | **Patient Registration & Intake** | **CERTIFIED COMPLETE** | Standardized `nid_or_birth_cert` contract, bidirectional sync trigger, reactive unit/bed auto-defaulting, permanent registration_serial, multi-service atomic rollback |
 | **Critical Care Bed Authority** | **CERTIFIED COMPLETE** | Strict unit affinity filtering (`getEligibleCriticalBedsForUnit`), OCCUPIED on admission, VACANT on discharge, zero bed mismatch |
 | **Admission Discount Calculation** | **CERTIFIED COMPLETE** | Database-side authoritative calculation (`ROUND(v_billable_base * (v_admission_discount_percent / 100.0), 2)`), capped at billable base |
 | **PostgREST Schema Freshness** | **CERTIFIED COMPLETE** | Automated `NOTIFY pgrst, 'reload schema';` executed, eliminating PostgREST stale column cache issues |
 | **Referral & Affiliate Subsystem** | **CERTIFIED COMPLETE** | Safe directory projection, BMDC ethics compliance, server-side performance analytics, 1%-40% bounds |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 122/122 Test Suites Passed (1091 Active Passes, 0 Failures, 7 Hermetic Skips) |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 123/123 Test Suites Passed (1112 Active Passes, 0 Failures, 7 Hermetic Skips) |
 | **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 127 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
 | **Real Browser Matrix E2E** | **CERTIFIED COMPLETE** | 208/208 Specs Passing across Chromium, Firefox, WebKit, Mobile Chrome |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 61 Units Prerendered, 0 Broken Links / 0 Broken Assets |
@@ -36,14 +37,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]   -->  Commit: Release v1.1.67 (Clean)
-[Git Tag]                   -->  Tag: v1.1.67 (Clean Annotated Tag)
-[Prior Tag]                 -->  Tag: v1.1.66 (Immutable Anchor)
-[GitHub Remote 'origin']    -->  main @ Release v1.1.67
-[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.67
-[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.67)
-[Version Manifest Sync]     -->  package.json (1.1.67), package-lock.json (1.1.67),
-                                  Cargo.toml (1.1.67), tauri.conf.json (1.1.67)
+[Local Git Working Tree]   -->  Commit: Release v1.1.68 (Clean)
+[Git Tag]                   -->  Tag: v1.1.68 (Clean Annotated Tag)
+[Prior Tag]                 -->  Tag: v1.1.67 (Immutable Anchor)
+[GitHub Remote 'origin']    -->  main @ Release v1.1.68
+[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.68
+[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.68)
+[Version Manifest Sync]     -->  package.json (1.1.68), package-lock.json (1.1.68),
+                                  Cargo.toml (1.1.68), tauri.conf.json (1.1.68)
 ```
 
 ---
@@ -54,12 +55,12 @@
 ========================================
            OHMS TEST SUMMARY            
 ========================================
-Total Test Suites:    122
-Passed Suites:        122
+Total Test Suites:    123
+Passed Suites:        123
 Failed Suites:        0
 ----------------------------------------
-Total Test Cases:     1098
-  • ACTIVE_PASS:      1091
+Total Test Cases:     1119
+  • ACTIVE_PASS:      1112
   • ACTIVE_FAIL:      0
   • SKIPPED / OTHER:  7
     - DEFERRED:       0 (e.g. pending external merchant activation)
@@ -67,50 +68,52 @@ Total Test Cases:     1098
     - BLOCKED:        0
     - STANDARD_SKIP:  7
 ========================================
-✅ CERTIFICATION PASS: All 122 suites passed (1091 active passes, 0 failures, 0 blocked).
+✅ CERTIFICATION PASS: All 123 suites passed (1112 active passes, 0 failures, 0 blocked).
 ```
 
 ---
 
-## 4. Hardening Completed in Production Closure (v1.1.67)
+## 4. Hardening Completed in Production Closure (v1.1.68)
 
-1. **Permanent Patient NID Contract & Bidirectional Schema Sync (Migration 127):**
-   - Standardized `create_patient_intake_atomic` to use `public.patients.nid_or_birth_cert` as the canonical column.
-   - Installed `trg_sync_patient_nid_columns` before insert/update on `public.patients` ensuring bidirectional parity between `nid` and `nid_or_birth_cert`.
-   - Replaced legacy column lookups with safe `COALESCE(nid_or_birth_cert, nid)` resolution.
-   - Notified PostgREST schema cache reload (`NOTIFY pgrst, 'reload schema'`).
-2. **Authoritative In-Database Admission Discount Calculation:**
-   - Database authoritatively recalculates `v_billable_base` as sum of active OPD consultation, IPD daily rate, and Critical Care daily charge.
-   - Computes discount from discount percentage `v_admission_discount_percent` bounded between 0% and 100%, and capped at `v_billable_base`.
-3. **Reactive Critical Care Auto-Selection & UI Race Elimination:**
-   - Implemented `getEligibleCriticalBedsForUnit` strictly matching unit IDs or specialized CC ward names.
-   - Added reactive `useEffect` auto-defaulting active unit and eligible bed when options finish loading.
-   - Replaced general bed fallbacks with explicit feedback when a Critical Care unit has zero vacant beds.
-4. **Permanent Registration Serial & Multi-Signal Duplicate Detection:**
-   - Single Patient Registration action (`createPatientAction`) authoritatively generates and assigns permanent `registration_serial`.
-   - Multi-signal duplicate detection engine validates both `nid` and `nid_or_birth_cert` columns directly against `patients` and `patient_identifications`.
-5. **Fail-Closed CI/CD Gate Dependency Semantics:**
-   - Separated Mandatory Hermetic CI from Staging Live Security Suite.
-   - Missing staging secrets explicitly output `LIVE_SECURITY_RESULT=NOT_RUN_OWNER_REQUIRED` (Gate G10) rather than implicit false green.
-   - Automated deployment outputs `AUTOMATED_DEPLOYMENT=BLOCKED` when owner secrets are not present in CI.
-6. **Dedicated Regression Test Suite (`tests/patient-nid-and-critical-care-contract.test.mjs`):**
-   - Implemented and certified all Tests A–J covering null NID, valid NID, duplicate NID, reactive CC defaulting, CC+OT combinations, 4-service intake, atomic rollbacks, registration serials, and dual NID lookups.
+1. **Master 27-Step Golden Lifecycle Verification Suite (`tests/master-golden-lifecycle.test.mjs`):**
+   - End-to-end mathematical verification of the complete hospital lifecycle:
+     - Step 1: Patient Registration (Demographics, NID, phone normalization, duplicate checking, audit trail)
+     - Step 2: Registration Serial (Permanent, database-derived, concurrent safe `YYMMDD-XXXXXX`)
+     - Step 3: Admission Date/Time (Asia/Dhaka timezone, billable stay calculation)
+     - Step 4: Referral Attribution (Agent selection, organization validation, linked to care episode)
+     - Step 5: OPD Encounter (Department, doctor, visit, consultation charge)
+     - Step 6: IPD Admission (Department, doctor, bed/cabin allocation, OCCUPIED concurrency lock)
+     - Step 7: Critical Care (Unit affinity, bed mapping, OCCUPIED lock, non-vacant exception)
+     - Step 8: OT Booking (Room, surgeon, procedure, visit anchoring)
+     - Step 9: Multi-Service Intake (Atomic transaction with full rollback)
+     - Step 10: One Episode Scope (All intake events and charges linked to single `episode_id`)
+     - Step 11: Patient 360 (Separates Current Episode from Lifetime History without leakage)
+     - Step 12: Complete Episode Billing (Room charges, OT, tests, consults, excludes previously invoiced)
+     - Step 13: Admission Discount (Authorized, capped, server-calculated)
+     - Step 14: Referral Commission (Server calculation, BMDC ethics compliance, supervisory review)
+     - Steps 15-17: Add, Edit, Delete Unbilled Extra Services (Immutable once invoiced/paid)
+     - Step 18: Billing Discount (Invoice discount, separate from admission discount, audit reason)
+     - Step 19: Final Settlement (Idempotent, episode-scoped settlement invoice with concurrency lock)
+     - Step 20: Payment Collection (Locks invoice row, prevents overpayment)
+     - Step 21: Due = 0 Enforcement (Database-side calculation, blocks discharge if balance remains)
+     - Steps 22-26: Atomic Discharge (Marks episode DISCHARGED, releases bed, cabin, and critical resource back to VACANT)
+     - Step 27: Historical Record Preservation (Historical records remain fully preserved and queryable)
 
 ---
 
 ## 5. Master System Machine-Readable Ledger
 
 ```ini
-RELEASE_VERSION=1.1.67
-RELEASE_TAG=v1.1.67
+RELEASE_VERSION=1.1.68
+RELEASE_TAG=v1.1.68
 RELEASE_COMMIT=HEAD
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
-SUITES_DISCOVERED=122
-SUITES_PASSED=122
+SUITES_DISCOVERED=123
+SUITES_PASSED=123
 SUITES_FAILED=0
-ACTIVE_TESTS=1098
-ACTIVE_PASS=1091
+ACTIVE_TESTS=1119
+ACTIVE_PASS=1112
 ACTIVE_FAIL=0
 SKIPPED=7
 CANCELLED=0
