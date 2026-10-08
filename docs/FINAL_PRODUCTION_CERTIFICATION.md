@@ -1,14 +1,14 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.63-FINAL`  
-**Execution Timestamp:** `2026-10-08T19:07:00+06:00`  
+**Document Version:** `v1.1.64-FINAL`  
+**Execution Timestamp:** `2026-10-08T19:35:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
-**Release Tag:** `v1.1.63`  
-**Prior Release Tag:** `v1.1.62` (Immutable anchor preserved)  
+**Release Tag:** `v1.1.64`  
+**Prior Release Tag:** `v1.1.63` (Immutable anchor preserved)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (123 Migrations in Full Parity)  
+**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (126 Migrations in Full Parity)  
 
 ---
 
@@ -21,11 +21,11 @@
 | **Critical Care Bed Authority** | **CERTIFIED COMPLETE** | Migration 122 case-insensitive trimmed bed resolution, unit affinity sorting, OCCUPIED on admission, VACANT on discharge |
 | **Referral & Affiliate Subsystem** | **CERTIFIED COMPLETE** | Safe directory projection, BMDC ethics compliance, server-side performance analytics, 1%-40% bounds |
 | **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 121/121 Test Suites Passed (1075 Active Passes, 0 Failures, 7 Hermetic Skips) |
-| **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 122 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
+| **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 126 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
 | **Real Browser Matrix E2E** | **CERTIFIED COMPLETE** | 208/208 Specs Passing across Chromium, Firefox, WebKit, Mobile Chrome |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 61 Units Prerendered, 0 Broken Links / 0 Broken Assets |
 | **Live Production Smoke** | **CERTIFIED COMPLETE** | Root & /app/referrals 200 OK, full CSP, HSTS, X-Frame-Options on Edge |
-| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 122 Migrations Applied Remotely, RLS Enabled on All Tables, 0 Anon Leaks |
+| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 126 Migrations Applied Remotely, RLS Enabled on All Tables, 0 Anon Leaks |
 | **CI/CD Security Gating** | **CERTIFIED COMPLETE** | Mandatory CI passed, G10 Staging Gate classified as Owner Prerequisite |
 | **Hospital Physical Commissioning** | **OWNER GATES PENDING** | Requires Hardware, Live Merchant Keys, Staff UAT & Statutory Sign-offs (G1–G16) |
 
@@ -34,14 +34,14 @@
 ## 2. Release Provenance Chain
 
 ```
-[Local Git Working Tree]   -->  Commit: Release v1.1.53 (Clean)
-[Git Tag]                   -->  Tag: v1.1.53 (Clean Annotated Tag)
-[Prior Tag]                 -->  Tag: v1.1.52 (Immutable Anchor)
-[GitHub Remote 'origin']    -->  main @ Release v1.1.53
-[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.53
-[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.53)
-[Version Manifest Sync]     -->  package.json (1.1.53), package-lock.json (1.1.53),
-                                  Cargo.toml (1.1.53), tauri.conf.json (1.1.53)
+[Local Git Working Tree]   -->  Commit: Release v1.1.64 (Clean)
+[Git Tag]                   -->  Tag: v1.1.64 (Clean Annotated Tag)
+[Prior Tag]                 -->  Tag: v1.1.63 (Immutable Anchor)
+[GitHub Remote 'origin']    -->  main @ Release v1.1.64
+[GitHub Remote 'ssh-origin'] -->  main @ Release v1.1.64
+[Cloudflare Edge Pages]     -->  https://onnesha-hospital.pages.dev (Serving v1.1.64)
+[Version Manifest Sync]     -->  package.json (1.1.64), package-lock.json (1.1.64),
+                                  Cargo.toml (1.1.64), tauri.conf.json (1.1.64)
 ```
 
 ---
@@ -52,12 +52,12 @@
 ========================================
            OHMS TEST SUMMARY            
 ========================================
-Total Test Suites:    115
-Passed Suites:        115
+Total Test Suites:    121
+Passed Suites:        121
 Failed Suites:        0
 ----------------------------------------
-Total Test Cases:     1032
-  • ACTIVE_PASS:      1025
+Total Test Cases:     1088
+  • ACTIVE_PASS:      1081
   • ACTIVE_FAIL:      0
   • SKIPPED / OTHER:  7
     - STANDARD_SKIP:  7 (Explicitly justified environmental/service role/destructive restore skips)
@@ -70,9 +70,10 @@ Total Test Cases:     1032
 - **`npm run typecheck`:** `tsc --noEmit` exited with code 0 (0 errors).
 - **`npx eslint . --max-warnings 0`:** Exited with code 0 (0 warnings, 0 errors).
 - **`npm audit --audit-level=high`:** Exited with code 0 (0 vulnerabilities).
-- **`npm run test:certification`:** 115 suites passed in strict mode (1029 active passes, 7 skips).
+- **`npm run test:certification`:** 121 suites passed in strict mode (1081 active passes, 7 skips).
+- **`node --test tests/patient-intake-atomic-resilience.test.mjs`:** 7/7 tests passed.
 - **`node --test tests/unified-patient-workflow.test.mjs`:** 12/12 tests passed (demographics schema, atomic intake, multi-service admission, episode billing, UI linkage, resilient submission, and loading options decoupling).
-- **`node --test tests/dr/database-backup-and-restore-readiness.test.mjs`:** 5/5 passed, 1 skip (117 migrations certified, anti-leak .gitignore verified, destructive restore skipped).
+- **`node --test tests/dr/database-backup-and-restore-readiness.test.mjs`:** 5/5 passed, 1 skip (126 migrations certified, anti-leak .gitignore verified, destructive restore skipped).
 - **`npm run audit:assets`:** 0 broken internal links or static assets (380 internal links, 1078 assets).
 - **`npm run build`:** Static production export succeeded without warnings (61 units prerendered).
 - **`npx playwright test`:** Specs passing across browser engines with mutation guard active.
@@ -98,15 +99,15 @@ Total Test Cases:     1032
 6. **Release Provenance & Historical Tag Immutability:**
    - Bumped to release `v1.1.53` without mutating or altering historical tag `v1.1.52`. All manifests synchronized across package.json, Cargo, and Tauri.
 7. **Database Migration Parity:**
-   - Exactly 118 local migrations confirmed in 100% remote parity (`npx supabase migration list`).
+   - Exactly 126 local migrations confirmed in 100% remote parity (`npx supabase migration list`).
 
 ---
 
 ## 5. Master System Machine-Readable Ledger
 
 ```ini
-RELEASE_VERSION=1.1.63
-RELEASE_TAG=v1.1.63
+RELEASE_VERSION=1.1.64
+RELEASE_TAG=v1.1.64
 RELEASE_COMMIT=33744cf927290a01571604a00fcfede99ef70512
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED

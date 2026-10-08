@@ -167,4 +167,38 @@ describe("Patient Intake Atomic Resilience & End-to-End Database Invariants", ()
     assert.match(sql, /CREATE OR REPLACE FUNCTION public\.create_patient_intake_atomic/);
     assert.match(sql, /nid, nid_or_birth_cert/);
   });
+
+  test("9. Migration 124 guarantees emergency contacts, generate_episode_number, patient_episodes view, and bed assignment patient_id", () => {
+    const migrationPath = path.join(ROOT, "supabase/migrations/20261008230000_permanent_patient_intake_and_episode_alignment.sql");
+    assert.ok(fs.existsSync(migrationPath), "Migration 124 file must exist");
+    const sql = fs.readFileSync(migrationPath, "utf8");
+
+    assert.match(sql, /emergency_contact_name TEXT/);
+    assert.match(sql, /total_visits INTEGER NOT NULL DEFAULT 1/);
+    assert.match(sql, /CREATE OR REPLACE FUNCTION public\.generate_episode_number/);
+    assert.match(sql, /CREATE OR REPLACE VIEW public\.patient_episodes/);
+    assert.match(sql, /INSTEAD OF INSERT ON public\.patient_episodes/);
+    assert.match(sql, /INSERT INTO public\.bed_assignments\s*\(\s*organization_id,\s*patient_id/);
+  });
+
+  test("10. Migration 125 repairs episode_service_charges and get_episode_billing_preview", () => {
+    const migrationPath = path.join(ROOT, "supabase/migrations/20261008233000_repair_episode_service_charges_and_billing_preview.sql");
+    assert.ok(fs.existsSync(migrationPath), "Migration 125 file must exist");
+    const sql = fs.readFileSync(migrationPath, "utf8");
+
+    assert.match(sql, /ADD COLUMN IF NOT EXISTS description TEXT/);
+    assert.match(sql, /ADD COLUMN IF NOT EXISTS is_billed BOOLEAN DEFAULT FALSE/);
+    assert.match(sql, /CREATE OR REPLACE FUNCTION public\.trg_sync_episode_service_charges/);
+    assert.match(sql, /CREATE OR REPLACE FUNCTION public\.get_episode_billing_preview/);
+  });
+
+  test("11. Migration 126 adds is_active to cabins and hardens intake atomicity", () => {
+    const migrationPath = path.join(ROOT, "supabase/migrations/20261008235000_add_is_active_to_cabins_and_harden_intake.sql");
+    assert.ok(fs.existsSync(migrationPath), "Migration 126 file must exist");
+    const sql = fs.readFileSync(migrationPath, "utf8");
+
+    assert.match(sql, /ALTER TABLE public\.cabins\s+ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE/);
+    assert.match(sql, /idx_cabins_org_active/);
+    assert.match(sql, /COALESCE\(is_active, TRUE\) = TRUE/);
+  });
 });
