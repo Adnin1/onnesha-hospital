@@ -153,5 +153,27 @@ describe("Unified Patient Intake & Episode Settlement Contract", () => {
     assert.match(c, /CHECK\s*\(status IN \('admitted', 'transferred', 'discharged', 'deceased', 'ACTIVE'/);
     assert.match(c, /critical_care_visit_id/);
   });
+
+  test("migration 122 provides resilient case-insensitive bed matching and unit affinity in atomic intake", () => {
+    const p = path.join(ROOT, "supabase/migrations/20261008200000_resilient_bed_lookup_and_intake_hardening.sql");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /CREATE OR REPLACE FUNCTION public\.create_patient_intake_atomic/);
+    assert.match(c, /UPPER\(TRIM\(bed_number\)\) = v_bed_number/);
+    assert.match(c, /ORDER BY\s+CASE WHEN critical_care_unit_id = v_unit_id THEN 1/);
+  });
+
+  test("UnifiedPatientIntakeModal provides auto-defaults, phone validation, and dedicated Register Patient Only button", () => {
+    const p = path.join(ROOT, "components/patient/UnifiedPatientIntakeModal.tsx");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /submitPatientOnly/);
+    assert.match(c, /isValidNormalizedBDPhone/);
+    assert.match(c, /scrollToField/);
+    assert.match(c, /toggleCriticalCare/);
+    assert.match(c, /toggleIpd/);
+    assert.match(c, /toggleOpd/);
+    assert.match(c, /toggleOt/);
+    assert.match(c, /👤 শুধু রোগী নিবন্ধন \(Register Patient Only\)/);
+  });
 });
+
 
