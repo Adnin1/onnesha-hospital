@@ -1,14 +1,14 @@
 # OHMS Project Execution State Ledger
 
-**Last Updated:** 2026-10-08T05:00:00+06:00  
-**Platform Version:** `1.1.53`  
+**Last Updated:** 2026-10-08T18:15:00+06:00  
+**Platform Version:** `1.1.61`  
 **Git Branch:** `main`  
-**Git Tag:** `v1.1.53`  
-**Prior Release Tag:** `v1.1.52` (Immutable anchor preserved)  
+**Git Tag:** `v1.1.61`  
+**Prior Release Tag:** `v1.1.60` (Immutable anchor preserved)  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (118 Migrations in 100% Parity)  
+**Supabase Production Database:** `iuhtzahuszdkdarhxobx.supabase.co` (122 Migrations in 100% Parity)  
 **Release Governance State:** `SOFTWARE VERIFIED — 16 OWNER GATES REMAIN (G1–G16)`  
 
 ---
@@ -19,17 +19,17 @@ This state ledger provides the persistent, authoritative single source of truth 
 
 ---
 
-## 2. Core Repository Metrics & Artifact Baseline (v1.1.53)
+## 2. Core Repository Metrics & Artifact Baseline (v1.1.61)
 
 | Metric | Measured Value | Standard / Target | Status |
 |:---|:---|:---|:---|
-| **Repository Version** | `1.1.53` | Synchronized across project manifests | ✅ Synchronized |
-| **Total Test Suites** | `115 suites` | 100% of discovered test files passing | ✅ 115 / 115 Passing |
-| **Active Test Passes** | `1028+ tests` | 0 failures, 0 regressions | ✅ 1028+ Active Passes |
+| **Repository Version** | `1.1.61` | Synchronized across project manifests | ✅ Synchronized |
+| **Total Test Suites** | `121 suites` | 100% of discovered test files passing | ✅ 121 / 121 Passing |
+| **Active Test Passes** | `1075 tests` | 0 failures, 0 regressions | ✅ 1075 Active Passes |
 | **Standard Skips** | `7 tests` | Explicitly justified environmental/destructive skips | ✅ 7 Standard Skips |
-| **Disaster Recovery & Restore** | `Multi-Tier Model` | 118 Migrations in Git, Service-role snapshot utility, DB SSL active, WAL-G verified | ✅ Certified Ready |
-| **Browser Matrix E2E Tests** | `200 specs` | 100% pass across 4 browser engines | ✅ 200 / 200 Passing |
-| **Database Migrations** | `118 files` | Idempotent, sequential, fail-closed SQL | ✅ 118 Migrations (100% Remote Parity) |
+| **Disaster Recovery & Restore** | `Multi-Tier Model` | 122 Migrations in Git, Service-role snapshot utility, DB SSL active, WAL-G verified | ✅ Certified Ready |
+| **Browser Matrix E2E Tests** | `208 specs` | 100% pass across 4 browser engines | ✅ 208 / 208 Passing |
+| **Database Migrations** | `122 files` | Idempotent, sequential, fail-closed SQL | ✅ 122 Migrations (100% Remote Parity) |
 | **TypeScript (tsc)** | `0 errors` | `tsc --noEmit` clean exit code 0 | ✅ Zero Errors |
 | **ESLint** | `0 warnings` | `eslint . --max-warnings 0` exit code 0 | ✅ Zero Warnings |
 | **Static Next.js Build** | `output: "export"` | 61 compilation units prerendered cleanly | ✅ Clean Build |

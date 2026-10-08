@@ -1,14 +1,14 @@
 # Onnesha Hospital Management System (OHMS) — Final Production Certification
 
-**Document Version:** `v1.1.53-FINAL`  
-**Execution Timestamp:** `2026-10-08T05:00:00+06:00`  
+**Document Version:** `v1.1.61-FINAL`  
+**Execution Timestamp:** `2026-10-08T18:15:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
 **Referral Subsystem Route:** `https://onnesha-hospital.pages.dev/app/referrals`  
-**Release Tag:** `v1.1.53`  
-**Prior Release Tag:** `v1.1.52` (Immutable anchor preserved)  
+**Release Tag:** `v1.1.61`  
+**Prior Release Tag:** `v1.1.60` (Immutable anchor preserved)  
 **Branch:** `main` (Synchronized across `origin` and `ssh-origin`)  
 **Cloudflare Pages Project:** `onnesha-hospital`  
-**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (118 Migrations in Full Parity)  
+**Supabase Production Project:** `iuhtzahuszdkdarhxobx` (122 Migrations in Full Parity)  
 
 ---
 
@@ -17,15 +17,15 @@
 | Evaluation Area | Status | Evidence & Verification Metric |
 |:---|:---:|:---|
 | **Software Core Engineering** | **CERTIFIED COMPLETE** | 0 Open Code Defects, 0 TypeScript Errors, 0 ESLint Warnings |
-| **Patient Registration & Intake** | **CERTIFIED COMPLETE** | Unified Wizard, updated_at repaired, UHID serial, multi-service intake, atomic rollback |
-| **Critical Care Bed Authority** | **CERTIFIED COMPLETE** | Public beds linked to critical_care_unit_id, OCCUPIED on admission, VACANT on discharge |
+| **Patient Registration & Intake** | **CERTIFIED COMPLETE** | Resilient Unified Intake, Auto-default bed/unit selection, 1-click fallback & inline removal, UHID serial, multi-service intake, atomic rollback |
+| **Critical Care Bed Authority** | **CERTIFIED COMPLETE** | Migration 122 case-insensitive trimmed bed resolution, unit affinity sorting, OCCUPIED on admission, VACANT on discharge |
 | **Referral & Affiliate Subsystem** | **CERTIFIED COMPLETE** | Safe directory projection, BMDC ethics compliance, server-side performance analytics, 1%-40% bounds |
-| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 115/115 Test Suites Passed (1028+ Active Passes, 0 Failures, 7 Hermetic Skips) |
-| **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 118 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
-| **Real Browser Matrix E2E** | **CERTIFIED COMPLETE** | 200/200 Specs Passing across Chromium, Firefox, WebKit, Mobile Chrome |
+| **Test Matrix & Invariants** | **CERTIFIED COMPLETE** | 121/121 Test Suites Passed (1075 Active Passes, 0 Failures, 7 Hermetic Skips) |
+| **Disaster Recovery & Architecture** | **CERTIFIED COMPLETE** | 122 Migrations in Git, Service-role snapshot engine, .gitignore anti-leak shield, DB SSL active |
+| **Real Browser Matrix E2E** | **CERTIFIED COMPLETE** | 208/208 Specs Passing across Chromium, Firefox, WebKit, Mobile Chrome |
 | **Static Export & Link Integrity** | **CERTIFIED COMPLETE** | 61 Units Prerendered, 0 Broken Links / 0 Broken Assets |
 | **Live Production Smoke** | **CERTIFIED COMPLETE** | Root & /app/referrals 200 OK, full CSP, HSTS, X-Frame-Options on Edge |
-| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 118 Migrations Applied Remotely, RLS Enabled on All Tables, 0 Anon Leaks |
+| **Database & RLS Topology** | **CERTIFIED COMPLETE** | 122 Migrations Applied Remotely, RLS Enabled on All Tables, 0 Anon Leaks |
 | **CI/CD Security Gating** | **CERTIFIED COMPLETE** | Mandatory CI passed, G10 Staging Gate classified as Owner Prerequisite |
 | **Hospital Physical Commissioning** | **OWNER GATES PENDING** | Requires Hardware, Live Merchant Keys, Staff UAT & Statutory Sign-offs (G1–G16) |
 
@@ -105,19 +105,20 @@ Total Test Cases:     1032
 ## 5. Master System Machine-Readable Ledger
 
 ```ini
-RELEASE_VERSION=1.1.53
-RELEASE_TAG=v1.1.53
+RELEASE_VERSION=1.1.61
+RELEASE_TAG=v1.1.61
+RELEASE_COMMIT=6871ea595466b67ecf1dc16d80a1d3b3a82d812e
 CANONICAL_HOST=https://onnesha-hospital.pages.dev
 CUSTOM_DOMAIN=DEFERRED
-SUITES_DISCOVERED=115
-SUITES_PASSED=115
+SUITES_DISCOVERED=121
+SUITES_PASSED=121
 SUITES_FAILED=0
-ACTIVE_TESTS=1036
-ACTIVE_PASS=1029
+ACTIVE_TESTS=1082
+ACTIVE_PASS=1075
 ACTIVE_FAIL=0
 SKIPPED=7
 CANCELLED=0
-BROWSER_FULL_MATRIX=PASS (200/200)
+BROWSER_FULL_MATRIX=PASS (208/208)
 BUILD=PASS
 BUILD_ROUTE_COUNT=61
 BROKEN_LINKS=0
@@ -127,8 +128,8 @@ LINT=PASS
 NPM_AUDIT=PASS
 SECURITY_TEST=PASS
 LIVE_DB_TEST=PASS (12/12)
-DATABASE_MIGRATIONS=118
-DATABASE_PARITY=100% (118/118)
+DATABASE_MIGRATIONS=122
+DATABASE_PARITY=100% (122/122)
 RLS=PASS
 SECURITY_DEFINER=PASS
 ACCOUNTING_INTEGRITY=PASS

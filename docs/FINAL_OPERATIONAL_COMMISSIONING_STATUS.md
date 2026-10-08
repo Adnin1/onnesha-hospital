@@ -1,9 +1,9 @@
 # Onnesha Hospital Management System (OHMS) — Final Operational Commissioning Status
 
-**Document Version:** `v1.1.24-OPERATIONAL-GATES`  
-**Execution Timestamp:** `2026-10-01T03:15:00+06:00`  
+**Document Version:** `v1.1.61-OPERATIONAL-GATES`  
+**Execution Timestamp:** `2026-10-08T18:15:00+06:00`  
 **Authoritative Host:** `https://onnesha-hospital.pages.dev`  
-**Current Governance State:** `SOFTWARE COMPLETE — 14 OWNER GATES PENDING PHYSICAL ACTION`  
+**Current Governance State:** `SOFTWARE COMPLETE — 16 OWNER GATES PENDING PHYSICAL ACTION (G1–G16)`  
 
 ---
 
@@ -13,28 +13,30 @@ Under the **Autonomous Engineering Swarm Constitution**, zero false greens are p
 > **`Software Complete ≠ Hospital Operationally Ready`**
 
 Every software line, database migration, automated test, build export, and live security smoke layer is **100% Code-Complete and Certified Green**.  
-The following 14 items require external physical hardware, bank merchant onboarding, staff training, or legal regulatory documentation that cannot be simulated or fabricated.
+The following 16 items require external physical hardware, bank merchant onboarding, staff training, code signing hardware, or legal regulatory documentation that cannot be simulated or fabricated.
 
 ---
 
-## 2. 14 Itemized Owner Gate Register
+## 2. 16 Itemized Canonical Owner Gate Register (G1–G16)
 
 | Gate ID | Area / Gate Description | Responsible Owner | Status | Required Real-World Evidence | Blocking Scope |
 |:---|:---|:---|:---:|:---|:---|
-| **OWNER_GATE_01** | Real Hospital Contact & Identity | Hospital Management | `PENDING` | Real reception phone, emergency hotline, ambulance mobile, and official email verified via test calls. | Public Contact & Emergency Dispatch |
-| **OWNER_GATE_02** | Real Doctor Roster & Chamber Schedules | Medical Director | `PENDING` | Approved specialist list with real consultation fees, room assignments, and practicing weekdays. | Real OPD Token Allocation |
-| **OWNER_GATE_03** | BMDC Doctor Credential Verification | Hospital HR / Admin | `PENDING` | Independent BMDC registration verification records archived in administrative files. | Clinical Practice Governance |
-| **OWNER_GATE_04** | Final Approved Diagnostic Tariffs | Finance & Billing Head | `PENDING` | Signed diagnostic investigation price schedule with effective date (currently `INDICATIVE_REFERENCE`). | Formal Diagnostic Invoicing |
-| **OWNER_GATE_05** | Isolated Staging Credentials | DevOps / IT Admin | `PENDING` | `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SERVICE_ROLE_KEY` added to GitHub Action Secrets. | Automated GitHub CI Live Security Gate |
-| **OWNER_GATE_06** | Live bKash & Nagad Merchant Credentials | Hospital Owner / Bank | `PENDING` | Production AppKey, AppSecret, Username, Password, and Private Key from merchant onboarding. | Live Mobile Financial Online Payments |
-| **OWNER_GATE_07** | SSLCommerz Production Store Keys | Hospital Owner / Bank | `PENDING` | Production `STORE_ID` and `STORE_PASSWD` from SSLCommerz merchant activation. | Live Card/NetBanking Gateway |
-| **OWNER_GATE_08** | SMS & WhatsApp Provider Activation | IT Admin / Telecom | `PENDING` | Production SSL Wireless/Greenweb SMS API Key and Meta WhatsApp Cloud API credentials configured. | Real-Time Patient SMS/WhatsApp Delivery |
-| **OWNER_GATE_09** | Physical Thermal Printer & USB Scanner | IT Technician | `PENDING` | 80mm POS thermal receipt printer and USB barcode scanner connected to reception/cashier workstations. | Physical Hardcopy Serial & Slip Printing |
-| **OWNER_GATE_10** | Hospital Staff Training & End-to-End UAT | Department Supervisors | `PENDING` | Receptionists, nurses, cashiers, and lab technicians complete supervised patient journey simulation. | Day-to-Day Clinical Operations |
-| **OWNER_GATE_11** | Database Disaster Recovery Drill | Lead DBA / SRE | `PENDING` | Point-in-Time-Recovery (PITR) restore drill executed on a staging database with verified RTO/RPO metrics. | Database Outage Recovery |
-| **OWNER_GATE_12** | Storage Object Independent DR Sync | Lead DBA / SRE | `PENDING` | S3 dual-track backup script scheduled to sync `medical-documents-vault` bucket to offline storage. | Inpatient Diagnostic Scan Archival |
-| **OWNER_GATE_13** | Supabase Production Dashboard Operations | Cloud Admin | `PENDING` | Review Security Advisor, confirm 0 critical alerts, enforce SSL, and configure production SMTP. | Platform Operational Hardening |
-| **OWNER_GATE_14** | DGHS Licensing & Regulatory Sign-Off | Hospital Board / Legal | `PENDING` | Directorate General of Health Services (DGHS) clinic/hospital operating license number recorded. | Legal Commercial Hospital Launch |
+| **G1** | Live Payment Gateway Keys (bKash, Nagad, SSLCommerz) | Hospital Owner / Bank | `PENDING` | Production AppKey, AppSecret, Username, Password, and Private Key from merchant onboarding. | Live Mobile & Card Online Payments |
+| **G2** | Bulk SMS Provider API Key | IT Admin / Telecom | `PENDING` | Production SSL Wireless/Greenweb SMS API Key configured in production vault. | Real-Time Patient SMS Delivery |
+| **G3** | WhatsApp Business Cloud API Key | IT Admin / Meta | `PENDING` | Meta WhatsApp Cloud API credentials and approved message templates configured. | WhatsApp Prescription & Token Alerts |
+| **G4** | Hospital SMTP Mail Credentials | IT Admin / Mailhost | `PENDING` | Production hospital SMTP credentials configured in Supabase Auth & alerting settings. | Email Verification & Formal Receipts |
+| **G5** | Physical 80mm ESC/POS Thermal Receipt Printers | IT Technician | `PENDING` | 80mm POS thermal receipt printers connected to reception/cashier workstations. | Physical Hardcopy Serial & Slip Printing |
+| **G6** | Physical 2D Handheld Barcode Scanners | IT Technician | `PENDING` | USB/Bluetooth 2D barcode scanners calibrated at patient triage and billing desks. | Quick Patient & Episode Retrieval |
+| **G7** | Physical ZKTeco Biometric Terminals | IT Technician / HR | `PENDING` | Biometric fingerprint/facial attendance terminals connected to hospital local network. | Biometric Staff Attendance Sync |
+| **G8** | Physical DICOM PACS Modalities (C-STORE binding) | Radiology / PACS Admin | `PENDING` | Physical CT/MRI/X-Ray modalities bound to DICOM C-STORE network endpoint. | Diagnostic Imaging Direct Archival |
+| **G9** | Physical LIS Analyzers (Serial/TCP interfaces) | Pathology / Lab Tech | `PENDING` | Physical hematology/biochemistry analyzers connected via serial/TCP cable. | Direct Machine Result Transmission |
+| **G10** | GitHub Actions Staging Secrets | DevOps / IT Admin | `PENDING` | `OHMS_TEST_SUPABASE_URL` and `OHMS_TEST_SERVICE_ROLE_KEY` added to GitHub Action Secrets. | Automated GitHub CI Live Security Gate |
+| **G11** | Supabase Point-in-Time Recovery (PITR) & Backups | Cloud Admin / DBA | `PENDING` | Supabase Pro plan PITR retention subscription active and daily off-site snapshots verified. | Production Disaster Recovery SLA |
+| **G12** | Physical Queue TV Android Displays | Facilities / Admin | `PENDING` | Wall-mounted Android Smart TVs displaying `/displays/queue` in OPD waiting halls. | Physical Queue Token Visibility |
+| **G13** | Clinical UAT Sign-Off from Hospital Superintendent | Medical Director | `PENDING` | Formal acceptance sign-off on clinical workflows, intake wizard, and triage paths. | Clinical Operations Launch |
+| **G14** | DGHS & BMDC Statutory Compliance Filings | Hospital Legal / Admin | `PENDING` | Directorate General of Health Services (DGHS) operating license and BMDC roster filings. | Legal Commercial Hospital Launch |
+| **G15** | Windows Authenticode EV Code Signing Certificate | Security / IT Admin | `PENDING` | Extended Validation (EV) hardware token used to sign Tauri desktop installer. | Windows SmartScreen Zero-Warning Install |
+| **G16** | Custom Domain DNS CNAME Cutover | Domain Owner | `DEFERRED` | Custom domain DNS records routed to Cloudflare Pages (canonical is `pages.dev`). | Custom Domain Access |
 
 ---
 
