@@ -67,25 +67,25 @@ describe("OHMS Phase 39: v1.1.59 Final Production Closure, Migration 120, Episod
   // Test 5: Synchronized Release Version Across All Manifests (1.1.59+)
   test("5. Version Synchronization: version is synchronized across all project manifests (1.1.59+)", () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, "package.json"), "utf8"));
-    assert.match(pkg.version, /^1\.1\.(59|60|61|62|63|64|65)$/, "package.json must be 1.1.59-1.1.65");
+    assert.match(pkg.version, /^1\.1\.(59|60|61|62|63|64|65|66)$/, "package.json must be 1.1.59-1.1.66");
 
     const pkgLock = JSON.parse(fs.readFileSync(path.join(rootDir, "package-lock.json"), "utf8"));
-    assert.match(pkgLock.version, /^1\.1\.(59|60|61|62|63|64|65)$/, "package-lock.json must match");
-    assert.match(pkgLock.packages[""].version, /^1\.1\.(59|60|61|62|63|64|65)$/, "package-lock.json empty package must match");
+    assert.match(pkgLock.version, /^1\.1\.(59|60|61|62|63|64|65|66)$/, "package-lock.json must match");
+    assert.match(pkgLock.packages[""].version, /^1\.1\.(59|60|61|62|63|64|65|66)$/, "package-lock.json empty package must match");
 
     const dockerfile = fs.readFileSync(path.join(rootDir, "Dockerfile"), "utf8");
-    assert.match(dockerfile, /LABEL version="1\.1\.(59|60|61|62|63|64|65)"/, "Dockerfile LABEL version must match");
+    assert.match(dockerfile, /LABEL version="1\.1\.(59|60|61|62|63|64|65|66)"/, "Dockerfile LABEL version must match");
 
     const cargoToml = fs.readFileSync(path.join(rootDir, "src-tauri", "Cargo.toml"), "utf8");
-    assert.match(cargoToml, /version\s*=\s*"1\.1\.(59|60|61|62|63|64|65)"/, "Cargo.toml version must match");
+    assert.match(cargoToml, /version\s*=\s*"1\.1\.(59|60|61|62|63|64|65|66)"/, "Cargo.toml version must match");
 
     const tauriConf = JSON.parse(fs.readFileSync(path.join(rootDir, "src-tauri", "tauri.conf.json"), "utf8"));
-    assert.match(tauriConf.version, /^1\.1\.(59|60|61|62|63|64|65)$/, "tauri.conf.json version must match");
+    assert.match(tauriConf.version, /^1\.1\.(59|60|61|62|63|64|65|66)$/, "tauri.conf.json version must match");
 
     const sw = fs.readFileSync(path.join(rootDir, "public", "sw.js"), "utf8");
-    assert.match(sw, /CACHE_VERSION\s*=\s*'ohms-static-v5-1\.1\.(59|60|61|62|63|64|65)'/, "sw.js CACHE_VERSION must match");
+    assert.match(sw, /CACHE_VERSION\s*=\s*'ohms-static-v5-1\.1\.(59|60|61|62|63|64|65|66)'/, "sw.js CACHE_VERSION must match");
 
     const latestJson = JSON.parse(fs.readFileSync(path.join(rootDir, "public", "downloads", "desktop", "latest.json"), "utf8"));
-    assert.match(latestJson.version, /^1\.1\.(59|60|61|62|63|64|65)$/, "latest.json version must match");
+    assert.match(latestJson.version, /^1\.1\.(59|60|61|62|63|64|65|66)$/, "latest.json version must match");
   });
 });

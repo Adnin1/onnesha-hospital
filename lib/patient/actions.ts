@@ -1365,6 +1365,7 @@ export interface UnifiedPatientIntakePayload {
     maritalStatus?: string;
     occupation?: string;
     nid?: string;
+    nid_or_birth_cert?: string;
     address?: string;
     emergencyName?: string;
     emergencyPhone?: string;
@@ -1408,6 +1409,8 @@ export interface UnifiedPatientIntakePayload {
   };
   referralAgentId?: string;
   admissionDiscountAmount?: number;
+  admissionDiscountPercent?: number;
+  admissionDiscountPercentage?: number;
   admissionDiscountReason?: string;
   bypassDuplicateWarning?: boolean;
 }
@@ -1539,6 +1542,7 @@ export async function createUnifiedPatientIntakeAction(
       encounter_at: encounterAt.toISOString(),
       referral_agent_id: payload.referralAgentId || payload.services.ipd?.referralAgentId || null,
       admission_discount_amount: payload.admissionDiscountAmount || 0,
+      admission_discount_percentage: payload.admissionDiscountPercentage ?? payload.admissionDiscountPercent ?? 0,
       admission_discount_reason: payload.admissionDiscountReason || null,
       patient: payload.patient
         ? {
@@ -1546,10 +1550,13 @@ export async function createUnifiedPatientIntakeAction(
             full_name: payload.patient.fullName,
             alternate_phone: payload.patient.alternatePhone,
             marital_status: payload.patient.maritalStatus,
+            nid: payload.patient.nid || payload.patient.nid_or_birth_cert || null,
+            nid_or_birth_cert: payload.patient.nid_or_birth_cert || payload.patient.nid || null,
             emergency_name: payload.patient.emergencyName,
             emergency_phone: payload.patient.emergencyPhone,
             emergency_relation: payload.patient.emergencyRelation,
             admission_discount_amount: payload.admissionDiscountAmount || 0,
+            admission_discount_percentage: payload.admissionDiscountPercentage ?? payload.admissionDiscountPercent ?? 0,
             admission_discount_reason: payload.admissionDiscountReason || null,
           }
         : null,
@@ -1589,6 +1596,8 @@ export async function createUnifiedPatientIntakeAction(
     if (error) {
       const message = error.message || "Unified patient intake transaction failed.";
       const readable =
+        message.includes("DUPLICATE_NID") ? "This National ID (NID) / Birth Certificate number is already registered for another patient in this hospital." :
+        message.includes("CRITICAL_CARE_BED_NOT_FOUND") || message.includes("CRITICAL_CARE_BED_NOT_VACANT") ? "The selected Critical Care bed is unavailable or not vacant. Please select another bed." :
         message.includes("MARITAL_STATUS") ? "Patient registration schema is not fully updated. Apply the latest forward migration and refresh the API schema." :
         message.includes("BED_UNAVAILABLE") || message.includes("DOUBLE_ASSIGNMENT_PREVENTED") ? "Selected bed/cabin is no longer available. Refresh availability and select another." :
         message.includes("CRITICAL_CARE_BED_UNAVAILABLE") || message.includes("CRITICAL_CARE_DOUBLE_ASSIGNMENT") ? "Selected critical-care bed is no longer available." :

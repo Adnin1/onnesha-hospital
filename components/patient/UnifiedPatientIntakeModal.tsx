@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Bed, Check, Clock3, Loader2, Search, Stethoscope, UserPlus, X, Scissors } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { calculateAgeFromDOB } from "@/lib/utils";
@@ -261,6 +261,102 @@ export function UnifiedPatientIntakeModal({
   const selectedCabin = cabins.find((c) => c.id === ipdCabinId);
   const selectedUnit = units.find((u) => u.id === criticalUnitId);
 
+  // Eligible Critical Care Beds filter: strictly enforces unit assignment and type matching
+  const getEligibleCriticalBedsForUnit = useCallback(
+    (unitId: string) => {
+      if (!unitId) return [];
+      const unit = units.find((u) => u.id === unitId);
+      const unitType = (unit?.unit_type || "").toUpperCase();
+      const unitName = (unit?.unit_name || "").toUpperCase();
+
+      return availableBeds.filter((b) => {
+        // Direct assignment to this critical care unit
+        if (b.critical_care_unit_id && b.critical_care_unit_id === unitId) return true;
+        // Unassigned beds matching CC unit type or keywords
+        if (!b.critical_care_unit_id) {
+          const bedText = `${b.ward_name || ""} ${b.bed_number}`.toUpperCase();
+          if (unitType && bedText.includes(unitType)) return true;
+          if (unitName && bedText.includes(unitName)) return true;
+          return /ICU|CCU|HDU|SICU|MICU|PICU|NICU/.test(bedText);
+        }
+        return false;
+      });
+    },
+    [units, availableBeds]
+  );
+
+  const eligibleCriticalBeds = useMemo(
+    () => (criticalUnitId ? getEligibleCriticalBedsForUnit(criticalUnitId) : []),
+    [criticalUnitId, getEligibleCriticalBedsForUnit]
+  );
+
+  // Reactive auto-defaulting when dropdown options load or critical care is toggled
+  useEffect(() => {
+    if (!isOpen || loadingOptions) return;
+
+    if (criticalEnabled) {
+      let resolvedUnitId = criticalUnitId;
+      if (!resolvedUnitId && units.length > 0) {
+        resolvedUnitId = units[0].id;
+        setCriticalUnitId(resolvedUnitId);
+      }
+      if (resolvedUnitId) {
+        const eligible = getEligibleCriticalBedsForUnit(resolvedUnitId);
+        const hasValidBed = eligible.some((b) => b.bed_number === criticalBedNumber);
+        if (!hasValidBed) {
+          setCriticalBedNumber(eligible.length > 0 ? eligible[0].bed_number : "");
+        }
+      }
+      if (!criticalDoctorId && doctors.length > 0) {
+        setCriticalDoctorId(doctors[0].id);
+      }
+    }
+
+    if (ipdEnabled) {
+      if (!ipdBedId && !ipdCabinId) {
+        if (availableBeds.length > 0) setIpdBedId(availableBeds[0].id);
+        else if (availableCabins.length > 0) setIpdCabinId(availableCabins[0].id);
+      }
+      if (!ipdDepartmentId && departments.length > 0) setIpdDepartmentId(departments[0].id);
+      if (!ipdDoctorId && doctors.length > 0) setIpdDoctorId(doctors[0].id);
+    }
+
+    if (opdEnabled) {
+      if (!opdDepartmentId && departments.length > 0) setOpdDepartmentId(departments[0].id);
+      if (!opdDoctorId && doctors.length > 0) setOpdDoctorId(doctors[0].id);
+    }
+
+    if (otEnabled) {
+      if (!otRoomId && otRooms.length > 0) setOtRoomId(otRooms[0].id);
+      if (!otDoctorId && doctors.length > 0) setOtDoctorId(doctors[0].id);
+    }
+  }, [
+    isOpen,
+    loadingOptions,
+    criticalEnabled,
+    ipdEnabled,
+    opdEnabled,
+    otEnabled,
+    units,
+    availableBeds,
+    availableCabins,
+    departments,
+    doctors,
+    otRooms,
+    criticalUnitId,
+    criticalBedNumber,
+    criticalDoctorId,
+    ipdBedId,
+    ipdCabinId,
+    ipdDepartmentId,
+    ipdDoctorId,
+    opdDepartmentId,
+    opdDoctorId,
+    otRoomId,
+    otDoctorId,
+    getEligibleCriticalBedsForUnit,
+  ]);
+
   // Smart Service Toggles with Auto-Default Population
   function toggleOpd() {
     const next = !opdEnabled;
@@ -295,16 +391,13 @@ export function UnifiedPatientIntakeModal({
     setErrorMsg(null);
     if (next) {
       const defaultUnit = criticalUnitId || (units.length > 0 ? units[0].id : "");
-      if (!criticalUnitId && defaultUnit) {
+      if (defaultUnit) {
         setCriticalUnitId(defaultUnit);
-      }
-      if (!criticalBedNumber) {
-        const matchingBed = availableBeds.find(
-          (b) => (defaultUnit && b.critical_care_unit_id === defaultUnit) ||
-                 /ICU|CCU|HDU|SICU|MICU/i.test((b.ward_name || "") + " " + b.bed_number)
-        ) || availableBeds[0];
-        if (matchingBed) {
-          setCriticalBedNumber(matchingBed.bed_number);
+        const eligible = getEligibleCriticalBedsForUnit(defaultUnit);
+        if (eligible.length > 0) {
+          setCriticalBedNumber(eligible[0].bed_number);
+        } else {
+          setCriticalBedNumber("");
         }
       }
       if (!criticalDoctorId && doctors.length > 0) {
@@ -391,8 +484,8 @@ export function UnifiedPatientIntakeModal({
       },
       criticalCare: {
         enabled: criticalEnabled,
-        unitId: criticalUnitId || (units[0]?.id || undefined),
-        bedNumber: criticalBedNumber || (availableBeds[0]?.bed_number || undefined),
+        unitId: criticalUnitId || undefined,
+        bedNumber: criticalBedNumber || undefined,
         doctorId: criticalDoctorId || undefined,
         initialDiagnosis: criticalDiagnosis || undefined,
         ventilatorRequired,
@@ -418,6 +511,8 @@ export function UnifiedPatientIntakeModal({
       encounterAt: toDhakaIso(encounterAt),
       referralAgentId: referralAgentId || undefined,
       admissionDiscountAmount: pct > 0 ? effectiveDiscountBDT : undefined,
+      admissionDiscountPercent: pct > 0 ? pct : undefined,
+      admissionDiscountPercentage: pct > 0 ? pct : undefined,
       admissionDiscountReason: effectiveReason,
       patient: mode === "NEW"
         ? {
@@ -431,6 +526,7 @@ export function UnifiedPatientIntakeModal({
             maritalStatus: maritalStatus || undefined,
             occupation: occupation.trim() || undefined,
             nid: nid.trim() || undefined,
+            nid_or_birth_cert: nid.trim() || undefined,
             address: address.trim() || undefined,
             emergencyName: emergencyName.trim() || undefined,
             emergencyPhone: emergencyPhone.trim() || undefined,
@@ -570,37 +666,34 @@ export function UnifiedPatientIntakeModal({
 
     // Critical Care Validation & Smart Fallback
     if (criticalEnabled) {
+      if (loadingOptions) {
+        setErrorMsg("ক্রিটিক্যাল কেয়ারের তথ্য লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন... (Loading Critical Care options, please wait...)");
+        return;
+      }
       let resolvedUnit = criticalUnitId;
-      let resolvedBed = criticalBedNumber;
-
       if (!resolvedUnit && units.length > 0) {
         resolvedUnit = units[0].id;
         setCriticalUnitId(resolvedUnit);
       }
-
-      if (!resolvedBed && availableBeds.length > 0) {
-        const matchingBed = availableBeds.find(
-          (b) => (resolvedUnit && b.critical_care_unit_id === resolvedUnit) ||
-                 /ICU|CCU|HDU|SICU/i.test((b.ward_name || "") + " " + b.bed_number)
-        ) || availableBeds[0];
-        if (matchingBed) {
-          resolvedBed = matchingBed.bed_number;
-          setCriticalBedNumber(resolvedBed);
-        }
+      if (!resolvedUnit) {
+        setErrorMsg("ক্রিটিক্যাল কেয়ারের জন্য একটি ইউনিট নির্বাচন করুন (Please select a Critical Care unit).");
+        scrollToField("field-critical-unit");
+        return;
       }
 
-      if (!resolvedUnit || !resolvedBed) {
-        if (!resolvedUnit && units.length > 0) resolvedUnit = units[0].id;
-        if (!resolvedBed && (availableBeds.length > 0 || beds.length > 0)) {
-          resolvedBed = (availableBeds[0] || beds[0]).bed_number;
-        } else if (!resolvedBed) {
-          resolvedBed = "ICU-01";
-        }
-        if (resolvedUnit && resolvedBed) {
-          setCriticalUnitId(resolvedUnit);
+      const eligibleBeds = getEligibleCriticalBedsForUnit(resolvedUnit);
+      let resolvedBed = criticalBedNumber;
+      if (!resolvedBed && eligibleBeds.length > 0) {
+        resolvedBed = eligibleBeds[0].bed_number;
+        setCriticalBedNumber(resolvedBed);
+      }
+
+      if (!resolvedBed || !eligibleBeds.some((b) => b.bed_number === resolvedBed)) {
+        if (eligibleBeds.length > 0) {
+          resolvedBed = eligibleBeds[0].bed_number;
           setCriticalBedNumber(resolvedBed);
         } else {
-          setErrorMsg("ক্রিটিক্যাল কেয়ারের জন্য একটি ইউনিট এবং খালি বেড নির্বাচন করুন (Critical Care requires a unit and an available bed).");
+          setErrorMsg("Selected Critical Care unit-এর কোনো vacant bed নেই (No vacant bed available). অন্য কোনো ইউনিট নির্বাচন করুন অথবা সাধারণ IPD অ্যাডমিশন ব্যবহার করুন।");
           scrollToField("field-critical-unit");
           return;
         }
@@ -1049,6 +1142,12 @@ export function UnifiedPatientIntakeModal({
                       ✕ বাদ দিন (Remove Critical Care)
                     </button>
                   </div>
+                  {loadingOptions && (
+                    <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600 shrink-0" />
+                      <span>Loading Critical Care availability...</span>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <Field label="Unit *">
                       <select
@@ -1057,16 +1156,16 @@ export function UnifiedPatientIntakeModal({
                         onChange={(e) => {
                           const unitId = e.target.value;
                           setCriticalUnitId(unitId);
-                          // Auto-select first matching bed for this unit
-                          const matchingBed = availableBeds.find((b) => b.critical_care_unit_id === unitId) ||
-                            availableBeds.find((b) => /ICU|CCU|HDU|SICU/i.test((b.ward_name || "") + " " + b.bed_number)) ||
-                            availableBeds[0];
-                          if (matchingBed) {
-                            setCriticalBedNumber(matchingBed.bed_number);
+                          const eligible = getEligibleCriticalBedsForUnit(unitId);
+                          if (eligible.length > 0) {
+                            setCriticalBedNumber(eligible[0].bed_number);
+                          } else {
+                            setCriticalBedNumber("");
                           }
                           setErrorMsg(null);
                         }}
                         className={inputCls + (highlightField === "field-critical-unit" ? " ring-2 ring-rose-500 border-rose-500" : "")}
+                        disabled={loadingOptions}
                       >
                         <option value="">{loadingOptions ? "Loading units..." : "Select unit"}</option>
                         {units.map((u) => <option key={u.id} value={u.id}>{u.unit_name} • {u.daily_charge} BDT/day</option>)}
@@ -1078,25 +1177,28 @@ export function UnifiedPatientIntakeModal({
                         value={criticalBedNumber}
                         onChange={(e) => { setCriticalBedNumber(e.target.value); setErrorMsg(null); }}
                         className={inputCls + (highlightField === "field-critical-bed" ? " ring-2 ring-rose-500 border-rose-500" : "")}
+                        disabled={loadingOptions || !criticalUnitId}
                       >
-                        <option value="">{loadingOptions ? "Loading beds..." : "Select available bed"}</option>
-                        {(() => {
-                          const filtered = availableBeds.filter((b) => {
-                            if (criticalUnitId && b.critical_care_unit_id === criticalUnitId) return true;
-                            if (selectedUnit && (
-                              (b.ward_name && b.ward_name.toLowerCase().includes(selectedUnit.unit_type.toLowerCase())) ||
-                              b.bed_number.toLowerCase().includes(selectedUnit.unit_type.toLowerCase())
-                            )) return true;
-                            return /ICU|CCU|ICCU|SICU|MICU|PICU/i.test((b.ward_name || "") + " " + b.bed_number);
-                          });
-                          const list = filtered.length > 0 ? filtered : availableBeds;
-                          return list.map((b) => (
-                            <option key={b.id} value={b.bed_number}>
-                              {b.bed_number} • {b.ward_name || "Critical Care"}
-                            </option>
-                          ));
-                        })()}
+                        <option value="">
+                          {loadingOptions
+                            ? "Loading beds..."
+                            : !criticalUnitId
+                            ? "Select unit first"
+                            : eligibleCriticalBeds.length === 0
+                            ? "Selected Critical Care unit-এর কোনো vacant bed নেই (No vacant bed available)"
+                            : "Select available bed"}
+                        </option>
+                        {eligibleCriticalBeds.map((b) => (
+                          <option key={b.id} value={b.bed_number}>
+                            {b.bed_number} • {b.ward_name || selectedUnit?.unit_name || "Critical Care"}
+                          </option>
+                        ))}
                       </select>
+                      {!loadingOptions && criticalUnitId && eligibleCriticalBeds.length === 0 && (
+                        <p className="text-[11px] text-rose-600 font-semibold mt-1">
+                          ⚠️ Selected Critical Care unit-এর কোনো vacant bed নেই।
+                        </p>
+                      )}
                     </Field>
                     <Field label="Admitting Doctor">
                       <select value={criticalDoctorId} onChange={(e) => setCriticalDoctorId(e.target.value)} className={inputCls}>
