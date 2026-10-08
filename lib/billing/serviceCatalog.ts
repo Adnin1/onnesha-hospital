@@ -1,12 +1,24 @@
-import { InvoiceItemRecord } from "@/types/billing";
+export type ServiceCategory =
+  | "CONSULTATION"
+  | "LAB"
+  | "XRAY"
+  | "USG"
+  | "ECG"
+  | "PHARMACY"
+  | "BED"
+  | "CABIN"
+  | "OT"
+  | "AMBULANCE"
+  | "MISC";
 
 export interface HospitalServiceItem {
   id: string;
-  category: InvoiceItemRecord["service_category"];
+  category: ServiceCategory;
   name: string;
   price: number;
   group: "CONSULTATION" | "LAB" | "IMAGING" | "BED_CABIN" | "CRITICAL_CARE" | "OT_SURGERY" | "EMERGENCY_NURSING";
   description?: string;
+  isDatabaseAuthoritative?: boolean;
 }
 
 export const MASTER_HOSPITAL_SERVICES: HospitalServiceItem[] = [
@@ -772,6 +784,11 @@ export const MASTER_HOSPITAL_SERVICES: HospitalServiceItem[] = [
 /**
  * Combines built-in master hospital services with any dynamic lab tests
  * loaded from the database table `diagnostic_tests`.
+ *
+ * TARIFF AUTHORITY PRINCIPLE:
+ * Authoritative Database Tariff > Verified Configuration > Safe Software Fallback.
+ * If the database defines an active price for a diagnostic test, the database price
+ * overrides the static fallback default.
  */
 export function getAllHospitalServices(
   dynamicLabTests?: Array<{
@@ -783,10 +800,30 @@ export function getAllHospitalServices(
   }>
 ): HospitalServiceItem[] {
   if (!dynamicLabTests || dynamicLabTests.length === 0) {
-    return MASTER_HOSPITAL_SERVICES;
+    return MASTER_HOSPITAL_SERVICES.map((s) => ({ ...s, isDatabaseAuthoritative: false }));
   }
 
-  const existingNames = new Set(MASTER_HOSPITAL_SERVICES.map((s) => s.name.toLowerCase()));
+  // Create lookup map of database diagnostic tests by normalized name
+  const dbTestMap = new Map<string, { id: string; test_name: string; test_code?: string; price: number; category_name?: string }>();
+  for (const t of dynamicLabTests) {
+    dbTestMap.set(t.test_name.trim().toLowerCase(), t);
+  }
+
+  // Authoritative Database Tariff Override: If database specifies an active tariff, it takes precedence
+  const overriddenServices = MASTER_HOSPITAL_SERVICES.map((s) => {
+    const dbMatch = dbTestMap.get(s.name.trim().toLowerCase());
+    if (dbMatch && typeof dbMatch.price === "number" && !isNaN(dbMatch.price)) {
+      return {
+        ...s,
+        price: Number(dbMatch.price),
+        isDatabaseAuthoritative: true,
+        description: dbMatch.category_name ? `${s.description || ""} (DB Tariff: ${dbMatch.category_name})` : s.description,
+      };
+    }
+    return { ...s, isDatabaseAuthoritative: false };
+  });
+
+  const existingNames = new Set(overriddenServices.map((s) => s.name.toLowerCase()));
   const extraTests: HospitalServiceItem[] = [];
 
   for (const t of dynamicLabTests) {
@@ -798,10 +835,11 @@ export function getAllHospitalServices(
         price: Number(t.price) || 0,
         group: "LAB",
         description: t.category_name ? `${t.category_name} laboratory investigation` : "Diagnostic laboratory test",
+        isDatabaseAuthoritative: true,
       });
       existingNames.add(t.test_name.toLowerCase());
     }
   }
 
-  return [...MASTER_HOSPITAL_SERVICES, ...extraTests];
+  return [...overriddenServices, ...extraTests];
 }
