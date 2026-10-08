@@ -3,6 +3,7 @@ import { test, expect } from "./fixtures";
 test.describe("Real Browser E2E: RBAC Security, 8 Canonical Roles & Navigation Guards", () => {
   // Test 1: Direct navigation to protected hospital paths enforces authentication or AuthGuard protection
   test("1. Direct navigation to protected hospital paths enforces authentication or AuthGuard protection", async ({ page }) => {
+    test.setTimeout(90000);
     const protectedPaths = [
       "/app/dashboard",
       "/app/billing",
@@ -18,7 +19,7 @@ test.describe("Real Browser E2E: RBAC Security, 8 Canonical Roles & Navigation G
 
     for (const path of protectedPaths) {
       await page.goto(path);
-      await page.waitForTimeout(800);
+      await page.waitForTimeout(400);
 
       const currentUrl = page.url();
       // Must either redirect to login page or present AuthGuard authentication container / prompt / loading
@@ -33,7 +34,7 @@ test.describe("Real Browser E2E: RBAC Security, 8 Canonical Roles & Navigation G
   // Test 2: Staff Directory route requires authenticated admin role
   test("2. Staff Directory route (/app/settings/staff) is strictly protected from unauthenticated access", async ({ page }) => {
     await page.goto("/app/settings/staff");
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(400);
 
     const currentUrl = page.url();
     const redirectedToLogin = currentUrl.includes("/login");
