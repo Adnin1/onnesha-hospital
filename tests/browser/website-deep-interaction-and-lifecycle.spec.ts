@@ -20,16 +20,16 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
       // Click first doctor card
       await doctorCards.first().click();
 
-      // Click "Proceed to Date & Schedule"
-      const proceedBtn = page.locator('button:has-text("Proceed to Date & Schedule")');
+      // Click "Continue to Date & Time"
+      const proceedBtn = page.locator('button:has-text("Continue to Date & Time")');
       await expect(proceedBtn).toBeVisible();
       await proceedBtn.click();
 
       // Step 2: Date & Schedule selection
-      await page.waitForSelector('h2:has-text("Step 2: Consultation Date")', { timeout: 10000 });
+      await page.waitForSelector('h2:has-text("Step 2: Choose Appointment Date & Visiting Slot")', { timeout: 10000 });
 
-      // Back navigation test: click "Back to Doctor Selection"
-      const backToDocBtn = page.locator('button:has-text("Back to Doctor Selection")');
+      // Back navigation test: click "Back"
+      const backToDocBtn = page.locator('button:has-text("Back")');
       await expect(backToDocBtn).toBeVisible();
       await backToDocBtn.click();
 
@@ -38,47 +38,65 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
 
       // Proceed again to Step 2
       await proceedBtn.click();
-      await page.waitForSelector('h2:has-text("Step 2: Consultation Date")', { timeout: 10000 });
+      await page.waitForSelector('h2:has-text("Step 2: Choose Appointment Date & Visiting Slot")', { timeout: 10000 });
 
       // Check if any schedule slots are available
-      const slotRadio = page.locator('input[type="radio"][name="scheduleSlot"]');
+      const slotRadio = page.locator('input[type="radio"][name="slot"]');
       const slotCount = await slotRadio.count();
 
       if (slotCount > 0) {
         await slotRadio.first().check();
-        const nextStepBtn = page.locator('button:has-text("Enter Patient Information")');
+        const nextStepBtn = page.locator('button:has-text("Continue to Patient Info")');
         await expect(nextStepBtn).toBeVisible();
         await nextStepBtn.click();
 
-        // Step 3: Patient Info
-        await page.waitForSelector('h2:has-text("Step 3: Patient Information")', { timeout: 10000 });
+        // Step 3: Patient Particulars
+        await page.waitForSelector('h2:has-text("Step 3: Patient Particulars & Contact Details")', { timeout: 10000 });
 
-        // Boundary Validation: click submit with empty name and phone
-        const submitBtn = page.locator('button:has-text("Confirm & Generate Serial Token")');
+        const nameInput = page.locator('input#patient-fullname');
+        const phoneInput = page.locator('input#patient-phone');
+        const ageInput = page.locator('input#patient-age');
+        const genderSelect = page.locator('select#patient-gender');
+        const submitBtn = page.locator('button[type="submit"]:has-text("Confirm Appointment & Generate Token")');
+
+        await expect(nameInput).toBeVisible();
+        await expect(phoneInput).toBeVisible();
+        await expect(ageInput).toBeVisible();
+        await expect(genderSelect).toBeVisible();
         await expect(submitBtn).toBeVisible();
+
+        // Boundary Validation: enter invalid phone to test server/action rejection alert
+        await nameInput.fill("Sultana Ahmed");
+        await phoneInput.fill("0123");
+        await ageInput.fill("28");
+        await genderSelect.selectOption("FEMALE");
         await submitBtn.click();
 
-        // Must display error alert
-        const errorAlert = page.locator('div:has-text("Please select a published schedule slot, patient name")');
-        await expect(errorAlert.first()).toBeVisible();
-
-        // Fill valid patient details
-        const nameInput = page.locator('input[placeholder*="Rohim Uddin"]');
-        await nameInput.fill("Sultana Ahmed");
-
-        const phoneInput = page.locator('input[placeholder*="01712-345678"]');
-        await phoneInput.fill("01711998877");
-
-        const ageInput = page.locator('input[placeholder="35"]');
-        await ageInput.fill("28");
+        // Must display error alert for invalid phone
+        const errorAlert = page.locator('div[role="alert"]:has-text("11-digit Bangladeshi mobile number")');
+        await expect(errorAlert.first()).toBeVisible({ timeout: 5000 });
 
         // Back navigation to Step 2
-        const backToScheduleBtn = page.locator('button:has-text("Back to Date Selection")');
+        const backToScheduleBtn = page.locator('button:has-text("Back")');
         await expect(backToScheduleBtn).toBeVisible();
         await backToScheduleBtn.click();
 
         // Verify returned to Step 2
-        await expect(page.locator('h2:has-text("Step 2: Consultation Date")')).toBeVisible();
+        await expect(page.locator('h2:has-text("Step 2: Choose Appointment Date & Visiting Slot")')).toBeVisible();
+
+        // Proceed forward to Step 3 again
+        await nextStepBtn.click();
+        await page.waitForSelector('h2:has-text("Step 3: Patient Particulars & Contact Details")', { timeout: 10000 });
+
+        // Fill valid 11-digit Bangladeshi mobile number
+        await phoneInput.fill("01711998877");
+        await submitBtn.click();
+
+        // Step 4: Instant confirmation & token slip
+        await page.waitForSelector('text=Appointment Confirmed Successfully!', { timeout: 10000 });
+        await expect(page.locator("text=OPD CONSULTATION TOKEN SLIP")).toBeVisible();
+        await expect(page.locator("text=#14")).toBeVisible();
+        await expect(page.locator('button:has-text("Print Token Slip")')).toBeVisible();
       }
     }
   });

@@ -11,19 +11,19 @@
 |:---|:---|:---:|
 | **Execution Timestamp** | `2026-10-09T01:30:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.75` | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.76` | VERIFIED (IMMUTABLE) |
 | **Preserved Release Tags** | v1.1.74, v1.1.73, 1.1.71 (c47eef71), 1.1.46 (c2c446), 1.1.45-1.1.26 | VERIFIED (IMMUTABLE) |
 | **Current Main HEAD SHA** | `Reconciled across local, origin, and ssh-origin` | VERIFIED |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED (100% IN SYNC) |
-| **Package Version (`package.json`)** | `1.1.75` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.75` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.75` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.75` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.75` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.75` | VERIFIED |
-| **Database Migrations Count** | `136 migration files` | VERIFIED |
-| **Latest Applied Migration** | `20261009240000_zero_db_lint_flawless_production_closure.sql` | VERIFIED |
-| **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity, 0 fatal lint errors) | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.76` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.76` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.76` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.76` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.76` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.76` | VERIFIED |
+| **Database Migrations Count** | `137 migration files` | VERIFIED |
+| **Latest Applied Migration** | `20261009250000_authoritative_settlement_cashier_and_concurrency_closure.sql` | VERIFIED |
+| **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (137/137 remote parity, 0 fatal lint errors) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
 | **Cloudflare Live Deployed SHA** | d556e0 (ecd727a-2a6a-46ce-9755-b59631f65911) | VERIFIED |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting Owner Secrets Gate in GitHub Actions; verified fallback to v1.1.4) | VERIFIED (FAIL-CLOSED) |
@@ -38,8 +38,8 @@
 
 | Suite / Gate | Result / Count | Status | Notes |
 |:---|:---:|:---:|:---|
-| **Total Test Suites** | `124 suites` | PASS | 100% of discovered test files passing |
-| **Active Test Passes** | `1123 passes` | PASS | Zero active failures, zero regressions |
+| **Total Test Suites** | `126 suites` | PASS | 100% of discovered test files passing |
+| **Active Test Passes** | `1143 passes` | PASS | Zero active failures, zero regressions |
 | **Test Failures** | `0 failures` | PASS | Zero active failures |
 | **Standard / Environment Skips** | `7 skips` | SKIPPED | Explicitly justified hermetic skips |
 | **Playwright Browser E2E** | `208 / 208 specs PASS` | PASS | 4 browser engines (Chromium, Firefox, Mobile Chrome, WebKit), 0 overflow on 320px |

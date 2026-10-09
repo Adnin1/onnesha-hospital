@@ -118,6 +118,12 @@ async function installMutationGuard(page: Page, baseURL: string): Promise<void> 
         return;
       }
 
+      // Allow hermetic test placeholder requests to be intercepted by fixture mocks
+      if (targetHost.includes("placeholder") || targetHost.includes("ci-hermetic")) {
+        await route.continue();
+        return;
+      }
+
       // Block mutations targeting production or Supabase
       if (
         PRODUCTION_HOSTNAMES.has(targetHost) ||
@@ -138,6 +144,17 @@ async function installMutationGuard(page: Page, baseURL: string): Promise<void> 
     await route.continue();
   });
 }
+
+const DAYS_OF_WEEK = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const MOCK_ALL_DAY_SCHEDULES = DAYS_OF_WEEK.map((day, idx) => ({
+  id: `sched-00${idx + 1}`,
+  day_of_week: day,
+  start_time: "09:00",
+  end_time: "13:00",
+  max_tokens: 30,
+  room_number: "301",
+  is_active: true,
+}));
 
 /**
  * Install hermetic route mocks for placeholder Supabase requests.
@@ -191,15 +208,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
               public_bio: "Experienced consultant in general and internal medicine.",
               department_name: "General Medicine",
               department_slug: "general-medicine",
-              schedules: [
-                {
-                  id: "sched-001",
-                  day_of_week: "Saturday",
-                  start_time: "09:00",
-                  end_time: "13:00",
-                  is_active: true,
-                },
-              ],
+              schedules: MOCK_ALL_DAY_SCHEDULES,
             },
           ]),
         });
@@ -210,16 +219,38 @@ async function installHermeticMocks(page: Page): Promise<void> {
         await route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify([
-            {
-              id: "sched-001",
-              day_of_week: "Saturday",
-              start_time: "09:00",
-              end_time: "13:00",
-              max_tokens: 30,
-              room_number: "301",
-            },
-          ]),
+          body: JSON.stringify(MOCK_ALL_DAY_SCHEDULES),
+        });
+        return;
+      }
+
+      if (reqUrl.includes("/rest/v1/rpc/book_online_appointment")) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: true,
+            appointment_id: "apt-mock-001",
+            token_number: 14,
+            patient_code: "P-2026-MOCK-001",
+            appointment_date: "2026-10-10",
+            doctor_name: "Prof. Dr. M. A. Rahman",
+            room_number: "301",
+            opd_fee: 1000,
+          }),
+        });
+        return;
+      }
+
+      if (reqUrl.includes("/rest/v1/rpc/submit_public_contact_inquiry")) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: true,
+            inquiry_id: "inq-mock-001",
+            reference_number: "INQ-2026-0001",
+          }),
         });
         return;
       }
