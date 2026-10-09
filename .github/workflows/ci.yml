@@ -171,7 +171,7 @@ jobs:
       contents: read
       deployments: write
     outputs:
-      deployment_result: ${{ steps.check_deploy.outputs.deployment_result }}
+      deployment_result: ${{ steps.record_deploy.outputs.deployment_result || steps.check_deploy.outputs.deployment_result }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -195,7 +195,7 @@ jobs:
             echo "- **Workstation Deployment:** Edge deployment actively maintained via authenticated workstation Wrangler CLI." >> $GITHUB_STEP_SUMMARY
           else
             echo "can_deploy=true" >> "$GITHUB_OUTPUT"
-            echo "deployment_result=DEPLOYED" >> "$GITHUB_OUTPUT"
+            echo "deployment_result=PENDING_EXECUTION" >> "$GITHUB_OUTPUT"
             echo "AUTOMATED_DEPLOYMENT=VERIFIED" >> "$GITHUB_ENV"
             echo "Production secrets verified."
           fi
@@ -249,6 +249,13 @@ jobs:
           curl -f -s -S -I "https://onnesha-hospital.pages.dev/check-token" | grep -i "200\|content-type"
           echo "Edge smoke test passed."
 
+      - name: Record Production Deployment Result
+        id: record_deploy
+        if: steps.check_deploy.outputs.can_deploy == 'true'
+        run: |
+          echo "deployment_result=DEPLOYED" >> "$GITHUB_OUTPUT"
+          echo "Production deployment and edge verification certified."
+
       - name: Live Canonical Host Edge Smoke Check (Workstation Deploy Verification)
         if: steps.check_deploy.outputs.can_deploy == 'false'
         run: |
@@ -269,7 +276,7 @@ jobs:
       id-token: write
       attestations: write
     outputs:
-      desktop_build_result: ${{ steps.check_desktop.outputs.desktop_build_result }}
+      desktop_build_result: ${{ steps.record_desktop.outputs.desktop_build_result || steps.check_desktop.outputs.desktop_build_result }}
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
@@ -285,7 +292,7 @@ jobs:
             "desktop_build_result=BLOCKED_OWNER_CONFIGURATION" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           } else {
             "can_build=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-            "desktop_build_result=BUILT_AND_ARTIFACT_VERIFIED" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            "desktop_build_result=PENDING_BUILD" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
 
       - name: Checkout repository
@@ -443,6 +450,14 @@ jobs:
           subject-path: |
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
+
+      - name: Record Desktop Build Certification Result
+        id: record_desktop
+        if: (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') && steps.check_desktop.outputs.can_build == 'true'
+        shell: powershell
+        run: |
+          "desktop_build_result=BUILT_AND_ARTIFACT_VERIFIED" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Desktop build, artifact verification, and release publication certified."
 
       - name: Checkout repository (Release Metadata Fallback)
         if: (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') && steps.check_desktop.outputs.can_build == 'false'
