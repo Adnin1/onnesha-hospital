@@ -4,7 +4,7 @@
 **Repository:** `Adnin1/onnesha-hospital` (Git remotes: `origin` & `ssh-origin` -> `git@github.com:Adnin1/onnesha-hospital.git`)  
 **Production Edge:** [`https://onnesha-hospital.pages.dev`](https://onnesha-hospital.pages.dev) (Cloudflare Pages Project: `onnesha-hospital`)  
 **Database (Supabase Production Ref):** `iuhtzahuszdkdarhxobx` (PostgreSQL 15+, 127/127 Migrations Synchronized)  
-**Current Certified Release:** `v1.1.71`  
+**Current Certified Release:** `v1.1.72`  
 **Primary Git Branch:** `main`  
 
 ---

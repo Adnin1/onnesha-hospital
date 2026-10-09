@@ -13,8 +13,10 @@ import {
   Printer,
   ReceiptText,
   Search,
+  ShieldAlert,
   Stethoscope,
   Trash2,
+  Undo2,
   User,
   X,
 } from "lucide-react";
@@ -25,6 +27,8 @@ import {
   addEpisodeServiceChargeAction,
   editEpisodeServiceChargeAction,
   deleteEpisodeServiceChargeAction,
+  waiveEpisodeServiceAction,
+  restoreEpisodeServiceWaiverAction,
   collectPaymentAction,
   EpisodeBillingPreviewData,
 } from "@/lib/billing/actions";
@@ -110,6 +114,17 @@ export function EpisodeBillingPanel({
   const [deleteChargeId, setDeleteChargeId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [excludedReferenceIds, setExcludedReferenceIds] = useState<string[]>([]);
+
+  // Durable Waiver State (audited)
+  const [waivingLine, setWaivingLine] = useState<{
+    referenceId: string;
+    category: string;
+    itemName: string;
+    amount: number;
+  } | null>(null);
+  const [waiverReason, setWaiverReason] = useState("");
+  const [waivingLoading, setWaivingLoading] = useState(false);
+  const [restoringWaiverId, setRestoringWaiverId] = useState<string | null>(null);
 
   // Settlement & Discount
   const [billingDiscount, setBillingDiscount] = useState<number>(0);
@@ -303,6 +318,58 @@ export function EpisodeBillingPanel({
       return;
     }
     setActionMessage("Unbilled service charge removed.");
+    await refreshPreview(selectedPatientId);
+  }
+
+  // Durable Waiver Handlers (audited)
+  async function handleConfirmWaiveItem(e: React.FormEvent) {
+    e.preventDefault();
+    if (!waivingLine || !preview?.episodeId || !selectedPatientId) return;
+    const cleanReason = waiverReason.trim();
+    if (cleanReason.length < 3) {
+      setActionError("A waiver justification of at least 3 characters is required.");
+      return;
+    }
+
+    setWaivingLoading(true);
+    setActionError("");
+    const res = await waiveEpisodeServiceAction({
+      patientId: selectedPatientId,
+      episodeId: preview.episodeId,
+      referenceId: waivingLine.referenceId,
+      serviceCategory: waivingLine.category,
+      itemName: waivingLine.itemName,
+      waivedAmount: waivingLine.amount,
+      waiverReason: cleanReason,
+    });
+    setWaivingLoading(false);
+
+    if (!res.success) {
+      setActionError(res.error || "Failed to permanently waive service charge.");
+      return;
+    }
+
+    setWaivingLine(null);
+    setWaiverReason("");
+    setActionMessage(`Service "${waivingLine.itemName}" permanently waived and recorded in audit ledger.`);
+    await refreshPreview(selectedPatientId);
+  }
+
+  async function handleRestoreWaivedItem(waiverId: string, itemName: string) {
+    setRestoringWaiverId(waiverId);
+    setActionError("");
+    const res = await restoreEpisodeServiceWaiverAction({
+      waiverId,
+      restorationReason: "Staff restored charge back to active billing ledger.",
+    });
+    setRestoringWaiverId(null);
+
+    if (!res.success) {
+      setActionError(res.error || "Failed to restore waived service charge.");
+      return;
+    }
+
+    setActionMessage(`Restored "${itemName}" back to unbilled active services.`);
     await refreshPreview(selectedPatientId);
   }
 
@@ -683,17 +750,35 @@ export function EpisodeBillingPanel({
                                       </button>
                                     </div>
                                   ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setExcludedReferenceIds((prev) => [...prev, line.reference_id]);
-                                        setActionMessage(`Excluded "${line.item_name}" from bill.`);
-                                      }}
-                                      className="p-1 rounded-lg hover:bg-rose-100 text-rose-500 hover:text-rose-700 transition"
-                                      title="Exclude / Waive this service from bill"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
+                                    <div className="flex items-center justify-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setExcludedReferenceIds((prev) => [...prev, line.reference_id]);
+                                          setActionMessage(`Excluded "${line.item_name}" from bill.`);
+                                        }}
+                                        className="p-1 rounded-lg hover:bg-amber-100 text-amber-600 hover:text-amber-800 transition"
+                                        title="Exclude from this bill (Temporary)"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setWaivingLine({
+                                            referenceId: line.reference_id,
+                                            category: line.service_category,
+                                            itemName: line.item_name,
+                                            amount: line.total_price,
+                                          });
+                                          setWaiverReason("");
+                                        }}
+                                        className="p-1 rounded-lg hover:bg-rose-100 text-rose-500 hover:text-rose-700 transition"
+                                        title="Permanently Waive Charge (Audited)"
+                                      >
+                                        <ShieldAlert className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
                                   )}
                                 </td>
                               </tr>
@@ -742,6 +827,60 @@ export function EpisodeBillingPanel({
                                 className="px-2.5 py-1 bg-sky-100 hover:bg-sky-200 text-sky-800 rounded-lg text-[10px] font-bold transition"
                               >
                                 Restore to Bill
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {preview.waived_items && preview.waived_items.length > 0 && (
+                      <div className="p-3.5 bg-rose-50/70 border-t border-rose-200 text-xs">
+                        <div className="flex items-center justify-between font-bold text-rose-900 mb-2">
+                          <span className="flex items-center gap-1.5">
+                            <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                            Durable Waived Services Ledger (Audited) ({preview.waived_items.length})
+                          </span>
+                          <span className="text-[10px] text-rose-700 font-semibold">
+                            Total Waived: {formatCurrencyBDT(preview.waived_items.reduce((sum, item) => sum + (item.waived_amount || 0), 0))}
+                          </span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {preview.waived_items.map((w) => (
+                            <div
+                              key={w.id}
+                              className="flex items-center justify-between bg-white/90 p-2.5 rounded-xl border border-rose-200/80 shadow-2xs"
+                            >
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-slate-800">{w.item_name}</span>
+                                  <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">
+                                    {w.service_category}
+                                  </span>
+                                  <span className="font-mono font-bold text-rose-700">
+                                    {formatCurrencyBDT(w.waived_amount)}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-2">
+                                  <span>Reason: <span className="text-slate-800 font-medium italic">{w.waiver_reason}</span></span>
+                                  <span>•</span>
+                                  <span>By: <strong>{w.waived_by_name}</strong></span>
+                                  <span>•</span>
+                                  <span>{dt(w.created_at)}</span>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={restoringWaiverId === w.id}
+                                onClick={() => void handleRestoreWaivedItem(w.id, w.item_name)}
+                                className="px-2.5 py-1 bg-sky-100 hover:bg-sky-200 text-sky-800 disabled:opacity-50 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0 ml-2"
+                              >
+                                {restoringWaiverId === w.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Undo2 className="w-3 h-3" />
+                                )}
+                                Restore Charge to Bill
                               </button>
                             </div>
                           ))}
@@ -1269,6 +1408,58 @@ export function EpisodeBillingPanel({
           onConfirm={confirmDeleteService}
           onCancel={() => setDeleteChargeId(null)}
         />
+      )}
+
+      {waivingLine && (
+        <div
+          className="fixed inset-0 z-[90] bg-slate-950/70 backdrop-blur-sm p-4 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center gap-2 text-rose-700">
+              <ShieldAlert className="w-5 h-5 shrink-0" />
+              <h3 className="font-black text-sm text-slate-900">Permanently Waive Charge (Audited)</h3>
+            </div>
+            <p className="text-xs text-slate-600">
+              You are permanently waiving <strong className="text-slate-900">{waivingLine.itemName}</strong> ({formatCurrencyBDT(waivingLine.amount)}).
+              This will be excluded from all future episode invoices and permanently recorded in the audit ledger.
+            </p>
+            <form onSubmit={handleConfirmWaiveItem} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Mandatory Justification / Clinical Reason *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={waiverReason}
+                  onChange={(e) => setWaiverReason(e.target.value)}
+                  placeholder="e.g., Medical Superintendent waiver granted due to patient distress..."
+                  className="w-full text-xs p-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+                <span className="text-[10px] text-slate-400">Minimum 3 characters required for legal audit compliance.</span>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setWaivingLine(null)}
+                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={waivingLoading || waiverReason.trim().length < 3}
+                  className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+                >
+                  {waivingLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Confirm Permanent Waiver
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </>
   );

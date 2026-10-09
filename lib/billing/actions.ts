@@ -597,11 +597,25 @@ export interface EpisodeInvoiceHistory {
   }>;
 }
 
+export interface EpisodeWaivedItem {
+  id: string;
+  reference_id: string;
+  service_category: string;
+  item_name: string;
+  waived_amount: number;
+  waiver_reason: string;
+  waived_by: string;
+  waived_by_name: string;
+  created_at: string;
+  status: string;
+}
+
 export interface EpisodeBillingPreviewData {
   episodeId?: string;
   episodeNumber?: string;
   primaryVisitId?: string;
   lines: EpisodeBillingLine[];
+  waived_items: EpisodeWaivedItem[];
   encounters: EpisodeEncounterHistory[];
   resources: EpisodeResourceHistory[];
   criticalCare: EpisodeCriticalCareHistory[];
@@ -653,6 +667,18 @@ export async function getEpisodeBillingPreviewAction(params: {
       episode_number?: string | null;
       primary_visit_id?: string | null;
       lines?: EpisodeBillingLine[];
+      waived_items?: Array<{
+        id: string;
+        reference_id: string;
+        service_category: string;
+        item_name: string;
+        waived_amount: number;
+        waiver_reason: string;
+        waived_by: string;
+        waived_by_name: string;
+        created_at: string;
+        status: string;
+      }>;
       encounters?: EpisodeEncounterHistory[];
       resources?: EpisodeResourceHistory[];
       critical_care?: EpisodeCriticalCareHistory[];
@@ -693,6 +719,18 @@ export async function getEpisodeBillingPreviewAction(params: {
           quantity: Number(line.quantity || 0),
           total_price: Number(line.total_price || 0),
           started_at: line.started_at || undefined,
+        })),
+        waived_items: (result.waived_items || []).map((item) => ({
+          id: String(item.id),
+          reference_id: String(item.reference_id),
+          service_category: String(item.service_category),
+          item_name: String(item.item_name),
+          waived_amount: Number(item.waived_amount || 0),
+          waiver_reason: String(item.waiver_reason || ""),
+          waived_by: String(item.waived_by),
+          waived_by_name: String(item.waived_by_name || "Staff Member"),
+          created_at: String(item.created_at),
+          status: String(item.status || "ACTIVE"),
         })),
         encounters: (result.encounters || []).map((item) => ({
           ...item,
@@ -1028,3 +1066,117 @@ export async function completeEpisodeDischargeAction(params: {
     return { success: false, error: err instanceof Error ? err.message : "Episode discharge failed." };
   }
 }
+
+export async function waiveEpisodeServiceAction(params: {
+  patientId: string;
+  episodeId: string;
+  referenceId: string;
+  serviceCategory: string;
+  itemName: string;
+  waivedAmount: number;
+  waiverReason: string;
+}): Promise<ActionResult<{ waiverId: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) return { success: false, error: "401 Unauthorized" };
+
+  try {
+    await requirePermission("billing.manage");
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.manage required" };
+  }
+
+  const cleanReason = params.waiverReason?.trim() || "";
+  if (cleanReason.length < 3) {
+    return { success: false, error: "A waiver reason of at least 3 characters is required." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("waive_episode_service_atomic", {
+      p_org_id: session.organizationId,
+      p_patient_id: params.patientId,
+      p_episode_id: params.episodeId,
+      p_reference_id: params.referenceId,
+      p_service_category: params.serviceCategory,
+      p_item_name: params.itemName.trim(),
+      p_waived_amount: Number(params.waivedAmount),
+      p_waiver_reason: cleanReason,
+    });
+
+    if (error) return { success: false, error: error.message };
+
+    const res = data as { success?: boolean; waiver_id?: string; error?: string };
+    if (!res?.success || !res?.waiver_id) {
+      return { success: false, error: res?.error || "Failed to permanently waive service charge." };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "CREATE",
+      module: "BILLING",
+      entityType: "episode_service_waivers",
+      entityId: res.waiver_id,
+      newValues: {
+        episode_id: params.episodeId,
+        patient_id: params.patientId,
+        reference_id: params.referenceId,
+        item_name: params.itemName,
+        waived_amount: params.waivedAmount,
+        waiver_reason: cleanReason,
+      },
+    });
+
+    return { success: true, data: { waiverId: res.waiver_id } };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to permanently waive service charge." };
+  }
+}
+
+export async function restoreEpisodeServiceWaiverAction(params: {
+  waiverId: string;
+  restorationReason?: string;
+}): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) return { success: false, error: "401 Unauthorized" };
+
+  try {
+    await requirePermission("billing.manage");
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.manage required" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("restore_episode_service_waiver_atomic", {
+      p_org_id: session.organizationId,
+      p_waiver_id: params.waiverId,
+      p_restoration_reason: params.restorationReason?.trim() || null,
+    });
+
+    if (error) return { success: false, error: error.message };
+
+    const res = data as { success?: boolean; error?: string };
+    if (!res?.success) {
+      return { success: false, error: res?.error || "Failed to restore waived service charge." };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "BILLING",
+      entityType: "episode_service_waivers",
+      entityId: params.waiverId,
+      newValues: {
+        status: "RESTORED",
+        restoration_reason: params.restorationReason?.trim() || null,
+      },
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to restore waived service charge." };
+  }
+}
+
