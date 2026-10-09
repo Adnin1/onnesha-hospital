@@ -151,7 +151,7 @@ describe("OHMS Phase 37: v1.1.57 Production Excellence, Tariff Authority & Websi
     assert.ok(fs.existsSync(swPath), "sw.js must exist");
     const content = fs.readFileSync(swPath, "utf8");
 
-    assert.match(content, /const CACHE_VERSION = 'ohms-static-v5-1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75)';/);
+    assert.match(content, /const CACHE_VERSION = 'ohms-static-v5-1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76)';/);
     assert.match(content, /keys\.filter\(key => key !== CACHE_VERSION\)\.map\(key => caches\.delete\(key\)\)/, "Must purge old cache versions on activate");
     assert.match(content, /NEVER_CACHE_PATTERNS/, "Must define never-cache patterns for private/clinical/auth routes");
   });
