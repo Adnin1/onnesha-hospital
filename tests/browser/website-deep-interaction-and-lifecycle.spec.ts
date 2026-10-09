@@ -72,9 +72,10 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
         await genderSelect.selectOption("FEMALE");
         await submitBtn.click();
 
-        // Must display error alert for invalid phone
-        const errorAlert = page.locator('div[role="alert"]:has-text("11-digit Bangladeshi mobile number")');
+        // Must display accessible error alert for invalid phone
+        const errorAlert = page.locator('div[role="alert"]').filter({ hasText: /Bangladeshi mobile number/i });
         await expect(errorAlert.first()).toBeVisible({ timeout: 5000 });
+        await expect(errorAlert.first()).toContainText("11-digit");
 
         // Back navigation to Step 2
         const backToScheduleBtn = page.locator('button:has-text("Back")');

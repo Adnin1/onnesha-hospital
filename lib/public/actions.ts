@@ -321,7 +321,7 @@ export async function bookOnlineAppointmentAction(params: {
 
   const normalizedPhone = normalizeBDPhone(patientPhone);
   if (!isValidNormalizedBDPhone(normalizedPhone)) {
-    return { success: false, error: "Please enter a valid Bangladeshi mobile number (013/014/015/016/017/018/019)." };
+    return { success: false, error: "Please enter a valid 11-digit Bangladeshi mobile number (013/014/015/016/017/018/019)." };
   }
 
   try {
