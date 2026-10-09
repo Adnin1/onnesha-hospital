@@ -23,6 +23,7 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
       // Click "Continue to Date & Time"
       const proceedBtn = page.locator('button:has-text("Continue to Date & Time")');
       await expect(proceedBtn).toBeVisible();
+      await expect(proceedBtn).toBeEnabled();
       await proceedBtn.click();
 
       // Step 2: Date & Schedule selection
@@ -37,6 +38,7 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
       await expect(page.locator('h2:has-text("Step 1: Select Doctor")')).toBeVisible();
 
       // Proceed again to Step 2
+      await expect(proceedBtn).toBeEnabled();
       await proceedBtn.click();
       await page.waitForSelector('h2:has-text("Step 2: Choose Appointment Date & Visiting Slot")', { timeout: 10000 });
 
@@ -48,6 +50,7 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
         await slotRadio.first().check();
         const nextStepBtn = page.locator('button:has-text("Continue to Patient Info")');
         await expect(nextStepBtn).toBeVisible();
+        await expect(nextStepBtn).toBeEnabled();
         await nextStepBtn.click();
 
         // Step 3: Patient Particulars
