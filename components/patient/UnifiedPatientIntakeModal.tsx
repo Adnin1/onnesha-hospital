@@ -914,17 +914,22 @@ export function UnifiedPatientIntakeModal({
 
             {/* Encounter, Referral & Discount Settings */}
             <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <Clock3 className="w-4 h-4 text-amber-700" />
-                <h3 className="font-black text-slate-900 text-sm">Admission, Referral & Intake Settings</h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock3 className="w-4 h-4 text-amber-700" />
+                  <h3 className="font-black text-slate-900 text-sm">দ্বিমুখী কমিশন ও ভর্তি সেটিংস (Dual Concession & Admission Settings)</h3>
+                </div>
+                <span className="text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-300/60">
+                  রোগীর ছাড় + রেফারেল এজেন্ট কমিশন
+                </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Field label="Admission / Encounter Date & Time">
+                <Field label="ভর্তি / এনকাউন্টারের সময় (Admission Date & Time)">
                   <input type="datetime-local" value={encounterAt} onChange={(e) => setEncounterAt(e.target.value)} className={inputCls + " bg-white"} />
                 </Field>
-                <Field label="Referral Agent (রেফারেল এজেন্ট)">
+                <Field label="২. রেফারেল এজেন্ট (Referral Agent)">
                   <select value={referralAgentId} onChange={(e) => setReferralAgentId(e.target.value)} className={inputCls + " bg-white"}>
-                    <option value="">{loadingOptions ? "Loading referral agents..." : "No referral agent (None)"}</option>
+                    <option value="">{loadingOptions ? "Loading referral agents..." : "সরাসরি রোগী (No Referral)"}</option>
                     {referrals.map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.agent_code} — {r.full_name}
@@ -932,7 +937,8 @@ export function UnifiedPatientIntakeModal({
                     ))}
                   </select>
                 </Field>
-                <Field label="Admission Discount (ভর্তি ছাড়)">
+                <Field label="১. রোগীর ভর্তি ছাড় / কমিশন (Patient Discount %)">
+
                   <div className="relative">
                     <input
                       id="field-discount"

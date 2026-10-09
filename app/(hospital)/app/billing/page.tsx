@@ -1282,10 +1282,10 @@ export default function BillingManagementPage() {
               {/* Totals & Initial Settlement */}
               <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
                 <div className="space-y-2">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
-                      <span>ডিসকাউন্ট (Discount %) *</span>
-                      <span className="text-[10px] text-slate-400">অনুমোদিত সীমা: ৫% - ৬০%</span>
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                    <label className="block font-bold text-slate-800 text-[11px] flex items-center justify-between">
+                      <span>১. রোগীর কমিশন / ছাড় (Patient Concession / Discount) *</span>
+                      <span className="text-[10px] text-slate-400">অনুমোদিত: ৫% - ৬০%</span>
                     </label>
                     <div className="relative">
                       <input
@@ -1303,7 +1303,7 @@ export default function BillingManagementPage() {
                             : 0;
                           setInitialPaymentAmount(Math.max(0, subtotal - disc));
                         }}
-                        className="w-full px-3 py-1.5 border rounded-xl bg-slate-50 font-mono font-bold pr-8 text-xs"
+                        className="w-full px-3 py-1.5 border rounded-xl bg-white font-mono font-bold pr-8 text-xs"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs pointer-events-none">
                         %
@@ -1317,23 +1317,24 @@ export default function BillingManagementPage() {
                           </span>
                         ) : (
                           <span className="text-emerald-700 font-bold">
-                            ছাড়: {formatCurrencyBDT(calculatedDiscountAmount)} BDT ({discountPercent}% of Subtotal {formatCurrencyBDT(subtotal)})
+                            রোগীর ছাড়: {formatCurrencyBDT(calculatedDiscountAmount)} BDT ({discountPercent}% of Subtotal {formatCurrencyBDT(subtotal)})
                           </span>
                         )}
                       </div>
                     )}
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">ডিসকাউন্ট এর কারণ (Discount Reason)</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Director waiver / Poor patient subsidy"
-                      value={discountReason}
-                      onChange={(e) => setDiscountReason(e.target.value)}
-                      className="w-full px-3 py-1.5 border rounded-xl bg-slate-50 text-xs"
-                    />
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 mb-1">ছাড় / কমিশনের কারণ (Reason / Authority)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Director waiver / Poor patient subsidy"
+                        value={discountReason}
+                        onChange={(e) => setDiscountReason(e.target.value)}
+                        className="w-full px-2.5 py-1 border rounded-lg bg-white text-xs"
+                      />
+                    </div>
                   </div>
                 </div>
+
 
                 <div className="space-y-2">
                   <div>
@@ -1366,9 +1367,9 @@ export default function BillingManagementPage() {
               {/* REFERRAL ATTRIBUTION & COMMISSION CONFIGURATION */}
               <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
                     <UserCheck className="w-4 h-4 text-emerald-600" />
-                    রেফারেন্স ও কমিশন ব্যবস্থাপনা (Referral & Commission)
+                    ২. রেফারেল এজেন্টের কমিশন (Referral Agent Commission — Net টাকার ওপর)
                   </span>
                   {checkingAttribution ? (
                     <span className="text-[10px] text-slate-400 flex items-center gap-1">
@@ -1428,21 +1429,24 @@ export default function BillingManagementPage() {
 
                 {/* Live Commission Estimate Preview */}
                 {selectedReferralAgentId && !noReferral && (
-                  <div className="p-2.5 bg-emerald-50/90 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
-                    <div>
+                  <div className="p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
                       <span className="text-emerald-950 font-bold block">
                         প্রাক্কলিত কমিশন (Estimated Commission):
                       </span>
-                      <span className="text-[10px] text-emerald-700">
-                        {referralCommissionRate}% on Net {formatCurrencyBDT(netTotal)} (Subtotal - Discount)
+
+                      <span className="font-mono font-black text-emerald-800 text-base">
+                        {formatCurrencyBDT(estimatedCommission)}
                       </span>
                     </div>
-                    <span className="font-mono font-black text-emerald-800 text-base">
-                      {formatCurrencyBDT(estimatedCommission)}
-                    </span>
+                    <div className="text-[11px] text-emerald-800 flex flex-wrap items-center justify-between gap-1 pt-1 border-t border-emerald-200/60 font-mono">
+                      <span>হিসাবের নিয়ম: সাবটোটাল ({formatCurrencyBDT(subtotal)}) - রোগীর ছাড় ({formatCurrencyBDT(calculatedDiscountAmount)}) = নিট {formatCurrencyBDT(netTotal)}</span>
+                      <span className="font-bold">এজেন্ট পাবে: নিট টাকার {referralCommissionRate}%</span>
+                    </div>
                   </div>
                 )}
               </div>
+
 
               <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs flex justify-between font-bold">
                 <span>Grand Total: {formatCurrencyBDT(netTotal)}</span>

@@ -17,6 +17,8 @@ import {
   Stethoscope,
   AlertCircle,
   PlusCircle,
+  Edit,
+  FileSpreadsheet,
 } from "lucide-react";
 import { getPatient360Action, getPatientsAction } from "@/lib/patient/actions";
 import {
@@ -34,11 +36,15 @@ import { formatDateBDT } from "@/lib/utils";
 import { HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
 import { UnifiedPatientIntakeModal } from "@/components/patient/UnifiedPatientIntakeModal";
+import { EditPatientModal } from "@/components/patient/EditPatientModal";
+import { PatientIntakeDossierModal } from "@/components/patient/PatientIntakeDossierModal";
 
 export default function PatientDetailView({ patientId }: { patientId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmissionModalOpen, setIsAdmissionModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isIntakeDossierModalOpen, setIsIntakeDossierModalOpen] = useState(false);
 
   const [patient, setPatient] = useState<PatientMaster | null>(null);
   const [allergies, setAllergies] = useState<PatientAllergy[]>([]);
@@ -180,6 +186,22 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button
+            onClick={() => setIsEditModalOpen(true)}
+            className="inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 shadow-2xs transition cursor-pointer"
+            title="তথ্য সংশোধন / Edit Patient Details"
+          >
+            <Edit className="w-3.5 h-3.5 mr-1.5" />
+            তথ্য সংশোধন (Edit)
+          </button>
+          <button
+            onClick={() => setIsIntakeDossierModalOpen(true)}
+            className="inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-sky-700 hover:bg-sky-800 shadow-2xs transition cursor-pointer"
+            title="ইনটেক ও রেজিস্ট্রেশন ফাইল / View Intake Dossier"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
+            ইনটেক ফাইল (Intake File)
+          </button>
+          <button
             onClick={() => setIsAdmissionModalOpen(true)}
             className="inline-flex items-center px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition"
           >
@@ -196,6 +218,7 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
           </button>
         </div>
       </div>
+
 
       {/* Patient Master Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-md relative overflow-hidden">
@@ -632,6 +655,28 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
           }
         }}
       />
+
+      {patient && (
+        <EditPatientModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          patient={patient}
+          onSuccess={(updated) => {
+            setPatient(updated);
+          }}
+        />
+      )}
+
+      {patient && (
+        <PatientIntakeDossierModal
+          isOpen={isIntakeDossierModalOpen}
+          onClose={() => setIsIntakeDossierModalOpen(false)}
+          patientId={patient.id}
+          onPatientUpdated={(updated) => {
+            setPatient(updated);
+          }}
+        />
+      )}
     </div>
   );
 }

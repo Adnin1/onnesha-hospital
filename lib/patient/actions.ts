@@ -16,6 +16,8 @@ import {
   DischargeSummary,
   TimelineEvent,
   DuplicateCheckResult,
+  UpdatePatientInput,
+  PatientIntakeDossier,
 } from "@/types/clinical";
 
 export interface ActionResult<T = unknown> {
@@ -1908,3 +1910,481 @@ export async function getIntakeDropdownOptionsAction(): Promise<
     };
   }
 }
+
+/**
+ * 13. Update Patient Demographics & Contact Records
+ * Allows hospital staff to correct patient details while strictly preserving
+ * immutable identifiers (patient_code, id) and financial invariants.
+ */
+export async function updatePatientAction(
+  input: UpdatePatientInput
+): Promise<ActionResult<{ patient: PatientMaster }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized: Valid hospital session required." };
+  }
+
+  const canEdit =
+    (await hasPermission("patients.edit")) ||
+    (await hasPermission("patients.create")) ||
+    (await hasPermission("patients.manage"));
+  if (!canEdit) {
+    return { success: false, error: "403 Forbidden: patients.edit or patients.create permission required." };
+  }
+
+  if (!input.patientId) {
+    return { success: false, error: "Patient identifier is required." };
+  }
+
+  if (!input.fullName || input.fullName.trim().length < 2) {
+    return { success: false, error: "Patient full name is required (at least 2 characters)." };
+  }
+
+  const normalizedPhone = normalizeBDPhone(input.phone);
+  if (!isValidNormalizedBDPhone(normalizedPhone)) {
+    return { success: false, error: "A valid 11-digit Bangladeshi mobile number is required (01xxxxxxxxx)." };
+  }
+
+  if (input.nid && input.nid.trim().length > 0) {
+    const cleanNid = input.nid.trim().replace(/[\s-]/g, "");
+    if (!/^\d{10}$|^\d{13}$|^\d{17}$/.test(cleanNid)) {
+      return {
+        success: false,
+        error: "NID / জন্ম নিবন্ধন নম্বরটি সঠিক নয় (১০, ১৩ বা ১৭ ডিজিটের সংখ্যা হতে হবে; ঐচ্ছিক ক্ষেত্র — না থাকলে ফাঁকা রাখুন)।",
+      };
+    }
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Verify patient exists and belongs to organization
+    const { data: existingPatient, error: fetchErr } = await supabase
+      .from("patients")
+      .select("*")
+      .eq("id", input.patientId)
+      .eq("organization_id", session.organizationId)
+      .single();
+
+    if (fetchErr || !existingPatient) {
+      return { success: false, error: "Patient record not found in this hospital organization." };
+    }
+
+    const { data: updatedPatient, error: updateErr } = await supabase
+      .from("patients")
+      .update({
+        full_name: input.fullName.trim(),
+        phone: input.phone.trim(),
+        normalized_phone: normalizedPhone,
+        alternate_phone: input.alternatePhone ? normalizeBDPhone(input.alternatePhone) : null,
+        gender: input.gender,
+        dob: input.dob || null,
+        blood_group: input.bloodGroup || "UNKNOWN",
+        marital_status: input.maritalStatus || null,
+        occupation: input.occupation || null,
+        nid: input.nid?.trim() || null,
+        nid_or_birth_cert: input.nid?.trim() || null,
+        address: input.address?.trim() || null,
+        emergency_contact_name: input.emergencyName?.trim() || null,
+        emergency_contact_phone: input.emergencyPhone ? normalizeBDPhone(input.emergencyPhone) : null,
+        emergency_contact_relation: input.emergencyRelation?.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", input.patientId)
+      .eq("organization_id", session.organizationId)
+      .select("*")
+      .single();
+
+    if (updateErr || !updatedPatient) {
+      return { success: false, error: updateErr?.message || "Failed to update patient record." };
+    }
+
+    // Synchronize auxiliary patient tables
+    if (input.nid && input.nid.trim().length > 0) {
+      const cleanNid = input.nid.trim().replace(/[\s-]/g, "");
+      const { data: existingNid } = await supabase
+        .from("patient_identifications")
+        .select("id")
+        .eq("patient_id", input.patientId)
+        .eq("id_type", "NID")
+        .maybeSingle();
+
+      if (existingNid) {
+        await supabase
+          .from("patient_identifications")
+          .update({ id_number: cleanNid })
+          .eq("id", existingNid.id);
+      } else {
+        await supabase
+          .from("patient_identifications")
+          .insert({
+            patient_id: input.patientId,
+            id_type: "NID",
+            id_number: cleanNid,
+            is_verified: false,
+          });
+      }
+    }
+
+    if (input.address && input.address.trim().length > 0) {
+      const { data: existingAddr } = await supabase
+        .from("patient_addresses")
+        .select("id")
+        .eq("patient_id", input.patientId)
+        .eq("address_type", "PRESENT")
+        .maybeSingle();
+
+      if (existingAddr) {
+        await supabase
+          .from("patient_addresses")
+          .update({ street_address: input.address.trim() })
+          .eq("id", existingAddr.id);
+      } else {
+        await supabase
+          .from("patient_addresses")
+          .insert({
+            patient_id: input.patientId,
+            address_type: "PRESENT",
+            street_address: input.address.trim(),
+            district: null,
+            division: null,
+          });
+      }
+    }
+
+    if (input.emergencyName && input.emergencyName.trim().length > 0) {
+      const { data: existingContact } = await supabase
+        .from("patient_contacts")
+        .select("id")
+        .eq("patient_id", input.patientId)
+        .eq("is_primary_emergency", true)
+        .maybeSingle();
+
+      if (existingContact) {
+        await supabase
+          .from("patient_contacts")
+          .update({
+            contact_name: input.emergencyName.trim(),
+            relationship: input.emergencyRelation?.trim() || "Guardian",
+            phone: input.emergencyPhone ? normalizeBDPhone(input.emergencyPhone) : "",
+          })
+          .eq("id", existingContact.id);
+      } else {
+        await supabase
+          .from("patient_contacts")
+          .insert({
+            patient_id: input.patientId,
+            contact_name: input.emergencyName.trim(),
+            relationship: input.emergencyRelation?.trim() || "Guardian",
+            phone: input.emergencyPhone ? normalizeBDPhone(input.emergencyPhone) : "",
+            is_primary_emergency: true,
+          });
+      }
+    }
+
+    // Audit trail
+    await recordAuditLog({
+      userId: session.userId,
+      organizationId: session.organizationId,
+      action: "UPDATE",
+      module: "PATIENT",
+      entityType: "patient",
+      entityId: input.patientId,
+      oldValues: {
+        full_name: existingPatient.full_name,
+        phone: existingPatient.phone,
+        gender: existingPatient.gender,
+        blood_group: existingPatient.blood_group,
+        address: existingPatient.address,
+        nid: existingPatient.nid,
+      },
+      newValues: {
+        full_name: updatedPatient.full_name,
+        phone: updatedPatient.phone,
+        gender: updatedPatient.gender,
+        blood_group: updatedPatient.blood_group,
+        address: updatedPatient.address,
+        nid: updatedPatient.nid,
+      },
+    });
+
+    return {
+      success: true,
+      data: { patient: updatedPatient as unknown as PatientMaster },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to update patient record.",
+    };
+  }
+}
+
+/**
+ * 14. Fetch Comprehensive Patient Registration & Intake Dossier
+ * Retrieves complete intake records across demographics, admission, bed, CCU, OT,
+ * diagnoses, and billing so staff can review or print the file anytime.
+ */
+export async function getPatientIntakeDossierAction(
+  patientId: string
+): Promise<ActionResult<PatientIntakeDossier>> {
+  const session = await getCurrentUserSession();
+  if (!session.organizationId) {
+    return { success: false, error: "Unauthorized session." };
+  }
+
+  try {
+    await requirePermission("patients.view");
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const { data: patient, error: pErr } = await supabase
+      .from("patients")
+      .select("*")
+      .eq("id", patientId)
+      .eq("organization_id", session.organizationId)
+      .single();
+
+    if (pErr || !patient) {
+      return { success: false, error: "Patient record not found." };
+    }
+
+    // Inpatient Admission
+    const { data: admissionData } = await supabase
+      .from("inpatient_admissions")
+      .select(`
+        id,
+        admission_date,
+        status,
+        discharge_date,
+        admission_discount_percent,
+        admission_discount_reason,
+        provisional_diagnosis,
+        referral_agent_id,
+        referral_agents (full_name, agent_code)
+      `)
+      .eq("patient_id", patientId)
+      .order("admission_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let assignedBedNumber: string | null = null;
+    let assignedCabinNumber: string | null = null;
+    let wardName: string | null = null;
+
+    if (admissionData?.id) {
+      const { data: bedAssign } = await supabase
+        .from("ipd_bed_assignments")
+        .select(`
+          bed_id,
+          beds (bed_number, daily_rate, ward_name),
+          cabin_id,
+          cabins (cabin_number, daily_rate)
+        `)
+        .eq("admission_id", admissionData.id)
+        .order("assigned_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (bedAssign) {
+        const bedObj = bedAssign.beds as unknown as { bed_number?: string; ward_name?: string } | null;
+        const cabinObj = bedAssign.cabins as unknown as { cabin_number?: string } | null;
+        if (bedObj?.bed_number) {
+          assignedBedNumber = bedObj.bed_number;
+          wardName = bedObj.ward_name || null;
+        }
+        if (cabinObj?.cabin_number) {
+          assignedCabinNumber = cabinObj.cabin_number;
+        }
+      }
+    }
+
+    // OPD Consultation
+    const { data: opdData } = await supabase
+      .from("opd_consultations")
+      .select(`
+        id,
+        consultation_date,
+        status,
+        chief_complaint,
+        doctors (full_name, specialization),
+        departments (name)
+      `)
+      .eq("patient_id", patientId)
+      .order("consultation_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Critical Care
+    const { data: ccuData } = await supabase
+      .from("critical_care_admissions")
+      .select(`
+        id,
+        admitted_at,
+        status,
+        bed_number,
+        initial_diagnosis,
+        ventilator_required,
+        critical_care_units (unit_name, unit_type),
+        doctors (full_name)
+      `)
+      .eq("patient_id", patientId)
+      .order("admitted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // OT Booking
+    const { data: otData } = await supabase
+      .from("ot_bookings")
+      .select(`
+        id,
+        procedure_name,
+        scheduled_start,
+        status,
+        anesthesia_type,
+        ot_rooms (room_name, room_number),
+        doctors (full_name)
+      `)
+      .eq("patient_id", patientId)
+      .order("scheduled_start", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Visits and Vitals
+    const { data: visits } = await supabase
+      .from("patient_visits")
+      .select("id")
+      .eq("patient_id", patientId)
+      .order("admitted_at", { ascending: false });
+
+    const visitIds = visits?.map((v) => v.id) || [];
+    let latestVitals: VitalSigns | null = null;
+    if (visitIds.length > 0) {
+      const { data: vtData } = await supabase
+        .from("vital_signs")
+        .select("*")
+        .in("visit_id", visitIds)
+        .order("recorded_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (vtData) latestVitals = vtData as unknown as VitalSigns;
+    }
+
+    // Diagnoses
+    const { data: diagData } = await supabase
+      .from("patient_diagnoses")
+      .select("icd_code, diagnosis_name, diagnosis_type, recorded_at")
+      .eq("patient_id", patientId)
+      .order("recorded_at", { ascending: false })
+      .limit(5);
+
+    // Recent Invoices
+    const { data: invData } = await supabase
+      .from("invoices")
+      .select("id, invoice_number, total_amount, discount_amount, paid_amount, due_amount, payment_status, created_at")
+      .eq("patient_id", patientId)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    const refAgent = admissionData?.referral_agents as unknown as { full_name?: string; agent_code?: string } | null;
+    const opdDoc = opdData?.doctors as unknown as { full_name?: string } | null;
+    const opdDept = opdData?.departments as unknown as { name?: string } | null;
+    const ccuUnit = ccuData?.critical_care_units as unknown as { unit_name?: string; unit_type?: string } | null;
+    const ccuDoc = ccuData?.doctors as unknown as { full_name?: string } | null;
+    const otRoom = otData?.ot_rooms as unknown as { room_name?: string; room_number?: string } | null;
+    const otDoc = otData?.doctors as unknown as { full_name?: string } | null;
+
+    const dossier: PatientIntakeDossier = {
+      patient: patient as unknown as PatientMaster,
+      registrationDetails: {
+        registeredAt: patient.created_at,
+        registrationSerial: patient.registration_serial || patient.patient_code,
+        patientCode: patient.patient_code,
+      },
+      inpatientAdmission: admissionData
+        ? {
+            id: admissionData.id,
+            admissionDate: admissionData.admission_date,
+            status: admissionData.status,
+            dischargeDate: admissionData.discharge_date,
+            admissionDiscountPercent: admissionData.admission_discount_percent,
+            admissionDiscountReason: admissionData.admission_discount_reason,
+            assignedBedNumber,
+            assignedCabinNumber,
+            wardName,
+            provisionalDiagnosis: admissionData.provisional_diagnosis,
+            referralAgentName: refAgent?.full_name || null,
+            referralAgentCode: refAgent?.agent_code || null,
+          }
+        : null,
+      opdEncounter: opdData
+        ? {
+            id: opdData.id,
+            encounterDate: opdData.consultation_date,
+            status: opdData.status,
+            departmentName: opdDept?.name || null,
+            doctorName: opdDoc?.full_name || null,
+            chiefComplaint: opdData.chief_complaint || null,
+          }
+        : null,
+      criticalCareAdmission: ccuData
+        ? {
+            id: ccuData.id,
+            admittedAt: ccuData.admitted_at,
+            status: ccuData.status,
+            unitName: ccuUnit?.unit_name || null,
+            unitType: ccuUnit?.unit_type || null,
+            bedNumber: ccuData.bed_number,
+            doctorName: ccuDoc?.full_name || null,
+            initialDiagnosis: ccuData.initial_diagnosis || null,
+            ventilatorRequired: ccuData.ventilator_required,
+          }
+        : null,
+      otBooking: otData
+        ? {
+            id: otData.id,
+            procedureName: otData.procedure_name,
+            scheduledStart: otData.scheduled_start,
+            status: otData.status,
+            roomName: otRoom?.room_name || null,
+            roomNumber: otRoom?.room_number || null,
+            surgeonName: otDoc?.full_name || null,
+            anesthesiaType: otData.anesthesia_type || null,
+          }
+        : null,
+      latestVitals,
+      diagnoses: (diagData || []).map((d) => ({
+        diagnosisCode: d.icd_code || undefined,
+        diagnosisName: d.diagnosis_name,
+        diagnosisType: d.diagnosis_type,
+        recordedAt: d.recorded_at,
+      })),
+      recentInvoices: (invData || []).map((i) => ({
+        id: i.id,
+        invoiceNumber: i.invoice_number,
+        totalAmount: Number(i.total_amount || 0),
+        discountAmount: Number(i.discount_amount || 0),
+        paidAmount: Number(i.paid_amount || 0),
+        dueAmount: Number(i.due_amount || 0),
+        paymentStatus: i.payment_status,
+        createdAt: i.created_at,
+      })),
+    };
+
+    return {
+      success: true,
+      data: dossier,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to load patient intake dossier.",
+    };
+  }
+}
+

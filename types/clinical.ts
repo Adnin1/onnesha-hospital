@@ -245,3 +245,91 @@ export interface DuplicateCheckResult {
     matchSignal: string;
   }[];
 }
+
+export interface UpdatePatientInput {
+  patientId: string;
+  fullName: string;
+  phone: string;
+  alternatePhone?: string;
+  gender: GenderType;
+  dob?: string;
+  bloodGroup?: BloodGroupType;
+  maritalStatus?: string;
+  occupation?: string;
+  nid?: string;
+  address?: string;
+  emergencyName?: string;
+  emergencyPhone?: string;
+  emergencyRelation?: string;
+}
+
+export interface PatientIntakeDossier {
+  patient: PatientMaster;
+  registrationDetails: {
+    registeredAt: string;
+    registrationSerial: string;
+    patientCode: string;
+  };
+  inpatientAdmission?: {
+    id: string;
+    admissionDate: string;
+    status: string;
+    dischargeDate?: string | null;
+    admissionDiscountPercent?: number | null;
+    admissionDiscountReason?: string | null;
+    departmentName?: string | null;
+    doctorName?: string | null;
+    assignedBedNumber?: string | null;
+    assignedCabinNumber?: string | null;
+    wardName?: string | null;
+    provisionalDiagnosis?: string | null;
+    referralAgentName?: string | null;
+    referralAgentCode?: string | null;
+  } | null;
+  opdEncounter?: {
+    id: string;
+    encounterDate: string;
+    status: string;
+    departmentName?: string | null;
+    doctorName?: string | null;
+    chiefComplaint?: string | null;
+  } | null;
+  criticalCareAdmission?: {
+    id: string;
+    admittedAt: string;
+    status: string;
+    unitName?: string | null;
+    unitType?: string | null;
+    bedNumber?: string | null;
+    doctorName?: string | null;
+    initialDiagnosis?: string | null;
+    ventilatorRequired?: boolean;
+  } | null;
+  otBooking?: {
+    id: string;
+    procedureName: string;
+    scheduledStart: string;
+    status: string;
+    roomName?: string | null;
+    roomNumber?: string | null;
+    surgeonName?: string | null;
+    anesthesiaType?: string | null;
+  } | null;
+  latestVitals?: VitalSigns | null;
+  diagnoses?: Array<{
+    diagnosisCode?: string;
+    diagnosisName: string;
+    diagnosisType: string;
+    recordedAt: string;
+  }>;
+  recentInvoices?: Array<{
+    id: string;
+    invoiceNumber: string;
+    totalAmount: number;
+    discountAmount: number;
+    paidAmount: number;
+    dueAmount: number;
+    paymentStatus: string;
+    createdAt: string;
+  }>;
+}

@@ -280,4 +280,29 @@ describe("OHMS Phase 3 Clinical & Patient Management Suite (18 Scenarios)", () =
     assert.match(timelineContent, /PATIENT_TRANSFERRED/);
     assert.match(timelineContent, /DISCHARGED/);
   });
+
+  // Scenario 24: Patient demographics correction and editing action
+  test("24. updatePatientAction enables live correction of patient details while preserving immutable identifiers", () => {
+    const actionsContent = fs.readFileSync(
+      path.join(rootDir, "lib", "patient", "actions.ts"),
+      "utf8"
+    );
+    assert.match(actionsContent, /export async function updatePatientAction/);
+    assert.match(actionsContent, /normalizeBDPhone/);
+    assert.match(actionsContent, /isValidNormalizedBDPhone/);
+    assert.match(actionsContent, /recordAuditLog/);
+  });
+
+  // Scenario 25: Patient registration and intake dossier inspection
+  test("25. getPatientIntakeDossierAction aggregates complete intake record for inspection and printing", () => {
+    const actionsContent = fs.readFileSync(
+      path.join(rootDir, "lib", "patient", "actions.ts"),
+      "utf8"
+    );
+    assert.match(actionsContent, /export async function getPatientIntakeDossierAction/);
+    assert.match(actionsContent, /inpatient_admissions/);
+    assert.match(actionsContent, /referral_agents/);
+    assert.match(actionsContent, /registrationDetails/);
+  });
 });
+

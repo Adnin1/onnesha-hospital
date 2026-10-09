@@ -10,6 +10,8 @@ import {
   Loader2,
   RefreshCw,
   AlertTriangle,
+  Edit,
+  FileSpreadsheet,
 } from "lucide-react";
 import { PatientMaster, TimelineEvent } from "@/types/clinical";
 import { InvoiceRecord } from "@/types/billing";
@@ -25,6 +27,8 @@ import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { Toast } from "@/components/ui/Toast";
 import { UnifiedPatientIntakeModal } from "@/components/patient/UnifiedPatientIntakeModal";
 import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
+import { EditPatientModal } from "@/components/patient/EditPatientModal";
+import { PatientIntakeDossierModal } from "@/components/patient/PatientIntakeDossierModal";
 
 export default function PatientsManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -40,6 +44,16 @@ export default function PatientsManagementPage() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [registerInitialMode, setRegisterInitialMode] = useState<"NEW" | "EXISTING">("NEW");
   const [registerInitialPatient, setRegisterInitialPatient] = useState<PatientMaster | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isIntakeDossierModalOpen, setIsIntakeDossierModalOpen] = useState(false);
+
+  const handlePatientUpdated = (updated: PatientMaster) => {
+    setSelectedPatient(updated);
+    setPatients((prev) =>
+      prev.map((item) => (item.id === updated.id ? updated : item))
+    );
+    showToast("রোগীর তথ্য সফলভাবে সংশোধন ও হালনাগাদ করা হয়েছে।", "success");
+  };
 
   // Patient 360 sub-records
   const [subLoading, setSubLoading] = useState(false);
@@ -275,12 +289,28 @@ export default function PatientsManagementPage() {
 
                 <div className="flex flex-wrap items-center gap-2">
                   <button
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-lg text-xs font-bold transition flex items-center shadow-xs cursor-pointer"
+                    title="রোগীর তথ্য সংশোধন / Edit Patient Details"
+                  >
+                    <Edit className="w-3.5 h-3.5 mr-1" />
+                    তথ্য সংশোধন (Edit)
+                  </button>
+                  <button
+                    onClick={() => setIsIntakeDossierModalOpen(true)}
+                    className="px-3 py-1.5 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-bold transition flex items-center shadow-xs cursor-pointer"
+                    title="রোগীর ভর্তি ও রেজিস্ট্রেশন ফাইল / Intake Dossier"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
+                    ইনটেক ফাইল (Intake File)
+                  </button>
+                  <button
                     onClick={() => {
                       setRegisterInitialMode("EXISTING");
                       setRegisterInitialPatient(selectedPatient);
                       setIsRegisterModalOpen(true);
                     }}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center shadow-xs"
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center shadow-xs cursor-pointer"
                   >
                     <PlusCircle className="w-3.5 h-3.5 mr-1" />
                     Admit / New Service
@@ -493,6 +523,24 @@ export default function PatientsManagementPage() {
         }}
       />
 
+      {selectedPatient && (
+        <EditPatientModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          patient={selectedPatient}
+          onSuccess={handlePatientUpdated}
+        />
+      )}
+
+      {selectedPatient && (
+        <PatientIntakeDossierModal
+          isOpen={isIntakeDossierModalOpen}
+          onClose={() => setIsIntakeDossierModalOpen(false)}
+          patientId={selectedPatient.id}
+          onPatientUpdated={handlePatientUpdated}
+        />
+      )}
+
       {toast && (
         <Toast
           message={toast.message}
@@ -503,3 +551,4 @@ export default function PatientsManagementPage() {
     </div>
   );
 }
+
