@@ -699,15 +699,20 @@ export async function getEpisodeBillingPreviewAction(params: {
       error?: string;
     };
 
-    if (!result?.success) {
+    const rawEpisode = (result as { episode?: { id?: string; episode_number?: string } })?.episode;
+    const resolvedEpisodeId = result?.episode_id || rawEpisode?.id;
+    const resolvedEpisodeNumber = result?.episode_number || rawEpisode?.episode_number;
+
+    const isSuccess = result?.success !== false && (result?.success === true || Array.isArray(result?.lines));
+    if (!isSuccess) {
       return { success: false, error: result?.error || "Unable to calculate episode billing preview." };
     }
 
     return {
       success: true,
       data: {
-        episodeId: result.episode_id || undefined,
-        episodeNumber: result.episode_number || undefined,
+        episodeId: resolvedEpisodeId || undefined,
+        episodeNumber: resolvedEpisodeNumber || undefined,
         primaryVisitId: result.primary_visit_id || undefined,
         lines: (result.lines || []).map((line) => ({
           reference_id: String(line.reference_id),

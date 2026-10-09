@@ -157,15 +157,15 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     await page.goto("/reset-password");
     await page.waitForLoadState("domcontentloaded");
 
-    // Fail-closed banner when visiting without valid recovery token
-    const alertBanner = page.locator('div[class*="bg-amber-950"], div[class*="border-amber-600"], div:has-text("session পাওয়া যায়নি")');
-    await expect(alertBanner.first()).toBeVisible({ timeout: 10000 });
-
     const newPwdInput = page.locator('#new-password');
     const confirmPwdInput = page.locator('#confirm-password');
 
-    await expect(newPwdInput).toBeVisible();
+    await expect(newPwdInput).toBeVisible({ timeout: 15000 });
     await expect(confirmPwdInput).toBeVisible();
+
+    // Fail-closed banner when visiting without valid recovery token
+    const alertBanner = page.locator('div[class*="bg-amber-950"], div[class*="border-amber-600"], div:has-text("session পাওয়া যায়নি")');
+    await expect(alertBanner.first()).toBeVisible({ timeout: 10000 });
 
     // Type weak password (< 8 chars, lowercase only -> score 0-1)
     await newPwdInput.fill("weak");

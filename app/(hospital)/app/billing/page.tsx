@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   UserCheck,
   Check,
+  Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import {
   InvoiceRecord,
@@ -27,6 +29,7 @@ import {
   collectPaymentAction,
   voidInvoiceAction,
   getCashRegisterSummaryAction,
+  getEpisodeBillingPreviewAction,
 } from "@/lib/billing/actions";
 import { searchPatientsAction } from "@/lib/patient/actions";
 import {
@@ -68,17 +71,21 @@ export default function BillingManagementPage() {
     itemName: string;
     unitPrice: number;
     quantity: number;
-  }>>([
-    {
-      category: "CONSULTATION",
-      itemName: "General OPD Consultation",
-      unitPrice: 500,
-      quantity: 1,
-    },
-  ]);
+    referenceId?: string;
+  }>>([]);
+  const [loadingUnbilledServices, setLoadingUnbilledServices] = useState(false);
+  const [unbilledServicesCount, setUnbilledServicesCount] = useState(0);
+  const [unbilledServicesTotal, setUnbilledServicesTotal] = useState(0);
+  const [_detectedUnbilledLines, setDetectedUnbilledLines] = useState<Array<{
+    referenceId?: string;
+    category: InvoiceItemRecord["service_category"];
+    itemName: string;
+    unitPrice: number;
+    quantity: number;
+  }>>([]);
   const [discountPercent, setDiscountPercent] = useState<number | "">("");
   const [discountReason, setDiscountReason] = useState("");
-  const [initialPaymentAmount, setInitialPaymentAmount] = useState(500);
+  const [initialPaymentAmount, setInitialPaymentAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentRecord["payment_method"]>("CASH");
   const [formLoading, setFormLoading] = useState(false);
 
@@ -263,12 +270,64 @@ export default function BillingManagementPage() {
     }
   };
 
+  const loadUnbilledServicesForPatient = async (patientId: string) => {
+    if (!patientId || patientId.trim().length < 10) return;
+    setLoadingUnbilledServices(true);
+    try {
+      const res = await getEpisodeBillingPreviewAction({ patientId: patientId.trim() });
+      if (res.success && res.data && res.data.lines && res.data.lines.length > 0) {
+        const mappedLines = res.data.lines.map((l) => {
+          let cat: InvoiceItemRecord["service_category"] = "MISC";
+          const rawCat = (l.service_category || "").toUpperCase();
+          if (["CONSULTATION", "LAB", "XRAY", "USG", "ECG", "PHARMACY", "BED", "CABIN", "OT", "AMBULANCE", "MISC"].includes(rawCat)) {
+            cat = rawCat as InvoiceItemRecord["service_category"];
+          } else if (rawCat === "INVESTIGATION") {
+            cat = "LAB";
+          } else if (rawCat === "PROCEDURE") {
+            cat = "OT";
+          } else if (rawCat === "ROOM") {
+            cat = "BED";
+          }
+          return {
+            referenceId: l.reference_id,
+            category: cat,
+            itemName: l.item_name,
+            unitPrice: Number(l.unit_price || 0),
+            quantity: Number(l.quantity || 1),
+          };
+        });
+
+        setDetectedUnbilledLines(mappedLines);
+        setUnbilledServicesCount(mappedLines.length);
+        const total = mappedLines.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
+        setUnbilledServicesTotal(total);
+
+        // Auto-populate items directly into invoice
+        setItems(mappedLines);
+        setInitialPaymentAmount(total);
+
+        if (res.data.admissionDiscountAmount && res.data.admissionDiscountAmount > 0) {
+          setDiscountReason(res.data.admissionDiscountReason || `Admission Concession ৳${res.data.admissionDiscountAmount}`);
+        }
+      } else {
+        setDetectedUnbilledLines([]);
+        setUnbilledServicesCount(0);
+        setUnbilledServicesTotal(0);
+      }
+    } catch (err) {
+      console.error("[loadUnbilledServicesForPatient] err:", err);
+    } finally {
+      setLoadingUnbilledServices(false);
+    }
+  };
+
   const handleSelectPatient = (p: PatientMaster) => {
     setSelectedPatient(p);
     setPatientIdInput(p.id);
     setPatientSearchQuery("");
     setSearchedPatients([]);
     checkAttributionForPatient(p.id);
+    void loadUnbilledServicesForPatient(p.id);
   };
 
   const handleReferralAgentChange = (agentId: string) => {
@@ -318,7 +377,6 @@ export default function BillingManagementPage() {
   };
 
   const removeItemRow = (idx: number) => {
-    if (items.length <= 1) return;
     const next = items.filter((_, i) => i !== idx);
     setItems(next);
     const newSub = next.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
@@ -356,17 +414,14 @@ export default function BillingManagementPage() {
     setNoReferral(false);
     setServiceFilterGroup("ALL");
     setServiceSearchTerm("");
-    setItems([
-      {
-        category: "CONSULTATION",
-        itemName: "General OPD Consultation",
-        unitPrice: 500,
-        quantity: 1,
-      },
-    ]);
+    setItems([]);
+    setDetectedUnbilledLines([]);
+    setUnbilledServicesCount(0);
+    setUnbilledServicesTotal(0);
+    setLoadingUnbilledServices(false);
     setDiscountPercent("");
     setDiscountReason("");
-    setInitialPaymentAmount(500);
+    setInitialPaymentAmount(0);
     setPaymentMethod("CASH");
   };
 
@@ -374,6 +429,11 @@ export default function BillingManagementPage() {
     e.preventDefault();
     if (!patientIdInput.trim()) {
       setToast({ message: "Please enter a valid Patient ID or Code.", type: "error" });
+      return;
+    }
+
+    if (!items || items.length === 0) {
+      setToast({ message: "কমপক্ষে একটি সার্ভিস বা টেস্ট আইটেম যোগ করুন।", type: "error" });
       return;
     }
 
@@ -912,11 +972,13 @@ export default function BillingManagementPage() {
                         setPatientIdInput(e.target.value);
                         if (e.target.value.length >= 30) {
                           checkAttributionForPatient(e.target.value);
+                          void loadUnbilledServicesForPatient(e.target.value);
                         }
                       }}
                       onBlur={() => {
                         if (patientIdInput.trim()) {
                           checkAttributionForPatient(patientIdInput.trim());
+                          void loadUnbilledServicesForPatient(patientIdInput.trim());
                         }
                       }}
                       className="w-full px-3 py-1.5 border rounded-xl bg-slate-50 text-[11px] font-mono"
@@ -1032,6 +1094,64 @@ export default function BillingManagementPage() {
 
               {/* Items List */}
               <div className="space-y-2 border-t border-slate-100 pt-3">
+                {/* Unbilled Services Banner */}
+                {loadingUnbilledServices && (
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center gap-2 text-xs animate-pulse">
+                    <Loader2 className="w-4 h-4 animate-spin text-amber-600 shrink-0" />
+                    <span className="font-semibold">রোগীর অবিলকৃত সেবা (OPD / IPD / ICU / OT) স্বয়ংক্রিয়ভাবে অনুসন্ধান ও লোড করা হচ্ছে...</span>
+                  </div>
+                )}
+
+                {!loadingUnbilledServices && unbilledServicesCount > 0 && (
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <span className="font-bold text-emerald-900">
+                          {unbilledServicesCount}টি অবিলকৃত সেবা স্বয়ংক্রিয়ভাবে ইনভয়েসে যুক্ত হয়েছে
+                        </span>
+                        <span className="text-[11px] text-emerald-700 ml-1.5 font-mono">
+                          (মোট: {formatCurrencyBDT(unbilledServicesTotal)})
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (patientIdInput.trim()) {
+                            void loadUnbilledServicesForPatient(patientIdInput.trim());
+                          }
+                        }}
+                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        পুনরায় লোড
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setItems([]);
+                          setDetectedUnbilledLines([]);
+                          setUnbilledServicesCount(0);
+                          setUnbilledServicesTotal(0);
+                          setInitialPaymentAmount(0);
+                        }}
+                        className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-white border border-emerald-300 hover:bg-emerald-100 text-emerald-800 transition"
+                      >
+                        মুছুন
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!loadingUnbilledServices && selectedPatient && unbilledServicesCount === 0 && (
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 flex items-center gap-2 text-[11px]">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>এই রোগীর কোনো অবিলকৃত ভর্তি বা সেবা বাকি নেই। ক্যাটালগ থেকে যেকোনো টেস্ট বা সেবা যোগ করতে পারেন।</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-bold text-slate-500 uppercase block">
                     ইনভয়েস আইটেম তালিকা (Invoice Line Items - {items.length}টি):
@@ -1150,6 +1270,13 @@ export default function BillingManagementPage() {
                     </button>
                   </div>
                 ))}
+
+                {items.length === 0 && (
+                  <div className="p-4 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-slate-400 text-xs">
+                    <p className="font-semibold text-slate-600 mb-0.5">কোনো আইটেম যোগ করা হয়নি</p>
+                    <p className="text-[10px]">উপরে ক্যাটালগ থেকে টেস্ট/সার্ভিস ক্লিক করুন অথবা &quot;+ নতুন কাস্টম আইটেম যোগ করুন&quot; চাপুন।</p>
+                  </div>
+                )}
               </div>
 
               {/* Totals & Initial Settlement */}

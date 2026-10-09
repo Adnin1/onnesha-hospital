@@ -50,26 +50,37 @@ function ResetPasswordContent() {
     let isMounted = true;
 
     async function checkSession() {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (!isMounted) return;
-
-      if (error || !user) {
-        setHasValidSession(false);
-        setErrorMessage(
-          isForced
-            ? "আপনার account session পাওয়া যায়নি। আগে বৈধভাবে লগইন করে temporary password পরিবর্তন করুন।"
-            : "কোনো সক্রিয় password-recovery session পাওয়া যায়নি। ইমেইলের নতুন রিকভারি লিংক ব্যবহার করুন।"
+      try {
+        const timeoutPromise = new Promise<{ data: { user: null }; error: Error }>((resolve) =>
+          setTimeout(() => resolve({ data: { user: null }, error: new Error("TIMEOUT") }), 2500)
         );
-      } else {
-        setHasValidSession(true);
-        setErrorMessage(null);
-      }
+        const {
+          data: { user },
+          error,
+        } = await Promise.race([supabase.auth.getUser(), timeoutPromise]);
 
-      setCheckingSession(false);
+        if (!isMounted) return;
+
+        if (error || !user) {
+          setHasValidSession(false);
+          setErrorMessage(
+            isForced
+              ? "আপনার account session পাওয়া যায়নি। আগে বৈধভাবে লগইন করে temporary password পরিবর্তন করুন।"
+              : "কোনো সক্রিয় password-recovery session পাওয়া যায়নি। ইমেইলের নতুন রিকভারি লিংক ব্যবহার করুন।"
+          );
+        } else {
+          setHasValidSession(true);
+          setErrorMessage(null);
+        }
+      } catch {
+        if (!isMounted) return;
+        setHasValidSession(false);
+        setErrorMessage("কোনো সক্রিয় password-recovery session পাওয়া যায়নি। ইমেইলের নতুন রিকভারি লিংক ব্যবহার করুন।");
+      } finally {
+        if (isMounted) {
+          setCheckingSession(false);
+        }
+      }
     }
 
     void checkSession();
@@ -238,7 +249,7 @@ function ResetPasswordContent() {
               {errorMessage && (
                 <div
                   role="alert"
-                  className="p-3.5 bg-red-950/80 border border-red-700/60 rounded-xl text-xs text-red-200 flex items-start gap-2"
+                  className="p-3.5 bg-amber-950/80 border border-amber-600/70 rounded-xl text-xs text-amber-200 flex items-start gap-2"
                 >
                   <span className="text-base leading-none">⚠️</span>
                   <span>{errorMessage}</span>
