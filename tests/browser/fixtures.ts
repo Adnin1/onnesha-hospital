@@ -140,8 +140,130 @@ async function installMutationGuard(page: Page, baseURL: string): Promise<void> 
 }
 
 /**
+ * Install hermetic route mocks for placeholder Supabase requests.
+ * Fulfills with valid deterministic JSON data so browser tests never fail DNS
+ * or raise unhandled fetch rejections (e.g. WebKit "TypeError: Load failed").
+ */
+async function installHermeticMocks(page: Page): Promise<void> {
+  await page.route(
+    (url) =>
+      url.hostname.includes("ci-hermetic-build-placeholder") ||
+      url.hostname.includes("placeholder.supabase"),
+    async (route) => {
+      const reqUrl = route.request().url();
+
+      if (reqUrl.includes("/rest/v1/public_departments_view")) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: "dept-gen-001",
+              name: "General Medicine",
+              slug: "general-medicine",
+              description: "General Outpatient and Internal Medicine Department",
+            },
+            {
+              id: "dept-ped-002",
+              name: "Pediatrics",
+              slug: "pediatrics",
+              description: "Child and Adolescent Healthcare Department",
+            },
+          ]),
+        });
+        return;
+      }
+
+      if (reqUrl.includes("/rest/v1/rpc/get_public_doctors_directory")) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: "doc-001",
+              full_name: "Prof. Dr. M. A. Rahman",
+              degrees: "MBBS, FCPS (Medicine)",
+              designation: "Professor & Head",
+              specialization: "Internal Medicine",
+              room_number: "301",
+              opd_fee: 1000,
+              avatar_url: null,
+              public_bio: "Experienced consultant in general and internal medicine.",
+              department_name: "General Medicine",
+              department_slug: "general-medicine",
+              schedules: [
+                {
+                  id: "sched-001",
+                  day_of_week: "Saturday",
+                  start_time: "09:00",
+                  end_time: "13:00",
+                  is_active: true,
+                },
+              ],
+            },
+          ]),
+        });
+        return;
+      }
+
+      if (reqUrl.includes("/rest/v1/rpc/get_public_doctor_schedules")) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: "sched-001",
+              day_of_week: "Saturday",
+              start_time: "09:00",
+              end_time: "13:00",
+              max_tokens: 30,
+              room_number: "301",
+            },
+          ]),
+        });
+        return;
+      }
+
+      if (reqUrl.includes("/rest/v1/rpc/get_public_live_queue")) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+        return;
+      }
+
+      if (reqUrl.includes("/rest/v1/rpc/get_public_token_status")) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(null),
+        });
+        return;
+      }
+
+      if (reqUrl.includes("/auth/v1/")) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ user: null, session: null }),
+        });
+        return;
+      }
+
+      // Default safe empty response for any other placeholder Supabase query
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    }
+  );
+}
+
+/**
  * Extended `test` fixture that automatically installs the runtime
- * production mutation guard on every test's `page` object.
+ * production mutation guard and hermetic placeholder mocks on every test's `page` object.
  *
  * Specs that import `test` from this file get automatic network-level
  * protection without any additional boilerplate.
@@ -153,6 +275,9 @@ const test = baseTest.extend<{ page: Page }>({
       process.env.E2E_BASE_URL ??
       "https://onnesha-hospital.pages.dev";
 
+    // Install hermetic mocks for placeholder Supabase endpoints
+    await installHermeticMocks(page);
+
     // Install guard before any test navigation
     await installMutationGuard(page, effectiveBaseURL);
 
@@ -160,5 +285,6 @@ const test = baseTest.extend<{ page: Page }>({
   },
 });
 
-export { test, expect, installMutationGuard };
+export { test, expect, installMutationGuard, installHermeticMocks };
 export type { Page };
+

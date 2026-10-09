@@ -1,14 +1,14 @@
 {
-  "version": "1.1.73",
+  "version": "1.1.74",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.73. Production release: durable billing waivers, RPC authorization hardening, patient admission pathway resilience, and Patient 360 dynamic routing verification.",
-  "pub_date": "2026-10-09T10:45:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.74. Production release: authoritative billing waiver derivation, concurrency locking, hermetic E2E matrix verification, and Patient 360 dynamic routing verification.",
+  "pub_date": "2026-10-09T12:00:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.73.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.74.exe",
       "installer_exe_sha256": "PENDING_BUILD",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.73.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.74.msi",
       "installer_msi_sha256": "PENDING_BUILD",
       "installer_msi_size": 0,
       "status": "pending_ci_build",

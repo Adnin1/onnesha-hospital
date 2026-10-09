@@ -80,4 +80,21 @@ describe("Durable Billing Waivers & RPC Authorization Hardening (Migration 130)"
     assert.match(panelCode, /handleRestoreWaivedItem/);
     assert.match(panelCode, /Minimum 3 characters required for legal audit compliance\./);
   });
+
+  test("migration 131 enforces authoritative derivation, unbilled eligibility, and concurrency lock", () => {
+    const mig131Path = path.join(
+      ROOT,
+      "supabase/migrations/20261009190000_authoritative_billing_waiver_derivation.sql"
+    );
+    const mig131Sql = fs.readFileSync(mig131Path, "utf8");
+
+    assert.match(mig131Sql, /CREATE UNIQUE INDEX IF NOT EXISTS uq_episode_service_waivers_active/);
+    assert.match(mig131Sql, /PERFORM 1 FROM public\.patient_care_episodes[\s\S]+?FOR UPDATE;/);
+    assert.match(mig131Sql, /RAISE EXCEPTION 'ITEM_ALREADY_INVOICED';/);
+    assert.match(mig131Sql, /RAISE EXCEPTION 'REFERENCED_SERVICE_NOT_FOUND_OR_INELIGIBLE';/);
+    assert.match(mig131Sql, /v_final_waived_amount/);
+    assert.match(mig131Sql, /REVOKE ALL ON FUNCTION public\.waive_episode_service_atomic/);
+    assert.match(mig131Sql, /GRANT EXECUTE ON FUNCTION public\.waive_episode_service_atomic.+?TO authenticated, service_role/);
+  });
 });
+
