@@ -118,9 +118,11 @@ async function installMutationGuard(page: Page, baseURL: string): Promise<void> 
         return;
       }
 
-      // Allow hermetic test placeholder requests to be intercepted by fixture mocks
+      // Let previously registered hermetic fixture mocks handle placeholder requests.
+      // Playwright runs page.route handlers in reverse registration order; continue()
+      // would bypass the earlier mock and send the placeholder request to the network.
       if (targetHost.includes("placeholder") || targetHost.includes("ci-hermetic")) {
-        await route.continue();
+        await route.fallback();
         return;
       }
 
