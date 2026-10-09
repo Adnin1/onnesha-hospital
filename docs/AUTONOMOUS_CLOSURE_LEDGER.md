@@ -25,7 +25,7 @@
 | **Latest Applied Migration** | `20261009250000_authoritative_settlement_cashier_and_concurrency_closure.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (137/137 remote parity, 0 fatal lint errors) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Live Deployed SHA** | 8b7062e (Deployment: e63d4395) | VERIFIED |
+| **Cloudflare Live Deployed SHA** | c5a2c9e (Deployment: 08fa8a57) | VERIFIED |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting Owner Secrets Gate in GitHub Actions; verified fallback to v1.1.4) | VERIFIED (FAIL-CLOSED) |
 | **Prerendered Website Routes** | `61 routes` (59 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 | **Website Route Acceptance** | `59 / 59 HTML routes PASS` (0 violations, 21 forensic schema fields) | VERIFIED (`audit:routes`) |
