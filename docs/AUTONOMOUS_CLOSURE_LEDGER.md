@@ -9,11 +9,11 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-09T01:30:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-09T20:31:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
 | **Active Release Tag** | `v1.1.77` | VERIFIED (IMMUTABLE) |
-| **Preserved Release Tags** | v1.1.74, v1.1.73, 1.1.71 (c47eef71), 1.1.46 (c2c446), 1.1.45-1.1.26 | VERIFIED (IMMUTABLE) |
-| **Current Main HEAD SHA** | `Reconciled across local, origin, and ssh-origin` | VERIFIED |
+| **Preserved Release Tags** | v1.1.76, v1.1.75, v1.1.74, v1.1.73, v1.1.71 (c47eef71), v1.1.46 (6c2c446), v1.1.45-v1.1.26 | VERIFIED (IMMUTABLE) |
+| **Current Main HEAD SHA** | `8b7062e7d33436ebe156f462099e841c676c9f30` | VERIFIED |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED (100% IN SYNC) |
 | **Package Version (`package.json`)** | `1.1.77` | VERIFIED |
 | **Package Lock Version (`package-lock.json`)** | `1.1.77` | VERIFIED |
@@ -25,7 +25,7 @@
 | **Latest Applied Migration** | `20261009250000_authoritative_settlement_cashier_and_concurrency_closure.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (137/137 remote parity, 0 fatal lint errors) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
-| **Cloudflare Live Deployed SHA** | d556e0 (ecd727a-2a6a-46ce-9755-b59631f65911) | VERIFIED |
+| **Cloudflare Live Deployed SHA** | 8b7062e (Deployment: e63d4395) | VERIFIED |
 | **Desktop Artifact Release State** | `PENDING_CI_BUILD` (Awaiting Owner Secrets Gate in GitHub Actions; verified fallback to v1.1.4) | VERIFIED (FAIL-CLOSED) |
 | **Prerendered Website Routes** | `61 routes` (59 HTML + 1 404 + 1 `sitemap.xml`) | VERIFIED |
 | **Website Route Acceptance** | `59 / 59 HTML routes PASS` (0 violations, 21 forensic schema fields) | VERIFIED (`audit:routes`) |
