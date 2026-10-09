@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CACHE_VERSION = 'ohms-static-v5-1.1.77';
+const CACHE_VERSION = 'ohms-static-v5-1.1.78';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

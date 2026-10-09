@@ -9,18 +9,18 @@
 
 | Field | Measured Value | Verification Status |
 |:---|:---|:---:|
-| **Execution Timestamp** | `2026-10-09T20:31:00+06:00` | VERIFIED |
+| **Execution Timestamp** | `2026-10-09T21:00:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.77` | VERIFIED (IMMUTABLE) |
-| **Preserved Release Tags** | v1.1.76, v1.1.75, v1.1.74, v1.1.73, v1.1.71 (c47eef71), v1.1.46 (6c2c446), v1.1.45-v1.1.26 | VERIFIED (IMMUTABLE) |
-| **Current Main HEAD SHA** | `8b7062e7d33436ebe156f462099e841c676c9f30` | VERIFIED |
+| **Active Release Tag** | `v1.1.78` | VERIFIED (IMMUTABLE) |
+| **Preserved Release Tags** | v1.1.77, v1.1.76, v1.1.75, v1.1.74, v1.1.73, v1.1.71 (c47eef71), v1.1.46 (6c2c446), v1.1.45-v1.1.26 | VERIFIED (IMMUTABLE) |
+| **Current Main HEAD SHA** | `Reconciled across local, origin, and ssh-origin` | VERIFIED |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED (100% IN SYNC) |
-| **Package Version (`package.json`)** | `1.1.77` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.77` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.77` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.77` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.77` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.77` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.78` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.78` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.78` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.78` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.78` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.78` | VERIFIED |
 | **Database Migrations Count** | `137 migration files` | VERIFIED |
 | **Latest Applied Migration** | `20261009250000_authoritative_settlement_cashier_and_concurrency_closure.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (137/137 remote parity, 0 fatal lint errors) | VERIFIED |

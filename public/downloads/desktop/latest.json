@@ -1,14 +1,14 @@
 {
-  "version": "1.1.77",
+  "version": "1.1.78",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.77. Production release: 137/137 migration parity, zero database schema lint errors, Playwright 4-browser 208/208 green closure, appointment 11-digit phone validation alignment, settlement cashier security hardening, advisory serial concurrency lock, and reconciled waiver accounting.",
-  "pub_date": "2026-10-09T20:25:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.78. Production release: 137/137 migration parity, zero database schema lint errors, Playwright 4-browser 208/208 green closure with exact token match, appointment 11-digit phone validation alignment, settlement cashier security hardening, advisory serial concurrency lock, and reconciled waiver accounting.",
+  "pub_date": "2026-10-09T20:55:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.77.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.78.exe",
       "installer_exe_sha256": "PENDING_BUILD",
       "installer_exe_size": 0,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.77.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.78.msi",
       "installer_msi_sha256": "PENDING_BUILD",
       "installer_msi_size": 0,
       "status": "pending_ci_build",
