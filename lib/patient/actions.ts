@@ -1604,10 +1604,13 @@ export async function createUnifiedPatientIntakeAction(
       const message = error.message || "Unified patient intake transaction failed.";
       const readable =
         message.includes("DUPLICATE_NID") ? "This National ID (NID) / Birth Certificate number is already registered for another patient in this hospital." :
-        message.includes("CRITICAL_CARE_BED_NOT_FOUND") || message.includes("CRITICAL_CARE_BED_NOT_VACANT") ? "The selected Critical Care bed is unavailable or not vacant. Please select another bed." :
+        message.includes("BED_NOT_VACANT") || message.includes("BED_UNAVAILABLE") || message.includes("DOUBLE_ASSIGNMENT_PREVENTED") ? "The selected bed is already occupied or unavailable. Please select another bed." :
+        message.includes("CABIN_NOT_VACANT") ? "The selected cabin is already occupied or unavailable. Please select another cabin." :
+        message.includes("CRITICAL_CARE_BED_OCCUPIED") || message.includes("CRITICAL_CARE_BED_NOT_FOUND") || message.includes("CRITICAL_CARE_BED_NOT_VACANT") || message.includes("CRITICAL_CARE_BED_UNAVAILABLE") || message.includes("CRITICAL_CARE_DOUBLE_ASSIGNMENT") ? "The selected Critical Care bed is already occupied or unavailable. Please select another bed." :
+        message.includes("CRITICAL_CARE_UNIT_INACTIVE") ? "The selected Critical Care unit is currently inactive." :
+        message.includes("CRITICAL_CARE_UNIT_AND_BED_REQUIRED") ? "Both Critical Care unit and bed number are required." :
+        message.includes("PERMISSION_DENIED_PATIENT_INTAKE") ? "You do not have permission to register or admit patients." :
         message.includes("MARITAL_STATUS") ? "Patient registration schema is not fully updated. Apply the latest forward migration and refresh the API schema." :
-        message.includes("BED_UNAVAILABLE") || message.includes("DOUBLE_ASSIGNMENT_PREVENTED") ? "Selected bed/cabin is no longer available. Refresh availability and select another." :
-        message.includes("CRITICAL_CARE_BED_UNAVAILABLE") || message.includes("CRITICAL_CARE_DOUBLE_ASSIGNMENT") ? "Selected critical-care bed is no longer available." :
         message.includes("PATIENT_NOT_FOUND") ? "The selected patient no longer exists in this hospital organization." :
         message.includes("OPD_DOCTOR_NOT_FOUND") || message.includes("IPD_DOCTOR_NOT_FOUND") ? "Selected doctor is inactive or unavailable." :
         message.includes("OPD_DEPARTMENT_NOT_FOUND") || message.includes("IPD_DEPARTMENT_NOT_FOUND") ? "Selected department is inactive or unavailable." :
