@@ -12,21 +12,18 @@ export default function SwRegister() {
     let reg: ServiceWorkerRegistration | null = null;
     let refreshing = false;
 
-    // Purge outdated browser caches if version changed
+    // Unconditionally purge outdated or misnamed browser caches
     try {
-      const storedVer = localStorage.getItem("ohms_sw_version");
-      if (storedVer !== CURRENT_SW_VERSION) {
-        if ("caches" in window) {
-          caches.keys().then((names) => {
-            names.forEach((name) => {
-              if (name !== `ohms-static-v5-${CURRENT_SW_VERSION}-prod`) {
-                caches.delete(name).catch(() => {});
-              }
-            });
-          }).catch(() => {});
-        }
-        localStorage.setItem("ohms_sw_version", CURRENT_SW_VERSION);
+      if ("caches" in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => {
+            if (name !== `ohms-static-v5-${CURRENT_SW_VERSION}`) {
+              caches.delete(name).catch(() => {});
+            }
+          });
+        }).catch(() => {});
       }
+      localStorage.setItem("ohms_sw_version", CURRENT_SW_VERSION);
     } catch {
       // Non-fatal
     }

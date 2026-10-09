@@ -10,7 +10,9 @@ import {
   Menu,
   X,
   User,
+  RefreshCw,
 } from "lucide-react";
+import { APP_VERSION } from "@/lib/version";
 import { HOSPITAL_NAV_SECTIONS } from "@/config/navigation";
 import { RoleType } from "@/types";
 import { DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
@@ -117,6 +119,29 @@ export function HospitalSidebar() {
       }
     }
     router.push("/login");
+  };
+
+  const handleHardRefreshAndPurge = async () => {
+    try {
+      if (typeof window !== "undefined") {
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const r of regs) {
+            await r.unregister();
+          }
+        }
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          for (const k of keys) {
+            await caches.delete(k);
+          }
+        }
+        localStorage.removeItem("ohms_sw_version");
+        window.location.reload();
+      }
+    } catch {
+      window.location.reload();
+    }
   };
 
   const isSuperAdmin = activeRole === "super_admin";
@@ -254,6 +279,31 @@ export function HospitalSidebar() {
             );
           })}
         </nav>
+
+        {/* Live Version & Cache Sync Action Bar */}
+        <div className="px-3 py-2 border-t border-slate-800/80 bg-slate-950/40 flex items-center justify-between text-[10px]">
+          {!collapsed ? (
+            <div className="flex items-center space-x-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-mono text-slate-300 font-semibold">{APP_VERSION}</span>
+              <span className="text-[9px] font-bold uppercase text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-1 py-0.2 rounded">
+                Live
+              </span>
+            </div>
+          ) : (
+            <span className="w-1.5 h-1.5 mx-auto rounded-full bg-emerald-400" />
+          )}
+          <button
+            type="button"
+            onClick={handleHardRefreshAndPurge}
+            className="text-slate-400 hover:text-sky-300 p-1 rounded hover:bg-slate-800 transition flex items-center gap-1 cursor-pointer"
+            title="ক্লিয়ার ক্যাশ ও রিলোড / Clear Stale Cache & Sync Latest Features"
+            aria-label="Clear Cache and Reload App"
+          >
+            <RefreshCw className="w-3 h-3" />
+            {!collapsed && <span className="text-[10px] font-medium">ক্যাশ সিঙ্ক</span>}
+          </button>
+        </div>
 
         {/* Bottom User Profile & Sign Out */}
         <div className="p-3 border-t border-slate-800">

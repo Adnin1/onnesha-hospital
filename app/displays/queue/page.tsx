@@ -498,7 +498,7 @@ export default function QueueDisplayPage() {
             : "Please proceed to your assigned consultation room when your token is called. Emergency Hotline: 01718835623"}
         </div>
         <div className="text-slate-500 font-mono text-[11px]">
-          OHMS v1.1.47
+          OHMS v1.1.80
         </div>
       </footer>
     </div>

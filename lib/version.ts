@@ -3,5 +3,5 @@
  * Synchronized across package.json, package-lock.json, Cargo.toml, tauri.conf.json,
  * Dockerfile, and latest.json.
  */
-export const APP_VERSION = "v1.1.47";
-export const RAW_VERSION = "1.1.47";
+export const APP_VERSION = "v1.1.80";
+export const RAW_VERSION = "1.1.80";
