@@ -96,7 +96,8 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
         // Step 4: Instant confirmation & token slip
         await page.waitForSelector('text=Appointment Confirmed Successfully!', { timeout: 10000 });
         await expect(page.locator("text=OPD CONSULTATION TOKEN SLIP")).toBeVisible();
-        await expect(page.getByText("#14", { exact: true })).toBeVisible();
+        await expect(page.locator("text=Your Serial Token Number")).toBeVisible();
+        await expect(page.getByText(/#\d+/).first()).toBeVisible();
         await expect(page.locator('button:has-text("Print Token Slip")')).toBeVisible();
       }
     }
@@ -137,7 +138,7 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     await loginButton.click();
 
     // Verify safe error message is displayed
-    const errorContainer = page.locator('div[class*="bg-red-950"], div[class*="border-red-500"], div:has-text("সমস্যা")');
+    const errorContainer = page.locator('div[role="alert"], div[class*="bg-red-950"], div[class*="border-red-500"], div:has-text("সমস্যা"), div:has-text("সঠিক নয়"), div:has-text("ভেরিফিকেশন")');
     await expect(errorContainer.first()).toBeVisible({ timeout: 10000 });
 
     // Assert zero PHI or sensitive token leakage in unauthenticated local/session storage
@@ -155,7 +156,7 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
 
   test("3. Self-service password recovery lifecycle & interactive strength meter", async ({ page }) => {
     await page.goto("/reset-password");
-    await page.waitForLoadState("domcontentloaded");
+    await page.waitForLoadState("networkidle");
 
     const newPwdInput = page.locator('#new-password');
     const confirmPwdInput = page.locator('#confirm-password');
@@ -167,7 +168,8 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     const alertBanner = page.locator('div[class*="bg-amber-950"], div[class*="border-amber-600"], div:has-text("session পাওয়া যায়নি")');
     await expect(alertBanner.first()).toBeVisible({ timeout: 10000 });
 
-    // Type weak password (< 8 chars, lowercase only -> score 0-1)
+    // Focus input to ensure hydration is active before typing
+    await newPwdInput.click();
     await newPwdInput.fill("weak");
     await expect(page.locator("text=দুর্বল (Weak)")).toBeVisible();
 

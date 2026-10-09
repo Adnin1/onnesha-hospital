@@ -17,6 +17,7 @@ import {
   Check,
   Sparkles,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import {
   InvoiceRecord,
@@ -102,6 +103,7 @@ function BillingManagementContent() {
   const [searchedPatients, setSearchedPatients] = useState<PatientMaster[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<PatientMaster | null>(null);
+  const [patientSearchNotice, setPatientSearchNotice] = useState<string | null>(null);
   const [billingReferralAgents, setBillingReferralAgents] = useState<
     Array<{
       id: string;
@@ -339,6 +341,7 @@ function BillingManagementContent() {
     setPatientIdInput(p.id);
     setPatientSearchQuery(`${p.full_name} (${p.patient_code || p.registration_serial || ""})`);
     setSearchedPatients([]);
+    setPatientSearchNotice(null);
     checkAttributionForPatient(p.id);
     void loadUnbilledServicesForPatient(p.id);
   };
@@ -346,18 +349,50 @@ function BillingManagementContent() {
   const autoLookupAndSelectPatient = async (term: string) => {
     const clean = term.trim();
     if (!clean) return;
+    setPatientSearchNotice(null);
     setLoadingPatients(true);
     try {
-      const res = await searchPatientsAction({ query: clean, pageSize: 5 });
+      const res = await searchPatientsAction({ query: clean, pageSize: 10 });
       if (res.success && res.data?.patients && res.data.patients.length > 0) {
-        handleSelectPatient(res.data.patients[0]);
+        const patients = res.data.patients;
+        const cleanUpper = clean.toUpperCase();
+
+        // Priority 1: Check for exact unique match on patient_code or UUID or phone number
+        const exactMatch = patients.find(
+          (p) =>
+            p.patient_code?.toUpperCase() === cleanUpper ||
+            p.id.toUpperCase() === cleanUpper ||
+            (p.phone && p.phone.trim() === clean)
+        );
+
+        if (exactMatch) {
+          handleSelectPatient(exactMatch);
+        } else if (patients.length === 1) {
+          // Exactly one match in directory
+          handleSelectPatient(patients[0]);
+        } else {
+          // Multiple matching patients found on ambiguous query (e.g. common name like 'Rahim').
+          // Never auto-select patients[0] blindly to prevent billing attribution errors.
+          // Surface search results so cashier explicitly selects the intended patient.
+          setSearchedPatients(patients);
+          setPatientSearchNotice(
+            `একাধিক রোগী পাওয়া গেছে (${patients.length} জন)। অনুগ্রহ করে নিচের তালিকা থেকে নির্দিষ্ট রোগীটি নির্বাচন করুন।`
+          );
+        }
       } else {
-        setPatientIdInput(clean);
-        checkAttributionForPatient(clean);
-        void loadUnbilledServicesForPatient(clean);
+        setSearchedPatients([]);
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
+        if (isUUID) {
+          setPatientIdInput(clean);
+          checkAttributionForPatient(clean);
+          void loadUnbilledServicesForPatient(clean);
+        } else {
+          setPatientSearchNotice(`"${clean}" সম্পর্কিত কোনো রোগী পাওয়া যায়নি।`);
+        }
       }
     } catch (err) {
       console.error("[autoLookupAndSelectPatient] error:", err);
+      setPatientSearchNotice("রোগী অনুসন্ধানে ত্রুটি দেখা দিয়েছে।");
     } finally {
       setLoadingPatients(false);
     }
@@ -1016,6 +1051,13 @@ function BillingManagementContent() {
                         খুঁজুন
                       </button>
                     </div>
+
+                    {patientSearchNotice && (
+                      <div role="alert" className="p-2.5 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>{patientSearchNotice}</span>
+                      </div>
+                    )}
 
                     {/* Patient search results dropdown */}
                     {loadingPatients ? (

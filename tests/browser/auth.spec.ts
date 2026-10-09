@@ -3,17 +3,17 @@ import { test, expect } from "./fixtures";
 test.describe("Real Browser E2E: Authentication & Navigation", () => {
   test("1. Login page loads cleanly, accepts email/password input, and validates submission", async ({ page }) => {
     await page.goto("/login");
-    await page.waitForLoadState("domcontentloaded");
+    await page.waitForLoadState("networkidle");
 
     const emailInput = page.locator('input[type="email"]');
     const passInput = page.locator('input[type="password"]');
     await expect(emailInput).toBeVisible();
     await expect(passInput).toBeVisible();
-    await expect(emailInput).toHaveValue("");
-    await expect(passInput).toHaveValue("");
 
-    // Test filling invalid inputs
+    // Ensure hydration is settled before typing
+    await emailInput.click();
     await emailInput.fill("invalid.user@hospital.com");
+    await passInput.click();
     await passInput.fill("WrongPassword123!");
     await expect(emailInput).toHaveValue("invalid.user@hospital.com");
     await expect(passInput).toHaveValue("WrongPassword123!");

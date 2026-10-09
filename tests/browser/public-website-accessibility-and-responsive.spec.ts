@@ -111,7 +111,8 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
 
   test("6. Real Browser Cache Storage: PWA caches only static assets and never caches /app/, /api/, or auth routes", async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("domcontentloaded");
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(500);
 
     // Evaluate window.caches directly inside the real browser environment
     const cacheReport = await page.evaluate(async () => {

@@ -151,7 +151,7 @@ describe("OHMS Phase 37: v1.1.57 Production Excellence, Tariff Authority & Websi
     assert.ok(fs.existsSync(swPath), "sw.js must exist");
     const content = fs.readFileSync(swPath, "utf8");
 
-    assert.match(content, /const CACHE_VERSION = 'ohms-static-v5-1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78)';/);
+    assert.match(content, /const CACHE_VERSION = 'ohms-static-v5-1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80)';/);
     assert.match(content, /keys\.filter\(key => key !== CACHE_VERSION\)\.map\(key => caches\.delete\(key\)\)/, "Must purge old cache versions on activate");
     assert.match(content, /NEVER_CACHE_PATTERNS/, "Must define never-cache patterns for private/clinical/auth routes");
   });
@@ -170,25 +170,25 @@ describe("OHMS Phase 37: v1.1.57 Production Excellence, Tariff Authority & Websi
   // Test 7: Synchronized Version across all manifests
   test("7. Version Synchronization: version is synchronized across all manifests (1.1.57+)", () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, "package.json"), "utf8"));
-    assert.match(pkg.version, /^1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78)$/, "package.json must be 1.1.57-1.1.78");
+    assert.match(pkg.version, /^1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80)$/, "package.json must be 1.1.57-1.1.80");
 
     const pkgLock = JSON.parse(fs.readFileSync(path.join(rootDir, "package-lock.json"), "utf8"));
-    assert.match(pkgLock.version, /^1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78)$/, "package-lock.json must match");
-    assert.match(pkgLock.packages[""].version, /^1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78)$/, "package-lock.json empty package must match");
+    assert.match(pkgLock.version, /^1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80)$/, "package-lock.json must match");
+    assert.match(pkgLock.packages[""].version, /^1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80)$/, "package-lock.json empty package must match");
 
     const dockerfile = fs.readFileSync(path.join(rootDir, "Dockerfile"), "utf8");
-    assert.match(dockerfile, /LABEL version="1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78)"/, "Dockerfile LABEL version must match");
+    assert.match(dockerfile, /LABEL version="1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80)"/, "Dockerfile LABEL version must match");
 
     const cargoToml = fs.readFileSync(path.join(rootDir, "src-tauri", "Cargo.toml"), "utf8");
-    assert.match(cargoToml, /version\s*=\s*"1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78)"/, "Cargo.toml version must match");
+    assert.match(cargoToml, /version\s*=\s*"1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80)"/, "Cargo.toml version must match");
 
     const tauriConf = JSON.parse(fs.readFileSync(path.join(rootDir, "src-tauri", "tauri.conf.json"), "utf8"));
-    assert.match(tauriConf.version, /^1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78)$/, "tauri.conf.json version must match");
+    assert.match(tauriConf.version, /^1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80)$/, "tauri.conf.json version must match");
 
     const sw = fs.readFileSync(path.join(rootDir, "public", "sw.js"), "utf8");
-    assert.match(sw, /CACHE_VERSION\s*=\s*'ohms-static-v5-1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78)'/, "sw.js CACHE_VERSION must match");
+    assert.match(sw, /CACHE_VERSION\s*=\s*'ohms-static-v5-1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80)'/, "sw.js CACHE_VERSION must match");
 
     const latestJson = JSON.parse(fs.readFileSync(path.join(rootDir, "public", "downloads", "desktop", "latest.json"), "utf8"));
-    assert.match(latestJson.version, /^1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78)$/, "latest.json version must match");
+    assert.match(latestJson.version, /^1\.1\.(57|58|59|60|61|62|63|64|65|66|67|68|69|70|71|72|73|74|75|76|77|78|79|80)$/, "latest.json version must match");
   });
 });
