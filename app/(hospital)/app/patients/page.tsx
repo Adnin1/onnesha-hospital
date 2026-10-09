@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Edit,
   FileSpreadsheet,
+  Wallet,
 } from "lucide-react";
 import { PatientMaster, TimelineEvent } from "@/types/clinical";
 import { InvoiceRecord } from "@/types/billing";
@@ -246,22 +247,53 @@ export default function PatientsManagementPage() {
                   <div
                     key={p.id}
                     onClick={() => selectPatient(p)}
-                    className={`p-4 cursor-pointer transition flex justify-between items-center ${
+                    className={`p-4 cursor-pointer transition flex justify-between items-center gap-2 ${
                       isSelected ? "bg-sky-50/80 font-medium" : "hover:bg-slate-50"
                     }`}
                   >
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
                         <span className="font-mono font-bold text-xs text-sky-900">
                           {p.patient_code || "N/A"}
                         </span>
-                        <span className="text-xs font-bold text-slate-900">{p.full_name || "Patient"}</span>
+                        <span className="text-xs font-bold text-slate-900 truncate">{p.full_name || "Patient"}</span>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-1">
+                      <p className="text-[11px] text-slate-500 mt-1 truncate">
                         Ph: {p.phone || "N/A"} • {p.gender || "N/A"} • Blood: {p.blood_group || "N/A"}
                       </p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPatient(p);
+                          setIsEditModalOpen(true);
+                        }}
+                        className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition"
+                        title="তথ্য সংশোধন (Edit Details)"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPatient(p);
+                          setIsIntakeDossierModalOpen(true);
+                        }}
+                        className="p-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition"
+                        title="ইনটেক ফাইল / ডসিয়ার দেখুন (View Intake Dossier)"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5" />
+                      </button>
+                      <Link
+                        href={`/app/billing?code=${p.patient_code || p.id}`}
+                        className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition"
+                        title="সরাসরি বিলিংয়ে যান (Proceed to Billing)"
+                      >
+                        <Wallet className="w-3.5 h-3.5" />
+                      </Link>
+                      <ChevronRight className="w-4 h-4 text-slate-400 ml-0.5" />
+                    </div>
                   </div>
                 );
               })
@@ -321,6 +353,14 @@ export default function PatientsManagementPage() {
                   >
                     <FileText className="w-3.5 h-3.5 mr-1" />
                     Full Patient 360 File
+                  </Link>
+                  <Link
+                    href={`/app/billing?code=${selectedPatient.patient_code || selectedPatient.id}`}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center shadow-xs cursor-pointer"
+                    title="সরাসরি বিলিংয়ে যান / Proceed to Billing"
+                  >
+                    <Wallet className="w-3.5 h-3.5 mr-1" />
+                    সরাসরি বিলিং (Billing)
                   </Link>
                   <EpisodeBillingPanel patientId={selectedPatient.id} />
                 </div>

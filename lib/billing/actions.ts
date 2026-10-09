@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/client";
 import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
 import { getDhakaDateString } from "@/lib/datetime";
+import { normalizeBDPhone } from "@/lib/patient/phone";
 import {
   InvoiceRecord,
   InvoiceItemRecord,
@@ -652,9 +653,29 @@ export async function getEpisodeBillingPreviewAction(params: {
 
   try {
     const supabase = await createClient();
+
+    let targetPatientId = params.patientId.trim();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetPatientId);
+    if (!isUuid) {
+      const sanitized = targetPatientId.replace(/[,().%"']/g, "").trim();
+      const normPhone = normalizeBDPhone(sanitized);
+      const { data: pRec } = await supabase
+        .from("patients")
+        .select("id")
+        .eq("organization_id", session.organizationId)
+        .eq("is_deleted", false)
+        .or(`patient_code.eq.${sanitized},registration_serial.eq.${sanitized},phone.eq.${sanitized},normalized_phone.eq.${normPhone}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (pRec?.id) {
+        targetPatientId = pRec.id;
+      }
+    }
+
     const { data, error } = await supabase.rpc("get_episode_billing_overview", {
       p_org_id: session.organizationId,
-      p_patient_id: params.patientId,
+      p_patient_id: targetPatientId,
       p_episode_id: params.episodeId || null,
       p_as_of: new Date().toISOString(),
     });

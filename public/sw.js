@@ -135,6 +135,20 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Immediate Activation & Purge on demand
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING' || (event.data && event.data.type === 'SKIP_WAITING')) {
+    void self.skipWaiting();
+  }
+  if (event.data === 'PURGE_OLD_CACHES' || (event.data && event.data.type === 'PURGE_OLD_CACHES')) {
+    event.waitUntil(
+      caches.keys().then(keys => Promise.all(
+        keys.filter(key => key !== CACHE_VERSION).map(key => caches.delete(key))
+      ))
+    );
+  }
+});
+
 // Fetch: network-first for API/dynamic, cache-first for static
 self.addEventListener('fetch', (event) => {
   const { request } = event;

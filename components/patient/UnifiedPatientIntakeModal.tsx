@@ -1,7 +1,24 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Bed, Check, Clock3, Loader2, Search, Stethoscope, UserPlus, X, Scissors } from "lucide-react";
+import Link from "next/link";
+import {
+  AlertTriangle,
+  Bed,
+  Check,
+  Clock3,
+  Loader2,
+  Search,
+  Stethoscope,
+  UserPlus,
+  X,
+  Scissors,
+  Edit,
+  FileSpreadsheet,
+  CheckCircle2,
+  Wallet,
+  Copy,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { calculateAgeFromDOB } from "@/lib/utils";
 import {
@@ -13,6 +30,8 @@ import { searchPatientsAction } from "@/lib/patient/actions";
 import { searchReferralAgentsAction } from "@/lib/referrals/actions";
 import { normalizeBDPhone, isValidNormalizedBDPhone } from "@/lib/patient/phone";
 import { PatientMaster } from "@/types/clinical";
+import { EditPatientModal } from "./EditPatientModal";
+import { PatientIntakeDossierModal } from "./PatientIntakeDossierModal";
 
 type Props = {
   isOpen: boolean;
@@ -110,8 +129,16 @@ export function UnifiedPatientIntakeModal({
   const [ipdCabinId, setIpdCabinId] = useState("");
   const [ipdDiagnosis, setIpdDiagnosis] = useState("");
   const [referralAgentId, setReferralAgentId] = useState("");
+  const [admissionDiscountMode, setAdmissionDiscountMode] = useState<"PERCENT" | "FIXED">("PERCENT");
   const [admissionDiscountPercent, setAdmissionDiscountPercent] = useState<number | "">("");
+  const [admissionDiscountFixed, setAdmissionDiscountFixed] = useState<number | "">("");
   const [admissionDiscountReason, setAdmissionDiscountReason] = useState("");
+
+  // Post-Registration Dossier & Success State
+  const [registeredSuccessPatient, setRegisteredSuccessPatient] = useState<PatientMaster | null>(null);
+  const [isIntakeDossierOpen, setIsIntakeDossierOpen] = useState(false);
+  const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   // Critical Care Fields
   const [criticalUnitId, setCriticalUnitId] = useState("");
@@ -446,10 +473,15 @@ export function UnifiedPatientIntakeModal({
     setEmergencyName("");
     setEmergencyRelation("Father");
     setEmergencyPhone("");
+    setAdmissionDiscountMode("PERCENT");
     setAdmissionDiscountPercent("");
+    setAdmissionDiscountFixed("");
     setAdmissionDiscountReason("");
     setReferralAgentId("");
     setHighlightField(null);
+    setRegisteredSuccessPatient(null);
+    setIsIntakeDossierOpen(false);
+    setIsEditPatientOpen(false);
   }
 
   // Authoritative Submission Function
@@ -458,9 +490,16 @@ export function UnifiedPatientIntakeModal({
     setErrorMsg(null);
     setDuplicateWarning(null);
 
-    const pct = admissionDiscountPercent !== "" ? Number(admissionDiscountPercent) : 0;
-    if (pct > 0 && (pct < 5 || pct > 60)) {
-      setErrorMsg("অনুমোদিত অ্যাডমিশন ডিসকাউন্ট সীমা ৫% থেকে ৬০% এর মধ্যে হতে হবে (বা ০% কোন ছাড় না থাকলে)।");
+    const pct = admissionDiscountMode === "PERCENT" && admissionDiscountPercent !== "" ? Number(admissionDiscountPercent) : 0;
+    const fixedVal = admissionDiscountMode === "FIXED" && admissionDiscountFixed !== "" ? Number(admissionDiscountFixed) : 0;
+
+    if (admissionDiscountMode === "PERCENT" && pct > 0 && (pct < 5 || pct > 60)) {
+      setErrorMsg("অনুমোদিত অ্যাডমিশন ডিসকাউন্ট শতকরা সীমা ৫% থেকে ৬০% এর মধ্যে হতে হবে।");
+      setSubmitting(false);
+      return;
+    }
+    if (admissionDiscountMode === "FIXED" && fixedVal < 0) {
+      setErrorMsg("অ্যাডমিশন ডিসকাউন্ট এর পরিমাণ ধনাত্মক হতে হবে।");
       setSubmitting(false);
       return;
     }
@@ -501,18 +540,23 @@ export function UnifiedPatientIntakeModal({
       },
     };
 
-    const effectiveDiscountBDT = estimate > 0 && pct > 0 ? Math.round((estimate * pct) / 100) : 0;
-    const effectiveReason = pct > 0
-      ? `[Admission Discount: ${pct}%] ${admissionDiscountReason.trim()}`.trim()
+    const effectiveDiscountBDT = admissionDiscountMode === "PERCENT"
+      ? (estimate > 0 && pct > 0 ? Math.round((estimate * pct) / 100) : 0)
+      : (fixedVal > 0 ? Math.round(fixedVal) : 0);
+
+    const effectiveReason = effectiveDiscountBDT > 0
+      ? (admissionDiscountMode === "PERCENT"
+          ? `[Admission Discount: ${pct}%] ${admissionDiscountReason.trim()}`.trim()
+          : `[Admission Concession: ৳${effectiveDiscountBDT}] ${admissionDiscountReason.trim()}`.trim())
       : admissionDiscountReason.trim() || undefined;
 
     const payload: UnifiedPatientIntakePayload = {
       existingPatientId: selectedExisting?.id,
       encounterAt: toDhakaIso(encounterAt),
       referralAgentId: referralAgentId || undefined,
-      admissionDiscountAmount: pct > 0 ? effectiveDiscountBDT : undefined,
-      admissionDiscountPercent: pct > 0 ? pct : undefined,
-      admissionDiscountPercentage: pct > 0 ? pct : undefined,
+      admissionDiscountAmount: effectiveDiscountBDT > 0 ? effectiveDiscountBDT : undefined,
+      admissionDiscountPercent: admissionDiscountMode === "PERCENT" && pct > 0 ? pct : undefined,
+      admissionDiscountPercentage: admissionDiscountMode === "PERCENT" && pct > 0 ? pct : undefined,
       admissionDiscountReason: effectiveReason,
       patient: mode === "NEW"
         ? {
@@ -559,13 +603,8 @@ export function UnifiedPatientIntakeModal({
           episodeId: result.data.episodeId,
           episodeNumber: result.data.episodeNumber,
         });
+        setRegisteredSuccessPatient(result.data.patient);
       }
-      resetNewPatientFields();
-      setOpdEnabled(false);
-      setIpdEnabled(false);
-      setCriticalEnabled(false);
-      setOtEnabled(false);
-      onClose();
     } catch (err: unknown) {
       console.error("Intake action error:", err);
       setErrorMsg(err instanceof Error ? err.message : "An unexpected error occurred during patient intake.");
@@ -701,7 +740,7 @@ export function UnifiedPatientIntakeModal({
     }
 
     // Admission Discount Range Check
-    if (admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0) {
+    if (admissionDiscountMode === "PERCENT" && admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0) {
       const p = Number(admissionDiscountPercent);
       if (p < 5 || p > 60) {
         setErrorMsg("অ্যাডমিশন ডিসকাউন্ট ৫% থেকে ৬০% এর মধ্যে হতে হবে (Admission discount percentage must be between 5% and 60%).");
@@ -709,11 +748,222 @@ export function UnifiedPatientIntakeModal({
         return;
       }
     }
+    if (admissionDiscountMode === "FIXED" && admissionDiscountFixed !== "" && Number(admissionDiscountFixed) < 0) {
+      setErrorMsg("অ্যাডমিশন ডিসকাউন্ট ঋণাত্মক হতে পারবে না।");
+      scrollToField("field-discount");
+      return;
+    }
 
     void submit(false);
   }
 
   if (!isOpen) return null;
+
+  if (registeredSuccessPatient) {
+    return (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/65 backdrop-blur-sm p-3 sm:p-5" role="dialog" aria-modal="true" aria-label="Patient Registration Success & Intake Dossier">
+        <div className="w-full max-w-4xl max-h-[94vh] overflow-hidden rounded-3xl bg-white shadow-2xl border border-slate-200 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-slate-200 bg-slate-50/70">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-black text-slate-900">নিবন্ধন ও ভর্তি সফল (Registration Complete)</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Patient record created. You can view the full dossier, edit details, or proceed directly to billing.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setRegisteredSuccessPatient(null);
+                onClose();
+              }}
+              className="p-2 rounded-xl hover:bg-slate-200 text-slate-500 transition"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Patient Header Card */}
+            <div className="rounded-3xl bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border border-emerald-200/80 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-full border border-emerald-300">
+                  সফলভাবে নিবন্ধিত / Active Patient
+                </span>
+                <h3 className="text-2xl font-black text-slate-900 mt-2">
+                  {registeredSuccessPatient.full_name}
+                </h3>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 mt-1 font-medium">
+                  <span>📱 {registeredSuccessPatient.phone}</span>
+                  <span>•</span>
+                  <span>{calculateAgeFromDOB(registeredSuccessPatient.dob) || "N/A"} বছর</span>
+                  <span>•</span>
+                  <span>{registeredSuccessPatient.gender === "MALE" ? "পুরুষ" : registeredSuccessPatient.gender === "FEMALE" ? "মহিলা" : "অন্যান্য"}</span>
+                  <span>•</span>
+                  <span className="font-bold text-rose-700">রক্ত: {registeredSuccessPatient.blood_group || "অজানা"}</span>
+                </div>
+              </div>
+
+              {/* Patient Code Copy Box */}
+              <div className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-2xl border-2 border-emerald-400 shadow-sm shrink-0">
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">রোগী কোড (Patient Code)</div>
+                  <div className="font-mono text-lg font-black text-sky-800 tracking-wide">
+                    {registeredSuccessPatient.patient_code || registeredSuccessPatient.registration_serial || registeredSuccessPatient.id.slice(0, 8)}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const code = registeredSuccessPatient.patient_code || registeredSuccessPatient.registration_serial || registeredSuccessPatient.id;
+                    void navigator.clipboard.writeText(code);
+                    setCopiedCode(true);
+                    setTimeout(() => setCopiedCode(false), 2500);
+                  }}
+                  className="p-2 rounded-xl hover:bg-slate-100 text-slate-700 border border-slate-200 transition"
+                  title="কপি করুন"
+                >
+                  {copiedCode ? <Check className="w-5 h-5 text-emerald-600" /> : <Copy className="w-5 h-5" />}
+                </button>
+                {copiedCode && <span className="text-[11px] font-bold text-emerald-600">কপি হয়েছে!</span>}
+              </div>
+            </div>
+
+            {/* Services & Financial Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-2">
+                <div className="text-xs font-bold text-slate-700">অন্তর্ভুক্ত এনকাউন্টার / সেবা:</div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {opdEnabled && <span className="px-2.5 py-1 rounded-lg bg-sky-100 text-sky-800 font-bold border border-sky-300">OPD বহির্বিভাগ</span>}
+                  {ipdEnabled && <span className="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 font-bold border border-indigo-300">IPD অন্তর্বিভাগ</span>}
+                  {criticalEnabled && <span className="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 font-bold border border-rose-300">ক্রিটিক্যাল কেয়ার</span>}
+                  {otEnabled && <span className="px-2.5 py-1 rounded-lg bg-purple-100 text-purple-800 font-bold border border-purple-300">OT সার্জারি</span>}
+                  {!opdEnabled && !ipdEnabled && !criticalEnabled && !otEnabled && (
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-700 font-bold">সাধারণ রোগী নিবন্ধন (General Registration)</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-2">
+                <div className="text-xs font-bold text-slate-700">ছাড় ও কমিশন নীতি:</div>
+                <div className="text-xs text-slate-600 space-y-1">
+                  <div>
+                    {admissionDiscountMode === "PERCENT" && admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0 ? (
+                      <span className="font-bold text-emerald-700">✓ রোগীর ভর্তি ছাড়: {admissionDiscountPercent}% নির্ধারিত</span>
+                    ) : admissionDiscountMode === "FIXED" && admissionDiscountFixed !== "" && Number(admissionDiscountFixed) > 0 ? (
+                      <span className="font-bold text-emerald-700">✓ রোগীর নির্ধারিত ছাড়: ৳{Number(admissionDiscountFixed).toLocaleString()}</span>
+                    ) : (
+                      <span className="text-slate-500">কোন ভর্তি ছাড় প্রযোজ্য হয়নি</span>
+                    )}
+                  </div>
+                  <div>
+                    {referralAgentId ? (
+                      <span className="text-sky-800 font-semibold">✓ রেফারেল এজেন্ট কমিশন: রোগীর ছাড় বাদে নেট বিলের ওপর প্রদেয়</span>
+                    ) : (
+                      <span className="text-slate-500">সরাসরি হাসপাতাল রোগী (No Referral Broker)</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions Grid */}
+            <div className="space-y-3">
+              <div className="text-xs font-black text-slate-500 uppercase tracking-wider">
+                পরবর্তী পদক্ষেপ ও ফাইল ব্যবস্থাপনা (Actions):
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* 1. View Dossier */}
+                <button
+                  type="button"
+                  onClick={() => setIsIntakeDossierOpen(true)}
+                  className="p-4 rounded-2xl border-2 border-sky-300 bg-sky-50/60 hover:bg-sky-100 text-sky-900 font-bold flex flex-col items-center justify-center gap-2 transition hover:shadow-md text-center group"
+                >
+                  <FileSpreadsheet className="w-6 h-6 text-sky-600 group-hover:scale-110 transition" />
+                  <span className="text-sm">ইনটেক ফাইল / ডসিয়ার দেখুন</span>
+                  <span className="text-[11px] font-normal text-sky-700">View Intake Form & Print</span>
+                </button>
+
+                {/* 2. Edit Details */}
+                <button
+                  type="button"
+                  onClick={() => setIsEditPatientOpen(true)}
+                  className="p-4 rounded-2xl border-2 border-amber-300 bg-amber-50/60 hover:bg-amber-100 text-amber-900 font-bold flex flex-col items-center justify-center gap-2 transition hover:shadow-md text-center group"
+                >
+                  <Edit className="w-6 h-6 text-amber-600 group-hover:scale-110 transition" />
+                  <span className="text-sm">তথ্য সংশোধন করুন (Edit)</span>
+                  <span className="text-[11px] font-normal text-amber-700">Fix Mistake or Update Fields</span>
+                </button>
+
+                {/* 3. Proceed to Billing */}
+                <Link
+                  href={`/app/billing?code=${registeredSuccessPatient.patient_code || registeredSuccessPatient.id}`}
+                  onClick={() => {
+                    setRegisteredSuccessPatient(null);
+                    onClose();
+                  }}
+                  className="p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex flex-col items-center justify-center gap-2 transition shadow-md hover:shadow-lg text-center group"
+                >
+                  <Wallet className="w-6 h-6 text-white group-hover:scale-110 transition" />
+                  <span className="text-sm">সরাসরি বিলিংয়ে যান (Billing)</span>
+                  <span className="text-[11px] font-normal text-emerald-100">Auto-load Services & Invoice</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Controls */}
+          <div className="border-t border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3 bg-slate-50/80">
+            <button
+              type="button"
+              onClick={() => {
+                resetNewPatientFields();
+                setRegisteredSuccessPatient(null);
+                setMode("NEW");
+              }}
+              className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-xs font-bold text-slate-700 transition"
+            >
+              ➕ নতুন রোগী নিবন্ধন করুন (Register Another)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRegisteredSuccessPatient(null);
+                onClose();
+              }}
+              className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-black transition shadow-sm"
+            >
+              সম্পন্ন ও বন্ধ করুন (Done & Close)
+            </button>
+          </div>
+        </div>
+
+        {/* Embedded modals accessible right from the confirmation screen */}
+        <PatientIntakeDossierModal
+          isOpen={isIntakeDossierOpen}
+          onClose={() => setIsIntakeDossierOpen(false)}
+          patientId={registeredSuccessPatient.id}
+          onPatientUpdated={(updated) => setRegisteredSuccessPatient(updated)}
+        />
+        <EditPatientModal
+          isOpen={isEditPatientOpen}
+          onClose={() => setIsEditPatientOpen(false)}
+          patient={registeredSuccessPatient}
+          onSuccess={(updated) => {
+            setRegisteredSuccessPatient(updated);
+            setIsEditPatientOpen(false);
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/65 backdrop-blur-sm p-3 sm:p-5" role="dialog" aria-modal="true" aria-label="Unified Patient Registration and Admission">
@@ -937,29 +1187,65 @@ export function UnifiedPatientIntakeModal({
                     ))}
                   </select>
                 </Field>
-                <Field label="১. রোগীর ভর্তি ছাড় / কমিশন (Patient Discount %)">
+                <Field label="১. রোগীর ভর্তি ছাড় / কমিশন (Patient Concession / Discount)">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setAdmissionDiscountMode("PERCENT")}
+                      className={"px-2.5 py-1 rounded-lg text-[11px] font-bold transition " + (admissionDiscountMode === "PERCENT" ? "bg-sky-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}
+                    >
+                      % শতকরা ছাড়
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAdmissionDiscountMode("FIXED")}
+                      className={"px-2.5 py-1 rounded-lg text-[11px] font-bold transition " + (admissionDiscountMode === "FIXED" ? "bg-sky-600 text-white shadow-sm" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}
+                    >
+                      ৳ নির্দিষ্ট টাকা
+                    </button>
+                  </div>
 
                   <div className="relative">
-                    <input
-                      id="field-discount"
-                      type="number"
-                      min="0"
-                      max="60"
-                      step="0.5"
-                      placeholder="৫% - ৬০%"
-                      value={admissionDiscountPercent}
-                      onChange={(e) => setAdmissionDiscountPercent(e.target.value === "" ? "" : Number(e.target.value))}
-                      className={inputCls + " bg-white font-mono pr-8"}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs pointer-events-none">
-                      %
-                    </span>
+                    {admissionDiscountMode === "PERCENT" ? (
+                      <>
+                        <input
+                          id="field-discount"
+                          type="number"
+                          min="0"
+                          max="60"
+                          step="0.5"
+                          placeholder="৫% - ৬০%"
+                          value={admissionDiscountPercent}
+                          onChange={(e) => setAdmissionDiscountPercent(e.target.value === "" ? "" : Number(e.target.value))}
+                          className={inputCls + " bg-white font-mono pr-8"}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs pointer-events-none">
+                          %
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          id="field-discount"
+                          type="number"
+                          min="0"
+                          step="10"
+                          placeholder="নির্দিষ্ট ছাড়ের পরিমাণ (৳)"
+                          value={admissionDiscountFixed}
+                          onChange={(e) => setAdmissionDiscountFixed(e.target.value === "" ? "" : Number(e.target.value))}
+                          className={inputCls + " bg-white font-mono pr-8"}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs pointer-events-none">
+                          ৳
+                        </span>
+                      </>
+                    )}
                   </div>
-                  {admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0 && (
+                  {admissionDiscountMode === "PERCENT" && admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0 && (
                     <div className="mt-1 text-[11px]">
                       {Number(admissionDiscountPercent) < 5 || Number(admissionDiscountPercent) > 60 ? (
                         <span className="text-amber-600 font-bold">
-                          ⚠️ অনুমোদিত ডিসকাউন্ট সীমা ৫% থেকে ৬০%
+                          ⚠️ অনুমোদিত ডিসকাউন্ট শতকরা সীমা ৫% থেকে ৬০%
                         </span>
                       ) : (
                         <span className="text-emerald-700 font-bold">
@@ -970,10 +1256,18 @@ export function UnifiedPatientIntakeModal({
                       )}
                     </div>
                   )}
+                  {admissionDiscountMode === "FIXED" && admissionDiscountFixed !== "" && Number(admissionDiscountFixed) > 0 && (
+                    <div className="mt-1 text-[11px]">
+                      <span className="text-emerald-700 font-bold">
+                        প্রাক্কলিত নির্দিষ্ট ছাড়: ৳{Number(admissionDiscountFixed).toLocaleString()} (বিলিংয়ের সময় সমন্বয় হবে)
+                      </span>
+                    </div>
+                  )}
                 </Field>
               </div>
-              {admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0 && (
-                <Field label="Admission Discount Reason / Authorization">
+              {((admissionDiscountMode === "PERCENT" && admissionDiscountPercent !== "" && Number(admissionDiscountPercent) > 0) ||
+                (admissionDiscountMode === "FIXED" && admissionDiscountFixed !== "" && Number(admissionDiscountFixed) > 0)) && (
+                <Field label="Admission Discount Reason / Authorization (ছাড়ের কারণ বা অনুমতি)">
                   <input
                     value={admissionDiscountReason}
                     onChange={(e) => setAdmissionDiscountReason(e.target.value)}
@@ -981,6 +1275,11 @@ export function UnifiedPatientIntakeModal({
                     className={inputCls + " bg-white"}
                   />
                 </Field>
+              )}
+              {referralAgentId && (
+                <div className="text-[11px] bg-sky-50 text-sky-800 p-2.5 rounded-xl border border-sky-200">
+                  ℹ️ <strong>রেফারেল কমিশন নীতি:</strong> এজেন্টের কমিশন রোগীর ছাড় বাদে মোট নেট বিলের ওপর স্বয়ংক্রিয়ভাবে হিসাব হবে (Agent commission is strictly calculated on Net billable amount after patient concession).
+                </div>
               )}
             </section>
 

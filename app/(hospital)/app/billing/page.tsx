@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Trash2,
@@ -48,7 +49,7 @@ import {
 } from "@/lib/billing/serviceCatalog";
 import { getDiagnosticTestsCatalogAction } from "@/lib/lab/actions";
 
-export default function BillingManagementPage() {
+function BillingManagementContent() {
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRecord | null>(null);
@@ -83,7 +84,9 @@ export default function BillingManagementPage() {
     unitPrice: number;
     quantity: number;
   }>>([]);
+  const [discountMode, setDiscountMode] = useState<"PERCENT" | "FIXED">("PERCENT");
   const [discountPercent, setDiscountPercent] = useState<number | "">("");
+  const [discountFixed, setDiscountFixed] = useState<number | "">("");
   const [discountReason, setDiscountReason] = useState("");
   const [initialPaymentAmount, setInitialPaymentAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentRecord["payment_method"]>("CASH");
@@ -270,11 +273,13 @@ export default function BillingManagementPage() {
     }
   };
 
-  const loadUnbilledServicesForPatient = async (patientId: string) => {
-    if (!patientId || patientId.trim().length < 10) return;
+  const searchParams = useSearchParams();
+
+  const loadUnbilledServicesForPatient = async (patientIdentifier: string) => {
+    if (!patientIdentifier || !patientIdentifier.trim()) return;
     setLoadingUnbilledServices(true);
     try {
-      const res = await getEpisodeBillingPreviewAction({ patientId: patientId.trim() });
+      const res = await getEpisodeBillingPreviewAction({ patientId: patientIdentifier.trim() });
       if (res.success && res.data && res.data.lines && res.data.lines.length > 0) {
         const mappedLines = res.data.lines.map((l) => {
           let cat: InvoiceItemRecord["service_category"] = "MISC";
@@ -304,10 +309,18 @@ export default function BillingManagementPage() {
 
         // Auto-populate items directly into invoice
         setItems(mappedLines);
-        setInitialPaymentAmount(total);
 
         if (res.data.admissionDiscountAmount && res.data.admissionDiscountAmount > 0) {
-          setDiscountReason(res.data.admissionDiscountReason || `Admission Concession ৳${res.data.admissionDiscountAmount}`);
+          setDiscountMode("FIXED");
+          setDiscountFixed(res.data.admissionDiscountAmount);
+          setDiscountReason(res.data.admissionDiscountReason || `ভর্তি ছাড়: ৳${res.data.admissionDiscountAmount}`);
+          setInitialPaymentAmount(Math.max(0, total - res.data.admissionDiscountAmount));
+        } else {
+          setInitialPaymentAmount(total);
+        }
+
+        if (res.data.referralAgentId && !selectedReferralAgentId) {
+          handleReferralAgentChange(res.data.referralAgentId);
         }
       } else {
         setDetectedUnbilledLines([]);
@@ -324,11 +337,41 @@ export default function BillingManagementPage() {
   const handleSelectPatient = (p: PatientMaster) => {
     setSelectedPatient(p);
     setPatientIdInput(p.id);
-    setPatientSearchQuery("");
+    setPatientSearchQuery(`${p.full_name} (${p.patient_code || p.registration_serial || ""})`);
     setSearchedPatients([]);
     checkAttributionForPatient(p.id);
     void loadUnbilledServicesForPatient(p.id);
   };
+
+  const autoLookupAndSelectPatient = async (term: string) => {
+    const clean = term.trim();
+    if (!clean) return;
+    setLoadingPatients(true);
+    try {
+      const res = await searchPatientsAction({ query: clean, pageSize: 5 });
+      if (res.success && res.data?.patients && res.data.patients.length > 0) {
+        handleSelectPatient(res.data.patients[0]);
+      } else {
+        setPatientIdInput(clean);
+        checkAttributionForPatient(clean);
+        void loadUnbilledServicesForPatient(clean);
+      }
+    } catch (err) {
+      console.error("[autoLookupAndSelectPatient] error:", err);
+    } finally {
+      setLoadingPatients(false);
+    }
+  };
+
+  // Auto-listen to URL search params (e.g. /app/billing?code=OH-010104 or ?patientId=...)
+  useEffect(() => {
+    const codeParam = searchParams.get("code") || searchParams.get("patient_code") || searchParams.get("patientId");
+    if (codeParam && codeParam.trim()) {
+      setIsCreatingNew(true);
+      setPatientSearchQuery(codeParam.trim());
+      void autoLookupAndSelectPatient(codeParam.trim());
+    }
+  }, [searchParams]);
 
   const handleReferralAgentChange = (agentId: string) => {
     if (!agentId) {
@@ -345,11 +388,15 @@ export default function BillingManagementPage() {
     }
   };
 
-  // Calculations for new invoice
+  // Calculations for new invoice with dual discount support
   const subtotal = items.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
-  const calculatedDiscountAmount = discountPercent !== "" && Number(discountPercent) > 0
-    ? Math.round((subtotal * Number(discountPercent)) / 100)
-    : 0;
+  const calculatedDiscountAmount = discountMode === "PERCENT"
+    ? (discountPercent !== "" && Number(discountPercent) > 0
+        ? Math.min(subtotal, Math.round((subtotal * Number(discountPercent)) / 100))
+        : 0)
+    : (discountFixed !== "" && Number(discountFixed) > 0
+        ? Math.min(subtotal, Math.round(Number(discountFixed)))
+        : 0);
   const netTotal = Math.max(0, subtotal - calculatedDiscountAmount);
   const dueAmount = Math.max(0, netTotal - initialPaymentAmount);
   const estimatedCommission = selectedReferralAgentId && !noReferral
@@ -370,9 +417,9 @@ export default function BillingManagementPage() {
     }
     setItems(next);
     const newSub = next.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
-    const newDisc = discountPercent !== "" && Number(discountPercent) > 0
-      ? Math.round((newSub * Number(discountPercent)) / 100)
-      : 0;
+    const newDisc = discountMode === "PERCENT"
+      ? (discountPercent !== "" && Number(discountPercent) > 0 ? Math.round((newSub * Number(discountPercent)) / 100) : 0)
+      : (discountFixed !== "" && Number(discountFixed) > 0 ? Number(discountFixed) : 0);
     setInitialPaymentAmount(Math.max(0, newSub - newDisc));
   };
 
@@ -380,9 +427,9 @@ export default function BillingManagementPage() {
     const next = items.filter((_, i) => i !== idx);
     setItems(next);
     const newSub = next.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
-    const newDisc = discountPercent !== "" && Number(discountPercent) > 0
-      ? Math.round((newSub * Number(discountPercent)) / 100)
-      : 0;
+    const newDisc = discountMode === "PERCENT"
+      ? (discountPercent !== "" && Number(discountPercent) > 0 ? Math.round((newSub * Number(discountPercent)) / 100) : 0)
+      : (discountFixed !== "" && Number(discountFixed) > 0 ? Number(discountFixed) : 0);
     setInitialPaymentAmount(Math.max(0, newSub - newDisc));
   };
 
@@ -419,7 +466,9 @@ export default function BillingManagementPage() {
     setUnbilledServicesCount(0);
     setUnbilledServicesTotal(0);
     setLoadingUnbilledServices(false);
+    setDiscountMode("PERCENT");
     setDiscountPercent("");
+    setDiscountFixed("");
     setDiscountReason("");
     setInitialPaymentAmount(0);
     setPaymentMethod("CASH");
@@ -437,7 +486,7 @@ export default function BillingManagementPage() {
       return;
     }
 
-    if (discountPercent !== "" && Number(discountPercent) > 0) {
+    if (discountMode === "PERCENT" && discountPercent !== "" && Number(discountPercent) > 0) {
       const p = Number(discountPercent);
       if (p < 5 || p > 60) {
         setToast({
@@ -448,14 +497,24 @@ export default function BillingManagementPage() {
       }
     }
 
+    if (discountMode === "FIXED" && discountFixed !== "" && Number(discountFixed) < 0) {
+      setToast({
+        message: "ডিসকাউন্টের পরিমাণ ঋণাত্মক হতে পারবে না।",
+        type: "error",
+      });
+      return;
+    }
+
     setFormLoading(true);
     try {
       const res = await createInvoiceAction({
         patientId: patientIdInput.trim(),
         items,
         discountAmount: calculatedDiscountAmount,
-        discountReason: discountPercent !== "" && Number(discountPercent) > 0
-          ? `[Discount: ${discountPercent}%] ${discountReason.trim()}`.trim()
+        discountReason: calculatedDiscountAmount > 0
+          ? (discountMode === "PERCENT"
+              ? `[Discount: ${discountPercent}%] ${discountReason.trim()}`.trim()
+              : `[Concession: ৳${calculatedDiscountAmount}] ${discountReason.trim()}`.trim())
           : discountReason.trim() || undefined,
         initialPaymentAmount: Number(initialPaymentAmount),
         paymentMethod,
@@ -898,13 +957,17 @@ export default function BillingManagementPage() {
               {/* Patient Selector */}
               <div>
                 <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>রোগী নির্বাচন (Select Patient) *</span>
+                  <span>রোগী অনুসন্ধান ও নির্বাচন (Select Patient) *</span>
                   {selectedPatient && (
                     <button
                       type="button"
                       onClick={() => {
                         setSelectedPatient(null);
                         setPatientIdInput("");
+                        setPatientSearchQuery("");
+                        setItems([]);
+                        setUnbilledServicesCount(0);
+                        setUnbilledServicesTotal(0);
                         checkAttributionForPatient("");
                       }}
                       className="text-[10px] text-rose-500 hover:underline font-semibold"
@@ -915,74 +978,72 @@ export default function BillingManagementPage() {
                 </label>
 
                 {selectedPatient ? (
-                  <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs">
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-between text-xs shadow-xs">
                     <div>
-                      <p className="font-bold text-emerald-950">{selectedPatient.full_name}</p>
-                      <p className="text-[10px] text-emerald-700 font-mono">
-                        {selectedPatient.patient_code} • {selectedPatient.gender} • {selectedPatient.phone}
+                      <p className="font-black text-emerald-950 text-sm">{selectedPatient.full_name}</p>
+                      <p className="text-[11px] text-emerald-800 font-mono mt-0.5">
+                        কোড: {selectedPatient.patient_code || selectedPatient.registration_serial} • {selectedPatient.gender} • 📱 {selectedPatient.phone}
                       </p>
                     </div>
-                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] flex items-center gap-1 shadow-xs">
+                      <Check className="w-3.5 h-3.5" /> নির্বাচিত
+                    </span>
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                      <input
-                        type="text"
-                        placeholder="রোগীর নাম বা মোবাইল বা OH-ID দিয়ে খুঁজুন..."
-                        value={patientSearchQuery}
-                        onChange={(e) => setPatientSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 border rounded-xl bg-slate-50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                        <input
+                          type="text"
+                          placeholder="রোগীর কোড (OH-010104), নাম, মোবাইল, বা UUID দিয়ে খুঁজুন..."
+                          value={patientSearchQuery}
+                          onChange={(e) => setPatientSearchQuery(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              void autoLookupAndSelectPatient(patientSearchQuery);
+                            }
+                          }}
+                          className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl bg-slate-50 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void autoLookupAndSelectPatient(patientSearchQuery)}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-xs"
+                      >
+                        খুঁজুন
+                      </button>
                     </div>
 
                     {/* Patient search results dropdown */}
                     {loadingPatients ? (
-                      <div className="p-3 text-center text-xs text-slate-400 bg-white border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 shadow-lg">
+                      <div className="p-3 text-center text-xs text-slate-500 bg-white border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 shadow-lg">
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
                         <span>রোগী খোঁজা হচ্ছে...</span>
                       </div>
                     ) : searchedPatients.length > 0 ? (
-                      <div className="max-h-36 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white shadow-lg">
+                      <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white shadow-xl">
                         {searchedPatients.map((pat) => (
                           <div
                             key={pat.id}
                             onClick={() => handleSelectPatient(pat)}
-                            className="p-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between transition text-xs"
+                            className="p-3 hover:bg-emerald-50 cursor-pointer flex items-center justify-between transition text-xs"
                           >
                             <div>
-                              <p className="font-bold text-slate-800">{pat.full_name}</p>
-                              <p className="text-[10px] text-slate-500 font-mono">
-                                {pat.patient_code} • {pat.phone}
+                              <p className="font-bold text-slate-900">{pat.full_name}</p>
+                              <p className="text-[11px] text-slate-500 font-mono">
+                                কোড: {pat.patient_code || pat.registration_serial} • 📱 {pat.phone}
                               </p>
                             </div>
-                            <span className="text-[10px] text-emerald-600 font-semibold">নির্বাচন করুন</span>
+                            <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-[10px] font-bold hover:bg-emerald-600 hover:text-white transition">
+                              নির্বাচন করুন
+                            </span>
                           </div>
                         ))}
                       </div>
                     ) : null}
-
-                    <input
-                      type="text"
-                      required
-                      placeholder="বা সরাসরি Patient UUID বসান"
-                      value={patientIdInput}
-                      onChange={(e) => {
-                        setPatientIdInput(e.target.value);
-                        if (e.target.value.length >= 30) {
-                          checkAttributionForPatient(e.target.value);
-                          void loadUnbilledServicesForPatient(e.target.value);
-                        }
-                      }}
-                      onBlur={() => {
-                        if (patientIdInput.trim()) {
-                          checkAttributionForPatient(patientIdInput.trim());
-                          void loadUnbilledServicesForPatient(patientIdInput.trim());
-                        }
-                      }}
-                      className="w-full px-3 py-1.5 border rounded-xl bg-slate-50 text-[11px] font-mono"
-                    />
                   </div>
                 )}
               </div>
@@ -1282,34 +1343,98 @@ export default function BillingManagementPage() {
               {/* Totals & Initial Settlement */}
               <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
                 <div className="space-y-2">
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
                     <label className="block font-bold text-slate-800 text-[11px] flex items-center justify-between">
-                      <span>১. রোগীর কমিশন / ছাড় (Patient Concession / Discount) *</span>
-                      <span className="text-[10px] text-slate-400">অনুমোদিত: ৫% - ৬০%</span>
+                      <span>১. রোগীর ছাড় / কমিশন (Patient Concession / Discount)</span>
+                      <span className="text-[10px] text-slate-400">শতকরা বা নির্দিষ্ট টাকা</span>
                     </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="0"
-                        max="60"
-                        step="0.5"
-                        placeholder="5% - 60%"
-                        value={discountPercent}
-                        onChange={(e) => {
-                          const val = e.target.value === "" ? "" : Number(e.target.value);
-                          setDiscountPercent(val);
-                          const disc = val !== "" && Number(val) > 0
-                            ? Math.round((subtotal * Number(val)) / 100)
+
+                    {/* Dual Mode Switcher */}
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDiscountMode("PERCENT");
+                          const disc = discountPercent !== "" && Number(discountPercent) > 0
+                            ? Math.round((subtotal * Number(discountPercent)) / 100)
                             : 0;
                           setInitialPaymentAmount(Math.max(0, subtotal - disc));
                         }}
-                        className="w-full px-3 py-1.5 border rounded-xl bg-white font-mono font-bold pr-8 text-xs"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs pointer-events-none">
-                        %
-                      </span>
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition ${
+                          discountMode === "PERCENT"
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "bg-white border text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        % শতকরা ছাড়
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDiscountMode("FIXED");
+                          const disc = discountFixed !== "" && Number(discountFixed) > 0
+                            ? Number(discountFixed)
+                            : 0;
+                          setInitialPaymentAmount(Math.max(0, subtotal - disc));
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition ${
+                          discountMode === "FIXED"
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "bg-white border text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        ৳ নির্দিষ্ট টাকা
+                      </button>
                     </div>
-                    {discountPercent !== "" && Number(discountPercent) > 0 && (
+
+                    <div className="relative">
+                      {discountMode === "PERCENT" ? (
+                        <>
+                          <input
+                            type="number"
+                            min="0"
+                            max="60"
+                            step="0.5"
+                            placeholder="৫% - ৬০%"
+                            value={discountPercent}
+                            onChange={(e) => {
+                              const val = e.target.value === "" ? "" : Number(e.target.value);
+                              setDiscountPercent(val);
+                              const disc = val !== "" && Number(val) > 0
+                                ? Math.round((subtotal * Number(val)) / 100)
+                                : 0;
+                              setInitialPaymentAmount(Math.max(0, subtotal - disc));
+                            }}
+                            className="w-full px-3 py-1.5 border rounded-xl bg-white font-mono font-bold pr-8 text-xs"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs pointer-events-none">
+                            %
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="number"
+                            min="0"
+                            step="10"
+                            placeholder="ছাড়ের নির্দিষ্ট পরিমাণ (৳)"
+                            value={discountFixed}
+                            onChange={(e) => {
+                              const val = e.target.value === "" ? "" : Number(e.target.value);
+                              setDiscountFixed(val);
+                              const disc = val !== "" && Number(val) > 0 ? Number(val) : 0;
+                              setInitialPaymentAmount(Math.max(0, subtotal - disc));
+                            }}
+                            className="w-full px-3 py-1.5 border rounded-xl bg-white font-mono font-bold pr-8 text-xs"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs pointer-events-none">
+                            ৳
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {discountMode === "PERCENT" && discountPercent !== "" && Number(discountPercent) > 0 && (
                       <div className="mt-1 text-[11px]">
                         {Number(discountPercent) < 5 || Number(discountPercent) > 60 ? (
                           <span className="text-amber-600 font-bold">
@@ -1322,6 +1447,15 @@ export default function BillingManagementPage() {
                         )}
                       </div>
                     )}
+
+                    {discountMode === "FIXED" && calculatedDiscountAmount > 0 && (
+                      <div className="mt-1 text-[11px]">
+                        <span className="text-emerald-700 font-bold">
+                          রোগীর ছাড়: {formatCurrencyBDT(calculatedDiscountAmount)} BDT (নির্দিষ্ট ছাড়)
+                        </span>
+                      </div>
+                    )}
+
                     <div>
                       <label className="block text-[10px] font-bold text-slate-600 mb-1">ছাড় / কমিশনের কারণ (Reason / Authority)</label>
                       <input
@@ -1617,5 +1751,22 @@ export default function BillingManagementPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function BillingManagementPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+          <div className="flex items-center gap-3 text-slate-600 font-bold text-sm bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+            <span>বিলিং ড্যাশবোর্ড লোড হচ্ছে... (Loading Billing Dashboard)</span>
+          </div>
+        </div>
+      }
+    >
+      <BillingManagementContent />
+    </Suspense>
   );
 }
