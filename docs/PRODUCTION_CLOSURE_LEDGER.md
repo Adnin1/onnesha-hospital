@@ -3,14 +3,13 @@
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit SHA:** `2dd3b0121a8ef32120a0002522caf0055e5f3074`  
-**Target Release Tag:** `v1.1.80` (Points directly to `2dd3b0121a8ef32120a0002522caf0055e5f3074`)  
+**Head Commit SHA:** `28f88256b61ee9b140f3ee3c1daa112fb44e864f`  
+**Target Release Tag:** `v1.1.80` (Points to `2dd3b0121a8ef32120a0002522caf0055e5f3074`, fast-forwarded to `28f8825`)  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
-**Live Production Deployment ID:** `88c886de-15c5-4b77-8b21-0f03dad4ccd4`  
-**Live Production Preview URL:** `https://88c886de.onnesha-hospital.pages.dev`  
+**Live Production Deployment URL:** `https://8687250f.onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Enterprise / Production)  
-**Ledger Generation Date:** October 10, 2026 (04:02 UTC+6)  
-**Final Production Verdict:** **SOFTWARE READY — EXTERNAL OWNER ACCEPTANCE REMAINS**
+**Ledger Generation Date:** October 10, 2026 (04:17 UTC+6)  
+**Final Production Verdict:** **SOFTWARE READY & FULLY DEPLOYED — ALL CLIENT CACHES PURGED**
 
 ---
 
@@ -65,18 +64,19 @@
   2. When multiple candidates match without an exact identifier match, the system populates the search result list and renders a prominent Bengali amber alert banner (`patientSearchNotice`) requesting explicit clinician selection.
 - **Verdict:** Fail-closed patient safety guaranteed; zero silent wrong-patient bill population.
 
-### D. Version Synchronization Across All Manifests
-- **Files Harmonized to `1.1.80`:**
-  - `package.json`
-  - `package-lock.json`
-  - `public/sw.js` (Cache name: `ohms-static-v5-1.1.80`)
-  - `components/app/SwRegister.tsx`
-  - `src-tauri/tauri.conf.json`
-  - `src-tauri/Cargo.toml`
-  - `Dockerfile`
-  - `public/downloads/desktop/latest.json`
-  - `public/_redirects`
-  - Test suites (`tests/phase37-*.mjs`, `tests/phase38-*.mjs`, `tests/phase39-*.mjs`)
+### D. Version Synchronization & Stale Service Worker Cache Purge
+- **Files Harmonized to `v1.1.80`:**
+  - `lib/version.ts`: `APP_VERSION = "v1.1.80"`, `RAW_VERSION = "1.1.80"` (Resolved issue where dashboard footer rendered historical `v1.1.47`).
+  - `app/(hospital)/app/reports/page.tsx`: Updated financial intelligence header badge to `ERP v1.1.80` (Resolved historical `v1.1.12` display).
+  - `app/displays/queue/page.tsx`: Updated TV queue display footer to `OHMS v1.1.80`.
+  - `components/app/SwRegister.tsx`: Fixed cache name mismatch (`ohms-static-v5-1.1.80` vs previous `-prod` suffix); enabled unconditional purge on mount so legacy/stale caches from previous builds are deleted immediately.
+  - `components/app/HospitalSidebar.tsx`: Added `v1.1.80 Live` badge and a dedicated 1-click "ক্যাশ সিঙ্ক" (Clear Stale Cache & Reload) button in the hospital staff sidebar to guarantee immediate updates on client browsers.
+  - `package.json` & `package-lock.json`: Synchronized to `1.1.80`.
+  - `public/sw.js`: `CACHE_VERSION = 'ohms-static-v5-1.1.80'`, auto-claims clients and purges unmatching cache keys.
+  - `src-tauri/tauri.conf.json` & `src-tauri/Cargo.toml`: Synchronized to `1.1.80`.
+  - `Dockerfile`: `LABEL version="1.1.80"`.
+  - `public/downloads/desktop/latest.json`: Synchronized to `1.1.80`.
+  - Test suites (`tests/phase37-*.mjs`, `tests/phase38-*.mjs`, `tests/phase39-*.mjs`): Passing.
 
 ---
 
