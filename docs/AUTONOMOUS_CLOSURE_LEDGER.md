@@ -11,18 +11,18 @@
 |:---|:---|:---:|
 | **Execution Timestamp** | `2026-10-09T01:30:00+06:00` | VERIFIED |
 | **Current Git Branch** | `main` | VERIFIED |
-| **Active Release Tag** | `v1.1.73` | VERIFIED (IMMUTABLE) |
-| **Preserved Release Tags** | 1.1.73 (d4ba62ac), 1.1.71 (c47eef71), 1.1.46 (c2c446), 1.1.45-1.1.26 | VERIFIED (IMMUTABLE) |
+| **Active Release Tag** | `v1.1.75` | VERIFIED (IMMUTABLE) |
+| **Preserved Release Tags** | v1.1.74, v1.1.73, 1.1.71 (c47eef71), 1.1.46 (c2c446), 1.1.45-1.1.26 | VERIFIED (IMMUTABLE) |
 | **Current Main HEAD SHA** | `Reconciled across local, origin, and ssh-origin` | VERIFIED |
 | **Remote Main Synchronization** | `origin/main` & `ssh-origin/main` | VERIFIED (100% IN SYNC) |
-| **Package Version (`package.json`)** | `1.1.73` | VERIFIED |
-| **Package Lock Version (`package-lock.json`)** | `1.1.73` | VERIFIED |
-| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.73` | VERIFIED |
-| **Cargo Package Version (`Cargo.toml`)** | `1.1.73` | VERIFIED |
-| **Docker Label Version (`Dockerfile`)** | `1.1.73` | VERIFIED |
-| **Desktop Manifest Version (`latest.json`)** | `1.1.73` | VERIFIED |
-| **Database Migrations Count** | `130 migration files` | VERIFIED |
-| **Latest Applied Migration** | `20261009010000_permanent_patient_nid_and_intake_contract.sql` | VERIFIED |
+| **Package Version (`package.json`)** | `1.1.75` | VERIFIED |
+| **Package Lock Version (`package-lock.json`)** | `1.1.75` | VERIFIED |
+| **Tauri Desktop Version (`tauri.conf.json`)** | `1.1.75` | VERIFIED |
+| **Cargo Package Version (`Cargo.toml`)** | `1.1.75` | VERIFIED |
+| **Docker Label Version (`Dockerfile`)** | `1.1.75` | VERIFIED |
+| **Desktop Manifest Version (`latest.json`)** | `1.1.75` | VERIFIED |
+| **Database Migrations Count** | `136 migration files` | VERIFIED |
+| **Latest Applied Migration** | `20261009240000_zero_db_lint_flawless_production_closure.sql` | VERIFIED |
 | **Supabase Remote Parity** | `iuhtzahuszdkdarhxobx` (100% remote parity, 0 fatal lint errors) | VERIFIED |
 | **Canonical Production URL** | `https://onnesha-hospital.pages.dev` | VERIFIED |
 | **Cloudflare Live Deployed SHA** | d556e0 (ecd727a-2a6a-46ce-9755-b59631f65911) | VERIFIED |

@@ -3,8 +3,8 @@
 **Authoritative Project:** Onnesha Hospital Management System (OHMS)  
 **Repository:** `Adnin1/onnesha-hospital` (Git remotes: `origin` & `ssh-origin` -> `git@github.com:Adnin1/onnesha-hospital.git`)  
 **Production Edge:** [`https://onnesha-hospital.pages.dev`](https://onnesha-hospital.pages.dev) (Cloudflare Pages Project: `onnesha-hospital`)  
-**Database (Supabase Production Ref):** `iuhtzahuszdkdarhxobx` (PostgreSQL 15+, 131/131 Migrations Synchronized)  
-**Current Certified Release:** `v1.1.74`  
+**Database (Supabase Production Ref):** `iuhtzahuszdkdarhxobx` (PostgreSQL 15+, 136/136 Migrations Synchronized)  
+**Current Certified Release:** `v1.1.75`  
 **Primary Git Branch:** `main`  
 
 ---
