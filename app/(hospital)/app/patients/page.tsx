@@ -286,7 +286,7 @@ export default function PatientsManagementPage() {
                     Admit / New Service
                   </button>
                   <Link
-                    href={`/app/patients/${selectedPatient.id}`}
+                    href={`/app/patients/preview?id=${selectedPatient.id}`}
                     className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition flex items-center shadow-xs"
                   >
                     <FileText className="w-3.5 h-3.5 mr-1" />

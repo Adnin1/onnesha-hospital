@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   User,
@@ -50,61 +51,80 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
 
   const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "visits" | "vitals" | "diagnoses" | "notes">("overview");
 
+  const searchParams = useSearchParams();
+  const queryId = searchParams?.get("id") || searchParams?.get("patientId");
+
+  let pathSlug: string | null = null;
+  if (typeof window !== "undefined") {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    const last = parts[parts.length - 1];
+    if (last && last !== "preview" && last !== "patients") {
+      pathSlug = last;
+    }
+  }
+
+  const effectiveId = (queryId && queryId.trim())
+    || (pathSlug && pathSlug.trim())
+    || (patientId && patientId !== "preview" ? patientId : null);
+
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
-      if (patientId === "preview") {
-        setLoading(true);
+      setLoading(true);
+      setError(null);
+
+      // 1. If we have a specific target patient ID, load that exact patient record
+      if (effectiveId) {
         try {
-          const listRes = await getPatientsAction();
-          if (listRes.success && listRes.data?.patients && listRes.data.patients.length > 0) {
-            const realPatient = listRes.data.patients[0];
-            const p360 = await getPatient360Action(realPatient.id);
-            if (isMounted) {
-              if (p360.success && p360.data) {
-                setPatient(p360.data.patient);
-                setAllergies(p360.data.allergies);
-                setAlerts(p360.data.alerts);
-                setVisits(p360.data.visits);
-                setTimeline(p360.data.timeline);
-                setVitals(p360.data.vitals);
-                setDiagnoses(p360.data.diagnoses);
-                setNotes(p360.data.notes);
-              } else {
-                setError("Failed to load Patient 360 record.");
-              }
+          const res = await getPatient360Action(effectiveId);
+          if (isMounted) {
+            if (res.success && res.data) {
+              setPatient(res.data.patient);
+              setAllergies(res.data.allergies);
+              setAlerts(res.data.alerts);
+              setVisits(res.data.visits);
+              setTimeline(res.data.timeline);
+              setVitals(res.data.vitals);
+              setDiagnoses(res.data.diagnoses);
+              setNotes(res.data.notes);
+            } else {
+              setError(res.error || "Failed to load patient record.");
             }
-          } else if (isMounted) {
-            setError("No registered patient found in this hospital organization. Please register a patient from the directory first.");
           }
         } catch (err: unknown) {
-          console.error("[PatientDetailView] loadPatient error:", err);
-          if (isMounted) setError("Failed to load patient record from clinical database.");
+          if (isMounted) setError(err instanceof Error ? err.message : "Error connecting to clinical database.");
         } finally {
           if (isMounted) setLoading(false);
         }
         return;
       }
 
-      setLoading(true);
+      // 2. Otherwise (generic preview mode with no target), fall back to first patient in directory
       try {
-        const res = await getPatient360Action(patientId);
-        if (isMounted) {
-          if (res.success && res.data) {
-            setPatient(res.data.patient);
-            setAllergies(res.data.allergies);
-            setAlerts(res.data.alerts);
-            setVisits(res.data.visits);
-            setTimeline(res.data.timeline);
-            setVitals(res.data.vitals);
-            setDiagnoses(res.data.diagnoses);
-            setNotes(res.data.notes);
-          } else {
-            setError(res.error || "Failed to load patient record.");
+        const listRes = await getPatientsAction();
+        if (listRes.success && listRes.data?.patients && listRes.data.patients.length > 0) {
+          const realPatient = listRes.data.patients[0];
+          const p360 = await getPatient360Action(realPatient.id);
+          if (isMounted) {
+            if (p360.success && p360.data) {
+              setPatient(p360.data.patient);
+              setAllergies(p360.data.allergies);
+              setAlerts(p360.data.alerts);
+              setVisits(p360.data.visits);
+              setTimeline(p360.data.timeline);
+              setVitals(p360.data.vitals);
+              setDiagnoses(p360.data.diagnoses);
+              setNotes(p360.data.notes);
+            } else {
+              setError("Failed to load Patient 360 record.");
+            }
           }
+        } else if (isMounted) {
+          setError("No registered patient found in this hospital organization. Please register a patient from the directory first.");
         }
       } catch (err: unknown) {
-        if (isMounted) setError(err instanceof Error ? err.message : "Error connecting to clinical database.");
+        console.error("[PatientDetailView] loadPatient error:", err);
+        if (isMounted) setError("Failed to load patient record from clinical database.");
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -114,7 +134,7 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
     return () => {
       isMounted = false;
     };
-  }, [patientId]);
+  }, [effectiveId, patientId]);
 
   const handlePrint = () => {
     window.print();
@@ -600,8 +620,9 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
         initialPatient={patient}
         onClose={() => setIsAdmissionModalOpen(false)}
         onSuccess={() => {
-          if (patientId && patientId !== "preview") {
-            void getPatient360Action(patientId).then((res) => {
+          const refreshId = patient?.id || effectiveId;
+          if (refreshId) {
+            void getPatient360Action(refreshId).then((res) => {
               if (res.success && res.data) {
                 setPatient(res.data.patient);
                 setVisits(res.data.visits);

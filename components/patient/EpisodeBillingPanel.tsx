@@ -56,6 +56,18 @@ function LabelText({ text }: { text: string }) {
   return <span className="block text-[10px] uppercase font-bold tracking-wider text-slate-400 mb-0.5">{text}</span>;
 }
 
+const QUICK_SERVICE_PRESETS = [
+  { label: "Doctor Visit (৳800)", category: "PROCEDURE", name: "Doctor Consultation / Follow-up", price: 800 },
+  { label: "Nursing Care (৳500)", category: "NURSING", name: "Nursing Care & Vitals Monitoring", price: 500 },
+  { label: "Oxygen Supply (৳1,200)", category: "OXYGEN", name: "Oxygen Supply (Flow / Cylinder)", price: 1200 },
+  { label: "CBC Test (৳500)", category: "INVESTIGATION", name: "Complete Blood Count (CBC)", price: 500 },
+  { label: "ECG 12-Lead (৳400)", category: "INVESTIGATION", name: "12-Lead ECG Test", price: 400 },
+  { label: "Dressing (৳350)", category: "PROCEDURE", name: "Surgical Wound Dressing", price: 350 },
+  { label: "Cannulation (৳200)", category: "PROCEDURE", name: "IV Cannulation & Setup", price: 200 },
+  { label: "Nebulization (৳250)", category: "PROCEDURE", name: "Nebulization Therapy", price: 250 },
+  { label: "Ambulance (৳2,500)", category: "AMBULANCE", name: "Hospital Emergency Ambulance Service", price: 2500 },
+];
+
 export function EpisodeBillingPanel({
   patientId,
   triggerButton,
@@ -97,6 +109,7 @@ export function EpisodeBillingPanel({
   const [editingLoading, setEditingLoading] = useState(false);
   const [deleteChargeId, setDeleteChargeId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [excludedReferenceIds, setExcludedReferenceIds] = useState<string[]>([]);
 
   // Settlement & Discount
   const [billingDiscount, setBillingDiscount] = useState<number>(0);
@@ -194,6 +207,7 @@ export function EpisodeBillingPanel({
     }
 
     setPreview(res.data);
+    setExcludedReferenceIds([]);
     if (res.data.admissionDiscountAmount) {
       setBillingDiscount(0);
     }
@@ -292,14 +306,23 @@ export function EpisodeBillingPanel({
     await refreshPreview(selectedPatientId);
   }
 
-  // Settlement Calculations
+  // Settlement Calculations with Exclusion / Waiver Support
+  const allLines = preview?.lines || [];
+  const activeLines = allLines.filter((l) => !excludedReferenceIds.includes(l.reference_id));
+  const excludedLines = allLines.filter((l) => excludedReferenceIds.includes(l.reference_id));
+  const activeUnbilledTotal = activeLines.reduce((sum, l) => sum + Number(l.total_price || 0), 0);
+
   const admissionDisc = preview ? preview.admissionDiscountAmount : 0;
   const totalDiscount = Math.max(0, admissionDisc + billingDiscount);
-  const netPayable = preview ? Math.max(0, preview.total - totalDiscount) : 0;
+  const netPayable = Math.max(0, activeUnbilledTotal - totalDiscount);
 
   async function prepareSettlement() {
     if (!preview?.episodeId || !selectedPatientId) {
       setActionError("No active patient-care episode found.");
+      return;
+    }
+    if (activeLines.length === 0) {
+      setActionError("No billable services remaining. Please restore an excluded item or add a service charge.");
       return;
     }
     setLoading(true);
@@ -310,6 +333,7 @@ export function EpisodeBillingPanel({
       discountAmount: totalDiscount,
       discountReason: billingDiscountReason || preview.admissionDiscountReason || undefined,
       referralAgentId: preview.referralAgentId || undefined,
+      excludedReferenceIds: excludedReferenceIds.length > 0 ? excludedReferenceIds : undefined,
     });
     setLoading(false);
 
@@ -512,7 +536,7 @@ export function EpisodeBillingPanel({
                 <>
                   {/* Financial Stats Bar */}
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <Stat label="Current Unbilled" value={formatCurrencyBDT(preview.total)} danger={preview.total > 0.005} />
+                    <Stat label="Current Unbilled" value={formatCurrencyBDT(activeUnbilledTotal)} danger={activeUnbilledTotal > 0.005} subtext={excludedLines.length > 0 ? `${excludedLines.length} excluded/waived` : undefined} />
                     <Stat label="Episode Invoiced" value={formatCurrencyBDT(preview.episodeInvoiced || 0)} />
                     <Stat label="Episode Paid" value={formatCurrencyBDT(preview.episodePaid || 0)} />
                     <Stat label="Episode Due" value={formatCurrencyBDT(preview.episodeDue || 0)} danger={(preview.episodeDue || 0) > 0.005} />
@@ -590,9 +614,11 @@ export function EpisodeBillingPanel({
                       </button>
                     </div>
 
-                    {preview.lines.length === 0 ? (
+                    {activeLines.length === 0 ? (
                       <div className="p-6 text-center text-xs text-slate-500">
-                        No unbilled services or charges pending. Everything has been settled or no billable items exist.
+                        {allLines.length > 0
+                          ? "All accrued charges have been excluded / waived from this bill. Restore items below or add an extra service."
+                          : "No unbilled services or charges pending. Everything has been settled or no billable items exist."}
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
@@ -608,7 +634,7 @@ export function EpisodeBillingPanel({
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
-                            {preview.lines.map((line) => (
+                            {activeLines.map((line) => (
                               <tr key={line.reference_id} className="hover:bg-slate-50/70">
                                 <td className="p-3">
                                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
@@ -642,7 +668,7 @@ export function EpisodeBillingPanel({
                                             notes: "",
                                           })
                                         }
-                                        className="p-1 rounded-lg hover:bg-slate-200 text-slate-600"
+                                        className="p-1 rounded-lg hover:bg-slate-200 text-slate-600 transition"
                                         title="Edit this service"
                                       >
                                         <Edit2 className="w-3.5 h-3.5" />
@@ -650,20 +676,76 @@ export function EpisodeBillingPanel({
                                       <button
                                         type="button"
                                         onClick={() => setDeleteChargeId(line.charge_id!)}
-                                        className="p-1 rounded-lg hover:bg-rose-100 text-rose-600"
-                                        title="Remove service"
+                                        className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 transition"
+                                        title="Delete service permanently"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
                                     </div>
                                   ) : (
-                                    <span className="text-[10px] text-slate-400">Fixed</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setExcludedReferenceIds((prev) => [...prev, line.reference_id]);
+                                        setActionMessage(`Excluded "${line.item_name}" from bill.`);
+                                      }}
+                                      className="p-1 rounded-lg hover:bg-rose-100 text-rose-500 hover:text-rose-700 transition"
+                                      title="Exclude / Waive this service from bill"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
                                   )}
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
+                      </div>
+                    )}
+
+                    {excludedLines.length > 0 && (
+                      <div className="p-3.5 bg-amber-50/70 border-t border-amber-200 text-xs">
+                        <div className="flex items-center justify-between font-bold text-amber-900 mb-2">
+                          <span className="flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                            Excluded / Waived Services ({excludedLines.length})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExcludedReferenceIds([]);
+                              setActionMessage("Restored all services to bill.");
+                            }}
+                            className="text-[11px] text-sky-700 hover:text-sky-900 underline font-semibold"
+                          >
+                            Restore All to Bill
+                          </button>
+                        </div>
+                        <div className="space-y-1.5">
+                          {excludedLines.map((line) => (
+                            <div
+                              key={line.reference_id}
+                              className="flex items-center justify-between bg-white/90 p-2 rounded-xl border border-amber-200/80 shadow-2xs"
+                            >
+                              <div>
+                                <span className="font-semibold text-slate-800">{line.item_name}</span>
+                                <span className="text-[10px] text-slate-500 ml-2">
+                                  [{line.service_category}] · {formatCurrencyBDT(line.total_price)}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExcludedReferenceIds((prev) => prev.filter((id) => id !== line.reference_id));
+                                  setActionMessage(`Restored "${line.item_name}" to bill.`);
+                                }}
+                                className="px-2.5 py-1 bg-sky-100 hover:bg-sky-200 text-sky-800 rounded-lg text-[10px] font-bold transition"
+                              >
+                                Restore to Bill
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -681,6 +763,26 @@ export function EpisodeBillingPanel({
                           <X className="w-4 h-4" />
                         </button>
                       </div>
+
+                      <div className="flex flex-wrap gap-1.5 items-center bg-white/70 p-2.5 rounded-xl border border-sky-100">
+                        <span className="text-[11px] font-bold text-sky-900 mr-1">Quick Presets:</span>
+                        {QUICK_SERVICE_PRESETS.map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              setAddCategory(preset.category);
+                              setAddItemName(preset.name);
+                              setAddUnitPrice(preset.price);
+                              setAddQuantity(1);
+                            }}
+                            className="px-2 py-1 bg-white hover:bg-sky-100 hover:text-sky-800 border border-slate-200 hover:border-sky-300 rounded-lg text-[10px] font-semibold text-slate-700 transition"
+                          >
+                            + {preset.label}
+                          </button>
+                        ))}
+                      </div>
+
                       <form onSubmit={handleAddExtraService} className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
                         <div>
                           <label className="block font-bold text-slate-700 mb-1">Category</label>
@@ -858,7 +960,7 @@ export function EpisodeBillingPanel({
                         <input
                           type="number"
                           min="0"
-                          max={preview.total - admissionDisc}
+                          max={Math.max(0, activeUnbilledTotal - admissionDisc)}
                           value={billingDiscount}
                           onChange={(e) => setBillingDiscount(Number(e.target.value))}
                           placeholder="BDT"
@@ -1172,11 +1274,12 @@ export function EpisodeBillingPanel({
   );
 }
 
-function Stat({ label, value, danger }: { label: string; value: string; danger?: boolean }) {
+function Stat({ label, value, danger, subtext }: { label: string; value: string; danger?: boolean; subtext?: string }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-2xs">
       <div className="text-[10px] text-slate-500 font-bold uppercase">{label}</div>
       <div className={"mt-1 text-sm font-black " + (danger ? "text-rose-700" : "text-slate-900")}>{value}</div>
+      {subtext && <div className="text-[10px] text-amber-600 font-semibold mt-0.5">{subtext}</div>}
     </div>
   );
 }

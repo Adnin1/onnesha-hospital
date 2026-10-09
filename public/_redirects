@@ -7,6 +7,9 @@
 /staff           /login          302
 /admin           /login          302
 /admin/login     /login          302
+# Patient 360 SPA rewrite for static export
+/app/patients/*  /app/patients/preview 200
+
 /downloads/desktop/Onnesha.Hospital_1.1.4_x64-setup.exe https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe 302
 /downloads/desktop/historical-installer.exe https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe 302
 # Unbuilt release installers safely route to the desktop download status page until CI builds real assets

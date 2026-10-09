@@ -174,6 +174,52 @@ describe("Unified Patient Intake & Episode Settlement Contract", () => {
     assert.match(c, /toggleOt/);
     assert.match(c, /👤 শুধু রোগী নিবন্ধন \(Register Patient Only\)/);
   });
+
+  test("migration 128 guarantees consultation_fee parity, trigger synchronization, and 5-source billing", () => {
+    const p = path.join(ROOT, "supabase/migrations/20261009160000_permanent_unified_admission_and_episode_billing.sql");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /ADD COLUMN IF NOT EXISTS consultation_fee NUMERIC/);
+    assert.match(c, /CREATE OR REPLACE FUNCTION public\.sync_doctor_fees/);
+    assert.match(c, /CREATE TRIGGER trg_sync_doctor_fees/);
+    assert.match(c, /CREATE OR REPLACE FUNCTION public\.create_patient_intake_atomic/);
+    assert.match(c, /CREATE OR REPLACE FUNCTION public\.get_episode_billing_overview/);
+  });
+
+  test("migration 129 guarantees granular exclusion and settlement invoice generation with excluded service lines", () => {
+    const p = path.join(ROOT, "supabase/migrations/20261009170000_episode_billing_exclusion_and_service_management.sql");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /FUNCTION public\.create_episode_settlement_invoice_atomic_v2/);
+    assert.match(c, /p_excluded_reference_ids JSONB DEFAULT '\[\]'::JSONB/);
+    assert.match(c, /p_excluded_reference_ids \? \(val->>'reference_id'\)/);
+  });
+
+  test("Patient 360 dynamic resolution guarantees URL query, path slug, and Cloudflare rewrite rules", () => {
+    const detailFile = path.join(ROOT, "app/(hospital)/app/patients/[id]/PatientDetailView.tsx");
+    const detailContent = fs.readFileSync(detailFile, "utf8");
+    assert.match(detailContent, /useSearchParams/);
+    assert.match(detailContent, /effectiveId/);
+    assert.match(detailContent, /window\.location\.pathname/);
+
+    const redirectFile = path.join(ROOT, "public/_redirects");
+    const redirectContent = fs.readFileSync(redirectFile, "utf8");
+    assert.match(redirectContent, /\/app\/patients\/\*\s+\/app\/patients\/preview\s+200/);
+
+    const pageFile = path.join(ROOT, "app/(hospital)/app/patients/page.tsx");
+    const pageContent = fs.readFileSync(pageFile, "utf8");
+    assert.match(pageContent, /\/app\/patients\/preview\?id=\$\{selectedPatient\.id\}/);
+  });
+
+  test("EpisodeBillingPanel supports quick presets, line exclusion, and deletion", () => {
+    const p = path.join(ROOT, "components/patient/EpisodeBillingPanel.tsx");
+    const c = fs.readFileSync(p, "utf8");
+    assert.match(c, /QUICK_SERVICE_PRESETS/);
+    assert.match(c, /excludedReferenceIds/);
+    assert.match(c, /activeLines/);
+    assert.match(c, /excludedLines/);
+    assert.match(c, /activeUnbilledTotal/);
+    assert.match(c, /prepareEpisodeSettlementAction/);
+  });
 });
+
 
 

@@ -889,6 +889,7 @@ export async function prepareEpisodeSettlementAction(params: {
   paymentMethod?: PaymentRecord["payment_method"];
   referralAgentId?: string;
   notes?: string;
+  excludedReferenceIds?: string[];
 }): Promise<ActionResult<{
   invoiceId?: string;
   invoiceNumber?: string;
@@ -919,6 +920,9 @@ export async function prepareEpisodeSettlementAction(params: {
       p_payment_method: params.paymentMethod || "CASH",
       p_referral_agent_id: params.referralAgentId || null,
       p_notes: params.notes?.trim() || null,
+      p_excluded_reference_ids: params.excludedReferenceIds && params.excludedReferenceIds.length > 0
+        ? params.excludedReferenceIds
+        : [],
     });
 
     if (error) return { success: false, error: error.message };
