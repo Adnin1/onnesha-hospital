@@ -202,15 +202,15 @@ export default function ProcurementPage() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <ShoppingCart className="h-7 w-7 text-sky-600 dark:text-sky-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <ShoppingCart className="h-7 w-7 text-sky-600" />
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
               Procurement, Requisitions & Supply Chain
             </h1>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1 font-medium">
             Departmental purchase requests, supplier Goods Receipt Notes (GRN), and multi-warehouse control.
           </p>
         </div>
@@ -221,7 +221,7 @@ export default function ProcurementPage() {
               setReqNumber(`PR-${Date.now().toString().slice(-6)}`);
               setIsReqModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 shadow-xs transition cursor-pointer"
           >
             <Plus className="h-4 w-4" /> New Requisition
           </button>
@@ -230,7 +230,7 @@ export default function ProcurementPage() {
               setGrnNumber(`GRN-${Date.now().toString().slice(-6)}`);
               setIsGrnModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 shadow-sm transition"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-sky-600 text-white hover:bg-sky-700 shadow-sm transition cursor-pointer"
           >
             <Plus className="h-4 w-4" /> Record GRN
           </button>
@@ -238,7 +238,7 @@ export default function ProcurementPage() {
             onClick={loadData}
             title="Refresh"
             disabled={loading}
-            className="p-2 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
+            className="p-2 border border-slate-300 rounded-xl hover:bg-slate-100 text-slate-600 transition cursor-pointer"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -247,46 +247,46 @@ export default function ProcurementPage() {
 
       {/* Notifications */}
       {errorMsg && (
-        <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 flex items-center gap-2 text-sm">
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-center gap-2 text-sm">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
       {successMsg && (
-        <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 flex items-center gap-2 text-sm">
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-2 text-sm">
           <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-6">
+      <div className="flex border-b border-slate-200 space-x-6">
         <button
           onClick={() => setActiveTab("REQUISITIONS")}
-          className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
             activeTab === "REQUISITIONS"
-              ? "border-sky-600 text-sky-600 dark:text-sky-400"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              ? "border-sky-600 text-sky-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           <ShoppingCart className="h-4 w-4" /> Requisitions ({requisitions.length})
         </button>
         <button
           onClick={() => setActiveTab("GRN")}
-          className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
             activeTab === "GRN"
-              ? "border-sky-600 text-sky-600 dark:text-sky-400"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              ? "border-sky-600 text-sky-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           <PackageCheck className="h-4 w-4" /> Goods Receipt Notes ({grns.length})
         </button>
         <button
           onClick={() => setActiveTab("WAREHOUSES")}
-          className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
             activeTab === "WAREHOUSES"
-              ? "border-sky-600 text-sky-600 dark:text-sky-400"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              ? "border-sky-600 text-sky-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           <Building2 className="h-4 w-4" /> Warehouses ({warehouses.length})
@@ -310,86 +310,86 @@ export default function ProcurementPage() {
                   placeholder="Search requisitions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                  className="w-full pl-9 pr-4 py-2 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-2xs"
                 />
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold">PR #</th>
-                    <th className="px-6 py-3 font-semibold">Priority</th>
-                    <th className="px-6 py-3 font-semibold">Items</th>
-                    <th className="px-6 py-3 font-semibold">Status</th>
-                    <th className="px-6 py-3 font-semibold">Created Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {filteredRequisitions.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase text-xs">
                     <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
-                        No purchase requisitions found. Click &quot;New Requisition&quot; to initiate a request.
-                      </td>
+                      <th className="px-6 py-3 font-semibold">PR #</th>
+                      <th className="px-6 py-3 font-semibold">Priority</th>
+                      <th className="px-6 py-3 font-semibold">Items</th>
+                      <th className="px-6 py-3 font-semibold">Status</th>
+                      <th className="px-6 py-3 font-semibold">Created Date</th>
                     </tr>
-                  ) : (
-                    filteredRequisitions.map((req) => (
-                      <React.Fragment key={req.id}>
-                        <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                          <td className="px-6 py-4 font-mono font-medium text-sky-700 dark:text-sky-400">
-                            {req.requisition_number}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                req.priority === "URGENT" || req.priority === "EMERGENCY"
-                                  ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                                  : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                              }`}
-                            >
-                              {req.priority}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-slate-700 dark:text-slate-300">
-                            {req.items?.length || 0} line items
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                              {req.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-slate-500 text-xs">
-                            {new Date(req.created_at).toLocaleDateString()}
-                          </td>
-                        </tr>
-                        {req.items && req.items.length > 0 && (
-                          <tr className="bg-slate-50/40 dark:bg-slate-800/20 text-xs">
-                            <td colSpan={5} className="px-8 py-2">
-                              <div className="space-y-1">
-                                {req.items.map((it, idx) => (
-                                  <div key={idx} className="flex justify-between text-slate-600 dark:text-slate-400">
-                                    <span>{it.item_name} ({it.item_category})</span>
-                                    <span>Qty: {it.quantity} @ {formatCurrencyBDT(it.estimated_unit_cost)}</span>
-                                  </div>
-                                ))}
-                              </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredRequisitions.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
+                          No purchase requisitions found. Click &quot;New Requisition&quot; to initiate a request.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredRequisitions.map((req) => (
+                        <React.Fragment key={req.id}>
+                          <tr className="hover:bg-slate-50/70 transition">
+                            <td className="px-6 py-4 font-mono font-bold text-sky-700">
+                              {req.requisition_number}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                  req.priority === "URGENT" || req.priority === "EMERGENCY"
+                                    ? "bg-rose-50 text-rose-700 border border-rose-200/60"
+                                    : "bg-slate-100 text-slate-700 border border-slate-200"
+                                }`}
+                              >
+                                {req.priority}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-slate-700 font-medium">
+                              {req.items?.length || 0} line items
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
+                                {req.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-slate-500 font-medium text-xs">
+                              {new Date(req.created_at).toLocaleDateString()}
                             </td>
                           </tr>
-                        )}
-                      </React.Fragment>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                          {req.items && req.items.length > 0 && (
+                            <tr className="bg-slate-50/70 text-xs">
+                              <td colSpan={5} className="px-8 py-2.5 border-t border-slate-100">
+                                <div className="space-y-1">
+                                  {req.items.map((it, idx) => (
+                                    <div key={idx} className="flex justify-between text-slate-600 font-mono">
+                                      <span>{it.item_name} ({it.item_category})</span>
+                                      <span className="font-semibold">Qty: {it.quantity} @ {formatCurrencyBDT(it.estimated_unit_cost)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
           {/* TAB 2: GOODS RECEIPT NOTES */}
           {activeTab === "GRN" && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase text-xs">
                   <tr>
                     <th className="px-6 py-3 font-semibold">GRN #</th>
                     <th className="px-6 py-3 font-semibold">Received Date</th>
@@ -398,7 +398,7 @@ export default function ProcurementPage() {
                     <th className="px-6 py-3 font-semibold">Notes</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-100">
                   {grns.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
@@ -408,33 +408,33 @@ export default function ProcurementPage() {
                   ) : (
                     grns.map((grn) => (
                       <React.Fragment key={grn.id}>
-                        <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                          <td className="px-6 py-4 font-mono font-medium text-sky-700 dark:text-sky-400">
+                        <tr className="hover:bg-slate-50/70 transition">
+                          <td className="px-6 py-4 font-mono font-bold text-sky-700">
                             {grn.grn_number}
                           </td>
-                          <td className="px-6 py-4 text-slate-500 text-xs">
+                          <td className="px-6 py-4 text-slate-500 font-medium text-xs">
                             {new Date(grn.received_at).toLocaleDateString()}
                           </td>
-                          <td className="px-6 py-4 text-right font-mono font-semibold text-slate-900 dark:text-white">
+                          <td className="px-6 py-4 text-right font-mono font-bold text-slate-900">
                             {formatCurrencyBDT(grn.total_received_cost)}
                           </td>
                           <td className="px-6 py-4">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                               {grn.status}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-xs">
+                          <td className="px-6 py-4 text-slate-600 text-xs font-medium">
                             {grn.notes || "—"}
                           </td>
                         </tr>
                         {grn.items && grn.items.length > 0 && (
-                          <tr className="bg-slate-50/40 dark:bg-slate-800/20 text-xs">
-                            <td colSpan={5} className="px-8 py-2">
+                          <tr className="bg-slate-50/70 text-xs">
+                            <td colSpan={5} className="px-8 py-2.5 border-t border-slate-100">
                               <div className="space-y-1">
                                 {grn.items.map((it, idx) => (
-                                  <div key={idx} className="flex justify-between text-slate-600 dark:text-slate-400 font-mono">
+                                  <div key={idx} className="flex justify-between text-slate-600 font-mono">
                                     <span>{it.item_name} (Batch: {it.batch_number || "N/A"})</span>
-                                    <span>
+                                    <span className="font-semibold">
                                       {it.quantity_received} units @ {formatCurrencyBDT(it.unit_cost)} = {formatCurrencyBDT(it.total_cost)}
                                     </span>
                                   </div>
@@ -453,9 +453,9 @@ export default function ProcurementPage() {
 
           {/* TAB 3: WAREHOUSES */}
           {activeTab === "WAREHOUSES" && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase text-xs">
                   <tr>
                     <th className="px-6 py-3 font-semibold">Warehouse Code</th>
                     <th className="px-6 py-3 font-semibold">Warehouse Name</th>
@@ -463,7 +463,7 @@ export default function ProcurementPage() {
                     <th className="px-6 py-3 font-semibold">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-100">
                   {warehouses.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
@@ -472,16 +472,16 @@ export default function ProcurementPage() {
                     </tr>
                   ) : (
                     warehouses.map((wh) => (
-                      <tr key={wh.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                        <td className="px-6 py-4 font-mono font-medium text-sky-700 dark:text-sky-400">
+                      <tr key={wh.id} className="hover:bg-slate-50/70 transition">
+                        <td className="px-6 py-4 font-mono font-bold text-sky-700">
                           {wh.warehouse_code}
                         </td>
-                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                        <td className="px-6 py-4 font-semibold text-slate-900">
                           {wh.warehouse_name}
                         </td>
-                        <td className="px-6 py-4 text-slate-500">{wh.location || "Central"}</td>
+                        <td className="px-6 py-4 text-slate-500 font-medium">{wh.location || "Central"}</td>
                         <td className="px-6 py-4">
-                          <span className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                          <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full text-xs font-bold">
                             ● ACTIVE
                           </span>
                         </td>
@@ -497,15 +497,15 @@ export default function ProcurementPage() {
 
       {/* MODAL: NEW REQUISITION */}
       {isReqModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 max-w-xl w-full p-6 space-y-4 shadow-xl">
-            <div className="flex justify-between items-center border-b pb-3 border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-xl w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3 border-slate-200">
+              <h3 className="text-lg font-extrabold text-slate-900">
                 Create Purchase Requisition
               </h3>
               <button
                 onClick={() => setIsReqModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -514,7 +514,7 @@ export default function ProcurementPage() {
             <form onSubmit={handleCreateRequisition} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                  <label className="block text-xs font-bold text-slate-700 uppercase">
                     Requisition #
                   </label>
                   <input
@@ -522,17 +522,17 @@ export default function ProcurementPage() {
                     required
                     value={reqNumber}
                     onChange={(e) => setReqNumber(e.target.value)}
-                    className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                    className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                  <label className="block text-xs font-bold text-slate-700 uppercase">
                     Priority
                   </label>
                   <select
                     value={reqPriority}
                     onChange={(e) => setReqPriority(e.target.value as "LOW" | "NORMAL" | "URGENT" | "EMERGENCY")}
-                    className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                    className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   >
                     <option value="LOW">LOW</option>
                     <option value="NORMAL">NORMAL</option>
@@ -545,7 +545,7 @@ export default function ProcurementPage() {
               {/* Items */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold uppercase text-slate-500">
+                  <span className="text-xs font-bold uppercase text-slate-600">
                     Requisition Items
                   </span>
                   <button
@@ -556,7 +556,7 @@ export default function ProcurementPage() {
                         { item_name: "", item_category: "CONSUMABLE", quantity: 1, estimated_unit_cost: 0 },
                       ])
                     }
-                    className="text-xs text-sky-600 hover:underline font-medium"
+                    className="text-xs text-sky-600 hover:underline font-bold cursor-pointer"
                   >
                     + Add Item
                   </button>
@@ -574,7 +574,7 @@ export default function ProcurementPage() {
                         updated[idx].item_name = e.target.value;
                         setReqItems(updated);
                       }}
-                      className="col-span-6 p-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                      className="col-span-6 p-2 text-xs border rounded-xl bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                     />
 
                     <input
@@ -587,7 +587,7 @@ export default function ProcurementPage() {
                         updated[idx].quantity = parseInt(e.target.value) || 1;
                         setReqItems(updated);
                       }}
-                      className="col-span-2 p-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                      className="col-span-2 p-2 text-xs border rounded-xl bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                     />
 
                     <input
@@ -601,14 +601,14 @@ export default function ProcurementPage() {
                         updated[idx].estimated_unit_cost = parseFloat(e.target.value) || 0;
                         setReqItems(updated);
                       }}
-                      className="col-span-3 p-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                      className="col-span-3 p-2 text-xs border rounded-xl bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                     />
 
                     {reqItems.length > 1 && (
                       <button
                         type="button"
                         onClick={() => setReqItems(reqItems.filter((_, i) => i !== idx))}
-                        className="col-span-1 text-red-500 hover:text-red-700 text-xs"
+                        className="col-span-1 text-red-500 hover:text-red-700 text-xs font-bold cursor-pointer"
                       >
                         ✕
                       </button>
@@ -618,7 +618,7 @@ export default function ProcurementPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase">
                   Notes / Justification
                 </label>
                 <textarea
@@ -626,22 +626,22 @@ export default function ProcurementPage() {
                   value={reqNotes}
                   onChange={(e) => setReqNotes(e.target.value)}
                   placeholder="Clinical department justification..."
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsReqModalOpen(false)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 text-sm font-medium bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-semibold bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
                   {submitting ? "Submitting..." : "Submit Requisition"}
                 </button>
@@ -653,15 +653,15 @@ export default function ProcurementPage() {
 
       {/* MODAL: NEW GRN */}
       {isGrnModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 max-w-xl w-full p-6 space-y-4 shadow-xl">
-            <div className="flex justify-between items-center border-b pb-3 border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-xl w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3 border-slate-200">
+              <h3 className="text-lg font-extrabold text-slate-900">
                 Record Goods Receipt Note (GRN)
               </h3>
               <button
                 onClick={() => setIsGrnModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -669,7 +669,7 @@ export default function ProcurementPage() {
 
             <form onSubmit={handleCreateGrn} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase">
                   GRN #
                 </label>
                 <input
@@ -677,14 +677,14 @@ export default function ProcurementPage() {
                   required
                   value={grnNumber}
                   onChange={(e) => setGrnNumber(e.target.value)}
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
               {/* GRN Items */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold uppercase text-slate-500">
+                  <span className="text-xs font-bold uppercase text-slate-600">
                     Received Goods
                   </span>
                   <button
@@ -695,7 +695,7 @@ export default function ProcurementPage() {
                         { item_name: "", quantity_received: 1, unit_cost: 0, batch_number: "", expiry_date: "" },
                       ])
                     }
-                    className="text-xs text-sky-600 hover:underline font-medium"
+                    className="text-xs text-sky-600 hover:underline font-bold cursor-pointer"
                   >
                     + Add Item
                   </button>
@@ -713,7 +713,7 @@ export default function ProcurementPage() {
                         updated[idx].item_name = e.target.value;
                         setGrnItems(updated);
                       }}
-                      className="col-span-4 p-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                      className="col-span-4 p-2 text-xs border rounded-xl bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                     />
 
                     <input
@@ -726,7 +726,7 @@ export default function ProcurementPage() {
                         updated[idx].quantity_received = parseInt(e.target.value) || 1;
                         setGrnItems(updated);
                       }}
-                      className="col-span-2 p-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                      className="col-span-2 p-2 text-xs border rounded-xl bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                     />
 
                     <input
@@ -740,7 +740,7 @@ export default function ProcurementPage() {
                         updated[idx].unit_cost = parseFloat(e.target.value) || 0;
                         setGrnItems(updated);
                       }}
-                      className="col-span-2 p-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                      className="col-span-2 p-2 text-xs border rounded-xl bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                     />
 
                     <input
@@ -752,14 +752,14 @@ export default function ProcurementPage() {
                         updated[idx].batch_number = e.target.value;
                         setGrnItems(updated);
                       }}
-                      className="col-span-3 p-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                      className="col-span-3 p-2 text-xs border rounded-xl bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                     />
 
                     {grnItems.length > 1 && (
                       <button
                         type="button"
                         onClick={() => setGrnItems(grnItems.filter((_, i) => i !== idx))}
-                        className="col-span-1 text-red-500 hover:text-red-700 text-xs"
+                        className="col-span-1 text-red-500 hover:text-red-700 text-xs font-bold cursor-pointer"
                       >
                         ✕
                       </button>
@@ -769,7 +769,7 @@ export default function ProcurementPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase">
                   Receiving Notes / Supplier Invoice
                 </label>
                 <textarea
@@ -777,22 +777,22 @@ export default function ProcurementPage() {
                   value={grnNotes}
                   onChange={(e) => setGrnNotes(e.target.value)}
                   placeholder="Supplier challan number, delivery condition..."
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsGrnModalOpen(false)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 text-sm font-medium bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-semibold bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
                   {submitting ? "Verifying..." : "Verify & Receive"}
                 </button>

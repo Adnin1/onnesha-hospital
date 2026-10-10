@@ -9,10 +9,39 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
+const SESSION_VERIFIED_KEY = "ohms_auth_verified";
+const SESSION_VERIFIED_TTL_MS = 15 * 60 * 1000; // 15 minutes client session cache
+
+function getCachedAuthVerified(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_VERIFIED_KEY);
+    if (!raw) return false;
+    const timestamp = parseInt(raw, 10);
+    if (Date.now() - timestamp < SESSION_VERIFIED_TTL_MS) {
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+function setCachedAuthVerified(verified: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (verified) {
+      window.sessionStorage.setItem(SESSION_VERIFIED_KEY, String(Date.now()));
+    } else {
+      window.sessionStorage.removeItem(SESSION_VERIFIED_KEY);
+    }
+  } catch {}
+}
+
 export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
+    return getCachedAuthVerified() ? true : null;
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -26,6 +55,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         } = await supabase.auth.getUser();
 
         if (error || !user) {
+          setCachedAuthVerified(false);
           if (isMounted) {
             setIsAuthenticated(false);
             router.push(`/login?redirectTo=${encodeURIComponent(pathname)}`);
@@ -122,10 +152,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
 
         if (isMounted) {
+          setCachedAuthVerified(true);
           setIsAuthenticated(true);
         }
       } catch (err: unknown) {
         console.error("[AuthGuard] checkAuthAndMfa error:", err);
+        setCachedAuthVerified(false);
         if (isMounted) {
           setIsAuthenticated(false);
           router.push(`/login?redirectTo=${encodeURIComponent(pathname)}`);

@@ -63,14 +63,14 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-desc"
-        className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 overflow-hidden"
+        className="w-full max-w-md bg-white border border-slate-200/80 rounded-2xl shadow-2xl p-6 overflow-hidden"
       >
         <div className="flex items-start gap-4">
           <div
             className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
               isDestructive
-                ? "bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400"
-                : "bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400"
+                ? "bg-rose-50 text-rose-600 border border-rose-200"
+                : "bg-amber-50 text-amber-600 border border-amber-200"
             }`}
           >
             {isDestructive ? (
@@ -97,13 +97,13 @@ export function ConfirmDialog({
           <div className="flex-1 min-w-0">
             <h3
               id="confirm-dialog-title"
-              className="text-lg font-bold text-slate-900 dark:text-white"
+              className="text-lg font-bold text-slate-900"
             >
               {title}
             </h3>
             <p
               id="confirm-dialog-desc"
-              className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed"
+              className="mt-2 text-sm text-slate-600 leading-relaxed"
             >
               {description}
             </p>
@@ -116,7 +116,7 @@ export function ConfirmDialog({
             type="button"
             disabled={isLoading}
             onClick={onCancel}
-            className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-semibold transition-colors disabled:opacity-50 min-h-[44px]"
+            className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 text-sm font-semibold transition-colors disabled:opacity-50 min-h-[44px]"
           >
             {cancelLabel}
           </button>
@@ -126,8 +126,8 @@ export function ConfirmDialog({
             onClick={onConfirm}
             className={`px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2 min-h-[44px] ${
               isDestructive
-                ? "bg-rose-600 hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700"
-                : "bg-primary-600 hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-700"
+                ? "bg-rose-600 hover:bg-rose-700"
+                : "bg-primary-600 hover:bg-primary-700"
             }`}
           >
             {isLoading && (

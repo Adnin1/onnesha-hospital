@@ -286,15 +286,15 @@ export default function AccountingPage() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <Scale className="h-7 w-7 text-sky-600 dark:text-sky-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <Scale className="h-7 w-7 text-sky-600" />
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
               Enterprise General Ledger & Accounting
             </h1>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1 font-medium">
             Strict double-entry bookkeeping, atomic journal vouchers, and automated trial balance.
           </p>
         </div>
@@ -302,7 +302,7 @@ export default function AccountingPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsAccountModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 shadow-xs transition cursor-pointer"
           >
             <Plus className="h-4 w-4" /> New Account
           </button>
@@ -311,7 +311,7 @@ export default function AccountingPage() {
               setEntryNumber(`JV-${Date.now().toString().slice(-6)}`);
               setIsPostingModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 shadow-sm transition"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl bg-sky-600 text-white hover:bg-sky-700 shadow-sm transition cursor-pointer"
           >
             <Plus className="h-4 w-4" /> Post Journal Entry
           </button>
@@ -319,7 +319,7 @@ export default function AccountingPage() {
             onClick={loadData}
             title="Refresh"
             disabled={loading}
-            className="p-2 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
+            className="p-2 border border-slate-300 rounded-xl hover:bg-slate-100 text-slate-600 transition cursor-pointer"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -328,56 +328,56 @@ export default function AccountingPage() {
 
       {/* Notifications */}
       {errorMsg && (
-        <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 flex items-center gap-2 text-sm">
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-center gap-2 text-sm">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
       {successMsg && (
-        <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 flex items-center gap-2 text-sm">
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-2 text-sm">
           <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-6">
+      <div className="flex border-b border-slate-200 space-x-6">
         <button
           onClick={() => setActiveTab("COA")}
-          className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
             activeTab === "COA"
-              ? "border-sky-600 text-sky-600 dark:text-sky-400"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              ? "border-sky-600 text-sky-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           <BookOpen className="h-4 w-4" /> Chart of Accounts ({accounts.length})
         </button>
         <button
           onClick={() => setActiveTab("ENTRIES")}
-          className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
             activeTab === "ENTRIES"
-              ? "border-sky-600 text-sky-600 dark:text-sky-400"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              ? "border-sky-600 text-sky-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           <Scale className="h-4 w-4" /> Journal Entries ({entries.length})
         </button>
         <button
           onClick={() => setActiveTab("TRIAL_BALANCE")}
-          className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
             activeTab === "TRIAL_BALANCE"
-              ? "border-sky-600 text-sky-600 dark:text-sky-400"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              ? "border-sky-600 text-sky-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           <FileSpreadsheet className="h-4 w-4" /> Trial Balance
         </button>
         <button
           onClick={() => setActiveTab("PERIODS")}
-          className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 text-sm font-semibold flex items-center gap-2 border-b-2 transition cursor-pointer ${
             activeTab === "PERIODS"
-              ? "border-sky-600 text-sky-600 dark:text-sky-400"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              ? "border-sky-600 text-sky-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           <Calendar className="h-4 w-4" /> Fiscal Periods ({fiscalPeriods.length})
@@ -402,14 +402,14 @@ export default function AccountingPage() {
                     placeholder="Search accounts..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                    className="w-full pl-9 pr-4 py-2 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-2xs"
                   />
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+              <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase text-xs">
                     <tr>
                       <th className="px-6 py-3 font-semibold">Account Code</th>
                       <th className="px-6 py-3 font-semibold">Account Name</th>
@@ -417,7 +417,7 @@ export default function AccountingPage() {
                       <th className="px-6 py-3 font-semibold">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y divide-slate-100">
                     {filteredAccounts.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="px-6 py-8 text-center text-slate-400">
@@ -426,32 +426,32 @@ export default function AccountingPage() {
                       </tr>
                     ) : (
                       filteredAccounts.map((acc) => (
-                        <tr key={acc.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                          <td className="px-6 py-4 font-mono font-medium text-sky-700 dark:text-sky-400">
+                        <tr key={acc.id} className="hover:bg-slate-50/70 transition">
+                          <td className="px-6 py-4 font-mono font-bold text-sky-700">
                             {acc.account_code}
                           </td>
-                          <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                          <td className="px-6 py-4 font-semibold text-slate-900">
                             {acc.account_name}
                           </td>
                           <td className="px-6 py-4">
                             <span
-                              className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                                 acc.account_type === "ASSET"
-                                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
                                   : acc.account_type === "LIABILITY"
-                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200/60"
                                   : acc.account_type === "EQUITY"
-                                  ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300"
+                                  ? "bg-purple-50 text-purple-700 border border-purple-200/60"
                                   : acc.account_type === "REVENUE"
-                                  ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
-                                  : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                                  ? "bg-blue-50 text-blue-700 border border-blue-200/60"
+                                  : "bg-rose-50 text-rose-700 border border-rose-200/60"
                               }`}
                             >
                               {acc.account_type}
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                            <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full text-xs font-bold">
                               ● ACTIVE
                             </span>
                           </td>
@@ -466,9 +466,9 @@ export default function AccountingPage() {
 
           {/* TAB 2: JOURNAL ENTRIES */}
           {activeTab === "ENTRIES" && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase text-xs">
                   <tr>
                     <th className="px-6 py-3 font-semibold">Voucher #</th>
                     <th className="px-6 py-3 font-semibold">Date</th>
@@ -478,7 +478,7 @@ export default function AccountingPage() {
                     <th className="px-6 py-3 font-semibold">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-100">
                   {entries.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
@@ -488,18 +488,18 @@ export default function AccountingPage() {
                   ) : (
                     entries.map((entry) => (
                       <React.Fragment key={entry.id}>
-                        <tr className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                          <td className="px-6 py-4 font-mono font-medium text-sky-700 dark:text-sky-400">
+                        <tr className="hover:bg-slate-50/70 transition">
+                          <td className="px-6 py-4 font-mono font-bold text-sky-700">
                             {entry.entry_number}
                           </td>
-                          <td className="px-6 py-4 text-slate-500">{entry.entry_date}</td>
-                          <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                          <td className="px-6 py-4 text-slate-500 font-medium">{entry.entry_date}</td>
+                          <td className="px-6 py-4 font-semibold text-slate-900">
                             {entry.description}
                           </td>
-                          <td className="px-6 py-4 text-right font-mono font-semibold text-slate-900 dark:text-white">
+                          <td className="px-6 py-4 text-right font-mono font-bold text-slate-900">
                             {formatCurrencyBDT(entry.total_debit)}
                           </td>
-                          <td className="px-6 py-4 text-right font-mono font-semibold text-slate-900 dark:text-white">
+                          <td className="px-6 py-4 text-right font-mono font-bold text-slate-900">
                             {formatCurrencyBDT(entry.total_credit)}
                           </td>
                           <td className="px-6 py-4">
@@ -507,10 +507,10 @@ export default function AccountingPage() {
                               <span
                                 className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                                   entry.status === "POSTED"
-                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
                                     : entry.status === "REVERSED"
-                                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                                    : "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300"
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200/60"
+                                    : "bg-slate-100 text-slate-700 border border-slate-200"
                                 }`}
                               >
                                 {entry.status}
@@ -519,7 +519,7 @@ export default function AccountingPage() {
                                 <button
                                   onClick={() => handleReverseJournal(entry.id, entry.entry_number)}
                                   title="Reverse this journal entry"
-                                  className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-300 font-semibold"
+                                  className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-800 font-semibold cursor-pointer"
                                 >
                                   <Undo2 className="h-3 w-3" /> Reverse
                                 </button>
@@ -528,13 +528,13 @@ export default function AccountingPage() {
                           </td>
                         </tr>
                         {entry.lines && entry.lines.length > 0 && (
-                          <tr className="bg-slate-50/40 dark:bg-slate-800/20 text-xs">
-                            <td colSpan={6} className="px-8 py-2">
+                          <tr className="bg-slate-50/70 text-xs">
+                            <td colSpan={6} className="px-8 py-2.5 border-t border-slate-100">
                               <div className="space-y-1">
                                 {entry.lines.map((l, idx) => (
-                                  <div key={idx} className="flex justify-between font-mono text-slate-600 dark:text-slate-400">
+                                  <div key={idx} className="flex justify-between font-mono text-slate-600">
                                     <span>{l.account_code || "ACC"} - {l.account_name || "Account"}</span>
-                                    <span>
+                                    <span className="font-semibold">
                                       {l.debit > 0 ? `DR: ${formatCurrencyBDT(l.debit)}` : `CR: ${formatCurrencyBDT(l.credit)}`}
                                     </span>
                                   </div>
@@ -555,22 +555,22 @@ export default function AccountingPage() {
           {activeTab === "TRIAL_BALANCE" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
                   <p className="text-xs text-slate-500 uppercase font-semibold">Total Debits</p>
-                  <p className="text-2xl font-bold font-mono text-slate-900 dark:text-white mt-1">
+                  <p className="text-2xl font-extrabold font-mono text-slate-900 mt-1">
                     {formatCurrencyBDT(tbTotals.debits)}
                   </p>
                 </div>
-                <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
                   <p className="text-xs text-slate-500 uppercase font-semibold">Total Credits</p>
-                  <p className="text-2xl font-bold font-mono text-slate-900 dark:text-white mt-1">
+                  <p className="text-2xl font-extrabold font-mono text-slate-900 mt-1">
                     {formatCurrencyBDT(tbTotals.credits)}
                   </p>
                 </div>
-                <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
                   <div>
                     <p className="text-xs text-slate-500 uppercase font-semibold">Ledger Invariant</p>
-                    <p className="text-lg font-bold text-slate-900 dark:text-white mt-1">
+                    <p className="text-lg font-bold text-slate-900 mt-1">
                       {tbTotals.balanced ? "Double-Entry Balanced" : "Unbalanced Discrepancy"}
                     </p>
                   </div>
@@ -582,9 +582,9 @@ export default function AccountingPage() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+              <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase text-xs">
                     <tr>
                       <th className="px-6 py-3 font-semibold">Account Code</th>
                       <th className="px-6 py-3 font-semibold">Account Name</th>
@@ -593,7 +593,7 @@ export default function AccountingPage() {
                       <th className="px-6 py-3 font-semibold text-right">Credit Balance (BDT)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y divide-slate-100">
                     {trialBalance.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
@@ -602,25 +602,25 @@ export default function AccountingPage() {
                       </tr>
                     ) : (
                       trialBalance.map((row) => (
-                        <tr key={row.account_id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                          <td className="px-6 py-4 font-mono font-medium text-sky-700 dark:text-sky-400">
+                        <tr key={row.account_id} className="hover:bg-slate-50/70 transition">
+                          <td className="px-6 py-4 font-mono font-bold text-sky-700">
                             {row.account_code}
                           </td>
-                          <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                          <td className="px-6 py-4 font-semibold text-slate-900">
                             {row.account_name}
                           </td>
-                          <td className="px-6 py-4 text-xs text-slate-500">{row.account_type}</td>
-                          <td className="px-6 py-4 text-right font-mono font-semibold text-slate-900 dark:text-white">
+                          <td className="px-6 py-4 text-xs font-semibold text-slate-500">{row.account_type}</td>
+                          <td className="px-6 py-4 text-right font-mono font-bold text-slate-900">
                             {row.total_debit > 0 ? formatCurrencyBDT(row.total_debit) : "—"}
                           </td>
-                          <td className="px-6 py-4 text-right font-mono font-semibold text-slate-900 dark:text-white">
+                          <td className="px-6 py-4 text-right font-mono font-bold text-slate-900">
                             {row.total_credit > 0 ? formatCurrencyBDT(row.total_credit) : "—"}
                           </td>
                         </tr>
                       ))
                     )}
                   </tbody>
-                  <tfoot className="bg-slate-100 dark:bg-slate-800 font-semibold text-slate-900 dark:text-white">
+                  <tfoot className="bg-slate-50 border-t-2 border-slate-200 font-bold text-slate-900">
                     <tr>
                       <td colSpan={3} className="px-6 py-4 text-right uppercase text-xs">
                         Total Sum:
@@ -640,15 +640,15 @@ export default function AccountingPage() {
 
           {/* TAB 4: FISCAL PERIODS */}
           {activeTab === "PERIODS" && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+              <div className="p-4 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Accounting Period Control</h3>
-                  <p className="text-xs text-slate-500">Prevent historical ledger postings and enforce audit period locking.</p>
+                  <h3 className="text-sm font-bold text-slate-900">Accounting Period Control</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Prevent historical ledger postings and enforce audit period locking.</p>
                 </div>
               </div>
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase text-xs">
                   <tr>
                     <th className="px-6 py-3 font-semibold">Period Name</th>
                     <th className="px-6 py-3 font-semibold">Start Date</th>
@@ -657,7 +657,7 @@ export default function AccountingPage() {
                     <th className="px-6 py-3 font-semibold text-right">Control Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-100">
                   {fiscalPeriods.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
@@ -666,18 +666,18 @@ export default function AccountingPage() {
                     </tr>
                   ) : (
                     fiscalPeriods.map((period) => (
-                      <tr key={period.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                        <td className="px-6 py-4 font-mono font-medium text-slate-900 dark:text-white">
+                      <tr key={period.id} className="hover:bg-slate-50/70 transition">
+                        <td className="px-6 py-4 font-mono font-bold text-slate-900">
                           {period.period_name}
                         </td>
-                        <td className="px-6 py-4 text-slate-500">{period.start_date}</td>
-                        <td className="px-6 py-4 text-slate-500">{period.end_date}</td>
+                        <td className="px-6 py-4 text-slate-500 font-medium">{period.start_date}</td>
+                        <td className="px-6 py-4 text-slate-500 font-medium">{period.end_date}</td>
                         <td className="px-6 py-4">
                           <span
                             className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                               period.is_closed
-                                ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200/60"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
                             }`}
                           >
                             {period.is_closed ? "CLOSED" : "OPEN"}
@@ -686,10 +686,10 @@ export default function AccountingPage() {
                         <td className="px-6 py-4 text-right">
                           <button
                             onClick={() => handleTogglePeriod(period)}
-                            className={`px-3 py-1 text-xs font-medium rounded-lg transition ${
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition cursor-pointer ${
                               period.is_closed
-                                ? "bg-slate-200 text-slate-800 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200"
-                                : "bg-rose-600 text-white hover:bg-rose-700"
+                                ? "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-200"
+                                : "bg-rose-600 text-white hover:bg-rose-700 shadow-2xs"
                             }`}
                           >
                             {period.is_closed ? "Reopen Period" : "Close Period"}
@@ -707,15 +707,15 @@ export default function AccountingPage() {
 
       {/* MODAL: POST JOURNAL ENTRY */}
       {isPostingModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 max-w-2xl w-full p-6 space-y-4 shadow-xl">
-            <div className="flex justify-between items-center border-b pb-3 border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3 border-slate-200">
+              <h3 className="text-lg font-extrabold text-slate-900">
                 Post Double-Entry Journal Voucher
               </h3>
               <button
                 onClick={() => setIsPostingModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -724,7 +724,7 @@ export default function AccountingPage() {
             <form onSubmit={handlePostJournal} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                  <label className="block text-xs font-bold text-slate-700 uppercase">
                     Voucher #
                   </label>
                   <input
@@ -732,11 +732,11 @@ export default function AccountingPage() {
                     required
                     value={entryNumber}
                     onChange={(e) => setEntryNumber(e.target.value)}
-                    className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                    className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                  <label className="block text-xs font-bold text-slate-700 uppercase">
                     Description
                   </label>
                   <input
@@ -745,7 +745,7 @@ export default function AccountingPage() {
                     placeholder="e.g. Pharmacy inventory bulk supplier settlement"
                     value={entryDesc}
                     onChange={(e) => setEntryDesc(e.target.value)}
-                    className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                    className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   />
                 </div>
               </div>
@@ -753,7 +753,7 @@ export default function AccountingPage() {
               {/* Journal Lines */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold uppercase text-slate-500">
+                  <span className="text-xs font-bold uppercase text-slate-600">
                     Journal Lines (Debit & Credit)
                   </span>
                   <button
@@ -764,7 +764,7 @@ export default function AccountingPage() {
                         { account_id: "", debit: 0, credit: 0, description: "" },
                       ])
                     }
-                    className="text-xs text-sky-600 hover:underline font-medium"
+                    className="text-xs text-sky-600 hover:underline font-bold cursor-pointer"
                   >
                     + Add Line
                   </button>
@@ -780,7 +780,7 @@ export default function AccountingPage() {
                         updated[idx].account_id = e.target.value;
                         setLines(updated);
                       }}
-                      className="col-span-5 p-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                      className="col-span-5 p-2 text-xs border rounded-xl bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                     >
                       <option value="">Select Account...</option>
                       {accounts.map((a) => (
@@ -802,7 +802,7 @@ export default function AccountingPage() {
                         if (updated[idx].debit > 0) updated[idx].credit = 0;
                         setLines(updated);
                       }}
-                      className="col-span-3 p-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                      className="col-span-3 p-2 text-xs border rounded-xl bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                     />
 
                     <input
@@ -817,14 +817,14 @@ export default function AccountingPage() {
                         if (updated[idx].credit > 0) updated[idx].debit = 0;
                         setLines(updated);
                       }}
-                      className="col-span-3 p-2 text-xs border rounded-lg bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                      className="col-span-3 p-2 text-xs border rounded-xl bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                     />
 
                     {lines.length > 2 && (
                       <button
                         type="button"
                         onClick={() => setLines(lines.filter((_, i) => i !== idx))}
-                        className="col-span-1 text-red-500 hover:text-red-700 text-xs"
+                        className="col-span-1 text-red-500 hover:text-red-700 text-xs font-bold cursor-pointer"
                       >
                         ✕
                       </button>
@@ -834,36 +834,36 @@ export default function AccountingPage() {
               </div>
 
               {/* Balancing summary */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg flex justify-between items-center text-xs font-mono">
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl flex justify-between items-center text-xs font-mono">
                 <div>
-                  <span>Total Debit: </span>
-                  <span className="font-bold text-sky-600">{formatCurrencyBDT(totalDebitSum)}</span>
+                  <span className="text-slate-500">Total Debit: </span>
+                  <span className="font-bold text-sky-700">{formatCurrencyBDT(totalDebitSum)}</span>
                 </div>
                 <div>
-                  <span>Total Credit: </span>
-                  <span className="font-bold text-sky-600">{formatCurrencyBDT(totalCreditSum)}</span>
+                  <span className="text-slate-500">Total Credit: </span>
+                  <span className="font-bold text-sky-700">{formatCurrencyBDT(totalCreditSum)}</span>
                 </div>
                 <div>
                   {isBalanced ? (
-                    <span className="text-emerald-600 font-bold">✓ BALANCED</span>
+                    <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">✓ BALANCED</span>
                   ) : (
-                    <span className="text-rose-500 font-bold">✗ UNBALANCED</span>
+                    <span className="text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full font-bold">✗ UNBALANCED</span>
                   )}
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsPostingModalOpen(false)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!isBalanced || submitting}
-                  className="px-4 py-2 text-sm font-medium bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-semibold bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
                   {submitting ? "Posting..." : "Confirm & Post Ledger"}
                 </button>
@@ -875,15 +875,15 @@ export default function AccountingPage() {
 
       {/* MODAL: NEW ACCOUNT */}
       {isAccountModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 space-y-4 shadow-xl">
-            <div className="flex justify-between items-center border-b pb-3 border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3 border-slate-200">
+              <h3 className="text-lg font-extrabold text-slate-900">
                 Create Chart of Accounts Code
               </h3>
               <button
                 onClick={() => setIsAccountModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer"
               >
                 ✕
               </button>
@@ -891,7 +891,7 @@ export default function AccountingPage() {
 
             <form onSubmit={handleCreateAccount} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase">
                   Account Code
                 </label>
                 <input
@@ -900,12 +900,12 @@ export default function AccountingPage() {
                   placeholder="e.g. 1010, 2020, 5010"
                   value={newAccCode}
                   onChange={(e) => setNewAccCode(e.target.value)}
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase">
                   Account Name
                 </label>
                 <input
@@ -914,18 +914,18 @@ export default function AccountingPage() {
                   placeholder="e.g. Cash in Vault, Medical Equipment Depreciation"
                   value={newAccName}
                   onChange={(e) => setNewAccName(e.target.value)}
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase">
                   Account Type
                 </label>
                 <select
                   value={newAccType}
                   onChange={(e) => setNewAccType(e.target.value as AccountType)}
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 >
                   <option value="ASSET">ASSET</option>
                   <option value="LIABILITY">LIABILITY</option>
@@ -935,18 +935,18 @@ export default function AccountingPage() {
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsAccountModalOpen(false)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 text-sm font-medium bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-semibold bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
                   {submitting ? "Creating..." : "Save Account"}
                 </button>
@@ -958,18 +958,18 @@ export default function AccountingPage() {
 
       {/* Reversal Confirmation Modal */}
       {reversalModalEntry && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full border border-slate-200 shadow-2xl">
+            <h3 className="text-lg font-extrabold text-slate-900 mb-2">
               Reverse Journal Entry {reversalModalEntry.num}
             </h3>
-            <p className="text-xs text-slate-500 mb-4">
+            <p className="text-xs text-slate-500 mb-4 font-medium">
               Enter mandatory reason for reversing this entry. A compensating reversal entry will be posted into the general ledger.
             </p>
 
             <form onSubmit={handleConfirmReverse} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Reversal Reason / Audit Justification <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -978,22 +978,22 @@ export default function AccountingPage() {
                   value={reversalReason}
                   onChange={(e) => setReversalReason(e.target.value)}
                   placeholder="e.g. Correcting mistaken duplicate entry from invoice batch..."
-                  className="w-full p-2.5 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                  className="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-white text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setReversalModalEntry(null)}
-                  className="px-4 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={reversing || !reversalReason.trim()}
-                  className="px-4 py-2 text-xs font-medium bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50"
+                  className="px-4 py-2 text-xs font-semibold bg-rose-600 text-white rounded-xl hover:bg-rose-700 disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
                   {reversing ? "Reversing..." : "Confirm Reversal"}
                 </button>

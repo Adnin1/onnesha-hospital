@@ -188,15 +188,17 @@ export default function AssetsPage() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <Wrench className="h-7 w-7 text-sky-600 dark:text-sky-400" />
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-sky-50 text-sky-600 border border-sky-100">
+              <Wrench className="h-6 w-6" />
+            </div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
               Fixed Assets & Biomedical Engineering
             </h1>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 font-medium mt-1">
             Biomedical machinery register, scheduled calibration, repairs, and lifecycle tracking.
           </p>
         </div>
@@ -204,16 +206,16 @@ export default function AssetsPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMaintModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs transition min-h-[40px]"
           >
-            <Plus className="h-4 w-4" /> Log Service
+            <Plus className="h-4 w-4 text-slate-500" /> Log Service
           </button>
           <button
             onClick={() => {
               setAssetCode(`AST-${Date.now().toString().slice(-6)}`);
               setIsAssetModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 shadow-sm transition"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-xl bg-sky-600 text-white hover:bg-sky-700 shadow-sm transition min-h-[40px]"
           >
             <Plus className="h-4 w-4" /> Register Asset
           </button>
@@ -221,7 +223,7 @@ export default function AssetsPage() {
             onClick={loadData}
             title="Refresh"
             disabled={loading}
-            className="p-2 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"
+            className="p-2.5 border border-slate-300 bg-white rounded-xl hover:bg-slate-50 text-slate-600 transition min-h-[40px] shadow-2xs"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -230,36 +232,36 @@ export default function AssetsPage() {
 
       {/* Notifications */}
       {errorMsg && (
-        <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 flex items-center gap-2 text-sm">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2.5 text-sm font-medium">
+          <AlertCircle className="h-4 w-4 flex-shrink-0 text-rose-500" />
           <span>{errorMsg}</span>
         </div>
       )}
       {successMsg && (
-        <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 flex items-center gap-2 text-sm">
-          <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-2.5 text-sm font-medium">
+          <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-500" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-6">
+      <div className="flex border-b border-slate-200 space-x-6">
         <button
           onClick={() => setActiveTab("ASSETS")}
-          className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${
             activeTab === "ASSETS"
-              ? "border-sky-600 text-sky-600 dark:text-sky-400"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              ? "border-sky-600 text-sky-600"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <Cpu className="h-4 w-4" /> Equipment Register ({assets.length})
         </button>
         <button
           onClick={() => setActiveTab("MAINTENANCE")}
-          className={`pb-3 text-sm font-medium flex items-center gap-2 border-b-2 transition ${
+          className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${
             activeTab === "MAINTENANCE"
-              ? "border-sky-600 text-sky-600 dark:text-sky-400"
-              : "border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400"
+              ? "border-sky-600 text-sky-600"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <Calendar className="h-4 w-4" /> Service & Calibration ({maintenanceLogs.length})
@@ -276,57 +278,59 @@ export default function AssetsPage() {
           {/* TAB 1: ASSET REGISTER */}
           {activeTab === "ASSETS" && (
             <div className="space-y-4">
-              <div className="relative w-72">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <div className="relative w-80">
+                <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search assets..."
+                  placeholder="Search assets by name or code..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                  className="w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-2xs"
                 />
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+              <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs">
+                  <thead className="bg-slate-50 text-slate-600 uppercase text-xs border-b border-slate-200">
                     <tr>
-                      <th className="px-6 py-3 font-semibold">Asset Code</th>
-                      <th className="px-6 py-3 font-semibold">Asset Name</th>
-                      <th className="px-6 py-3 font-semibold">Category</th>
-                      <th className="px-6 py-3 font-semibold">Location</th>
-                      <th className="px-6 py-3 font-semibold text-right">Purchase Cost (BDT)</th>
-                      <th className="px-6 py-3 font-semibold">Status</th>
+                      <th className="px-6 py-3.5 font-bold tracking-wider">Asset Code</th>
+                      <th className="px-6 py-3.5 font-bold tracking-wider">Asset Name</th>
+                      <th className="px-6 py-3.5 font-bold tracking-wider">Category</th>
+                      <th className="px-6 py-3.5 font-bold tracking-wider">Location</th>
+                      <th className="px-6 py-3.5 font-bold tracking-wider text-right">Purchase Cost (BDT)</th>
+                      <th className="px-6 py-3.5 font-bold tracking-wider">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y divide-slate-100">
                     {filteredAssets.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
+                        <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium">
                           No hospital assets recorded. Click &quot;Register Asset&quot; to add biomedical machinery.
                         </td>
                       </tr>
                     ) : (
                       filteredAssets.map((asset) => (
-                        <tr key={asset.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                          <td className="px-6 py-4 font-mono font-medium text-sky-700 dark:text-sky-400">
+                        <tr key={asset.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="px-6 py-4 font-mono font-bold text-sky-700">
                             {asset.asset_code}
                           </td>
-                          <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                          <td className="px-6 py-4 font-bold text-slate-900">
                             <div>{asset.asset_name}</div>
                             {asset.serial_number && (
-                              <div className="text-xs text-slate-400">S/N: {asset.serial_number}</div>
+                              <div className="text-xs text-slate-500 font-normal mt-0.5">S/N: {asset.serial_number}</div>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-xs font-medium text-slate-600 dark:text-slate-300">
-                            {asset.category}
+                          <td className="px-6 py-4 text-xs font-semibold text-slate-700">
+                            <span className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200/60">
+                              {asset.category}
+                            </span>
                           </td>
-                          <td className="px-6 py-4 text-slate-500 text-xs">{asset.location || "Hospital"}</td>
-                          <td className="px-6 py-4 text-right font-mono font-semibold text-slate-900 dark:text-white">
+                          <td className="px-6 py-4 text-slate-600 text-xs font-medium">{asset.location || "Hospital"}</td>
+                          <td className="px-6 py-4 text-right font-mono font-bold text-slate-900">
                             {formatCurrencyBDT(asset.purchase_cost)}
                           </td>
                           <td className="px-6 py-4">
-                            <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                               {asset.status}
                             </span>
                           </td>
@@ -341,40 +345,40 @@ export default function AssetsPage() {
 
           {/* TAB 2: MAINTENANCE */}
           {activeTab === "MAINTENANCE" && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase text-xs">
+                <thead className="bg-slate-50 text-slate-600 uppercase text-xs border-b border-slate-200">
                   <tr>
-                    <th className="px-6 py-3 font-semibold">Service Date</th>
-                    <th className="px-6 py-3 font-semibold">Technician / Vendor</th>
-                    <th className="px-6 py-3 font-semibold">Service Notes</th>
-                    <th className="px-6 py-3 font-semibold text-right">Cost (BDT)</th>
-                    <th className="px-6 py-3 font-semibold">Next Service</th>
+                    <th className="px-6 py-3.5 font-bold tracking-wider">Service Date</th>
+                    <th className="px-6 py-3.5 font-bold tracking-wider">Technician / Vendor</th>
+                    <th className="px-6 py-3.5 font-bold tracking-wider">Service Notes</th>
+                    <th className="px-6 py-3.5 font-bold tracking-wider text-right">Cost (BDT)</th>
+                    <th className="px-6 py-3.5 font-bold tracking-wider">Next Service</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-slate-100">
                   {maintenanceLogs.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
+                      <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium">
                         No maintenance logs recorded.
                       </td>
                     </tr>
                   ) : (
                     maintenanceLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                        <td className="px-6 py-4 text-slate-500 text-xs">
+                      <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="px-6 py-4 text-slate-600 text-xs font-semibold">
                           {new Date(log.maintenance_date).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                        <td className="px-6 py-4 font-bold text-slate-900">
                           {log.performed_by || "Biomedical Team"}
                         </td>
-                        <td className="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm">
+                        <td className="px-6 py-4 text-slate-600 text-sm font-medium">
                           {log.notes}
                         </td>
-                        <td className="px-6 py-4 text-right font-mono font-semibold text-slate-900 dark:text-white">
+                        <td className="px-6 py-4 text-right font-mono font-bold text-slate-900">
                           {formatCurrencyBDT(log.cost)}
                         </td>
-                        <td className="px-6 py-4 text-slate-500 text-xs font-mono">
+                        <td className="px-6 py-4 text-slate-600 text-xs font-mono font-semibold">
                           {log.next_service_date || "—"}
                         </td>
                       </tr>
@@ -389,15 +393,15 @@ export default function AssetsPage() {
 
       {/* MODAL: REGISTER ASSET */}
       {isAssetModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 space-y-4 shadow-xl">
-            <div className="flex justify-between items-center border-b pb-3 border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200/80 max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-lg font-bold text-slate-900">
                 Register Hospital Asset
               </h3>
               <button
                 onClick={() => setIsAssetModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-slate-400 hover:text-slate-600 rounded-lg p-1 text-lg font-bold transition"
               >
                 ✕
               </button>
@@ -405,7 +409,7 @@ export default function AssetsPage() {
 
             <form onSubmit={handleCreateAsset} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Asset Code
                 </label>
                 <input
@@ -413,12 +417,12 @@ export default function AssetsPage() {
                   required
                   value={assetCode}
                   onChange={(e) => setAssetCode(e.target.value)}
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Asset / Equipment Name
                 </label>
                 <input
@@ -427,19 +431,19 @@ export default function AssetsPage() {
                   placeholder="e.g. GE Healthcare CT Scanner, Mindray Patient Monitor"
                   value={assetName}
                   onChange={(e) => setAssetName(e.target.value)}
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Category
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as AssetCategory)}
-                    className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                    className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   >
                     <option value="MEDICAL_EQUIPMENT">MEDICAL_EQUIPMENT</option>
                     <option value="DIAGNOSTIC_MACHINE">DIAGNOSTIC_MACHINE</option>
@@ -450,7 +454,7 @@ export default function AssetsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Serial #
                   </label>
                   <input
@@ -458,14 +462,14 @@ export default function AssetsPage() {
                     placeholder="OEM Serial"
                     value={serialNumber}
                     onChange={(e) => setSerialNumber(e.target.value)}
-                    className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                    className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Purchase Cost (BDT)
                   </label>
                   <input
@@ -474,11 +478,11 @@ export default function AssetsPage() {
                     step="0.01"
                     value={purchaseCost || ""}
                     onChange={(e) => setPurchaseCost(parseFloat(e.target.value) || 0)}
-                    className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                    className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Location / Ward
                   </label>
                   <input
@@ -486,23 +490,23 @@ export default function AssetsPage() {
                     placeholder="e.g. ICU-2, Radiology"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                    className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsAssetModalOpen(false)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 text-sm font-medium bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50"
+                  className="px-5 py-2 text-sm font-bold bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 shadow-sm transition"
                 >
                   {submitting ? "Saving..." : "Save Equipment"}
                 </button>
@@ -514,15 +518,15 @@ export default function AssetsPage() {
 
       {/* MODAL: LOG MAINTENANCE */}
       {isMaintModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 space-y-4 shadow-xl">
-            <div className="flex justify-between items-center border-b pb-3 border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200/80 max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-lg font-bold text-slate-900">
                 Log Calibration & Service
               </h3>
               <button
                 onClick={() => setIsMaintModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
+                className="text-slate-400 hover:text-slate-600 rounded-lg p-1 text-lg font-bold transition"
               >
                 ✕
               </button>
@@ -530,14 +534,14 @@ export default function AssetsPage() {
 
             <form onSubmit={handleCreateMaintenance} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Target Asset
                 </label>
                 <select
                   required
                   value={selectedAssetId}
                   onChange={(e) => setSelectedAssetId(e.target.value)}
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 >
                   <option value="">Select Equipment...</option>
                   {assets.map((a) => (
@@ -550,7 +554,7 @@ export default function AssetsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Service Cost (BDT)
                   </label>
                   <input
@@ -559,11 +563,11 @@ export default function AssetsPage() {
                     step="0.01"
                     value={maintCost || ""}
                     onChange={(e) => setMaintCost(parseFloat(e.target.value) || 0)}
-                    className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                    className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Performed By
                   </label>
                   <input
@@ -571,13 +575,13 @@ export default function AssetsPage() {
                     placeholder="Vendor / Engineer"
                     value={performedBy}
                     onChange={(e) => setPerformedBy(e.target.value)}
-                    className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                    className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Service Notes / Calibration Checklist
                 </label>
                 <textarea
@@ -586,34 +590,34 @@ export default function AssetsPage() {
                   value={maintNotes}
                   onChange={(e) => setMaintNotes(e.target.value)}
                   placeholder="Parts replaced, calibration tolerance results..."
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Next Scheduled Service Date
                 </label>
                 <input
                   type="date"
                   value={nextServiceDate}
                   onChange={(e) => setNextServiceDate(e.target.value)}
-                  className="mt-1 w-full p-2 border rounded-lg text-sm bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                  className="mt-1 w-full p-2.5 border rounded-xl text-sm bg-white border-slate-300 text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsMaintModalOpen(false)}
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 text-sm font-medium bg-sky-600 text-white rounded-lg hover:bg-sky-700 disabled:opacity-50"
+                  className="px-5 py-2 text-sm font-bold bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 shadow-sm transition"
                 >
                   {submitting ? "Saving..." : "Record Service"}
                 </button>

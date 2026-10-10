@@ -104,6 +104,8 @@ export function HospitalSidebar() {
 
   const handleLogout = async () => {
     try {
+      const { invalidateCurrentUserSession } = await import("@/lib/auth/session");
+      invalidateCurrentUserSession();
       const { createBrowserClientInstance } = await import("@/lib/supabase/browser");
       const supabase = createBrowserClientInstance();
       await supabase.auth.signOut();

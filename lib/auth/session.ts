@@ -27,6 +27,24 @@ const EMPTY_SESSION: UserSessionState = {
   mfaFactorsCount: 0,
 };
 
+let inMemoryCachedSession: UserSessionState | null = null;
+let inMemoryCachedTimestamp = 0;
+const SESSION_CACHE_TTL_MS = 30 * 1000; // 30 seconds high-speed cache
+
+/**
+ * Invalidate cached user session upon logout or organization switch.
+ */
+export function invalidateCurrentUserSession(): void {
+  inMemoryCachedSession = null;
+  inMemoryCachedTimestamp = 0;
+  if (typeof window !== "undefined") {
+    try {
+      window.sessionStorage.removeItem("ohms_auth_guard_session");
+      window.sessionStorage.removeItem("ohms_user_session_cache");
+    } catch {}
+  }
+}
+
 /**
  * Retrieve the authenticated user's profile, active-organization roles,
  * permissions and MFA assurance level.
@@ -35,7 +53,11 @@ const EMPTY_SESSION: UserSessionState = {
  * granted in another organization must never elevate the current session.
  * If no active organization can be resolved, role/permission access fails closed.
  */
-export async function getCurrentUserSession(): Promise<UserSessionState> {
+export async function getCurrentUserSession(forceRefresh = false): Promise<UserSessionState> {
+  if (!forceRefresh && inMemoryCachedSession && (Date.now() - inMemoryCachedTimestamp < SESSION_CACHE_TTL_MS)) {
+    return inMemoryCachedSession;
+  }
+
   try {
     const supabase = createBrowserClient();
 
@@ -45,6 +67,7 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
+      inMemoryCachedSession = null;
       return EMPTY_SESSION;
     }
 
@@ -189,7 +212,7 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
       }
     }
 
-    return {
+    const resolvedSession: UserSessionState = {
       userId: user.id,
       email: user.email || null,
       profile,
@@ -200,8 +223,14 @@ export async function getCurrentUserSession(): Promise<UserSessionState> {
       nextAalLevel,
       mfaFactorsCount,
     };
+
+    inMemoryCachedSession = resolvedSession;
+    inMemoryCachedTimestamp = Date.now();
+
+    return resolvedSession;
   } catch (err: unknown) {
     console.error("[Session] getCurrentUserSession error:", err);
+    inMemoryCachedSession = null;
     return EMPTY_SESSION;
   }
 }
