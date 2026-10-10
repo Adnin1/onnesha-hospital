@@ -156,12 +156,19 @@ const MOCK_ALL_DAY_SCHEDULES = DAYS_OF_WEEK.map((day, idx) => ({
   is_active: true,
 }));
 
-const MOCK_CORS_HEADERS: Record<string, string> = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type, prefer, range",
-  "content-type": "application/json",
-};
+function getMockCorsHeaders(request: { headers: () => Record<string, string> }): Record<string, string> {
+  const reqHeaders = request.headers();
+  const origin = reqHeaders["origin"] || "*";
+  return {
+    "access-control-allow-origin": origin,
+    "access-control-allow-credentials": "true",
+    "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD",
+    "access-control-allow-headers": "authorization, x-client-info, apikey, content-type, prefer, range, x-supabase-api-version, accept, accept-language",
+    "access-control-expose-headers": "content-range, range-unit, x-total-count",
+    "content-type": "application/json",
+    "vary": "Origin",
+  };
+}
 
 /**
  * Install hermetic route mocks for placeholder Supabase requests.
@@ -172,13 +179,16 @@ async function installHermeticMocks(page: Page): Promise<void> {
   await page.route(
     (url) =>
       url.hostname.includes("ci-hermetic-build-placeholder") ||
-      url.hostname.includes("placeholder.supabase"),
+      url.hostname.includes("placeholder.supabase") ||
+      url.hostname.includes("placeholder") ||
+      (url.hostname.endsWith(".supabase.co") && !url.hostname.includes("iuhtzahuszdkdarhxobx")),
     async (route) => {
       const request = route.request();
+      const corsHeaders = getMockCorsHeaders(request);
       if (request.method().toUpperCase() === "OPTIONS") {
         await route.fulfill({
           status: 204,
-          headers: MOCK_CORS_HEADERS,
+          headers: corsHeaders,
         });
         return;
       }
@@ -188,7 +198,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
       if (reqUrl.includes("/rest/v1/public_departments_view") || reqUrl.includes("/rest/v1/departments")) {
         await route.fulfill({
           status: 200,
-          headers: MOCK_CORS_HEADERS,
+          headers: corsHeaders,
           body: JSON.stringify([
             {
               id: "dept-gen-001",
@@ -212,7 +222,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
       if (reqUrl.includes("/rest/v1/rpc/get_public_doctors_directory") || reqUrl.includes("/rest/v1/doctors")) {
         await route.fulfill({
           status: 200,
-          headers: MOCK_CORS_HEADERS,
+          headers: corsHeaders,
           body: JSON.stringify([
             {
               id: "doc-001",
@@ -238,7 +248,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
       if (reqUrl.includes("/rest/v1/rpc/get_public_doctor_schedules")) {
         await route.fulfill({
           status: 200,
-          headers: MOCK_CORS_HEADERS,
+          headers: corsHeaders,
           body: JSON.stringify(MOCK_ALL_DAY_SCHEDULES),
         });
         return;
@@ -247,7 +257,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
       if (reqUrl.includes("/rest/v1/rpc/book_online_appointment")) {
         await route.fulfill({
           status: 200,
-          headers: MOCK_CORS_HEADERS,
+          headers: corsHeaders,
           body: JSON.stringify({
             success: true,
             appointment_id: "apt-mock-001",
@@ -265,7 +275,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
       if (reqUrl.includes("/rest/v1/rpc/submit_public_contact_inquiry")) {
         await route.fulfill({
           status: 200,
-          headers: MOCK_CORS_HEADERS,
+          headers: corsHeaders,
           body: JSON.stringify({
             success: true,
             inquiry_id: "inq-mock-001",
@@ -278,7 +288,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
       if (reqUrl.includes("/rest/v1/rpc/get_public_live_queue")) {
         await route.fulfill({
           status: 200,
-          headers: MOCK_CORS_HEADERS,
+          headers: corsHeaders,
           body: JSON.stringify([]),
         });
         return;
@@ -287,7 +297,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
       if (reqUrl.includes("/rest/v1/rpc/get_public_token_status")) {
         await route.fulfill({
           status: 200,
-          headers: MOCK_CORS_HEADERS,
+          headers: corsHeaders,
           body: JSON.stringify(null),
         });
         return;
@@ -296,7 +306,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
       if (reqUrl.includes("/auth/v1/token")) {
         await route.fulfill({
           status: 400,
-          headers: MOCK_CORS_HEADERS,
+          headers: corsHeaders,
           body: JSON.stringify({
             error: "invalid_grant",
             error_description: "Invalid login credentials",
@@ -309,7 +319,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
       if (reqUrl.includes("/auth/v1/")) {
         await route.fulfill({
           status: 200,
-          headers: MOCK_CORS_HEADERS,
+          headers: corsHeaders,
           body: JSON.stringify({ user: null, session: null }),
         });
         return;
@@ -318,7 +328,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
       // Default safe empty response for any other placeholder Supabase query
       await route.fulfill({
         status: 200,
-        headers: MOCK_CORS_HEADERS,
+        headers: corsHeaders,
         body: JSON.stringify([]),
       });
     }

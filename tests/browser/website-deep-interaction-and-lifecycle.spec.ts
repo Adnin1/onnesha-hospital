@@ -11,14 +11,15 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     await expect(stepIndicator).toBeVisible();
 
     // Step 1: Select doctor
-    // Wait for doctors list to load or empty state
+    // Wait for doctors list to finish loading and doctor card to be visible
     await page.waitForSelector('h2:has-text("Step 1: Select Doctor")', { timeout: 15000 });
-    const doctorCards = page.locator('div[role="button"][tabindex="0"]');
-    const doctorCount = await doctorCards.count();
+    const doctorCard = page.locator('[data-testid="doctor-card"], div[role="button"][tabindex="0"]').first();
+    await doctorCard.waitFor({ state: "visible", timeout: 15000 });
+    const doctorCount = await page.locator('[data-testid="doctor-card"], div[role="button"][tabindex="0"]').count();
+    expect(doctorCount).toBeGreaterThan(0);
 
-    if (doctorCount > 0) {
-      // Click first doctor card
-      await doctorCards.first().click();
+    // Click first doctor card
+    await doctorCard.click();
 
       // Click "Continue to Date & Time"
       const proceedBtn = page.locator('button:has-text("Continue to Date & Time")');
@@ -103,7 +104,6 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
         await expect(page.getByText(/#\d+/).first()).toBeVisible();
         await expect(page.locator('button:has-text("Print Token Slip")')).toBeVisible();
       }
-    }
   });
 
   test("2. Login Form input normalization, password reveal toggle & safe error shielding", async ({ page }) => {

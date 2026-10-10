@@ -251,6 +251,7 @@ function AppointmentBookingContent() {
                 {doctors.map((doc: PublicDoctor) => (
                   <div
                     key={doc.id}
+                    data-testid="doctor-card"
                     role="button"
                     tabIndex={0}
                     aria-label={`Select ${doc.full_name}, ${doc.department_name}`}

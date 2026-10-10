@@ -58,38 +58,36 @@ test.describe("Real Browser E2E: Route-by-Route Runtime Acceptance & Console Dia
   test("1. Public routes execute with zero uncaught fatal console errors and intact main landmark", async ({ page }) => {
     test.setTimeout(90000);
 
-    for (const route of PUBLIC_ROUTES) {
-      const consoleErrors: string[] = [];
-      const pageErrors: string[] = [];
+    const pageErrors: { route: string; error: string }[] = [];
+    let currentRoute = "";
 
-      page.on("console", (msg) => {
-        if (msg.type() === "error") {
-          const text = msg.text();
-          // Filter known benign 3rd party or harmless font/icon 404 warnings if any
-          if (!text.includes("favicon") && !text.includes("Non-serializable")) {
-            consoleErrors.push(text);
-          }
-        }
-      });
+    const onPageError = (err: Error) => {
+      const msg = err.message || "";
+      // WebKit surfaces Next.js static export background prefetch network 404s/aborts as unhandled fetch exceptions
+      if (msg.includes("access control checks") || msg.includes("__next.") || msg.includes("cancelled")) {
+        return;
+      }
+      pageErrors.push({ route: currentRoute, error: msg });
+    };
 
-      page.on("pageerror", (err) => {
-        const msg = err.message || "";
-        // WebKit surfaces Next.js static export background prefetch network 404s/aborts as unhandled fetch exceptions
-        if (msg.includes("access control checks") || msg.includes("__next.") || msg.includes("cancelled")) {
-          return;
-        }
-        pageErrors.push(err.message);
-      });
+    page.on("pageerror", onPageError);
 
-      await page.goto(route, { waitUntil: "domcontentloaded", timeout: 20000 });
-      await page.waitForTimeout(300);
+    try {
+      for (const route of PUBLIC_ROUTES) {
+        currentRoute = route;
+        await page.goto(route, { waitUntil: "domcontentloaded", timeout: 20000 });
+        await page.waitForTimeout(300);
 
-      // Verify no uncaught fatal JavaScript crash
-      expect(pageErrors, `Route ${route} threw uncaught page exceptions: ${pageErrors.join(", ")}`).toHaveLength(0);
+        // Verify no uncaught fatal JavaScript crash
+        const routeErrors = pageErrors.filter((e) => e.route === route);
+        expect(routeErrors, `Route ${route} threw uncaught page exceptions: ${routeErrors.map((e) => e.error).join(", ")}`).toHaveLength(0);
 
-      // Verify DOM landmark
-      const main = page.locator("main#main-content");
-      await expect(main, `Route ${route} must render main landmark with id='main-content'`).toBeVisible();
+        // Verify DOM landmark
+        const main = page.locator("main#main-content");
+        await expect(main, `Route ${route} must render main landmark with id='main-content'`).toBeVisible();
+      }
+    } finally {
+      page.off("pageerror", onPageError);
     }
   });
 

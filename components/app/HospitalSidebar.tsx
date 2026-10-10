@@ -124,16 +124,23 @@ export function HospitalSidebar() {
   const handleHardRefreshAndPurge = async () => {
     try {
       if (typeof window !== "undefined") {
+        // Only unregister the OHMS service worker
         if ("serviceWorker" in navigator) {
           const regs = await navigator.serviceWorker.getRegistrations();
           for (const r of regs) {
-            await r.unregister();
+            const scriptUrl = r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || "";
+            if (scriptUrl.includes("/sw.js") || r.scope === window.location.origin + "/") {
+              await r.unregister().catch(() => {});
+            }
           }
         }
+        // Only delete OHMS-owned cache storage keys
         if ("caches" in window) {
           const keys = await caches.keys();
           for (const k of keys) {
-            await caches.delete(k);
+            if (k.startsWith("ohms-")) {
+              await caches.delete(k).catch(() => {});
+            }
           }
         }
         localStorage.removeItem("ohms_sw_version");

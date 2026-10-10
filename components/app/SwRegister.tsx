@@ -17,7 +17,7 @@ export default function SwRegister() {
       if ("caches" in window) {
         caches.keys().then((names) => {
           names.forEach((name) => {
-            if (name !== `ohms-static-v5-${CURRENT_SW_VERSION}`) {
+            if (name.startsWith("ohms-") && name !== `ohms-static-v5-${CURRENT_SW_VERSION}`) {
               caches.delete(name).catch(() => {});
             }
           });

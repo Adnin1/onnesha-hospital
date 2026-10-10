@@ -43,8 +43,8 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
     for (const vp of viewports) {
       await page.setViewportSize(vp);
       for (const route of routes) {
-        await page.goto(route);
-        await page.waitForLoadState("domcontentloaded");
+        await page.goto(route, { waitUntil: "domcontentloaded" });
+        await expect(page.locator("main#main-content")).toBeVisible({ timeout: 10000 });
 
         // Verify no horizontal document overflow: scrollWidth should match clientWidth
         const hasHorizontalScroll = await page.evaluate(() => {
