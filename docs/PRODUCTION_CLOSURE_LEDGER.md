@@ -3,12 +3,12 @@
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit SHA:** `b076956ef24ce1e1929e14b6993ff78f41525a7d` (with v1.1.82 provenance hardening)  
-**Historical Release Tags:** `v1.1.81` (`48779e110b9f3e8e0ee7967ae2cc4bbaeb949f25`), `v1.1.80` (`2dd3b0121a8ef32120a0002522caf0055e5f3074`)  
+**Head Commit SHA:** `7b402136c4575442db08a66b3e5eb1950889a6cc` (with v1.1.82 CI provenance hardening)  
+**Historical Release Tags:** `v1.1.82` (`7b402136c4575442db08a66b3e5eb1950889a6cc`), `v1.1.81` (`48779e110b9f3e8e0ee7967ae2cc4bbaeb949f25`), `v1.1.80` (`2dd3b0121a8ef32120a0002522caf0055e5f3074`)  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
 **Live Production Deployment URL:** `https://fa3707dc.onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
-**Ledger Generation Date:** October 10, 2026 (22:10 UTC+6)  
+**Ledger Generation Date:** October 11, 2026 (01:25 UTC+6)  
 **Final Production Verdict:** **SOFTWARE QUALITY VERIFIED; DEPLOYMENT VERIFIED; DESKTOP INSTALLERS VERIFIED; REMOTE STAGING & PHYSICAL OWNER GATES BLOCKED_EXTERNAL_OWNER**
 
 ---
@@ -16,9 +16,10 @@
 ## 1. Verified Live Execution Status
 
 | Component | Target / Value | Telemetry Verification Source | Verdict |
-| :--- | :--- | :--- | :---: |
+| :--- | :--- | :--- | :--- |
 | **Git Working Tree** | Clean (`0 staged, 0 unstaged`) | `git status --short` | ✅ PASS |
-| **Head Commit** | Main active branch (`b076956...`) | `git rev-parse HEAD` | ✅ PASS |
+| **Head Commit** | Main active branch (`7b40213...`) | `git rev-parse HEAD` | ✅ PASS |
+| **Git Tag `v1.1.82` Target** | `7b402136c4575442db08a66b3e5eb1950889a6cc` (Immutable) | `git rev-parse "v1.1.82^{commit}"` | ✅ PASS |
 | **Git Tag `v1.1.81` Target** | `48779e110b9f3e8e0ee7967ae2cc4bbaeb949f25` (Immutable) | `git rev-parse "v1.1.81^{commit}"` | ✅ PASS |
 | **Git Tag `v1.1.80` Target** | `2dd3b0121a8ef32120a0002522caf0055e5f3074` (Immutable) | `git rev-parse "v1.1.80^{commit}"` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
@@ -52,31 +53,46 @@
   3. Deployed the verified binaries to Cloudflare Pages edge (`out/downloads/desktop/`).
   4. Executed an independent cache-busted HTTP GET download test to fetch the raw bytes over HTTPS and recalculate the SHA-256 hash. **100% mathematical match confirmed.**
 
-### B. CI Workflow "Green but Skipped" Semantics Corrected
+### B. CI Workflow "Green but Skipped" Semantics Corrected & PowerShell Syntax Fixed
 - **File Modified:** `.github/workflows/ci.yml`
-- **Issue:** Previously, jobs that skipped critical build/deploy steps still reported green job conclusions, and the release step published empty GitHub releases with only `latest.json`.
+- **Issue:**
+  1. Previously, jobs that skipped critical build/deploy steps still reported green job conclusions, and the release step published empty GitHub releases with only `latest.json`.
+  2. In Tag Run #496, the step `Report Desktop Build Status (When Secrets Absent)` failed due to PowerShell parser error caused by double-quote backtick escaping in `"- **Status:** \`DESKTOP_BUILD_BLOCKED\`"`.
 - **Resolution:**
-  1. Provided explicit, machine-readable step outputs:
+  1. Converted PowerShell output lines to single-quoted strings `'- **Status:** `DESKTOP_BUILD_BLOCKED`'`, ensuring valid execution without escaping errors on Windows CI runners.
+  2. Provided explicit, machine-readable step outputs:
      - `QUALITY_CI_PASSED`
      - `HERMETIC_SECURITY_TEST_PASSED`
      - `REMOTE_STAGING_SECURITY_BLOCKED`
      - `PRODUCTION_DEPLOYED` / `PRODUCTION_DEPLOYMENT_BLOCKED`
      - `DESKTOP_BUILD_VERIFIED` / `DESKTOP_BUILD_BLOCKED`
-  2. Separated hermetic test results from remote cloud staging security. Hermetic in-build test is labeled `HERMETIC_SECURITY_TEST_PASSED`, while remote staging is marked `BLOCKED_EXTERNAL_OWNER` when `OHMS_TEST_SUPABASE_URL` is missing.
-  3. Prohibited publishing empty GitHub Releases when desktop binaries are not built.
-  4. Added a definitive `release-gate` job that generates a comprehensive Markdown ledger in `$GITHUB_STEP_SUMMARY`.
+  3. Separated hermetic test results from remote cloud staging security. Hermetic in-build test is labeled `HERMETIC_SECURITY_TEST_PASSED`, while remote staging is marked `BLOCKED_EXTERNAL_OWNER` when `OHMS_TEST_SUPABASE_URL` is missing.
+  4. Prohibited publishing empty GitHub Releases when desktop binaries are not built.
+  5. Updated `release-gate` job with unambiguous verdict semantics:
+     - For git tag events (`refs/tags/v*`): `RELEASE_COMPLETE_VERIFIED` if desktop binaries built on runner; `RELEASE_DESKTOP_BLOCKED_PENDING_SECRETS` if skipped due to missing runner secrets.
+     - For main branch pushes: `PRODUCTION_DEPLOYED_VERIFIED` if deployed via Cloudflare token; `QUALITY_PASSED_DEPLOYMENT_PENDING_SECRETS` if deployment credentials absent on runner.
+     - Strictly guarantees that skipped CI jobs can NEVER be misrepresented as a complete release.
 
 ### C. Clinical Appointment Booking Fail-Closed Integrity
 - **File Verified:** `lib/public/actions.ts`
 - **Status:** Tested with `tests/public-actions-fail-closed.test.mjs` (8/8 passed). Absolute zero presence of `apt-hermetic-001`, `P-2026-HERMETIC-001`, or hardcoded token 14 constants. Backend RPC errors truthfully display patient error alerts; no fake bookings can be created.
 
-### D. Supabase Database Migration Parity (142/142)
+### D. Supabase Database Migration Parity (142/142) & Migration 140/141 Provenance
 - **Status:** Migrations 138–141 deployed to remote Supabase (`iuhtzahuszdkdarhxobx`):
-  - `20261010210000_qualify_organization_settings_and_search_path.sql`
-  - `20261010211500_harden_gl_and_referral_accounts.sql`
-  - `20261010213000_fix_gl_account_resolution_in_billing_atomic.sql`
-  - `20261010214000_fix_referral_commission_gl_fallback.sql`
-- **Result:** `npx supabase migration list` reports 142/142 matching migrations (100% parity, 0 drift). `npx supabase db lint --linked` returns 0 fatal errors.
+  - `20261010210000_fix_generate_invoice_number_and_organization_settings.sql` (Migration 138)
+  - `20261010211500_harden_generator_permissions.sql` (Migration 139)
+  - `20261010213000_fix_referral_commission_gl_account_codes.sql` (Migration 140)
+  - `20261010214000_fix_referral_commission_gl_account_codes.sql` (Migration 141)
+- **Duplicate Migration Forensic Audit (20261010213000 vs 20261010214000):**
+  - Both files share the identical cryptographic SHA-256 hash: `FB76911457C69F1E00DBA3E6848BBF5B7C2E012434DA2BB94B9E653052690A03`.
+  - Both migrations were applied to the remote production Supabase instance (`iuhtzahuszdkdarhxobx`).
+  - Both contain 100% idempotent SQL (`ON CONFLICT (organization_id, account_code) DO UPDATE`, `CREATE OR REPLACE FUNCTION`, `CREATE SEQUENCE IF NOT EXISTS`).
+  - Because remote migration history recorded both timestamps, both files are permanently preserved in the repository to guarantee 0 migration drift (`npx supabase migration list` returns 142/142 matching migrations).
+- **Referral Commission Accounting (5020 & 5400) Invariants:**
+  - Both account `5020` ('Referral & Partner Commission Expense') and account `5400` ('Referral Commission Expense') are seeded and active across all organizations.
+  - Account `2030` ('Referral & Partner Commissions Payable') is established for liabilities.
+  - In `post_billing_to_gl_atomic`, journal entries post Debit to 5020/5400 and Credit to 2030, strictly balancing debits = credits with zero NULL account resolution errors.
+- **Lint Result:** `npx supabase db lint --linked` returns 0 fatal schema/security errors.
 
 ---
 

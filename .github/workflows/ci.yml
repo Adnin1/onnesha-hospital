@@ -472,10 +472,10 @@ jobs:
         if: (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') && steps.check_desktop.outputs.can_build == 'false'
         shell: powershell
         run: |
-          Write-Host "::warning title=Desktop Release Notice::Desktop compilation skipped on CI runner because production Supabase secrets are not configured in GitHub repository secrets. Production binaries are compiled and distributed from authenticated workstation."
-          "### ⚠️ Desktop Release Gate: DESKTOP_BUILD_BLOCKED" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          "- **Status:** \`DESKTOP_BUILD_BLOCKED\`" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
-          "- **Notice:** Automated release publication requires verified installer binaries (EXE/MSI). Empty releases with metadata-only are strictly forbidden to ensure zero false green." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          Write-Host '::warning title=Desktop Release Notice::Desktop compilation skipped on CI runner because production Supabase secrets are not configured in GitHub repository secrets. Production binaries are compiled and distributed from authenticated workstation.'
+          '### ⚠️ Desktop Release Gate: DESKTOP_BUILD_BLOCKED' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          '- **Status:** `DESKTOP_BUILD_BLOCKED`' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          '- **Notice:** Automated release publication requires verified installer binaries (EXE/MSI). Empty releases with metadata-only are strictly forbidden to ensure zero false green.' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
 
   release-gate:
     name: Comprehensive Release Provenance & Status Gate
@@ -503,13 +503,23 @@ jobs:
           echo "Desktop Build:       $DESKTOP_STATUS"
           echo "=========================================================================="
 
-          # Determine overall verdict
-          if [ "$QUALITY_STATUS" = "QUALITY_CI_PASSED" ] && [ "$DEPLOY_STATUS" = "PRODUCTION_DEPLOYED" ] && [ "$DESKTOP_STATUS" = "DESKTOP_BUILD_VERIFIED" ]; then
-            FINAL_VERDICT="RELEASE_READY"
-          elif [ "$QUALITY_STATUS" = "QUALITY_CI_PASSED" ]; then
-            FINAL_VERDICT="SOFTWARE_QUALITY_VERIFIED"
+          # Determine overall verdict with zero false green guarantee
+          if [ "$QUALITY_STATUS" != "QUALITY_CI_PASSED" ]; then
+            FINAL_VERDICT="QUALITY_CI_FAILED"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            if [ "$DESKTOP_STATUS" = "DESKTOP_BUILD_VERIFIED" ]; then
+              FINAL_VERDICT="RELEASE_COMPLETE_VERIFIED"
+            else
+              FINAL_VERDICT="RELEASE_DESKTOP_BLOCKED_PENDING_SECRETS"
+            fi
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            if [ "$DEPLOY_STATUS" = "PRODUCTION_DEPLOYED" ]; then
+              FINAL_VERDICT="PRODUCTION_DEPLOYED_VERIFIED"
+            else
+              FINAL_VERDICT="QUALITY_PASSED_DEPLOYMENT_PENDING_SECRETS"
+            fi
           else
-            FINAL_VERDICT="RELEASE_BLOCKED"
+            FINAL_VERDICT="BRANCH_QUALITY_VERIFIED"
           fi
 
           echo "FINAL RELEASE VERDICT: $FINAL_VERDICT"
@@ -523,3 +533,5 @@ jobs:
           echo "| **Cloudflare Production Deployment** | \`$DEPLOY_STATUS\` | Edge deployment status |" >> $GITHUB_STEP_SUMMARY
           echo "| **Windows Desktop Packaging** | \`$DESKTOP_STATUS\` | Native WiX MSI & NSIS EXE toolchain status |" >> $GITHUB_STEP_SUMMARY
           echo "| **OVERALL VERDICT** | **\`$FINAL_VERDICT\`** | Zero false green guarantee |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> **Release Integrity Notice:** When automated deployment or desktop packaging steps are skipped due to external owner secrets (G10), this runner certifies hermetic software quality only. Full edge deployment and desktop releases are verified and distributed via authenticated workstation." >> $GITHUB_STEP_SUMMARY
