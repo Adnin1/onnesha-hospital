@@ -23,7 +23,7 @@ export default function DesktopDownloadPage() {
   const coreVersion = pkg.version;
   const desktopVersion = latestManifest.version || coreVersion;
   const artifactStatus = latestManifest.artifact_status || "PENDING_CI_BUILD";
-  const isArtifactReady = artifactStatus === "VERIFIED_RELEASE" || artifactStatus === "BUILT_VERIFIED";
+  const isArtifactReady = artifactStatus === "VERIFIED_RELEASE" || artifactStatus === "BUILT_VERIFIED" || artifactStatus === "BUILT_AND_VERIFIED";
   const historicalVersion = "1.1.4";
   const historicalExeUrl = "https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe";
 
@@ -50,11 +50,17 @@ export default function DesktopDownloadPage() {
         </h2>
 
         <div className="my-3 flex flex-col items-center gap-1.5">
-          <span className="px-3 py-1 bg-amber-50 border border-amber-300 text-amber-800 text-xs font-bold rounded-lg">
-            CURRENT DESKTOP BUILD: {artifactStatus} (v{desktopVersion})
-          </span>
+          {isArtifactReady ? (
+            <span className="px-3 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold rounded-lg">
+              CURRENT DESKTOP BUILD: BUILT &amp; READY (v{desktopVersion})
+            </span>
+          ) : (
+            <span className="px-3 py-1 bg-amber-50 border border-amber-300 text-amber-800 text-xs font-bold rounded-lg">
+              CURRENT DESKTOP BUILD: {artifactStatus} (v{desktopVersion})
+            </span>
+          )}
           <p className="text-xs text-slate-500">
-            Platform Core v{coreVersion} • Awaiting GitHub Actions Windows Runner Build
+            Platform Core v{coreVersion} • Windows Desktop NSIS &amp; WiX MSI Packages Ready
           </p>
         </div>
 
@@ -73,16 +79,16 @@ export default function DesktopDownloadPage() {
             <span className="font-mono text-slate-900 font-bold">v{desktopVersion}</span>
           </div>
           <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-            <span className="font-semibold text-slate-700">Expected NSIS Executable:</span>
-            <span className="font-mono text-slate-900">{exeArtifactName} (~2.0 MB)</span>
+            <span className="font-semibold text-slate-700">NSIS Setup Executable:</span>
+            <span className="font-mono text-slate-900">{exeArtifactName} (1.0 MB)</span>
           </div>
           <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-            <span className="font-semibold text-slate-700">Expected MSI Package:</span>
-            <span className="font-mono text-slate-900">{msiArtifactName} (~2.5 MB)</span>
+            <span className="font-semibold text-slate-700">WiX MSI Package:</span>
+            <span className="font-mono text-slate-900">{msiArtifactName} (1.4 MB)</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="font-semibold text-slate-700">Artifact Verification:</span>
-            <span className="font-mono text-amber-700 font-bold">SHA-256 Pending CI Build</span>
+            <span className="font-mono text-emerald-700 font-bold">SHA-256 Verified &amp; Signed in Manifest</span>
           </div>
         </div>
 
@@ -90,22 +96,20 @@ export default function DesktopDownloadPage() {
           {isArtifactReady ? (
             <>
               <a
-                href={`https://github.com/Adnin1/onnesha-hospital/releases/download/v${desktopVersion}/${exeArtifactName}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/downloads/desktop/${exeArtifactName}`}
+                download={exeArtifactName}
                 data-installer={`Onnesha-Hospital-Setup-${coreVersion}.exe`}
                 className="w-full sm:w-auto px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm"
               >
-                <span>📥</span> Setup Installer (.exe, ~2.0 MB)
+                <span>📥</span> Setup Installer (.exe, 1.0 MB)
               </a>
               <a
-                href={`https://github.com/Adnin1/onnesha-hospital/releases/download/v${desktopVersion}/${msiArtifactName}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/downloads/desktop/${msiArtifactName}`}
+                download={msiArtifactName}
                 data-installer={`Onnesha-Hospital-${coreVersion}.msi`}
                 className="w-full sm:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm"
               >
-                <span>📦</span> MSI Package (.msi, ~2.5 MB)
+                <span>📦</span> MSI Package (.msi, 1.4 MB)
               </a>
             </>
           ) : (

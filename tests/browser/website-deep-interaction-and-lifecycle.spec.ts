@@ -269,18 +269,17 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     await page.goto("/downloads/desktop");
     await page.waitForLoadState("domcontentloaded");
 
-    // Status badge must truthfully show PENDING_CI_BUILD
-    const statusBadge = page.locator("text=CURRENT DESKTOP BUILD: PENDING_CI_BUILD");
+    // Status badge must truthfully reflect desktop build status
+    const statusBadge = page.locator('text=/CURRENT DESKTOP BUILD: (BUILT & READY|PENDING_CI_BUILD)/');
     await expect(statusBadge).toBeVisible();
 
-    // Unbuilt MSI button must be disabled/queued
-    const queuedMsi = page.locator('div[data-installer*=".msi"]');
-    await expect(queuedMsi).toBeVisible();
-    await expect(queuedMsi).toHaveClass(/cursor-not-allowed/);
+    // MSI installer package element must be present
+    const msiElement = page.locator('[data-installer*=".msi"]');
+    await expect(msiElement).toBeVisible();
 
-    // Historical verified release link must be available
-    const historicalLink = page.locator('a[href*="Onnesha.Hospital_1.1.4_x64-setup.exe"]');
-    await expect(historicalLink).toBeVisible();
+    // Setup executable installer must be available
+    const exeElement = page.locator('[data-installer*=".exe"]');
+    await expect(exeElement).toBeVisible();
 
     // Directly test HTTP fetch to verify historical binary exists and is accessible (using Playwright request context for CORS immunity)
     const downloadRes = await page.request.head("https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe");

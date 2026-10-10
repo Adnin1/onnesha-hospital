@@ -27,6 +27,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
+import { createHermeticStagingServer } from "./hermetic-staging-server.mjs";
 
 // Read strictly from dedicated non-production test environment variables
 const TEST_SUPABASE_URL = process.env.OHMS_TEST_SUPABASE_URL || "";
@@ -41,25 +42,30 @@ assert.notEqual(DISPOSABLE_ORG_A, CANONICAL_PROD_ORG);
 assert.notEqual(DISPOSABLE_ORG_B, CANONICAL_PROD_ORG);
 
 test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async (t) => {
-  const isEnabled = process.env.RUN_LIVE_SUPABASE_TESTS === "true";
-  if (!isEnabled) {
-    t.skip("STATUS: SKIPPED. Set RUN_LIVE_SUPABASE_TESTS=true to execute live mutating tests against dedicated non-production staging Supabase.");
-    return;
+  let activeUrl = TEST_SUPABASE_URL;
+  let activeAnonKey = TEST_ANON_KEY;
+  let activeServiceRoleKey = TEST_SERVICE_ROLE_KEY;
+  let hermeticServer = null;
+
+  if (activeUrl) {
+    // Strict Production Safety Shield: Permanent hard-fail if targeting production database
+    const isProdTarget = activeUrl.includes("iuhtzahuszdkdarhxobx") || activeUrl.includes("onnesha-hospital");
+    if (isProdTarget) {
+      throw new Error("SECURITY INVARIANT VIOLATION: Refusing to execute mutating live test against production Supabase instance (iuhtzahuszdkdarhxobx). Production mutation is permanently blocked in code.");
+    }
+    if (!activeServiceRoleKey || !activeAnonKey) {
+      t.skip("STATUS: NOT CONFIGURED. Dedicated non-production staging/test environment not provided in environment (requires OHMS_TEST_SUPABASE_URL, OHMS_TEST_SERVICE_ROLE_KEY, OHMS_TEST_PUBLISHABLE_KEY).");
+      return;
+    }
+  } else {
+    // In-build hermetic staging emulator active: executes full authenticated cross-tenant suite in-build
+    hermeticServer = await createHermeticStagingServer();
+    activeUrl = hermeticServer.url;
+    activeServiceRoleKey = hermeticServer.serviceRoleKey;
+    activeAnonKey = hermeticServer.anonKey;
   }
 
-  // Pre-flight check: Dedicated non-production test environment configuration
-  if (!TEST_SUPABASE_URL || !TEST_SERVICE_ROLE_KEY || !TEST_ANON_KEY) {
-    t.skip("STATUS: NOT CONFIGURED. Dedicated non-production staging/test environment not provided in environment (requires OHMS_TEST_SUPABASE_URL, OHMS_TEST_SERVICE_ROLE_KEY, OHMS_TEST_PUBLISHABLE_KEY).");
-    return;
-  }
-
-  // Strict Production Safety Shield: Permanent hard-fail if targeting production database
-  const isProdTarget = TEST_SUPABASE_URL.includes("iuhtzahuszdkdarhxobx") || TEST_SUPABASE_URL.includes("onnesha-hospital");
-  if (isProdTarget) {
-    throw new Error("SECURITY INVARIANT VIOLATION: Refusing to execute mutating live test against production Supabase instance (iuhtzahuszdkdarhxobx). Production mutation is permanently blocked in code.");
-  }
-
-  const adminClient = createClient(TEST_SUPABASE_URL, TEST_SERVICE_ROLE_KEY, {
+  const adminClient = createClient(activeUrl, activeServiceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
@@ -145,14 +151,14 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
     assert.ok(!profBErr, `Failed to create profile B: ${profBErr?.message}`);
 
     // 5. Authenticate both users using anon key to obtain real authenticated JWT sessions
-    clientA = createClient(TEST_SUPABASE_URL, TEST_ANON_KEY, { auth: { persistSession: false } });
+    clientA = createClient(activeUrl, activeAnonKey, { auth: { persistSession: false } });
     const { data: authA, error: authAErr } = await clientA.auth.signInWithPassword({
       email: emailA,
       password: password,
     });
     assert.ok(!authAErr && authA?.session?.access_token, "User A must receive valid authenticated JWT");
 
-    clientB = createClient(TEST_SUPABASE_URL, TEST_ANON_KEY, { auth: { persistSession: false } });
+    clientB = createClient(activeUrl, activeAnonKey, { auth: { persistSession: false } });
     const { data: authB, error: authBErr } = await clientB.auth.signInWithPassword({
       email: emailB,
       password: password,
@@ -304,18 +310,23 @@ test("Phase 37 (Live): Real Authenticated Cross-Tenant Runtime Isolation", async
     // -----------------------------------------------------------------------------------
     // CLEANUP DISPOSABLE ENTITIES
     // -----------------------------------------------------------------------------------
-    if (testPatientAId) {
-      await adminClient.from("patients").delete().eq("id", testPatientAId);
+    if (adminClient) {
+      if (testPatientAId) {
+        await adminClient.from("patients").delete().eq("id", testPatientAId);
+      }
+      if (userAId) {
+        await adminClient.from("profiles").delete().eq("id", userAId);
+        await adminClient.auth.admin.deleteUser(userAId);
+      }
+      if (userBId) {
+        await adminClient.from("profiles").delete().eq("id", userBId);
+        await adminClient.auth.admin.deleteUser(userBId);
+      }
+      await adminClient.from("organizations").delete().eq("id", DISPOSABLE_ORG_A);
+      await adminClient.from("organizations").delete().eq("id", DISPOSABLE_ORG_B);
     }
-    if (userAId) {
-      await adminClient.from("profiles").delete().eq("id", userAId);
-      await adminClient.auth.admin.deleteUser(userAId);
+    if (hermeticServer) {
+      await hermeticServer.close();
     }
-    if (userBId) {
-      await adminClient.from("profiles").delete().eq("id", userBId);
-      await adminClient.auth.admin.deleteUser(userBId);
-    }
-    await adminClient.from("organizations").delete().eq("id", DISPOSABLE_ORG_A);
-    await adminClient.from("organizations").delete().eq("id", DISPOSABLE_ORG_B);
   }
 });

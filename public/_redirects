@@ -12,9 +12,7 @@
 
 /downloads/desktop/Onnesha.Hospital_1.1.4_x64-setup.exe https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe 302
 /downloads/desktop/historical-installer.exe https://github.com/Adnin1/onnesha-hospital/releases/download/v1.1.4/Onnesha.Hospital_1.1.4_x64-setup.exe 302
-# Unbuilt release installers safely route to the desktop download status page until CI builds real assets
-/downloads/desktop/Onnesha-Hospital-Setup-1.1.80.exe /downloads/desktop 302
-/downloads/desktop/Onnesha-Hospital-1.1.80.msi /downloads/desktop 302
+# Direct downloads are now built and served statically for 1.1.80
 /downloads/desktop/Onnesha-Hospital-Setup-1.1.78.exe /downloads/desktop 302
 /downloads/desktop/Onnesha-Hospital-1.1.78.msi /downloads/desktop 302
 /downloads/desktop/Onnesha-Hospital-Setup-1.1.77.exe /downloads/desktop 302
