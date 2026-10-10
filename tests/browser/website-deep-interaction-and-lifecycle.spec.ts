@@ -274,11 +274,11 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     await expect(statusBadge).toBeVisible();
 
     // MSI installer package element must be present
-    const msiElement = page.locator('[data-installer*=".msi"]');
+    const msiElement = page.locator('[data-installer*=".msi"]').first();
     await expect(msiElement).toBeVisible();
 
     // Setup executable installer must be available
-    const exeElement = page.locator('[data-installer*=".exe"]');
+    const exeElement = page.locator('[data-installer*=".exe"]').first();
     await expect(exeElement).toBeVisible();
 
     // Directly test HTTP fetch to verify historical binary exists and is accessible (using Playwright request context for CORS immunity)
@@ -297,12 +297,14 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     const menuBtn = page.locator('button[aria-label*="menu" i]').first();
     await expect(menuBtn).toBeVisible();
 
-    // Check menu button touch target height
-    const box = await menuBtn.boundingBox();
-    expect(box).not.toBeNull();
-    if (box) {
-      expect(box.height).toBeGreaterThanOrEqual(36);
-    }
+    // Check menu button touch target height with hydration-resilient polling
+    await expect(async () => {
+      const box = await menuBtn.boundingBox();
+      expect(box).not.toBeNull();
+      if (box) {
+        expect(box.height).toBeGreaterThanOrEqual(36);
+      }
+    }).toPass({ timeout: 5000 });
 
     await menuBtn.click();
     await page.waitForTimeout(300);

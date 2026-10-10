@@ -141,7 +141,20 @@ export default function DesktopDownloadPage() {
           </Link>
         </div>
 
-        <p className="text-xs text-slate-500 mt-4">
+        <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-500">
+          <span>পূর্ববর্তী যাচাইকৃত ভার্সন:</span>
+          <a
+            href={historicalExeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-archive-installer={`Onnesha-Hospital-Setup-${historicalVersion}.exe`}
+            className="text-sky-600 hover:text-sky-800 font-medium inline-flex items-center gap-1 underline underline-offset-2"
+          >
+            v{historicalVersion} Setup .exe (Archive Fallback)
+          </a>
+        </div>
+
+        <p className="text-xs text-slate-500 mt-3">
           All desktop releases are built via CI and digitally archived on{" "}
           <a
             href="https://github.com/Adnin1/onnesha-hospital/releases"
