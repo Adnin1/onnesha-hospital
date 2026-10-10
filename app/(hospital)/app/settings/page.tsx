@@ -14,6 +14,8 @@ import {
   Eye,
   Users,
   Cpu,
+  Layers,
+  Activity,
 } from "lucide-react";
 import { PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 import { RoleType } from "@/types";
@@ -24,6 +26,7 @@ import {
   APPROVED_HOSPITAL_DATA,
 } from "@/lib/hospital/actions";
 import { TestTariffManager } from "@/components/lab/TestTariffManager";
+import { HospitalTariffManager } from "@/components/billing/HospitalTariffManager";
 
 const DEFAULT_HOSPITAL_PROFILE = {
   name: "Annesha Hospital and Diagnostic Center",
@@ -37,6 +40,7 @@ const DEFAULT_HOSPITAL_PROFILE = {
 
 export default function SettingsAndAuditPage() {
   const [activeTab, setActiveTab] = useState<"hospital" | "rbac" | "sms" | "audit" | "tariffs">("rbac");
+  const [tariffSubTab, setTariffSubTab] = useState<"hospital" | "diagnostic">("hospital");
   const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<RoleType>("accountant");
   const [rolePerms, setRolePerms] = useState<Record<RoleType, string[]>>(DEFAULT_ROLE_PERMISSIONS);
   const [savedToast, setSavedToast] = useState("");
@@ -861,7 +865,40 @@ export default function SettingsAndAuditPage() {
 
       {/* Tariffs & Service Rate Manager */}
       {activeTab === "tariffs" && (
-        <TestTariffManager />
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl w-fit border border-slate-200/80 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setTariffSubTab("hospital")}
+              className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 ${
+                tariffSubTab === "hospital"
+                  ? "bg-white text-indigo-700 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              Hospital Services Tariff (OPD / IPD / ICU / OT)
+            </button>
+            <button
+              type="button"
+              onClick={() => setTariffSubTab("diagnostic")}
+              className={`px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-2 ${
+                tariffSubTab === "diagnostic"
+                  ? "bg-white text-indigo-700 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              Diagnostic Pathology & Lab Tests
+            </button>
+          </div>
+
+          {tariffSubTab === "hospital" ? (
+            <HospitalTariffManager />
+          ) : (
+            <TestTariffManager />
+          )}
+        </div>
       )}
     </div>
   );

@@ -1300,40 +1300,31 @@ export async function saveHospitalServiceTariffAction(params: {
 
   try {
     const supabase = await createClient();
-    const payload = {
-      organization_id: session.organizationId,
-      service_code: params.serviceCode.trim().toUpperCase(),
-      service_name: params.serviceName.trim(),
-      category: params.category.trim().toUpperCase(),
-      price: Math.max(0, params.price),
-      unit: params.unit?.trim() || "Per Service",
-      description: params.description?.trim() || null,
-      is_active: params.isActive ?? true,
-      updated_at: new Date().toISOString(),
-    };
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("save_hospital_service_tariff_atomic", {
+      p_org_id: session.organizationId,
+      p_id: params.id || null,
+      p_service_code: params.serviceCode.trim().toUpperCase(),
+      p_service_name: params.serviceName.trim(),
+      p_category: params.category.trim().toUpperCase(),
+      p_price: Math.max(0, params.price),
+      p_unit: params.unit?.trim() || "Per Service",
+      p_description: params.description?.trim() || null,
+      p_is_active: params.isActive ?? true,
+    });
 
-    let result;
-    if (params.id) {
-      result = await supabase
-        .from("hospital_service_tariffs")
-        .update(payload)
-        .eq("id", params.id)
-        .eq("organization_id", session.organizationId)
-        .select("*")
-        .single();
-    } else {
-      result = await supabase
-        .from("hospital_service_tariffs")
-        .upsert(payload, { onConflict: "organization_id,service_code" })
-        .select("*")
-        .single();
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message || "Failed to save hospital service tariff." };
     }
 
-    if (result.error) {
-      return { success: false, error: result.error.message };
-    }
+    const tariffId = (rpcRes as { id?: string })?.id || params.id;
+    const { data: tariffRow } = await supabase
+      .from("hospital_service_tariffs")
+      .select("*")
+      .eq("id", tariffId)
+      .eq("organization_id", session.organizationId)
+      .single();
 
-    return { success: true, data: { tariff: result.data as HospitalServiceTariffRecord } };
+    return { success: true, data: { tariff: (tariffRow || rpcRes) as HospitalServiceTariffRecord } };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "Error saving service tariff" };
   }

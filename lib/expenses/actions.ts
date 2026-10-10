@@ -33,7 +33,7 @@ export interface ExpenseRecord {
   doctor_id?: string;
   duty_shift?: string;
   department?: string;
-  status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "POSTED" | "PAID" | "VOID";
+  status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "POSTED" | "PAID" | "VOID" | "VOIDED";
   due_amount: number;
   notes?: string;
   created_at: string;
@@ -373,12 +373,12 @@ export async function getExpenseAnalyticsAction(params?: {
 }
 
 /**
- * 6. Void an Expense Voucher
+ * 6. Void an Expense Voucher (Atomic GL Reversal)
  */
 export async function voidExpenseAction(
   expenseId: string,
   voidReason: string
-): Promise<ActionResult<{ success: boolean }>> {
+): Promise<ActionResult<{ success: boolean; status: string }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "401 Unauthorized" };
@@ -399,18 +399,15 @@ export async function voidExpenseAction(
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase
-      .from("expenses")
-      .update({
-        status: "VOID",
-        void_reason: voidReason.trim(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", expenseId)
-      .eq("organization_id", session.organizationId);
+    const { data: _rpcRes, error: rpcErr } = await supabase.rpc("void_hospital_expense_atomic", {
+      p_org_id: session.organizationId,
+      p_expense_id: expenseId,
+      p_void_reason: voidReason.trim(),
+      p_voided_by: session.userId,
+    });
 
-    if (error) {
-      return { success: false, error: error.message };
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message || "Failed to void expense voucher." };
     }
 
     await recordAuditLog({
@@ -421,16 +418,266 @@ export async function voidExpenseAction(
       entityType: "expenses",
       entityId: expenseId,
       newValues: {
-        status: "VOID",
+        status: "VOIDED",
         void_reason: voidReason.trim(),
       },
+    });
+
+    return { success: true, data: { success: true, status: "VOIDED" } };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Error voiding expense voucher",
+    };
+  }
+}
+
+/**
+ * 7. Update an Unposted or Draft Expense
+ */
+export async function updateExpenseAction(params: {
+  expenseId: string;
+  title?: string;
+  amount?: number;
+  paidTo?: string;
+  notes?: string;
+  categoryId?: string;
+  paymentMethod?: string;
+}): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("accounting.manage");
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "403 Forbidden: accounting.manage required",
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Check expense exists and is not voided
+    const { data: exp, error: fetchErr } = await supabase
+      .from("expenses")
+      .select("id, status, title, amount")
+      .eq("id", params.expenseId)
+      .eq("organization_id", session.organizationId)
+      .single();
+
+    if (fetchErr || !exp) {
+      return { success: false, error: "Expense voucher not found." };
+    }
+
+    if (exp.status === "VOID" || exp.status === "VOIDED") {
+      return { success: false, error: "Cannot edit a voided expense voucher." };
+    }
+
+    const updates: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (params.title && params.title.trim()) updates.title = params.title.trim();
+    if (params.amount !== undefined && params.amount > 0) updates.amount = params.amount;
+    if (params.paidTo && params.paidTo.trim()) updates.paid_to = params.paidTo.trim();
+    if (params.notes !== undefined) updates.notes = params.notes.trim() || null;
+    if (params.categoryId) updates.category_id = params.categoryId;
+    if (params.paymentMethod) updates.payment_method = params.paymentMethod;
+
+    const { error: updateErr } = await supabase
+      .from("expenses")
+      .update(updates)
+      .eq("id", params.expenseId)
+      .eq("organization_id", session.organizationId);
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "ACCOUNTING",
+      entityType: "expenses",
+      entityId: params.expenseId,
+      oldValues: { title: exp.title, amount: exp.amount },
+      newValues: updates,
     });
 
     return { success: true, data: { success: true } };
   } catch (err: unknown) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Error voiding expense voucher",
+      error: err instanceof Error ? err.message : "Error updating expense voucher",
+    };
+  }
+}
+
+/**
+ * 8. Archive or Toggle Expense Category
+ */
+export async function archiveExpenseCategoryAction(
+  categoryId: string,
+  isActive: boolean
+): Promise<ActionResult<{ success: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("accounting.manage");
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "403 Forbidden: accounting.manage required",
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("expense_categories")
+      .update({ is_active: isActive, updated_at: new Date().toISOString() })
+      .eq("id", categoryId)
+      .eq("organization_id", session.organizationId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "ACCOUNTING",
+      entityType: "expense_categories",
+      entityId: categoryId,
+      newValues: { is_active: isActive },
+    });
+
+    return { success: true, data: { success: true } };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Error updating category status",
+    };
+  }
+}
+
+/**
+ * 9. Idempotent Monthly Recurring Expenses Generator
+ * Generates monthly retainers without creating duplicate entries for the same month
+ */
+export async function generateMonthlyRecurringExpensesAction(
+  targetMonthDate?: string
+): Promise<ActionResult<{ generatedCount: number; skippedCount: number }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("accounting.manage");
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "403 Forbidden: accounting.manage required",
+    };
+  }
+
+  const effectiveDate = targetMonthDate || new Date().toISOString().split("T")[0];
+  const monthStart = effectiveDate.substring(0, 7) + "-01";
+
+  try {
+    const supabase = await createClient();
+
+    // 1. Get active categories
+    const { data: categories } = await supabase
+      .from("expense_categories")
+      .select("id, name, category_code")
+      .eq("organization_id", session.organizationId)
+      .eq("is_active", true);
+
+    const docCategory = categories?.find(
+      (c) => c.category_code === "DOCTOR_EXPENSE" || c.name.toLowerCase().includes("doctor")
+    );
+
+    if (!docCategory) {
+      return { success: true, data: { generatedCount: 0, skippedCount: 0 } };
+    }
+
+    // 2. Fetch doctors with monthly retainer configured
+    const { data: doctors } = await supabase
+      .from("doctors")
+      .select("id, full_name")
+      .eq("organization_id", session.organizationId)
+      .eq("is_active", true);
+
+    let generatedCount = 0;
+    let skippedCount = 0;
+
+    for (const doc of doctors || []) {
+      // Check if monthly expense already exists for this doctor in this month
+      const { data: existing } = await supabase
+        .from("expenses")
+        .select("id")
+        .eq("organization_id", session.organizationId)
+        .eq("doctor_id", doc.id)
+        .eq("expense_type", "MONTHLY_RETAINER")
+        .gte("expense_date", monthStart)
+        .lte("expense_date", effectiveDate)
+        .neq("status", "VOIDED")
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        skippedCount++;
+        continue;
+      }
+
+      // Check previous monthly retainer amount for this doctor
+      const { data: prevRetainer } = await supabase
+        .from("expenses")
+        .select("amount")
+        .eq("organization_id", session.organizationId)
+        .eq("doctor_id", doc.id)
+        .eq("expense_type", "MONTHLY_RETAINER")
+        .neq("status", "VOIDED")
+        .order("expense_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const retainerAmount = prevRetainer?.amount ? Number(prevRetainer.amount) : 0;
+      if (retainerAmount > 0) {
+        const monthName = new Date(effectiveDate).toLocaleString("default", { month: "long", year: "numeric" });
+        const createRes = await createExpenseAction({
+          categoryId: docCategory.id,
+          title: `Monthly Retainer: ${doc.full_name} (${monthName})`,
+          amount: retainerAmount,
+          paymentMethod: "BANK_TRANSFER",
+          paidTo: doc.full_name,
+          expenseDate: effectiveDate,
+          expenseType: "MONTHLY_RETAINER",
+          doctorId: doc.id,
+          notes: `Automated recurring monthly retainer voucher for ${doc.full_name}`,
+        });
+        if (createRes.success) {
+          generatedCount++;
+        }
+      } else {
+        skippedCount++;
+      }
+    }
+
+    return { success: true, data: { generatedCount, skippedCount } };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Error generating monthly recurring expenses",
     };
   }
 }

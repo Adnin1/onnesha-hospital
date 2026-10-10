@@ -34,6 +34,7 @@ import {
   getCashRegisterSummaryAction,
   getEpisodeBillingPreviewAction,
   getHospitalServiceTariffsAction,
+  HospitalServiceTariffRecord,
 } from "@/lib/billing/actions";
 import { searchPatientsAction, updatePatientAction } from "@/lib/patient/actions";
 import { getDoctorsAction } from "@/lib/appointments/actions";
@@ -134,6 +135,7 @@ function BillingManagementContent() {
   // Doctor & Service Tariffs State
   const [doctorsList, setDoctorsList] = useState<DoctorRecord[]>([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState("");
+  const [hospitalServiceTariffs, setHospitalServiceTariffs] = useState<HospitalServiceTariffRecord[]>([]);
 
   // Patient Demographic Invariant State
   const [patientAddressInput, setPatientAddressInput] = useState("");
@@ -239,6 +241,7 @@ function BillingManagementContent() {
           if (active && diagRes.status === "fulfilled" && diagRes.value.success && diagRes.value.data?.tests) {
             let baseServices = getAllHospitalServices(diagRes.value.data.tests);
             if (tariffRes.status === "fulfilled" && tariffRes.value.success && tariffRes.value.data?.tariffs) {
+              setHospitalServiceTariffs(tariffRes.value.data.tariffs);
               const customTariffs: HospitalServiceItem[] = tariffRes.value.data.tariffs.map((t) => ({
                 id: `db-${t.service_code}`,
                 category: (t.category as ServiceCategory) || "MISC",
@@ -558,7 +561,18 @@ function BillingManagementContent() {
     const doc = doctorsList.find((d) => d.id === doctorId);
     if (!doc) return;
 
-    const fee = doc.opd_fee || doc.consultation_fee || 500;
+    const tariffFee = hospitalServiceTariffs.find((t) => t.category === "CONSULTATION" && t.is_active)?.price;
+    const configuredFee = doc.opd_fee ?? doc.consultation_fee ?? tariffFee;
+    const fee = configuredFee !== undefined && configuredFee !== null ? Number(configuredFee) : 0;
+
+    if (fee <= 0) {
+      setToast({
+        message: `ডাক্তার ${doc.full_name}-এর কনসালটেশন ফি ডাটাবেজে কনফিগার করা নেই। অনুগ্রহ করে ট্যারিফ থেকে ফি সেট করুন।`,
+        type: "error",
+      });
+      return;
+    }
+
     const itemName = `Consultation: ${doc.full_name} (${doc.designation || doc.specialization || "Consultant"})`;
     addItemRow("CONSULTATION", itemName, fee);
     setSelectedDoctorId("");
@@ -1377,11 +1391,15 @@ function BillingManagementContent() {
                       className="flex-1 px-2.5 py-1.5 border border-sky-300 rounded-lg bg-white text-xs"
                     >
                       <option value="">-- ডাক্তার নির্বাচন করুন --</option>
-                      {doctorsList.map((doc) => (
-                        <option key={doc.id} value={doc.id}>
-                          {doc.full_name} ({doc.designation || doc.specialization}) — ফি: ৳{doc.opd_fee || doc.consultation_fee || 500}
-                        </option>
-                      ))}
+                      {doctorsList.map((doc) => {
+                        const tariffFee = hospitalServiceTariffs.find((t) => t.category === "CONSULTATION" && t.is_active)?.price;
+                        const fee = doc.opd_fee ?? doc.consultation_fee ?? tariffFee;
+                        return (
+                          <option key={doc.id} value={doc.id}>
+                            {doc.full_name} ({doc.designation || doc.specialization}) — ফি: {fee ? `৳${fee}` : "ফি নির্ধারিত নেই"}
+                          </option>
+                        );
+                      })}
                     </select>
                     <button
                       type="button"

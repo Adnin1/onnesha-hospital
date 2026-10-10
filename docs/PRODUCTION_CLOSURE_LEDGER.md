@@ -88,6 +88,19 @@
   - In `post_billing_to_gl_atomic`, journal entries post Debit to 5020/5400 and Credit to 2030, strictly balancing debits = credits with zero NULL account resolution errors.
 - **Lint Result:** `npx supabase db lint --linked` returns 0 fatal schema/security errors.
 
+- **Phase 43 (Migrations 143–148) Forensic Hardening & Mathematical Parity:**
+  - **Migration 143 (`20261011030000`):** Billing & Cashier (consultation fee, medicines, Half-Letter statement layout), Hospital Expense Management (categories, vouchers, GL linkages), and IPD Discharge Summary Schema.
+  - **Migration 144 (`20261011031000`):** Fix Hospital Expense GL Posting.
+  - **Migration 145 (`20261011033000`):** Harden Expenses, Tariffs, and Discharge Security:
+    - Enforced `p_org_id = public.get_current_org_id()` across `record_hospital_expense_atomic`, `void_hospital_expense_atomic`, and `get_expense_analytics_summary`, rejecting cross-tenant attacks with 403 Forbidden.
+    - Guaranteed GL atomicity: failed journal entry posting raises an exception with immediate transactional rollback (zero phantom vouchers).
+    - Enforced atomic void semantics: updates status to `VOIDED`, generates reversing journal entry (`REV-...`), and excludes voided vouchers from analytics.
+    - Revoked direct table mutation grants (`INSERT`, `UPDATE`, `DELETE`) on `hospital_service_tariffs` and `expense_categories`.
+  - **Migration 146 (`20261011034000`):** Aligned doctor schema columns (`full_name`, `bmdc_reg_number`, `specialization`, `designation`).
+  - **Migration 147 (`20261011035000`):** Aligned `journal_entry_lines` and `discharge_summaries` columns (`consultant_doctor_name`, `consultant_doctor_bmdc`, `consultant_doctor_specialty`, `ot_details`, `baby_note`, `discharge_medications`).
+  - **Migration 148 (`20261011040000`):** Dropped stale 10-argument overload of `save_hospital_service_tariff_atomic`, aligned `bed_assignments` status to `VACATED` with `vacated_at = NOW()`, ensuring complete IPD discharge atomicity.
+  - **Database Migration Status:** Exactly 148/148 migrations applied to remote production Supabase instance (`iuhtzahuszdkdarhxobx`) with 100% parity (`npx supabase db lint --linked` returns 0 fatal errors).
+
 ---
 
 ## 3. Human & On-Site Boundary Governance (G1–G16)
@@ -115,7 +128,7 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 128/128 certification suites, 1,161 active passes, 0 failures, 60/60 route forensic acceptance, 52/52 Playwright browser tests, 0 lint warnings, 0 typecheck errors.
+1. **Software Quality:** 129/129 certification suites, 1,175 active passes, 0 failures, 60/60 route forensic acceptance, 52/52 Playwright browser tests, 0 lint warnings, 0 typecheck errors.
 2. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev` & `https://fa3707dc.onnesha-hospital.pages.dev`).
 3. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries built on Windows, deployed to edge, downloaded over HTTPS, and SHA-256 hashes independently verified.
 4. **External Owner Gates:** G1–G16 clearly isolated without false greens.

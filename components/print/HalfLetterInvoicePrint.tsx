@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * Half-Letter / Statement Page Size Standard (5.5 x 8.5 in / 139.7mm x 215.9mm)
+ * Compact hospital billing memo, cash receipt, and delivery challan printing standard.
+ */
 import React from "react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { generateSvgBarcode } from "@/lib/print/barcode";

@@ -1053,101 +1053,89 @@ export async function dischargePatientAction(params: {
     return { success: false, error: "Final diagnosis is mandatory for patient discharge." };
   }
 
+  // Mandatory Consultant Doctor Verification
+  if (!params.consultantName?.trim() && !params.consultantDoctorId) {
+    return { success: false, error: "Consultant doctor name or selection is mandatory on discharge certificate." };
+  }
+  if (!params.bmdcRegNumber?.trim() && !params.consultantDoctorId) {
+    return { success: false, error: "Doctor BMDC registration number is mandatory on discharge certificate." };
+  }
+
   try {
     const supabase = await createClient();
 
-    // 1. Verify Active Visit
-    const { data: visit, error: vErr } = await supabase
-      .from("patient_visits")
-      .select("id, status, patient_id")
-      .eq("id", params.visitId)
+    // Execute atomic IPD discharge database RPC
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("complete_ipd_discharge_atomic", {
+      p_org_id: session.organizationId,
+      p_visit_id: params.visitId,
+      p_discharge_type: params.dischargeType,
+      p_final_diagnosis: params.finalDiagnosis.trim(),
+      p_consultant_doctor_id: params.consultantDoctorId || null,
+      p_consultant_name: params.consultantName?.trim() || null,
+      p_bmdc_reg_number: params.bmdcRegNumber?.trim() || null,
+      p_consultant_designation: params.consultantDesignation?.trim() || null,
+      p_hospital_course: params.hospitalCourse?.trim() || null,
+      p_condition_at_discharge: params.conditionAtDischarge?.trim() || null,
+      p_discharge_advice: params.dischargeAdvice?.trim() || null,
+      p_followup_instructions: params.followupInstructions?.trim() || null,
+      p_presenting_features: params.presentingFeatures ? (typeof params.presentingFeatures === "string" ? JSON.parse(params.presentingFeatures) : params.presentingFeatures) : [],
+      p_investigations_summary: params.investigationsSummary?.trim() || null,
+      p_operation_name: params.operationName?.trim() || null,
+      p_operation_date: params.operationDate || null,
+      p_operation_time: params.operationTime?.trim() || null,
+      p_surgeon_name: params.surgeonName?.trim() || null,
+      p_assistant_surgeons: params.assistantSurgeons?.trim() || null,
+      p_anaesthetist_name: params.anaesthetistName?.trim() || null,
+      p_anaesthesia_type: params.anaesthesiaType?.trim() || null,
+      p_operative_findings: params.operativeFindings?.trim() || null,
+      p_baby_sex: params.babySex || null,
+      p_baby_weight_kg: params.babyWeightKg || null,
+      p_baby_apgar_score: params.babyApgarScore || null,
+      p_baby_notes: params.babyNotes?.trim() || null,
+      p_medications_schedule: params.medicationsSchedule || [],
+      p_stitch_removal_date: params.stitchRemovalDate || null,
+      p_followup_date: params.followupDate || null,
+      p_prepared_by: session.userId,
+    });
+
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message || "Failed to execute atomic patient discharge." };
+    }
+
+    const summaryId = (rpcRes as { summary_id?: string })?.summary_id;
+    if (!summaryId) {
+      return { success: false, error: "Discharge summary ID missing from atomic response." };
+    }
+
+    // Retrieve the authoritative generated summary
+    const { data: summary, error: sErr } = await supabase
+      .from("discharge_summaries")
+      .select("*")
+      .eq("id", summaryId)
       .eq("organization_id", session.organizationId)
       .single();
 
-    if (vErr || !visit) {
-      return { success: false, error: "Admission record not found." };
-    }
-
-    if (visit.status === "DISCHARGED") {
-      return { success: false, error: "Patient has already been discharged from this encounter." };
-    }
-
-    // 2. Insert Discharge Summary with Organization ID and Full Clinical Metadata
-    const { data: summary, error: sErr } = await supabase
-      .from("discharge_summaries")
-      .insert({
-        organization_id: session.organizationId,
-        visit_id: params.visitId,
-        discharge_type: params.dischargeType,
-        final_diagnosis: params.finalDiagnosis.trim(),
-        hospital_course: params.hospitalCourse?.trim() || null,
-        condition_at_discharge: params.conditionAtDischarge?.trim() || null,
-        discharge_advice: params.dischargeAdvice?.trim() || null,
-        followup_instructions: params.followupInstructions?.trim() || null,
-        consultant_doctor_id: params.consultantDoctorId || null,
-        consultant_name: params.consultantName?.trim() || null,
-        consultant_designation: params.consultantDesignation?.trim() || null,
-        bmdc_reg_number: params.bmdcRegNumber?.trim() || null,
-        presenting_features: params.presentingFeatures?.trim() || null,
-        investigations_summary: params.investigationsSummary?.trim() || null,
-        operation_name: params.operationName?.trim() || null,
-        operation_date: params.operationDate || null,
-        operation_time: params.operationTime?.trim() || null,
-        surgeon_name: params.surgeonName?.trim() || null,
-        assistant_surgeons: params.assistantSurgeons?.trim() || null,
-        anaesthetist_name: params.anaesthetistName?.trim() || null,
-        anaesthesia_type: params.anaesthesiaType?.trim() || null,
-        operative_findings: params.operativeFindings?.trim() || null,
-        baby_sex: params.babySex || null,
-        baby_weight_kg: params.babyWeightKg || null,
-        baby_apgar_score: params.babyApgarScore || null,
-        baby_notes: params.babyNotes?.trim() || null,
-        medications_schedule: params.medicationsSchedule || [],
-        stitch_removal_date: params.stitchRemovalDate || null,
-        followup_date: params.followupDate || null,
-        prepared_by: session.userId,
-        approved_by: session.userId,
-      })
-      .select("*")
-      .single();
-
     if (sErr || !summary) {
-      return { success: false, error: sErr?.message || "Failed to generate discharge summary." };
+      return { success: false, error: "Failed to load generated discharge summary record." };
     }
 
-    // 3. Mark Visit Discharged
-    await supabase
-      .from("patient_visits")
-      .update({
-        status: "DISCHARGED",
-        discharged_at: new Date().toISOString(),
-      })
-      .eq("id", params.visitId)
-      .eq("organization_id", session.organizationId);
-
-    // 4. Release Bed or Cabin Assignment if any
+    // Secondary safety verification: Confirm bed and cabin are released to VACANT
     const { data: bedAssign } = await supabase
       .from("bed_assignments")
       .select("id, bed_id, cabin_id")
       .eq("visit_id", params.visitId)
       .eq("organization_id", session.organizationId)
-      .eq("status", "ACTIVE")
       .maybeSingle();
 
-    if (bedAssign) {
+    if (bedAssign && bedAssign.bed_id) {
       await supabase
-        .from("bed_assignments")
-        .update({ status: "DISCHARGED", discharged_at: new Date().toISOString() })
+        .from("beds")
+        .update({ status: "VACANT" })
         .eq("organization_id", session.organizationId)
-        .eq("id", bedAssign.id);
+        .eq("id", bedAssign.bed_id);
+    }
 
-      if (bedAssign.bed_id) {
-        await supabase
-          .from("beds")
-          .update({ status: "VACANT" })
-          .eq("organization_id", session.organizationId)
-          .eq("id", bedAssign.bed_id);
-      }
+    if (bedAssign && bedAssign.cabin_id) {
       if (bedAssign.cabin_id) {
         await supabase
           .from("cabins")
@@ -1157,7 +1145,13 @@ export async function dischargePatientAction(params: {
       }
     }
 
-    // 5. Audit Log
+    await supabase
+      .from("patient_visits")
+      .update({ status: "DISCHARGED" })
+      .eq("organization_id", session.organizationId)
+      .eq("id", params.visitId);
+
+    // Audit Log
     await recordAuditLog({
       userId: session.userId,
       organizationId: session.organizationId,
@@ -1168,6 +1162,7 @@ export async function dischargePatientAction(params: {
       newValues: {
         discharge_type: params.dischargeType,
         final_diagnosis: params.finalDiagnosis,
+        summary_id: summaryId,
       },
     });
 
