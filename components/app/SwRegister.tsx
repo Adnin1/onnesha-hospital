@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const CURRENT_SW_VERSION = "1.1.80";
+const CURRENT_SW_VERSION = "1.1.81";
 
 export default function SwRegister() {
   useEffect(() => {

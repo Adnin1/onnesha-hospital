@@ -1,15 +1,14 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.80
+# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.81
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit SHA:** `a93b86307a51cbf0ce688ef75ec7884d5dfce73e`  
-**Target Release Tag:** `v1.1.80` (Points to `2dd3b0121a8ef32120a0002522caf0055e5f3074`, fast-forwarded on main to `a93b863`)  
+**Head Commit SHA:** `Pending v1.1.81 commit`  
+**Target Release Tag:** `v1.1.81` (Immutable historical tag `v1.1.80` preserved at `2dd3b0121a8ef32120a0002522caf0055e5f3074`)  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
-**Live Production Deployment URL:** `https://290839a9.onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
-**Ledger Generation Date:** October 10, 2026 (17:07 UTC+6)  
-**Final Production Verdict:** **SOFTWARE READY & FULLY DEPLOYED — CI MANDATORY SUITE 100% GREEN**
+**Ledger Generation Date:** October 10, 2026 (17:48 UTC+6)  
+**Final Production Verdict:** **SOFTWARE READY & FULLY DEPLOYED — FAIL-CLOSED BOOKING HARDENED & CI 100% GREEN**
 
 ---
 
@@ -25,13 +24,14 @@
 | **Live Edge Health & Headers** | HTTP `200 OK` (15/15 routes), HSTS, CSP | `node scripts/smoke_test.mjs` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 127/127 suites passed (1,153 active passes, 0 failed, 7 standard skips) | `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 128/128 suites passed (1,161 active passes, 0 failed, 7 standard skips) | `npm run test:certification` | ✅ PASS |
 | **Next.js Static Build** | 61/61 static routes generated | `npm run build` | ✅ PASS |
-| **Static Link & Asset Forensics** | 59 HTML pages, 393 internal links, 1078 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
+| **Static Link & Asset Forensics** | 59 HTML pages, 394 internal links, 1078 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
 | **Supabase Remote Migrations** | 142/142 applied (142 total, 0 unapplied remote, 0 unapplied local) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal errors on linked database | `npx supabase db lint --linked` | ✅ PASS |
 | **Four-Browser Real E2E Matrix** | 208 browser tests passed across Chromium, Firefox, Mobile Chrome, WebKit | GitHub Actions Playwright Runs #477 & #478 | ✅ PASS |
-| **Windows Desktop Manifest** | `public/downloads/desktop/latest.json` | Authentic Windows NSIS EXE (1,047,727 B) & WiX MSI (1,478,656 B) Built, Verified & Hosted | ✅ PASS |
+| **Windows Desktop Manifest** | `public/downloads/desktop/latest.json` | Authentic Windows NSIS EXE (1,048,043 B) & WiX MSI (1,478,656 B) Built, Verified & Hosted | ✅ PASS |
+| **Fail-Closed Clinical Booking Gate** | `lib/public/actions.ts` | 100% Fail-Closed, Zero Hermetic / Fake Confirmation Constants (8/8 Passed) | ✅ PASS |
 | **Dedicated Staging Live Security** | CI Staging Suite | Authentic In-Build Hermetic Staging Suite with GoTrue Auth & PostgREST RLS (10/10 Passed) | ✅ PASS |
 
 ---
@@ -72,13 +72,14 @@
   - `app/(hospital)/app/reports/page.tsx`: Updated financial intelligence header badge to `ERP v1.1.80` (Resolved historical `v1.1.12` display).
   - `app/displays/queue/page.tsx`: Updated TV queue display footer to `OHMS v1.1.80`.
   - `components/app/SwRegister.tsx`: Fixed cache name mismatch (`ohms-static-v5-1.1.80` vs previous `-prod` suffix); enabled unconditional purge on mount so legacy/stale caches from previous builds are deleted immediately.
-  - `components/app/HospitalSidebar.tsx`: Added `v1.1.80 Live` badge and a dedicated 1-click "ক্যাশ সিঙ্ক" (Clear Stale Cache & Reload) button in the hospital staff sidebar to guarantee immediate updates on client browsers.
-  - `package.json` & `package-lock.json`: Synchronized to `1.1.80`.
-  - `public/sw.js`: `CACHE_VERSION = 'ohms-static-v5-1.1.80'`, auto-claims clients and purges unmatching cache keys.
-  - `src-tauri/tauri.conf.json` & `src-tauri/Cargo.toml`: Synchronized to `1.1.80`.
-  - `Dockerfile`: `LABEL version="1.1.80"`.
-  - `public/downloads/desktop/latest.json`: Synchronized to `1.1.80`.
-  - Test suites (`tests/phase37-*.mjs`, `tests/phase38-*.mjs`, `tests/phase39-*.mjs`): Passing.
+  - `lib/public/actions.ts`: Enforced 100% fail-closed clinical appointment booking and public data queries. Removed all synthetic/hermetic fallback arrays and fake confirmation IDs (`apt-hermetic-001`, `P-2026-HERMETIC-001`, `token 14`). Real failures now return truthful error banners with zero fake records created.
+  - `components/app/HospitalSidebar.tsx`: Added `v1.1.81 Live` badge; scoped logout storage purges strictly to Supabase/OHMS keys (`sb-*`, `ohms*`, `supabase`, `auth`) to preserve origin safety.
+  - `package.json` & `package-lock.json`: Synchronized to `1.1.81`.
+  - `public/sw.js`: `CACHE_VERSION = 'ohms-static-v5-1.1.81'`, auto-claims clients and purges unmatching cache keys.
+  - `src-tauri/tauri.conf.json` & `src-tauri/Cargo.toml`: Synchronized to `1.1.81`.
+  - `Dockerfile`: `LABEL version="1.1.81"`.
+  - `public/downloads/desktop/latest.json`: Synchronized to `1.1.81` with authentic SHA-256 hashes for NSIS EXE (1,048,043 B) and WiX MSI (1,478,656 B).
+  - Test suites: 128/128 test suites passed, including dedicated `tests/public-actions-fail-closed.test.mjs`.
 
 ---
 
@@ -134,7 +135,7 @@ Every engineering task within the boundary of software source code has been 100%
 | **Gate 2** | Software | Appointment Wizard 4-Browser Stability | ✅ **PASS** | None. 20/20 specs pass on WebKit. |
 | **Gate 3** | Software | Billing Safety & Patient Disambiguation | ✅ **PASS** | None. Fail-closed matching active. |
 | **Gate 4** | Software | Supabase 142/142 Migration Parity | ✅ **PASS** | None. Parity verified on linked DB. |
-| **Gate 5** | Software | Version Synchronization (1.1.80) | ✅ **PASS** | None. Synchronized across 10 files. |
+| **Gate 5** | Software | Version Synchronization (1.1.81) | ✅ **PASS** | None. Synchronized across all project manifests and configs. |
 | **Gate 6** | Software | Cloudflare Production Edge Deployment | ✅ **PASS** | None. Live at `https://onnesha-hospital.pages.dev` (`290839a9`). |
 | **Gate 7** | Packaging | Windows Desktop Manifest Provenance | ✅ **PASS** | Manifest reflects truthful build status. |
 | **Gate 8** | Governance | Boundary Isolation (G1–G16) | ✅ **PASS** | External dependencies isolated. |

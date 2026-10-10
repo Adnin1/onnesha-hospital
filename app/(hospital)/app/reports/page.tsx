@@ -349,7 +349,7 @@ export default function ReportsManagementPage() {
               Asia/Dhaka (BST, UTC+6)
             </span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700">
-              ERP v1.1.80
+              ERP v1.1.81
             </span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 mt-1 tracking-tight">

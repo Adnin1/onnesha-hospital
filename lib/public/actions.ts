@@ -115,55 +115,7 @@ export interface PublicBookingResult {
   error?: string;
 }
 
-const HERMETIC_FALLBACK_DOCTORS: PublicDoctor[] = [
-  {
-    id: "doc-001",
-    full_name: "Prof. Dr. M. A. Rahman",
-    degrees: "MBBS, FCPS (Medicine)",
-    designation: "Professor & Head",
-    specialization: "Internal Medicine",
-    room_number: "301",
-    opd_fee: 1000,
-    avatar_url: null,
-    public_bio: "Experienced consultant in general and internal medicine.",
-    department_name: "General Medicine",
-    department_slug: "general-medicine",
-    schedules: [
-      { id: "sched-001", day_of_week: "Saturday", start_time: "09:00", end_time: "13:00", is_active: true },
-      { id: "sched-002", day_of_week: "Sunday", start_time: "09:00", end_time: "13:00", is_active: true },
-      { id: "sched-003", day_of_week: "Monday", start_time: "09:00", end_time: "13:00", is_active: true },
-      { id: "sched-004", day_of_week: "Tuesday", start_time: "09:00", end_time: "13:00", is_active: true },
-      { id: "sched-005", day_of_week: "Wednesday", start_time: "09:00", end_time: "13:00", is_active: true },
-      { id: "sched-006", day_of_week: "Thursday", start_time: "09:00", end_time: "13:00", is_active: true },
-      { id: "sched-007", day_of_week: "Friday", start_time: "09:00", end_time: "13:00", is_active: true },
-    ],
-    visiting_hours_text: "Sat, Sun, Mon, Tue, Wed, Thu, Fri (09:00 AM - 01:00 PM)",
-  },
-];
 
-const HERMETIC_FALLBACK_SCHEDULES: PublicDoctorSchedule[] = [
-  "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
-].map((day, idx) => ({
-  id: `sched-fallback-00${idx + 1}`,
-  day_of_week: day,
-  start_time: "09:00",
-  end_time: "13:00",
-  max_tokens: 30,
-  room_number: "301",
-  slot_label: `${day}: 09:00 - 13:00 (Room: 301)`,
-}));
-
-const HERMETIC_FALLBACK_DEPARTMENTS: PublicDepartment[] = [
-  { id: "dept-gen-001", name: "General Medicine", slug: "general-medicine", description: "General Outpatient and Internal Medicine Department" },
-  { id: "dept-ped-002", name: "Pediatrics", slug: "pediatrics", description: "Child and Adolescent Healthcare Department" },
-];
-
-function isHermeticOrNetworkFallback(errMessage?: string): boolean {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  if (url.includes("placeholder") || url.includes("ci-hermetic")) return true;
-  if (!errMessage) return false;
-  return errMessage.includes("Load failed") || errMessage.includes("Failed to fetch") || errMessage.includes("NetworkError");
-}
 
 /**
  * 1. Fetch public list of active consultants (sanitized of salary/commissions)
@@ -183,9 +135,6 @@ export async function getPublicDoctorsAction(): Promise<{
 
     if (rpcError) {
       console.error("[getPublicDoctorsAction]", rpcError.message);
-      if (isHermeticOrNetworkFallback(rpcError.message)) {
-        return { success: true, doctors: HERMETIC_FALLBACK_DOCTORS };
-      }
       return { success: false, doctors: [], error: "Unable to load doctor directory. Please try again later." };
     }
 
@@ -227,9 +176,6 @@ export async function getPublicDoctorsAction(): Promise<{
     return { success: true, doctors };
   } catch (err: unknown) {
     console.error("[getPublicDoctorsAction exception]", err);
-    if (isHermeticOrNetworkFallback(err instanceof Error ? err.message : String(err))) {
-      return { success: true, doctors: HERMETIC_FALLBACK_DOCTORS };
-    }
     return { success: false, doctors: [], error: "Unable to load doctor directory. Please try again later." };
   }
 }
@@ -262,9 +208,6 @@ export async function getPublicDoctorSchedulesAction(doctorId: string): Promise<
 
     if (error) {
       console.error("[getPublicDoctorSchedulesAction]", error.message);
-      if (isHermeticOrNetworkFallback(error.message)) {
-        return { success: true, schedules: HERMETIC_FALLBACK_SCHEDULES };
-      }
       return { success: false, schedules: [], error: "Unable to load doctor schedules. Please try again later." };
     }
 
@@ -294,9 +237,6 @@ export async function getPublicDoctorSchedulesAction(doctorId: string): Promise<
     return { success: true, schedules };
   } catch (err: unknown) {
     console.error("[getPublicDoctorSchedulesAction exception]", err);
-    if (isHermeticOrNetworkFallback(err instanceof Error ? err.message : String(err))) {
-      return { success: true, schedules: HERMETIC_FALLBACK_SCHEDULES };
-    }
     return { success: false, schedules: [], error: "Unable to load doctor schedules. Please try again later." };
   }
 }
@@ -319,9 +259,6 @@ export async function getPublicDepartmentsAction(): Promise<{
 
     if (error) {
       console.error("[getPublicDepartmentsAction]", error.message);
-      if (isHermeticOrNetworkFallback(error.message)) {
-        return { success: true, departments: HERMETIC_FALLBACK_DEPARTMENTS };
-      }
       return { success: false, departments: [], error: "Unable to load departments. Please try again later." };
     }
 
@@ -342,9 +279,6 @@ export async function getPublicDepartmentsAction(): Promise<{
     return { success: true, departments };
   } catch (err: unknown) {
     console.error("[getPublicDepartmentsAction exception]", err);
-    if (isHermeticOrNetworkFallback(err instanceof Error ? err.message : String(err))) {
-      return { success: true, departments: HERMETIC_FALLBACK_DEPARTMENTS };
-    }
     return { success: false, departments: [], error: "Unable to load departments. Please try again later." };
   }
 }
@@ -409,21 +343,8 @@ export async function bookOnlineAppointmentAction(params: {
     });
 
     if (rpcErr || !rpcRes) {
-      if (isHermeticOrNetworkFallback(rpcErr?.message)) {
-        return {
-          success: true,
-          data: {
-            appointmentId: "apt-hermetic-001",
-            tokenNumber: 14,
-            patientCode: "P-2026-HERMETIC-001",
-            appointmentDate,
-            doctorName: "Prof. Dr. M. A. Rahman",
-            roomNumber: "301",
-            opdFee: 1000,
-          },
-        };
-      }
-      return { success: false, error: "Online appointment service is temporarily unavailable. Please try again or contact hospital reception." };
+      console.error("[bookOnlineAppointmentAction rpc error]", rpcErr?.message);
+      return { success: false, error: rpcErr?.message || "Online appointment service is temporarily unavailable. Please try again or contact hospital reception." };
     }
 
     const resObj = typeof rpcRes === "string" ? JSON.parse(rpcRes) : rpcRes;
@@ -446,20 +367,6 @@ export async function bookOnlineAppointmentAction(params: {
     };
   } catch (err: unknown) {
     console.error("[bookOnlineAppointmentAction exception]", err);
-    if (isHermeticOrNetworkFallback(err instanceof Error ? err.message : String(err))) {
-      return {
-        success: true,
-        data: {
-          appointmentId: "apt-hermetic-001",
-          tokenNumber: 14,
-          patientCode: "P-2026-HERMETIC-001",
-          appointmentDate,
-          doctorName: "Prof. Dr. M. A. Rahman",
-          roomNumber: "301",
-          opdFee: 1000,
-        },
-      };
-    }
     return { success: false, error: "Appointment booking could not be processed at this time. Please try again or contact hospital reception." };
   }
 }
@@ -523,9 +430,6 @@ export async function submitContactInquiryAction(params: {
 
     if (error) {
       console.error("[submitContactInquiryAction error]", error.message);
-      if (isHermeticOrNetworkFallback(error.message)) {
-        return { success: true };
-      }
       return { success: false, error: "Unable to submit inquiry at this time. Please try again later." };
     }
 
@@ -537,9 +441,6 @@ export async function submitContactInquiryAction(params: {
     return { success: true };
   } catch (err: unknown) {
     console.error("[submitContactInquiryAction exception]", err);
-    if (isHermeticOrNetworkFallback(err instanceof Error ? err.message : String(err))) {
-      return { success: true };
-    }
     return { success: false, error: "Submission could not be completed at this time. Please try again later." };
   }
 }

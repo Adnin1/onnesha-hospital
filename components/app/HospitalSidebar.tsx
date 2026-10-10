@@ -112,8 +112,20 @@ export function HospitalSidebar() {
     }
     if (typeof window !== "undefined") {
       try {
-        localStorage.clear();
-        sessionStorage.clear();
+        const clearMatchingKeys = (storage: Storage) => {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < storage.length; i++) {
+            const key = storage.key(i);
+            if (key && (key.startsWith("sb-") || key.startsWith("ohms") || key.includes("supabase") || key.includes("auth"))) {
+              keysToRemove.push(key);
+            }
+          }
+          for (const key of keysToRemove) {
+            storage.removeItem(key);
+          }
+        };
+        clearMatchingKeys(localStorage);
+        clearMatchingKeys(sessionStorage);
       } catch (err: unknown) {
         console.error("[HospitalSidebar] storage clear error:", err);
       }
@@ -129,7 +141,7 @@ export function HospitalSidebar() {
           const regs = await navigator.serviceWorker.getRegistrations();
           for (const r of regs) {
             const scriptUrl = r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || "";
-            if (scriptUrl.includes("/sw.js") || r.scope === window.location.origin + "/") {
+            if (scriptUrl.includes("/sw.js")) {
               await r.unregister().catch(() => {});
             }
           }
