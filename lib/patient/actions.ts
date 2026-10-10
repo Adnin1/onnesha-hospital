@@ -1007,6 +1007,34 @@ export async function dischargePatientAction(params: {
   conditionAtDischarge?: string;
   dischargeAdvice?: string;
   followupInstructions?: string;
+  consultantDoctorId?: string;
+  consultantName?: string;
+  consultantDesignation?: string;
+  bmdcRegNumber?: string;
+  presentingFeatures?: string;
+  investigationsSummary?: string;
+  operationName?: string;
+  operationDate?: string;
+  operationTime?: string;
+  surgeonName?: string;
+  assistantSurgeons?: string;
+  anaesthetistName?: string;
+  anaesthesiaType?: string;
+  operativeFindings?: string;
+  babySex?: string;
+  babyWeightKg?: number;
+  babyApgarScore?: string;
+  babyNotes?: string;
+  medicationsSchedule?: Array<{
+    name: string;
+    formulation?: string;
+    dosage: string;
+    timing?: string;
+    duration: string;
+    instructions?: string;
+  }>;
+  stitchRemovalDate?: string;
+  followupDate?: string;
 }): Promise<ActionResult<{ dischargeSummary: DischargeSummary }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
@@ -1044,17 +1072,39 @@ export async function dischargePatientAction(params: {
       return { success: false, error: "Patient has already been discharged from this encounter." };
     }
 
-    // 2. Insert Discharge Summary
+    // 2. Insert Discharge Summary with Organization ID and Full Clinical Metadata
     const { data: summary, error: sErr } = await supabase
       .from("discharge_summaries")
       .insert({
+        organization_id: session.organizationId,
         visit_id: params.visitId,
         discharge_type: params.dischargeType,
         final_diagnosis: params.finalDiagnosis.trim(),
-        hospital_course: params.hospitalCourse || null,
-        condition_at_discharge: params.conditionAtDischarge || null,
-        discharge_advice: params.dischargeAdvice || null,
-        followup_instructions: params.followupInstructions || null,
+        hospital_course: params.hospitalCourse?.trim() || null,
+        condition_at_discharge: params.conditionAtDischarge?.trim() || null,
+        discharge_advice: params.dischargeAdvice?.trim() || null,
+        followup_instructions: params.followupInstructions?.trim() || null,
+        consultant_doctor_id: params.consultantDoctorId || null,
+        consultant_name: params.consultantName?.trim() || null,
+        consultant_designation: params.consultantDesignation?.trim() || null,
+        bmdc_reg_number: params.bmdcRegNumber?.trim() || null,
+        presenting_features: params.presentingFeatures?.trim() || null,
+        investigations_summary: params.investigationsSummary?.trim() || null,
+        operation_name: params.operationName?.trim() || null,
+        operation_date: params.operationDate || null,
+        operation_time: params.operationTime?.trim() || null,
+        surgeon_name: params.surgeonName?.trim() || null,
+        assistant_surgeons: params.assistantSurgeons?.trim() || null,
+        anaesthetist_name: params.anaesthetistName?.trim() || null,
+        anaesthesia_type: params.anaesthesiaType?.trim() || null,
+        operative_findings: params.operativeFindings?.trim() || null,
+        baby_sex: params.babySex || null,
+        baby_weight_kg: params.babyWeightKg || null,
+        baby_apgar_score: params.babyApgarScore || null,
+        baby_notes: params.babyNotes?.trim() || null,
+        medications_schedule: params.medicationsSchedule || [],
+        stitch_removal_date: params.stitchRemovalDate || null,
+        followup_date: params.followupDate || null,
         prepared_by: session.userId,
         approved_by: session.userId,
       })
@@ -1128,6 +1178,41 @@ export async function dischargePatientAction(params: {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Discharge failed.";
     return { success: false, error: msg };
+  }
+}
+
+/**
+ * 10.1 Get Discharge Summary Record by Visit ID
+ */
+export async function getDischargeSummaryAction(params: {
+  visitId: string;
+}): Promise<ActionResult<{ summary: DischargeSummary }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "Unauthorized session." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("discharge_summaries")
+      .select("*")
+      .eq("visit_id", params.visitId)
+      .eq("organization_id", session.organizationId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    if (!data) {
+      return { success: false, error: "Discharge certificate not found." };
+    }
+
+    return { success: true, data: { summary: data as unknown as DischargeSummary } };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Error retrieving discharge summary." };
   }
 }
 
@@ -1985,6 +2070,8 @@ export async function updatePatientAction(
         nid: input.nid?.trim() || null,
         nid_or_birth_cert: input.nid?.trim() || null,
         address: input.address?.trim() || null,
+        age: input.age !== undefined && input.age !== null ? input.age : (existingPatient.age ?? null),
+        guardian_name: input.guardianName?.trim() || existingPatient.guardian_name || null,
         emergency_contact_name: input.emergencyName?.trim() || null,
         emergency_contact_phone: input.emergencyPhone ? normalizeBDPhone(input.emergencyPhone) : null,
         emergency_contact_relation: input.emergencyRelation?.trim() || null,

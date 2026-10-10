@@ -11,6 +11,7 @@ import {
   Scissors,
   FileText,
   Receipt,
+  DollarSign,
   UserCheck,
   BarChart3,
   Settings,
@@ -191,6 +192,12 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         href: "/app/billing",
         label: "Billing & Cashier",
         icon: Receipt,
+        perm: PERMISSIONS.BILLING_VIEW,
+      },
+      {
+        href: "/app/expenses",
+        label: "Hospital Expenses",
+        icon: DollarSign,
         perm: PERMISSIONS.BILLING_VIEW,
       },
       {

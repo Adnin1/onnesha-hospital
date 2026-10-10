@@ -23,6 +23,9 @@ export interface PatientMaster {
   blood_group?: BloodGroupType;
   marital_status?: string;
   occupation?: string;
+  guardian_name?: string;
+  relationship_with_guardian?: string;
+  age?: number;
   nid?: string;
   address?: string;
   emergency_contact_name?: string;
@@ -181,6 +184,7 @@ export interface PatientTransfer {
 
 export interface DischargeSummary {
   id: UUID;
+  organization_id?: UUID;
   visit_id: UUID;
   discharge_type: DischargeType;
   final_diagnosis: string;
@@ -190,6 +194,34 @@ export interface DischargeSummary {
   followup_instructions?: string;
   prepared_by?: UUID;
   approved_by?: UUID;
+  consultant_doctor_id?: UUID;
+  consultant_name?: string;
+  consultant_designation?: string;
+  bmdc_reg_number?: string;
+  presenting_features?: string;
+  investigations_summary?: string;
+  operation_name?: string;
+  operation_date?: string;
+  operation_time?: string;
+  surgeon_name?: string;
+  assistant_surgeons?: string;
+  anaesthetist_name?: string;
+  anaesthesia_type?: string;
+  operative_findings?: string;
+  baby_sex?: string;
+  baby_weight_kg?: number;
+  baby_apgar_score?: string;
+  baby_notes?: string;
+  medications_schedule?: Array<{
+    name: string;
+    formulation?: string;
+    dosage: string;
+    timing?: string;
+    duration: string;
+    instructions?: string;
+  }>;
+  stitch_removal_date?: string;
+  followup_date?: string;
   created_at: string;
 }
 
@@ -258,6 +290,8 @@ export interface UpdatePatientInput {
   occupation?: string;
   nid?: string;
   address?: string;
+  age?: number;
+  guardianName?: string;
   emergencyName?: string;
   emergencyPhone?: string;
   emergencyRelation?: string;

@@ -39,7 +39,7 @@ export async function getInvoicesAction(params?: {
         invoice_items (*),
         payments (*),
         refunds (*),
-        patients (id, patient_code, full_name, phone, gender)
+        patients (id, patient_code, full_name, phone, gender, address, age, blood_group)
       `)
       .eq("organization_id", session.organizationId)
       .order("created_at", { ascending: false })
@@ -86,6 +86,9 @@ export async function getInvoicesAction(params?: {
         full_name: string;
         phone: string;
         gender?: string;
+        address?: string;
+        age?: number;
+        blood_group?: string;
       } | null;
     }
 
@@ -144,16 +147,32 @@ export async function createInvoiceAction(params: {
   try {
     const supabase = await createClient();
 
-    // Verify patient
+    // Verify patient and enforce mandatory demographic invariants (Name, UHID, Phone, Address, Age)
     const { data: patient } = await supabase
       .from("patients")
-      .select("id, patient_code, full_name, phone, gender")
+      .select("id, patient_code, full_name, phone, gender, address, age, dob, blood_group")
       .eq("id", params.patientId)
       .eq("organization_id", session.organizationId)
       .single();
 
     if (!patient) {
-      return { success: false, error: "Patient not found." };
+      return { success: false, error: "Patient record not found." };
+    }
+
+    if (!patient.full_name || patient.full_name.trim().length < 2) {
+      return { success: false, error: "Patient name is mandatory for billing." };
+    }
+    if (!patient.patient_code) {
+      return { success: false, error: "Patient UHID is mandatory for billing." };
+    }
+    if (!patient.phone) {
+      return { success: false, error: "Patient contact number is mandatory for billing." };
+    }
+    if (!patient.address || patient.address.trim().length < 2) {
+      return { success: false, error: "Patient address is mandatory for hospital billing. Please save address in patient details." };
+    }
+    if ((patient.age === null || patient.age === undefined) && !patient.dob) {
+      return { success: false, error: "Patient age is mandatory for hospital billing. Please specify patient age." };
     }
 
     // Invariant: Atomic single-transaction database RPC create_invoice_and_post_gl_atomic encapsulates
@@ -1207,4 +1226,117 @@ export async function restoreEpisodeServiceWaiverAction(params: {
     return { success: false, error: err instanceof Error ? err.message : "Failed to restore waived service charge." };
   }
 }
+
+export interface HospitalServiceTariffRecord {
+  id: string;
+  organization_id: string;
+  service_code: string;
+  service_name: string;
+  category: string;
+  price: number;
+  unit: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getHospitalServiceTariffsAction(params?: {
+  category?: string;
+  isActive?: boolean;
+}): Promise<ActionResult<{ tariffs: HospitalServiceTariffRecord[] }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    let query = supabase
+      .from("hospital_service_tariffs")
+      .select("*")
+      .eq("organization_id", session.organizationId)
+      .order("category", { ascending: true })
+      .order("service_name", { ascending: true });
+
+    if (params?.category && params.category !== "ALL") {
+      query = query.eq("category", params.category);
+    }
+    if (params?.isActive !== undefined) {
+      query = query.eq("is_active", params.isActive);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: { tariffs: (data || []) as HospitalServiceTariffRecord[] } };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Error loading service tariffs" };
+  }
+}
+
+export async function saveHospitalServiceTariffAction(params: {
+  id?: string;
+  serviceCode: string;
+  serviceName: string;
+  category: string;
+  price: number;
+  unit?: string;
+  description?: string;
+  isActive?: boolean;
+}): Promise<ActionResult<{ tariff: HospitalServiceTariffRecord }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission("billing.manage");
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.manage required" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const payload = {
+      organization_id: session.organizationId,
+      service_code: params.serviceCode.trim().toUpperCase(),
+      service_name: params.serviceName.trim(),
+      category: params.category.trim().toUpperCase(),
+      price: Math.max(0, params.price),
+      unit: params.unit?.trim() || "Per Service",
+      description: params.description?.trim() || null,
+      is_active: params.isActive ?? true,
+      updated_at: new Date().toISOString(),
+    };
+
+    let result;
+    if (params.id) {
+      result = await supabase
+        .from("hospital_service_tariffs")
+        .update(payload)
+        .eq("id", params.id)
+        .eq("organization_id", session.organizationId)
+        .select("*")
+        .single();
+    } else {
+      result = await supabase
+        .from("hospital_service_tariffs")
+        .upsert(payload, { onConflict: "organization_id,service_code" })
+        .select("*")
+        .single();
+    }
+
+    if (result.error) {
+      return { success: false, error: result.error.message };
+    }
+
+    return { success: true, data: { tariff: result.data as HospitalServiceTariffRecord } };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Error saving service tariff" };
+  }
+}
+
 

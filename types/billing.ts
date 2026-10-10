@@ -66,6 +66,9 @@ export interface InvoiceRecord {
     full_name: string;
     phone: string;
     gender?: string;
+    address?: string;
+    age?: number;
+    blood_group?: string;
   };
 }
 

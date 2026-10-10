@@ -15,28 +15,22 @@
 
 ## 1. Verified Live Execution Status
 
-| Component | Target / Value | Telemetry Verification Source | Verdict |
+| **Component** | **Target / Value** | **Telemetry Verification Source** | **Verdict** |
 | :--- | :--- | :--- | :--- |
 | **Git Working Tree** | Clean (`0 staged, 0 unstaged`) | `git status --short` | ✅ PASS |
-| **Head Commit** | Main active branch (`7b40213...`) | `git rev-parse HEAD` | ✅ PASS |
-| **Git Tag `v1.1.82` Target** | `7b402136c4575442db08a66b3e5eb1950889a6cc` (Immutable) | `git rev-parse "v1.1.82^{commit}"` | ✅ PASS |
-| **Git Tag `v1.1.81` Target** | `48779e110b9f3e8e0ee7967ae2cc4bbaeb949f25` (Immutable) | `git rev-parse "v1.1.81^{commit}"` | ✅ PASS |
-| **Git Tag `v1.1.80` Target** | `2dd3b0121a8ef32120a0002522caf0055e5f3074` (Immutable) | `git rev-parse "v1.1.80^{commit}"` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
 | **Node Certification Test Suite** | 128/128 suites passed (1,161 active passes, 0 failed, 7 standard skips) | `npm run test:certification` | ✅ PASS |
-| **Next.js Static Build** | 61/61 static routes generated | `npm run build` | ✅ PASS |
-| **Static Link & Asset Forensics** | 60 HTML pages, 395 internal links, 1081 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Website Route Acceptance** | 60/60 routes passed forensic acceptance criteria | `npm run audit:routes` | ✅ PASS |
-| **Playwright Real Browser E2E** | 52/52 real browser tests passed (Chromium headless) | `npx playwright test` (exit code 0) | ✅ PASS |
+| **Next.js Static Build** | 62/62 static routes generated (including `/app/expenses`, `/app/ipd`, `/app/billing`) | `npm run build` | ✅ PASS |
+| **Static Link & Asset Forensics** | 61 HTML pages, 402 internal links, 1081 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
+| **Playwright Real Browser E2E** | 52/52 real browser tests passed (Chromium headless) | `npx playwright test --project=chromium` | ✅ PASS |
 | **Fail-Closed Clinical Booking Gate** | `lib/public/actions.ts` (0 fake constants, truthful errors) | `node --test tests/public-actions-fail-closed.test.mjs` (8/8) | ✅ PASS |
-| **Supabase Remote Migrations** | 142/142 applied (100% parity, 0 drift) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 144/144 applied (100% parity, 0 drift) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB | `npx supabase db lint --linked` | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://fa3707dc.onnesha-hospital.pages.dev` & canonical host | `npx wrangler pages deploy out` | ✅ PASS |
-| **Live Canonical Manifest Version** | `1.1.82` (Verified via cache-busted HTTP GET) | `curl /downloads/desktop/latest.json?verify=...` | ✅ PASS |
-| **Windows Desktop NSIS Setup EXE** | Size: 23,669,991 bytes; SHA-256: `B7791A99E527165FF2A8D49694CC24D867CD13AA6B5A67E32482C4BBE89CC7CC` | Downloaded bytes verified via HTTP GET | ✅ PASS |
-| **Windows Desktop WiX MSI** | Size: 25,247,744 bytes; SHA-256: `2C84472F8E53DB4A22A3571BDCCF8BA82277C37760C824F541A7576E79DAC57E` | Downloaded bytes verified via HTTP GET | ✅ PASS |
-| **Hermetic Security Suite** | 10/10 cross-tenant runtime isolation assertions passed | `node --test tests/live/authenticated-cross-tenant.live.test.mjs` | ✅ PASS |
+| **Billing Patient Demographics & Half-Letter Slip** | Mandatory validation (Name, UHID, Phone, Address, Age), Half-Letter (5.5" x 8.5") print | `components/print/HalfLetterInvoicePrint.tsx` & `app/billing/page.tsx` | ✅ PASS |
+| **Hospital Expense Management & Voucher GL** | 20+ categories, voucher numbering, atomic GL posting, UI console | `app/expenses/page.tsx`, `lib/expenses/actions.ts` | ✅ PASS |
+| **IPD 4-Part Discharge Certificate Folder** | RLS fixed, 4-part folder (Cover, Clinical/OT, Rx, Advice) | `components/print/DischargeSummaryPrint.tsx` & `app/ipd/page.tsx` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---

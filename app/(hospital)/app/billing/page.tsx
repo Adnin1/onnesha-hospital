@@ -18,6 +18,7 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
+  FileText,
 } from "lucide-react";
 import {
   InvoiceRecord,
@@ -32,8 +33,12 @@ import {
   voidInvoiceAction,
   getCashRegisterSummaryAction,
   getEpisodeBillingPreviewAction,
+  getHospitalServiceTariffsAction,
 } from "@/lib/billing/actions";
-import { searchPatientsAction } from "@/lib/patient/actions";
+import { searchPatientsAction, updatePatientAction } from "@/lib/patient/actions";
+import { getDoctorsAction } from "@/lib/appointments/actions";
+import { DoctorRecord } from "@/types/appointments";
+import { HalfLetterInvoicePrint } from "@/components/print/HalfLetterInvoicePrint";
 import {
   getPatientReferralAttributionAction,
   searchReferralAgentsForBillingAction,
@@ -47,6 +52,7 @@ import {
   getAllHospitalServices,
   MASTER_HOSPITAL_SERVICES,
   HospitalServiceItem,
+  ServiceCategory,
 } from "@/lib/billing/serviceCatalog";
 import { getDiagnosticTestsCatalogAction } from "@/lib/lab/actions";
 import { printBillingInvoiceReceipt, BillingReceiptData } from "@/lib/hardware/escpos";
@@ -125,6 +131,24 @@ function BillingManagementContent() {
   const [checkingAttribution, setCheckingAttribution] = useState(false);
   const [noReferral, setNoReferral] = useState(false);
 
+  // Doctor & Service Tariffs State
+  const [doctorsList, setDoctorsList] = useState<DoctorRecord[]>([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState("");
+
+  // Patient Demographic Invariant State
+  const [patientAddressInput, setPatientAddressInput] = useState("");
+  const [patientAgeInput, setPatientAgeInput] = useState<number | "">("");
+  const [savingPatientDemographics, setSavingPatientDemographics] = useState(false);
+
+  // Medicine Itemization State
+  const [medicineNameInput, setMedicineNameInput] = useState("");
+  const [medicineUnitInput, setMedicineUnitInput] = useState("Tablet");
+  const [medicineQtyInput, setMedicineQtyInput] = useState(1);
+  const [medicinePriceInput, setMedicinePriceInput] = useState<number | "">("");
+
+  // Print Mode State
+  const [halfLetterPrintInv, setHalfLetterPrintInv] = useState<InvoiceRecord | null>(null);
+
   // Collect Payment Modal
   const [paymentModalInv, setPaymentModalInv] = useState<InvoiceRecord | null>(null);
   const [collectAmount, setCollectAmount] = useState(0);
@@ -200,15 +224,33 @@ function BillingManagementContent() {
     if (isCreatingNew) {
       async function loadAgentsAndCatalog() {
         try {
-          const [agentRes, diagRes] = await Promise.allSettled([
+          const [agentRes, diagRes, docRes, tariffRes] = await Promise.allSettled([
             searchReferralAgentsForBillingAction(),
             getDiagnosticTestsCatalogAction(),
+            getDoctorsAction(),
+            getHospitalServiceTariffsAction(),
           ]);
           if (active && agentRes.status === "fulfilled" && agentRes.value.success && agentRes.value.data) {
             setBillingReferralAgents(agentRes.value.data);
           }
+          if (active && docRes.status === "fulfilled" && docRes.value.success && docRes.value.data?.doctors) {
+            setDoctorsList(docRes.value.data.doctors);
+          }
           if (active && diagRes.status === "fulfilled" && diagRes.value.success && diagRes.value.data?.tests) {
-            setAllServices(getAllHospitalServices(diagRes.value.data.tests));
+            let baseServices = getAllHospitalServices(diagRes.value.data.tests);
+            if (tariffRes.status === "fulfilled" && tariffRes.value.success && tariffRes.value.data?.tariffs) {
+              const customTariffs: HospitalServiceItem[] = tariffRes.value.data.tariffs.map((t) => ({
+                id: `db-${t.service_code}`,
+                category: (t.category as ServiceCategory) || "MISC",
+                name: t.service_name,
+                price: Number(t.price),
+                group: (t.category === "LAB" ? "LAB" : "CONSULTATION") as HospitalServiceItem["group"],
+                description: t.description || undefined,
+                isDatabaseAuthoritative: true,
+              }));
+              baseServices = [...customTariffs, ...baseServices];
+            }
+            setAllServices(baseServices);
           }
         } catch (err) {
           console.error("Failed loading billing catalog/agents:", err);
@@ -340,6 +382,8 @@ function BillingManagementContent() {
   const handleSelectPatient = (p: PatientMaster) => {
     setSelectedPatient(p);
     setPatientIdInput(p.id);
+    setPatientAddressInput(p.address || "");
+    setPatientAgeInput(p.age !== undefined && p.age !== null ? p.age : "");
     setPatientSearchQuery(`${p.full_name} (${p.patient_code || p.registration_serial || ""})`);
     setSearchedPatients([]);
     setPatientSearchNotice(null);
@@ -439,17 +483,22 @@ function BillingManagementContent() {
     ? Math.round(((netTotal * (referralCommissionRate || 0)) / 100) * 100) / 100
     : 0;
 
-  const addItemRow = (category: InvoiceItemRecord["service_category"], name: string, price: number) => {
+  const addItemRow = (
+    category: InvoiceItemRecord["service_category"],
+    name: string,
+    price: number,
+    quantity: number = 1
+  ) => {
     const existingIndex = items.findIndex((it) => it.itemName.toLowerCase() === name.toLowerCase());
     let next: typeof items;
     if (existingIndex >= 0) {
       next = [...items];
       next[existingIndex] = {
         ...next[existingIndex],
-        quantity: next[existingIndex].quantity + 1,
+        quantity: next[existingIndex].quantity + quantity,
       };
     } else {
-      next = [...items, { category, itemName: name, unitPrice: price, quantity: 1 }];
+      next = [...items, { category, itemName: name, unitPrice: price, quantity }];
     }
     setItems(next);
     const newSub = next.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
@@ -467,6 +516,70 @@ function BillingManagementContent() {
       ? (discountPercent !== "" && Number(discountPercent) > 0 ? Math.round((newSub * Number(discountPercent)) / 100) : 0)
       : (discountFixed !== "" && Number(discountFixed) > 0 ? Number(discountFixed) : 0);
     setInitialPaymentAmount(Math.max(0, newSub - newDisc));
+  };
+
+  const handleSavePatientDemographics = async () => {
+    if (!selectedPatient) return;
+    if (!patientAddressInput.trim()) {
+      setToast({ message: "রোগীর ঠিকানা প্রদান করুন।", type: "error" });
+      return;
+    }
+    if (patientAgeInput === "" || Number(patientAgeInput) < 0) {
+      setToast({ message: "রোগীর বয়স প্রদান করুন।", type: "error" });
+      return;
+    }
+
+    setSavingPatientDemographics(true);
+    try {
+      const res = await updatePatientAction({
+        patientId: selectedPatient.id,
+        fullName: selectedPatient.full_name,
+        phone: selectedPatient.phone,
+        gender: selectedPatient.gender,
+        address: patientAddressInput.trim(),
+        age: Number(patientAgeInput),
+      });
+
+      if (res.success && res.data?.patient) {
+        setSelectedPatient(res.data.patient);
+        setToast({ message: "রোগীর ঠিকানা ও বয়স সফলভাবে সংরক্ষিত হয়েছে!", type: "success" });
+      } else {
+        setToast({ message: res.error || "সংরক্ষণ করা যায়নি।", type: "error" });
+      }
+    } catch {
+      setToast({ message: "Network error saving demographics", type: "error" });
+    } finally {
+      setSavingPatientDemographics(false);
+    }
+  };
+
+  const handleAddDoctorConsultation = (doctorId: string) => {
+    if (!doctorId) return;
+    const doc = doctorsList.find((d) => d.id === doctorId);
+    if (!doc) return;
+
+    const fee = doc.opd_fee || doc.consultation_fee || 500;
+    const itemName = `Consultation: ${doc.full_name} (${doc.designation || doc.specialization || "Consultant"})`;
+    addItemRow("CONSULTATION", itemName, fee);
+    setSelectedDoctorId("");
+  };
+
+  const handleAddMedicineItem = () => {
+    if (!medicineNameInput.trim()) {
+      setToast({ message: "ঔষধের নাম প্রদান করুন।", type: "error" });
+      return;
+    }
+    const unitPrice = Number(medicinePriceInput);
+    if (isNaN(unitPrice) || unitPrice < 0) {
+      setToast({ message: "সঠিক ইউনিট মূল্য দিন।", type: "error" });
+      return;
+    }
+    const qty = Math.max(1, Number(medicineQtyInput) || 1);
+    const desc = `${medicineNameInput.trim()} (${medicineUnitInput})`;
+    addItemRow("PHARMACY", desc, unitPrice, qty);
+    setMedicineNameInput("");
+    setMedicinePriceInput("");
+    setMedicineQtyInput(1);
   };
 
   const filteredServices = useMemo(() => {
@@ -512,9 +625,49 @@ function BillingManagementContent() {
 
   const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!patientIdInput.trim()) {
-      setToast({ message: "Please enter a valid Patient ID or Code.", type: "error" });
+    if (!patientIdInput.trim() || !selectedPatient) {
+      setToast({ message: "অনুগ্রহ করে একজন রোগী নির্বাচন করুন (Please select a patient).", type: "error" });
       return;
+    }
+
+    // Mandatory Patient Demographic Validation Invariants: Name, ID, Phone, Address, Age
+    if (!selectedPatient.full_name || selectedPatient.full_name.trim().length < 2) {
+      setToast({ message: "রোগীর নাম আবশ্যক (Patient name is mandatory).", type: "error" });
+      return;
+    }
+    if (!selectedPatient.phone) {
+      setToast({ message: "রোগীর মোবাইল নম্বর আবশ্যক (Patient contact phone is mandatory).", type: "error" });
+      return;
+    }
+
+    const effectiveAddress = (selectedPatient.address || patientAddressInput).trim();
+    const effectiveAge = selectedPatient.age !== undefined && selectedPatient.age !== null
+      ? selectedPatient.age
+      : (patientAgeInput !== "" ? Number(patientAgeInput) : null);
+
+    if (!effectiveAddress || effectiveAddress.length < 2) {
+      setToast({ message: "বিলিংয়ের জন্য রোগীর ঠিকানা প্রদান করা বাধ্যতামূলক (Patient address is mandatory).", type: "error" });
+      return;
+    }
+    if (effectiveAge === null || effectiveAge < 0) {
+      setToast({ message: "বিলিংয়ের জন্য রোগীর বয়স প্রদান করা বাধ্যতামূলক (Patient age is mandatory).", type: "error" });
+      return;
+    }
+
+    // Auto-sync missing demographics to patient database record
+    if (!selectedPatient.address || selectedPatient.age === null || selectedPatient.age === undefined) {
+      try {
+        await updatePatientAction({
+          patientId: selectedPatient.id,
+          fullName: selectedPatient.full_name,
+          phone: selectedPatient.phone,
+          gender: selectedPatient.gender,
+          address: effectiveAddress,
+          age: effectiveAge,
+        });
+      } catch (err) {
+        console.error("Auto-syncing demographics failed:", err);
+      }
     }
 
     if (!items || items.length === 0) {
@@ -560,16 +713,15 @@ function BillingManagementContent() {
       });
 
       if (res.success && res.data) {
+        const newlyCreatedInv = res.data.invoice;
         resetInvoiceModal();
         await loadBillingData();
-        setSelectedInvoice(res.data.invoice);
-        setToast({ message: `Invoice ${res.data.invoice.invoice_number} created successfully!`, type: "success" });
-        const newlyCreatedInv = res.data.invoice;
-        handlePrintInvoice(newlyCreatedInv);
-        // Automatically trigger print dialog for official invoice paper
+        setSelectedInvoice(newlyCreatedInv);
+        setHalfLetterPrintInv(newlyCreatedInv);
         setTimeout(() => {
           window.print();
         }, 350);
+        setToast({ message: `Invoice ${newlyCreatedInv.invoice_number} created successfully!`, type: "success" });
       } else {
         setToast({ message: res.error || "Failed to generate invoice", type: "error" });
       }
@@ -881,6 +1033,14 @@ function BillingManagementContent() {
                   >
                     <Printer className="w-4 h-4" />
                   </button>
+                  <button
+                    onClick={() => setHalfLetterPrintInv(selectedInvoice)}
+                    className="px-2.5 py-1.5 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition flex items-center shadow-2xs"
+                    title="Print Half-Letter Invoice Slip (5.5 × 8.5 in)"
+                  >
+                    <FileText className="w-3.5 h-3.5 mr-1" />
+                    Half-Letter Slip
+                  </button>
                   {selectedInvoice.due_amount > 0 && !selectedInvoice.is_voided && (
                     <button
                       onClick={() => {
@@ -1048,16 +1208,72 @@ function BillingManagementContent() {
                 </label>
 
                 {selectedPatient ? (
-                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-between text-xs shadow-xs">
-                    <div>
-                      <p className="font-black text-emerald-950 text-sm">{selectedPatient.full_name}</p>
-                      <p className="text-[11px] text-emerald-800 font-mono mt-0.5">
-                        কোড: {selectedPatient.patient_code || selectedPatient.registration_serial} • {selectedPatient.gender} • 📱 {selectedPatient.phone}
-                      </p>
+                  <div className="space-y-2">
+                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-between text-xs shadow-xs">
+                      <div>
+                        <p className="font-black text-emerald-950 text-sm">{selectedPatient.full_name}</p>
+                        <p className="text-[11px] text-emerald-800 font-mono mt-0.5">
+                          কোড: {selectedPatient.patient_code || selectedPatient.registration_serial} • {selectedPatient.gender} • 📱 {selectedPatient.phone}
+                        </p>
+                        {selectedPatient.address && (
+                          <p className="text-[11px] text-emerald-900 mt-0.5">
+                            ঠিকানা: {selectedPatient.address}
+                          </p>
+                        )}
+                        {(selectedPatient.age !== undefined && selectedPatient.age !== null) && (
+                          <p className="text-[11px] text-emerald-900">
+                            বয়স: {selectedPatient.age} বছর {selectedPatient.blood_group ? `• রক্ত: [${selectedPatient.blood_group}]` : ""}
+                          </p>
+                        )}
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] flex items-center gap-1 shadow-xs">
+                        <Check className="w-3.5 h-3.5" /> নির্বাচিত
+                      </span>
                     </div>
-                    <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[10px] flex items-center gap-1 shadow-xs">
-                      <Check className="w-3.5 h-3.5" /> নির্বাচিত
-                    </span>
+
+                    {/* Mandatory Demographic Verification Block (Address & Age) */}
+                    {(!selectedPatient.address || selectedPatient.age === null || selectedPatient.age === undefined) && (
+                      <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-2">
+                        <div className="flex items-center gap-1.5 text-amber-900 font-bold text-[11px]">
+                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>বিলিংয়ের জন্য রোগীর পূর্ণাঙ্গ ঠিকানা ও বয়স আবশ্যক (Address & Age Required):</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-700 block mb-0.5">ঠিকানা / গ্রাম / এলাকা *</label>
+                            <input
+                              type="text"
+                              placeholder="ঠিকানা (গ্রাম/পোস্ট/থানা)..."
+                              value={patientAddressInput}
+                              onChange={(e) => setPatientAddressInput(e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-lg bg-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-slate-700 block mb-0.5">বয়স (বছর) *</label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="125"
+                              placeholder="বয়স..."
+                              value={patientAgeInput}
+                              onChange={(e) => setPatientAgeInput(e.target.value === "" ? "" : Number(e.target.value))}
+                              className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-lg bg-white font-mono"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={handleSavePatientDemographics}
+                            disabled={savingPatientDemographics}
+                            className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-bold rounded-lg transition"
+                          >
+                            {savingPatientDemographics ? "সংরক্ষণ হচ্ছে..." : "প্রোফাইলে সংরক্ষণ করুন"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-1.5">
@@ -1146,6 +1362,92 @@ function BillingManagementContent() {
                       onChange={(e) => setServiceSearchTerm(e.target.value)}
                       className="w-full pl-8 pr-3 py-1 text-[11px] border rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
+                  </div>
+                </div>
+
+                {/* Consultation Doctor Fee Quick Adder */}
+                <div className="p-3 bg-sky-50/70 border border-sky-200 rounded-xl text-xs space-y-2">
+                  <span className="font-bold text-sky-950 text-[11px] block">
+                    🩺 ডাক্তার কনসালটেশন যোগ করুন (Consultation Doctor Fee):
+                  </span>
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedDoctorId}
+                      onChange={(e) => setSelectedDoctorId(e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 border border-sky-300 rounded-lg bg-white text-xs"
+                    >
+                      <option value="">-- ডাক্তার নির্বাচন করুন --</option>
+                      {doctorsList.map((doc) => (
+                        <option key={doc.id} value={doc.id}>
+                          {doc.full_name} ({doc.designation || doc.specialization}) — ফি: ৳{doc.opd_fee || doc.consultation_fee || 500}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleAddDoctorConsultation(selectedDoctorId)}
+                      disabled={!selectedDoctorId}
+                      className="px-3 py-1.5 bg-sky-700 hover:bg-sky-800 text-white font-bold rounded-lg text-xs transition disabled:opacity-50"
+                    >
+                      + যোগ করুন
+                    </button>
+                  </div>
+                </div>
+
+                {/* Pharmacy Medicine Itemization Quick Adder */}
+                <div className="p-3 bg-teal-50/70 border border-teal-200 rounded-xl text-xs space-y-2">
+                  <span className="font-bold text-teal-950 text-[11px] block">
+                    💊 ঔষধ আইটেম যোগ করুন (Pharmacy Medicine Itemization):
+                  </span>
+                  <div className="grid grid-cols-12 gap-2">
+                    <input
+                      type="text"
+                      placeholder="ঔষধের নাম (Brand / Generic)"
+                      value={medicineNameInput}
+                      onChange={(e) => setMedicineNameInput(e.target.value)}
+                      className="col-span-4 px-2.5 py-1.5 border border-teal-300 rounded-lg bg-white text-xs"
+                    />
+                    <select
+                      value={medicineUnitInput}
+                      onChange={(e) => setMedicineUnitInput(e.target.value)}
+                      className="col-span-3 px-2 py-1.5 border border-teal-300 rounded-lg bg-white text-xs"
+                    >
+                      <option value="Tablet">Tablet (ট্যাবলেট)</option>
+                      <option value="Capsule">Capsule (ক্যাপসুল)</option>
+                      <option value="Syrup">Syrup (সিরাপ)</option>
+                      <option value="Injection">Injection (ইনজেকশন)</option>
+                      <option value="Vial">Vial (ভায়াল)</option>
+                      <option value="Ampoule">Ampoule (অ্যাম্পুল)</option>
+                      <option value="Strip">Strip (পাতা)</option>
+                      <option value="Bottle">Bottle (বোতল)</option>
+                      <option value="Ointment">Ointment (মলম)</option>
+                      <option value="Suspension">Suspension</option>
+                    </select>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="পরিমাণ"
+                      value={medicineQtyInput}
+                      onChange={(e) => setMedicineQtyInput(Number(e.target.value))}
+                      className="col-span-2 px-2 py-1.5 border border-teal-300 rounded-lg bg-white text-xs font-mono text-center"
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="দর (৳)"
+                      value={medicinePriceInput}
+                      onChange={(e) => setMedicinePriceInput(e.target.value === "" ? "" : Number(e.target.value))}
+                      className="col-span-2 px-2 py-1.5 border border-teal-300 rounded-lg bg-white text-xs font-mono text-right"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddMedicineItem}
+                      className="col-span-1 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-lg text-xs transition flex items-center justify-center"
+                      title="ঔষধ যোগ করুন"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 
@@ -1816,6 +2118,77 @@ function BillingManagementContent() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* HALF-LETTER PRINT PREVIEW MODAL */}
+      {halfLetterPrintInv && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto print:p-0 print:bg-white print:static">
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden print:border-none print:shadow-none print:max-w-none print:w-full">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 print:hidden">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-sm font-black text-slate-900">
+                  Half-Letter (5.5″ × 8.5″) Invoice Slip — {halfLetterPrintInv.invoice_number}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition flex items-center shadow-xs cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5 mr-1.5" />
+                  Print Slip
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHalfLetterPrintInv(null)}
+                  className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition cursor-pointer"
+                  title="Close Preview"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 overflow-x-auto max-h-[80vh] print:max-h-none print:p-0">
+              <HalfLetterInvoicePrint
+                invoiceNumber={halfLetterPrintInv.invoice_number}
+                dateStr={halfLetterPrintInv.created_at}
+                dueDateStr={halfLetterPrintInv.created_at}
+                cashierName="Cashier"
+                patient={{
+                  name: halfLetterPrintInv.patient?.full_name || "Patient",
+                  patientCode: halfLetterPrintInv.patient?.patient_code || "OH-P-WALKIN",
+                  phone: halfLetterPrintInv.patient?.phone,
+                  address: halfLetterPrintInv.patient?.address,
+                  age: halfLetterPrintInv.patient?.age,
+                  bloodGroup: halfLetterPrintInv.patient?.blood_group,
+                }}
+                items={(halfLetterPrintInv.items || []).map((it) => ({
+                  description: it.item_name,
+                  serviceCategory: it.service_category || "General",
+                  unitPrice: it.unit_price,
+                  quantity: it.quantity,
+                  totalAmount: it.total_price,
+                }))}
+                payments={(halfLetterPrintInv.payments || []).map((p) => ({
+                  receiptNumber: p.receipt_number,
+                  paymentMethod: p.payment_method,
+                  amount: p.amount,
+                  paidAt: p.created_at || new Date().toISOString(),
+                }))}
+                subtotal={halfLetterPrintInv.subtotal}
+                discount={halfLetterPrintInv.discount_amount}
+                discountReason={halfLetterPrintInv.discount_reason || undefined}
+                tax={halfLetterPrintInv.tax_amount}
+                totalAmount={halfLetterPrintInv.grand_total}
+                paidAmount={halfLetterPrintInv.paid_amount}
+                dueAmount={halfLetterPrintInv.due_amount}
+              />
+            </div>
           </div>
         </div>
       )}

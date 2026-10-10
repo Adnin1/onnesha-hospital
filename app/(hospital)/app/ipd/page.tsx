@@ -9,6 +9,12 @@ import {
   AlertCircle,
   ArrowRightLeft,
   CheckCircle2,
+  FileText,
+  X,
+  Trash2,
+  Calendar,
+  Stethoscope,
+  Pill,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatDateBDT } from "@/lib/utils";
@@ -17,9 +23,16 @@ import {
   createIpdAdmissionAction,
   dischargePatientAction,
   transferPatientAction,
+  getDischargeSummaryAction,
 } from "@/lib/patient/actions";
 import { searchReferralAgentsAction } from "@/lib/referrals/actions";
 import { getCurrentUserSession } from "@/lib/auth/session";
+import { getDoctorsAction } from "@/lib/appointments/actions";
+import { DoctorRecord } from "@/types/appointments";
+import {
+  DischargeSummaryPrint,
+  DischargeSummaryPrintProps,
+} from "@/components/print/DischargeSummaryPrint";
 
 interface InpatientRecord {
   id: string; // visit_id
@@ -30,6 +43,9 @@ interface InpatientRecord {
   phone: string;
   gender: string;
   age?: number | string;
+  address?: string;
+  guardian_name?: string;
+  blood_group?: string;
   bed_id?: string;
   bed_number?: string;
   ward_name?: string;
@@ -74,11 +90,41 @@ export default function IPDAdmissionsPage() {
     reason: "",
   });
 
+  const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
+  const [certificatePrintProps, setCertificatePrintProps] = useState<DischargeSummaryPrintProps | null>(null);
+
   const [dischargeForm, setDischargeForm] = useState({
     dischargeType: "NORMAL" as "NORMAL" | "DOR" | "LAMA" | "REFERRED" | "DECEASED",
     finalDiagnosis: "",
     hospitalCourse: "",
-    dischargeAdvice: "",
+    conditionAtDischarge: "STABLE",
+    dischargeAdvice: "নিয়মিত ওষুধ সেবন করবেন। পর্যাপ্ত বিশ্রাম নিবেন। ভারী কাজ থেকে বিরত থাকবেন।",
+    followupInstructions: "৭ দিন পর বহির্বিভাগে কনসালট্যান্ট ডাক্তারের সাথে দেখা করবেন।",
+    consultantDoctorId: "",
+    consultantName: "",
+    consultantDesignation: "",
+    bmdcRegNumber: "",
+    presentingFeatures: "",
+    investigationsSummary: "",
+    operationName: "",
+    operationDate: "",
+    operationTime: "",
+    surgeonName: "",
+    assistantSurgeons: "",
+    anaesthetistName: "",
+    anaesthesiaType: "",
+    operativeFindings: "",
+    babySex: "",
+    babyWeightKg: "",
+    babyApgarScore: "",
+    babyNotes: "",
+    medications: [
+      { name: "Tab. Cefuroxime (500mg)", formulation: "Tab.", dosage: "1+0+1", timing: "খাবার পর", duration: "7 days", instructions: "নিয়মিত খাবেন" },
+      { name: "Tab. Paracetamol (500mg)", formulation: "Tab.", dosage: "1+1+1", timing: "ভরা পেটে", duration: "5 days", instructions: "ব্যথা বা জ্বর হলে" },
+      { name: "Cap. Esomeprazole (20mg)", formulation: "Cap.", dosage: "1+0+1", timing: "খাবার ৩০ মিনিট আগে", duration: "14 days", instructions: "খালি পেটে" },
+    ],
+    stitchRemovalDate: "",
+    followupDate: "",
   });
 
   const [actionError, setActionError] = useState<string | null>(null);
@@ -114,7 +160,11 @@ export default function IPDAdmissionsPage() {
               patient_code,
               full_name,
               phone,
-              gender
+              gender,
+              age,
+              address,
+              guardian_name,
+              blood_group
             ),
             bed_assignments (
               id,
@@ -148,6 +198,10 @@ export default function IPDAdmissionsPage() {
               full_name: string;
               phone: string;
               gender: string;
+              age?: number | string;
+              address?: string;
+              guardian_name?: string;
+              blood_group?: string;
             } | null;
             bed_assignments: Array<{
               id: string;
@@ -171,6 +225,10 @@ export default function IPDAdmissionsPage() {
               patient_code: v.patients?.patient_code || "P-PENDING",
               phone: v.patients?.phone || "",
               gender: v.patients?.gender || "OTHER",
+              age: v.patients?.age,
+              address: v.patients?.address,
+              guardian_name: v.patients?.guardian_name,
+              blood_group: v.patients?.blood_group,
               bed_id: activeBedAssign?.beds?.id,
               bed_number: activeBedAssign?.beds?.bed_number || "UNASSIGNED",
               ward_name: activeBedAssign?.beds?.wards?.name || "General IPD",
@@ -226,6 +284,16 @@ export default function IPDAdmissionsPage() {
         } catch {
           // Non-blocking for IPD load
         }
+
+        // Fetch doctors for consultant assignment
+        try {
+          const docRes = await getDoctorsAction();
+          if (docRes.success && docRes.data?.doctors) {
+            setDoctors(docRes.data.doctors);
+          }
+        } catch {
+          // Non-blocking for IPD load
+        }
       } catch (err: unknown) {
         console.error("[IPD loadData] error:", err);
         setActionError("Failed to load IPD patient and bed directory.");
@@ -237,8 +305,109 @@ export default function IPDAdmissionsPage() {
     loadData();
   }, [refreshIndex]);
 
-  const handlePrintDischarge = () => {
-    window.print();
+  const handleOpenCertificatePrint = async (record: InpatientRecord) => {
+    try {
+      const summaryRes = await getDischargeSummaryAction({ visitId: record.id });
+      if (summaryRes.success && summaryRes.data?.summary) {
+        const s = summaryRes.data.summary;
+        setCertificatePrintProps({
+          admissionNumber: record.visit_number,
+          dischargeDateStr: s.created_at || new Date().toISOString(),
+          admissionDateStr: record.admitted_at,
+          patient: {
+            name: record.patient_name,
+            patientCode: record.patient_code,
+            age: record.age,
+            gender: record.gender,
+            phone: record.phone,
+            address: record.address,
+            guardianName: record.guardian_name,
+            bloodGroup: record.blood_group,
+          },
+          wardName: record.ward_name || "General IPD",
+          bedNumber: record.bed_number || "Bed",
+          consultantDoctorName: s.consultant_name || record.doctor_name || "Consultant Physician",
+          consultantDesignation: s.consultant_designation || "Senior Consultant",
+          bmdcRegNumber: s.bmdc_reg_number || "A-XXXXX",
+          dutyDoctorName: "Medical Officer on Duty",
+          admissionDiagnosis: record.provisional_diagnosis,
+          finalDiagnosis: s.final_diagnosis || record.provisional_diagnosis,
+          hospitalCourseSummary: s.hospital_course || "",
+          presentingFeatures: s.presenting_features || "",
+          investigationsSummary: s.investigations_summary || "",
+          operationDetails: s.operation_name
+            ? {
+                operationName: s.operation_name,
+                operationDate: s.operation_date || undefined,
+                operationTime: s.operation_time || undefined,
+                surgeonName: s.surgeon_name || undefined,
+                assistantSurgeons: s.assistant_surgeons || undefined,
+                anaesthetistName: s.anaesthetist_name || undefined,
+                anaesthesiaType: s.anaesthesia_type || undefined,
+                operativeFindings: s.operative_findings || undefined,
+              }
+            : undefined,
+          babyNote: s.baby_sex
+            ? {
+                sex: s.baby_sex,
+                weightKg: s.baby_weight_kg || undefined,
+                apgarScore: s.baby_apgar_score || undefined,
+                notes: s.baby_notes || undefined,
+              }
+            : undefined,
+          takeHomeMedications: ((s.medications_schedule as Array<Record<string, unknown>>) || []).map((m) => ({
+            name: String(m.name || ""),
+            dosage: String(m.dosage || ""),
+            duration: String(m.duration || ""),
+            instructions: m.instructions ? String(m.instructions) : undefined,
+            timing: m.timing ? String(m.timing) : undefined,
+            formulation: m.formulation ? String(m.formulation) : undefined,
+          })),
+          stitchRemovalDate: s.stitch_removal_date || undefined,
+          followupDate: s.followup_date || undefined,
+          followUpInstructions: s.followup_instructions || s.discharge_advice || undefined,
+        });
+      } else {
+        // Fallback live preview for inpatient
+        setCertificatePrintProps({
+          admissionNumber: record.visit_number,
+          dischargeDateStr: new Date().toISOString(),
+          admissionDateStr: record.admitted_at,
+          patient: {
+            name: record.patient_name,
+            patientCode: record.patient_code,
+            age: record.age,
+            gender: record.gender,
+            phone: record.phone,
+            address: record.address,
+            guardianName: record.guardian_name,
+            bloodGroup: record.blood_group,
+          },
+          wardName: record.ward_name || "General IPD",
+          bedNumber: record.bed_number || "Bed",
+          consultantDoctorName: record.doctor_name || "Consultant Physician",
+          consultantDesignation: "Attending Consultant",
+          bmdcRegNumber: "A-XXXXX",
+          dutyDoctorName: "Medical Officer on Duty",
+          admissionDiagnosis: record.provisional_diagnosis,
+          finalDiagnosis: record.provisional_diagnosis,
+          hospitalCourseSummary: "Inpatient admission active. Clinical management in progress.",
+          presentingFeatures: record.provisional_diagnosis,
+          takeHomeMedications: [
+            {
+              name: "Tab. Cefuroxime (500mg)",
+              formulation: "Tab.",
+              dosage: "1+0+1",
+              timing: "খাবার পর",
+              duration: "7 days",
+              instructions: "নিয়মিত খাবেন",
+            },
+          ],
+        });
+      }
+    } catch (err) {
+      console.error("[handleOpenCertificatePrint] error:", err);
+    }
   };
 
   // Handle Admission Submission
@@ -331,24 +500,93 @@ export default function IPDAdmissionsPage() {
     setSubmitting(true);
 
     try {
+      const activeMedications = dischargeForm.medications.filter((m) => m.name.trim().length > 0);
       const res = await dischargePatientAction({
         visitId: selectedAdmission.id,
         dischargeType: dischargeForm.dischargeType,
         finalDiagnosis: dischargeForm.finalDiagnosis,
         hospitalCourse: dischargeForm.hospitalCourse,
+        conditionAtDischarge: dischargeForm.conditionAtDischarge,
         dischargeAdvice: dischargeForm.dischargeAdvice,
+        followupInstructions: dischargeForm.followupInstructions,
+        consultantDoctorId: dischargeForm.consultantDoctorId || undefined,
+        consultantName: dischargeForm.consultantName || undefined,
+        consultantDesignation: dischargeForm.consultantDesignation || undefined,
+        bmdcRegNumber: dischargeForm.bmdcRegNumber || undefined,
+        presentingFeatures: dischargeForm.presentingFeatures || undefined,
+        investigationsSummary: dischargeForm.investigationsSummary || undefined,
+        operationName: dischargeForm.operationName || undefined,
+        operationDate: dischargeForm.operationDate || undefined,
+        operationTime: dischargeForm.operationTime || undefined,
+        surgeonName: dischargeForm.surgeonName || undefined,
+        assistantSurgeons: dischargeForm.assistantSurgeons || undefined,
+        anaesthetistName: dischargeForm.anaesthetistName || undefined,
+        anaesthesiaType: dischargeForm.anaesthesiaType || undefined,
+        operativeFindings: dischargeForm.operativeFindings || undefined,
+        babySex: dischargeForm.babySex || undefined,
+        babyWeightKg: dischargeForm.babyWeightKg ? parseFloat(dischargeForm.babyWeightKg) : undefined,
+        babyApgarScore: dischargeForm.babyApgarScore || undefined,
+        babyNotes: dischargeForm.babyNotes || undefined,
+        medicationsSchedule: activeMedications,
+        stitchRemovalDate: dischargeForm.stitchRemovalDate || undefined,
+        followupDate: dischargeForm.followupDate || undefined,
       });
 
       if (!res.success) {
         setActionError(res.error || "Discharge failed.");
       } else {
-        setActionSuccess("Patient discharged successfully.");
+        setActionSuccess("Patient discharged successfully. Discharge certificate generated.");
         setShowDischargeModal(false);
-        setDischargeForm({
-          dischargeType: "NORMAL",
-          finalDiagnosis: "",
-          hospitalCourse: "",
-          dischargeAdvice: "",
+        // Automatically open the 4-part certificate preview
+        setCertificatePrintProps({
+          admissionNumber: selectedAdmission.visit_number,
+          dischargeDateStr: new Date().toISOString(),
+          admissionDateStr: selectedAdmission.admitted_at,
+          patient: {
+            name: selectedAdmission.patient_name,
+            patientCode: selectedAdmission.patient_code,
+            age: selectedAdmission.age,
+            gender: selectedAdmission.gender,
+            phone: selectedAdmission.phone,
+            address: selectedAdmission.address,
+            guardianName: selectedAdmission.guardian_name,
+            bloodGroup: selectedAdmission.blood_group,
+          },
+          wardName: selectedAdmission.ward_name || "General IPD",
+          bedNumber: selectedAdmission.bed_number || "Bed",
+          consultantDoctorName: dischargeForm.consultantName || selectedAdmission.doctor_name || "Consultant Physician",
+          consultantDesignation: dischargeForm.consultantDesignation || "Senior Consultant",
+          bmdcRegNumber: dischargeForm.bmdcRegNumber || "A-XXXXX",
+          dutyDoctorName: "Medical Officer on Duty",
+          admissionDiagnosis: selectedAdmission.provisional_diagnosis,
+          finalDiagnosis: dischargeForm.finalDiagnosis,
+          hospitalCourseSummary: dischargeForm.hospitalCourse,
+          presentingFeatures: dischargeForm.presentingFeatures,
+          investigationsSummary: dischargeForm.investigationsSummary,
+          operationDetails: dischargeForm.operationName
+            ? {
+                operationName: dischargeForm.operationName,
+                operationDate: dischargeForm.operationDate || undefined,
+                operationTime: dischargeForm.operationTime || undefined,
+                surgeonName: dischargeForm.surgeonName || undefined,
+                assistantSurgeons: dischargeForm.assistantSurgeons || undefined,
+                anaesthetistName: dischargeForm.anaesthetistName || undefined,
+                anaesthesiaType: dischargeForm.anaesthesiaType || undefined,
+                operativeFindings: dischargeForm.operativeFindings || undefined,
+              }
+            : undefined,
+          babyNote: dischargeForm.babySex
+            ? {
+                sex: dischargeForm.babySex,
+                weightKg: dischargeForm.babyWeightKg ? parseFloat(dischargeForm.babyWeightKg) : undefined,
+                apgarScore: dischargeForm.babyApgarScore || undefined,
+                notes: dischargeForm.babyNotes || undefined,
+              }
+            : undefined,
+          takeHomeMedications: activeMedications,
+          stitchRemovalDate: dischargeForm.stitchRemovalDate || undefined,
+          followupDate: dischargeForm.followupDate || undefined,
+          followUpInstructions: dischargeForm.followupInstructions || dischargeForm.dischargeAdvice,
         });
         setRefreshIndex((prev) => prev + 1);
       }
@@ -497,11 +735,20 @@ export default function IPDAdmissionsPage() {
                       Discharge
                     </button>
                     <button
-                      onClick={handlePrintDischarge}
+                      onClick={() => handleOpenCertificatePrint(selectedAdmission)}
+                      className="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-2xs"
+                      title="View & Print Authentic 4-Part Discharge Certificate Folder"
+                    >
+                      <FileText className="w-3.5 h-3.5 mr-1.5" />
+                      Discharge Certificate
+                    </button>
+                    <button
+                      onClick={() => window.print()}
                       className="inline-flex items-center bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+                      title="Print Inpatient Admission Sheet"
                     >
                       <Printer className="w-3.5 h-3.5 mr-1.5 text-sky-400" />
-                      Print
+                      Print Sheet
                     </button>
                   </div>
                 </div>
@@ -725,95 +972,527 @@ export default function IPDAdmissionsPage() {
         </div>
       )}
 
-      {/* Discharge Summary Modal */}
+      {/* 4-Part IPD Discharge Certificate Modal */}
       {showDischargeModal && selectedAdmission && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">Prepare Inpatient Discharge</h3>
-            <p className="text-xs text-slate-500">
-              Mandatory clinical sign-off for discharging <strong>{selectedAdmission.patient_name}</strong>.
-            </p>
-
-            <form onSubmit={handleDischargeSubmit} className="space-y-3.5 text-xs">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Discharge Disposition Type <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={dischargeForm.dischargeType}
-                  onChange={(e) =>
-                    setDischargeForm({
-                      ...dischargeForm,
-                      dischargeType: e.target.value as "NORMAL" | "DOR" | "LAMA" | "REFERRED" | "DECEASED",
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
-                >
-                  <option value="NORMAL">Normal / Recovered</option>
-                  <option value="DOR">Discharged on Request (DOR)</option>
-                  <option value="LAMA">Left Against Medical Advice (LAMA)</option>
-                  <option value="REFERRED">Referred to Higher Center</option>
-                  <option value="DECEASED">Deceased / Expired</option>
-                </select>
+                <span className="text-[10px] font-bold text-sky-600 uppercase tracking-widest">
+                  Onnesha Hospital Clinical Sign-Off
+                </span>
+                <h3 className="text-xl font-black text-slate-900">
+                  Prepare Inpatient Discharge & 4-Part Certificate Folder
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Patient: <strong className="text-slate-800">{selectedAdmission.patient_name}</strong> • UHID:{" "}
+                  <span className="font-mono">{selectedAdmission.patient_code}</span> • Ward/Bed:{" "}
+                  <strong>
+                    {selectedAdmission.ward_name} ({selectedAdmission.bed_number})
+                  </strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDischargeModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-600 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleDischargeSubmit} className="space-y-6 text-xs">
+              {/* Part 1: Consultant & Disposition */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                  <Stethoscope className="w-4 h-4 text-sky-600" />
+                  <h4 className="font-black text-slate-900 text-sm">
+                    Part 1: Consultant Doctor & Discharge Disposition
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">
+                      Attending Consultant Doctor <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={dischargeForm.consultantDoctorId}
+                      onChange={(e) => {
+                        const selectedDoc = doctors.find((d) => d.id === e.target.value);
+                        setDischargeForm({
+                          ...dischargeForm,
+                          consultantDoctorId: e.target.value,
+                          consultantName: selectedDoc?.full_name || "",
+                          consultantDesignation: selectedDoc?.designation || "",
+                          bmdcRegNumber: selectedDoc?.bmdc_reg_number || "",
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-medium focus:ring-2 focus:ring-sky-500"
+                    >
+                      <option value="">-- Select Consultant Doctor --</option>
+                      {doctors.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.full_name} ({d.designation}) — BMDC: {d.bmdc_reg_number || "N/A"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">BMDC Reg. Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. A-45210"
+                      value={dischargeForm.bmdcRegNumber}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, bmdcRegNumber: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">
+                      Discharge Disposition Type <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={dischargeForm.dischargeType}
+                      onChange={(e) =>
+                        setDischargeForm({
+                          ...dischargeForm,
+                          dischargeType: e.target.value as "NORMAL" | "DOR" | "LAMA" | "REFERRED" | "DECEASED",
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-medium focus:ring-2 focus:ring-sky-500"
+                    >
+                      <option value="NORMAL">Normal / Recovered</option>
+                      <option value="DOR">Discharged on Request (DOR)</option>
+                      <option value="LAMA">Left Against Medical Advice (LAMA)</option>
+                      <option value="REFERRED">Referred to Higher Center</option>
+                      <option value="DECEASED">Deceased / Expired</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Condition at Discharge</label>
+                    <select
+                      value={dischargeForm.conditionAtDischarge}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, conditionAtDischarge: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-medium focus:ring-2 focus:ring-sky-500"
+                    >
+                      <option value="STABLE">Stable / Hemodynamically Stable</option>
+                      <option value="IMPROVED">Improved / Afebrile</option>
+                      <option value="CRITICAL">Critical / Under Observation</option>
+                      <option value="EXPIRED">Deceased / Expired</option>
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="font-bold text-slate-700 block mb-1">
+                      Final Verified Diagnosis <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Primary confirmed diagnosis on discharge..."
+                      value={dischargeForm.finalDiagnosis}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, finalDiagnosis: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-semibold text-slate-900 focus:ring-2 focus:ring-sky-500"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Final Verified Diagnosis <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Primary confirmed diagnosis on discharge..."
-                  value={dischargeForm.finalDiagnosis}
-                  onChange={(e) => setDischargeForm({ ...dischargeForm, finalDiagnosis: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
-                />
+              {/* Part 2: Clinical Summary & Course */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                  <FileText className="w-4 h-4 text-emerald-600" />
+                  <h4 className="font-black text-slate-900 text-sm">
+                    Part 2: Clinical Summary, Presenting Complaints & Investigations
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Presenting Complaints & History</label>
+                    <textarea
+                      rows={2}
+                      placeholder="e.g. Lower abdominal pain for 3 days, vomiting, high-grade fever..."
+                      value={dischargeForm.presentingFeatures}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, presentingFeatures: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Investigations & Lab Findings</label>
+                    <textarea
+                      rows={2}
+                      placeholder="e.g. CBC: Hb 11.2, TLC 12,400. USG of Whole Abdomen: Acute Appendicitis..."
+                      value={dischargeForm.investigationsSummary}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, investigationsSummary: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="font-bold text-slate-700 block mb-1">Hospital Course & Clinical Treatment</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Treatment received, clinical response during inpatient hospital stay..."
+                      value={dischargeForm.hospitalCourse}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, hospitalCourse: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Hospital Course & Summary of Treatment
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Brief summary of procedures and clinical course during stay..."
-                  value={dischargeForm.hospitalCourse}
-                  onChange={(e) => setDischargeForm({ ...dischargeForm, hospitalCourse: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
-                />
+              {/* Part 3: Surgical / OT & Maternity Details (Optional) */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                  <FileCheck className="w-4 h-4 text-indigo-600" />
+                  <h4 className="font-black text-slate-900 text-sm">
+                    Part 3: Surgical / OT & Delivery Records (Optional)
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Operation / Procedure Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Appendectomy / LUCS"
+                      value={dischargeForm.operationName}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, operationName: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Operation Date</label>
+                    <input
+                      type="date"
+                      value={dischargeForm.operationDate}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, operationDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Operating Surgeon</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Dr. Md. Rafiqul Islam"
+                      value={dischargeForm.surgeonName}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, surgeonName: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Anaesthetist Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Dr. Anisur Rahman"
+                      value={dischargeForm.anaesthetistName}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, anaesthetistName: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Anaesthesia Type</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Spinal Anaesthesia / GA"
+                      value={dischargeForm.anaesthesiaType}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, anaesthesiaType: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Operative Findings</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Inflamed appendicular tissue removed uneventfully"
+                      value={dischargeForm.operativeFindings}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, operativeFindings: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Maternity / Delivery sub-box */}
+                <div className="p-3 bg-white rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-600 block mb-1 text-[11px]">Baby Sex</label>
+                    <select
+                      value={dischargeForm.babySex}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, babySex: e.target.value })}
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
+                    >
+                      <option value="">N/A (Non-Delivery)</option>
+                      <option value="MALE">Male (পুত্র)</option>
+                      <option value="FEMALE">Female (কন্যা)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-600 block mb-1 text-[11px]">Birth Weight (Kg)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="e.g. 2.85"
+                      value={dischargeForm.babyWeightKg}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, babyWeightKg: e.target.value })}
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-600 block mb-1 text-[11px]">APGAR Score</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 8/10, 9/10"
+                      value={dischargeForm.babyApgarScore}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, babyApgarScore: e.target.value })}
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-600 block mb-1 text-[11px]">Baby Clinical Note</label>
+                    <input
+                      type="text"
+                      placeholder="Cried immediately, breastfeeding started"
+                      value={dischargeForm.babyNotes}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, babyNotes: e.target.value })}
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Discharge Advice & Follow-Up Instructions
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Medication plan, activity advice, follow-up timeline..."
-                  value={dischargeForm.dischargeAdvice}
-                  onChange={(e) => setDischargeForm({ ...dischargeForm, dischargeAdvice: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
-                />
+              {/* Part 4: Take-Home Medications Schedule (Rx) */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <Pill className="w-4 h-4 text-rose-600" />
+                    <h4 className="font-black text-slate-900 text-sm">
+                      Part 4: Take-Home Medications Schedule (Rx ছাড়পত্রের ওষুধ)
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDischargeForm({
+                        ...dischargeForm,
+                        medications: [
+                          ...dischargeForm.medications,
+                          { name: "", formulation: "Tab.", dosage: "1+0+1", timing: "খাবার পর", duration: "7 days", instructions: "নিয়মিত খাবেন" },
+                        ],
+                      })
+                    }
+                    className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg text-[11px] flex items-center shadow-2xs cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Medicine
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {dischargeForm.medications.map((med, idx) => (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-12 gap-2 p-2.5 bg-white rounded-xl border border-slate-200 items-center text-xs"
+                    >
+                      <div className="col-span-2">
+                        <select
+                          value={med.formulation}
+                          onChange={(e) => {
+                            const updated = [...dischargeForm.medications];
+                            updated[idx].formulation = e.target.value;
+                            setDischargeForm({ ...dischargeForm, medications: updated });
+                          }}
+                          className="w-full px-2 py-1.5 border border-slate-200 rounded-lg font-bold text-slate-700 bg-slate-50"
+                        >
+                          <option value="Tab.">Tab.</option>
+                          <option value="Cap.">Cap.</option>
+                          <option value="Syr.">Syr.</option>
+                          <option value="Inj.">Inj.</option>
+                          <option value="Oint.">Oint.</option>
+                          <option value="Drops">Drops</option>
+                        </select>
+                      </div>
+
+                      <div className="col-span-3">
+                        <input
+                          type="text"
+                          placeholder="Medicine Name (e.g. Cefuroxime 500mg)"
+                          value={med.name}
+                          onChange={(e) => {
+                            const updated = [...dischargeForm.medications];
+                            updated[idx].name = e.target.value;
+                            setDischargeForm({ ...dischargeForm, medications: updated });
+                          }}
+                          className="w-full px-2 py-1.5 border border-slate-200 rounded-lg font-medium"
+                        />
+                      </div>
+
+                      <div className="col-span-2">
+                        <input
+                          type="text"
+                          placeholder="Dosage (1+0+1)"
+                          value={med.dosage}
+                          onChange={(e) => {
+                            const updated = [...dischargeForm.medications];
+                            updated[idx].dosage = e.target.value;
+                            setDischargeForm({ ...dischargeForm, medications: updated });
+                          }}
+                          className="w-full px-2 py-1.5 border border-slate-200 rounded-lg font-mono font-bold text-center"
+                        />
+                      </div>
+
+                      <div className="col-span-2">
+                        <input
+                          type="text"
+                          placeholder="Duration (7 days)"
+                          value={med.duration}
+                          onChange={(e) => {
+                            const updated = [...dischargeForm.medications];
+                            updated[idx].duration = e.target.value;
+                            setDischargeForm({ ...dischargeForm, medications: updated });
+                          }}
+                          className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-center"
+                        />
+                      </div>
+
+                      <div className="col-span-2">
+                        <input
+                          type="text"
+                          placeholder="Instructions (খাবার পর)"
+                          value={med.instructions}
+                          onChange={(e) => {
+                            const updated = [...dischargeForm.medications];
+                            updated[idx].instructions = e.target.value;
+                            setDischargeForm({ ...dischargeForm, medications: updated });
+                          }}
+                          className="w-full px-2 py-1.5 border border-slate-200 rounded-lg"
+                        />
+                      </div>
+
+                      <div className="col-span-1 text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = dischargeForm.medications.filter((_, i) => i !== idx);
+                            setDischargeForm({ ...dischargeForm, medications: updated });
+                          }}
+                          className="p-1 hover:bg-rose-50 text-rose-500 rounded-lg transition cursor-pointer"
+                          title="Remove Medicine"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex justify-end space-x-2.5 pt-2">
+              {/* Part 5: Advice, Stitch Removal & Follow-Up */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                  <Calendar className="w-4 h-4 text-amber-600" />
+                  <h4 className="font-black text-slate-900 text-sm">
+                    Part 5: Advice, Stitch Removal Date & Follow-Up (উপদেশ ও ফলো-আপ)
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Stitch Removal Date (সেলাই কাটার তারিখ)</label>
+                    <input
+                      type="date"
+                      value={dischargeForm.stitchRemovalDate}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, stitchRemovalDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Next Follow-Up Date (পরবর্তী সাক্ষাত)</label>
+                    <input
+                      type="date"
+                      value={dischargeForm.followupDate}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, followupDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="font-bold text-slate-700 block mb-1">
+                      Discharge Advice & Special Precautions (ছাড়পত্রের বিশেষ উপদেশ)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={dischargeForm.dischargeAdvice}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, dischargeAdvice: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Submission Actions */}
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowDischargeModal(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl font-semibold text-slate-700 hover:bg-slate-50"
+                  className="px-5 py-2.5 border border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl"
+                  disabled={submitting || !dischargeForm.finalDiagnosis.trim()}
+                  className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-black rounded-xl transition flex items-center shadow-md cursor-pointer"
                 >
-                  {submitting ? "Discharging..." : "Confirm & Discharge"}
+                  <FileCheck className="w-4 h-4 mr-2" />
+                  {submitting ? "Signing & Discharging..." : "Confirm Discharge & Generate 4-Part Certificate"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Authentic 4-Part Discharge Certificate Print Modal */}
+      {certificatePrintProps && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
+          <div className="bg-white rounded-3xl max-w-4xl w-full border border-slate-200 shadow-2xl overflow-hidden print:border-none print:shadow-none print:max-w-none print:w-full my-6">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 print:hidden">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-sm font-black text-slate-900">
+                  Onnesha Hospital 4-Part Discharge Certificate Folder — {certificatePrintProps.admissionNumber}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition flex items-center shadow-xs cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5 mr-1.5" />
+                  Print Certificate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCertificatePrintProps(null)}
+                  className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition cursor-pointer"
+                  title="Close Certificate"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 overflow-x-auto max-h-[82vh] print:max-h-none print:p-0">
+              <DischargeSummaryPrint {...certificatePrintProps} />
+            </div>
           </div>
         </div>
       )}

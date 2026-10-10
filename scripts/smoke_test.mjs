@@ -11,6 +11,8 @@ const routes = [
   '/contact',
   '/app/dashboard',
   '/app/billing',
+  '/app/expenses',
+  '/app/ipd',
   '/app/patients',
   '/app/appointments',
   '/app/ot',
