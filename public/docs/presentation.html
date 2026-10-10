@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>অন্বেষা হাসপাতাল ইআরপি — পূর্ণাঙ্গ ব্যবহার নির্দেশিকা ও প্রশিক্ষণ প্রেজেন্টেশন</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --accent: #10b981;
+      --bg: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.75);
+      --card-border: rgba(148, 163, 184, 0.15);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 70%, #020617 100%);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', 'Hind Siliguri', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    /* Presentation Header */
+    header {
+      padding: 16px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.6);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #0ea5e9, #10b981);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 20px;
+      color: white;
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+    }
+
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: #38bdf8;
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge {
+      background: rgba(14, 165, 233, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    /* Slide Stage Container */
+    .stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+    }
+
+    .slide-viewport {
+      width: 100%;
+      max-width: 1150px;
+      min-height: 600px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 48px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(14, 165, 233, 0.1);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Slide Content Animations */
+    .slide {
+      display: none;
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      height: 100%;
+    }
+
+    .slide.active {
+      display: flex;
+      flex-direction: column;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .slide-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(14, 165, 233, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: #38bdf8;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      width: fit-content;
+      margin-bottom: 12px;
+    }
+
+    .slide-title {
+      font-size: 32px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.25;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .slide-subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 28px;
+      max-width: 850px;
+    }
+
+    /* Content Layout Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    /* Cards */
+    .step-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .step-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 25px -10px rgba(14, 165, 233, 0.3);
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0284c7, #06b6d4);
+      color: white;
+      font-weight: 800;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .step-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .step-card p {
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .tip-box {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-top: 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .tip-box .tip-icon {
+      color: #10b981;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .tip-box p {
+      font-size: 13.5px;
+      color: #a7f3d0;
+      line-height: 1.5;
+    }
+
+    .highlight-pill {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    /* Role Quick Selector */
+    .role-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .role-pill-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .role-pill-btn:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    .role-pill-btn.active {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border-color: #38bdf8;
+      color: white;
+      box-shadow: 0 0 15px rgba(2, 132, 199, 0.4);
+    }
+
+    /* Control Bar Footer */
+    footer {
+      padding: 16px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(12px);
+      z-index: 40;
+    }
+
+    .nav-btn {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      border: none;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 10px 22px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+    }
+
+    .nav-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .nav-btn.secondary {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      box-shadow: none;
+    }
+
+    .nav-btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+    }
+
+    .progress-bar-container {
+      flex: 1;
+      max-width: 450px;
+      margin: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 8%;
+      background: linear-gradient(90deg, #0ea5e9, #10b981);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    .slide-counter {
+      font-size: 12px;
+      color: #94a3b8;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* Quick jump drawer */
+    .jump-drawer {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 10px 0;
+      scrollbar-width: thin;
+    }
+
+    .jump-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .jump-dot.active {
+      background: #38bdf8;
+      transform: scale(1.4);
+      box-shadow: 0 0 10px #38bdf8;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr;
+      }
+      .slide-viewport {
+        padding: 24px;
+        min-height: 520px;
+      }
+      .slide-title {
+        font-size: 24px;
+      }
+      header, footer {
+        padding: 12px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Brand Navigation -->
+  <header>
+    <div class="brand">
+      <div class="logo-badge">অ</div>
+      <div class="brand-text">
+        <h1>অন্বেষা হাসপাতাল ও ডায়াগনস্টিক কমপ্লেক্স</h1>
+        <p>OHMS Cloud ERP • ব্যবহার নির্দেশিকা ও প্রশিক্ষণ ২০২৬</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        লাইভ সিস্টেম রেডি (v1.1.82)
+      </div>
+      <button class="nav-btn secondary" onclick="toggleFullScreen()" title="ফুলস্ক্রিন প্রেজেন্টেশন">
+        ⛶ ফুলস্ক্রিন
+      </button>
+    </div>
+  </header>
+
+  <!-- Slide Stage -->
+  <main class="stage">
+    <div class="slide-viewport" id="viewport">
+
+      <!-- SLIDE 1: Welcome & Overview -->
+      <div class="slide active" data-index="1">
+        <div>
+          <span class="slide-tag">✨ ওয়েলকাম ও ভূমিকা</span>
+          <h2 class="slide-title">হাসপাতাল অটোমেশন: একটি সম্পূর্ণ শিশুও চালাতে পারবে এমন সহজ ব্যবস্থা</h2>
+          <p class="slide-subtitle">
+            অন্বেষা হাসপাতালের সম্পূর্ণ ডিজিটাল কার্যপ্রণালী এমনভাবে সাজানো হয়েছে যেন একজন নতুন স্টাফ ৫ মিনিটের প্রশিক্ষণে কোনো ভুল ছাড়াই রোগী ভর্তি, ডাক্তার দেখানো, ল্যাব টেস্ট, বিলিং এবং রসিদ প্রিন্ট করতে পারেন।
+          </p>
+
+          <div class="grid-3">
+            <div class="step-card">
+              <div class="step-num">১</div>
+              <h3>এক ক্লিকেই সব তথ্য</h3>
+              <p>রোগীর নাম বা মোবাইল নম্বর দিলে পুরনো সমস্ত হিস্ট্রি, প্রেসক্রিপশন ও বকেয়া বিল স্বয়ংক্রিয়ভাবে স্ক্রিনে ভেসে ওঠে।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">২</div>
+              <h3>কোনো হিসাব মুখস্থ নয়</h3>
+              <p>ডাক্তারের ফি, বেড ভাড়া, ল্যাব টেস্ট ও ডিসকাউন্ট সফটওয়্যার অটো-ক্যালকুলেট করে। শূন্য ভুলের নিশ্চয়তা।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">৩</div>
+              <h3>ইনস্ট্যান্ট থার্মাল ও A4 প্রিন্ট</h3>
+              <p>বিল কনফার্ম করলেই POS মেশিনে ক্যাশ রসিদ এবং সাধারণ প্রিন্টারে কালার প্যাড অটোমেটিক প্রিন্ট হয়ে বেরিয়ে আসে।</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">💡</div>
+          <p><strong>পরামর্শ:</strong> কিবোর্ডের <strong>ডানদিকের তীর (➔)</strong> চাপুন পরবর্তী স্লাইডে যেতে এবং <strong>বামদিকের তীর (⬅)</strong> চাপুন আগের স্লাইডে ফিরতে।</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: Receptionist & Registration -->
+      <div class="slide" data-index="2">
+        <div>
+          <span class="slide-tag">🏥 বিভাগ ১: ফ্রন্ট ডেস্ক ও রিসেপশন</span>
+          <h2 class="slide-title">রোগী নিবন্ধন ও ডাক্তার ভিজিট টোকেন প্রদান</h2>
+          <p class="slide-subtitle">
+            রোগী আসার পর প্রথম কাজ হলো তাকে সিস্টেমে এন্ট্রি করা এবং ডাক্তারের জন্য একটি লাইভ টোকেন নম্বর ইস্যু করা।
+          </p>
+
+          <div class="grid-3">
+            <div class="step-card">
+              <div class="step-num">১</div>
+              <h3>সার্চ অথবা নতুন যোগ</h3>
+              <p><strong>/app/patients</strong> পেজে গিয়ে রোগীর মোবাইল লিখে সার্চ দিন। রোগী পুরনো হলে এক ক্লিকেই চলে আসবে। নতুন হলে <strong>"+ New Patient"</strong> চাপুন।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">২</div>
+              <h3>নাম, বয়স ও জেন্ডার</h3>
+              <p>রোগীর নাম, বয়স, জেন্ডার এবং রক্তের গ্রুপ লিখুন। সিস্টেম স্বয়ংক্রিয়ভাবে একটি ইউনিক UHID কোড (যেমন: <span class="highlight-pill">OH-P-000123</span>) বানিয়ে দেবে।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">৩</div>
+              <h3>ডাক্তার সিলেক্ট ও টোকেন</h3>
+              <p>রোগী কোন ডাক্তার দেখাতে চান তা সিলেক্ট করে <strong>"Issue Token"</strong> দিন। রোগীর হাতে চলে যাবে আজকের লাইভ সিরিয়াল টোকেন (যেমন: Token #12)।</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">⭐</div>
+          <p><strong>রিসেপশনিস্টের জন্য গোল্ডেন রুল:</strong> নতুন রোগী আসলে কখনোই পুরনো রোগীকে ওভাররাইট করবেন না। রোগীর মোবাইল নম্বর সঠিকভাবে দিলে রোগী ভবিষ্যতে ঘরে বসেই প্রেসক্রিপশন দেখতে পারবে।</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 3: Doctor Consultation & OPD -->
+      <div class="slide" data-index="3">
+        <div>
+          <span class="slide-tag">🩺 বিভাগ ২: ওপিডি ও ডাক্তার কনসালটেশন</span>
+          <h2 class="slide-title">রোগী দেখা, ভাইটালস রেকর্ড ও ডিজিটাল প্রেসক্রিপশন</h2>
+          <p class="slide-subtitle">
+            ডাক্তার তার রুমে বসে কম্পিউটারে লাইভ কিউ দেখতে পারবেন এবং এক ক্লিকেই প্রেসক্রিপশন ও টেস্ট লিখে দিতে পারবেন।
+          </p>
+
+          <div class="grid-3">
+            <div class="step-card">
+              <div class="step-num">১</div>
+              <h3>সিরিয়াল অনুযায়ী কল</h3>
+              <p><strong>/app/opd</strong> পেজে ডাক্তারের নিজস্ব রুম সিলেক্ট করলেই বাইরে বসা রোগীদের সিরিয়াল দেখা যাবে। <strong>"Call Next"</strong> চাপলেই রোগী প্রবেশ করবেন।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">২</div>
+              <h3>ভাইটালস ও হিস্ট্রি</h3>
+              <p>রক্তচাপ (BP: 120/80), পালস, ওজন, তাপমাত্রা লিখে ফেলুন। রোগীর অতীতের কোনো রোগ বা অ্যালার্জি থাকলে তা বামপাশে দেখা যাবে।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">৩</div>
+              <h3>ওষুধ ও টেস্ট অর্ডার</h3>
+              <p>ওষুধের নামের ২-৩ অক্ষর লিখলেই ড্রপডাউন চলে আসে। ডোজ (১+০+১) সিলেক্ট করুন। দরকারি ল্যাব টেস্ট টিক চিহ্ন দিন এবং <strong>"Save & Print"</strong> চাপুন।</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">📋</div>
+          <p><strong>সুবিধা:</strong> ডাক্তারের প্রেসক্রিপশন সেভ হওয়ার সাথে সাথে ল্যাব কাউন্টারে এবং ফার্মেসিতে সেই টেস্ট ও ওষুধ আনবিল্ড হিসেবে অটোমেটিক পৌঁছে যায়!</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 4: Diagnostics & Pathology Lab -->
+      <div class="slide" data-index="4">
+        <div>
+          <span class="slide-tag">🔬 বিভাগ ৩: ডায়াগনস্টিক ও ল্যাবরেটরি</span>
+          <h2 class="slide-title">স্যাম্পল কালেকশন, বারকোড ট্র্যাকিং ও রেজাল্ট প্রিন্ট</h2>
+          <p class="slide-subtitle">
+            সিবিসি, ইউরিন, এক্স-রে, আল্ট্রাসাউন্ড বা ইসিজি—সমস্ত টেস্টের নির্ভুল মান রেকর্ড ও স্বয়ংক্রিয় রেফারেন্স রেঞ্জ যাচাই।
+          </p>
+
+          <div class="grid-3">
+            <div class="step-card">
+              <div class="step-num">১</div>
+              <h3>স্যাম্পল কালেকশন</h3>
+              <p><strong>/app/lab</strong> পেজে রোগীর ইনভয়েস বা টোকেন নম্বর দিয়ে খুঁজুন। রক্ত বা ইউরিন নেওয়ার পর <strong>"Sample Collected"</strong> স্ট্যাটাস দিন।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">২</div>
+              <h3>মান (Values) ইনপুট</h3>
+              <p>হিমোগ্লোবিন, সুগার বা অন্যান্য প্যারামিটার টাইপ করুন। মান স্বাভাবিকের চেয়ে বেশি বা কম হলে সফটওয়্যার লাল কালারে সতর্ক করবে।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">৩</div>
+              <h3>প্যাথলজিস্ট ভেরিফিকেশন</h3>
+              <p>প্যাথলজিস্ট চেক করে <strong>"Approve & Authorize"</strong> দিলে অফিসিয়াল বারকোডযুক্ত প্যাডে প্রিন্ট রেডি হয়ে যাবে।</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">🛡️</div>
+          <p><strong>নিরাপত্তা গার্ড:</strong> বিল পরিশোধ ছাড়া কোনো ল্যাব রিপোর্ট প্রিন্ট করা যায় না। ফলে হাসপাতালের আর্থিক ক্ষতি হওয়ার কোনো সুযোগ নেই।</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 5: Admission & IPD Bed Matrix -->
+      <div class="slide" data-index="5">
+        <div>
+          <span class="slide-tag">🛏️ বিভাগ ৪: ইন-পেশেন্ট (আইপিডি) ও বেড ম্যানেজমেন্ট</span>
+          <h2 class="slide-title">রোগী ভর্তি, কেবিন/ওয়ার্ড বরাদ্দ ও ডিসচার্জ সামারি</h2>
+          <p class="slide-subtitle">
+            হাসপাতালে কোন বেডটি খালি আছে, কোনটি ভর্তি এবং কোনটিতে রোগী পরিবর্তন দরকার—রিয়েলটাইম কালার গ্রিডে স্পষ্ট দেখা যায়।
+          </p>
+
+          <div class="grid-3">
+            <div class="step-card">
+              <div class="step-num">১</div>
+              <h3>কালার-কোডেড বেড গ্রিড</h3>
+              <p><strong>/app/beds</strong> পেজে যান। সবুজ মানে বেড খালি, লাল মানে রোগী ভর্তি, এবং হলুদ মানে ক্লিনিং চলছে। চোখের পলকেই স্ট্যাটাস বোঝা যায়।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">২</div>
+              <h3>এক ক্লিকে ভর্তি (Admit)</h3>
+              <p>সবুজ বেডে ক্লিক করে রোগীর নাম ও ভর্তি ডিপার্টমেন্ট (মেডিসিন/সার্জারি/গাইনি) সিলেক্ট করে <strong>"Confirm Admission"</strong> দিন। বেড সাথে সাথে বুক হয়ে যাবে।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">৩</div>
+              <h3>দৈনিক সার্ভিস ও ডিসচার্জ</h3>
+              <p>প্রতিদিনের বেড চার্জ, নার্সিং চার্জ অটোমেটিক যোগ হতে থাকে। সুস্থ হলে <strong>"Discharge Patient"</strong> চাপলে পূর্ণাঙ্গ ডিসচার্জ সার্টিফিকেট প্রিন্ট হয়।</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">✨</div>
+          <p><strong>ইমার্জেন্সি বেড ট্রান্সফার:</strong> রোগীকে সাধারণ ওয়ার্ড থেকে আইসিইউ বা কেবিনে নিতে চাইলে মাত্র এক ক্লিকে "Transfer Bed" অপশন ব্যবহার করা যায়।</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 6: Billing & Cashier Desk -->
+      <div class="slide" data-index="6">
+        <div>
+          <span class="slide-tag">💰 বিভাগ ৫: বিলিং ডেস্ক ও ক্যাশিয়ার</span>
+          <h2 class="slide-title">ইনভয়েস ইস্যু, ছাড় পলিসি, রেফারেল ও রসিদ প্রিন্ট</h2>
+          <p class="slide-subtitle">
+            ক্যাশিয়ারদের সবচেয়ে গুরুত্বপূর্ণ ডেস্ক। এখানে রোগী বা স্বজন বিল পরিশোধ করেন এবং থার্মাল স্লিপ বা A4 ইনভয়েস গ্রহণ করেন।
+          </p>
+
+          <div class="grid-4">
+            <div class="step-card">
+              <div class="step-num">১</div>
+              <h3>রোগী সিলেক্ট</h3>
+              <p><strong>/app/billing</strong> পেজে রোগীর নাম/আইডি দিন। ডাক্তারের প্রেসক্রাইব করা টেস্ট বা বেড চার্জ অটোমেটিক লোড হয়ে যাবে।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">২</div>
+              <h3>ডিসকাউন্ট নিয়ন্ত্রণ</h3>
+              <p>ক্যাশিয়ার ৫% থেকে ৬০% পর্যন্ত অনুমোদিত ছাড় দিতে পারেন। ছাড়ের কারণ (যেমন: গরীব রোগী) ফিল্ডে লেখা বাধ্যতামূলক।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">৩</div>
+              <h3>রেফারেল পার্টনার</h3>
+              <p>কোনো দালাল/ডাক্তার রেফার করলে তাদের নাম সিলেক্ট করুন (১%-৪০% কমিশন অটো-ক্যালকুলেট হয়ে একাউন্টসে সেভ থাকবে)।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">৪</div>
+              <h3>পেমেন্ট ও প্রিন্ট</h3>
+              <p>ক্যাশ/বিকাশ/কার্ড সিলেক্ট করে <strong>"Confirm & Issue"</strong> চাপুন। সাথে সাথে থার্মাল রসিদ স্বয়ংক্রিয়ভাবে প্রিন্ট হবে!</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">🖨️</div>
+          <p><strong>স্থায়ী সমাধান (v1.1.82):</strong> আগে যে "Account NULL" বা "organization_settings" এরর আসত তা এখন ডাটাবেসে স্থায়ীভাবে ফিক্স করা হয়েছে। এখন রেফারেল সহ বা ছাড়া যেকোনো বিলে ১০০% স্মুথলি প্রিন্ট হবে।</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 7: Pharmacy POS & Inventory -->
+      <div class="slide" data-index="7">
+        <div>
+          <span class="slide-tag">💊 বিভাগ ৬: ফার্মেসি ও ওষুধ কাউন্টার</span>
+          <h2 class="slide-title">প্রেসক্রিপশন ডিসপেন্স, বারকোড স্ক্যানিং ও স্টক নিয়ন্ত্রণ</h2>
+          <p class="slide-subtitle">
+            হাসপাতালের নিজস্ব ফার্মেসি থেকে রোগীদের দ্রুত ওষুধ সরবরাহ এবং স্টকের মেয়াদ ও শর্টেজ মনিটরিং।
+          </p>
+
+          <div class="grid-3">
+            <div class="step-card">
+              <div class="step-num">১</div>
+              <h3>প্রেসক্রিপশন লোড</h3>
+              <p><strong>/app/pharmacy</strong> পেজে রোগীর আইডি লিখলেই ডাক্তারের প্রেসক্রাইব করা ওষুধের তালিকা অটোমেটিক স্ক্রিনে চলে আসে। টাইপ করার প্রয়োজন নেই।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">২</div>
+              <h3>বারকোড স্ক্যান ও ব্যাচ</h3>
+              <p>বারকোড স্ক্যানার দিয়ে ওষুধের পাতার বারকোড স্ক্যান করলেই ব্যাচ নম্বর ও এক্সপায়ারি ডেট মিলে যায় এবং বিক্রয়মূল্য বসে যায়।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">৩</div>
+              <h3>ক্যাশ রসিদ ও অটো-স্টক মাইনাস</h3>
+              <p>টাকা নিয়ে <strong>"Complete Sale"</strong> চাপলে রোগীর জন্য ওষুধ স্লিপ প্রিন্ট হয় এবং ইনভেন্টরি থেকে সেই পরিমাণ ওষুধ অটোমেটিক কমে যায়।</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">⚠️</div>
+          <p><strong>মেয়াদোত্তীর্ণ ওষুধের অ্যালার্ট:</strong> কোনো ওষুধের মেয়াদ ৩০ দিনের কম থাকলে সফটওয়্যার স্বয়ংক্রিয়ভাবে লাল সতর্কবার্তা দেখায় যাতে মেয়াদোত্তীর্ণ ওষুধ বিক্রি বন্ধ থাকে।</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 8: Emergency & 24/7 Casualty -->
+      <div class="slide" data-index="8">
+        <div>
+          <span class="slide-tag">🚨 বিভাগ ৭: জরুরি বিভাগ ও ট্রায়াজ</span>
+          <h2 class="slide-title">২৪/৭ ইমার্জেন্সি ট্রায়াজ (Red / Yellow / Green)</h2>
+          <p class="slide-subtitle">
+            মুমূর্ষু রোগীর ক্ষেত্রে কাগজপত্রের জন্য এক সেকেন্ডও নষ্ট না করে তাৎক্ষণিক জীবনরক্ষাকারী চিকিৎসার ব্যবস্থা।
+          </p>
+
+          <div class="grid-3">
+            <div class="step-card">
+              <div class="step-num">🔴</div>
+              <h3>লাল (Red): লাইফ থ্রেটনিং</h3>
+              <p>হার্ট অ্যাটাক, মারাত্মক দুর্ঘটনা বা শ্বাসকষ্ট। কোনো ফরমালিটি ছাড়া সরাসরি ইমার্জেন্সি বেড বা ওটিতে শিফট। সফটওয়্যার স্বয়ংক্রিয় টেম্পোরারি আইডি বানায়।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">🟡</div>
+              <h3>হলুদ (Yellow): মাঝারি জরুরি</h3>
+              <p>তীব্র পেটব্যথা, ফ্র্যাকচার বা উচ্চ জ্বর। রোগীকে জরুরি অবজারভেশন বেডে রেখে প্রাথমিক ড্রিপ বা ইনজেকশন শুরু।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">🟢</div>
+              <h3>সবুজ (Green): মৃদু বা সাধারণ</h3>
+              <p>ছোটখাটো কাটাছেঁড়া বা ড্রেসিং। দ্রুত ড্রেসিং শেষে ওপিডি ডেস্কে রেফার করা হয়।</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">🚑</div>
+          <p><strong>২৪ ঘণ্টা অ্যাম্বুলেন্স ট্র্যাকিং:</strong> ইমার্জেন্সি হটলাইন (+৮৮০ ১৭১১-০০০০০০) এবং অ্যাম্বুলেন্স ডিসপ্যাচ সরাসরি ইমার্জেন্সি কনসোল থেকে পরিচালনা করা যায়।</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 9: Troubleshooting & FAQ -->
+      <div class="slide" data-index="9">
+        <div>
+          <span class="slide-tag">🔧 সমস্যা সমাধান ও রক্ষণাবেক্ষণ</span>
+          <h2 class="slide-title">যেকোনো সমস্যা হলে যা করবেন (Troubleshooting Guide)</h2>
+          <p class="slide-subtitle">
+            স্টাফদের কাজের সময় কোনো প্রযুক্তিগত সমস্যা দেখা দিলে খুব সহজেই নিজেই সমাধান করতে পারবেন।
+          </p>
+
+          <div class="grid-3">
+            <div class="step-card">
+              <div class="step-num">১</div>
+              <h3>প্রিন্ট না হলে কী করবেন?</h3>
+              <p><strong>/app/settings/hardware</strong> পেজে গিয়ে প্রিন্টার মোড দেখুন। ইউএসবি থার্মাল প্রিন্টারে না হলে <strong>"Browser System Print"</strong> সিলেক্ট করে সেভ করুন। যেকোনো প্রিন্টারে সাথে সাথে প্রিন্ট হবে।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">২</div>
+              <h3>ইন্টারনেট স্লো বা বন্ধ হলে?</h3>
+              <p>সফটওয়্যারটিতে আধুনিক <strong>PWA ক্যাশিং</strong> আছে। ব্রাউজার বন্ধ না করে কাজ চালিয়ে যান; ইন্টারনেট ফিরে আসলে সমস্ত ডাটা স্বয়ংক্রিয়ভাবে ক্লাউডে সিঙ্ক হয়ে যাবে।</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">৩</div>
+              <h3>স্ক্রিন ফ্রিজ বা পুরনো ডাটা দেখালে?</h3>
+              <p>কিবোর্ডে <strong>Ctrl + F5</strong> (বা মোবাইলে সোয়াইপ ডাউন রিফ্রেশ) চাপুন। এক সেকেন্ডেই ক্লাউড থেকে সর্বশেষ v1.1.82 আপডেট লোড হয়ে যাবে।</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-icon">📞</div>
+          <p><strong>আইটি সাপোর্ট টিম:</strong> কোনো বড় সমস্যা হলে সরাসরি সিস্টেম অ্যাডমিনিস্ট্রেটর বা টেলিগ্রাম বটের মাধ্যমে তাৎক্ষণিক ডায়াগনস্টিক রিপোর্ট পাঠাতে পারবেন।</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Bottom Control Bar -->
+  <footer>
+    <div style="display: flex; gap: 10px;">
+      <button class="nav-btn secondary" id="prevBtn" onclick="prevSlide()">◀ পূর্ববর্তী</button>
+      <button class="nav-btn" id="nextBtn" onclick="nextSlide()">পরবর্তী ▶</button>
+    </div>
+
+    <div class="progress-bar-container">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="slide-counter" id="counterText">স্লাইড ১ / ৯</div>
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+      <button class="nav-btn secondary" onclick="printSlide()" title="প্রেজেন্টেশন প্রিন্ট বা পিডিএফ সেভ করুন">
+        🖨️ প্রিন্ট / PDF
+      </button>
+    </div>
+  </footer>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 9;
+
+    function updateSlide() {
+      const slides = document.querySelectorAll('.slide');
+      slides.forEach((s) => {
+        const idx = parseInt(s.getAttribute('data-index'), 10);
+        if (idx === currentSlide) {
+          s.classList.add('active');
+        } else {
+          s.classList.remove('active');
+        }
+      });
+
+      // Update counter and progress bar
+      document.getElementById('counterText').innerText = `স্লাইড ${currentSlide} / ${totalSlides}`;
+      const pct = (currentSlide / totalSlides) * 100;
+      document.getElementById('progressFill').style.width = `${pct}%`;
+
+      // Button state
+      document.getElementById('prevBtn').disabled = currentSlide === 1;
+      document.getElementById('nextBtn').innerText = currentSlide === totalSlides ? 'সমাপ্তি 🏁' : 'পরবর্তী ▶';
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        currentSlide++;
+        updateSlide();
+      } else {
+        alert("🎉 অভিনন্দন! আপনি অন্বেষা হাসপাতাল ইআরপির সমস্ত বিভাগের প্রশিক্ষণ সফলভাবে সম্পন্ন করেছেন।");
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'Space') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevSlide();
+      }
+    });
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    function printSlide() {
+      window.print();
+    }
+  </script>
+</body>
+</html>
