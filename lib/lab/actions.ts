@@ -472,11 +472,22 @@ export async function getAllDiagnosticTestsAction(): Promise<
       .order("category_name", { ascending: true });
 
     const categories: DiagnosticCategoryItem[] = catData && catData.length > 0 ? catData : [
-      { id: "cat-hema", category_name: "Hematology", category_code: "HEMA" },
-      { id: "cat-biochem", category_name: "Biochemistry", category_code: "BIOCHEM" },
-      { id: "cat-path", category_name: "Clinical Pathology", category_code: "PATH" },
-      { id: "cat-rad", category_name: "Radiology & Imaging", category_code: "RAD" },
-      { id: "cat-cardio", category_name: "Cardiology", category_code: "CARDIO" },
+      { id: "cat-hema", category_name: "Hematological Tests (রক্ত রোগ সংক্রান্ত টেস্ট)", category_code: "HEMA" },
+      { id: "cat-sero-immuno", category_name: "Sero-Immunology Tests", category_code: "SERO_IMMUNO" },
+      { id: "cat-biochem", category_name: "Biochemistry (বায়োকেমিস্ট্রি টেস্ট)", category_code: "BIOCHEM" },
+      { id: "cat-ict-viro", category_name: "ICT Method Immunology/Virology Tests", category_code: "ICT_VIRO" },
+      { id: "cat-serology", category_name: "Serology Tests", category_code: "SEROLOGY" },
+      { id: "cat-immunology", category_name: "Immunological Tests", category_code: "IMMUNOLOGY" },
+      { id: "cat-repro-endo", category_name: "Reproductive Endocrinology", category_code: "REPRO_ENDO" },
+      { id: "cat-oncology", category_name: "Oncology (ক্যান্সার সংক্রান্ত টেস্ট)", category_code: "ONCOLOGY" },
+      { id: "cat-clin-path", category_name: "Clinical Pathology", category_code: "CLIN_PATH" },
+      { id: "cat-microbio", category_name: "Microbiological Tests", category_code: "MICROBIO" },
+      { id: "cat-micro-other", category_name: "Microbiological Tests (Widal/Other)", category_code: "MICRO_OTHER" },
+      { id: "cat-usg", category_name: "USG (আল্ট্রাসনোগ্রাফি)", category_code: "USG" },
+      { id: "cat-xray", category_name: "X-RAY (ডিজিটাল এক্স-রে)", category_code: "XRAY" },
+      { id: "cat-ct", category_name: "CT Scan", category_code: "CT_SCAN" },
+      { id: "cat-mri", category_name: "MRI (ম্যাগনেটিক রেজোন্যান্স ইমেজিং)", category_code: "MRI" },
+      { id: "cat-special", category_name: "অন্যান্য বিশেষ টেস্ট (Special Diagnostic)", category_code: "SPECIAL_DIAG" },
     ];
 
     // 2. Fetch all tests
@@ -534,7 +545,7 @@ export async function getAllDiagnosticTestsAction(): Promise<
  */
 export async function createDiagnosticTestAction(params: {
   test_name: string;
-  test_code: string;
+  test_code?: string;
   category_id?: string;
   category_name?: string;
   specimen_type?: string;
@@ -549,11 +560,17 @@ export async function createDiagnosticTestAction(params: {
   if (!params.test_name || !params.test_name.trim()) {
     return { success: false, error: "টেস্টের নাম দেওয়া বাধ্যতামূলক (Test name is required)" };
   }
-  if (!params.test_code || !params.test_code.trim()) {
-    return { success: false, error: "টেস্ট কোড দেওয়া বাধ্যতামূলক (Test code is required)" };
-  }
   if (params.price === undefined || isNaN(params.price) || params.price < 0) {
     return { success: false, error: "সঠিক মূল্য (ফি) প্রদান করুন (Price must be 0 or positive)" };
+  }
+
+  // Auto-generate unique test code if omitted or empty
+  let finalTestCode = (params.test_code || "").trim().toUpperCase();
+  if (!finalTestCode) {
+    const rawClean = params.test_name.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const prefix = rawClean.length > 0 ? rawClean.slice(0, 16) : "TEST";
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    finalTestCode = `${prefix}_${randSuffix}`.slice(0, 30);
   }
 
   try {
@@ -573,7 +590,7 @@ export async function createDiagnosticTestAction(params: {
     const newRecord = {
       organization_id: session.organizationId,
       category_id: catId,
-      test_code: params.test_code.trim().toUpperCase(),
+      test_code: finalTestCode,
       test_name: params.test_name.trim(),
       specimen_type: params.specimen_type || "None",
       price: Number(params.price),
