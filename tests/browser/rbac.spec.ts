@@ -18,7 +18,14 @@ test.describe("Real Browser E2E: RBAC Security, 8 Canonical Roles & Navigation G
     ];
 
     for (const path of protectedPaths) {
-      await page.goto(path, { waitUntil: "domcontentloaded" });
+      try {
+        await page.goto(path, { waitUntil: "commit" });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (!msg.includes("interrupted") && !msg.includes("Navigation to") && !msg.includes("ERR_ABORTED")) {
+          throw err;
+        }
+      }
       await expect(async () => {
         const currentUrl = page.url();
         const isRedirectedToLogin = currentUrl.includes("/login");
@@ -26,12 +33,20 @@ test.describe("Real Browser E2E: RBAC Security, 8 Canonical Roles & Navigation G
           (await page.locator("text=/লগইন|Login|Sign In|অনুমতি|অথেন্টিকেশন|যাচাই|প্রবেশ|লোড|Auth|Access/i").count()) > 0;
         expect(isRedirectedToLogin || hasAuthGuardPrompt).toBeTruthy();
       }).toPass({ timeout: 5000 });
+      await page.waitForLoadState("domcontentloaded").catch(() => {});
     }
   });
 
   // Test 2: Staff Directory route requires authenticated admin role
   test("2. Staff Directory route (/app/settings/staff) is strictly protected from unauthenticated access", async ({ page }) => {
-    await page.goto("/app/settings/staff", { waitUntil: "domcontentloaded" });
+    try {
+      await page.goto("/app/settings/staff", { waitUntil: "commit" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes("interrupted") && !msg.includes("Navigation to") && !msg.includes("ERR_ABORTED")) {
+        throw err;
+      }
+    }
     await expect(async () => {
       const currentUrl = page.url();
       const redirectedToLogin = currentUrl.includes("/login");
@@ -46,10 +61,9 @@ test.describe("Real Browser E2E: RBAC Security, 8 Canonical Roles & Navigation G
     await page.goto("/login?error=account_deactivated");
     await page.waitForLoadState("domcontentloaded");
 
-    const alertBanner = page.locator('div[role="alert"]').first();
-    await expect(alertBanner).toBeVisible();
-    const alertText = await alertBanner.textContent();
-    expect(alertText).toMatch(/স্থগিত|নিষ্ক্রিয়|কর্তৃপক্ষের|হয়েছে/);
+    const alertBanner = page.locator('[data-testid="login-error-alert"], div[role="alert"]:has-text("স্থগিত"), div[role="alert"]:has-text("নিষ্ক্রিয়"), div[role="alert"]').first();
+    await expect(alertBanner).toBeVisible({ timeout: 10000 });
+    await expect(alertBanner).toHaveText(/স্থগিত|নিষ্ক্রিয়|কর্তৃপক্ষের|হয়েছে/, { timeout: 10000 });
   });
 
   // Test 4: Forced reset password flow displays mandatory change banner

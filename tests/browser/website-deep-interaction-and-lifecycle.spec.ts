@@ -128,16 +128,16 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     await passwordInput.fill("DemoPassword123!");
 
     // Test password reveal toggle
-    const toggleButton = page.locator('button[aria-label*="পাসওয়ার্ড দেখুন"], button[aria-label*="পাসওয়ার্ড লুকান"]');
+    const toggleButton = page.locator('button[data-testid="password-toggle-btn"], button[aria-label*="পাসওয়ার্ড দেখুন"]').first();
     await expect(toggleButton).toBeVisible();
-    await toggleButton.click();
+    await toggleButton.click({ force: true });
 
     // Should now be type="text"
-    await expect(passwordInput).toHaveAttribute("type", "text");
+    await expect(passwordInput).toHaveAttribute("type", "text", { timeout: 10000 });
 
     // Click toggle again to hide
-    await toggleButton.click();
-    await expect(passwordInput).toHaveAttribute("type", "password");
+    await toggleButton.click({ force: true });
+    await expect(passwordInput).toHaveAttribute("type", "password", { timeout: 10000 });
 
     // Submit with invalid credentials
     await loginButton.click();

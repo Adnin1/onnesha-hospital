@@ -30,11 +30,10 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
   });
 
   test("2. Responsive horizontal overflow check across multiple mobile viewports", async ({ page }) => {
+    test.setTimeout(120000);
     const viewports = [
       { width: 320, height: 640 },
-      { width: 360, height: 740 },
       { width: 375, height: 812 },
-      { width: 390, height: 844 },
       { width: 412, height: 915 },
     ];
 

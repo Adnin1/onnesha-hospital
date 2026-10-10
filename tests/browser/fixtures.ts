@@ -161,16 +161,16 @@ function getMockCorsHeaders(request: { headers: () => Record<string, string> }):
   const origin = reqHeaders["origin"] || reqHeaders["Origin"] || process.env.E2E_BASE_URL || "http://127.0.0.1:3000";
   const reqAllowHeaders = reqHeaders["access-control-request-headers"] || reqHeaders["Access-Control-Request-Headers"];
   const standardHeaders = "authorization, x-client-info, apikey, content-type, prefer, range, x-supabase-api-version, accept, accept-language, accept-profile, content-profile";
-  const allowHeaders = reqAllowHeaders ? `${reqAllowHeaders}, ${standardHeaders}` : standardHeaders;
+  const allowHeaders = reqAllowHeaders ? `${reqAllowHeaders}, ${standardHeaders}` : `${standardHeaders}, *`;
 
   return {
     "access-control-allow-origin": origin,
     "access-control-allow-credentials": "true",
     "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD",
     "access-control-allow-headers": allowHeaders,
-    "access-control-expose-headers": "content-range, range-unit, x-total-count, *",
+    "access-control-expose-headers": "*",
+    "access-control-max-age": "86400",
     "content-type": "application/json",
-    "vary": "Origin",
   };
 }
 
@@ -180,29 +180,16 @@ function getMockCorsHeaders(request: { headers: () => Record<string, string> }):
  * or raise unhandled fetch rejections (e.g. WebKit "TypeError: Load failed").
  */
 async function installHermeticMocks(page: Page): Promise<void> {
-  await page.route(
-    (url) => {
-      const h = url.hostname || "";
-      const href = url.href || "";
-      return (
-        h.includes("ci-hermetic-build-placeholder") ||
-        h.includes("placeholder.supabase") ||
-        h.includes("placeholder") ||
-        href.includes("placeholder") ||
-        (h.endsWith(".supabase.co") && !h.includes("iuhtzahuszdkdarhxobx")) ||
-        (href.includes(".supabase.co") && !href.includes("iuhtzahuszdkdarhxobx"))
-      );
-    },
-    async (route) => {
-      const request = route.request();
-      const corsHeaders = getMockCorsHeaders(request);
-      if (request.method().toUpperCase() === "OPTIONS") {
-        await route.fulfill({
-          status: 200,
-          headers: corsHeaders,
-        });
-        return;
-      }
+  const handler = async (route: import("@playwright/test").Route) => {
+    const request = route.request();
+    const corsHeaders = getMockCorsHeaders(request);
+    if (request.method().toUpperCase() === "OPTIONS") {
+      await route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+      });
+      return;
+    }
 
       const reqUrl = request.url();
 
@@ -342,8 +329,15 @@ async function installHermeticMocks(page: Page): Promise<void> {
         headers: corsHeaders,
         body: JSON.stringify([]),
       });
-    }
-  );
+  };
+
+  const pattern = /(ci-hermetic-build-placeholder|placeholder\.supabase|placeholder|\.supabase\.co)/;
+  await page.route(pattern, handler);
+  try {
+    await page.context().route(pattern, handler);
+  } catch {
+    // Ignore if context is locked
+  }
 }
 
 /**

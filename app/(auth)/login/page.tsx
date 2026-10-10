@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
@@ -25,6 +25,14 @@ export default function LoginPage() {
       ? "আপনার অ্যাকাউন্টটি সাময়িকভাবে স্থগিত বা নিষ্ক্রিয় করা হয়েছে। অনুগ্রহ করে হাসপাতাল কর্তৃপক্ষের সাথে যোগাযোগ করুন।"
       : null
   );
+
+  useEffect(() => {
+    if (urlError === "account_deactivated") {
+      setErrorMessage(
+        "আপনার অ্যাকাউন্টটি সাময়িকভাবে স্থগিত বা নিষ্ক্রিয় করা হয়েছে। অনুগ্রহ করে হাসপাতাল কর্তৃপক্ষের সাথে যোগাযোগ করুন।"
+      );
+    }
+  }, [urlError]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,6 +133,7 @@ export default function LoginPage() {
           {errorMessage && (
             <div
               role="alert"
+              data-testid="login-error-alert"
               className="mb-4 p-3.5 bg-red-950/80 border border-red-700/60 rounded-xl text-xs text-red-200 flex items-start gap-2"
             >
               <span className="text-base leading-none">⚠️</span>
@@ -181,9 +190,10 @@ export default function LoginPage() {
                 />
                 <button
                   type="button"
+                  data-testid="password-toggle-btn"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখুন"}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 focus:outline-none focus:text-slate-200 p-0.5 rounded cursor-pointer"
+                  className="absolute right-3 top-2.5 z-10 text-slate-400 hover:text-slate-200 focus:outline-none focus:text-slate-200 p-0.5 rounded cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
