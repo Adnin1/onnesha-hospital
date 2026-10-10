@@ -53,15 +53,29 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
         }
       }
       await expect(page.locator("main#main-content")).toBeVisible({ timeout: 10000 });
+      await page.waitForTimeout(100);
 
       for (const vp of viewports) {
         await page.setViewportSize(vp);
         await page.waitForTimeout(50);
 
         // Verify no horizontal document overflow: scrollWidth should match clientWidth
-        const hasHorizontalScroll = await page.evaluate(() => {
-          return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
-        });
+        let hasHorizontalScroll = false;
+        for (let evalAttempt = 0; evalAttempt < 3; evalAttempt++) {
+          try {
+            hasHorizontalScroll = await page.evaluate(() => {
+              return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
+            });
+            break;
+          } catch (evalErr: unknown) {
+            const errMsg = String(evalErr);
+            if (evalAttempt < 2 && errMsg.includes("Execution context was destroyed")) {
+              await page.waitForTimeout(150);
+              continue;
+            }
+            throw evalErr;
+          }
+        }
         expect(hasHorizontalScroll, `Route ${route} should not have horizontal overflow on ${vp.width}x${vp.height}`).toBe(false);
       }
     }
@@ -196,29 +210,17 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
         }
       }
 
-      // If on /mfa, wait for any unauthenticated redirect to /login to settle
-      // so it does not collide with subsequent route navigations
+      // If on /mfa, wait for any unauthenticated redirect to settle
       if (route === "/mfa") {
         await page.waitForTimeout(500);
         await page.waitForLoadState("domcontentloaded");
-      } else {
-        await page.waitForTimeout(100);
       }
 
-      const a11yLandmarks = await page.evaluate(() => {
-        const mains = document.querySelectorAll("main");
-        const mainContentIds = document.querySelectorAll("#main-content");
-        const skipLinks = document.querySelectorAll('a[href="#main-content"]');
-        return {
-          mainCount: mains.length,
-          mainContentIdCount: mainContentIds.length,
-          hasSkipLink: skipLinks.length >= 1,
-        };
-      });
-
-      expect(a11yLandmarks.mainCount, `Route ${route} must have exactly 1 <main> element`).toBe(1);
-      expect(a11yLandmarks.mainContentIdCount, `Route ${route} must have exactly 1 element with id='main-content'`).toBe(1);
-      expect(a11yLandmarks.hasSkipLink, `Route ${route} must provide skip-to-content anchor`).toBe(true);
+      // Assert DOM accessibility landmarks using Playwright auto-retrying locators
+      await expect(page.locator("main"), `Route ${route} must have exactly 1 <main> element`).toHaveCount(1, { timeout: 10000 });
+      await expect(page.locator("#main-content"), `Route ${route} must have exactly 1 element with id='main-content'`).toHaveCount(1, { timeout: 10000 });
+      const skipLinkCount = await page.locator('a[href="#main-content"]').count();
+      expect(skipLinkCount, `Route ${route} must provide skip-to-content anchor`).toBeGreaterThanOrEqual(1);
     }
   });
 });
