@@ -158,13 +158,17 @@ const MOCK_ALL_DAY_SCHEDULES = DAYS_OF_WEEK.map((day, idx) => ({
 
 function getMockCorsHeaders(request: { headers: () => Record<string, string> }): Record<string, string> {
   const reqHeaders = request.headers();
-  const origin = reqHeaders["origin"] || process.env.E2E_BASE_URL || "http://127.0.0.1:3000";
+  const origin = reqHeaders["origin"] || reqHeaders["Origin"] || process.env.E2E_BASE_URL || "http://127.0.0.1:3000";
+  const reqAllowHeaders = reqHeaders["access-control-request-headers"] || reqHeaders["Access-Control-Request-Headers"];
+  const standardHeaders = "authorization, x-client-info, apikey, content-type, prefer, range, x-supabase-api-version, accept, accept-language, accept-profile, content-profile";
+  const allowHeaders = reqAllowHeaders ? `${reqAllowHeaders}, ${standardHeaders}` : standardHeaders;
+
   return {
     "access-control-allow-origin": origin,
     "access-control-allow-credentials": "true",
     "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD",
-    "access-control-allow-headers": "authorization, x-client-info, apikey, content-type, prefer, range, x-supabase-api-version, accept, accept-language",
-    "access-control-expose-headers": "content-range, range-unit, x-total-count",
+    "access-control-allow-headers": allowHeaders,
+    "access-control-expose-headers": "content-range, range-unit, x-total-count, *",
     "content-type": "application/json",
     "vary": "Origin",
   };
@@ -177,17 +181,24 @@ function getMockCorsHeaders(request: { headers: () => Record<string, string> }):
  */
 async function installHermeticMocks(page: Page): Promise<void> {
   await page.route(
-    (url) =>
-      url.hostname.includes("ci-hermetic-build-placeholder") ||
-      url.hostname.includes("placeholder.supabase") ||
-      url.hostname.includes("placeholder") ||
-      (url.hostname.endsWith(".supabase.co") && !url.hostname.includes("iuhtzahuszdkdarhxobx")),
+    (url) => {
+      const h = url.hostname || "";
+      const href = url.href || "";
+      return (
+        h.includes("ci-hermetic-build-placeholder") ||
+        h.includes("placeholder.supabase") ||
+        h.includes("placeholder") ||
+        href.includes("placeholder") ||
+        (h.endsWith(".supabase.co") && !h.includes("iuhtzahuszdkdarhxobx")) ||
+        (href.includes(".supabase.co") && !href.includes("iuhtzahuszdkdarhxobx"))
+      );
+    },
     async (route) => {
       const request = route.request();
       const corsHeaders = getMockCorsHeaders(request);
       if (request.method().toUpperCase() === "OPTIONS") {
         await route.fulfill({
-          status: 204,
+          status: 200,
           headers: corsHeaders,
         });
         return;

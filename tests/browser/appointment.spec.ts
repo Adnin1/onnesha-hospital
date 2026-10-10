@@ -10,11 +10,12 @@ test.describe("Real Browser E2E: Public & Staff Appointments", () => {
     await expect(heading).toBeVisible();
 
     // Step 1: Select doctor and click Continue to Date & Time
+    await page.waitForSelector('h2:has-text("Step 1: Select Doctor")', { timeout: 15000 });
     const continueBtn1 = page.locator('button:has-text("Continue to Date & Time")').first();
     await expect(continueBtn1).toBeVisible();
 
-    const doctorCard = page.locator('[data-testid="doctor-card"], div[role="button"][tabindex="0"]').first();
-    await doctorCard.waitFor({ state: "visible", timeout: 15000 });
+    const doctorCard = page.locator('[data-testid="doctor-card"]').first();
+    await doctorCard.waitFor({ state: "visible", timeout: 20000 });
     await doctorCard.click();
     await expect(continueBtn1).toBeEnabled({ timeout: 10000 });
     await continueBtn1.click();

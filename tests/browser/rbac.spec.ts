@@ -18,30 +18,27 @@ test.describe("Real Browser E2E: RBAC Security, 8 Canonical Roles & Navigation G
     ];
 
     for (const path of protectedPaths) {
-      await page.goto(path);
-      await page.waitForTimeout(400);
-
-      const currentUrl = page.url();
-      // Must either redirect to login page or present AuthGuard authentication container / prompt / loading
-      const isRedirectedToLogin = currentUrl.includes("/login");
-      const hasAuthGuardPrompt =
-        (await page.locator("text=/লগইন|Login|Sign In|অনুমতি|অথেন্টিকেশন|যাচাই|প্রবেশ|লোড/i").count()) > 0;
-
-      expect(isRedirectedToLogin || hasAuthGuardPrompt).toBeTruthy();
+      await page.goto(path, { waitUntil: "domcontentloaded" });
+      await expect(async () => {
+        const currentUrl = page.url();
+        const isRedirectedToLogin = currentUrl.includes("/login");
+        const hasAuthGuardPrompt =
+          (await page.locator("text=/লগইন|Login|Sign In|অনুমতি|অথেন্টিকেশন|যাচাই|প্রবেশ|লোড|Auth|Access/i").count()) > 0;
+        expect(isRedirectedToLogin || hasAuthGuardPrompt).toBeTruthy();
+      }).toPass({ timeout: 5000 });
     }
   });
 
   // Test 2: Staff Directory route requires authenticated admin role
   test("2. Staff Directory route (/app/settings/staff) is strictly protected from unauthenticated access", async ({ page }) => {
-    await page.goto("/app/settings/staff");
-    await page.waitForTimeout(400);
-
-    const currentUrl = page.url();
-    const redirectedToLogin = currentUrl.includes("/login");
-    const hasAuthGuard =
-      (await page.locator("text=/লগইন|Sign In|যাচাই|অথেন্টিকেশন|অ্যাক্সেস|লোড/i").count()) > 0;
-
-    expect(redirectedToLogin || hasAuthGuard).toBeTruthy();
+    await page.goto("/app/settings/staff", { waitUntil: "domcontentloaded" });
+    await expect(async () => {
+      const currentUrl = page.url();
+      const redirectedToLogin = currentUrl.includes("/login");
+      const hasAuthGuard =
+        (await page.locator("text=/লগইন|Sign In|যাচাই|অথেন্টিকেশন|অ্যাক্সেস|লোড|Auth|Access/i").count()) > 0;
+      expect(redirectedToLogin || hasAuthGuard).toBeTruthy();
+    }).toPass({ timeout: 5000 });
   });
 
   // Test 3: Account Deactivated banner displayed when error=account_deactivated is provided

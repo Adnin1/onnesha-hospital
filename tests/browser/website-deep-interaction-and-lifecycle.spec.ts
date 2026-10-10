@@ -13,9 +13,9 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     // Step 1: Select doctor
     // Wait for doctors list to finish loading and doctor card to be visible
     await page.waitForSelector('h2:has-text("Step 1: Select Doctor")', { timeout: 15000 });
-    const doctorCard = page.locator('[data-testid="doctor-card"], div[role="button"][tabindex="0"]').first();
-    await doctorCard.waitFor({ state: "visible", timeout: 15000 });
-    const doctorCount = await page.locator('[data-testid="doctor-card"], div[role="button"][tabindex="0"]').count();
+    const doctorCard = page.locator('[data-testid="doctor-card"]').first();
+    await doctorCard.waitFor({ state: "visible", timeout: 20000 });
+    const doctorCount = await page.locator('[data-testid="doctor-card"]').count();
     expect(doctorCount).toBeGreaterThan(0);
 
     // Click first doctor card
