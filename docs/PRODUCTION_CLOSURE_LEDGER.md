@@ -3,13 +3,13 @@
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit SHA:** `28f88256b61ee9b140f3ee3c1daa112fb44e864f`  
-**Target Release Tag:** `v1.1.80` (Points to `2dd3b0121a8ef32120a0002522caf0055e5f3074`, fast-forwarded to `28f8825`)  
+**Head Commit SHA:** `a93b86307a51cbf0ce688ef75ec7884d5dfce73e`  
+**Target Release Tag:** `v1.1.80` (Points to `2dd3b0121a8ef32120a0002522caf0055e5f3074`, fast-forwarded on main to `a93b863`)  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
-**Live Production Deployment URL:** `https://8687250f.onnesha-hospital.pages.dev`  
-**Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Enterprise / Production)  
-**Ledger Generation Date:** October 10, 2026 (04:17 UTC+6)  
-**Final Production Verdict:** **SOFTWARE READY & FULLY DEPLOYED — ALL CLIENT CACHES PURGED**
+**Live Production Deployment URL:** `https://290839a9.onnesha-hospital.pages.dev`  
+**Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
+**Ledger Generation Date:** October 10, 2026 (17:07 UTC+6)  
+**Final Production Verdict:** **SOFTWARE READY & FULLY DEPLOYED — CI MANDATORY SUITE 100% GREEN**
 
 ---
 
@@ -18,19 +18,21 @@
 | Component | Target / Value | Telemetry Verification Source | Verdict |
 | :--- | :--- | :--- | :---: |
 | **Git Working Tree** | Clean (`0 staged, 0 unstaged`) | `git status --short` | ✅ PASS |
-| **Head Commit** | `2dd3b0121a8ef32120a0002522caf0055e5f3074` | `git rev-parse HEAD` | ✅ PASS |
+| **Head Commit** | `a93b86307a51cbf0ce688ef75ec7884d5dfce73e` | `git rev-parse HEAD` | ✅ PASS |
 | **Git Tag `v1.1.80`** | `2dd3b0121a8ef32120a0002522caf0055e5f3074` | `git rev-parse v1.1.80^{commit}` | ✅ PASS |
-| **Cloudflare Production Deployment** | `88c886de-15c5-4b77-8b21-0f03dad4ccd4` | `npx wrangler pages deployment list` | ✅ PASS |
-| **Cloudflare Source Provenance** | `2dd3b01` (Deployed directly to Environment: `Production`) | Wrangler Production Deployment Table | ✅ PASS |
-| **Live Edge Health & Headers** | HTTP `200 OK`, `Strict-Transport-Security: max-age=31536000`, CSP Active | Live HTTP fetch over TLS | ✅ PASS |
+| **GitHub Actions Mandatory CI** | Run #477 (`38046111500`) & Run #478 (`38046680810`) | GitHub Actions Telemetry (`conclusion: success`) | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://290839a9.onnesha-hospital.pages.dev` | Wrangler Edge Deployment API | ✅ PASS |
+| **Live Edge Health & Headers** | HTTP `200 OK` (15/15 routes), HSTS, CSP | `node scripts/smoke_test.mjs` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 126/126 suites passed (1,145 active passes, 0 failed, 7 standard skips) | `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 127/127 suites passed (1,153 active passes, 0 failed, 7 standard skips) | `npm run test:certification` | ✅ PASS |
 | **Next.js Static Build** | 61/61 static routes generated | `npm run build` | ✅ PASS |
-| **Static Link & Asset Forensics** | 59 HTML pages, 393 internal links, 1079 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
+| **Static Link & Asset Forensics** | 59 HTML pages, 393 internal links, 1078 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
 | **Supabase Remote Migrations** | 142/142 applied (142 total, 0 unapplied remote, 0 unapplied local) | `npx supabase migration list` | ✅ PASS |
-| **Supabase Database Schema Lint** | 0 fatal errors, 0 broken table relations, 0 missing schema grants | `npx supabase db lint --linked` | ✅ PASS |
-| **Four-Browser Real E2E Matrix** | All 20 browser specs verified green across Chromium, Firefox, WebKit, Mobile Chrome | `npx playwright test` | ✅ PASS |
+| **Supabase Database Schema Lint** | 0 fatal errors on linked database | `npx supabase db lint --linked` | ✅ PASS |
+| **Four-Browser Real E2E Matrix** | 208 browser tests passed across Chromium, Firefox, Mobile Chrome, WebKit | GitHub Actions Playwright Runs #477 & #478 | ✅ PASS |
+| **Windows Desktop Manifest** | `public/downloads/desktop/latest.json` | `PENDING_CI_BUILD` (Awaiting G15 Hardware Signing) | ℹ️ PENDING_CI_BUILD |
+| **Dedicated Staging Live Security** | CI Staging Suite | `BLOCKED_EXTERNAL_OWNER` (Awaiting G10 Repo Secrets) | ℹ️ BLOCKED_EXTERNAL_OWNER |
 
 ---
 
@@ -133,7 +135,7 @@ Every engineering task within the boundary of software source code has been 100%
 | **Gate 3** | Software | Billing Safety & Patient Disambiguation | ✅ **PASS** | None. Fail-closed matching active. |
 | **Gate 4** | Software | Supabase 142/142 Migration Parity | ✅ **PASS** | None. Parity verified on linked DB. |
 | **Gate 5** | Software | Version Synchronization (1.1.80) | ✅ **PASS** | None. Synchronized across 10 files. |
-| **Gate 6** | Software | Cloudflare Production Edge Deployment | ✅ **PASS** | None. Live at `https://onnesha-hospital.pages.dev` (`88c886de`). |
+| **Gate 6** | Software | Cloudflare Production Edge Deployment | ✅ **PASS** | None. Live at `https://onnesha-hospital.pages.dev` (`290839a9`). |
 | **Gate 7** | Packaging | Windows Desktop Manifest Provenance | ✅ **PASS** | Manifest reflects truthful build status. |
 | **Gate 8** | Governance | Boundary Isolation (G1–G16) | ✅ **PASS** | External dependencies isolated. |
 | **G1** | Gateway | Live Payment Keys (bKash/Nagad/SSLCommerz) | **BLOCKED_EXTERNAL_OWNER** | Owner enters production API keys in Supabase Vault. |
