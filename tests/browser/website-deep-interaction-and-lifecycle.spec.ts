@@ -259,7 +259,7 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     const routes = ["/", "/appointment", "/doctors", "/check-token", "/contact", "/login", "/downloads/desktop"];
 
     for (const route of routes) {
-      await page.goto(route);
+      await page.goto(route, { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("domcontentloaded");
       expect(rawDialogCalled, `Route ${route} called raw browser dialog: ${dialogMessage}`).toBe(false);
     }

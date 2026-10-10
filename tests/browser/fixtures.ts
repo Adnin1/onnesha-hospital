@@ -333,6 +333,103 @@ async function installHermeticMocks(page: Page): Promise<void> {
 
   const pattern = /(ci-hermetic-build-placeholder|placeholder\.supabase|placeholder|\.supabase\.co)/;
   await page.route(pattern, handler);
+
+  // In-page fetch interceptor: Intercepts Supabase placeholder fetch calls before the
+  // browser's network layer (preventing WebKit libsoup socket/DNS connection resets on Linux)
+  await page.addInitScript(() => {
+    const MOCK_DAYS = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    const MOCK_SCHEDULES = MOCK_DAYS.map((day, idx) => ({
+      id: "sched-00" + (idx + 1),
+      day_of_week: day,
+      start_time: "09:00",
+      end_time: "13:00",
+      max_tokens: 30,
+      room_number: "301",
+      is_active: true,
+    }));
+
+    const origFetch = window.fetch;
+    window.fetch = async function (input, init) {
+      const url = typeof input === "string" ? input : input instanceof Request ? input.url : String(input);
+      const isPlaceholder =
+        url.includes("ci-hermetic-build-placeholder") ||
+        url.includes("placeholder.supabase") ||
+        (url.includes(".supabase.co") && !url.includes("iuhtzahuszdkdarhxobx"));
+
+      if (isPlaceholder) {
+        let body: unknown = [];
+        let status = 200;
+
+        if (url.includes("/rest/v1/public_departments_view") || url.includes("/rest/v1/departments")) {
+          body = [
+            { id: "dept-gen-001", name: "General Medicine", slug: "general-medicine", description: "General Outpatient and Internal Medicine Department", is_active: true },
+            { id: "dept-ped-002", name: "Pediatrics", slug: "pediatrics", description: "Child and Adolescent Healthcare Department", is_active: true },
+          ];
+        } else if (url.includes("/rest/v1/rpc/get_public_doctors_directory") || url.includes("/rest/v1/doctors")) {
+          body = [
+            {
+              id: "doc-001",
+              full_name: "Prof. Dr. M. A. Rahman",
+              degrees: "MBBS, FCPS (Medicine)",
+              designation: "Professor & Head",
+              specialization: "Internal Medicine",
+              room_number: "301",
+              opd_fee: 1000,
+              avatar_url: null,
+              public_bio: "Experienced consultant in general and internal medicine.",
+              department_name: "General Medicine",
+              department_slug: "general-medicine",
+              is_active: true,
+              is_public: true,
+              schedules: MOCK_SCHEDULES,
+            },
+          ];
+        } else if (url.includes("/rest/v1/rpc/get_public_doctor_schedules")) {
+          body = MOCK_SCHEDULES;
+        } else if (url.includes("/rest/v1/rpc/book_online_appointment")) {
+          body = {
+            success: true,
+            appointment_id: "apt-mock-001",
+            token_number: 14,
+            patient_code: "P-2026-MOCK-001",
+            appointment_date: "2026-10-10",
+            doctor_name: "Prof. Dr. M. A. Rahman",
+            room_number: "301",
+            opd_fee: 1000,
+          };
+        } else if (url.includes("/rest/v1/rpc/submit_public_contact_inquiry")) {
+          body = {
+            success: true,
+            inquiry_id: "inq-mock-001",
+            reference_number: "INQ-2026-0001",
+          };
+        } else if (url.includes("/rest/v1/rpc/get_public_live_queue")) {
+          body = [];
+        } else if (url.includes("/rest/v1/rpc/get_public_token_status")) {
+          body = null;
+        } else if (url.includes("/auth/v1/token")) {
+          status = 400;
+          body = {
+            error: "invalid_grant",
+            error_description: "Invalid login credentials",
+            message: "Invalid login credentials",
+          };
+        } else if (url.includes("/auth/v1/")) {
+          body = { user: null, session: null };
+        }
+
+        return new Response(JSON.stringify(body), {
+          status,
+          headers: {
+            "content-type": "application/json",
+            "access-control-allow-origin": "*",
+          },
+        });
+      }
+
+      return origFetch.apply(window, [input, init] as [RequestInfo, RequestInit | undefined]);
+    };
+  });
 }
 
 /**
