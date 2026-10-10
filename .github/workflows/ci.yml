@@ -71,6 +71,7 @@ jobs:
 
       - name: Create CI environment file (hermetic placeholders)
         run: |
+          echo "127.0.0.1 ci-hermetic-build-placeholder.supabase.co" | sudo tee -a /etc/hosts || true
           echo "NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}" >> .env.local
           echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}" >> .env.local
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}" >> .env.local

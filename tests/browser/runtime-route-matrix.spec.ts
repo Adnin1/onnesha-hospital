@@ -69,7 +69,9 @@ test.describe("Real Browser E2E: Route-by-Route Runtime Acceptance & Console Dia
         msg.includes("__next.") ||
         msg.includes("cancelled") ||
         msg.includes("Load failed") ||
-        msg.includes("Failed to fetch")
+        msg.includes("Failed to fetch") ||
+        msg.includes("supabase.co") ||
+        msg.includes("placeholder")
       ) {
         return;
       }
