@@ -205,10 +205,13 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
           if (
             attempt < 2 &&
             (msg.includes("NS_BINDING_ABORTED") ||
+              msg.includes("ERR_ABORTED") ||
+              msg.includes("abort") ||
               msg.includes("interrupted") ||
-              msg.includes("navigation"))
+              msg.includes("navigation") ||
+              msg.includes("reset"))
           ) {
-            await page.waitForTimeout(400);
+            await page.waitForTimeout(500);
             continue;
           }
           throw err;

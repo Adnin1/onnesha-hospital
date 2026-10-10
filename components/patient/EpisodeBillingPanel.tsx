@@ -38,6 +38,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import type { PaymentRecord } from "@/types/billing";
 import type { PatientMaster } from "@/types/clinical";
+import { printBillingInvoiceReceipt, BillingReceiptData } from "@/lib/hardware/escpos";
 
 type Props = {
   patientId?: string;
@@ -474,6 +475,39 @@ export function EpisodeBillingPanel({
     setActionMessage("Episode discharged and bed/cabin released at " + formatDateBDT(res.data?.dischargedAt || new Date().toISOString()) + ".");
   }
 
+  async function handlePrintEpisodeStatement() {
+    if (!preview) {
+      window.print();
+      return;
+    }
+    try {
+      const netTotal = (preview.total || 0) - (preview.admissionDiscountAmount || 0);
+      const balance = Math.max(0, netTotal - (preview.episodePaid || 0));
+      const receiptData: BillingReceiptData = {
+        invoiceNumber: invoiceNumber || `EP-${preview.episodeNumber || "STMT"}`,
+        patientName: selectedPatient?.full_name || "Episode Patient",
+        uhid: selectedPatient?.patient_code || "OH-P-EPISODE",
+        items: (preview.lines || []).map((ch) => ({
+          description: ch.item_name,
+          qty: ch.quantity,
+          unitPrice: ch.unit_price,
+          total: ch.total_price,
+        })),
+        subtotal: preview.total || 0,
+        discount: preview.admissionDiscountAmount || 0,
+        tax: 0,
+        total: netTotal,
+        paid: preview.episodePaid || 0,
+        balance,
+        paymentMethod: paymentMethod || "CASH",
+        cashierName: "Cashier",
+      };
+      await printBillingInvoiceReceipt(receiptData);
+    } catch {
+      window.print();
+    }
+  }
+
   return (
     <>
       {triggerButton ? (
@@ -513,9 +547,9 @@ export function EpisodeBillingPanel({
                 {preview?.episodeId && (
                   <button
                     type="button"
-                    onClick={() => window.print()}
+                    onClick={handlePrintEpisodeStatement}
                     className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-700 transition"
-                    title="Print Statement / Invoice"
+                    title="Print Statement / Invoice (Thermal or Standard)"
                   >
                     <Printer className="w-4 h-4" />
                   </button>

@@ -234,6 +234,8 @@ export async function createInvoiceAction(params: {
       return { success: false, error: rpcRes.error || "Failed to generate invoice." };
     }
 
+    const createdInvoiceId = rpcRes.invoice_id;
+
     // Fetch full saved invoice with joined items and payments
     const { data: invRow } = await supabase
       .from("invoices")
@@ -242,7 +244,7 @@ export async function createInvoiceAction(params: {
         invoice_items (*),
         payments (*)
       `)
-      .eq("id", rpcRes.invoice_id)
+      .eq("id", createdInvoiceId)
       .single();
 
     // Audit log
@@ -252,7 +254,7 @@ export async function createInvoiceAction(params: {
       action: "CREATE",
       module: "BILLING",
       entityType: "invoice",
-      entityId: rpcRes.invoice_id,
+      entityId: createdInvoiceId,
       newValues: {
         invoiceNumber: rpcRes.invoice_number,
         grandTotal: rpcRes.grand_total,
@@ -265,7 +267,7 @@ export async function createInvoiceAction(params: {
 
     const fullInvoice: InvoiceRecord = {
       ...(invRow || {}),
-      id: rpcRes.invoice_id,
+      id: createdInvoiceId,
       organization_id: session.organizationId,
       invoice_number: rpcRes.invoice_number || "",
       patient_id: params.patientId,

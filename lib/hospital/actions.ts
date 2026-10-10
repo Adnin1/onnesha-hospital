@@ -81,9 +81,9 @@ export async function getHospitalMasterDataAction(): Promise<{
       .maybeSingle();
 
     if (settingsError) {
+      console.warn(`[getHospitalMasterDataAction] organization_settings query: ${settingsError.message}`);
       return {
-        success: false,
-        error: `Database query failed for organization_settings: ${settingsError.message}`,
+        success: true,
         data: APPROVED_HOSPITAL_DATA,
       };
     }

@@ -49,6 +49,7 @@ import {
   HospitalServiceItem,
 } from "@/lib/billing/serviceCatalog";
 import { getDiagnosticTestsCatalogAction } from "@/lib/lab/actions";
+import { printBillingInvoiceReceipt, BillingReceiptData } from "@/lib/hardware/escpos";
 
 function BillingManagementContent() {
   const [loading, setLoading] = useState(true);
@@ -563,6 +564,8 @@ function BillingManagementContent() {
         await loadBillingData();
         setSelectedInvoice(res.data.invoice);
         setToast({ message: `Invoice ${res.data.invoice.invoice_number} created successfully!`, type: "success" });
+        const newlyCreatedInv = res.data.invoice;
+        handlePrintInvoice(newlyCreatedInv);
         // Automatically trigger print dialog for official invoice paper
         setTimeout(() => {
           window.print();
@@ -575,6 +578,38 @@ function BillingManagementContent() {
       setToast({ message: "Error generating invoice", type: "error" });
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  const handlePrintInvoice = async (inv: InvoiceRecord) => {
+    try {
+      const receiptData: BillingReceiptData = {
+        invoiceNumber: inv.invoice_number,
+        patientName: inv.patient?.full_name || "Hospital Patient",
+        uhid: inv.patient?.patient_code || "OH-P-WALKIN",
+        items: (inv.items || []).map((it) => ({
+          description: it.item_name,
+          qty: it.quantity,
+          unitPrice: it.unit_price,
+          total: it.total_price,
+        })),
+        subtotal: inv.subtotal,
+        discount: inv.discount_amount,
+        tax: inv.tax_amount,
+        total: inv.grand_total,
+        paid: inv.paid_amount,
+        balance: inv.due_amount,
+        paymentMethod: inv.payments?.[0]?.payment_method || "CASH",
+        cashierName: "Cashier",
+      };
+
+      const result = await printBillingInvoiceReceipt(receiptData);
+      if (result.success && result.transport !== "BROWSER_PRINT") {
+        setToast({ message: `Receipt sent to ${result.deviceName || result.transport}`, type: "success" });
+      }
+    } catch (err) {
+      console.error("[handlePrintInvoice] error:", err);
+      window.print();
     }
   };
 
@@ -840,9 +875,9 @@ function BillingManagementContent() {
                 </div>
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => window.print()}
+                    onClick={() => handlePrintInvoice(selectedInvoice)}
                     className="p-2 border rounded-xl hover:bg-slate-50 text-slate-700 transition"
-                    title="Print Invoice"
+                    title="Print Invoice (Thermal / Configured Workstation Printer)"
                   >
                     <Printer className="w-4 h-4" />
                   </button>

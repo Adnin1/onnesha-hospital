@@ -958,3 +958,62 @@ export class PrintJobQueue {
   }
 }
 
+/**
+ * Universal Billing Invoice Printing Dispatcher
+ * Intelligently honors local machine hardware configuration (WebUSB / WebSerial thermal or browser print dialog).
+ */
+export async function printBillingInvoiceReceipt(
+  data: BillingReceiptData,
+  explicitTransport?: PrinterTransportType
+): Promise<{ success: boolean; transport: PrinterTransportType; deviceName?: string; error?: string }> {
+  let transport: PrinterTransportType = explicitTransport || "BROWSER_PRINT";
+  let baudRate = 9600;
+
+  if (!explicitTransport && typeof window !== "undefined") {
+    const savedTransport = localStorage.getItem("ohms_printer_transport") as PrinterTransportType | null;
+    if (savedTransport) {
+      transport = savedTransport;
+    }
+    const savedBaud = localStorage.getItem("ohms_printer_baud");
+    if (savedBaud) {
+      baudRate = parseInt(savedBaud, 10) || 9600;
+    }
+  }
+
+  // 1. WebUSB thermal printing
+  if (transport === "WEB_USB") {
+    try {
+      const bytes = buildBillingReceiptEscPos(data).build();
+      const res = await printViaWebUsb(bytes);
+      if (res.success) {
+        return { success: true, transport: "WEB_USB", deviceName: res.deviceName };
+      }
+      console.warn("[printBillingInvoiceReceipt] WebUSB failed, falling back to browser print:", res.error);
+    } catch (err) {
+      console.warn("[printBillingInvoiceReceipt] WebUSB exception:", err);
+    }
+  }
+
+  // 2. WebSerial thermal printing
+  if (transport === "WEB_SERIAL") {
+    try {
+      const bytes = buildBillingReceiptEscPos(data).build();
+      const res = await printViaWebSerial(bytes, baudRate);
+      if (res.success) {
+        return { success: true, transport: "WEB_SERIAL", deviceName: res.deviceName };
+      }
+      console.warn("[printBillingInvoiceReceipt] WebSerial failed, falling back to browser print:", res.error);
+    } catch (err) {
+      console.warn("[printBillingInvoiceReceipt] WebSerial exception:", err);
+    }
+  }
+
+  // 3. Browser system print (Default & universal fallback)
+  if (typeof window !== "undefined") {
+    window.print();
+    return { success: true, transport: "BROWSER_PRINT", deviceName: "Browser Print" };
+  }
+
+  return { success: false, transport: "BROWSER_PRINT", error: "Window object unavailable" };
+}
+

@@ -54,7 +54,33 @@ export default function HardwareManagementPage() {
       setWebUsbAvailable("usb" in navigator);
       setWebSerialAvailable("serial" in navigator);
     }
+    if (typeof window !== "undefined") {
+      const savedTransport = localStorage.getItem("ohms_printer_transport") as PrinterTransportType | null;
+      if (savedTransport) {
+        setPrinterTransport(savedTransport);
+      }
+      const savedBaud = localStorage.getItem("ohms_printer_baud");
+      if (savedBaud) {
+        setBaudRate(parseInt(savedBaud, 10) || 9600);
+      }
+    }
   }, []);
+
+  const updatePrinterTransport = (transport: PrinterTransportType) => {
+    setPrinterTransport(transport);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ohms_printer_transport", transport);
+    }
+    addPrinterLog(`[CONFIG] Saved default printer transport: ${transport}`);
+  };
+
+  const updateBaudRate = (baud: number) => {
+    setBaudRate(baud);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ohms_printer_baud", String(baud));
+    }
+    addPrinterLog(`[CONFIG] Saved serial baud rate: ${baud}`);
+  };
 
   const addPrinterLog = (msg: string) => {
     setPrinterLogs((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev.slice(0, 30)]);
@@ -421,7 +447,7 @@ export default function HardwareManagementPage() {
                         name="printerTransport"
                         value={opt.id}
                         checked={printerTransport === opt.id}
-                        onChange={() => setPrinterTransport(opt.id as PrinterTransportType)}
+                        onChange={() => updatePrinterTransport(opt.id as PrinterTransportType)}
                         className="mt-1 accent-sky-500"
                       />
                       <div>
@@ -438,7 +464,7 @@ export default function HardwareManagementPage() {
                   <label className="text-xs font-semibold text-slate-300">Serial Baud Rate</label>
                   <select
                     value={baudRate}
-                    onChange={(e) => setBaudRate(parseInt(e.target.value, 10))}
+                    onChange={(e) => updateBaudRate(parseInt(e.target.value, 10))}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
                   >
                     <option value={9600}>9600 baud (Standard POS)</option>
@@ -448,6 +474,13 @@ export default function HardwareManagementPage() {
                   </select>
                 </div>
               )}
+
+              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 flex items-center gap-2.5 text-xs text-emerald-300">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  <strong>Workstation Config Saved:</strong> Using <strong>{printerTransport}</strong> across Billing, OPD tokens, and receipts.
+                </span>
+              </div>
             </div>
 
             {/* Test Actions Card */}

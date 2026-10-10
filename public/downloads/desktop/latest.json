@@ -1,14 +1,14 @@
 {
-  "version": "1.1.81",
+  "version": "1.1.82",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.81. Production release: Fail-closed booking integrity, scoped cache and storage boundaries, 142/142 migration parity, zero database schema lint errors, Playwright 4-browser 208/208 green closure, hermetic CORS routing fallback, dual commission transparency, unbilled services auto-population, and fail-safe billing disambiguation.",
-  "pub_date": "2026-10-10T12:00:00.000Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.82. Production release: Fail-closed booking integrity, scoped cache and storage boundaries, 142/142 migration parity, zero database schema lint errors, Playwright 4-browser 208/208 green closure, hermetic CORS routing fallback, dual commission transparency, unbilled services auto-population, and fail-safe billing disambiguation.",
+  "pub_date": "2026-10-10T15:30:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.81.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.82.exe",
       "installer_exe_sha256": "EBBF8937DC4C8AA80AD14DD2744679A2AAE3EA0C827FD155790E5A81BAB375FC",
       "installer_exe_size": 1048043,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.81.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.82.msi",
       "installer_msi_sha256": "05F3EF93734F0D0F7224509873176F1CFA7668980810D90F94E3D3980B25EB05",
       "installer_msi_size": 1478656,
       "status": "ready",
