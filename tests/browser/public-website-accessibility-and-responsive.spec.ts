@@ -40,11 +40,23 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
 
     const routes = ["/", "/doctors", "/appointment", "/check-token", "/contact", "/privacy", "/terms"];
 
-    for (const vp of viewports) {
-      await page.setViewportSize(vp);
-      for (const route of routes) {
+    for (const route of routes) {
+      try {
         await page.goto(route, { waitUntil: "domcontentloaded" });
-        await expect(page.locator("main#main-content")).toBeVisible({ timeout: 10000 });
+      } catch (err: unknown) {
+        const msg = String(err);
+        if (msg.includes("ERR_ABORTED") || msg.includes("interrupted")) {
+          await page.waitForTimeout(200);
+          await page.goto(route, { waitUntil: "domcontentloaded" });
+        } else {
+          throw err;
+        }
+      }
+      await expect(page.locator("main#main-content")).toBeVisible({ timeout: 10000 });
+
+      for (const vp of viewports) {
+        await page.setViewportSize(vp);
+        await page.waitForTimeout(50);
 
         // Verify no horizontal document overflow: scrollWidth should match clientWidth
         const hasHorizontalScroll = await page.evaluate(() => {
@@ -111,7 +123,7 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
 
   test("6. Real Browser Cache Storage: PWA caches only static assets and never caches /app/, /api/, or auth routes", async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(500);
 
     // Evaluate window.caches directly inside the real browser environment

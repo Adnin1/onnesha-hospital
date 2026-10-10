@@ -45,6 +45,7 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
 
       // Check if any schedule slots are available
       const slotRadio = page.locator('input[type="radio"][name="slot"]');
+      await slotRadio.first().waitFor({ state: "visible", timeout: 15000 });
       const slotCount = await slotRadio.count();
 
       if (slotCount > 0) {
@@ -159,7 +160,7 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
 
   test("3. Self-service password recovery lifecycle & interactive strength meter", async ({ page }) => {
     await page.goto("/reset-password");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const newPwdInput = page.locator('#new-password');
     const confirmPwdInput = page.locator('#confirm-password');

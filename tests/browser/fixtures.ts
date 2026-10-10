@@ -158,7 +158,7 @@ const MOCK_ALL_DAY_SCHEDULES = DAYS_OF_WEEK.map((day, idx) => ({
 
 function getMockCorsHeaders(request: { headers: () => Record<string, string> }): Record<string, string> {
   const reqHeaders = request.headers();
-  const origin = reqHeaders["origin"] || "*";
+  const origin = reqHeaders["origin"] || process.env.E2E_BASE_URL || "http://127.0.0.1:3000";
   return {
     "access-control-allow-origin": origin,
     "access-control-allow-credentials": "true",

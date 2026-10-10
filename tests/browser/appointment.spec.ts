@@ -13,45 +13,45 @@ test.describe("Real Browser E2E: Public & Staff Appointments", () => {
     const continueBtn1 = page.locator('button:has-text("Continue to Date & Time")').first();
     await expect(continueBtn1).toBeVisible();
 
-    const doctorCard = page.locator('div[class*="cursor-pointer"]').first();
-    const hasDoctor = await doctorCard.isVisible({ timeout: 5000 }).catch(() => false);
-    if (hasDoctor) {
-      await doctorCard.click();
-      await expect(continueBtn1).toBeEnabled();
-      await continueBtn1.click();
+    const doctorCard = page.locator('[data-testid="doctor-card"], div[role="button"][tabindex="0"]').first();
+    await doctorCard.waitFor({ state: "visible", timeout: 15000 });
+    await doctorCard.click();
+    await expect(continueBtn1).toBeEnabled({ timeout: 10000 });
+    await continueBtn1.click();
 
-      // Step 2: Date & Slot Selection view
-      const dateInput = page.locator('input[type="date"]').first();
-      await expect(dateInput).toBeVisible();
+    // Step 2: Date & Slot Selection view
+    await page.waitForSelector('h2:has-text("Step 2: Choose Appointment Date & Visiting Slot")', { timeout: 15000 });
+    const dateInput = page.locator('input[type="date"], input#appointment-date').first();
+    await expect(dateInput).toBeVisible();
 
-      // Check schedule slot radio or empty notice
-      const slotRadio = page.locator('input[type="radio"][name="slot"]').first();
-      const emptyNotice = page.locator('div:has-text("No active published schedule")').first();
+    // Await schedule slot radio or empty notice to finish loading (resolves loadingSchedules async delay)
+    const slotOrNotice = page.locator('input[type="radio"][name="slot"], div:has-text("No active published schedule"), div:has-text("No Visiting Hours")').first();
+    await slotOrNotice.waitFor({ state: "visible", timeout: 15000 });
 
-      const isSlotAvailable = await slotRadio.isVisible().catch(() => false);
-      if (isSlotAvailable) {
-        await slotRadio.check();
-        const continueBtn2 = page.locator('button:has-text("Continue to Patient Info")').first();
-        await expect(continueBtn2).toBeEnabled();
-        await continueBtn2.click();
+    const slotRadio = page.locator('input[type="radio"][name="slot"]').first();
+    const isSlotAvailable = await slotRadio.isVisible();
+    if (isSlotAvailable) {
+      await slotRadio.check();
+      const continueBtn2 = page.locator('button:has-text("Continue to Patient Info")').first();
+      await expect(continueBtn2).toBeEnabled({ timeout: 10000 });
+      await continueBtn2.click();
 
-        // Step 3: Patient Form
-        const nameInput = page.locator('input[placeholder*="Md. Tariqul"]').first();
-        await expect(nameInput).toBeVisible();
-        await nameInput.fill("E2E Test Patient");
+      // Step 3: Patient Form
+      await page.waitForSelector('h2:has-text("Step 3: Patient Particulars & Contact Details")', { timeout: 15000 });
+      const nameInput = page.locator('input#patient-fullname, input[placeholder*="Md. Tariqul"]').first();
+      await expect(nameInput).toBeVisible({ timeout: 10000 });
+      await nameInput.fill("E2E Test Patient");
 
-        const phoneInput = page.locator('input[placeholder*="017XXXX"]').first();
-        await expect(phoneInput).toBeVisible();
-        await phoneInput.fill("01799887766");
+      const phoneInput = page.locator('input#patient-phone, input[placeholder*="017XXXX"]').first();
+      await expect(phoneInput).toBeVisible({ timeout: 10000 });
+      await phoneInput.fill("01799887766");
 
-        const submitBtn = page.locator('button:has-text("Confirm Appointment")').first();
-        await expect(submitBtn).toBeEnabled();
-      } else {
-        await expect(emptyNotice).toBeVisible();
-      }
+      const submitBtn = page.locator('button:has-text("Confirm Appointment")').first();
+      await expect(submitBtn).toBeVisible({ timeout: 10000 });
+      await expect(submitBtn).toBeEnabled({ timeout: 10000 });
     } else {
-      // If doctor directory is still loading or empty, verify loading indicator or empty banner
-      await expect(page.locator('text=Select Doctor & Specialty')).toBeVisible();
+      const emptyNotice = page.locator('div:has-text("No active published schedule"), div:has-text("No Visiting Hours")').first();
+      await expect(emptyNotice).toBeVisible();
     }
   });
 

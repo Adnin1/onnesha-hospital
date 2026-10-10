@@ -3,7 +3,7 @@ import { test, expect } from "./fixtures";
 test.describe("Real Browser E2E: Authentication & Navigation", () => {
   test("1. Login page loads cleanly, accepts email/password input, and validates submission", async ({ page }) => {
     await page.goto("/login");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const emailInput = page.locator('input[type="email"]');
     const passInput = page.locator('input[type="password"]');
