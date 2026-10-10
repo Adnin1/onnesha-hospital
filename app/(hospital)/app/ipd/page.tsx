@@ -109,8 +109,11 @@ export default function IPDAdmissionsPage() {
     operationName: "",
     operationDate: "",
     operationTime: "",
+    indication: "",
     surgeonName: "",
     assistantSurgeons: "",
+    assistantSurgeon1: "",
+    assistantSurgeon2: "",
     anaesthetistName: "",
     anaesthesiaType: "",
     operativeFindings: "",
@@ -124,6 +127,8 @@ export default function IPDAdmissionsPage() {
       { name: "Cap. Esomeprazole (20mg)", formulation: "Cap.", dosage: "1+0+1", timing: "খাবার ৩০ মিনিট আগে", duration: "14 days", instructions: "খালি পেটে" },
     ],
     stitchRemovalDate: "",
+    restDays: "১৫",
+    heavyWorkRestrictionDays: "১ মাস",
     followupDate: "",
   });
 
@@ -364,6 +369,8 @@ export default function IPDAdmissionsPage() {
             formulation: m.formulation ? String(m.formulation) : undefined,
           })),
           stitchRemovalDate: s.stitch_removal_date || undefined,
+          restDays: "১৫",
+          heavyWorkRestrictionDays: "১ মাস",
           followupDate: s.followup_date || undefined,
           followUpInstructions: s.followup_instructions || s.discharge_advice || undefined,
         });
@@ -393,6 +400,11 @@ export default function IPDAdmissionsPage() {
           finalDiagnosis: record.provisional_diagnosis,
           hospitalCourseSummary: "Inpatient admission active. Clinical management in progress.",
           presentingFeatures: record.provisional_diagnosis,
+          stitchRemovalDate: "১০ দিন পর",
+          restDays: "১৫",
+          heavyWorkRestrictionDays: "১ মাস",
+          followupDate: "৭ দিন পর",
+          followUpInstructions: "নিয়মিত ওষুধ খাবেন। যেকোনো সমস্যায় হাসপাতালে যোগাযোগ করবেন।",
           takeHomeMedications: [
             {
               name: "Tab. Cefuroxime (500mg)",
@@ -568,8 +580,11 @@ export default function IPDAdmissionsPage() {
                 operationName: dischargeForm.operationName,
                 operationDate: dischargeForm.operationDate || undefined,
                 operationTime: dischargeForm.operationTime || undefined,
+                indication: dischargeForm.indication || dischargeForm.finalDiagnosis,
                 surgeonName: dischargeForm.surgeonName || undefined,
                 assistantSurgeons: dischargeForm.assistantSurgeons || undefined,
+                assistantSurgeon1: dischargeForm.assistantSurgeon1 || undefined,
+                assistantSurgeon2: dischargeForm.assistantSurgeon2 || undefined,
                 anaesthetistName: dischargeForm.anaesthetistName || undefined,
                 anaesthesiaType: dischargeForm.anaesthesiaType || undefined,
                 operativeFindings: dischargeForm.operativeFindings || undefined,
@@ -585,6 +600,8 @@ export default function IPDAdmissionsPage() {
             : undefined,
           takeHomeMedications: activeMedications,
           stitchRemovalDate: dischargeForm.stitchRemovalDate || undefined,
+          restDays: dischargeForm.restDays || "১৫",
+          heavyWorkRestrictionDays: dischargeForm.heavyWorkRestrictionDays || "১ মাস",
           followupDate: dischargeForm.followupDate || undefined,
           followUpInstructions: dischargeForm.followupInstructions || dischargeForm.dischargeAdvice,
         });
@@ -598,7 +615,7 @@ export default function IPDAdmissionsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${certificatePrintProps ? "print:hidden" : ""}`}>
       {/* Top Banner */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
         <div>
@@ -1168,6 +1185,16 @@ export default function IPDAdmissionsPage() {
                     />
                   </div>
                   <div>
+                    <label className="font-bold text-slate-700 block mb-1">Indication (অপারেশনের কারণ)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Acute Appendicitis / Foetal Distress"
+                      value={dischargeForm.indication}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, indication: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                  <div>
                     <label className="font-bold text-slate-700 block mb-1">Operation Date</label>
                     <input
                       type="date"
@@ -1183,6 +1210,26 @@ export default function IPDAdmissionsPage() {
                       placeholder="e.g. Dr. Md. Rafiqul Islam"
                       value={dischargeForm.surgeonName}
                       onChange={(e) => setDischargeForm({ ...dischargeForm, surgeonName: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Assistant Surgeon 1</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Dr. Tariqul Islam"
+                      value={dischargeForm.assistantSurgeon1}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, assistantSurgeon1: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Assistant Surgeon 2</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Dr. Mahmudul Hasan"
+                      value={dischargeForm.assistantSurgeon2}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, assistantSurgeon2: e.target.value })}
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
                     />
                   </div>
@@ -1403,6 +1450,28 @@ export default function IPDAdmissionsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
+                    <label className="font-bold text-slate-700 block mb-1">Rest Duration (বিশ্রামের মেয়াদ দিন/মাস)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. ১৫ দিন / ১ মাস"
+                      value={dischargeForm.restDays}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, restDays: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Heavy Work Restriction (ভারী কাজ নিষেধ)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. ১ মাস / ২ মাস"
+                      value={dischargeForm.heavyWorkRestrictionDays}
+                      onChange={(e) => setDischargeForm({ ...dischargeForm, heavyWorkRestrictionDays: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div>
                     <label className="font-bold text-slate-700 block mb-1">Stitch Removal Date (সেলাই কাটার তারিখ)</label>
                     <input
                       type="date"
@@ -1461,23 +1530,23 @@ export default function IPDAdmissionsPage() {
 
       {/* Authentic 4-Part Discharge Certificate Print Modal */}
       {certificatePrintProps && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static">
-          <div className="bg-white rounded-3xl max-w-4xl w-full border border-slate-200 shadow-2xl overflow-hidden print:border-none print:shadow-none print:max-w-none print:w-full my-6">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static print:z-auto print:overflow-visible print:block print:w-full print:m-0">
+          <div className="bg-white rounded-3xl max-w-4xl w-full border border-slate-200 shadow-2xl overflow-hidden print:border-none print:shadow-none print:max-w-none print:w-full my-6 print:m-0 print:p-0">
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 print:hidden">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-indigo-600" />
+                <FileText className="w-5 h-5 text-sky-700" />
                 <h3 className="text-sm font-black text-slate-900">
-                  Onnesha Hospital 4-Part Discharge Certificate Folder — {certificatePrintProps.admissionNumber}
+                  ANNESHA HOSPITAL AND DIAGNOSTIC 4-Part Discharge Certificate Folder — {certificatePrintProps.admissionNumber}
                 </h3>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition flex items-center shadow-xs cursor-pointer"
+                  className="px-4 py-1.5 bg-sky-700 hover:bg-sky-800 text-white font-bold rounded-xl text-xs transition flex items-center shadow-xs cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5 mr-1.5" />
-                  Print Certificate
+                  Print 4-Part Folder (4 Pages)
                 </button>
                 <button
                   type="button"
@@ -1490,7 +1559,7 @@ export default function IPDAdmissionsPage() {
               </div>
             </div>
 
-            <div className="p-4 overflow-x-auto max-h-[82vh] print:max-h-none print:p-0">
+            <div className="p-4 overflow-x-auto max-h-[82vh] print:max-h-none print:p-0 print:overflow-visible">
               <DischargeSummaryPrint {...certificatePrintProps} />
             </div>
           </div>

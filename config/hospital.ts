@@ -80,52 +80,50 @@ export interface HospitalMetadata {
 
 export const HOSPITAL_METADATA: HospitalMetadata = {
   id: "a0000000-0000-0000-0000-000000000001",
-  // English brand name: Default in repo & ERP database
-  // [CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED]
-  name: process.env.NEXT_PUBLIC_APP_NAME || "Annesha Hospital and Diagnostic Center",
-  shortName: "Onnesha Hospital",
-  banglaName: "অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার",
+  // English brand name: ANNESHA HOSPITAL AND DIAGNOSTIC (Center removed per owner directive)
+  name: process.env.NEXT_PUBLIC_APP_NAME || "ANNESHA HOSPITAL AND DIAGNOSTIC",
+  shortName: "ANNESHA HOSPITAL",
+  banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক",
   code: process.env.NEXT_PUBLIC_HOSPITAL_CODE || "OH",
-  phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01718835623",
-  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "01718835623",
+  phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01620003888, 01718835623",
+  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "01620003888",
   ambulanceHotline: process.env.NEXT_PUBLIC_AMBULANCE_HOTLINE || "01904210065",
   email: process.env.NEXT_PUBLIC_HOSPITAL_EMAIL || "aaih.apon@gmail.com",
-  // Physical address: Default in repo
-  // [CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED]
-  address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া",
-  normalizedAddress: "সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া",
+  // Physical address: Official Bogura address
+  address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
+  normalizedAddress: "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
   regNo: process.env.NEXT_PUBLIC_HOSPITAL_REG_NO || "10022715",
   // DGHS Registry data (Facility ID 10022715)
   dghsFacilityId: "10022715",
   dghsRegisteredName: "ANNESHA HOSPITAL / অন্বেষা হাসপাতাল",
   dghsDivisionDistrict: "Rajshahi / Bogura",
-  // External directory finding for cross-audit
-  externalDirectoryAddress: "Mofiz Paglar Mor, Sherpur Road, Bogura",
+  // External directory finding
+  externalDirectoryAddress: "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
   timezone: "Asia/Dhaka",
   currency: process.env.NEXT_PUBLIC_DEFAULT_CURRENCY || "BDT",
   currencySymbol: "৳",
   contentTruthBlockers: {
     physicalAddress: {
-      status: "CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED",
+      status: "RESOLVED PER OWNER DIRECTIVE",
       repoDefault: "সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া",
       repoNormalized: "সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া",
-      externalDirectory: "Mofiz Paglar Mor, Sherpur Road, Bogura",
-      locality: "Khandar",
+      externalDirectory: "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
+      locality: "Sutrapur",
       district: "Bogura",
       division: "Rajshahi",
       notes:
-        "Discrepancy identified between repository baseline (Khandar, in front of Sonali Bank) and external directory citations (Mofiz Paglar Mor, Sherpur Road). Both locations are in Bogura, but represent separate street junctions. Physical premises confirmation required from hospital management.",
+        "Canonical address verified per physical hospital document: Sherpur Road, Sutrapur, Bogura. Historical baseline preserved for audit: সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া.",
     },
     englishBrandTransliteration: {
-      status: "CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED",
+      status: "RESOLVED PER OWNER DIRECTIVE",
       dghsFacilityId: "10022715",
       dghsRegisteredName: "ANNESHA HOSPITAL / অন্বেষা হাসপাতাল",
       erpDefaultName: "Annesha Hospital and Diagnostic Center",
-      webPortalBranding: "Onnesha Hospital & Diagnostic Complex",
-      shortName: "Onnesha Hospital",
+      webPortalBranding: "ANNESHA HOSPITAL AND DIAGNOSTIC",
+      shortName: "ANNESHA HOSPITAL",
       banglaName: "অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার",
       notes:
-        "Discrepancy identified between DGHS government registration ('ANNESHA HOSPITAL') / ERP database baseline ('Annesha Hospital and Diagnostic Center') and digital web portal branding ('Onnesha Hospital & Diagnostic Complex'). Official owner verification required for canonical legal corporate name vs public trade name.",
+        "Canonical title established: ANNESHA HOSPITAL AND DIAGNOSTIC (Bengali: অন্বেষা হাসপাতাল ও ডায়াগনস্টিক). 'Center' has been cancelled across the system per owner instruction. Historical references preserved for audit compliance: 'Annesha Hospital and Diagnostic Center' and 'অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার'.",
     },
   },
 };

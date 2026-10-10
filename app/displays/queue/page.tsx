@@ -279,7 +279,7 @@ export default function QueueDisplayPage() {
           </div>
           <div>
             <h1 className="text-xl lg:text-2xl font-bold tracking-tight text-white">
-              {isBangla ? "অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার" : "ANNESHA HOSPITAL & DIAGNOSTIC CENTER"}
+              {isBangla ? "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক" : "ANNESHA HOSPITAL & DIAGNOSTIC"}
             </h1>
             <p className="text-xs text-sky-400 font-medium tracking-wide">
               {isBangla ? "বহির্বিভাগ (OPD) ডিজিটাল লাইভ টোকেন ডিসপ্লে" : "Outpatient Department (OPD) Live Token Calling Board"}

@@ -144,7 +144,7 @@ export default function EmergencyTriageDisplayPage() {
               </span>
             </div>
             <p className="text-xs text-rose-300 font-medium">
-              {isBangla ? "অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার | বগুড়া" : "Annesha Hospital & Diagnostic Center | Bogura"}
+              {isBangla ? "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক | বগুড়া" : "Annesha Hospital & Diagnostic | Bogura"}
             </p>
           </div>
         </div>
