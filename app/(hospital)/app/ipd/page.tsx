@@ -615,7 +615,8 @@ export default function IPDAdmissionsPage() {
   };
 
   return (
-    <div className={`space-y-6 ${certificatePrintProps ? "print:hidden" : ""}`}>
+    <>
+      <div className={`space-y-6 ${certificatePrintProps ? "print:hidden" : ""}`}>
       {/* Top Banner */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 no-print">
         <div>
@@ -1528,6 +1529,8 @@ export default function IPDAdmissionsPage() {
         </div>
       )}
 
+      </div>
+
       {/* Authentic 4-Part Discharge Certificate Print Modal */}
       {certificatePrintProps && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto print:p-0 print:bg-white print:static print:z-auto print:overflow-visible print:block print:w-full print:m-0">
@@ -1565,6 +1568,6 @@ export default function IPDAdmissionsPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
