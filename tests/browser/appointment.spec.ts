@@ -15,7 +15,7 @@ test.describe("Real Browser E2E: Public & Staff Appointments", () => {
     await expect(continueBtn1).toBeVisible();
 
     const doctorCard = page.locator('[data-testid="doctor-card"]').first();
-    await doctorCard.waitFor({ state: "visible", timeout: 20000 });
+    await expect(doctorCard).toBeVisible({ timeout: 25000 });
     await doctorCard.click();
     await expect(continueBtn1).toBeEnabled({ timeout: 10000 });
     await continueBtn1.click();

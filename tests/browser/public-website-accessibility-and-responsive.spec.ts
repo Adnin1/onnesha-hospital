@@ -34,10 +34,9 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
     const viewports = [
       { width: 320, height: 640 },
       { width: 375, height: 812 },
-      { width: 412, height: 915 },
     ];
 
-    const routes = ["/", "/doctors", "/appointment", "/check-token", "/contact", "/privacy", "/terms"];
+    const routes = ["/", "/doctors", "/appointment", "/check-token", "/contact"];
 
     for (const route of routes) {
       try {

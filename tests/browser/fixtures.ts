@@ -161,14 +161,14 @@ function getMockCorsHeaders(request: { headers: () => Record<string, string> }):
   const origin = reqHeaders["origin"] || reqHeaders["Origin"] || process.env.E2E_BASE_URL || "http://127.0.0.1:3000";
   const reqAllowHeaders = reqHeaders["access-control-request-headers"] || reqHeaders["Access-Control-Request-Headers"];
   const standardHeaders = "authorization, x-client-info, apikey, content-type, prefer, range, x-supabase-api-version, accept, accept-language, accept-profile, content-profile";
-  const allowHeaders = reqAllowHeaders ? `${reqAllowHeaders}, ${standardHeaders}` : `${standardHeaders}, *`;
+  const allowHeaders = reqAllowHeaders ? `${reqAllowHeaders}, ${standardHeaders}` : standardHeaders;
 
   return {
     "access-control-allow-origin": origin,
     "access-control-allow-credentials": "true",
     "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD",
     "access-control-allow-headers": allowHeaders,
-    "access-control-expose-headers": "*",
+    "access-control-expose-headers": "content-range, content-length, etag",
     "access-control-max-age": "86400",
     "content-type": "application/json",
   };
@@ -333,11 +333,6 @@ async function installHermeticMocks(page: Page): Promise<void> {
 
   const pattern = /(ci-hermetic-build-placeholder|placeholder\.supabase|placeholder|\.supabase\.co)/;
   await page.route(pattern, handler);
-  try {
-    await page.context().route(pattern, handler);
-  } catch {
-    // Ignore if context is locked
-  }
 }
 
 /**
