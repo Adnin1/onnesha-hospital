@@ -29,13 +29,13 @@ import { TestTariffManager } from "@/components/lab/TestTariffManager";
 import { HospitalTariffManager } from "@/components/billing/HospitalTariffManager";
 
 const DEFAULT_HOSPITAL_PROFILE = {
-  name: "Annesha Hospital and Diagnostic Center",
-  banglaName: "অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার",
-  phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01718835623",
-  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "01718835623",
+  name: "ANNESHA HOSPITAL AND DIAGNOSTIC",
+  banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক",
+  phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01620003888, 01718835623",
+  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "01620003888",
   ambulanceHotline: process.env.NEXT_PUBLIC_AMBULANCE_HOTLINE || "01904210065",
   email: process.env.NEXT_PUBLIC_HOSPITAL_EMAIL || "aaih.apon@gmail.com",
-  address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া",
+  address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
 };
 
 export default function SettingsAndAuditPage() {
