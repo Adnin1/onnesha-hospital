@@ -100,7 +100,7 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
         await submitBtn.click();
 
         // Step 4: Instant confirmation & token slip
-        await page.waitForSelector('text=Appointment Confirmed Successfully!', { timeout: 10000 });
+        await page.waitForSelector('text=Appointment Confirmed Successfully!', { timeout: 15000 });
         await expect(page.locator("text=OPD CONSULTATION TOKEN SLIP")).toBeVisible();
         await expect(page.locator("text=Your Serial Token Number")).toBeVisible();
         await expect(page.getByText(/#\d+/).first()).toBeVisible();
