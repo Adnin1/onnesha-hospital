@@ -3,11 +3,12 @@
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit SHA:** `Pending v1.1.81 commit`  
+**Head Commit SHA:** `bc4b9160f10c933203c379d94e002534ae523a9e`  
 **Target Release Tag:** `v1.1.81` (Immutable historical tag `v1.1.80` preserved at `2dd3b0121a8ef32120a0002522caf0055e5f3074`)  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
+**Live Production Deployment URL:** `https://b644ce34.onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
-**Ledger Generation Date:** October 10, 2026 (17:48 UTC+6)  
+**Ledger Generation Date:** October 10, 2026 (18:32 UTC+6)  
 **Final Production Verdict:** **SOFTWARE READY & FULLY DEPLOYED — FAIL-CLOSED BOOKING HARDENED & CI 100% GREEN**
 
 ---
@@ -17,16 +18,17 @@
 | Component | Target / Value | Telemetry Verification Source | Verdict |
 | :--- | :--- | :--- | :---: |
 | **Git Working Tree** | Clean (`0 staged, 0 unstaged`) | `git status --short` | ✅ PASS |
-| **Head Commit** | `a93b86307a51cbf0ce688ef75ec7884d5dfce73e` | `git rev-parse HEAD` | ✅ PASS |
-| **Git Tag `v1.1.80`** | `2dd3b0121a8ef32120a0002522caf0055e5f3074` | `git rev-parse v1.1.80^{commit}` | ✅ PASS |
-| **GitHub Actions Mandatory CI** | Run #477 (`38046111500`) & Run #478 (`38046680810`) | GitHub Actions Telemetry (`conclusion: success`) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://290839a9.onnesha-hospital.pages.dev` | Wrangler Edge Deployment API | ✅ PASS |
+| **Head Commit** | `bc4b9160f10c933203c379d94e002534ae523a9e` | `git rev-parse HEAD` | ✅ PASS |
+| **Git Tag `v1.1.80`** | `2dd3b0121a8ef32120a0002522caf0055e5f3074` | `git rev-parse "v1.1.80^{commit}"` | ✅ PASS |
+| **Git Tag `v1.1.81`** | `bc4b9160f10c933203c379d94e002534ae523a9e` | `git rev-parse "v1.1.81^{commit}"` | ✅ PASS |
+| **GitHub Actions Mandatory CI** | Run #477 (`38046111500`), #478 (`38046680810`), #38052321918 | GitHub Actions Telemetry | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://b644ce34.onnesha-hospital.pages.dev` | Wrangler Edge Deployment API | ✅ PASS |
 | **Live Edge Health & Headers** | HTTP `200 OK` (15/15 routes), HSTS, CSP | `node scripts/smoke_test.mjs` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
 | **Node Certification Test Suite** | 128/128 suites passed (1,161 active passes, 0 failed, 7 standard skips) | `npm run test:certification` | ✅ PASS |
 | **Next.js Static Build** | 61/61 static routes generated | `npm run build` | ✅ PASS |
-| **Static Link & Asset Forensics** | 59 HTML pages, 394 internal links, 1078 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
+| **Static Link & Asset Forensics** | 59 HTML pages, 395 internal links, 1078 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
 | **Supabase Remote Migrations** | 142/142 applied (142 total, 0 unapplied remote, 0 unapplied local) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal errors on linked database | `npx supabase db lint --linked` | ✅ PASS |
 | **Four-Browser Real E2E Matrix** | 208 browser tests passed across Chromium, Firefox, Mobile Chrome, WebKit | GitHub Actions Playwright Runs #477 & #478 | ✅ PASS |
