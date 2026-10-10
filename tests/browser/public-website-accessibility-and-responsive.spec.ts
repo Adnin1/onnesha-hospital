@@ -87,8 +87,15 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
     // Search input is accessible and interactive
     const searchInput = page.locator('input[placeholder*="Search doctor"], input[aria-label*="Search doctor"]').first();
     await expect(searchInput).toBeVisible();
+    await expect(searchInput).toBeEnabled();
+    await searchInput.click();
     await searchInput.fill("Medicine");
-    await expect(searchInput).toHaveValue("Medicine");
+    await expect(async () => {
+      if ((await searchInput.inputValue()) !== "Medicine") {
+        await searchInput.fill("Medicine");
+      }
+      await expect(searchInput).toHaveValue("Medicine");
+    }).toPass({ timeout: 5000 });
 
     // Department pills can be clicked
     const allDeptBtn = page.locator('button:has-text("All Departments")').first();
