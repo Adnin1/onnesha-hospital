@@ -141,7 +141,7 @@ if (secretsFound === 0) pass('No hardcoded secrets found in production source');
 console.log('\n📋 4. Localhost / HTTP References');
 const prodFiles = sourceFiles.filter(f => {
   const rel = path.relative(ROOT, f).replace(/\\/g, '/');
-  return !rel.includes('node_modules') && !rel.startsWith('docs/') && !rel.startsWith('tests/') && !rel.startsWith('scripts/') && !rel.includes('.test.') && !rel.includes('.spec.');
+  return !rel.includes('node_modules') && !rel.startsWith('.github/') && !rel.startsWith('docs/') && !rel.startsWith('tests/') && !rel.startsWith('scripts/') && !rel.includes('.test.') && !rel.includes('.spec.');
 });
 let localhostCount = 0;
 for (const file of prodFiles) {
