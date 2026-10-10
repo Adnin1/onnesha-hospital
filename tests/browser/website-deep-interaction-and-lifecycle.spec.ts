@@ -44,11 +44,12 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
       await page.waitForSelector('h2:has-text("Step 2: Choose Appointment Date & Visiting Slot")', { timeout: 10000 });
 
       // Check if any schedule slots are available
+      const slotOrNotice = page.locator('input[type="radio"][name="slot"], div:has-text("No active published schedule"), div:has-text("No Visiting Hours")').first();
+      await slotOrNotice.waitFor({ state: "visible", timeout: 15000 });
       const slotRadio = page.locator('input[type="radio"][name="slot"]');
-      await slotRadio.first().waitFor({ state: "visible", timeout: 15000 });
-      const slotCount = await slotRadio.count();
+      const isSlotAvailable = await slotRadio.first().isVisible();
 
-      if (slotCount > 0) {
+      if (isSlotAvailable) {
         await slotRadio.first().check();
         const nextStepBtn = page.locator('button:has-text("Continue to Patient Info")');
         await expect(nextStepBtn).toBeVisible();

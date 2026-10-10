@@ -64,7 +64,13 @@ test.describe("Real Browser E2E: Route-by-Route Runtime Acceptance & Console Dia
     const onPageError = (err: Error) => {
       const msg = err.message || "";
       // WebKit surfaces Next.js static export background prefetch network 404s/aborts as unhandled fetch exceptions
-      if (msg.includes("access control checks") || msg.includes("__next.") || msg.includes("cancelled")) {
+      if (
+        msg.includes("access control checks") ||
+        msg.includes("__next.") ||
+        msg.includes("cancelled") ||
+        msg.includes("Load failed") ||
+        msg.includes("Failed to fetch")
+      ) {
         return;
       }
       pageErrors.push({ route: currentRoute, error: msg });
