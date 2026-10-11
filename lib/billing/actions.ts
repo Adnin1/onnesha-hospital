@@ -1542,6 +1542,7 @@ export async function editInvoiceAction(params: {
 export async function deleteInvoiceAction(params: {
   invoiceId: string;
   reason?: string;
+  permanentPurge?: boolean;
 }): Promise<ActionResult<{ success: boolean; mode: string; message: string }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
@@ -1565,6 +1566,7 @@ export async function deleteInvoiceAction(params: {
       p_invoice_id: params.invoiceId,
       p_admin_id: session.userId,
       p_reason: params.reason?.trim() || "Purged by Super Admin",
+      p_permanent_purge: Boolean(params.permanentPurge),
     });
 
     if (rpcErr) {

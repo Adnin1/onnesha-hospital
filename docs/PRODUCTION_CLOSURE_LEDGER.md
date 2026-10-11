@@ -24,7 +24,7 @@
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 162/162 applied (100% parity, 0 drift, newest: `20261011233000`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 163/163 applied (100% parity, 0 drift, newest: `20261012033000`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB | `npx supabase db lint --linked` | ✅ PASS |
 | **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
 | **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
@@ -74,9 +74,9 @@
   - `Onnesha-Hospital-1.1.90.msi`: exactly **3,457,024 bytes**, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
 
-### E. Supabase Database Migration Parity (162/162)
-- All 162 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
-- Verified via `npx supabase migration list` ending at `20261011233000` (`20261011233000_quarantine_synthetic_bootstrap_data.sql`) on both local and remote with 0 drift.
+### E. Supabase Database Migration Parity (163/163)
+- All 163 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
+- Verified via `npx supabase migration list` ending at `20261012033000` (`20261012033000_super_admin_permanent_invoice_purge.sql`) on both local and remote with 0 drift.
 - Key recent migrations:
   - `20261011082000_fix_medicines_generics_foreign_key.sql`: Explicit foreign key relation between `public.medicines(generic_id)` and `public.medicine_generics(id)` with schema cache notification.
   - `20261011083000_seed_official_hospital_rate_chart.sql`: Seeding and synchronization of official hospital tariffs into `diagnostic_tests` and `hospital_service_tariffs`.
@@ -85,6 +85,7 @@
   - `20261011215800_add_voided_at_to_invoices.sql`: Added `voided_at` timestamp column to `invoices` table with backfill for audit logs and accounting reports compatibility.
   - `20261011231500_add_date_of_birth_column_to_patients.sql`: Harmonized `date_of_birth` and `dob` columns on `patients` table with two-way trigger sync, resolving schema join compatibility across medical certificates and laboratory orders.
   - `20261011233000_quarantine_synthetic_bootstrap_data.sql`: Quarantined and permanently purged synthetic test/bootstrap operational records (accounting journal entries, welfare applications, demo patients with 0 invoices/episodes, purchase requisitions, goods receipts, biomedical devices, and asset registers) to enforce zero auto-fabrication and maintain pristine operational data integrity.
+  - `20261012033000_super_admin_permanent_invoice_purge.sql`: Enhanced `delete_invoice_super_admin_atomic` stored procedure with dual-mode operational support (Safe Void vs Permanent Purge), enabling Super Admins to permanently purge invoices and eliminate all linked payments, line items, and audit history from the database.
 - Schema verification via `npx supabase db lint --linked` confirmed 0 fatal schema or security errors.
 
 ### F. Medical Certificates Overhaul & Cashier Billing Permission Governance

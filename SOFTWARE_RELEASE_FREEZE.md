@@ -24,7 +24,7 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 | **Canonical Physical Address** | `শেরপুর রোড, সূত্রাপুর, বগুড়া।` | ✅ SYNCHRONIZED |
 | **Official Telephone Hotlines** | `01620003888, 01718835623` | ✅ SYNCHRONIZED |
 | **DGHS Facility ID** | `10022715` | ✅ CERTIFIED |
-| **Supabase Remote Migrations** | 162 / 162 applied (Latest: `20261011233000_quarantine_synthetic_bootstrap_data.sql`) | ✅ 100% PARITY |
+| **Supabase Remote Migrations** | 163 / 163 applied (Latest: `20261012033000_super_admin_permanent_invoice_purge.sql`) | ✅ 100% PARITY |
 | **Data Authenticity Policy** | Honest empty states enforced; zero synthetic auto-fabrication in production tenant | ✅ CERTIFIED |
 | **TypeScript Strict Compiler** | `tsc --noEmit` -> 0 errors, 0 warnings | ✅ PASS |
 | **ESLint Quality Gate** | `eslint` -> 0 errors, 0 warnings | ✅ PASS |

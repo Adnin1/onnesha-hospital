@@ -429,7 +429,7 @@ export default function HardwareManagementPage() {
           }`}
         >
           <Activity className="w-4 h-4" />
-          LIS Analyzers (G9)
+          LIS Laboratory Analyzers (G9)
         </button>
 
         <button
@@ -441,7 +441,7 @@ export default function HardwareManagementPage() {
           }`}
         >
           <Layers className="w-4 h-4" />
-          PACS DICOM (G8)
+          PACS & DICOM Node (G8)
         </button>
 
         <button

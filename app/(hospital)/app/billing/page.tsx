@@ -87,6 +87,7 @@ function BillingManagementContent() {
   const [editModalInv, setEditModalInv] = useState<InvoiceRecord | null>(null);
   const [deleteModalInv, setDeleteModalInv] = useState<InvoiceRecord | null>(null);
   const [deleteReasonInput, setDeleteReasonInput] = useState("");
+  const [deletePermanentPurge, setDeletePermanentPurge] = useState<boolean>(true);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // User Roles & Cashier Authorization
@@ -977,7 +978,8 @@ function BillingManagementContent() {
     try {
       const res = await deleteInvoiceAction({
         invoiceId: deleteModalInv.id,
-        reason: deleteReasonInput.trim() || "Purged by Super Admin",
+        reason: deleteReasonInput.trim() || (deletePermanentPurge ? "Permanent Purge by Super Admin" : "Voided by Super Admin"),
+        permanentPurge: deletePermanentPurge,
       });
 
       if (res.success) {
@@ -987,7 +989,9 @@ function BillingManagementContent() {
         setSelectedInvoice(null);
         await loadBillingData();
         setToast({
-          message: `বিল ${invNum} সফলভাবে মুছে ফেলা বা বাতিল করা হয়েছে (${res.data?.mode})`,
+          message: deletePermanentPurge
+            ? `বিল #${invNum} এবং এর সমস্ত হিস্ট্রি ডাটাবেজ থেকে স্থায়ীভাবে মুছে ফেলা হয়েছে`
+            : `বিল #${invNum} সফলভাবে Void হিসেবে চিহ্নিত করা হয়েছে`,
           type: "success",
         });
       } else {
@@ -1275,6 +1279,7 @@ function BillingManagementContent() {
                               onClick={() => {
                                 setSelectedInvoice(inv);
                                 setDeleteModalInv(inv);
+                                setDeletePermanentPurge(true);
                                 setDeleteReasonInput("");
                               }}
                               className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition"
@@ -1344,6 +1349,7 @@ function BillingManagementContent() {
                     <button
                       onClick={() => {
                         setDeleteModalInv(selectedInvoice);
+                        setDeletePermanentPurge(true);
                         setDeleteReasonInput("");
                       }}
                       className="px-2.5 py-1.5 border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition flex items-center shadow-2xs"
@@ -2664,12 +2670,65 @@ function BillingManagementContent() {
               </button>
             </div>
 
-            <div className="bg-rose-50/70 border border-rose-100 rounded-2xl p-3.5 text-xs text-rose-900 space-y-1">
-              <p className="font-bold">সতর্কবার্তা: বিল নম্বর #{deleteModalInv.invoice_number}</p>
-              <p className="text-[11px] text-rose-800 leading-relaxed">
-                এই বিলটি সিস্টেম থেকে মুছে ফেলা বা বাতিল করা হবে। যদি কোনো পেমেন্ট রেকর্ড থাকে, তবে অডিট ও লেজার সুরক্ষার জন্য বিলটি নিরাপদভাবে Void ও Soft-Delete হিসেবে চিহ্নিত হবে। কোনো পেমেন্ট না থাকলে এটি সম্পূর্ণ ডিলিট হবে।
-              </p>
+            {/* Mode Selection Cards */}
+            <div className="space-y-2">
+              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                মুছে ফেলার মোড নির্বাচন করুন (Select Action Mode)
+              </label>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeletePermanentPurge(true)}
+                  className={`p-3 rounded-2xl border text-left transition flex items-start gap-3 cursor-pointer ${
+                    deletePermanentPurge
+                      ? "bg-rose-50/80 border-rose-300 ring-2 ring-rose-500/20 text-rose-950"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100/70"
+                  }`}
+                >
+                  <div className={`p-1.5 rounded-xl shrink-0 mt-0.5 ${deletePermanentPurge ? "bg-rose-600 text-white" : "bg-slate-200 text-slate-500"}`}>
+                    <Trash2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black flex items-center gap-1.5">
+                      <span>স্থায়ীভাবে সম্পূর্ণ ডিলিট ও হিস্ট্রি রিমুভ</span>
+                      <span className="text-[9px] uppercase px-1.5 py-0.5 bg-rose-200/70 text-rose-800 rounded font-bold">Hard Delete</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                      বিল #{deleteModalInv.invoice_number}, সমস্ত আইটেম এবং পেমেন্ট ট্রানজ্যাকশন ডাটাবেজ থেকে চিরতরে মুছে যাবে। লেজারে আর কোনো চিহ্ন থাকবে না।
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDeletePermanentPurge(false)}
+                  className={`p-3 rounded-2xl border text-left transition flex items-start gap-3 cursor-pointer ${
+                    !deletePermanentPurge
+                      ? "bg-amber-50/80 border-amber-300 ring-2 ring-amber-500/20 text-amber-950"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100/70"
+                  }`}
+                >
+                  <div className={`p-1.5 rounded-xl shrink-0 mt-0.5 ${!deletePermanentPurge ? "bg-amber-600 text-white" : "bg-slate-200 text-slate-500"}`}>
+                    <Ban className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black flex items-center gap-1.5">
+                      <span>নিরাপদ বাতিল (Safe Void)</span>
+                      <span className="text-[9px] uppercase px-1.5 py-0.5 bg-amber-200/70 text-amber-800 rounded font-bold">Soft Delete</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                      বিলটি VOID হিসেবে চিহ্নিত থাকবে কিন্তু অডিট রেকর্ডে থেকে যাবে।
+                    </p>
+                  </div>
+                </button>
+              </div>
             </div>
+
+            {deletePermanentPurge && (
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3 text-[11px] text-rose-900 leading-relaxed font-medium">
+                ⚠️ <strong>স্থায়ী ডিলিট সতর্কতা:</strong> এই অপারেশনটি অপরিবর্তনীয় (irreversible)। বিলের সমস্ত পেমেন্ট ও অডিট হিস্ট্রি ডাটাবেজ থেকে চিরতরে নিশ্চিহ্ন হয়ে যাবে।
+              </div>
+            )}
 
             <form onSubmit={handleConfirmDeleteInvoice} className="space-y-4">
               <div>
@@ -2681,7 +2740,7 @@ function BillingManagementContent() {
                   rows={2}
                   value={deleteReasonInput}
                   onChange={(e) => setDeleteReasonInput(e.target.value)}
-                  placeholder="যেমন: ভুল এন্ট্রি, রোগীর ডুপ্লিকেট ইনভয়েস সংশোধন..."
+                  placeholder="যেমন: ভুল এন্ট্রি, টেস্ট বিল ক্লিয়ারেন্স, ডুপ্লিকেট ইনভয়েস সংশোধন..."
                   className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-medium"
                 />
               </div>
@@ -2698,10 +2757,14 @@ function BillingManagementContent() {
                 <button
                   type="submit"
                   disabled={deleteLoading}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-rose-600/20 cursor-pointer"
+                  className={`px-4 py-2 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md cursor-pointer ${
+                    deletePermanentPurge
+                      ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"
+                      : "bg-amber-600 hover:bg-amber-700 shadow-amber-600/20"
+                  }`}
                 >
                   {deleteLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Confirm Permanent Delete
+                  {deletePermanentPurge ? "Confirm Permanent Delete & Wipe" : "Confirm Safe Void"}
                 </button>
               </div>
             </form>
