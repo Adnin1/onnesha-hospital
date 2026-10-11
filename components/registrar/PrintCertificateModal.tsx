@@ -149,10 +149,10 @@ export function PrintCertificateModal({
                 {HOSPITAL_METADATA.banglaName}
               </p>
               <p className="text-[11px] font-sans text-slate-600 mt-1">
-                {HOSPITAL_METADATA.address} • Hotline: {HOSPITAL_METADATA.phone} • Emergency: +880 1712-000000
+                {HOSPITAL_METADATA.address} • Hotline: {HOSPITAL_METADATA.phone} • Emergency: {HOSPITAL_METADATA.emergencyHotline}
               </p>
               <p className="text-[10px] font-sans text-slate-500">
-                DGHS Reg No: HSM-2024-88492 • Email: {HOSPITAL_METADATA.email} • Web: onnesha-hospital.pages.dev
+                DGHS Facility ID: {HOSPITAL_METADATA.dghsFacilityId} • Email: {HOSPITAL_METADATA.email} • Web: onnesha-hospital.pages.dev
               </p>
             </div>
 

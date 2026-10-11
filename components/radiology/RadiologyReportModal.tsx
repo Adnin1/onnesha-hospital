@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { X, Printer, ShieldCheck, CheckCircle2, Loader2, Scan } from "lucide-react";
 import { approveRadiologyReportAction, RadiologyStudy } from "@/lib/radiology/actions";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 
 interface RadiologyReportModalProps {
   isOpen: boolean;
@@ -84,8 +85,11 @@ export function RadiologyReportModal({
           {/* Hospital Header for Print */}
           <div className="border-b pb-4 text-center">
             <h1 className="text-xl font-black text-slate-900 tracking-wide font-sans">
-              ONNESHA HOSPITAL & DIAGNOSTIC COMPLEX
+              {HOSPITAL_METADATA.name.toUpperCase()}
             </h1>
+            <p className="text-xs font-bold text-slate-700 mt-0.5">
+              {HOSPITAL_METADATA.banglaName}
+            </p>
             <p className="text-xs text-slate-500 uppercase tracking-wider mt-0.5">
               Department of Radiology & Medical Imaging
             </p>

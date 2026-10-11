@@ -38,7 +38,7 @@ import { LiveQueueWidget } from "@/components/public/LiveQueueWidget";
 import { FeaturedDoctorsWidget } from "@/components/public/FeaturedDoctorsWidget";
 
 export const metadata: Metadata = {
-  title: "Onnesha Hospital & Diagnostic Complex | Modern Healthcare & Diagnostics",
+  title: "ANNESHA HOSPITAL AND DIAGNOSTIC | Modern Healthcare & Diagnostics",
   description:
     "Book specialist doctor appointments, track live OPD token queues, emergency casualty care, pathology & diagnostic services at Onnesha Hospital, Bangladesh.",
   alternates: {

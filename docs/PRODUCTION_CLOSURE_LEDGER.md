@@ -1,11 +1,11 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.84
+# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.85
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit Reference:** Production Release `v1.1.84`  
+**Head Commit Reference:** Production Release `v1.1.85`  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
-**Historical Release Tags:** `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
+**Historical Release Tags:** `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
 **Ledger Reconciliation Date:** October 11, 2026  
@@ -21,7 +21,7 @@
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
 | **Node Certification Test Suite** | 129/129 suites passed (1,175 active passes, 0 failed, 7 standard skips) | `npm test` & `npm run test:certification` | ✅ PASS |
-| **Playwright Real Browser E2E** | 52/52 real browser tests passed (Chromium headless) | `npx playwright test --project=chromium` | ✅ PASS |
+| **Playwright Real Browser E2E** | 156/156 real browser tests passed across Chromium (52), Firefox (52), and Mobile-Chrome (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
 | **Supabase Remote Migrations** | 157/157 applied (100% parity, 0 drift, newest: `20261011083000`) | `npx supabase migration list` | ✅ PASS |
@@ -31,7 +31,7 @@
 | **System UI 3D Dimensional Engine** | Tactile 3D cards, elevated floating metrics, beveled buttons, glassmorphic panels | `app/globals.css`, `components/dashboard/*`, `app/(hospital)/*` | ✅ PASS |
 | **Pharmacy Schema Relationship Resilience** | Foreign key relation between `medicines(generic_id)` and `medicine_generics(id)` hardened with automatic schema-cache fallback query | `lib/pharmacy/actions.ts` & migration `20261011082000` | ✅ PASS |
 | **Official Hospital Tariffs & Diagnostics** | Complete official rate chart seeded across 16 categories, ~140 procedures, synchronized with billing | `lib/billing/serviceCatalog.ts` & migration `20261011083000` | ✅ PASS |
-| **Native Windows Desktop Installers (v1.1.83/v1.1.84)** | Optimized native NSIS EXE (2.86 MB) & WiX MSI (3.42 MB) matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
+| **Native Windows Desktop Installers (v1.1.85)** | Authentic native NSIS EXE (2.86 MB) & WiX MSI (3.40 MB) matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
 | **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
@@ -67,13 +67,13 @@
   - The discharge folder prints **EXACTLY 4 PAGES** (Sheets: 4) bounded to 279mm A4 dimensions.
   - Printing the admission sheet prints **EXACTLY 1 PAGE** (`.print-pad`).
 
-### D. Native Windows Desktop Packaging (v1.1.83 / v1.1.84)
+### D. Native Windows Desktop Packaging (v1.1.85)
 - **Toolchains:** Host WiX 3.11 (`C:\Users\mahin khan\wix311`) and NSIS 3.10 (`C:\Users\mahin khan\nsis310\nsis-3.10`).
 - **Compiled & Verified Binaries (Synchronized with `latest.json`):**
-  - `Onnesha-Hospital-Setup-1.1.83.exe`: exactly **2,864,635 bytes**, SHA-256: `E964268A1F0BA7736C00832EC01613CAE588CFD7E65D82E1C7221BAAB3A9340B`
-  - `Onnesha-Hospital-1.1.83.msi`: exactly **3,420,160 bytes**, SHA-256: `FC5E89C15DF8FA88A8E1D58C22E95BE30C2F5ABE538137AB63D5B99D50EB341B`
+  - `Onnesha-Hospital-Setup-1.1.85.exe`: exactly **2,864,236 bytes**, SHA-256: `12AE14939BCCE9A1F5C66AE08E6CA9284EA3365F3B0F43F55C145A11C20EF699`
+  - `Onnesha-Hospital-1.1.85.msi`: exactly **3,399,680 bytes**, SHA-256: `028FE46BAF48F484D5577B2AA3482DE98C3936BC92230007F44E244C89A9B86C`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
-- **Historical Note:** Earlier documentation references mentioning ~69–74 MB pertained to uncompressed developer staging outputs before production packaging optimization; the canonical production installers distributed to clients are the ~2.86 MB (EXE) and ~3.42 MB (MSI) packages.
+- **Historical Note:** Earlier documentation references mentioning ~69–74 MB pertained to uncompressed developer staging outputs before production packaging optimization; the canonical production installers distributed to clients are the ~2.86 MB (EXE) and ~3.40 MB (MSI) packages.
 
 ### E. Supabase Database Migration Parity (157/157)
 - All 157 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
