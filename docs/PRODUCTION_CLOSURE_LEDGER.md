@@ -24,7 +24,7 @@
 | **Playwright Real Browser E2E** | 156/156 real browser tests passed across Chromium (52), Firefox (52), and Mobile-Chrome (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 160/160 applied (100% parity, 0 drift, newest: `20261011215800`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 161/161 applied (100% parity, 0 drift, newest: `20261011231500`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB | `npx supabase db lint --linked` | ✅ PASS |
 | **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
 | **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
@@ -74,15 +74,16 @@
   - `Onnesha-Hospital-1.1.90.msi`: exactly **3,457,024 bytes**, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
 
-### E. Supabase Database Migration Parity (160/160)
-- All 160 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
-- Verified via `npx supabase migration list` ending at `20261011215800` on both local and remote.
+### E. Supabase Database Migration Parity (161/161)
+- All 161 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
+- Verified via `npx supabase migration list` ending at `20261011231500` on both local and remote.
 - Key recent migrations:
   - `20261011082000_fix_medicines_generics_foreign_key.sql`: Explicit foreign key relation between `public.medicines(generic_id)` and `public.medicine_generics(id)` with schema cache notification.
   - `20261011083000_seed_official_hospital_rate_chart.sql`: Seeding and synchronization of official hospital tariffs into `diagnostic_tests` and `hospital_service_tariffs`.
   - `20261011190000_diagnostic_tariffs_rls_and_complete_rate_chart.sql`: Full RLS policy resolution on `diagnostic_categories` and `diagnostic_tests` allowing authenticated staff and anon reads, plus complete 185 tests across 16 categories with exact hospital tariffs and synchronization with `hospital_service_tariffs`.
   - `20261011193500_fix_hospital_service_tariffs_categories_and_dedup.sql`: Normalized tariff categories into medical groups, categorized CT Scans (`CT_SCAN`), MRIs (`MRI`), X-Rays (`XRAY`), Ultrasounds (`USG`), Consultations (`CONSULTATION`), Beds (`IPD_BED`), Critical Care (`CRITICAL_CARE`), Surgeries (`OT_SURGERY`), and eliminated duplicate tariff entries.
   - `20261011215800_add_voided_at_to_invoices.sql`: Added `voided_at` timestamp column to `invoices` table with backfill for audit logs and accounting reports compatibility.
+  - `20261011231500_add_date_of_birth_column_to_patients.sql`: Harmonized `date_of_birth` and `dob` columns on `patients` table with two-way trigger sync, resolving schema join compatibility across medical certificates and laboratory orders.
 - Schema verification via `npx supabase db lint --linked` confirmed 0 fatal schema or security errors.
 
 ### F. Medical Certificates Overhaul & Cashier Billing Permission Governance

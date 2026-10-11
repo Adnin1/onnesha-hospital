@@ -104,7 +104,18 @@ export async function getMedicalCertificatesAction(certType?: string): Promise<{
 
     const { data, error } = await query;
     if (error) {
-      return { success: false, error: error.message };
+      // Fallback query without joined table if foreign key cache is reloading
+      const { data: fallbackData, error: fbError } = await supabase
+        .from("medical_certificates")
+        .select("*")
+        .eq("organization_id", session.organizationId)
+        .eq("is_deleted", false)
+        .order("issue_date", { ascending: false });
+
+      if (fbError || !fallbackData) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, data: (fallbackData as MedicalCertificate[]) || [] };
     }
     return { success: true, data: (data as MedicalCertificate[]) || [] };
   } catch (err: unknown) {
@@ -235,7 +246,19 @@ export async function updateMedicalCertificateAction(payload: {
       .single();
 
     if (updateErr || !updated) {
-      return { success: false, error: updateErr ? updateErr.message : "Failed to update certificate." };
+      // Fallback without join
+      const { data: fbUpdated, error: fbErr } = await supabase
+        .from("medical_certificates")
+        .update(updateFields)
+        .eq("id", payload.certificate_id)
+        .eq("organization_id", session.organizationId)
+        .select("*")
+        .single();
+
+      if (fbErr || !fbUpdated) {
+        return { success: false, error: updateErr ? updateErr.message : "Failed to update certificate." };
+      }
+      return { success: true, data: fbUpdated as MedicalCertificate };
     }
 
     return { success: true, data: updated as MedicalCertificate };

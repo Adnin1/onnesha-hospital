@@ -257,20 +257,75 @@ export default function HardwareManagementPage() {
   const [zkStatus, setZkStatus] = useState<"STANDBY_SIMULATION_READY" | "CONNECTED" | "DISCONNECTED">(
     "STANDBY_SIMULATION_READY"
   );
+  const [isTestingLan, setIsTestingLan] = useState<boolean>(false);
   const [zkPunchLogs, setZkPunchLogs] = useState<
     Array<{
       employeeId: string;
+      employeeName?: string;
       punchTime: string;
       verifyType: string;
       punchState: "CHECK_IN" | "CHECK_OUT";
       isDebounced: boolean;
     }>
-  >([]);
+  >([
+    {
+      employeeId: "EMP-1001",
+      employeeName: "Dr. Rafiqul Islam (Duty Doctor)",
+      punchTime: "08:02:14 AM",
+      verifyType: "FINGERPRINT",
+      punchState: "CHECK_IN",
+      isDebounced: false,
+    },
+    {
+      employeeId: "EMP-1004",
+      employeeName: "Nasreen Akhter (Senior Staff Nurse)",
+      punchTime: "08:15:33 AM",
+      verifyType: "FACE_ID",
+      punchState: "CHECK_IN",
+      isDebounced: false,
+    },
+    {
+      employeeId: "EMP-1012",
+      employeeName: "Kabir Hossain (Pathology Lab Tech)",
+      punchTime: "08:29:45 AM",
+      verifyType: "FINGERPRINT",
+      punchState: "CHECK_IN",
+      isDebounced: false,
+    },
+    {
+      employeeId: "EMP-1042",
+      employeeName: "Anisur Rahman (Billing Cashier)",
+      punchTime: "08:44:10 AM",
+      verifyType: "FINGERPRINT",
+      punchState: "CHECK_IN",
+      isDebounced: false,
+    },
+  ]);
   const [manualEmpId, setManualEmpId] = useState<string>("EMP-1042");
   const [zkSimulating, setZkSimulating] = useState<boolean>(false);
 
+  const handleTestLanLink = async () => {
+    setIsTestingLan(true);
+    await new Promise((r) => setTimeout(r, 600));
+    setZkStatus("CONNECTED");
+    setIsTestingLan(false);
+    const now = new Date();
+    setZkPunchLogs((prev) => [
+      {
+        employeeId: "EMP-1042",
+        employeeName: "Anisur Rahman (Biometric Loopback ACK)",
+        punchTime: now.toLocaleTimeString(),
+        verifyType: "ZK_UDP:4370",
+        punchState: "CHECK_IN",
+        isDebounced: false,
+      },
+      ...prev,
+    ]);
+  };
+
   const handleSimulatePunch = (empId: string = manualEmpId, punchState: "CHECK_IN" | "CHECK_OUT" = "CHECK_IN") => {
     setZkSimulating(true);
+    playScannerBeep();
     const now = new Date();
     // Sliding-window debounce check: check if same empId punched in last 60 seconds
     const recent = zkPunchLogs.slice(0, 5).find((l) => l.employeeId === empId && !l.isDebounced);
@@ -278,6 +333,7 @@ export default function HardwareManagementPage() {
 
     const newEntry = {
       employeeId: empId,
+      employeeName: empId === "EMP-1042" ? "Anisur Rahman (Cashier)" : "Hospital Staff Member",
       punchTime: now.toLocaleTimeString(),
       verifyType: "FINGERPRINT",
       punchState,
@@ -718,12 +774,23 @@ export default function HardwareManagementPage() {
                   </span>
                 </div>
                 <button
-                  onClick={() =>
-                    setZkStatus(zkStatus === "CONNECTED" ? "DISCONNECTED" : "CONNECTED")
-                  }
-                  className="text-[11px] font-mono font-bold underline hover:text-slate-900 transition"
+                  onClick={() => {
+                    if (zkStatus === "CONNECTED") {
+                      setZkStatus("DISCONNECTED");
+                    } else {
+                      void handleTestLanLink();
+                    }
+                  }}
+                  disabled={isTestingLan}
+                  className="text-[11px] font-mono font-bold underline hover:text-slate-900 transition flex items-center gap-1"
                 >
-                  {zkStatus === "CONNECTED" ? "Disconnect" : "Test LAN Link (10.10.10.50:4370)"}
+                  {isTestingLan ? (
+                    <span>Connecting UDP:4370...</span>
+                  ) : zkStatus === "CONNECTED" ? (
+                    "Disconnect Terminal"
+                  ) : (
+                    "Test LAN Link (10.10.10.50:4370)"
+                  )}
                 </button>
               </div>
 
@@ -812,6 +879,9 @@ export default function HardwareManagementPage() {
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-bold text-slate-900 text-sm">{log.employeeId}</span>
+                          {log.employeeName && (
+                            <span className="text-[11px] text-slate-600 font-medium">({log.employeeName})</span>
+                          )}
                           {log.isDebounced && (
                             <span className="bg-rose-100 text-rose-700 border border-rose-300 text-[9px] px-1.5 py-0.2 rounded font-bold uppercase">
                               Debounced (Suppressed)
