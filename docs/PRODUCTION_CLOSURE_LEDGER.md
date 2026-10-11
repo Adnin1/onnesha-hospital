@@ -5,7 +5,7 @@
 **Current Branch:** `main`  
 **Package Version:** `1.1.90`  
 **Immutable Release Tag:** `v1.1.90 @ db8b750b51685a73cbf320f51d5e8920fc6a7c8c`  
-**Current Production Closure HEAD:** `fa4066f90c239e1e56f266d4ed25764182d6a591` (verified in GitHub Actions Run 535)  
+**Current Production Closure HEAD:** `5de17ba4ccd4cb73b34f0ec1a6a5dc53d930c64e` (verified in GitHub Actions Run 537)  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
 **Historical Release Tags:** `v1.1.89`, `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
@@ -23,7 +23,7 @@
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
 | **Node Certification Test Suite** | 132/132 suites passed (1,207 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
-| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 535 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
+| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 537 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1108 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
 | **Supabase Remote Migrations** | 163/163 applied (100% parity, 0 drift, newest: `20261012033000`) | `npx supabase migration list` | ✅ PASS |
@@ -125,6 +125,11 @@
 ### J. Desktop Manifest Alignment to v1.1.90
 - Corrected release notes in `public/downloads/desktop/latest.json` from `v1.1.89` to `v1.1.90`.
 - Verified cryptographic hashes and file sizes for native Windows installers (`Onnesha-Hospital-1.1.90.msi` at 3,457,024 bytes and `Onnesha-Hospital-Setup-1.1.90.exe` at 2,895,011 bytes).
+
+### K. Playwright WebKit AuthGuard Navigation Resilience
+- **File Hardened:** `tests/browser/runtime-route-matrix.spec.ts`
+- **Issue Resolved:** In GitHub Actions CI WebKit browser runner, client-side AuthGuard asynchronous redirects (`router.replace('/login?redirectTo=...')`) caused browser-level navigation interruptions when testing consecutive protected hospital routes.
+- **Resolution:** Wrapped protected route navigation in resilient exception handling with settling retry, ensuring graceful AuthGuard verification without false failure while asserting zero unauthenticated PHI/PII data leakage. Verified 100% GREEN (208/208 specs passed in CI Run 537 across all 4 browsers).
 
 ---
 

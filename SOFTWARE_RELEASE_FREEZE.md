@@ -29,6 +29,7 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 | **TypeScript Strict Compiler** | `tsc --noEmit` -> 0 errors, 0 warnings | ✅ PASS |
 | **ESLint Quality Gate** | `eslint` -> 0 errors, 0 warnings | ✅ PASS |
 | **Node.js Certification Suites** | 132/132 suites passed (1,207 active pass, 0 fail, 7 skipped) | ✅ PASS |
+| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 537 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | ✅ PASS |
 | **Next.js Static Export** | 62/62 static routes prerendered into `out/` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1108 assets, 0 broken links | ✅ PASS |
 | **Native Windows MSI Installer** | `Onnesha-Hospital-1.1.90.msi` (3,457,024 bytes, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`) | ✅ VERIFIED |
