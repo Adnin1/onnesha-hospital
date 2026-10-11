@@ -254,9 +254,9 @@ export default function HardwareManagementPage() {
   };
 
   // --- ZKTeco Biometrics Diagnostic State ---
-  const [zkStatus, setZkStatus] = useState<"STANDBY_SIMULATION_READY" | "CONNECTED" | "DISCONNECTED">(
-    "STANDBY_SIMULATION_READY"
-  );
+  const [zkStatus, setZkStatus] = useState<
+    "STANDBY_SIMULATION_READY" | "PROTOCOL_STACK_READY" | "SIMULATION_PASSED" | "DISCONNECTED"
+  >("STANDBY_SIMULATION_READY");
   const [isTestingLan, setIsTestingLan] = useState<boolean>(false);
   const [zkPunchLogs, setZkPunchLogs] = useState<
     Array<{
@@ -307,15 +307,15 @@ export default function HardwareManagementPage() {
   const handleTestLanLink = async () => {
     setIsTestingLan(true);
     await new Promise((r) => setTimeout(r, 600));
-    setZkStatus("CONNECTED");
+    setZkStatus("PROTOCOL_STACK_READY");
     setIsTestingLan(false);
     const now = new Date();
     setZkPunchLogs((prev) => [
       {
         employeeId: "EMP-1042",
-        employeeName: "Anisur Rahman (Biometric Loopback ACK)",
+        employeeName: "Anisur Rahman (Biometric Loopback ACK • Gate G7 Pending)",
         punchTime: now.toLocaleTimeString(),
-        verifyType: "ZK_UDP:4370",
+        verifyType: "ZK_UDP:4370_LOOPBACK",
         punchState: "CHECK_IN",
         isDebounced: false,
       },
@@ -326,6 +326,7 @@ export default function HardwareManagementPage() {
   const handleSimulatePunch = (empId: string = manualEmpId, punchState: "CHECK_IN" | "CHECK_OUT" = "CHECK_IN") => {
     setZkSimulating(true);
     playScannerBeep();
+    setZkStatus("SIMULATION_PASSED");
     const now = new Date();
     // Sliding-window debounce check: check if same empId punched in last 60 seconds
     const recent = zkPunchLogs.slice(0, 5).find((l) => l.employeeId === empId && !l.isDebounced);
@@ -429,7 +430,7 @@ export default function HardwareManagementPage() {
           }`}
         >
           <Activity className="w-4 h-4" />
-          LIS Laboratory Analyzers (G9)
+          LIS Analyzers (G9)
         </button>
 
         <button
@@ -441,7 +442,7 @@ export default function HardwareManagementPage() {
           }`}
         >
           <Layers className="w-4 h-4" />
-          PACS & DICOM Node (G8)
+          PACS DICOM (G8)
         </button>
 
         <button
@@ -752,8 +753,8 @@ export default function HardwareManagementPage() {
               {/* Status Banner */}
               <div
                 className={`p-4 rounded-xl flex items-center justify-between text-xs border ${
-                  zkStatus === "CONNECTED"
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  zkStatus === "PROTOCOL_STACK_READY" || zkStatus === "SIMULATION_PASSED"
+                    ? "bg-sky-50 border-sky-200 text-sky-800"
                     : zkStatus === "STANDBY_SIMULATION_READY"
                     ? "bg-amber-50 border-amber-200 text-amber-800"
                     : "bg-rose-50 border-rose-200 text-rose-800"
@@ -762,21 +763,28 @@ export default function HardwareManagementPage() {
                 <div className="flex items-center gap-2">
                   <span
                     className={`w-2.5 h-2.5 rounded-full ${
-                      zkStatus === "CONNECTED"
-                        ? "bg-emerald-500 animate-ping"
+                      zkStatus === "PROTOCOL_STACK_READY" || zkStatus === "SIMULATION_PASSED"
+                        ? "bg-sky-500 animate-pulse"
                         : zkStatus === "STANDBY_SIMULATION_READY"
                         ? "bg-amber-500"
                         : "bg-rose-500"
                     }`}
                   />
                   <span className="font-bold">
-                    ZKTeco Daemon: {zkStatus === "STANDBY_SIMULATION_READY" ? "STANDBY (Loopback Testbed Ready • Gate G7 Pending)" : zkStatus}
+                    ZKTeco Daemon:{" "}
+                    {zkStatus === "STANDBY_SIMULATION_READY"
+                      ? "STANDBY (Loopback Testbed Ready • Gate G7 Pending)"
+                      : zkStatus === "PROTOCOL_STACK_READY"
+                      ? "PROTOCOL STACK READY (Loopback Verified • Gate G7 Pending)"
+                      : zkStatus === "SIMULATION_PASSED"
+                      ? "SIMULATION PASSED (Gate G7 Pending)"
+                      : zkStatus}
                   </span>
                 </div>
                 <button
                   onClick={() => {
-                    if (zkStatus === "CONNECTED") {
-                      setZkStatus("DISCONNECTED");
+                    if (zkStatus === "PROTOCOL_STACK_READY" || zkStatus === "SIMULATION_PASSED") {
+                      setZkStatus("STANDBY_SIMULATION_READY");
                     } else {
                       void handleTestLanLink();
                     }
@@ -785,11 +793,11 @@ export default function HardwareManagementPage() {
                   className="text-[11px] font-mono font-bold underline hover:text-slate-900 transition flex items-center gap-1"
                 >
                   {isTestingLan ? (
-                    <span>Connecting UDP:4370...</span>
-                  ) : zkStatus === "CONNECTED" ? (
-                    "Disconnect Terminal"
+                    <span>Verifying Loopback UDP:4370...</span>
+                  ) : zkStatus === "PROTOCOL_STACK_READY" || zkStatus === "SIMULATION_PASSED" ? (
+                    "Reset Loopback Testbed"
                   ) : (
-                    "Test LAN Link (10.10.10.50:4370)"
+                    "Test Protocol Stack (Port 4370 Loopback)"
                   )}
                 </button>
               </div>

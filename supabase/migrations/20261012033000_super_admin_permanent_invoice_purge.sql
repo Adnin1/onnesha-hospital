@@ -47,10 +47,6 @@ BEGIN
     -- PERMANENT HARD DELETE: Obliterate the bill and wipe entire associated history from database
     
     -- Unlink foreign references in other modules so FK constraints do not fail
-    UPDATE public.patient_care_episodes 
-    SET invoice_id = NULL 
-    WHERE invoice_id = p_invoice_id;
-
     UPDATE public.pharmacy_sales 
     SET invoice_id = NULL 
     WHERE invoice_id = p_invoice_id;

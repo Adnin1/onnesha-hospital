@@ -198,9 +198,21 @@ test('15. Hardware diagnostic console and network VLAN topology are fully specif
     path.join(rootDir, 'app', '(hospital)', 'app', 'settings', 'hardware', 'page.tsx'),
     'utf8'
   );
-  assert.match(hardwarePage, /Thermal Printers/i);
-  assert.match(hardwarePage, /LIS Laboratory Analyzers/i);
-  assert.match(hardwarePage, /PACS & DICOM/i);
+  assert.match(
+    hardwarePage,
+    /Thermal Printers|Printer Transport Settings/i,
+    'Hardware console must expose thermal printer configuration'
+  );
+  assert.match(
+    hardwarePage,
+    /LIS Analyzers|Laboratory Information System.*LIS.*Gate 9/i,
+    'Hardware console must expose the LIS analyzer integration boundary'
+  );
+  assert.match(
+    hardwarePage,
+    /PACS DICOM|PACS Imaging Node Diagnostic Console.*Gate 8/i,
+    'Hardware console must expose the PACS/DICOM integration boundary'
+  );
 
   const vlanDoc = fs.readFileSync(path.join(rootDir, 'docs', 'HOSPITAL_NETWORK_VLAN_TOPOLOGY.md'), 'utf8');
   assert.match(vlanDoc, /VLAN 10/);
@@ -208,4 +220,18 @@ test('15. Hardware diagnostic console and network VLAN topology are fully specif
   assert.match(vlanDoc, /VLAN 30/);
   assert.match(vlanDoc, /VLAN 40/);
   assert.match(vlanDoc, /VLAN 50/);
+});
+
+test('16. Zero False-Green hardware safety notices and boundary disclosures are fully enforced', () => {
+  const hardwarePage = fs.readFileSync(
+    path.join(rootDir, 'app', '(hospital)', 'app', 'settings', 'hardware', 'page.tsx'),
+    'utf8'
+  );
+  assert.match(hardwarePage, /Operational Gate G7/i, 'Must disclose Operational Gate G7');
+  assert.match(hardwarePage, /Operational Gate G8/i, 'Must disclose Operational Gate G8');
+  assert.match(hardwarePage, /Operational Gate G9/i, 'Must disclose Operational Gate G9');
+  assert.match(hardwarePage, /Zero False-Green Notice/i, 'Must contain explicit Zero False-Green notices');
+  assert.match(hardwarePage, /physical device communication/i, 'Must state physical device communication requirements');
+  assert.match(hardwarePage, /physical RS-232.*TCP/i, 'Must state physical RS-232 / TCP converter bridge requirements');
+  assert.match(hardwarePage, /AE Title pairing.*LAN routing|LAN routing.*AE Title pairing/i, 'Must state AE Title pairing / LAN routing requirements');
 });
