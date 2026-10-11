@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   Save,
@@ -10,6 +10,7 @@ import {
   Microscope,
   Sparkles,
   ClipboardList,
+  Plus,
 } from "lucide-react";
 import { DiagnosticOrderRecord, DiagnosticParameterRecord } from "@/types/clinical-emr";
 import { saveDiagnosticResultsAction } from "@/lib/lab/actions";
@@ -31,8 +32,10 @@ const NORMAL_TEMPLATES: Record<string, Record<string, string>> = {
     "Platelet Count": "280",
     "Neutrophils": "62",
     "Lymphocytes": "30",
-    "Eosinophils": "04",
     "Monocytes": "04",
+    "Eosinophils": "04",
+    "Basophils": "00",
+    "PCV / Hematocrit": "42",
   },
   FBS: {
     "Fasting Blood Sugar (FBS)": "95",
@@ -40,23 +43,84 @@ const NORMAL_TEMPLATES: Record<string, Record<string, string>> = {
   RBS: {
     "Random Blood Sugar (RBS)": "115",
   },
+  "2HABF": {
+    "2 Hours After Breakfast (2h-ABF)": "110",
+  },
+  HBA1C: {
+    "HbA1c (Glycated Hemoglobin)": "5.4",
+  },
   CREATININE: {
     "Serum Creatinine": "0.95",
+    "Blood Urea": "24",
+    "Blood Urea Nitrogen (BUN)": "12",
+    "Serum Uric Acid": "4.8",
+  },
+  LFT: {
+    "Serum Bilirubin (Total)": "0.8",
+    "Serum Bilirubin (Direct)": "0.2",
+    "SGPT (ALT)": "28",
+    "SGOT (AST)": "24",
+    "Alkaline Phosphatase (ALP)": "85",
+    "Total Protein": "7.2",
+    "Serum Albumin": "4.2",
+  },
+  ELECTROLYTES: {
+    "Serum Sodium (Na+)": "140",
+    "Serum Potassium (K+)": "4.2",
+    "Serum Chloride (Cl-)": "102",
+    "Serum Bicarbonate (HCO3-)": "24",
   },
   LIPID: {
     "Total Cholesterol": "175",
     "Triglycerides": "135",
     "HDL Cholesterol": "46",
     "LDL Cholesterol": "98",
+    "VLDL Cholesterol": "24",
+  },
+  THYROID: {
+    "TSH (Thyroid Stimulating Hormone)": "2.1",
+    "Free T4 (FT4)": "1.2",
+    "Free T3 (FT3)": "3.1",
   },
   URINE_RE: {
     "Colour": "Straw",
     "Appearance": "Clear",
+    "Reaction (pH)": "6.0",
+    "Specific Gravity": "1.015",
     "Pus Cells": "2-3",
     "RBCs": "Nil",
     "Epithelial Cells": "1-2",
     "Albumin": "Nil",
     "Sugar": "Nil",
+    "Casts": "Nil",
+    "Crystals": "Nil",
+  },
+  STOOL: {
+    "Colour": "Yellowish Brown",
+    "Consistency": "Formed",
+    "Mucus": "Negative",
+    "Occult Blood (OBT)": "Negative",
+    "Pus Cells": "0-1",
+    "RBCs": "Nil",
+    "Ova / Parasites": "Not Found",
+  },
+  WIDAL: {
+    "S. Typhi 'O' Antigen": "1:40",
+    "S. Typhi 'H' Antigen": "1:40",
+    "S. Paratyphi 'AH' Antigen": "1:20",
+    "S. Paratyphi 'BH' Antigen": "1:20",
+  },
+  DENGUE: {
+    "Dengue NS1 Antigen": "Negative",
+    "Dengue IgM Antibody": "Negative",
+    "Dengue IgG Antibody": "Negative",
+  },
+  BLOOD_GROUP: {
+    "ABO Grouping": "B Positive (+ve)",
+    "Rh (D) Factor": "Positive",
+  },
+  CALCIUM: {
+    "Serum Calcium": "9.4",
   },
 };
 
@@ -132,6 +196,59 @@ export function LabResultEntryModal({ isOpen, onClose, order, onSaved, onToast }
     return initialFindings;
   });
   const [clinicalRemarks, setClinicalRemarks] = useState("");
+  const [customParams, setCustomParams] = useState<
+    Record<string, Array<{ parameterName: string; unit: string; referenceRangeMale: string }>>
+  >({});
+  const [showAddParam, setShowAddParam] = useState(false);
+  const [newParamName, setNewParamName] = useState("");
+  const [newParamUnit, setNewParamUnit] = useState("");
+  const [newParamRefRange, setNewParamRefRange] = useState("");
+
+  // Re-sync parameter and descriptive values whenever modal opens or order changes
+  useEffect(() => {
+    if (!isOpen || !order) return;
+    const initialParams: Record<
+      string,
+      {
+        parameterId?: string;
+        parameterName: string;
+        observedValue: string;
+        unit?: string;
+        referenceRangeMale?: string;
+        referenceRangeFemale?: string;
+        referenceRangeChild?: string;
+        isAbnormal: boolean;
+      }
+    > = {};
+
+    (order.tests || []).forEach((t) => {
+      (t.parameters || []).forEach((p) => {
+        const key = `${t.id || t.test_id}_${p.parameter_name}`;
+        initialParams[key] = {
+          parameterId: p.id,
+          parameterName: p.parameter_name,
+          observedValue: p.observed_value || "",
+          unit: p.unit,
+          referenceRangeMale: p.reference_range_male,
+          referenceRangeFemale: p.reference_range_female,
+          referenceRangeChild: p.reference_range_child,
+          isAbnormal: Boolean(p.is_abnormal),
+        };
+      });
+    });
+    setParamValues(initialParams);
+
+    const initialFindings: Record<string, string> = {};
+    (order.tests || []).forEach((t) => {
+      if (t.descriptive_findings) {
+        initialFindings[t.id || t.test_id] = t.descriptive_findings;
+      }
+    });
+    setDescriptiveFindings(initialFindings);
+    setClinicalRemarks(order.pathologist_remarks || "");
+    setSelectedTestIndex(0);
+    setShowAddParam(false);
+  }, [isOpen, order?.id]);
 
   const tests = order?.tests || [];
   const currentTest = tests[selectedTestIndex] || tests[0];
@@ -139,21 +256,69 @@ export function LabResultEntryModal({ isOpen, onClose, order, onSaved, onToast }
   if (!isOpen) return null;
 
   const currentTestKey = currentTest ? currentTest.id || currentTest.test_id : "";
-  const currentTestParams = (currentTest?.parameters || []).map((p) => {
-    const key = `${currentTestKey}_${p.parameter_name}`;
+  const standardParams = (currentTest?.parameters || []).map((p) => ({
+    parameterId: p.id,
+    parameterName: p.parameter_name,
+    unit: p.unit,
+    referenceRangeMale: p.reference_range_male,
+    referenceRangeFemale: p.reference_range_female,
+    referenceRangeChild: p.reference_range_child,
+  }));
+  const customTestParams = (customParams[currentTestKey] || []).map((cp) => ({
+    parameterId: undefined,
+    parameterName: cp.parameterName,
+    unit: cp.unit,
+    referenceRangeMale: cp.referenceRangeMale,
+    referenceRangeFemale: cp.referenceRangeMale,
+    referenceRangeChild: undefined,
+  }));
+  const allParams = [...standardParams, ...customTestParams];
+
+  const currentTestParams = allParams.map((p) => {
+    const key = `${currentTestKey}_${p.parameterName}`;
     return (
       paramValues[key] || {
-        parameterId: p.id,
-        parameterName: p.parameter_name,
-        observedValue: p.observed_value || "",
+        parameterId: p.parameterId,
+        parameterName: p.parameterName,
+        observedValue: "",
         unit: p.unit,
-        referenceRangeMale: p.reference_range_male,
-        referenceRangeFemale: p.reference_range_female,
-        referenceRangeChild: p.reference_range_child,
-        isAbnormal: Boolean(p.is_abnormal),
+        referenceRangeMale: p.referenceRangeMale,
+        referenceRangeFemale: p.referenceRangeFemale,
+        referenceRangeChild: p.referenceRangeChild,
+        isAbnormal: false,
       }
     );
   });
+
+  const handleAddCustomParam = () => {
+    const name = newParamName.trim();
+    if (!name || !currentTestKey) return;
+    const newEntry = {
+      parameterName: name,
+      unit: newParamUnit.trim(),
+      referenceRangeMale: newParamRefRange.trim(),
+    };
+    setCustomParams((prev) => ({
+      ...prev,
+      [currentTestKey]: [...(prev[currentTestKey] || []), newEntry],
+    }));
+    const key = `${currentTestKey}_${name}`;
+    setParamValues((prev) => ({
+      ...prev,
+      [key]: {
+        parameterName: name,
+        observedValue: "",
+        unit: newParamUnit.trim(),
+        referenceRangeMale: newParamRefRange.trim(),
+        isAbnormal: false,
+      },
+    }));
+    setNewParamName("");
+    setNewParamUnit("");
+    setNewParamRefRange("");
+    setShowAddParam(false);
+    onToast(`'${name}' প্যারামিটার যুক্ত করা হয়েছে।`, "success");
+  };
 
   const handleParamChange = (
     paramName: string,
@@ -177,15 +342,26 @@ export function LabResultEntryModal({ isOpen, onClose, order, onSaved, onToast }
   const handleApplyNormalTemplate = () => {
     if (!currentTest) return;
     const code = currentTest.test_code?.toUpperCase() || "";
+    const name = currentTest.test_name?.toUpperCase() || "";
 
     // Find matching template
     let matchedTemplate: Record<string, string> | null = null;
-    if (code.includes("CBC")) matchedTemplate = NORMAL_TEMPLATES.CBC;
-    else if (code.includes("FBS") || code.includes("SUGAR")) matchedTemplate = NORMAL_TEMPLATES.FBS;
-    else if (code.includes("RBS")) matchedTemplate = NORMAL_TEMPLATES.RBS;
-    else if (code.includes("CREAT")) matchedTemplate = NORMAL_TEMPLATES.CREATININE;
-    else if (code.includes("LIPID")) matchedTemplate = NORMAL_TEMPLATES.LIPID;
-    else if (code.includes("URINE")) matchedTemplate = NORMAL_TEMPLATES.URINE_RE;
+    if (code.includes("CBC") || name.includes("CBC") || name.includes("HEMOGRAM")) matchedTemplate = NORMAL_TEMPLATES.CBC;
+    else if (code.includes("FBS") || name.includes("FASTING") || name.includes("SUGAR")) matchedTemplate = NORMAL_TEMPLATES.FBS;
+    else if (code.includes("RBS") || name.includes("RANDOM")) matchedTemplate = NORMAL_TEMPLATES.RBS;
+    else if (code.includes("2HABF") || name.includes("2H") || name.includes("PPBS")) matchedTemplate = NORMAL_TEMPLATES["2HABF"];
+    else if (code.includes("HBA1C") || name.includes("HBA1C") || name.includes("GLYCATED")) matchedTemplate = NORMAL_TEMPLATES.HBA1C;
+    else if (code.includes("CREAT") || code.includes("KFT") || name.includes("CREATININE") || name.includes("RENAL") || name.includes("KIDNEY")) matchedTemplate = NORMAL_TEMPLATES.CREATININE;
+    else if (code.includes("LFT") || code.includes("LIVER") || code.includes("SGPT") || name.includes("LIVER") || name.includes("SGPT") || name.includes("BILIRUBIN")) matchedTemplate = NORMAL_TEMPLATES.LFT;
+    else if (code.includes("ELECTROLYTE") || name.includes("ELECTROLYTE")) matchedTemplate = NORMAL_TEMPLATES.ELECTROLYTES;
+    else if (code.includes("LIPID") || code.includes("CHOLESTEROL") || name.includes("LIPID") || name.includes("CHOLESTEROL")) matchedTemplate = NORMAL_TEMPLATES.LIPID;
+    else if (code.includes("THYROID") || code.includes("TSH") || name.includes("THYROID") || name.includes("TSH")) matchedTemplate = NORMAL_TEMPLATES.THYROID;
+    else if (code.includes("URINE") || name.includes("URINE")) matchedTemplate = NORMAL_TEMPLATES.URINE_RE;
+    else if (code.includes("STOOL") || name.includes("STOOL")) matchedTemplate = NORMAL_TEMPLATES.STOOL;
+    else if (code.includes("WIDAL") || name.includes("WIDAL") || name.includes("TYPHOID")) matchedTemplate = NORMAL_TEMPLATES.WIDAL;
+    else if (code.includes("DENGUE") || name.includes("DENGUE")) matchedTemplate = NORMAL_TEMPLATES.DENGUE;
+    else if (code.includes("GROUP") || name.includes("BLOOD GROUP") || name.includes("GROUPING")) matchedTemplate = NORMAL_TEMPLATES.BLOOD_GROUP;
+    else if (code.includes("CALCIUM") || name.includes("CALCIUM")) matchedTemplate = NORMAL_TEMPLATES.CALCIUM;
 
     if (matchedTemplate) {
       setParamValues((prev) => {
@@ -395,18 +571,65 @@ export function LabResultEntryModal({ isOpen, onClose, order, onSaved, onToast }
           </div>
 
           {/* Numerical Parameters Table */}
-          {currentTestParams.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Activity className="w-4 h-4 text-sky-600" />
-                  <span>প্যারামিটার ও পরীক্ষার ফলাফল মান (Numerical Observed Values)</span>
-                </h4>
+          <div className="space-y-3">
+            <div className="flex flex-wrap justify-between items-center gap-2">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <Activity className="w-4 h-4 text-sky-600" />
+                <span>প্যারামিটার ও পরীক্ষার ফলাফল মান (Numerical Observed Values)</span>
+              </h4>
+              <div className="flex items-center gap-2">
                 <span className="text-[11px] text-slate-500">
                   মোট প্যারামিটার: {currentTestParams.length} টি
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setShowAddParam((v) => !v)}
+                  className="px-2.5 py-1 bg-white hover:bg-sky-50 border border-sky-300 text-sky-700 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs"
+                >
+                  <Plus className="w-3.5 h-3.5 text-sky-600" />
+                  <span>{showAddParam ? "ফর্ম বন্ধ" : "+ প্যারামিটার যোগ"}</span>
+                </button>
               </div>
+            </div>
 
+            {/* Inline Custom Parameter Add Form */}
+            {showAddParam && (
+              <div className="p-3 bg-sky-50/70 border border-sky-300 rounded-xl space-y-2">
+                <p className="text-xs font-bold text-slate-800">নতুন টেস্ট প্যারামিটার যোগ করুন:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                  <input
+                    type="text"
+                    value={newParamName}
+                    onChange={(e) => setNewParamName(e.target.value)}
+                    placeholder="প্যারামিটারের নাম (যেমন: SGOT)"
+                    className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={newParamUnit}
+                    onChange={(e) => setNewParamUnit(e.target.value)}
+                    placeholder="একক / Unit (যেমন: U/L)"
+                    className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                  <input
+                    type="text"
+                    value={newParamRefRange}
+                    onChange={(e) => setNewParamRefRange(e.target.value)}
+                    placeholder="রেফারেন্স রেঞ্জ (যেমন: < 35)"
+                    className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomParam}
+                    className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition shadow-xs"
+                  >
+                    যোগ করুন
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {currentTestParams.length > 0 ? (
               <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
                 <table className="w-full text-xs text-left border-collapse">
                   <thead>
@@ -465,8 +688,12 @@ export function LabResultEntryModal({ isOpen, onClose, order, onSaved, onToast }
                   </tbody>
                 </table>
               </div>
-            </div>
-          )}
+            ) : !isDescriptiveTest && (
+              <div className="p-4 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center text-xs text-slate-500">
+                এই টেস্টের জন্য কোনো পূর্বনির্ধারিত প্যারামিটার নেই। উপরে &apos;+ প্যারামিটার যোগ&apos; বাটনে ক্লিক করে প্যারামিটার যোগ করুন অথবা নিচে ডেসক্রিপশনে ফলাফল লিখুন।
+              </div>
+            )}
+          </div>
 
           {/* Descriptive Findings for Imaging or General Reports */}
           <div className="space-y-2">

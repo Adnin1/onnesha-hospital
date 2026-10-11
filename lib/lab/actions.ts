@@ -12,6 +12,138 @@ export interface ActionResult<T = unknown> {
   error?: string;
 }
 
+export const DEFAULT_TEST_PARAMETERS: Record<
+  string,
+  Array<{ name: string; unit: string; male: string; female: string; child?: string }>
+> = {
+  CBC: [
+    { name: "Hemoglobin (Hb)", unit: "g/dL", male: "13.5 - 17.5", female: "12.0 - 15.5", child: "11.0 - 14.5" },
+    { name: "Erythrocyte Sedimentation Rate (ESR)", unit: "mm/1st hr", male: "0 - 15", female: "0 - 20", child: "0 - 10" },
+    { name: "Total White Blood Cell Count (WBC)", unit: "/cu mm", male: "4,000 - 11,000", female: "4,000 - 11,000", child: "5,000 - 15,000" },
+    { name: "Platelet Count", unit: "x 10^3/uL", male: "150 - 450", female: "150 - 450", child: "150 - 450" },
+    { name: "Neutrophils", unit: "%", male: "40 - 75", female: "40 - 75" },
+    { name: "Lymphocytes", unit: "%", male: "20 - 45", female: "20 - 45" },
+    { name: "Monocytes", unit: "%", male: "2 - 8", female: "2 - 8" },
+    { name: "Eosinophils", unit: "%", male: "1 - 6", female: "1 - 6" },
+    { name: "Basophils", unit: "%", male: "0 - 1", female: "0 - 1" },
+    { name: "PCV / Hematocrit", unit: "%", male: "40 - 52", female: "36 - 48" },
+  ],
+  FBS: [
+    { name: "Fasting Blood Sugar (FBS)", unit: "mg/dL", male: "70 - 100", female: "70 - 100", child: "70 - 100" },
+  ],
+  RBS: [
+    { name: "Random Blood Sugar (RBS)", unit: "mg/dL", male: "70 - 140", female: "70 - 140" },
+  ],
+  "2HABF": [
+    { name: "2 Hours After Breakfast (2h-ABF)", unit: "mg/dL", male: "< 140", female: "< 140" },
+  ],
+  HBA1C: [
+    { name: "HbA1c (Glycated Hemoglobin)", unit: "%", male: "< 5.7 (Normal), 5.7 - 6.4 (Prediabetes)", female: "< 5.7 (Normal), 5.7 - 6.4 (Prediabetes)" },
+  ],
+  CREATININE: [
+    { name: "Serum Creatinine", unit: "mg/dL", male: "0.7 - 1.3", female: "0.6 - 1.1", child: "0.3 - 0.7" },
+  ],
+  CREAT: [
+    { name: "Serum Creatinine", unit: "mg/dL", male: "0.7 - 1.3", female: "0.6 - 1.1", child: "0.3 - 0.7" },
+  ],
+  UREA: [
+    { name: "Blood Urea", unit: "mg/dL", male: "15 - 45", female: "15 - 45" },
+    { name: "Blood Urea Nitrogen (BUN)", unit: "mg/dL", male: "7 - 20", female: "7 - 20" },
+  ],
+  URIC: [
+    { name: "Serum Uric Acid", unit: "mg/dL", male: "3.5 - 7.2", female: "2.6 - 6.0" },
+  ],
+  LFT: [
+    { name: "Serum Bilirubin (Total)", unit: "mg/dL", male: "0.3 - 1.2", female: "0.3 - 1.2" },
+    { name: "Serum Bilirubin (Direct)", unit: "mg/dL", male: "0.0 - 0.3", female: "0.0 - 0.3" },
+    { name: "SGPT (ALT)", unit: "U/L", male: "< 45", female: "< 35" },
+    { name: "SGOT (AST)", unit: "U/L", male: "< 40", female: "< 35" },
+    { name: "Alkaline Phosphatase (ALP)", unit: "U/L", male: "44 - 147", female: "44 - 147" },
+    { name: "Total Protein", unit: "g/dL", male: "6.4 - 8.3", female: "6.4 - 8.3" },
+    { name: "Serum Albumin", unit: "g/dL", male: "3.5 - 5.0", female: "3.5 - 5.0" },
+  ],
+  "LIVER": [
+    { name: "Serum Bilirubin (Total)", unit: "mg/dL", male: "0.3 - 1.2", female: "0.3 - 1.2" },
+    { name: "Serum Bilirubin (Direct)", unit: "mg/dL", male: "0.0 - 0.3", female: "0.0 - 0.3" },
+    { name: "SGPT (ALT)", unit: "U/L", male: "< 45", female: "< 35" },
+    { name: "SGOT (AST)", unit: "U/L", male: "< 40", female: "< 35" },
+    { name: "Alkaline Phosphatase (ALP)", unit: "U/L", male: "44 - 147", female: "44 - 147" },
+    { name: "Total Protein", unit: "g/dL", male: "6.4 - 8.3", female: "6.4 - 8.3" },
+    { name: "Serum Albumin", unit: "g/dL", male: "3.5 - 5.0", female: "3.5 - 5.0" },
+  ],
+  SGPT: [
+    { name: "SGPT (ALT)", unit: "U/L", male: "< 45", female: "< 35" },
+  ],
+  SGOT: [
+    { name: "SGOT (AST)", unit: "U/L", male: "< 40", female: "< 35" },
+  ],
+  BILIRUBIN: [
+    { name: "Serum Bilirubin (Total)", unit: "mg/dL", male: "0.3 - 1.2", female: "0.3 - 1.2" },
+    { name: "Serum Bilirubin (Direct)", unit: "mg/dL", male: "0.0 - 0.3", female: "0.0 - 0.3" },
+  ],
+  ELECTROLYTE: [
+    { name: "Serum Sodium (Na+)", unit: "mmol/L", male: "135 - 145", female: "135 - 145" },
+    { name: "Serum Potassium (K+)", unit: "mmol/L", male: "3.5 - 5.1", female: "3.5 - 5.1" },
+    { name: "Serum Chloride (Cl-)", unit: "mmol/L", male: "98 - 107", female: "98 - 107" },
+    { name: "Serum Bicarbonate (HCO3-)", unit: "mmol/L", male: "22 - 29", female: "22 - 29" },
+  ],
+  LIPID: [
+    { name: "Total Cholesterol", unit: "mg/dL", male: "< 200", female: "< 200" },
+    { name: "Triglycerides", unit: "mg/dL", male: "< 150", female: "< 150" },
+    { name: "HDL Cholesterol", unit: "mg/dL", male: "> 40", female: "> 50" },
+    { name: "LDL Cholesterol", unit: "mg/dL", male: "< 100", female: "< 100" },
+    { name: "VLDL Cholesterol", unit: "mg/dL", male: "< 30", female: "< 30" },
+  ],
+  THYROID: [
+    { name: "TSH (Thyroid Stimulating Hormone)", unit: "uIU/mL", male: "0.4 - 4.2", female: "0.4 - 4.2" },
+    { name: "Free T4 (FT4)", unit: "ng/dL", male: "0.8 - 1.8", female: "0.8 - 1.8" },
+    { name: "Free T3 (FT3)", unit: "pg/mL", male: "2.3 - 4.2", female: "2.3 - 4.2" },
+  ],
+  TSH: [
+    { name: "TSH (Thyroid Stimulating Hormone)", unit: "uIU/mL", male: "0.4 - 4.2", female: "0.4 - 4.2" },
+  ],
+  URINE: [
+    { name: "Colour", unit: "", male: "Straw / Pale Yellow", female: "Straw / Pale Yellow" },
+    { name: "Appearance", unit: "", male: "Clear", female: "Clear" },
+    { name: "Reaction (pH)", unit: "", male: "5.0 - 7.5", female: "5.0 - 7.5" },
+    { name: "Specific Gravity", unit: "", male: "1.005 - 1.030", female: "1.005 - 1.030" },
+    { name: "Albumin (Protein)", unit: "", male: "Nil", female: "Nil" },
+    { name: "Sugar (Glucose)", unit: "", male: "Nil", female: "Nil" },
+    { name: "Pus Cells", unit: "/HPF", male: "0 - 5", female: "0 - 5" },
+    { name: "RBCs", unit: "/HPF", male: "Nil", female: "Nil" },
+    { name: "Epithelial Cells", unit: "/HPF", male: "1 - 3", female: "1 - 3" },
+    { name: "Casts", unit: "/LPF", male: "Nil", female: "Nil" },
+    { name: "Crystals", unit: "", male: "Nil", female: "Nil" },
+  ],
+  STOOL: [
+    { name: "Colour", unit: "", male: "Yellowish Brown", female: "Yellowish Brown" },
+    { name: "Consistency", unit: "", male: "Formed / Soft", female: "Formed / Soft" },
+    { name: "Mucus", unit: "", male: "Negative", female: "Negative" },
+    { name: "Occult Blood (OBT)", unit: "", male: "Negative", female: "Negative" },
+    { name: "Pus Cells", unit: "/HPF", male: "0 - 2", female: "0 - 2" },
+    { name: "RBCs", unit: "/HPF", male: "Nil", female: "Nil" },
+    { name: "Ova / Parasites", unit: "", male: "Not Found", female: "Not Found" },
+  ],
+  WIDAL: [
+    { name: "S. Typhi 'O' Antigen", unit: "Titre", male: "< 1:80", female: "< 1:80" },
+    { name: "S. Typhi 'H' Antigen", unit: "Titre", male: "< 1:80", female: "< 1:80" },
+    { name: "S. Paratyphi 'AH' Antigen", unit: "Titre", male: "< 1:80", female: "< 1:80" },
+    { name: "S. Paratyphi 'BH' Antigen", unit: "Titre", male: "< 1:80", female: "< 1:80" },
+  ],
+  DENGUE: [
+    { name: "Dengue NS1 Antigen", unit: "", male: "Negative", female: "Negative" },
+    { name: "Dengue IgM Antibody", unit: "", male: "Negative", female: "Negative" },
+    { name: "Dengue IgG Antibody", unit: "", male: "Negative", female: "Negative" },
+  ],
+  "BLOOD GROUP": [
+    { name: "ABO Grouping", unit: "", male: "ABO Defined", female: "ABO Defined" },
+    { name: "Rh (D) Factor", unit: "", male: "Positive / Negative", female: "Positive / Negative" },
+  ],
+  CALCIUM: [
+    { name: "Serum Calcium", unit: "mg/dL", male: "8.5 - 10.5", female: "8.5 - 10.5" },
+  ],
+};
+
 /**
  * 1. Get Diagnostic Pathology & Radiology Orders
  */
@@ -28,7 +160,7 @@ export async function getDiagnosticOrdersAction(params?: {
     const supabase = await createClient();
     let query = supabase
       .from("diagnostic_orders")
-      .select("*, patients(id, patient_code, full_name, gender, phone, date_of_birth), doctors(id, full_name), verifier:profiles!diagnostic_orders_verified_by_profile_id_fkey(id, full_name), diagnostic_order_items(*, diagnostic_tests(id, test_name, test_code, price, specimen_type), sample_collections(barcode), diagnostic_results(*, diagnostic_result_values(*, diagnostic_test_parameters(*))))")
+      .select("*, patients(id, patient_code, full_name, gender, phone, date_of_birth), doctors(id, full_name), verifier:profiles!diagnostic_orders_verified_by_profile_id_fkey(id, full_name), diagnostic_order_items(*, diagnostic_tests(id, test_name, test_code, price, specimen_type), sample_collections(barcode), diagnostic_results(*, diagnostic_result_values(*, diagnostic_test_parameters(*))), diagnostic_report_verifications(remarks, signature_hash))")
       .eq("organization_id", session.organizationId)
       .order("created_at", { ascending: false });
 
@@ -88,6 +220,10 @@ export async function getDiagnosticOrdersAction(params?: {
         sample_collections?: {
           barcode: string;
         } | null;
+        diagnostic_report_verifications?: {
+          remarks?: string;
+          signature_hash?: string;
+        } | null;
         diagnostic_results?: Array<{
           descriptive_findings?: string;
           diagnostic_result_values?: Array<{
@@ -109,48 +245,18 @@ export async function getDiagnosticOrdersAction(params?: {
 
     const orders: DiagnosticOrderRecord[] = ((data || []) as unknown as OrderDbRow[]).map((ord) => {
       let barcode = "";
+      let detectedRemarks = "";
+      let detectedSignature = "";
       const tests = (ord.diagnostic_order_items || []).map((item) => {
         if (item.sample_collections?.barcode) {
           barcode = item.sample_collections.barcode;
         }
-
-const DEFAULT_TEST_PARAMETERS: Record<
-  string,
-  Array<{ name: string; unit: string; male: string; female: string; child?: string }>
-> = {
-  CBC: [
-    { name: "Hemoglobin (Hb)", unit: "g/dL", male: "13.5 - 17.5", female: "12.0 - 15.5", child: "11.0 - 14.5" },
-    { name: "Erythrocyte Sedimentation Rate (ESR)", unit: "mm/1st hr", male: "0 - 15", female: "0 - 20", child: "0 - 10" },
-    { name: "Total White Blood Cell Count (WBC)", unit: "/cu mm", male: "4,000 - 11,000", female: "4,000 - 11,000", child: "5,000 - 15,000" },
-    { name: "Platelet Count", unit: "x 10^3/uL", male: "150 - 450", female: "150 - 450", child: "150 - 450" },
-    { name: "Neutrophils", unit: "%", male: "40 - 75", female: "40 - 75" },
-    { name: "Lymphocytes", unit: "%", male: "20 - 45", female: "20 - 45" },
-  ],
-  FBS: [
-    { name: "Fasting Blood Sugar (FBS)", unit: "mg/dL", male: "70 - 100", female: "70 - 100", child: "70 - 100" },
-  ],
-  RBS: [
-    { name: "Random Blood Sugar (RBS)", unit: "mg/dL", male: "70 - 140", female: "70 - 140" },
-  ],
-  CREATININE: [
-    { name: "Serum Creatinine", unit: "mg/dL", male: "0.7 - 1.3", female: "0.6 - 1.1", child: "0.3 - 0.7" },
-  ],
-  LIPID: [
-    { name: "Total Cholesterol", unit: "mg/dL", male: "< 200", female: "< 200" },
-    { name: "Triglycerides", unit: "mg/dL", male: "< 150", female: "< 150" },
-    { name: "HDL Cholesterol", unit: "mg/dL", male: "> 40", female: "> 50" },
-    { name: "LDL Cholesterol", unit: "mg/dL", male: "< 100", female: "< 100" },
-  ],
-  URINE: [
-    { name: "Colour", unit: "", male: "Pale Yellow", female: "Pale Yellow" },
-    { name: "Appearance", unit: "", male: "Clear", female: "Clear" },
-    { name: "Pus Cells", unit: "/HPF", male: "0 - 5", female: "0 - 5" },
-    { name: "RBCs", unit: "/HPF", male: "Nil", female: "Nil" },
-    { name: "Epithelial Cells", unit: "/HPF", male: "1 - 2", female: "1 - 2" },
-    { name: "Albumin", unit: "", male: "Nil", female: "Nil" },
-    { name: "Sugar", unit: "", male: "Nil", female: "Nil" },
-  ],
-};
+        if (item.diagnostic_report_verifications?.remarks) {
+          detectedRemarks = item.diagnostic_report_verifications.remarks;
+        }
+        if (item.diagnostic_report_verifications?.signature_hash) {
+          detectedSignature = item.diagnostic_report_verifications.signature_hash;
+        }
 
         const res = item.diagnostic_results?.[0];
         let paramsList = (res?.diagnostic_result_values || []).map((v) => ({
@@ -169,7 +275,7 @@ const DEFAULT_TEST_PARAMETERS: Record<
           const testCode = item.diagnostic_tests?.test_code?.toUpperCase() || "";
           const testName = item.diagnostic_tests?.test_name?.toUpperCase() || "";
           const matched = Object.entries(DEFAULT_TEST_PARAMETERS).find(([k]) =>
-            testCode.includes(k) || testName.includes(k)
+            testCode.includes(k) || testName.includes(k) || testName.includes(k.replace(/_/g, " "))
           );
           if (matched) {
             paramsList = matched[1].map((dp, i) => ({
@@ -220,6 +326,8 @@ const DEFAULT_TEST_PARAMETERS: Record<
         referred_by_doctor_id: ord.referred_by_doctor_id,
         status: ord.status,
         clinical_notes: ord.clinical_notes,
+        pathologist_remarks: detectedRemarks || undefined,
+        signature_hash: detectedSignature || undefined,
         verified_by_profile_id: ord.verified_by_profile_id,
         verified_at: ord.verified_at,
         created_at: ord.created_at,
@@ -240,7 +348,67 @@ const DEFAULT_TEST_PARAMETERS: Record<
 }
 
 /**
- * 2. Verify Diagnostic Test Result Action
+ * 2. Accept Diagnostic Order Server Action (Staff Workflow Stage 1)
+ * Changes status to ACCEPTED atomically across order and items.
+ */
+export async function acceptDiagnosticOrderAction(
+  orderIdOrParams: string | { orderId: string }
+): Promise<ActionResult<{ success: boolean; status: string }>> {
+  const orderId = typeof orderIdOrParams === "string" ? orderIdOrParams : orderIdOrParams?.orderId;
+  if (!orderId) {
+    return { success: false, error: "Order ID is required" };
+  }
+
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const { error: orderErr } = await supabase
+      .from("diagnostic_orders")
+      .update({
+        status: "ACCEPTED",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", orderId)
+      .eq("organization_id", session.organizationId);
+
+    if (orderErr) {
+      return { success: false, error: orderErr.message };
+    }
+
+    await supabase
+      .from("diagnostic_order_items")
+      .update({ status: "ACCEPTED" })
+      .eq("order_id", orderId)
+      .in("status", ["PENDING", "ORDERED"]);
+
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "UPDATE",
+        module: "LAB",
+        entityType: "diagnostic_order",
+        entityId: orderId,
+        newValues: { action: "ACCEPT_ORDER", status: "ACCEPTED" },
+      });
+    } catch (auditErr: unknown) {
+      console.error("[LabActions] accept order audit error:", auditErr);
+    }
+
+    return { success: true, data: { success: true, status: "ACCEPTED" } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to accept diagnostic order";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 3. Verify Diagnostic Test Result Action
  * Sets status to VERIFIED atomically and records cryptographic pathologist audit verification
  * in diagnostic_report_verifications table with signature_hash via verify_diagnostic_order_atomic RPC.
  */
@@ -991,7 +1159,7 @@ export async function saveDiagnosticResultsAction(params: {
       }
     }
 
-    // Advance order status to PROCESSING if currently ORDERED or PAID
+    // Advance order status to PROCESSING if currently ORDERED, PAID, ACCEPTED, or SAMPLE_COLLECTED
     await supabase
       .from("diagnostic_orders")
       .update({
@@ -999,13 +1167,13 @@ export async function saveDiagnosticResultsAction(params: {
         updated_at: new Date().toISOString(),
       })
       .eq("id", params.orderId)
-      .in("status", ["ORDERED", "PAID", "SAMPLE_COLLECTED"]);
+      .in("status", ["ORDERED", "PAID", "ACCEPTED", "SAMPLE_COLLECTED"]);
 
     await supabase
       .from("diagnostic_order_items")
       .update({ status: "PROCESSING" })
       .eq("order_id", params.orderId)
-      .in("status", ["PENDING", "SAMPLE_COLLECTED"]);
+      .in("status", ["PENDING", "ACCEPTED", "SAMPLE_COLLECTED"]);
 
     try {
       await recordAuditLog({

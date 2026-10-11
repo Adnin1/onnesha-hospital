@@ -1373,18 +1373,6 @@ function BillingManagementContent() {
 
               {/* PRINTABLE SLIP CONTAINER */}
               <div className="pt-4 space-y-3 text-xs relative">
-                {/* Official Authentic Rubber Stamp Seal */}
-                <div className="absolute right-3 top-7 z-20 pointer-events-none opacity-95 print:opacity-100">
-                  <PaymentStampSeal
-                    status={selectedInvoice.status}
-                    dueAmount={selectedInvoice.due_amount}
-                    paidAmount={selectedInvoice.paid_amount}
-                    totalAmount={selectedInvoice.grand_total}
-                    dateStr={selectedInvoice.created_at}
-                    receiptNumber={selectedInvoice.payments?.[0]?.receipt_number}
-                    size="sm"
-                  />
-                </div>
                 <HospitalPrintHeader documentTitle="BILLING INVOICE & CASH RECEIPT" />
 
                 <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
@@ -1440,7 +1428,20 @@ function BillingManagementContent() {
                 </div>
 
                 {/* TOTAL SUMMARY */}
-                <div className="p-3 bg-slate-50 rounded-xl space-y-1 font-mono text-xs border border-slate-100">
+                <div className="relative p-3 bg-slate-50 rounded-xl space-y-1 font-mono text-xs border border-slate-100 overflow-hidden">
+                  {/* Official Compact Stamp Seal (Centrally placed in marked summary zone without obscuring text) */}
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-90 print:opacity-100 flex items-center justify-center">
+                    <PaymentStampSeal
+                      status={selectedInvoice.status}
+                      dueAmount={selectedInvoice.due_amount}
+                      paidAmount={selectedInvoice.paid_amount}
+                      totalAmount={selectedInvoice.grand_total}
+                      dateStr={selectedInvoice.created_at}
+                      receiptNumber={selectedInvoice.payments?.[0]?.receipt_number}
+                      size="compact"
+                    />
+                  </div>
+
                   <div className="flex justify-between text-slate-600">
                     <span>Subtotal:</span>
                     <span>{formatCurrencyBDT(selectedInvoice.subtotal)}</span>

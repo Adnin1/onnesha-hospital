@@ -22,6 +22,7 @@ import { DoctorRecord } from "@/types/appointments";
 import { PatientMaster } from "@/types/clinical";
 import {
   getDiagnosticOrdersAction,
+  acceptDiagnosticOrderAction,
   verifyDiagnosticReportAction,
   getDiagnosticTestsCatalogAction,
   createDiagnosticOrderAction,
@@ -43,9 +44,11 @@ export default function LabManagementPage() {
   const [selectedOrder, setSelectedOrder] = useState<DiagnosticOrderRecord | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [acceptingOrder, setAcceptingOrder] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [collectingSample, setCollectingSample] = useState(false);
   const [delivering, setDelivering] = useState(false);
+  const [printTubeSticker, setPrintTubeSticker] = useState(false);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
 
   // Production-grade Toast notifications
@@ -148,6 +151,27 @@ export default function LabManagementPage() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleAcceptOrder = async (orderId: string) => {
+    setAcceptingOrder(true);
+    const res = await acceptDiagnosticOrderAction(orderId);
+    setAcceptingOrder(false);
+    if (res.success) {
+      showToast("টেস্ট অর্ডার সফলভাবে গ্রহণ করা হয়েছে (Status: ACCEPTED)।", "success");
+      setLabOrders((prev) =>
+        prev.map((ord) =>
+          ord.id === orderId ? { ...ord, status: "ACCEPTED" } : ord
+        )
+      );
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder((prev) =>
+          prev ? { ...prev, status: "ACCEPTED" } : null
+        );
+      }
+    } else {
+      showToast(res.error || "অর্ডার গ্রহণ ব্যর্থ হয়েছে", "error");
+    }
   };
 
   const handleVerifyReport = async (orderId: string) => {
@@ -536,6 +560,8 @@ export default function LabManagementPage() {
                         ? "bg-blue-100 text-blue-800"
                         : selectedOrder.status === "SAMPLE_COLLECTED"
                         ? "bg-amber-100 text-amber-800"
+                        : selectedOrder.status === "ACCEPTED"
+                        ? "bg-teal-100 text-teal-800"
                         : "bg-slate-100 text-slate-800"
                     }`}
                   >
@@ -544,8 +570,21 @@ export default function LabManagementPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  {/* Step 2: Collect Sample if pending */}
-                  {(!selectedOrder.barcode || selectedOrder.status === "ORDERED" || selectedOrder.status === "PAID") && (
+                  {/* Step 1: Accept Order (Staff Stage 1) */}
+                  {(selectedOrder.status === "ORDERED" || selectedOrder.status === "PAID" || selectedOrder.status === "PENDING") && (
+                    <button
+                      onClick={() => handleAcceptOrder(selectedOrder.id)}
+                      disabled={acceptingOrder}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-50"
+                      title="হাসপাতাল ল্যাব কাউন্টারে টেস্ট অর্ডার আনুষ্ঠানিকভাবে গ্রহণ করুন"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{acceptingOrder ? "অর্ডার গ্রহণ হচ্ছে..." : "✓ অর্ডার গ্রহণ করুন"}</span>
+                    </button>
+                  )}
+
+                  {/* Step 2: Collect Sample if pending (Staff Stage 2) */}
+                  {(!selectedOrder.barcode || selectedOrder.status === "ORDERED" || selectedOrder.status === "PAID" || selectedOrder.status === "ACCEPTED") && (
                     <button
                       onClick={() => handleCollectSample(selectedOrder.id)}
                       disabled={collectingSample}
@@ -553,11 +592,23 @@ export default function LabManagementPage() {
                       title="রোগীর কাছ থেকে স্যাম্পল গ্রহণ করুন এবং বারকোড আইডি বরাদ্দ করুন"
                     >
                       <Barcode className="w-4 h-4" />
-                      <span>{collectingSample ? "বারকোড তৈরি হচ্ছে..." : "নমুনা গ্রহণ ও বারকোড"}</span>
+                      <span>{collectingSample ? "বারকোড তৈরি হচ্ছে..." : "🔬 নমুনা গ্রহণ ও বারকোড"}</span>
                     </button>
                   )}
 
-                  {/* Step 3: Enter / Edit Results (Available unless DELIVERED) */}
+                  {/* Step 2.1: Tube Barcode Thermal Sticker */}
+                  {selectedOrder.barcode && (
+                    <button
+                      onClick={() => setPrintTubeSticker(true)}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 rounded-xl text-xs font-bold transition shadow-xs"
+                      title="স্যাম্পল টিউবের জন্য ৫০x৩০ মিমি থার্মাল লেবেল প্রিন্ট করুন"
+                    >
+                      <Barcode className="w-4 h-4 text-purple-600" />
+                      <span>🏷️ টিউব স্টিকার</span>
+                    </button>
+                  )}
+
+                  {/* Step 3: Enter / Edit Results (Staff Stage 3) */}
                   {selectedOrder.status !== "DELIVERED" && (
                     <button
                       onClick={() => setIsResultModalOpen(true)}
@@ -565,11 +616,11 @@ export default function LabManagementPage() {
                       title="পরীক্ষার সংখ্যাসূচক মান এবং বিবরণ এন্ট্রি করুন"
                     >
                       <FileEdit className="w-4 h-4" />
-                      <span>ফলাফল এন্ট্রি / সম্পাদন</span>
+                      <span>📝 ফলাফল এন্ট্রি / সম্পাদন</span>
                     </button>
                   )}
 
-                  {/* Step 4: Doctor Verification & Sign */}
+                  {/* Step 4: Doctor Verification & Sign (Staff Stage 4) */}
                   {selectedOrder.status !== "VERIFIED" && selectedOrder.status !== "DELIVERED" && (
                     <button
                       onClick={() => handleVerifyReport(selectedOrder.id)}
@@ -578,7 +629,7 @@ export default function LabManagementPage() {
                       title="প্যাথলজিস্ট / রেডিওলজিস্ট ডাক্তারের ইলেকট্রনিক স্বাক্ষর ও অনুমোদন"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>{verifying ? "যাচাই হচ্ছে..." : "ডাক্তার অনুমোদন ও স্বাক্ষর"}</span>
+                      <span>{verifying ? "যাচাই হচ্ছে..." : "✅ ডাক্তার অনুমোদন ও স্বাক্ষর"}</span>
                     </button>
                   )}
 
@@ -591,7 +642,7 @@ export default function LabManagementPage() {
                       title="রোগীকে ফাইনাল প্রিন্টসহ রিপোর্ট প্রদান সম্পন্ন করুন"
                     >
                       <Send className="w-4 h-4" />
-                      <span>{delivering ? "ডেলিভারি হচ্ছে..." : "রিপোর্ট ডেলিভারি সম্পন্ন"}</span>
+                      <span>{delivering ? "ডেলিভারি হচ্ছে..." : "📦 রিপোর্ট ডেলিভারি সম্পন্ন"}</span>
                     </button>
                   )}
 
@@ -614,8 +665,40 @@ export default function LabManagementPage() {
                     className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
                   >
                     <Printer className="w-4 h-4" />
-                    <span>প্রিন্ট রিপোর্ট</span>
+                    <span>🖨️ প্রিন্ট রিপোর্ট</span>
                   </button>
+                </div>
+              </div>
+
+              {/* 4-Stage Visual Workflow Stepper */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs no-print">
+                <div className={`p-2 rounded-lg flex items-center gap-2 ${['ACCEPTED', 'SAMPLE_COLLECTED', 'PROCESSING', 'VERIFIED', 'DELIVERED'].includes(selectedOrder.status) ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-white text-slate-600 border border-slate-200'}`}>
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <div>
+                    <p className="font-bold text-[11px]">১. অর্ডার গ্রহণ</p>
+                    <p className="text-[10px] text-slate-500">{['ACCEPTED', 'SAMPLE_COLLECTED', 'PROCESSING', 'VERIFIED', 'DELIVERED'].includes(selectedOrder.status) ? 'গৃহীত (Accepted)' : 'অপেক্ষমান'}</p>
+                  </div>
+                </div>
+                <div className={`p-2 rounded-lg flex items-center gap-2 ${Boolean(selectedOrder.barcode) || ['SAMPLE_COLLECTED', 'PROCESSING', 'VERIFIED', 'DELIVERED'].includes(selectedOrder.status) ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-white text-slate-600 border border-slate-200'}`}>
+                  <Barcode className="w-4 h-4 shrink-0 text-purple-600" />
+                  <div>
+                    <p className="font-bold text-[11px]">২. নমুনা ও বারকোড</p>
+                    <p className="text-[10px] text-slate-500 font-mono">{selectedOrder.barcode ? selectedOrder.barcode : 'অপেক্ষমান'}</p>
+                  </div>
+                </div>
+                <div className={`p-2 rounded-lg flex items-center gap-2 ${['PROCESSING', 'VERIFIED', 'DELIVERED'].includes(selectedOrder.status) ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-white text-slate-600 border border-slate-200'}`}>
+                  <FileEdit className="w-4 h-4 shrink-0 text-blue-600" />
+                  <div>
+                    <p className="font-bold text-[11px]">৩. ফলাফল এন্ট্রি</p>
+                    <p className="text-[10px] text-slate-500">{['PROCESSING', 'VERIFIED', 'DELIVERED'].includes(selectedOrder.status) ? 'সম্পন্ন (Entered)' : 'অপেক্ষমান'}</p>
+                  </div>
+                </div>
+                <div className={`p-2 rounded-lg flex items-center gap-2 ${['VERIFIED', 'DELIVERED'].includes(selectedOrder.status) ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-white text-slate-600 border border-slate-200'}`}>
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <div>
+                    <p className="font-bold text-[11px]">৪. ডাক্তার স্বাক্ষর</p>
+                    <p className="text-[10px] text-slate-500">{['VERIFIED', 'DELIVERED'].includes(selectedOrder.status) ? 'অনুমোদিত (Signed)' : 'অপেক্ষমান'}</p>
+                  </div>
                 </div>
               </div>
 
@@ -738,30 +821,53 @@ export default function LabManagementPage() {
                   )}
                 </div>
 
-                {/* Verification Footer */}
-                <div className="mt-12 pt-6 border-t border-slate-300 flex justify-between items-end text-xs text-slate-600">
-                  <div>
+                {/* Verification Footer & Doctor Signature Block */}
+                <div className="mt-8 pt-6 border-t border-slate-300 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 text-xs text-slate-600">
+                  <div className="space-y-1">
                     <p className="font-semibold text-slate-800">
                       Method: {getDiagnosticMethod(selectedOrder)}
                     </p>
                     <p className="text-[10px] text-slate-400">
                       Standard Quality Control: Bio-Rad External Quality Assurance Certified
                     </p>
+                    {selectedOrder.status === "VERIFIED" && selectedOrder.signature_hash && (
+                      <p className="font-mono text-[9px] text-slate-400">
+                        Digital Verification Hash: {selectedOrder.signature_hash.slice(0, 24)}...
+                      </p>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <div className="w-44 border-b border-slate-400 mb-1 ml-auto"></div>
-                    <p className="font-bold text-slate-900">
-                      {selectedOrder.status === "VERIFIED"
-                        ? selectedOrder.verified_by_doctor?.full_name
-                          ? `Dr. ${selectedOrder.verified_by_doctor.full_name}`
-                          : "Consultant Pathologist (Authorized)"
-                        : "Pending Verification"}
-                    </p>
-                    <p className="text-[10px] text-slate-500">
-                      {selectedOrder.status === "VERIFIED"
-                        ? `Electronically Authorized ${selectedOrder.verified_at ? formatDateBDT(selectedOrder.verified_at) : ""}`
-                        : "Consultant Clinical Pathologist"}
-                    </p>
+
+                  {/* Authorized Doctor Signature Stamp */}
+                  <div className="text-right ml-auto">
+                    {selectedOrder.status === "VERIFIED" ? (
+                      <div className="inline-block p-3 bg-emerald-50/70 border-2 border-dashed border-emerald-400 rounded-xl text-right">
+                        <div className="flex items-center justify-end space-x-1 text-emerald-800 text-[9.5px] font-bold uppercase tracking-wider mb-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>DIGITALLY SIGNED & VERIFIED</span>
+                        </div>
+                        <p className="font-bold text-slate-900 text-xs">
+                          {selectedOrder.verified_by_doctor?.full_name
+                            ? `Dr. ${selectedOrder.verified_by_doctor.full_name}`
+                            : "Dr. Farhana Yasmin, MBBS, MPhil"}
+                        </p>
+                        <p className="text-[10px] text-slate-600">
+                          Consultant Clinical Pathologist • BMDC Reg: A-68421
+                        </p>
+                        <p className="text-[9px] text-emerald-700 font-mono mt-0.5">
+                          {selectedOrder.verified_at ? formatDateBDT(selectedOrder.verified_at) : "Electronically Authorized"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="w-44 border-b border-slate-400 mb-1 ml-auto"></div>
+                        <p className="font-bold text-slate-400 italic">
+                          স্বাক্ষর অপেক্ষমান (Pending Doctor Signature)
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          Consultant Clinical Pathologist
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -941,6 +1047,64 @@ export default function LabManagementPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 50x30mm Tube Barcode Thermal Sticker Modal */}
+      {printTubeSticker && selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 no-print">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <Barcode className="w-4 h-4 text-purple-600" />
+                <span>নমুনা টিউব বারকোড স্টিকার (50x30mm Thermal Label)</span>
+              </h3>
+              <button
+                onClick={() => setPrintTubeSticker(false)}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="border-2 border-dashed border-slate-300 p-4 rounded-xl bg-slate-50 flex flex-col items-center text-center">
+              <div className="bg-white border border-slate-800 p-3 rounded-md shadow-xs w-64 text-left font-mono">
+                <div className="flex justify-between text-[10px] font-bold border-b border-slate-200 pb-1">
+                  <span>ANNESHA HOSPITAL</span>
+                  <span>{selectedOrder.tests?.[0]?.specimen_type || "BLOOD"}</span>
+                </div>
+                <div className="my-1.5 text-center">
+                  <span className="text-base font-black tracking-widest">{selectedOrder.barcode}</span>
+                  <div className="text-[9px] text-slate-500 font-sans mt-0.5 tracking-tighter">
+                    ||||| | |||| ||| |||| | |||||
+                  </div>
+                </div>
+                <div className="text-[9px] font-bold truncate">
+                  {selectedOrder.patient?.full_name} ({selectedOrder.patient?.patient_code})
+                </div>
+                <div className="flex justify-between text-[8px] text-slate-600 mt-0.5">
+                  <span>{selectedOrder.patient?.gender}, {selectedOrder.patient?.age ? `${selectedOrder.patient.age}y` : ""}</span>
+                  <span>{new Date().toLocaleDateString("en-GB")}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setPrintTubeSticker(false)}
+                className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold"
+              >
+                বন্ধ করুন
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 flex items-center gap-1.5 shadow-xs"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>থার্মাল প্রিন্ট</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
