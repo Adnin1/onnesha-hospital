@@ -45,7 +45,7 @@ export interface InsuranceClaim {
 /**
  * Default standard healthcare insurance payers for Bangladesh corporate healthcare market.
  */
-const DEFAULT_PAYERS = [
+export const DEFAULT_PAYERS = [
   { payer_name: "MetLife Bangladesh (Alico)", payer_code: "METLIFE" },
   { payer_name: "Green Delta Insurance Company Ltd", payer_code: "GREEN_DELTA" },
   { payer_name: "Pragati Life Insurance Ltd", payer_code: "PRAGATI" },
@@ -75,24 +75,6 @@ export async function getInsurancePayersAction(): Promise<{
       .order("payer_name", { ascending: true });
 
     if (error) throw error;
-
-    if (!data || data.length === 0) {
-      // Auto-bootstrap standard corporate payers
-      const toInsert = DEFAULT_PAYERS.map((p) => ({
-        organization_id: session.organizationId,
-        payer_name: p.payer_name,
-        payer_code: p.payer_code,
-      }));
-
-      const { data: inserted, error: insertErr } = await supabase
-        .from("insurance_payers")
-        .insert(toInsert)
-        .select("*");
-
-      if (!insertErr && inserted) {
-        return { success: true, data: inserted as InsurancePayer[] };
-      }
-    }
 
     return { success: true, data: (data as InsurancePayer[]) || [] };
   } catch (err: unknown) {

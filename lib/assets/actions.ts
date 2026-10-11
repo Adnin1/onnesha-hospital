@@ -47,6 +47,15 @@ export interface ActionResult<T = unknown> {
   error?: string;
 }
 
+export const DEFAULT_HOSPITAL_ASSETS = [
+  { asset_code: "AST-MED-001", asset_name: "Sysmex Automated 5-Part Hematology Analyzer", category: "DIAGNOSTIC_MACHINE", serial_number: "SYS-2026-XN55" },
+  { asset_code: "AST-RAD-002", asset_name: "Shimadzu 500mA High-Frequency Digital X-Ray System", category: "DIAGNOSTIC_MACHINE", serial_number: "SHM-XR-4402" },
+  { asset_code: "AST-SUR-003", asset_name: "GE Datex-Ohmeda Anesthesia Workstation & Ventilator", category: "MEDICAL_EQUIPMENT", serial_number: "GE-ANES-1109" },
+  { asset_code: "AST-ICU-004", asset_name: "Mindray Multi-Parameter Central ICU Patient Monitor", category: "MEDICAL_EQUIPMENT", serial_number: "MIN-ICU-7721" },
+  { asset_code: "AST-USG-005", asset_name: "GE Logiq P9 4D Color Doppler Ultrasound System", category: "DIAGNOSTIC_MACHINE", serial_number: "GE-USG-3390" },
+  { asset_code: "AST-VEH-006", asset_name: "Toyota HiAce 24-Hour Critical Care Ambulance", category: "VEHICLE", serial_number: "BOG-CHA-11-8092" },
+];
+
 /**
  * 1. Fetch Hospital Assets
  */
@@ -79,92 +88,6 @@ export async function getHospitalAssetsAction(params?: {
     const { data, error } = await query;
     if (error) {
       return { success: false, error: error.message };
-    }
-
-    if (!data || data.length === 0) {
-      const defaultAssets = [
-        {
-          organization_id: session.organizationId,
-          asset_code: "AST-MED-001",
-          asset_name: "Sysmex Automated 5-Part Hematology Analyzer",
-          category: "DIAGNOSTIC_MACHINE",
-          serial_number: "SYS-2026-XN55",
-          purchase_date: "2024-03-15",
-          purchase_cost: 1850000,
-          current_value: 1550000,
-          location: "Pathology & Clinical Lab (1st Floor)",
-          status: "ACTIVE",
-        },
-        {
-          organization_id: session.organizationId,
-          asset_code: "AST-RAD-002",
-          asset_name: "Shimadzu 500mA High-Frequency Digital X-Ray System",
-          category: "DIAGNOSTIC_MACHINE",
-          serial_number: "SHM-XR-4402",
-          purchase_date: "2023-11-20",
-          purchase_cost: 3200000,
-          current_value: 2700000,
-          location: "Radiology & Imaging Suite (Ground Floor)",
-          status: "ACTIVE",
-        },
-        {
-          organization_id: session.organizationId,
-          asset_code: "AST-SUR-003",
-          asset_name: "GE Datex-Ohmeda Anesthesia Workstation & Ventilator",
-          category: "MEDICAL_EQUIPMENT",
-          serial_number: "GE-ANES-1109",
-          purchase_date: "2024-01-10",
-          purchase_cost: 2400000,
-          current_value: 2100000,
-          location: "Operation Theater Complex (OT-1)",
-          status: "ACTIVE",
-        },
-        {
-          organization_id: session.organizationId,
-          asset_code: "AST-ICU-004",
-          asset_name: "Mindray Multi-Parameter Central ICU Patient Monitor",
-          category: "MEDICAL_EQUIPMENT",
-          serial_number: "MIN-ICU-7721",
-          purchase_date: "2024-05-02",
-          purchase_cost: 450000,
-          current_value: 410000,
-          location: "ICU / CCU Critical Care Bay 3",
-          status: "ACTIVE",
-        },
-        {
-          organization_id: session.organizationId,
-          asset_code: "AST-USG-005",
-          asset_name: "GE Logiq P9 4D Color Doppler Ultrasound System",
-          category: "DIAGNOSTIC_MACHINE",
-          serial_number: "GE-USG-3390",
-          purchase_date: "2024-02-18",
-          purchase_cost: 2900000,
-          current_value: 2600000,
-          location: "Ultrasonography & Echo Lab",
-          status: "ACTIVE",
-        },
-        {
-          organization_id: session.organizationId,
-          asset_code: "AST-VEH-006",
-          asset_name: "Toyota HiAce 24-Hour Critical Care Ambulance",
-          category: "VEHICLE",
-          serial_number: "BOG-CHA-11-8092",
-          purchase_date: "2023-08-14",
-          purchase_cost: 4200000,
-          current_value: 3600000,
-          location: "Hospital Emergency Ramp & Bay",
-          status: "ACTIVE",
-        },
-      ];
-
-      const { data: inserted, error: insertError } = await supabase
-        .from("hospital_assets")
-        .insert(defaultAssets)
-        .select("*");
-
-      if (!insertError && inserted && inserted.length > 0) {
-        return { success: true, data: { assets: inserted as HospitalAssetRecord[] } };
-      }
     }
 
     return { success: true, data: { assets: (data as HospitalAssetRecord[]) || [] } };

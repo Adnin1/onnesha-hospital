@@ -1,7 +1,7 @@
 {
   "version": "1.1.90",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.89. Authentic production release: reports invoice voided_at column query fix, automated bootstrap of biomedical devices, procurement warehouses, expense categories, fiscal periods, assets, and all-in-one financial service stability.",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.90. Authentic production release: reports invoice voided_at schema resilience, patient date_of_birth bidirectional sync, ZKTeco LAN stream enhancement, zero-warning clean build, and verified all-in-one financial service stability.",
   "pub_date": "2026-10-11T16:39:29.290Z",
   "platforms": {
     "windows-x86_64": {

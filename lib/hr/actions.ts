@@ -388,55 +388,12 @@ export async function getTodayAttendanceAction(): Promise<
       } | null;
     }
 
-    let records: AttendanceRecordItem[] = ((data || []) as unknown as AttRow[]).map((r) => ({
+    const records: AttendanceRecordItem[] = ((data || []) as unknown as AttRow[]).map((r) => ({
       ...r,
       employee: r.employees || undefined,
     }));
 
-    if (records.length === 0) {
-      const { data: staffList } = await supabase
-        .from("employees")
-        .select("id, employee_code, full_name, phone")
-        .eq("organization_id", session.organizationId)
-        .order("employee_code", { ascending: true })
-        .limit(7);
 
-      if (staffList && staffList.length > 0) {
-        const punchTimings = [
-          { time: `${today}T08:30:15.000Z`, mode: "FINGERPRINT" as const, late: false },
-          { time: `${today}T08:45:20.000Z`, mode: "FINGERPRINT" as const, late: false },
-          { time: `${today}T08:50:10.000Z`, mode: "FACE" as const, late: false },
-          { time: `${today}T08:55:40.000Z`, mode: "FINGERPRINT" as const, late: false },
-          { time: `${today}T09:05:00.000Z`, mode: "CARD" as const, late: false },
-          { time: `${today}T09:22:15.000Z`, mode: "FINGERPRINT" as const, late: true },
-          { time: `${today}T08:40:00.000Z`, mode: "FINGERPRINT" as const, late: false },
-        ];
-
-        const defaultPunches = staffList.map((st, idx) => ({
-          organization_id: session.organizationId,
-          employee_id: st.id,
-          punch_time: punchTimings[idx % punchTimings.length].time,
-          punch_type: "CHECK_IN" as const,
-          verification_mode: punchTimings[idx % punchTimings.length].mode,
-          is_late: punchTimings[idx % punchTimings.length].late,
-        }));
-
-        const { data: insertedPunches } = await supabase
-          .from("attendance_records")
-          .insert(defaultPunches)
-          .select(`
-            *,
-            employees (id, employee_code, full_name, phone)
-          `);
-
-        if (insertedPunches && insertedPunches.length > 0) {
-          records = (insertedPunches as unknown as AttRow[]).map((r) => ({
-            ...r,
-            employee: r.employees || undefined,
-          }));
-        }
-      }
-    }
 
     const uniquePresent = new Set(records.map((r) => r.employee_id));
     const lateCount = records.filter((r) => r.is_late).length;

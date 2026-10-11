@@ -107,88 +107,7 @@ export async function getPurchaseRequisitionsAction(params?: {
       return { success: false, error: error.message };
     }
 
-    let reqRows = (data as PurchaseRequisitionRecord[]) || [];
-
-    if (!reqRows || reqRows.length === 0) {
-      const defaultRequisitions = [
-        {
-          header: {
-            organization_id: session.organizationId,
-            requisition_number: "PR-OT-2026-001",
-            priority: "URGENT" as const,
-            status: "APPROVED" as const,
-            notes: "Monthly sterile surgical consumables replenishment for OT-1 and OT-2",
-            requested_by: session.userId,
-          },
-          items: [
-            { item_name: "Sterile Latex Surgical Gloves Size 7.5 (Box of 50)", item_category: "CONSUMABLE", quantity: 25, estimated_unit_cost: 1200 },
-            { item_name: "Suture Prolene 3-0 Round Bodied 75cm", item_category: "CONSUMABLE", quantity: 40, estimated_unit_cost: 350 },
-            { item_name: "Disposable Scalpel Blades #15", item_category: "CONSUMABLE", quantity: 15, estimated_unit_cost: 450 },
-          ],
-        },
-        {
-          header: {
-            organization_id: session.organizationId,
-            requisition_number: "PR-PHARM-2026-002",
-            priority: "NORMAL" as const,
-            status: "PENDING" as const,
-            notes: "Inpatient pharmacy critical intravenous fluid and antibiotic buffer stocks",
-            requested_by: session.userId,
-          },
-          items: [
-            { item_name: "Normal Saline 1000ml Infusion Bags", item_category: "CONSUMABLE", quantity: 200, estimated_unit_cost: 85 },
-            { item_name: "Ceftriaxone 1g IV Injection Vials", item_category: "CONSUMABLE", quantity: 150, estimated_unit_cost: 180 },
-            { item_name: "Intravenous Cannula 20G with Port", item_category: "CONSUMABLE", quantity: 250, estimated_unit_cost: 45 },
-          ],
-        },
-        {
-          header: {
-            organization_id: session.organizationId,
-            requisition_number: "PR-ICU-2026-003",
-            priority: "EMERGENCY" as const,
-            status: "PENDING" as const,
-            notes: "Emergency critical care ventilator filters and airway management circuits",
-            requested_by: session.userId,
-          },
-          items: [
-            { item_name: "HME Bacterial/Viral Ventilator Breathing Filters", item_category: "CONSUMABLE", quantity: 60, estimated_unit_cost: 380 },
-            { item_name: "Endotracheal Tubes 7.5mm Cuffed", item_category: "CONSUMABLE", quantity: 30, estimated_unit_cost: 250 },
-          ],
-        },
-      ];
-
-      for (const req of defaultRequisitions) {
-        const { data: insertedHdr } = await supabase
-          .from("purchase_requisitions")
-          .insert(req.header as never)
-          .select("*")
-          .single();
-
-        if (insertedHdr) {
-          const itemInserts = req.items.map((it) => ({
-            requisition_id: insertedHdr.id,
-            item_name: it.item_name,
-            item_category: it.item_category,
-            quantity: it.quantity,
-            estimated_unit_cost: it.estimated_unit_cost,
-          }));
-          await supabase.from("purchase_requisition_items").insert(itemInserts as never);
-        }
-      }
-
-      const { data: refetched } = await supabase
-        .from("purchase_requisitions")
-        .select(`
-          *,
-          items:purchase_requisition_items (*)
-        `)
-        .eq("organization_id", session.organizationId)
-        .order("created_at", { ascending: false });
-
-      if (refetched && refetched.length > 0) {
-        reqRows = refetched as PurchaseRequisitionRecord[];
-      }
-    }
+    const reqRows = (data as PurchaseRequisitionRecord[]) || [];
 
     return { success: true, data: { requisitions: reqRows } };
   } catch (err: unknown) {
@@ -318,73 +237,7 @@ export async function getGoodsReceiptNotesAction(params?: {
       return { success: false, error: error.message };
     }
 
-    let grnRows = (data as GoodsReceiptNoteRecord[]) || [];
-
-    if (!grnRows || grnRows.length === 0) {
-      const defaultGrns = [
-        {
-          header: {
-            organization_id: session.organizationId,
-            grn_number: "GRN-2026-001",
-            received_by: session.userId,
-            status: "VERIFIED" as const,
-            total_received_cost: 23500,
-            notes: "Square Pharmaceuticals delivery batch verified by Central Medical Store",
-          },
-          items: [
-            { item_name: "Normal Saline 1000ml Infusion Bags", quantity_received: 200, unit_cost: 85, total_cost: 17000, batch_number: "SQ-NS-9912", expiry_date: "2027-12-31" },
-            { item_name: "IV Cannula 20G Infusion Sets", quantity_received: 100, unit_cost: 65, total_cost: 6500, batch_number: "SQ-IV-4401", expiry_date: "2028-06-30" },
-          ],
-        },
-        {
-          header: {
-            organization_id: session.organizationId,
-            grn_number: "GRN-2026-002",
-            received_by: session.userId,
-            status: "VERIFIED" as const,
-            total_received_cost: 45000,
-            notes: "Incepta Pharmaceuticals antibiotic delivery verified and stored in Pharmacy Vault",
-          },
-          items: [
-            { item_name: "Ceftriaxone 1g IV Injection Vials", quantity_received: 250, unit_cost: 180, total_cost: 45000, batch_number: "INC-CTX-7721", expiry_date: "2027-08-31" },
-          ],
-        },
-      ];
-
-      for (const grn of defaultGrns) {
-        const { data: insertedGrn } = await supabase
-          .from("goods_receipt_notes")
-          .insert(grn.header as never)
-          .select("*")
-          .single();
-
-        if (insertedGrn) {
-          const itemInserts = grn.items.map((it) => ({
-            grn_id: insertedGrn.id,
-            item_name: it.item_name,
-            quantity_received: it.quantity_received,
-            unit_cost: it.unit_cost,
-            total_cost: it.total_cost,
-            batch_number: it.batch_number,
-            expiry_date: it.expiry_date,
-          }));
-          await supabase.from("goods_receipt_items").insert(itemInserts as never);
-        }
-      }
-
-      const { data: refetchedGrns } = await supabase
-        .from("goods_receipt_notes")
-        .select(`
-          *,
-          items:goods_receipt_items (*)
-        `)
-        .eq("organization_id", session.organizationId)
-        .order("created_at", { ascending: false });
-
-      if (refetchedGrns && refetchedGrns.length > 0) {
-        grnRows = refetchedGrns as GoodsReceiptNoteRecord[];
-      }
-    }
+    const grnRows = (data as GoodsReceiptNoteRecord[]) || [];
 
     return { success: true, data: { grns: grnRows } };
   } catch (err: unknown) {
@@ -503,6 +356,12 @@ export async function createGoodsReceiptNoteAction(input: {
   }
 }
 
+export const DEFAULT_WAREHOUSES = [
+  { warehouse_code: "WH-CENTRAL", warehouse_name: "Central Medical Supply & General Store", location: "Ground Floor" },
+  { warehouse_code: "WH-PHARM", warehouse_name: "Main Pharmacy Storage & Bulk Dispensary", location: "1st Floor" },
+  { warehouse_code: "WH-OT", warehouse_name: "OT Sterile Consumables & Surgical Vault", location: "2nd Floor" },
+];
+
 /**
  * 5. Fetch Warehouses
  */
@@ -528,41 +387,6 @@ export async function getWarehousesAction(): Promise<ActionResult<{ warehouses: 
 
     if (error) {
       return { success: false, error: error.message };
-    }
-
-    if (!data || data.length === 0) {
-      const defaultWarehouses = [
-        {
-          organization_id: session.organizationId,
-          warehouse_code: "WH-CENTRAL",
-          warehouse_name: "Central Medical Supply & General Store",
-          location: "Ground Floor, Logistics & Distribution Wing",
-          is_active: true,
-        },
-        {
-          organization_id: session.organizationId,
-          warehouse_code: "WH-PHARM",
-          warehouse_name: "Main Pharmacy Storage & Bulk Dispensary",
-          location: "1st Floor, Hospital Pharmacy Annex",
-          is_active: true,
-        },
-        {
-          organization_id: session.organizationId,
-          warehouse_code: "WH-OT",
-          warehouse_name: "OT Sterile Consumables & Surgical Vault",
-          location: "2nd Floor, Surgical Operation Theater Wing",
-          is_active: true,
-        },
-      ];
-
-      const { data: inserted, error: insertError } = await supabase
-        .from("warehouses")
-        .insert(defaultWarehouses)
-        .select("*");
-
-      if (!insertError && inserted && inserted.length > 0) {
-        return { success: true, data: { warehouses: inserted as WarehouseRecord[] } };
-      }
     }
 
     return { success: true, data: { warehouses: (data as WarehouseRecord[]) || [] } };

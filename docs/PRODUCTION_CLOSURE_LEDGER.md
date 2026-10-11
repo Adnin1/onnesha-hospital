@@ -24,7 +24,7 @@
 | **Playwright Real Browser E2E** | 156/156 real browser tests passed across Chromium (52), Firefox (52), and Mobile-Chrome (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 161/161 applied (100% parity, 0 drift, newest: `20261011231500`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 162/162 applied (100% parity, 0 drift, newest: `20261011233000`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB | `npx supabase db lint --linked` | ✅ PASS |
 | **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
 | **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
@@ -112,6 +112,15 @@
 - **Radiology Modality Query Hardening:** Replaced PostgREST nested table column filter with client-side filtering on joined study modalities in `lib/radiology/actions.ts`, fixing the stuck loading state when querying modalities (such as CT/MRI/USG).
 - **LIS Integration Transparency (G9 Gate Boundary):** Relabeled "Connected Analyzers" to "Registered Analyzers" in `components/lab/LisAnalyzerModal.tsx` and embedded an explicit G9 Gate Simulation Mode notice clarifying that physical analyzer connectivity requires the on-premise LIS Bridge Agent.
 - **Desktop Installers v1.1.88 Recompiled:** Native WiX MSI (9.54 MB) and NSIS EXE (8.91 MB) compiled with fresh release artifacts and synchronized into `public/downloads/desktop/latest.json`.
+
+### I. Production Data Authenticity & Zero Auto-Fabrication Policy
+- **Surgical Codebase Cleanup:** Completely purged query-time auto-seeding logic across `lib/accounting/actions.ts` (JE-2026-001/002/003), `lib/scholarship/actions.ts` (SCH-2026-001/002/003 & demo patients), `lib/procurement/actions.ts` (PR-ICU-2026-003 & GRN-2026-001), `lib/hr/actions.ts` (synthetic staff punch logs), `lib/biomedical/actions.ts`, and `lib/assets/actions.ts`.
+- **Database Quarantine Migration:** Applied `20261011233000_quarantine_synthetic_bootstrap_data.sql` to remote Supabase DB (`iuhtzahuszdkdarhxobx`), permanently purging synthetic demo records from the production tenant while preserving genuine clinical data.
+- **Honest Empty States:** Empty database tables now render honest, zero-state interfaces rather than auto-fabricating transactional records.
+
+### J. Desktop Manifest Alignment to v1.1.90
+- Corrected release notes in `public/downloads/desktop/latest.json` from `v1.1.89` to `v1.1.90`.
+- Verified cryptographic hashes and file sizes for native Windows installers (`Onnesha-Hospital-1.1.90.msi` at 3,457,024 bytes and `Onnesha-Hospital-Setup-1.1.90.exe` at 2,895,011 bytes).
 
 ---
 
