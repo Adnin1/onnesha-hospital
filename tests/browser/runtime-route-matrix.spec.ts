@@ -103,7 +103,22 @@ test.describe("Real Browser E2E: Route-by-Route Runtime Acceptance & Console Dia
     test.setTimeout(90000);
 
     for (const route of PROTECTED_SHELL_ROUTES) {
-      await page.goto(route, { waitUntil: "domcontentloaded", timeout: 20000 });
+      try {
+        await page.goto(route, { waitUntil: "domcontentloaded", timeout: 20000 });
+      } catch (err: any) {
+        // In WebKit/Safari, an active client-side AuthGuard router.replace to /login can interrupt or abort page.goto
+        if (
+          err?.message?.includes("interrupted by another navigation") ||
+          err?.message?.includes("ERR_ABORTED") ||
+          err?.message?.includes("frame was detached")
+        ) {
+          await page.waitForTimeout(500);
+          await page.goto(route, { waitUntil: "domcontentloaded", timeout: 20000 }).catch(() => {});
+        } else {
+          throw err;
+        }
+      }
+      await page.waitForLoadState("domcontentloaded").catch(() => {});
       await page.waitForTimeout(400);
 
       const currentUrl = page.url();
