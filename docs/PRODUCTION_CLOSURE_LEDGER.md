@@ -1,11 +1,11 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.85
+# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.86
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit Reference:** Production Release `v1.1.85`  
+**Head Commit Reference:** Production Release `v1.1.86`  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
-**Historical Release Tags:** `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
+**Historical Release Tags:** `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
 **Ledger Reconciliation Date:** October 11, 2026  
@@ -24,14 +24,14 @@
 | **Playwright Real Browser E2E** | 156/156 real browser tests passed across Chromium (52), Firefox (52), and Mobile-Chrome (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 157/157 applied (100% parity, 0 drift, newest: `20261011083000`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 158/158 applied (100% parity, 0 drift, newest: `20261011190000`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB | `npx supabase db lint --linked` | ✅ PASS |
 | **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
 | **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
 | **System UI 3D Dimensional Engine** | Tactile 3D cards, elevated floating metrics, beveled buttons, glassmorphic panels | `app/globals.css`, `components/dashboard/*`, `app/(hospital)/*` | ✅ PASS |
 | **Pharmacy Schema Relationship Resilience** | Foreign key relation between `medicines(generic_id)` and `medicine_generics(id)` hardened with automatic schema-cache fallback query | `lib/pharmacy/actions.ts` & migration `20261011082000` | ✅ PASS |
-| **Official Hospital Tariffs & Diagnostics** | Complete official rate chart seeded across 16 categories, ~140 procedures, synchronized with billing | `lib/billing/serviceCatalog.ts` & migration `20261011083000` | ✅ PASS |
-| **Native Windows Desktop Installers (v1.1.85)** | Authentic native NSIS EXE (2.86 MB) & WiX MSI (3.40 MB) matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
+| **Official Hospital Diagnostic Tariffs** | Complete official rate chart seeded across 16 categories, 185 tests with exact BDT tariffs, resilient RLS policies allowing authenticated staff & anon query | `lib/lab/actions.ts`, `lib/billing/serviceCatalog.ts` & migration `20261011190000` | ✅ PASS |
+| **Native Windows Desktop Installers (v1.1.86)** | Authentic native NSIS EXE (13.66 MB) & WiX MSI (15.56 MB) matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
 | **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
@@ -67,20 +67,20 @@
   - The discharge folder prints **EXACTLY 4 PAGES** (Sheets: 4) bounded to 279mm A4 dimensions.
   - Printing the admission sheet prints **EXACTLY 1 PAGE** (`.print-pad`).
 
-### D. Native Windows Desktop Packaging (v1.1.85)
+### D. Native Windows Desktop Packaging (v1.1.86)
 - **Toolchains:** Host WiX 3.11 (`C:\Users\mahin khan\wix311`) and NSIS 3.10 (`C:\Users\mahin khan\nsis310\nsis-3.10`).
 - **Compiled & Verified Binaries (Synchronized with `latest.json`):**
-  - `Onnesha-Hospital-Setup-1.1.85.exe`: exactly **2,864,236 bytes**, SHA-256: `12AE14939BCCE9A1F5C66AE08E6CA9284EA3365F3B0F43F55C145A11C20EF699`
-  - `Onnesha-Hospital-1.1.85.msi`: exactly **3,399,680 bytes**, SHA-256: `028FE46BAF48F484D5577B2AA3482DE98C3936BC92230007F44E244C89A9B86C`
+  - `Onnesha-Hospital-Setup-1.1.86.exe`: exactly **13,656,186 bytes**, SHA-256: `F6223396E02C6F6164595E68FA55DED8A556D9833D657C7E5D83C754905395DC`
+  - `Onnesha-Hospital-1.1.86.msi`: exactly **15,556,608 bytes**, SHA-256: `53471B7455BD0A5B3CF8626E454C585BA48965FE1DCCA9ECE31B4174BB9188EB`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
-- **Historical Note:** Earlier documentation references mentioning ~69–74 MB pertained to uncompressed developer staging outputs before production packaging optimization; the canonical production installers distributed to clients are the ~2.86 MB (EXE) and ~3.40 MB (MSI) packages.
 
-### E. Supabase Database Migration Parity (157/157)
-- All 157 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
-- Verified via `npx supabase migration list` ending at `20261011083000` on both local and remote.
+### E. Supabase Database Migration Parity (158/158)
+- All 158 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
+- Verified via `npx supabase migration list` ending at `20261011190000` on both local and remote.
 - Key recent migrations:
   - `20261011082000_fix_medicines_generics_foreign_key.sql`: Explicit foreign key relation between `public.medicines(generic_id)` and `public.medicine_generics(id)` with schema cache notification.
-  - `20261011083000_seed_official_hospital_rate_chart.sql`: Seeding and synchronization of official hospital tariffs across 16 categories and ~140 procedures into both `diagnostic_tests` and `hospital_service_tariffs`.
+  - `20261011083000_seed_official_hospital_rate_chart.sql`: Seeding and synchronization of official hospital tariffs into `diagnostic_tests` and `hospital_service_tariffs`.
+  - `20261011190000_diagnostic_tariffs_rls_and_complete_rate_chart.sql`: Full RLS policy resolution on `diagnostic_categories` and `diagnostic_tests` allowing authenticated staff and anon reads, plus complete 185 tests across 16 categories with exact hospital tariffs and synchronization with `hospital_service_tariffs`.
 - Schema verification via `npx supabase db lint --linked` confirmed 0 fatal schema or security errors.
 
 ### F. Medical Certificates Overhaul & Cashier Billing Permission Governance

@@ -21,7 +21,9 @@ export interface HospitalServiceItem {
   isDatabaseAuthoritative?: boolean;
 }
 
-export const MASTER_HOSPITAL_SERVICES: HospitalServiceItem[] = [
+import { OFFICIAL_DIAGNOSTIC_TESTS } from "../lab/rateChartData.ts";
+
+const BASE_HOSPITAL_SERVICES: HospitalServiceItem[] = [
   // --- 1. CONSULTATIONS ---
   {
     id: "srv-con-opd",
@@ -859,6 +861,43 @@ export const MASTER_HOSPITAL_SERVICES: HospitalServiceItem[] = [
     group: "EMERGENCY_NURSING",
     description: "Advanced life support ambulance with transport ventilator & paramedic",
   },
+];
+
+const OFFICIAL_RATE_CHART_SERVICE_ITEMS: HospitalServiceItem[] = OFFICIAL_DIAGNOSTIC_TESTS.map((t) => {
+  let cat: ServiceCategory = "LAB";
+  let grp: "LAB" | "IMAGING" = "LAB";
+  if (t.category_code === "XRAY") {
+    cat = "XRAY";
+    grp = "IMAGING";
+  } else if (t.category_code === "USG") {
+    cat = "USG";
+    grp = "IMAGING";
+  } else if (t.test_code === "SPEC_ECG") {
+    cat = "ECG";
+    grp = "IMAGING";
+  } else if (t.category_code === "CT_SCAN" || t.category_code === "MRI" || t.category_code === "SPECIAL_DIAG") {
+    cat = "MISC";
+    grp = "IMAGING";
+  }
+
+  return {
+    id: `srv-diag-${t.test_code.toLowerCase().replace(/_/g, "-")}`,
+    category: cat,
+    name: t.test_name,
+    price: t.price,
+    group: grp,
+    description: `${t.category_name} (${t.specimen_type !== "None" ? t.specimen_type : "Investigation"})`,
+  };
+});
+
+const baseNames = new Set(BASE_HOSPITAL_SERVICES.map((s) => s.name.trim().toLowerCase()));
+const extraOfficialItems = OFFICIAL_RATE_CHART_SERVICE_ITEMS.filter(
+  (t) => !baseNames.has(t.name.trim().toLowerCase())
+);
+
+export const MASTER_HOSPITAL_SERVICES: HospitalServiceItem[] = [
+  ...BASE_HOSPITAL_SERVICES,
+  ...extraOfficialItems,
 ];
 
 /**

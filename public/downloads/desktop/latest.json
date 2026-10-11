@@ -1,16 +1,16 @@
 {
-  "version": "1.1.85",
+  "version": "1.1.86",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.85. Authentic production release: 157/157 Supabase migration parity, ANNESHA HOSPITAL AND DIAGNOSTIC official branding, authentic 4-part IPD discharge folder, collision-safe diagnostic catalog with cryptographically generated codes, official hospital tariffs across 16 categories, international medical certificates, cashier bill editing permissions, super admin invoice deletion, 3D UI engine, and pharmacy generic relationship resilience.",
-  "pub_date": "2026-10-11T11:49:56.622Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.86. Authentic production release: 158/158 Supabase migration parity, ANNESHA HOSPITAL AND DIAGNOSTIC official branding, authentic 4-part IPD discharge folder, collision-safe diagnostic catalog with cryptographically generated codes, official hospital tariffs across 16 categories with 185 tests and exact BDT tariffs, international medical certificates, cashier bill editing permissions, super admin invoice deletion, 3D UI engine, and pharmacy generic relationship resilience.",
+  "pub_date": "2026-10-11T13:06:33.306Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.85.exe",
-      "installer_exe_sha256": "12AE14939BCCE9A1F5C66AE08E6CA9284EA3365F3B0F43F55C145A11C20EF699",
-      "installer_exe_size": 2864236,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.85.msi",
-      "installer_msi_sha256": "028FE46BAF48F484D5577B2AA3482DE98C3936BC92230007F44E244C89A9B86C",
-      "installer_msi_size": 3399680
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.86.exe",
+      "installer_exe_sha256": "F6223396E02C6F6164595E68FA55DED8A556D9833D657C7E5D83C754905395DC",
+      "installer_exe_size": 13656186,
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.86.msi",
+      "installer_msi_sha256": "53471B7455BD0A5B3CF8626E454C585BA48965FE1DCCA9ECE31B4174BB9188EB",
+      "installer_msi_size": 15556608
     }
   },
   "signing": {
