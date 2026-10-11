@@ -826,7 +826,28 @@ export function buildBillingReceiptEscPos(data: BillingReceiptData): EscPosBuild
     .rule("-")
     .twoColumns("Payment Mode:", data.paymentMethod)
     .twoColumns("Cashier:", data.cashierName)
-    .align("center")
+    .feed(1)
+    .align("center");
+
+  if (data.balance <= 0) {
+    builder
+      .bold(true)
+      .textLine("********************************")
+      .textLine("    * PAID / PORISHODHIT *    ")
+      .textLine("        FULL SETTLEMENT        ")
+      .textLine("********************************")
+      .bold(false);
+  } else {
+    builder
+      .bold(true)
+      .textLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+      .textLine("       DUE / BOKEYA SEAL        ")
+      .textLine(`   DUE BALANCE: BDT ${data.balance.toFixed(2)}   `)
+      .textLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+      .bold(false);
+  }
+
+  builder
     .feed(1)
     .barcode128(data.invoiceNumber, 50)
     .textLine("Thank you for choosing Onnesha Hospital")

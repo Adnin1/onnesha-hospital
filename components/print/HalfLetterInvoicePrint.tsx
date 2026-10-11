@@ -7,6 +7,7 @@
 import React from "react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { generateSvgBarcode } from "@/lib/print/barcode";
+import { PaymentStampSeal } from "@/components/billing/PaymentStampSeal";
 
 export interface HalfLetterInvoicePrintProps {
   invoiceNumber: string;
@@ -286,7 +287,20 @@ export function HalfLetterInvoicePrint({
       </div>
 
       {/* 4. Financial Calculations & Settlement */}
-      <div className="grid grid-cols-12 gap-2 mb-2 text-[10px]">
+      <div className="relative grid grid-cols-12 gap-2 mb-2 text-[10px]">
+        {/* Authentic Visual Rubber Stamp Seal */}
+        <div className="absolute right-2 top-0 z-10 pointer-events-none opacity-90 print:opacity-100">
+          <PaymentStampSeal
+            status={dueAmount <= 0 ? "PAID" : "DUE"}
+            dueAmount={dueAmount}
+            paidAmount={paidAmount}
+            totalAmount={totalAmount}
+            dateStr={dateStr}
+            cashierName={cashierName}
+            receiptNumber={payments[0]?.receiptNumber}
+            size="sm"
+          />
+        </div>
         {/* Left: Payments Ledger & Words */}
         <div className="col-span-7 flex flex-col justify-between">
           <div>

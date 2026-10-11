@@ -200,7 +200,267 @@ export async function createDoctorAction(params: {
 }
 
 /**
- * 2c. Create / Publish Doctor Schedule
+ * 2c. Update Doctor Details
+ */
+export async function updateDoctorAction(params: {
+  doctorId: string;
+  fullName: string;
+  specialization: string;
+  bmdcRegNumber: string;
+  degrees?: string;
+  designation?: string;
+  phone?: string;
+  consultationFee: number;
+  followupFee?: number;
+  reportFee?: number;
+  roomNumber: string;
+  departmentId?: string;
+  isActive?: boolean;
+}): Promise<ActionResult<{ doctor: DoctorRecord }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.DOCTORS_MANAGE);
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
+  if (
+    !params.doctorId?.trim() ||
+    !params.fullName?.trim() ||
+    !params.specialization?.trim() ||
+    !params.bmdcRegNumber?.trim() ||
+    !params.roomNumber?.trim() ||
+    params.consultationFee === undefined ||
+    params.consultationFee < 0
+  ) {
+    return {
+      success: false,
+      error: "Doctor ID, full name, specialization, BMDC reg number, room number, and valid fee are required.",
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const deptId = params.departmentId;
+    if (deptId) {
+      const { data: dept, error: deptErr } = await supabase
+        .from("departments")
+        .select("id")
+        .eq("id", deptId)
+        .eq("organization_id", session.organizationId)
+        .maybeSingle();
+
+      if (deptErr || !dept) {
+        return { success: false, error: "Department not found or belongs to another organization" };
+      }
+    }
+
+    const updatePayload: Record<string, unknown> = {
+      full_name: params.fullName.trim(),
+      specialization: params.specialization.trim(),
+      bmdc_reg_number: params.bmdcRegNumber.trim(),
+      degrees: params.degrees?.trim() || "MBBS",
+      designation: params.designation?.trim() || "Consultant",
+      room_number: params.roomNumber.trim(),
+      opd_fee: params.consultationFee,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (params.followupFee !== undefined) {
+      updatePayload.followup_fee = params.followupFee;
+    }
+    if (params.reportFee !== undefined) {
+      updatePayload.report_fee = params.reportFee;
+    }
+    if (params.phone !== undefined) {
+      updatePayload.phone = params.phone.trim() || null;
+    }
+    if (deptId) {
+      updatePayload.department_id = deptId;
+    }
+    if (params.isActive !== undefined) {
+      updatePayload.is_active = params.isActive;
+    }
+
+    const { data: updatedDoc, error } = await supabase
+      .from("doctors")
+      .update(updatePayload)
+      .eq("id", params.doctorId)
+      .eq("organization_id", session.organizationId)
+      .select("*, departments(name)")
+      .single();
+
+    if (error || !updatedDoc) {
+      return { success: false, error: error?.message || "Failed to update doctor" };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "APPOINTMENT",
+      entityType: "doctor",
+      entityId: params.doctorId,
+      newValues: updatePayload,
+    });
+
+    interface DoctorDbRow extends Omit<DoctorRecord, "department_name"> {
+      departments?: { name: string } | null;
+    }
+
+    const docRow = updatedDoc as unknown as DoctorDbRow;
+    const doctor: DoctorRecord = {
+      ...docRow,
+      department_name: docRow.departments?.name || "General Medicine",
+    };
+
+    return { success: true, data: { doctor } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Error updating doctor";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 2d. Delete / Deactivate Doctor
+ */
+export async function deleteDoctorAction(
+  doctorId: string
+): Promise<ActionResult<{ deletedDoctorId: string; mode: "DEACTIVATED" | "DELETED" }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.DOCTORS_MANAGE);
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
+  if (!doctorId?.trim()) {
+    return { success: false, error: "Doctor ID is required" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const { data: existingDoc, error: findErr } = await supabase
+      .from("doctors")
+      .select("id, full_name")
+      .eq("id", doctorId)
+      .eq("organization_id", session.organizationId)
+      .maybeSingle();
+
+    if (findErr || !existingDoc) {
+      return { success: false, error: "Doctor profile not found in your organization" };
+    }
+
+    const { count: apptCount } = await supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("doctor_id", doctorId);
+
+    let mode: "DEACTIVATED" | "DELETED" = "DEACTIVATED";
+    if (apptCount && apptCount > 0) {
+      const { error: deactivateErr } = await supabase
+        .from("doctors")
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq("id", doctorId)
+        .eq("organization_id", session.organizationId);
+
+      if (deactivateErr) {
+        return { success: false, error: deactivateErr.message };
+      }
+
+      await supabase
+        .from("doctor_schedules")
+        .update({ is_active: false })
+        .eq("doctor_id", doctorId)
+        .eq("organization_id", session.organizationId);
+    } else {
+      const { error: delErr } = await supabase
+        .from("doctors")
+        .delete()
+        .eq("id", doctorId)
+        .eq("organization_id", session.organizationId);
+
+      if (delErr) {
+        const { error: fallbackErr } = await supabase
+          .from("doctors")
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq("id", doctorId)
+          .eq("organization_id", session.organizationId);
+
+        if (fallbackErr) {
+          return { success: false, error: fallbackErr.message };
+        }
+      } else {
+        mode = "DELETED";
+      }
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "DELETE",
+      module: "APPOINTMENT",
+      entityType: "doctor",
+      entityId: doctorId,
+      newValues: { mode, doctor_name: existingDoc.full_name },
+    });
+
+    return { success: true, data: { deletedDoctorId: doctorId, mode } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Error deleting doctor";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 2e. Delete Doctor Schedule
+ */
+export async function deleteDoctorScheduleAction(
+  scheduleId: string
+): Promise<ActionResult<{ deletedScheduleId: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.DOCTORS_MANAGE);
+  } catch (permErr: unknown) {
+    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
+    return { success: false, error: msg };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("doctor_schedules")
+      .delete()
+      .eq("id", scheduleId)
+      .eq("organization_id", session.organizationId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data: { deletedScheduleId: scheduleId } };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Error deleting schedule" };
+  }
+}
+
+/**
+ * 2f. Create / Publish Doctor Schedule
  */
 export async function createDoctorScheduleAction(params: {
   doctorId: string;

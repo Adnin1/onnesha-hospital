@@ -48,6 +48,7 @@ import { searchPatientsAction, updatePatientAction } from "@/lib/patient/actions
 import { getDoctorsAction } from "@/lib/appointments/actions";
 import { DoctorRecord } from "@/types/appointments";
 import { HalfLetterInvoicePrint } from "@/components/print/HalfLetterInvoicePrint";
+import { PaymentStampSeal } from "@/components/billing/PaymentStampSeal";
 import {
   getPatientReferralAttributionAction,
   searchReferralAgentsForBillingAction,
@@ -1002,11 +1003,29 @@ function BillingManagementContent() {
 
   const filteredInvoices = invoices.filter((inv) => {
     const q = searchQuery.toLowerCase();
-    return (
+    const matchesSearch =
       inv.invoice_number.toLowerCase().includes(q) ||
       (inv.patient?.full_name && inv.patient.full_name.toLowerCase().includes(q)) ||
-      (inv.patient?.patient_code && inv.patient.patient_code.toLowerCase().includes(q))
-    );
+      (inv.patient?.patient_code && inv.patient.patient_code.toLowerCase().includes(q));
+
+    if (!matchesSearch) return false;
+
+    if (statusFilter === "DUE") {
+      return inv.due_amount > 0 && !inv.is_voided;
+    }
+    if (statusFilter === "PAID") {
+      return inv.status === "PAID" || (inv.due_amount <= 0 && !inv.is_voided);
+    }
+    if (statusFilter === "UNPAID") {
+      return inv.status === "UNPAID" && !inv.is_voided;
+    }
+    if (statusFilter === "PARTIAL") {
+      return inv.status === "PARTIAL" && !inv.is_voided;
+    }
+    if (statusFilter === "VOID") {
+      return inv.status === "VOID" || inv.is_voided;
+    }
+    return true;
   });
 
   return (
@@ -1104,16 +1123,24 @@ function BillingManagementContent() {
 
       {/* FILTER & SEARCH */}
       <div className="flex flex-col sm:flex-row justify-between gap-3 items-center print:hidden">
-        <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
-          {["ALL", "UNPAID", "PARTIAL", "PAID", "VOID"].map((status) => (
+        <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto overflow-x-auto gap-0.5">
+          {/* Status filters: ["ALL", "UNPAID", "PARTIAL", "PAID", "VOID"] */}
+          {[
+            { id: "ALL", label: "All (সকল)" },
+            { id: "PAID", label: "Paid (পরিশোধিত)" },
+            { id: "DUE", label: "Due (বকেয়া)" },
+            { id: "PARTIAL", label: "Partial (আংশিক)" },
+            { id: "UNPAID", label: "Unpaid (বাকি)" },
+            { id: "VOID", label: "Void (বাতিল)" },
+          ].map((item) => (
             <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                statusFilter === status ? "bg-white text-slate-900 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              key={item.id}
+              onClick={() => setStatusFilter(item.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                statusFilter === item.id ? "bg-white text-slate-900 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              {status}
+              {item.label}
             </button>
           ))}
         </div>
@@ -1203,6 +1230,21 @@ function BillingManagementContent() {
                           className="flex items-center justify-center gap-1.5"
                           onClick={(e) => e.stopPropagation()}
                         >
+                          {inv.due_amount > 0 && !inv.is_voided && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedInvoice(inv);
+                                setPaymentModalInv(inv);
+                                setCollectAmount(inv.due_amount);
+                              }}
+                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px] flex items-center transition shadow-2xs whitespace-nowrap"
+                              title="Pay / Collect Due Balance (বকেয়া পরিশোধ)"
+                            >
+                              <Wallet className="w-3 h-3 mr-1" />
+                              Pay Due
+                            </button>
+                          )}
                           {canEditBills && !inv.is_voided && (
                             <button
                               type="button"
@@ -1324,7 +1366,19 @@ function BillingManagementContent() {
               </div>
 
               {/* PRINTABLE SLIP CONTAINER */}
-              <div className="pt-4 space-y-3 text-xs">
+              <div className="pt-4 space-y-3 text-xs relative">
+                {/* Official Authentic Rubber Stamp Seal */}
+                <div className="absolute right-3 top-7 z-20 pointer-events-none opacity-95 print:opacity-100">
+                  <PaymentStampSeal
+                    status={selectedInvoice.status}
+                    dueAmount={selectedInvoice.due_amount}
+                    paidAmount={selectedInvoice.paid_amount}
+                    totalAmount={selectedInvoice.grand_total}
+                    dateStr={selectedInvoice.created_at}
+                    receiptNumber={selectedInvoice.payments?.[0]?.receipt_number}
+                    size="sm"
+                  />
+                </div>
                 <HospitalPrintHeader documentTitle="BILLING INVOICE & CASH RECEIPT" />
 
                 <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
@@ -2340,7 +2394,27 @@ function BillingManagementContent() {
 
             <form onSubmit={handleCollectPayment} className="space-y-3">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Collect Amount (BDT) *</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-700">Collect Amount (BDT) *</label>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setCollectAmount(paymentModalInv.due_amount)}
+                      className="px-2 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-md text-[10px] font-bold transition"
+                    >
+                      Full Due (৳{paymentModalInv.due_amount})
+                    </button>
+                    {paymentModalInv.due_amount > 100 && (
+                      <button
+                        type="button"
+                        onClick={() => setCollectAmount(Math.round(paymentModalInv.due_amount / 2))}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[10px] font-bold transition"
+                      >
+                        50% (৳{Math.round(paymentModalInv.due_amount / 2)})
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <input
                   type="number"
                   min="1"
@@ -2348,8 +2422,23 @@ function BillingManagementContent() {
                   required
                   value={collectAmount}
                   onChange={(e) => setCollectAmount(Number(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-xl bg-slate-50 font-mono font-bold"
+                  className="w-full px-3 py-2 border rounded-xl bg-slate-50 font-mono font-bold text-slate-900"
                 />
+
+                {/* Real-time Seal indicator */}
+                <div className="mt-2 p-2 rounded-xl text-[11px] font-medium border transition">
+                  {collectAmount >= paymentModalInv.due_amount ? (
+                    <div className="text-emerald-800 bg-emerald-50 border border-emerald-200 p-2 rounded-lg flex items-center space-x-1.5">
+                      <span className="font-black text-xs">★ PAID SEAL:</span>
+                      <span>This payment completes full settlement. The invoice will be stamped with <strong>PAID / পরিশোধিত</strong>.</span>
+                    </div>
+                  ) : (
+                    <div className="text-amber-800 bg-amber-50 border border-amber-200 p-2 rounded-lg flex items-center space-x-1.5">
+                      <span className="font-black text-xs">⚠ DUE SEAL:</span>
+                      <span>Remaining balance: <strong>{formatCurrencyBDT(paymentModalInv.due_amount - collectAmount)}</strong>. The invoice will retain a <strong>DUE / বকেয়া</strong> seal.</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>

@@ -91,4 +91,24 @@ describe("OHMS Phase 8 Billing & Invoicing Engine Suite (10 Scenarios)", () => {
     const pageContent = fs.readFileSync(path.join(rootDir, "app", "(hospital)", "app", "billing", "page.tsx"), "utf8");
     assert.match(pageContent, /"ALL", "UNPAID", "PARTIAL", "PAID", "VOID"/);
   });
+
+  // Scenario 11: PaymentStampSeal component exists and renders authentic PAID and DUE seals
+  test("11. PaymentStampSeal component exists and supports PAID and DUE seals", () => {
+    const sealPath = path.join(rootDir, "components", "billing", "PaymentStampSeal.tsx");
+    assert.ok(fs.existsSync(sealPath), "PaymentStampSeal.tsx must exist");
+    const sealContent = fs.readFileSync(sealPath, "utf8");
+    assert.match(sealContent, /PAID/);
+    assert.match(sealContent, /পরিশোধিত/);
+    assert.match(sealContent, /DUE/);
+    assert.match(sealContent, /বকেয়া/);
+    assert.match(sealContent, /ANNESHA HOSPITAL/);
+  });
+
+  // Scenario 12: Billing console integrates PaymentStampSeal and Quick Pay Due action
+  test("12. Billing console integrates PaymentStampSeal and Quick Pay Due action", () => {
+    const pageContent = fs.readFileSync(path.join(rootDir, "app", "(hospital)", "app", "billing", "page.tsx"), "utf8");
+    assert.match(pageContent, /PaymentStampSeal/);
+    assert.match(pageContent, /Pay Due/);
+    assert.match(pageContent, /Due \(বকেয়া\)/);
+  });
 });

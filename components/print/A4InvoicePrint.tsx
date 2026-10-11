@@ -3,6 +3,7 @@
 import React from "react";
 import { HospitalPrintHeader, HospitalPrintFooter } from "./HospitalPrintHeader";
 import { generateSvgBarcode } from "@/lib/print/barcode";
+import { PaymentStampSeal } from "@/components/billing/PaymentStampSeal";
 
 export interface A4InvoicePrintProps {
   invoiceNumber: string;
@@ -118,7 +119,19 @@ export function A4InvoicePrint({
       </div>
 
       {/* 4. Financial Summary & Payments Ledger */}
-      <div className="grid grid-cols-12 gap-6 mb-6">
+      <div className="relative grid grid-cols-12 gap-6 mb-6">
+        {/* Authentic Rubber Stamp Seal */}
+        <div className="absolute right-4 -top-3 z-10 pointer-events-none opacity-90 print:opacity-100">
+          <PaymentStampSeal
+            status={dueAmount <= 0 ? "PAID" : "DUE"}
+            dueAmount={dueAmount}
+            paidAmount={paidAmount}
+            totalAmount={totalAmount}
+            dateStr={dateStr}
+            receiptNumber={payments[0]?.receiptNumber}
+            size="md"
+          />
+        </div>
         {/* Payment History */}
         <div className="col-span-7">
           <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-zinc-700">Payment Settlements</h3>

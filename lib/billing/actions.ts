@@ -49,7 +49,11 @@ export async function getInvoicesAction(params?: {
       query = query.eq("patient_id", params.patientId);
     }
     if (params?.status && params.status !== "ALL") {
-      query = query.eq("status", params.status);
+      if (params.status === "DUE") {
+        query = query.in("status", ["PARTIAL", "UNPAID"]).gt("due_amount", 0);
+      } else {
+        query = query.eq("status", params.status);
+      }
     }
 
     const { data, error } = await query;

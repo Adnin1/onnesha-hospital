@@ -142,6 +142,24 @@ export function ThermalReceipt({
         </div>
       </div>
 
+      {/* Authentic Rubber Stamp Box */}
+      <div className={`my-2 p-1.5 border-2 text-center font-mono ${
+        dueAmount <= 0 ? "border-emerald-700 text-emerald-800 bg-emerald-50/50" : "border-rose-700 text-rose-800 bg-rose-50/50"
+      }`}>
+        {dueAmount <= 0 ? (
+          <div>
+            <div className="text-[11px] font-black tracking-widest uppercase">★ PAID / পরিশোধিত ★</div>
+            <div className="text-[9px] font-bold uppercase tracking-wider">FULL SETTLEMENT</div>
+          </div>
+        ) : (
+          <div>
+            <div className="text-[11px] font-black tracking-widest uppercase text-rose-700">⚠ DUE / বকেয়া ⚠</div>
+            <div className="text-[10px] font-black text-rose-800">DUE: ৳{dueAmount.toFixed(2)}</div>
+            <div className="text-[8px] uppercase tracking-wider">PAYMENT PENDING</div>
+          </div>
+        )}
+      </div>
+
       {/* Barcode & Footer */}
       <div className="text-center pt-1 space-y-1">
         <div

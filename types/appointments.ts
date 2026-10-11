@@ -14,6 +14,7 @@ export interface DoctorRecord {
   followup_fee: number;
   report_fee: number;
   avatar_url?: string;
+  phone?: string;
   bio?: string;
   is_active: boolean;
   department_name?: string;

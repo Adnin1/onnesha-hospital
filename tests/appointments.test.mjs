@@ -104,4 +104,24 @@ describe("OHMS Phase 4 Doctor Chambers & Appointments Suite (10 Scenarios)", () 
     assert.match(pageContent, /max_tokens/);
     assert.match(pageContent, /avg_consultation_minutes/);
   });
+
+  // Scenario 11: lib/appointments/actions.ts exports updateDoctorAction, deleteDoctorAction, deleteDoctorScheduleAction
+  test("11. lib/appointments/actions.ts provides updateDoctorAction, deleteDoctorAction, and deleteDoctorScheduleAction", () => {
+    const actionsContent = fs.readFileSync(path.join(rootDir, "lib", "appointments", "actions.ts"), "utf8");
+    assert.match(actionsContent, /export async function updateDoctorAction/);
+    assert.match(actionsContent, /export async function deleteDoctorAction/);
+    assert.match(actionsContent, /export async function deleteDoctorScheduleAction/);
+  });
+
+  // Scenario 12: app/doctors/page.tsx integrates EditDoctorModal and DeleteDoctorModal
+  test("12. app/doctors/page.tsx integrates EditDoctorModal, DeleteDoctorModal, and Edit/Delete action triggers", () => {
+    const pageContent = fs.readFileSync(
+      path.join(rootDir, "app", "(hospital)", "app", "doctors", "page.tsx"),
+      "utf8"
+    );
+    assert.match(pageContent, /EditDoctorModal/);
+    assert.match(pageContent, /DeleteDoctorModal/);
+    assert.match(pageContent, /Edit Doctor Details/);
+    assert.match(pageContent, /Delete \/ Deactivate Doctor/);
+  });
 });

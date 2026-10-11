@@ -9,6 +9,8 @@ import {
   X,
   UserPlus,
   Plus,
+  Edit3,
+  Trash2,
 } from "lucide-react";
 import { DoctorRecord, DoctorScheduleRecord } from "@/types/appointments";
 import {
@@ -16,9 +18,12 @@ import {
   getDoctorSchedulesAction,
   createDoctorAction,
   createDoctorScheduleAction,
+  deleteDoctorScheduleAction,
 } from "@/lib/appointments/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
 import { Toast } from "@/components/ui/Toast";
+import { EditDoctorModal } from "@/components/doctors/EditDoctorModal";
+import { DeleteDoctorModal } from "@/components/doctors/DeleteDoctorModal";
 
 export default function DoctorsAdminPage() {
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
@@ -38,6 +43,10 @@ export default function DoctorsAdminPage() {
   const [docRoom, setDocRoom] = useState("");
   const [savingDoc, setSavingDoc] = useState(false);
 
+  // Edit & Delete Doctor State
+  const [doctorToEdit, setDoctorToEdit] = useState<DoctorRecord | null>(null);
+  const [doctorToDelete, setDoctorToDelete] = useState<DoctorRecord | null>(null);
+
   // Add Schedule Form State
   const [showAddSchedModal, setShowAddSchedModal] = useState(false);
   const [schedDay, setSchedDay] = useState("0");
@@ -53,6 +62,35 @@ export default function DoctorsAdminPage() {
       setDoctors(res.data.doctors);
     }
     setLoading(false);
+  };
+
+  const handleDoctorUpdated = (updated: DoctorRecord) => {
+    setDoctors((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+    setToast({ message: `Dr. ${updated.full_name}'s profile updated successfully!`, type: "success" });
+  };
+
+  const handleDoctorDeleted = (deletedId: string) => {
+    setDoctors((prev) => prev.filter((d) => d.id !== deletedId));
+    if (selectedDoctor?.id === deletedId) {
+      setSelectedDoctor(null);
+    }
+    setToast({ message: "Doctor profile successfully removed from active registry.", type: "success" });
+  };
+
+  const handleDeleteSchedule = async (scheduleId: string) => {
+    if (!selectedDoctor) return;
+    try {
+      const res = await deleteDoctorScheduleAction(scheduleId);
+      if (res.success) {
+        setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
+        setToast({ message: "Schedule slot removed.", type: "success" });
+      } else {
+        setToast({ message: res.error || "Failed to remove schedule", type: "error" });
+      }
+    } catch (err: unknown) {
+      console.error("[DoctorsPage] handleDeleteSchedule error:", err);
+      setToast({ message: "Network error deleting schedule", type: "error" });
+    }
   };
 
   const handleCreateDoctor = async (e: React.FormEvent) => {
@@ -250,13 +288,29 @@ export default function DoctorsAdminPage() {
                     {formatCurrencyBDT(doc.opd_fee)}
                   </span>
                 </div>
-                <button
-                  onClick={() => handleOpenSchedules(doc)}
-                  className="inline-flex items-center text-xs font-semibold text-sky-600 hover:text-sky-700 hover:underline"
-                >
-                  <Calendar className="w-3.5 h-3.5 mr-1" />
-                  View Visiting Hours
-                </button>
+                <div className="flex items-center space-x-1.5">
+                  <button
+                    onClick={() => setDoctorToEdit(doc)}
+                    className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition"
+                    title="Edit Doctor Details / পরিবর্তন করুন"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setDoctorToDelete(doc)}
+                    className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition"
+                    title="Delete / Deactivate Doctor / মুছে ফেলুন"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleOpenSchedules(doc)}
+                    className="inline-flex items-center text-xs font-semibold text-sky-600 hover:text-sky-700 hover:underline ml-1"
+                  >
+                    <Calendar className="w-3.5 h-3.5 mr-1" />
+                    Visiting Hours
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -301,9 +355,18 @@ export default function DoctorsAdminPage() {
                           {s.start_time} - {s.end_time} ({s.avg_consultation_minutes} mins/consultation)
                         </p>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[10px] text-slate-400 block">Max Tokens</span>
-                        <span className="font-bold text-sky-700">{s.max_tokens} Patients</span>
+                      <div className="flex items-center space-x-3">
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-400 block">Max Tokens</span>
+                          <span className="font-bold text-sky-700">{s.max_tokens} Patients</span>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteSchedule(s.id)}
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                          title="Remove Schedule Slot"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -503,6 +566,26 @@ export default function DoctorsAdminPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Edit Doctor Modal */}
+      {doctorToEdit && (
+        <EditDoctorModal
+          doctor={doctorToEdit}
+          isOpen={!!doctorToEdit}
+          onClose={() => setDoctorToEdit(null)}
+          onSuccess={handleDoctorUpdated}
+        />
+      )}
+
+      {/* Delete Doctor Modal */}
+      {doctorToDelete && (
+        <DeleteDoctorModal
+          doctor={doctorToDelete}
+          isOpen={!!doctorToDelete}
+          onClose={() => setDoctorToDelete(null)}
+          onSuccess={handleDoctorDeleted}
+        />
       )}
 
       {toast && (
