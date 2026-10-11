@@ -179,7 +179,7 @@ function getMockCorsHeaders(request: { headers: () => Record<string, string> }):
  * Fulfills with valid deterministic JSON data so browser tests never fail DNS
  * or raise unhandled fetch rejections (e.g. WebKit "TypeError: Load failed").
  */
-async function installHermeticMocks(page: Page): Promise<void> {
+async function installHermeticMocks(page: Page, isHermeticMode = true): Promise<void> {
   const handler = async (route: import("@playwright/test").Route) => {
     const request = route.request();
     const corsHeaders = getMockCorsHeaders(request);
@@ -336,25 +336,27 @@ async function installHermeticMocks(page: Page): Promise<void> {
 
   // In-page fetch interceptor: Intercepts Supabase placeholder fetch calls before the
   // browser's network layer (preventing WebKit libsoup socket/DNS connection resets on Linux)
-  await page.addInitScript(() => {
-    const MOCK_DAYS = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-    const MOCK_SCHEDULES = MOCK_DAYS.map((day, idx) => ({
-      id: "sched-00" + (idx + 1),
-      day_of_week: day,
-      start_time: "09:00",
-      end_time: "13:00",
-      max_tokens: 30,
-      room_number: "301",
-      is_active: true,
-    }));
+  await page.addInitScript(
+    ({ isHermetic }: { isHermetic: boolean }) => {
+      const MOCK_DAYS = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+      const MOCK_SCHEDULES = MOCK_DAYS.map((day, idx) => ({
+        id: "sched-00" + (idx + 1),
+        day_of_week: day,
+        start_time: "09:00",
+        end_time: "13:00",
+        max_tokens: 30,
+        room_number: "301",
+        is_active: true,
+      }));
 
-    const origFetch = window.fetch;
-    window.fetch = async function (input, init) {
-      const url = typeof input === "string" ? input : input instanceof Request ? input.url : String(input);
-      const isPlaceholder =
-        url.includes("ci-hermetic-build-placeholder") ||
-        url.includes("placeholder.supabase") ||
-        (url.includes(".supabase.co") && !url.includes("iuhtzahuszdkdarhxobx"));
+      const origFetch = window.fetch;
+      window.fetch = async function (input, init) {
+        const url = typeof input === "string" ? input : input instanceof Request ? input.url : String(input);
+        const isPlaceholder =
+          url.includes("ci-hermetic-build-placeholder") ||
+          url.includes("placeholder.supabase") ||
+          (isHermetic && url.includes(".supabase.co")) ||
+          (url.includes(".supabase.co") && !url.includes("iuhtzahuszdkdarhxobx"));
 
       if (isPlaceholder) {
         let body: unknown = [];
@@ -429,7 +431,7 @@ async function installHermeticMocks(page: Page): Promise<void> {
 
       return origFetch.apply(window, [input, init] as [RequestInfo, RequestInit | undefined]);
     };
-  });
+  }, { isHermetic: isHermeticMode });
 }
 
 /**
@@ -446,8 +448,16 @@ const test = baseTest.extend<{ page: Page }>({
       process.env.E2E_BASE_URL ??
       "https://onnesha-hospital.pages.dev";
 
-    // Install hermetic mocks for placeholder Supabase endpoints
-    await installHermeticMocks(page);
+    let isProduction = false;
+    try {
+      isProduction = PRODUCTION_HOSTNAMES.has(new URL(effectiveBaseURL).hostname);
+    } catch {
+      isProduction = false;
+    }
+
+    // In local non-production environments (e.g. 127.0.0.1:3000), hermetic mode intercepts
+    // all cross-origin Supabase requests to prevent socket/CORS aborts across all browsers
+    await installHermeticMocks(page, !isProduction);
 
     // Install guard before any test navigation
     await installMutationGuard(page, effectiveBaseURL);
