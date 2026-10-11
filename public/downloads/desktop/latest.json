@@ -1,16 +1,16 @@
 {
-  "version": "1.1.87",
+  "version": "1.1.88",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.87. Authentic production release: 159/159 Supabase migration parity, medical catalog domain classification (doctor consultation isolation, CT/MRI radiology grouping, bed/cabin/OT/emergency categorization), intelligent service deduplication, dynamic category badge styling and 3D invoice interactive indicators, infant demographic display, international medical certificates, cashier bill permissions, and super admin invoice deletion.",
-  "pub_date": "2026-10-11T14:25:09.673Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.88. Authentic production release: full category scroll controls, OPD queue hook loop resilience, LIS simulation mode G9 boundary transparency, and radiology modality query fixes.",
+  "pub_date": "2026-10-11T15:23:51.650Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.87.exe",
-      "installer_exe_sha256": "C0B01EC4B6F643F347398E318C0188908502AF3BB30B150CAF19D8EA5360EE18",
-      "installer_exe_size": 2879859,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.87.msi",
-      "installer_msi_sha256": "280E6FB179BFFF5F2D7A8BDCBA376D3D51D505FDE53AD07C56F675A4745DFD0A",
-      "installer_msi_size": 3436544
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.88.exe",
+      "installer_exe_sha256": "210DABDE63BD3E7EA267569A13BB9A61E6E4A0FE4673BF59DB7D73AC9473D52C",
+      "installer_exe_size": 8905122,
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.88.msi",
+      "installer_msi_sha256": "965C9406323EF1DA1C2F98658BF28092DE55A1CE2954ADE6C2B77B921849E338",
+      "installer_msi_size": 9539584
     }
   },
   "signing": {

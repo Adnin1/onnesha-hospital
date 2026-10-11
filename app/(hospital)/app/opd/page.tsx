@@ -77,7 +77,7 @@ export default function OPDConsultationPage() {
     return () => {
       isMounted = false;
     };
-  }, [activeQueueItem]);
+  }, []);
 
   const handleSaveVitals = async (e: React.FormEvent) => {
     e.preventDefault();

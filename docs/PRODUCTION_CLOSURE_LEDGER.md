@@ -1,11 +1,11 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.87
+# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.88
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit Reference:** Production Release `v1.1.87`  
+**Head Commit Reference:** Production Release `v1.1.88`  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
-**Historical Release Tags:** `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
+**Historical Release Tags:** `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
 **Ledger Reconciliation Date:** October 11, 2026  
@@ -20,7 +20,7 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 130/130 suites passed (1,179 active passes, 0 failed) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 130/130 suites passed (1,180 active passes, 0 failed) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Real Browser E2E** | 156/156 real browser tests passed across Chromium (52), Firefox (52), and Mobile-Chrome (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
@@ -31,7 +31,7 @@
 | **System UI 3D Dimensional Engine** | Tactile 3D cards, elevated floating metrics, beveled buttons, glassmorphic panels | `app/globals.css`, `components/dashboard/*`, `app/(hospital)/*` | ✅ PASS |
 | **Billing Catalog Classification & Deduplication** | Deterministic domain categorization (Bed/ICU/OT/Doctor/Imaging/Lab), 0 duplicates, 3D quick adder | `lib/billing/serviceCatalog.ts`, `app/billing/page.tsx` & migration `20261011193500` | ✅ PASS |
 | **Official Hospital Diagnostic Tariffs** | Complete official rate chart seeded across 16 categories, 185 tests with exact BDT tariffs | `lib/lab/actions.ts`, `lib/billing/serviceCatalog.ts` & migration `20261011190000` | ✅ PASS |
-| **Native Windows Desktop Installers (v1.1.87)** | Authentic native NSIS EXE (2.88 MB) & WiX MSI (3.44 MB) matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
+| **Native Windows Desktop Installers (v1.1.88)** | Authentic native NSIS EXE (8.91 MB) & WiX MSI (9.54 MB) matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
 | **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
@@ -103,6 +103,13 @@
   4. *3D Interactive Card Styling:* Added tactile 3D hover elevation (`hover:-translate-y-0.5 hover:shadow-md`), custom category badges (Cyan for CT, Blue for MRI, Rose for ECG, Indigo for X-Ray, etc.), and a real-time `✓ Xটি ইনভয়েসে যুক্ত` badge.
   5. *Patient Demographics:* Newborn/infant age display formatted into contextual Bengali (`০ বছর (নবজাতক/শিশু)`).
   6. *Invoice Items DB Mapping:* Implemented `toDbInvoiceCategory()` ensuring extended categories safely map to PostgreSQL's 11-category CHECK constraint (`'CONSULTATION'`, `'LAB'`, `'XRAY'`, `'USG'`, `'ECG'`, `'PHARMACY'`, `'BED'`, `'CABIN'`, `'OT'`, `'AMBULANCE'`, `'MISC'`).
+
+### H. Real-World Usability, Diagnostics & Integration Transparency (v1.1.88)
+- **Billing Category Tab Scroll Controls:** Replaced non-standard Tailwind sizing tokens with standard `h-8 w-8` and `shadow-sm`, and implemented guaranteed inline `overflowX: "auto"` and `scrollBehavior: "smooth"` on the tab scroll track so Left/Right scroll buttons work deterministically across all desktop and mobile browsers.
+- **OPD Consultation Console Loop Resilience:** Removed unstable state reference from `useEffect` dependencies in `app/(hospital)/app/opd/page.tsx`, eliminating infinite queue re-fetch cycles and UI freezing.
+- **Radiology Modality Query Hardening:** Replaced PostgREST nested table column filter with client-side filtering on joined study modalities in `lib/radiology/actions.ts`, fixing the stuck loading state when querying modalities (such as CT/MRI/USG).
+- **LIS Integration Transparency (G9 Gate Boundary):** Relabeled "Connected Analyzers" to "Registered Analyzers" in `components/lab/LisAnalyzerModal.tsx` and embedded an explicit G9 Gate Simulation Mode notice clarifying that physical analyzer connectivity requires the on-premise LIS Bridge Agent.
+- **Desktop Installers v1.1.88 Recompiled:** Native WiX MSI (9.54 MB) and NSIS EXE (8.91 MB) compiled with fresh release artifacts and synchronized into `public/downloads/desktop/latest.json`.
 
 ---
 

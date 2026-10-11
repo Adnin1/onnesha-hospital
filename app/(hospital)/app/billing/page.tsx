@@ -1725,15 +1725,15 @@ function BillingManagementContent() {
                 </div>
 
                 {/* Category Filter Pills with 3D Left & Right Scroll Controls */}
-                <div className="relative group/tabs flex items-center gap-1.5 p-1 rounded-2xl bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 border border-slate-200/90 shadow-2xs">
+                <div className="relative group/tabs flex items-center gap-1.5 p-1 rounded-2xl bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 border border-slate-200/90 shadow-sm">
                   {/* Left Scroll Button */}
                   <button
                     type="button"
                     onClick={() => scrollCategoryTabs("left")}
                     disabled={!canScrollCategoryLeft}
-                    className={`h-7.5 w-7.5 rounded-xl flex items-center justify-center shrink-0 transition-all duration-150 border ${
+                    className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-150 border ${
                       canScrollCategoryLeft
-                        ? "bg-white text-emerald-800 border-slate-300 shadow-xs hover:bg-emerald-50 hover:border-emerald-400 hover:scale-105 active:scale-95 cursor-pointer"
+                        ? "bg-white text-emerald-800 border-slate-300 shadow-sm hover:bg-emerald-50 hover:border-emerald-400 hover:scale-105 active:scale-95 cursor-pointer"
                         : "bg-slate-100/60 text-slate-300 border-slate-200/50 cursor-not-allowed opacity-30"
                     }`}
                     title="বামে স্ক্রল করুন (Scroll Left)"
@@ -1747,8 +1747,8 @@ function BillingManagementContent() {
                     ref={categoryTabsRef}
                     onScroll={checkCategoryScroll}
                     onWheel={handleCategoryWheel}
-                    className="flex-1 flex gap-1.5 overflow-x-auto py-0.5 text-[10px] font-bold scroll-smooth no-scrollbar"
-                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                    className="flex-1 flex gap-1.5 py-0.5 text-[10px] font-bold"
+                    style={{ overflowX: "auto", scrollBehavior: "smooth", scrollbarWidth: "none", msOverflowStyle: "none" }}
                   >
                     {[
                       { id: "ALL", label: "সকল সেবা", icon: "🧪" },
@@ -1777,7 +1777,7 @@ function BillingManagementContent() {
                           className={`px-3 py-1.5 rounded-xl shrink-0 transition-all duration-150 flex items-center gap-1.5 border ${
                             isActive
                               ? "bg-gradient-to-r from-emerald-700 to-emerald-800 text-white border-emerald-900 shadow-sm font-black scale-[1.02]"
-                              : "bg-white hover:bg-slate-100/90 text-slate-700 border-slate-200/90 hover:border-slate-300 shadow-2xs"
+                              : "bg-white hover:bg-slate-100/90 text-slate-700 border-slate-200/90 hover:border-slate-300 shadow-sm"
                           }`}
                         >
                           <span className="text-xs">{grp.icon}</span>
@@ -1801,9 +1801,9 @@ function BillingManagementContent() {
                     type="button"
                     onClick={() => scrollCategoryTabs("right")}
                     disabled={!canScrollCategoryRight}
-                    className={`h-7.5 w-7.5 rounded-xl flex items-center justify-center shrink-0 transition-all duration-150 border ${
+                    className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-150 border ${
                       canScrollCategoryRight
-                        ? "bg-white text-emerald-800 border-slate-300 shadow-xs hover:bg-emerald-50 hover:border-emerald-400 hover:scale-105 active:scale-95 cursor-pointer"
+                        ? "bg-white text-emerald-800 border-slate-300 shadow-sm hover:bg-emerald-50 hover:border-emerald-400 hover:scale-105 active:scale-95 cursor-pointer"
                         : "bg-slate-100/60 text-slate-300 border-slate-200/50 cursor-not-allowed opacity-30"
                     }`}
                     title="ডানে স্ক্রল করুন (Scroll Right)"

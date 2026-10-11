@@ -55,23 +55,28 @@ export async function getRadiologyStudiesAction(modalityCode?: string): Promise<
     await requirePermission(PERMISSIONS.RADIOLOGY_VIEW);
 
     const supabase = createClient();
-    let query = supabase
+    // NOTE: PostgREST does not support .eq() on nested/joined columns directly.
+    // We fetch all studies for the org and filter by modality code client-side.
+    const { data, error } = await supabase
       .from("radiology_studies")
       .select("*, patients(id, patient_code, full_name, phone, gender), radiology_modalities(id, modality_name, modality_code)")
       .eq("organization_id", session.organizationId)
       .order("created_at", { ascending: false });
 
-    if (modalityCode && modalityCode !== "ALL") {
-      query = query.eq("radiology_modalities.modality_code", modalityCode);
-    }
-
-    const { data, error } = await query;
     if (error) {
       console.error("[RadiologyActions] getRadiologyStudiesAction DB error:", error);
       return { success: false, error: error.message };
     }
 
-    return { success: true, data: (data || []) as RadiologyStudy[] };
+    const allStudies = (data || []) as RadiologyStudy[];
+    const filtered =
+      modalityCode && modalityCode !== "ALL"
+        ? allStudies.filter(
+            (s) => s.radiology_modalities?.modality_code === modalityCode
+          )
+        : allStudies;
+
+    return { success: true, data: filtered };
   } catch (err: unknown) {
     console.error("[RadiologyActions] getRadiologyStudiesAction error:", err);
     return {

@@ -186,6 +186,15 @@ export function LisAnalyzerModal({
           </button>
         </div>
 
+        {/* G9 Gate Simulation Disclaimer */}
+        <div className="px-6 py-2 bg-amber-900/80 border-b border-amber-700/60 flex items-center gap-2 text-[11px] text-amber-200">
+          <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span>
+            <span className="font-bold text-amber-300">SIMULATION MODE (G9 Gate):</span>{" "}
+            Physical RS-232/LAN analyzer integration requires the on-premise LIS Bridge Agent installed on hospital network. This console supports ASTM/HL7 packet simulation and manual paste-ingest only.
+          </span>
+        </div>
+
         {/* Modal Navigation Tabs */}
         <div className="flex border-b border-slate-200 bg-slate-50 px-6 gap-4 text-xs font-semibold">
           <button
@@ -206,7 +215,7 @@ export function LisAnalyzerModal({
                 : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <Server className="w-4 h-4" /> Connected Analyzers ({analyzers.length})
+            <Server className="w-4 h-4" /> Registered Analyzers ({analyzers.length})
           </button>
           <button
             onClick={() => setActiveTab("history")}
