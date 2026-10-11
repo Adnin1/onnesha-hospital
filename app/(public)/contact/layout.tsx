@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Contact Us | Onnesha Hospital & Diagnostic Complex",
+  title: "Contact Us | ANNESHA HOSPITAL AND DIAGNOSTIC",
   description:
-    "Contact Onnesha Hospital for appointments, emergency information, directions, and general enquiries. Find our address, hotlines, and patient services.",
+    "Contact ANNESHA HOSPITAL AND DIAGNOSTIC for appointments, emergency information, directions, and general enquiries. Find our address, hotlines, and patient services.",
   alternates: { canonical: "/contact" },
   openGraph: {
-    title: "Contact Us | Onnesha Hospital & Diagnostic Complex",
+    title: "Contact Us | ANNESHA HOSPITAL AND DIAGNOSTIC",
     description:
-      "Contact Onnesha Hospital for appointments, emergency information, directions, and general enquiries. Find our address, hotlines, and patient services.",
+      "Contact ANNESHA HOSPITAL AND DIAGNOSTIC for appointments, emergency information, directions, and general enquiries. Find our address, hotlines, and patient services.",
     url: "/contact",
     type: "website",
   },

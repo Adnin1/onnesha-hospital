@@ -4,12 +4,12 @@ import pkg from "@/package.json";
 import latestManifest from "@/public/downloads/desktop/latest.json";
 
 export const metadata: Metadata = {
-  title: "Windows Desktop App Download | Onnesha Hospital",
-  description: "Download Onnesha Hospital & Diagnostic Complex Windows PC Software Client.",
+  title: "Windows Desktop App Download | ANNESHA HOSPITAL AND DIAGNOSTIC",
+  description: "Download ANNESHA HOSPITAL AND DIAGNOSTIC Windows PC Software Client.",
   alternates: { canonical: "/downloads/desktop" },
   openGraph: {
-    title: "Windows Desktop App Download | Onnesha Hospital",
-    description: "Download Onnesha Hospital & Diagnostic Complex Windows PC Software Client.",
+    title: "Windows Desktop App Download | ANNESHA HOSPITAL AND DIAGNOSTIC",
+    description: "Download ANNESHA HOSPITAL AND DIAGNOSTIC Windows PC Software Client.",
     url: "/downloads/desktop",
     type: "website",
   },

@@ -507,7 +507,7 @@ export default function HospitalDashboardPage() {
           </span>
         </div>
         <div className="text-[11px] text-slate-400 mt-1 sm:mt-0 font-medium">
-          Onnesha Hospital & Diagnostic Complex ERP Management System
+          ANNESHA HOSPITAL AND DIAGNOSTIC ERP Management System
         </div>
       </div>
     </div>

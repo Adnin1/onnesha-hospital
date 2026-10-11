@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Onnesha Hospital & Diagnostic Complex",
-  "short_name": "Onnesha HMS",
-  "description": "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক কমপ্লেক্স — Unified Hospital Management System, Online Appointment, Patient Care & Diagnostic Services",
+  "name": "ANNESHA HOSPITAL AND DIAGNOSTIC",
+  "short_name": "ANNESHA HOSPITAL",
+  "description": "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক — Unified Hospital Management System, Online Appointment, Patient Care & Diagnostic Services",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

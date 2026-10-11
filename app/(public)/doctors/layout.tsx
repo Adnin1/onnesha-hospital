@@ -21,14 +21,14 @@ import { HOSPITAL_METADATA } from "@/config/hospital";
 export const metadata: Metadata = {
   title: "Specialist Doctor Directory | Visiting Hours & OPD Schedule",
   description:
-    "Find specialist doctors, medical qualifications, OPD chamber room numbers, consultation fees, and visiting hours at Onnesha Hospital & Diagnostic Complex.",
+    "Find specialist doctors, medical qualifications, OPD chamber room numbers, consultation fees, and visiting hours at ANNESHA HOSPITAL AND DIAGNOSTIC.",
   alternates: {
     canonical: "/doctors",
   },
   openGraph: {
-    title: "Specialist Doctor Directory | Onnesha Hospital & Diagnostic Complex",
+    title: "Specialist Doctor Directory | ANNESHA HOSPITAL AND DIAGNOSTIC",
     description:
-      "Find specialist doctors, medical qualifications, OPD chamber room numbers, consultation fees, and visiting hours at Onnesha Hospital & Diagnostic Complex.",
+      "Find specialist doctors, medical qualifications, OPD chamber room numbers, consultation fees, and visiting hours at ANNESHA HOSPITAL AND DIAGNOSTIC.",
     url: "/doctors",
     type: "website",
     siteName: SITE_CONFIG.shortName,
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Specialist Doctor Directory | Onnesha Hospital & Diagnostic Complex",
+    title: "Specialist Doctor Directory | ANNESHA HOSPITAL AND DIAGNOSTIC",
     description:
-      "Find specialist doctors, medical qualifications, OPD chamber room numbers, consultation fees, and visiting hours at Onnesha Hospital & Diagnostic Complex.",
+      "Find specialist doctors, medical qualifications, OPD chamber room numbers, consultation fees, and visiting hours at ANNESHA HOSPITAL AND DIAGNOSTIC.",
   },
   robots: {
     index: true,
@@ -53,9 +53,9 @@ const doctorsDirectoryJsonLd = {
       "@type": "MedicalWebPage",
       "@id": `${SITE_CONFIG.canonicalUrl}/doctors#webpage`,
       url: `${SITE_CONFIG.canonicalUrl}/doctors`,
-      name: "Specialist Doctor Directory & Medical Specialties | Onnesha Hospital & Diagnostic Complex",
+      name: "Specialist Doctor Directory & Medical Specialties | ANNESHA HOSPITAL AND DIAGNOSTIC",
       description:
-        "Find specialist doctors, medical qualifications, OPD chamber room numbers, consultation fees, and visiting hours at Onnesha Hospital & Diagnostic Complex.",
+        "Find specialist doctors, medical qualifications, OPD chamber room numbers, consultation fees, and visiting hours at ANNESHA HOSPITAL AND DIAGNOSTIC.",
       inLanguage: ["en", "bn"],
       isPartOf: {
         "@type": "WebSite",
@@ -77,7 +77,7 @@ const doctorsDirectoryJsonLd = {
         "@type": "ItemList",
         name: "Specialist Medical Departments & Clinical Consulting Services",
         description:
-          "Directory of clinical specialties and consultant outpatient services available at Onnesha Hospital & Diagnostic Complex.",
+          "Directory of clinical specialties and consultant outpatient services available at ANNESHA HOSPITAL AND DIAGNOSTIC.",
         itemListElement: [
           {
             "@type": "ListItem",

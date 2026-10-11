@@ -20,11 +20,11 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 130/130 suites passed (1,180 active passes, 0 failed) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 131/131 suites passed (1,189 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Real Browser E2E** | 156/156 real browser tests passed across Chromium (52), Firefox (52), and Mobile-Chrome (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 159/159 applied (100% parity, 0 drift, newest: `20261011193500`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 160/160 applied (100% parity, 0 drift, newest: `20261011215800`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB | `npx supabase db lint --linked` | ✅ PASS |
 | **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
 | **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
@@ -67,21 +67,22 @@
   - The discharge folder prints **EXACTLY 4 PAGES** (Sheets: 4) bounded to 279mm A4 dimensions.
   - Printing the admission sheet prints **EXACTLY 1 PAGE** (`.print-pad`).
 
-### D. Native Windows Desktop Packaging (v1.1.87)
+### D. Native Windows Desktop Packaging (v1.1.90)
 - **Toolchains:** Host WiX 3.11 (`C:\Users\mahin khan\wix311`) and NSIS 3.10 (`C:\Users\mahin khan\nsis310\nsis-3.10`).
 - **Compiled & Verified Binaries (Synchronized with `latest.json`):**
-  - `Onnesha-Hospital-Setup-1.1.87.exe`: exactly **2,879,859 bytes**, SHA-256: `C0B01EC4B6F643F347398E318C0188908502AF3BB30B150CAF19D8EA5360EE18`
-  - `Onnesha-Hospital-1.1.87.msi`: exactly **3,436,544 bytes**, SHA-256: `280E6FB179BFFF5F2D7A8BDCBA376D3D51D505FDE53AD07C56F675A4745DFD0A`
+  - `Onnesha-Hospital-Setup-1.1.90.exe`: exactly **2,895,011 bytes**, SHA-256: `72BAD4D10633B4FDC03549DA64FE01C29FFE400EC142347561FC8394380134D1`
+  - `Onnesha-Hospital-1.1.90.msi`: exactly **3,457,024 bytes**, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
 
-### E. Supabase Database Migration Parity (159/159)
-- All 159 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
-- Verified via `npx supabase migration list` ending at `20261011193500` on both local and remote.
+### E. Supabase Database Migration Parity (160/160)
+- All 160 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
+- Verified via `npx supabase migration list` ending at `20261011215800` on both local and remote.
 - Key recent migrations:
   - `20261011082000_fix_medicines_generics_foreign_key.sql`: Explicit foreign key relation between `public.medicines(generic_id)` and `public.medicine_generics(id)` with schema cache notification.
   - `20261011083000_seed_official_hospital_rate_chart.sql`: Seeding and synchronization of official hospital tariffs into `diagnostic_tests` and `hospital_service_tariffs`.
   - `20261011190000_diagnostic_tariffs_rls_and_complete_rate_chart.sql`: Full RLS policy resolution on `diagnostic_categories` and `diagnostic_tests` allowing authenticated staff and anon reads, plus complete 185 tests across 16 categories with exact hospital tariffs and synchronization with `hospital_service_tariffs`.
   - `20261011193500_fix_hospital_service_tariffs_categories_and_dedup.sql`: Normalized tariff categories into medical groups, categorized CT Scans (`CT_SCAN`), MRIs (`MRI`), X-Rays (`XRAY`), Ultrasounds (`USG`), Consultations (`CONSULTATION`), Beds (`IPD_BED`), Critical Care (`CRITICAL_CARE`), Surgeries (`OT_SURGERY`), and eliminated duplicate tariff entries.
+  - `20261011215800_add_voided_at_to_invoices.sql`: Added `voided_at` timestamp column to `invoices` table with backfill for audit logs and accounting reports compatibility.
 - Schema verification via `npx supabase db lint --linked` confirmed 0 fatal schema or security errors.
 
 ### F. Medical Certificates Overhaul & Cashier Billing Permission Governance
@@ -138,7 +139,7 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 129/129 certification suites, 1,175 active passes, 0 failures, 52/52 Playwright real-browser tests, 0 lint warnings, 0 typecheck errors.
+1. **Software Quality:** 131/131 certification suites, 1,189 active passes, 0 failures, 7 skipped, 52/52 Playwright real-browser tests, 0 lint warnings, 0 typecheck errors.
 2. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`).
 3. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced.
 4. **External Owner Gates:** G1–G16 clearly isolated without false greens.

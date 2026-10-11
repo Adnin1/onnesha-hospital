@@ -48,7 +48,7 @@ RUN npm run build
 FROM nginx:alpine AS runner
 LABEL maintainer="Onnesha Hospital Engineering Team <tech@onneshahospital.com>"
 LABEL version="1.1.90"
-LABEL description="Onnesha Hospital & Diagnostic Complex - High Availability Production Web Container"
+LABEL description="ANNESHA HOSPITAL AND DIAGNOSTIC - High Availability Production Web Container"
 
 # Create unprivileged nginx user directories
 RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx && \

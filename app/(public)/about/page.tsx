@@ -4,14 +4,14 @@ import { Award, ShieldCheck, Heart, CheckCircle2, MapPin, Phone } from "lucide-r
 import { HOSPITAL_METADATA } from "@/config/hospital";
 
 export const metadata: Metadata = {
-  title: "About Us | Onnesha Hospital & Diagnostic Complex",
+  title: "About Us | ANNESHA HOSPITAL AND DIAGNOSTIC",
   description:
-    "Learn about Onnesha Hospital's mission, vision, clinical governance, and hospital infrastructure. Modern patient-centered healthcare in Bangladesh.",
+    "Learn about ANNESHA HOSPITAL AND DIAGNOSTIC mission, vision, clinical governance, and hospital infrastructure. Modern patient-centered healthcare in Bangladesh.",
   alternates: { canonical: "/about" },
   openGraph: {
-    title: "About Us | Onnesha Hospital & Diagnostic Complex",
+    title: "About Us | ANNESHA HOSPITAL AND DIAGNOSTIC",
     description:
-      "Learn about Onnesha Hospital's mission, vision, clinical governance, and hospital infrastructure in Bangladesh.",
+      "Learn about ANNESHA HOSPITAL AND DIAGNOSTIC mission, vision, clinical governance, and hospital infrastructure in Bangladesh.",
     url: "/about",
     type: "website",
   },

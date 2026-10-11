@@ -3,12 +3,12 @@ import { ShieldCheck, Lock, Eye, FileText, CheckCircle2, UserCheck } from "lucid
 import { HOSPITAL_METADATA } from "@/config/hospital";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Onnesha Hospital",
-  description: "Patient Privacy Policy and Personal Data Protection principles at Onnesha Hospital & Diagnostic Complex.",
+  title: "Privacy Policy | ANNESHA HOSPITAL AND DIAGNOSTIC",
+  description: "Patient Privacy Policy and Personal Data Protection principles at ANNESHA HOSPITAL AND DIAGNOSTIC.",
   alternates: { canonical: "/privacy" },
   openGraph: {
-    title: "Privacy Policy | Onnesha Hospital",
-    description: "Patient Privacy Policy and Personal Data Protection principles at Onnesha Hospital & Diagnostic Complex.",
+    title: "Privacy Policy | ANNESHA HOSPITAL AND DIAGNOSTIC",
+    description: "Patient Privacy Policy and Personal Data Protection principles at ANNESHA HOSPITAL AND DIAGNOSTIC.",
     url: "/privacy",
     type: "website",
   },
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
               <h2 className="text-lg font-bold text-slate-900">1. Overview & Scope</h2>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Onnesha Hospital & Diagnostic Complex (&quot;Onnesha HMS&quot;) describes through this policy our technical safeguards and procedural controls for handling patient demographic data, outpatient consultation records, diagnostic appointments, and billing transactions. Legal compliance should be assessed against applicable Bangladesh law and current operational healthcare practices.
+              ANNESHA HOSPITAL AND DIAGNOSTIC (&quot;Onnesha HMS&quot;) describes through this policy our technical safeguards and procedural controls for handling patient demographic data, outpatient consultation records, diagnostic appointments, and billing transactions. Legal compliance should be assessed against applicable Bangladesh law and current operational healthcare practices.
             </p>
           </section>
 

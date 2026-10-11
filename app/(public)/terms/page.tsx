@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { FileText, AlertCircle, Scale, ShieldAlert, CheckSquare } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Onnesha Hospital",
-  description: "Terms of Service and Operational Conditions for Onnesha Hospital & Diagnostic Complex.",
+  title: "Terms of Service | ANNESHA HOSPITAL AND DIAGNOSTIC",
+  description: "Terms of Service and Operational Conditions for ANNESHA HOSPITAL AND DIAGNOSTIC.",
   alternates: { canonical: "/terms" },
   openGraph: {
-    title: "Terms of Service | Onnesha Hospital",
-    description: "Terms of Service and Operational Conditions for Onnesha Hospital & Diagnostic Complex.",
+    title: "Terms of Service | ANNESHA HOSPITAL AND DIAGNOSTIC",
+    description: "Terms of Service and Operational Conditions for ANNESHA HOSPITAL AND DIAGNOSTIC.",
     url: "/terms",
     type: "website",
   },
@@ -29,7 +29,7 @@ export default function TermsPage() {
             Terms of Service
           </h1>
           <p className="text-xs text-slate-600 mt-2">
-            Effective Date: September 2026 | Onnesha Hospital & Diagnostic Complex
+            Effective Date: September 2026 | ANNESHA HOSPITAL AND DIAGNOSTIC
           </p>
         </div>
 
@@ -74,7 +74,7 @@ export default function TermsPage() {
               <h2 className="text-lg font-bold text-slate-900">4. Intellectual Property & System Integrity</h2>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              All digital software interfaces, prescription layouts, diagnostic reporting templates, trademarks, and logos associated with Onnesha HMS are the intellectual property of Onnesha Hospital & Diagnostic Complex. Unauthorized reverse engineering, automated scraping, or unauthorized interference with system APIs is prohibited under applicable laws and hospital policy.
+              All digital software interfaces, prescription layouts, diagnostic reporting templates, trademarks, and logos associated with Onnesha HMS are the intellectual property of ANNESHA HOSPITAL AND DIAGNOSTIC. Unauthorized reverse engineering, automated scraping, or unauthorized interference with system APIs is prohibited under applicable laws and hospital policy.
             </p>
           </section>
 
