@@ -31,7 +31,7 @@
 | **System UI 3D Dimensional Engine** | Tactile 3D cards, elevated floating metrics, beveled buttons, glassmorphic panels | `app/globals.css`, `components/dashboard/*`, `app/(hospital)/*` | ✅ PASS |
 | **Billing Catalog Classification & Deduplication** | Deterministic domain categorization (Bed/ICU/OT/Doctor/Imaging/Lab), 0 duplicates, 3D quick adder | `lib/billing/serviceCatalog.ts`, `app/billing/page.tsx` & migration `20261011193500` | ✅ PASS |
 | **Official Hospital Diagnostic Tariffs** | Complete official rate chart seeded across 16 categories, 185 tests with exact BDT tariffs | `lib/lab/actions.ts`, `lib/billing/serviceCatalog.ts` & migration `20261011190000` | ✅ PASS |
-| **Native Windows Desktop Installers (v1.1.87)** | Authentic native NSIS EXE (39.98 MB) & WiX MSI (44.54 MB) matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
+| **Native Windows Desktop Installers (v1.1.87)** | Authentic native NSIS EXE (2.88 MB) & WiX MSI (3.44 MB) matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
 | **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
@@ -70,8 +70,8 @@
 ### D. Native Windows Desktop Packaging (v1.1.87)
 - **Toolchains:** Host WiX 3.11 (`C:\Users\mahin khan\wix311`) and NSIS 3.10 (`C:\Users\mahin khan\nsis310\nsis-3.10`).
 - **Compiled & Verified Binaries (Synchronized with `latest.json`):**
-  - `Onnesha-Hospital-Setup-1.1.87.exe`: exactly **39,984,087 bytes**, SHA-256: `0B04524697D1870EC786604DDD1BE38B1A910BF87ABE85EBAFE3A99B8766FB57`
-  - `Onnesha-Hospital-1.1.87.msi`: exactly **44,544,000 bytes**, SHA-256: `D6345BD080439FEB9A4EE4F3AD1AC7395F6563544FAD9ED63F8495A570A1EC57`
+  - `Onnesha-Hospital-Setup-1.1.87.exe`: exactly **2,879,859 bytes**, SHA-256: `C0B01EC4B6F643F347398E318C0188908502AF3BB30B150CAF19D8EA5360EE18`
+  - `Onnesha-Hospital-1.1.87.msi`: exactly **3,436,544 bytes**, SHA-256: `280E6FB179BFFF5F2D7A8BDCBA376D3D51D505FDE53AD07C56F675A4745DFD0A`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
 
 ### E. Supabase Database Migration Parity (159/159)

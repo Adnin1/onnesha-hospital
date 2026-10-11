@@ -56,10 +56,12 @@ public/downloads/desktop/*.exe
 .clinerules
 
 public/downloads/desktop/*.zip
+desktop_installers_archive/
 /logs/
 *.log
 docs/discharge_video_frames/
 docs/user_video_analysis/
+docs/user_video_analysis_2/
 scripts/check_tariffs.mjs
 
 # Database snapshot archives and manifests (strictly uncommitted, prevents PHI/PII leakage)

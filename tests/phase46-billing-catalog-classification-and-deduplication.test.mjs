@@ -101,4 +101,17 @@ describe("OHMS Phase 46: Billing Catalog Classification, 3D UI & Deduplication S
     assert.match(content, /serviceGroupCounts/, "page.tsx must compute dynamic serviceGroupCounts");
     assert.match(content, /getCategoryBadgeStyle/, "page.tsx must use getCategoryBadgeStyle for 3D badges");
   });
+
+  test("5. app/(hospital)/app/billing/page.tsx has Left/Right 3D scroll buttons, mouse wheel, and auto-centering", () => {
+    const billingPagePath = path.join(rootDir, "app", "(hospital)", "app", "billing", "page.tsx");
+    const content = fs.readFileSync(billingPagePath, "utf8");
+
+    assert.match(content, /scrollCategoryTabs/, "Must implement scrollCategoryTabs function");
+    assert.match(content, /canScrollCategoryLeft/, "Must track canScrollCategoryLeft state");
+    assert.match(content, /canScrollCategoryRight/, "Must track canScrollCategoryRight state");
+    assert.match(content, /handleCategoryWheel/, "Must support mouse-wheel horizontal scrolling");
+    assert.match(content, /ChevronLeft/, "Must render ChevronLeft navigation button");
+    assert.match(content, /ChevronRight/, "Must render ChevronRight navigation button");
+    assert.match(content, /scrollIntoView/, "Must auto-center selected category tab into view");
+  });
 });

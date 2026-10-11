@@ -20,6 +20,8 @@ import {
   AlertCircle,
   FileText,
   Edit3,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   InvoiceRecord,
@@ -123,6 +125,37 @@ function BillingManagementContent() {
   const [allServices, setAllServices] = useState<HospitalServiceItem[]>(MASTER_HOSPITAL_SERVICES);
   const [serviceFilterGroup, setServiceFilterGroup] = useState<string>("ALL");
   const [serviceSearchTerm, setServiceSearchTerm] = useState<string>("");
+
+  // Category Tabs Horizontal Scroll State & Ref
+  const categoryTabsRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollCategoryLeft, setCanScrollCategoryLeft] = useState(false);
+  const [canScrollCategoryRight, setCanScrollCategoryRight] = useState(true);
+
+  const checkCategoryScroll = () => {
+    if (categoryTabsRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = categoryTabsRef.current;
+      setCanScrollCategoryLeft(scrollLeft > 4);
+      setCanScrollCategoryRight(scrollLeft + clientWidth < scrollWidth - 4);
+    }
+  };
+
+  const scrollCategoryTabs = (direction: "left" | "right") => {
+    if (categoryTabsRef.current) {
+      const step = 220;
+      categoryTabsRef.current.scrollBy({
+        left: direction === "left" ? -step : step,
+        behavior: "smooth",
+      });
+      setTimeout(checkCategoryScroll, 320);
+    }
+  };
+
+  const handleCategoryWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (categoryTabsRef.current && e.deltaY !== 0) {
+      categoryTabsRef.current.scrollLeft += e.deltaY;
+      checkCategoryScroll();
+    }
+  };
 
   // New Invoice Patient Search & Referral State
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
@@ -288,11 +321,18 @@ function BillingManagementContent() {
         }
       }
       loadAgentsAndCatalog();
+      setTimeout(checkCategoryScroll, 150);
     }
     return () => {
       active = false;
     };
   }, [isCreatingNew]);
+
+  useEffect(() => {
+    const handleResize = () => checkCategoryScroll();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Debounced search for patients in invoice modal
   useEffect(() => {
@@ -1578,8 +1618,19 @@ function BillingManagementContent() {
                       placeholder="সার্ভিস বা টেস্ট খুঁজুন (CBC, USG, Cabin, OT)..."
                       value={serviceSearchTerm}
                       onChange={(e) => setServiceSearchTerm(e.target.value)}
-                      className="w-full pl-8 pr-3 py-1 text-[11px] border rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="w-full pl-8 pr-7 py-1 text-[11px] border border-slate-200/90 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-2xs"
                     />
+                    {serviceSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setServiceSearchTerm("")}
+                        className="absolute right-2 top-1.5 text-slate-400 hover:text-slate-600 transition"
+                        title="সার্চ মুছুন"
+                        aria-label="সার্চ মুছুন"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -1673,48 +1724,97 @@ function BillingManagementContent() {
                   </div>
                 </div>
 
-                {/* Category Filter Pills */}
-                <div className="flex gap-1.5 overflow-x-auto pb-1 text-[10px] font-bold scrollbar-none">
-                  {[
-                    { id: "ALL", label: "সকল সেবা", icon: "🧪" },
-                    { id: "LAB", label: "ল্যাব ও প্যাথলজি টেস্ট", icon: "🔬" },
-                    { id: "IMAGING", label: "রেডিওলজি ও ইমেজিং", icon: "🩻" },
-                    { id: "CONSULTATION", label: "ডাক্তার কনসাল্টেশন", icon: "🩺" },
-                    { id: "BED_CABIN", label: "বেড ও কেবিন (IPD)", icon: "🛏️" },
-                    { id: "CRITICAL_CARE", label: "ICU / CCU / HDU", icon: "🏥" },
-                    { id: "OT_SURGERY", label: "অপারেশন ও OT", icon: "🔪" },
-                    { id: "EMERGENCY_NURSING", label: "ইমার্জেন্সি ও নার্সিং", icon: "🚑" },
-                  ].map((grp) => {
-                    const count = serviceGroupCounts[grp.id] || 0;
-                    return (
-                      <button
-                        key={grp.id}
-                        type="button"
-                        onClick={() => setServiceFilterGroup(grp.id)}
-                        className={`px-3 py-1.5 rounded-xl shrink-0 transition flex items-center gap-1.5 border ${
-                          serviceFilterGroup === grp.id
-                            ? "bg-emerald-700 text-white border-emerald-800 shadow-sm font-black scale-102"
-                            : "bg-white hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-slate-300"
-                        }`}
-                      >
-                        <span>{grp.icon}</span>
-                        <span>{grp.label}</span>
-                        <span
-                          className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${
-                            serviceFilterGroup === grp.id
-                              ? "bg-emerald-800 text-emerald-100"
-                              : "bg-slate-100 text-slate-600 font-bold"
+                {/* Category Filter Pills with 3D Left & Right Scroll Controls */}
+                <div className="relative group/tabs flex items-center gap-1.5 p-1 rounded-2xl bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 border border-slate-200/90 shadow-2xs">
+                  {/* Left Scroll Button */}
+                  <button
+                    type="button"
+                    onClick={() => scrollCategoryTabs("left")}
+                    disabled={!canScrollCategoryLeft}
+                    className={`h-7.5 w-7.5 rounded-xl flex items-center justify-center shrink-0 transition-all duration-150 border ${
+                      canScrollCategoryLeft
+                        ? "bg-white text-emerald-800 border-slate-300 shadow-xs hover:bg-emerald-50 hover:border-emerald-400 hover:scale-105 active:scale-95 cursor-pointer"
+                        : "bg-slate-100/60 text-slate-300 border-slate-200/50 cursor-not-allowed opacity-30"
+                    }`}
+                    title="বামে স্ক্রল করুন (Scroll Left)"
+                    aria-label="বামে স্ক্রল করুন"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  {/* Scrollable Tabs Track with Wheel Intercept */}
+                  <div
+                    ref={categoryTabsRef}
+                    onScroll={checkCategoryScroll}
+                    onWheel={handleCategoryWheel}
+                    className="flex-1 flex gap-1.5 overflow-x-auto py-0.5 text-[10px] font-bold scroll-smooth no-scrollbar"
+                    style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                  >
+                    {[
+                      { id: "ALL", label: "সকল সেবা", icon: "🧪" },
+                      { id: "LAB", label: "ল্যাব ও প্যাথলজি টেস্ট", icon: "🔬" },
+                      { id: "IMAGING", label: "রেডিওলজি ও ইমেজিং", icon: "🩻" },
+                      { id: "CONSULTATION", label: "ডাক্তার কনসালটেশন", icon: "🩺" },
+                      { id: "BED_CABIN", label: "বেড ও কেবিন (IPD)", icon: "🛏️" },
+                      { id: "CRITICAL_CARE", label: "ICU / CCU / HDU", icon: "🏥" },
+                      { id: "OT_SURGERY", label: "অপারেশন ও OT", icon: "🔪" },
+                      { id: "EMERGENCY_NURSING", label: "ইমার্জেন্সি ও নার্সিং", icon: "🚑" },
+                    ].map((grp) => {
+                      const count = serviceGroupCounts[grp.id] || 0;
+                      const isActive = serviceFilterGroup === grp.id;
+                      return (
+                        <button
+                          key={grp.id}
+                          type="button"
+                          onClick={(e) => {
+                            setServiceFilterGroup(grp.id);
+                            (e.currentTarget as HTMLElement).scrollIntoView({
+                              behavior: "smooth",
+                              inline: "center",
+                              block: "nearest",
+                            });
+                          }}
+                          className={`px-3 py-1.5 rounded-xl shrink-0 transition-all duration-150 flex items-center gap-1.5 border ${
+                            isActive
+                              ? "bg-gradient-to-r from-emerald-700 to-emerald-800 text-white border-emerald-900 shadow-sm font-black scale-[1.02]"
+                              : "bg-white hover:bg-slate-100/90 text-slate-700 border-slate-200/90 hover:border-slate-300 shadow-2xs"
                           }`}
                         >
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
+                          <span className="text-xs">{grp.icon}</span>
+                          <span>{grp.label}</span>
+                          <span
+                            className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold ${
+                              isActive
+                                ? "bg-emerald-950/60 text-emerald-100 border border-emerald-600/40"
+                                : "bg-slate-100 text-slate-600 border border-slate-200"
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right Scroll Button */}
+                  <button
+                    type="button"
+                    onClick={() => scrollCategoryTabs("right")}
+                    disabled={!canScrollCategoryRight}
+                    className={`h-7.5 w-7.5 rounded-xl flex items-center justify-center shrink-0 transition-all duration-150 border ${
+                      canScrollCategoryRight
+                        ? "bg-white text-emerald-800 border-slate-300 shadow-xs hover:bg-emerald-50 hover:border-emerald-400 hover:scale-105 active:scale-95 cursor-pointer"
+                        : "bg-slate-100/60 text-slate-300 border-slate-200/50 cursor-not-allowed opacity-30"
+                    }`}
+                    title="ডানে স্ক্রল করুন (Scroll Right)"
+                    aria-label="ডানে স্ক্রল করুন"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
 
                 {/* Service Cards Grid (Scrollable Quick Adder with 3D feel & smart badges) */}
-                <div className="max-h-56 overflow-y-auto pr-1 border border-slate-200/90 rounded-2xl p-2.5 bg-slate-50/70 shadow-inner">
+                <div className="max-h-64 sm:max-h-72 overflow-y-auto pr-1 border border-slate-200/90 rounded-2xl p-2.5 bg-slate-50/70 shadow-inner">
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                     {filteredServices.map((srv) => {
                       const badge = getCategoryBadgeStyle(srv.category, srv.group);
@@ -1727,7 +1827,7 @@ function BillingManagementContent() {
                           key={srv.id}
                           type="button"
                           onClick={() => addItemRow(srv.category, srv.name, srv.price)}
-                          className="text-left p-2.5 rounded-xl bg-white border border-slate-200/90 hover:border-emerald-500 hover:bg-emerald-50/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 group flex flex-col justify-between gap-1.5"
+                          className="text-left p-2.5 rounded-xl bg-white border border-slate-200/90 hover:border-emerald-500 hover:bg-emerald-50/30 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all duration-150 group flex flex-col justify-between gap-1.5 cursor-pointer"
                           title={srv.description || srv.name}
                         >
                           <div className="w-full flex items-start justify-between gap-1.5">
