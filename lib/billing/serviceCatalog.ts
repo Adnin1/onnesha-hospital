@@ -4,11 +4,19 @@ export type ServiceCategory =
   | "XRAY"
   | "USG"
   | "ECG"
+  | "CT_SCAN"
+  | "MRI"
+  | "ENDOSCOPY"
   | "PHARMACY"
   | "BED"
   | "CABIN"
+  | "IPD_BED"
+  | "CRITICAL_CARE"
   | "OT"
+  | "OT_SURGERY"
+  | "ADMISSION"
   | "AMBULANCE"
+  | "PROCEDURE"
   | "MISC";
 
 export interface HospitalServiceItem {
@@ -863,20 +871,142 @@ const BASE_HOSPITAL_SERVICES: HospitalServiceItem[] = [
   },
 ];
 
+export function classifyServiceGroup(category: string, serviceName: string = ""): HospitalServiceItem["group"] {
+  const cat = (category || "").toUpperCase().trim();
+  const name = (serviceName || "").toLowerCase().trim();
+
+  // 1. Bed & Cabin
+  if (
+    ["BED", "CABIN", "IPD_BED", "BED_CABIN", "WARD"].includes(cat) ||
+    name.includes("cabin") ||
+    name.includes("ward bed") ||
+    name.includes("bed charge")
+  ) {
+    return "BED_CABIN";
+  }
+
+  // 2. Critical Care
+  if (
+    ["CRITICAL_CARE", "ICU", "CCU", "HDU", "NICU", "PICU"].includes(cat) ||
+    name.includes("icu bed") ||
+    name.includes("ccu bed") ||
+    name.includes("hdu bed") ||
+    name.includes("nicu bed") ||
+    name.includes("coronary care unit") ||
+    name.includes("intensive care unit") ||
+    name.includes("high dependency unit") ||
+    name.includes("neonatal intensive care")
+  ) {
+    return "CRITICAL_CARE";
+  }
+
+  // 3. Surgery & OT
+  if (
+    ["OT", "OT_SURGERY", "SURGERY", "OPERATION"].includes(cat) ||
+    name.includes("operation theatre") ||
+    name.includes("surgical procedure") ||
+    name.includes("major surgical") ||
+    name.includes("minor surgical") ||
+    name.includes("minor ot") ||
+    name.includes("major ot") ||
+    name.includes("laparoscopic surgery") ||
+    name.includes("caesarean section") ||
+    name.includes("c-section") ||
+    name.includes("anaesthesia") ||
+    name.includes("orthopedic closed reduction") ||
+    name.includes("normal vaginal delivery")
+  ) {
+    return "OT_SURGERY";
+  }
+
+  // 4. Consultation (ONLY genuine doctor visits and OPD consultations)
+  if (
+    (["CONSULTATION", "DOCTOR", "OPD_VISIT"].includes(cat) || name.includes("consultation")) &&
+    !name.includes("investigation") &&
+    !name.includes("test") &&
+    !name.includes("scan") &&
+    !name.includes("x-ray") &&
+    !name.includes("usg") &&
+    !name.includes("procedure")
+  ) {
+    return "CONSULTATION";
+  }
+
+  // 5. Imaging / Radiology (X-Ray, USG, ECG, Echo, CT Scan, MRI, Endoscopy, Colonoscopy)
+  if (
+    ["XRAY", "USG", "ECG", "CT_SCAN", "MRI", "ENDOSCOPY", "IMAGING", "RADIOLOGY"].includes(cat) ||
+    name.includes("x-ray") ||
+    name.includes("xray") ||
+    name.includes("usg") ||
+    name.includes("ultrasound") ||
+    name.includes("ultrasono") ||
+    name.includes("ecg") ||
+    name.includes("echocardiog") ||
+    name.includes("ct scan") ||
+    name.includes("mri") ||
+    name.includes("endoscopy") ||
+    name.includes("colonoscopy")
+  ) {
+    return "IMAGING";
+  }
+
+  // 6. Emergency & Nursing & Admission
+  if (
+    ["EMERGENCY", "NURSING", "AMBULANCE", "ADMISSION", "EMERGENCY_NURSING"].includes(cat) ||
+    name.includes("admission & registration") ||
+    name.includes("ambulance") ||
+    name.includes("dressing & bandaging") ||
+    name.includes("emergency nursing")
+  ) {
+    return "EMERGENCY_NURSING";
+  }
+
+  // 7. Clinical procedures (nursing care / minor procedures)
+  if (cat === "PROCEDURE") {
+    if (
+      name.includes("dressing") ||
+      name.includes("cannula") ||
+      name.includes("catheter") ||
+      name.includes("nebulization") ||
+      name.includes("suction") ||
+      name.includes("injection administration")
+    ) {
+      return "EMERGENCY_NURSING";
+    }
+  }
+
+  // 8. Default for all pathology/lab investigations
+  return "LAB";
+}
+
 const OFFICIAL_RATE_CHART_SERVICE_ITEMS: HospitalServiceItem[] = OFFICIAL_DIAGNOSTIC_TESTS.map((t) => {
   let cat: ServiceCategory = "LAB";
-  let grp: "LAB" | "IMAGING" = "LAB";
+  let grp: HospitalServiceItem["group"] = "LAB";
   if (t.category_code === "XRAY") {
     cat = "XRAY";
     grp = "IMAGING";
   } else if (t.category_code === "USG") {
     cat = "USG";
     grp = "IMAGING";
-  } else if (t.test_code === "SPEC_ECG") {
+  } else if (
+    t.test_code === "SPEC_ECG" ||
+    t.test_name.toLowerCase().includes("electrocardiogram") ||
+    t.test_name.toLowerCase().includes("echocardiography")
+  ) {
     cat = "ECG";
     grp = "IMAGING";
-  } else if (t.category_code === "CT_SCAN" || t.category_code === "MRI" || t.category_code === "SPECIAL_DIAG") {
-    cat = "MISC";
+  } else if (t.category_code === "CT_SCAN") {
+    cat = "CT_SCAN";
+    grp = "IMAGING";
+  } else if (t.category_code === "MRI") {
+    cat = "MRI";
+    grp = "IMAGING";
+  } else if (t.category_code === "SPECIAL_DIAG") {
+    if (t.test_name.toLowerCase().includes("endoscopy") || t.test_name.toLowerCase().includes("colonoscopy")) {
+      cat = "ENDOSCOPY";
+    } else {
+      cat = "MISC";
+    }
     grp = "IMAGING";
   }
 
@@ -900,14 +1030,22 @@ export const MASTER_HOSPITAL_SERVICES: HospitalServiceItem[] = [
   ...extraOfficialItems,
 ];
 
+export interface DatabaseTariffInput {
+  id?: string;
+  service_code?: string;
+  service_name: string;
+  category: string;
+  price: number;
+  description?: string;
+  is_active?: boolean;
+}
+
 /**
- * Combines built-in master hospital services with any dynamic lab tests
- * loaded from the database table `diagnostic_tests`.
+ * Combines built-in master hospital services with dynamic lab tests
+ * and database tariffs, applying intelligent deduplication and classification.
  *
  * TARIFF AUTHORITY PRINCIPLE:
  * Authoritative Database Tariff > Verified Configuration > Safe Software Fallback.
- * If the database defines an active price for a diagnostic test, the database price
- * overrides the static fallback default.
  */
 export function getAllHospitalServices(
   dynamicLabTests?: Array<{
@@ -916,49 +1054,128 @@ export function getAllHospitalServices(
     test_code?: string;
     price: number;
     category_name?: string;
-  }>
+  }>,
+  databaseTariffs?: DatabaseTariffInput[]
 ): HospitalServiceItem[] {
-  if (!dynamicLabTests || dynamicLabTests.length === 0) {
-    return MASTER_HOSPITAL_SERVICES.map((s) => ({ ...s, isDatabaseAuthoritative: false }));
+  // Normalize key for deduplication
+  const normalize = (s: string) => s.trim().toLowerCase().replace(/[\s\-_]+/g, " ");
+
+  const serviceMap = new Map<string, HospitalServiceItem>();
+
+  for (const s of MASTER_HOSPITAL_SERVICES) {
+    serviceMap.set(normalize(s.name), { ...s, isDatabaseAuthoritative: false });
   }
 
-  // Create lookup map of database diagnostic tests by normalized name
-  const dbTestMap = new Map<string, { id: string; test_name: string; test_code?: string; price: number; category_name?: string }>();
-  for (const t of dynamicLabTests) {
-    dbTestMap.set(t.test_name.trim().toLowerCase(), t);
-  }
+  const existingNames = new Set<string>(Array.from(serviceMap.keys()));
 
-  // Authoritative Database Tariff Override: If database specifies an active tariff, it takes precedence
-  const overriddenServices = MASTER_HOSPITAL_SERVICES.map((s) => {
-    const dbMatch = dbTestMap.get(s.name.trim().toLowerCase());
-    if (dbMatch && typeof dbMatch.price === "number" && !isNaN(dbMatch.price)) {
-      return {
-        ...s,
-        price: Number(dbMatch.price),
-        isDatabaseAuthoritative: true,
-        description: dbMatch.category_name ? `${s.description || ""} (DB Tariff: ${dbMatch.category_name})` : s.description,
-      };
+  // 1. Merge Database Dynamic Diagnostic Tests
+  if (dynamicLabTests && dynamicLabTests.length > 0) {
+    for (const t of dynamicLabTests) {
+      const norm = normalize(t.test_name);
+      const group = classifyServiceGroup(t.category_name || "LAB", t.test_name);
+      const category: ServiceCategory = group === "IMAGING"
+        ? (t.test_name.toLowerCase().includes("ct scan")
+            ? "CT_SCAN"
+            : t.test_name.toLowerCase().includes("mri")
+            ? "MRI"
+            : t.test_name.toLowerCase().includes("usg")
+            ? "USG"
+            : t.test_name.toLowerCase().includes("x-ray")
+            ? "XRAY"
+            : "MISC")
+        : "LAB";
+
+      if (existingNames.has(norm)) {
+        const existing = serviceMap.get(norm)!;
+        serviceMap.set(norm, {
+          ...existing,
+          price: Number(t.price) || existing.price,
+          isDatabaseAuthoritative: true,
+          description: t.category_name ? `${existing.description || ""} (DB: ${t.category_name})` : existing.description,
+        });
+      } else {
+        existingNames.add(norm);
+        serviceMap.set(norm, {
+          id: `dyn-lab-${t.id}`,
+          category,
+          name: t.test_name,
+          price: Number(t.price) || 0,
+          group,
+          description: t.category_name ? `${t.category_name} laboratory investigation` : "Diagnostic laboratory test",
+          isDatabaseAuthoritative: true,
+        });
+      }
     }
-    return { ...s, isDatabaseAuthoritative: false };
-  });
+  }
 
-  const existingNames = new Set(overriddenServices.map((s) => s.name.toLowerCase()));
-  const extraTests: HospitalServiceItem[] = [];
+  // 2. Merge Database Authoritative Hospital Service Tariffs
+  if (databaseTariffs && databaseTariffs.length > 0) {
+    for (const t of databaseTariffs) {
+      if (t.is_active === false) continue;
+      const norm = normalize(t.service_name);
+      const existing = serviceMap.get(norm);
+      const group = classifyServiceGroup(t.category, t.service_name);
+      const category = (t.category as ServiceCategory) || (group === "LAB" ? "LAB" : "MISC");
 
-  for (const t of dynamicLabTests) {
-    if (!existingNames.has(t.test_name.toLowerCase())) {
-      extraTests.push({
-        id: `dyn-lab-${t.id}`,
-        category: "LAB",
-        name: t.test_name,
-        price: Number(t.price) || 0,
-        group: "LAB",
-        description: t.category_name ? `${t.category_name} laboratory investigation` : "Diagnostic laboratory test",
-        isDatabaseAuthoritative: true,
-      });
-      existingNames.add(t.test_name.toLowerCase());
+      if (existing) {
+        serviceMap.set(norm, {
+          ...existing,
+          category,
+          group,
+          price: Number(t.price) || existing.price,
+          isDatabaseAuthoritative: true,
+          description: t.description || existing.description,
+        });
+      } else {
+        serviceMap.set(norm, {
+          id: `db-${t.service_code || t.id || norm}`,
+          category,
+          name: t.service_name,
+          price: Number(t.price) || 0,
+          group,
+          description: t.description || undefined,
+          isDatabaseAuthoritative: true,
+        });
+      }
     }
   }
 
-  return [...overriddenServices, ...extraTests];
+  return Array.from(serviceMap.values());
+}
+
+/**
+ * Maps extended catalog categories into the valid database CHECK constraint categories for invoice_items.
+ */
+export function toDbInvoiceCategory(
+  cat: ServiceCategory | string
+): "CONSULTATION" | "LAB" | "XRAY" | "USG" | "ECG" | "PHARMACY" | "BED" | "CABIN" | "OT" | "AMBULANCE" | "MISC" {
+  switch (cat) {
+    case "CONSULTATION":
+      return "CONSULTATION";
+    case "LAB":
+      return "LAB";
+    case "XRAY":
+    case "CT_SCAN":
+    case "MRI":
+      return "XRAY";
+    case "USG":
+      return "USG";
+    case "ECG":
+      return "ECG";
+    case "PHARMACY":
+      return "PHARMACY";
+    case "BED":
+    case "IPD_BED":
+    case "CRITICAL_CARE":
+      return "BED";
+    case "CABIN":
+      return "CABIN";
+    case "OT":
+    case "OT_SURGERY":
+      return "OT";
+    case "AMBULANCE":
+      return "AMBULANCE";
+    default:
+      return "MISC";
+  }
 }

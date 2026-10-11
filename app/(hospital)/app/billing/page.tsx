@@ -60,6 +60,7 @@ import {
   MASTER_HOSPITAL_SERVICES,
   HospitalServiceItem,
   ServiceCategory,
+  toDbInvoiceCategory,
 } from "@/lib/billing/serviceCatalog";
 import { getDiagnosticTestsCatalogAction } from "@/lib/lab/actions";
 import { printBillingInvoiceReceipt, BillingReceiptData } from "@/lib/hardware/escpos";
@@ -273,22 +274,14 @@ function BillingManagementContent() {
           if (active && docRes.status === "fulfilled" && docRes.value.success && docRes.value.data?.doctors) {
             setDoctorsList(docRes.value.data.doctors);
           }
-          if (active && diagRes.status === "fulfilled" && diagRes.value.success && diagRes.value.data?.tests) {
-            let baseServices = getAllHospitalServices(diagRes.value.data.tests);
-            if (tariffRes.status === "fulfilled" && tariffRes.value.success && tariffRes.value.data?.tariffs) {
-              setHospitalServiceTariffs(tariffRes.value.data.tariffs);
-              const customTariffs: HospitalServiceItem[] = tariffRes.value.data.tariffs.map((t) => ({
-                id: `db-${t.service_code}`,
-                category: (t.category as ServiceCategory) || "MISC",
-                name: t.service_name,
-                price: Number(t.price),
-                group: (t.category === "LAB" ? "LAB" : "CONSULTATION") as HospitalServiceItem["group"],
-                description: t.description || undefined,
-                isDatabaseAuthoritative: true,
-              }));
-              baseServices = [...customTariffs, ...baseServices];
-            }
-            setAllServices(baseServices);
+          const dynamicTests = diagRes.status === "fulfilled" && diagRes.value.success ? diagRes.value.data?.tests : undefined;
+          const tariffs = tariffRes.status === "fulfilled" && tariffRes.value.success ? tariffRes.value.data?.tariffs : undefined;
+          if (active && tariffs) {
+            setHospitalServiceTariffs(tariffs);
+          }
+          if (active) {
+            const unifiedServices = getAllHospitalServices(dynamicTests, tariffs);
+            setAllServices(unifiedServices);
           }
         } catch (err) {
           console.error("Failed loading billing catalog/agents:", err);
@@ -522,11 +515,12 @@ function BillingManagementContent() {
     : 0;
 
   const addItemRow = (
-    category: InvoiceItemRecord["service_category"],
+    category: ServiceCategory | InvoiceItemRecord["service_category"],
     name: string,
     price: number,
     quantity: number = 1
   ) => {
+    const dbCategory = toDbInvoiceCategory(category);
     const existingIndex = items.findIndex((it) => it.itemName.toLowerCase() === name.toLowerCase());
     let next: typeof items;
     if (existingIndex >= 0) {
@@ -536,7 +530,7 @@ function BillingManagementContent() {
         quantity: next[existingIndex].quantity + quantity,
       };
     } else {
-      next = [...items, { category, itemName: name, unitPrice: price, quantity }];
+      next = [...items, { category: dbCategory, itemName: name, unitPrice: price, quantity }];
     }
     setItems(next);
     const newSub = next.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
@@ -643,6 +637,31 @@ function BillingManagementContent() {
       );
     });
   }, [allServices, serviceFilterGroup, serviceSearchTerm]);
+
+  const serviceGroupCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: allServices.length };
+    for (const s of allServices) {
+      counts[s.group] = (counts[s.group] || 0) + 1;
+    }
+    return counts;
+  }, [allServices]);
+
+  const getCategoryBadgeStyle = (category: string, group: string) => {
+    const cat = (category || "").toUpperCase();
+    if (cat === "CT_SCAN") return { label: "CT SCAN", bg: "bg-cyan-50 text-cyan-800 border-cyan-200" };
+    if (cat === "MRI") return { label: "MRI", bg: "bg-blue-50 text-blue-800 border-blue-200" };
+    if (cat === "XRAY") return { label: "X-RAY", bg: "bg-indigo-50 text-indigo-800 border-indigo-200" };
+    if (cat === "USG") return { label: "USG", bg: "bg-purple-50 text-purple-800 border-purple-200" };
+    if (cat === "ECG") return { label: "ECG", bg: "bg-rose-50 text-rose-800 border-rose-200" };
+    if (cat === "ENDOSCOPY") return { label: "ENDOSCOPY", bg: "bg-amber-50 text-amber-800 border-amber-200" };
+    if (group === "LAB" || cat === "LAB") return { label: "LAB", bg: "bg-emerald-50 text-emerald-800 border-emerald-200" };
+    if (group === "CONSULTATION" || cat === "CONSULTATION") return { label: "DOCTOR", bg: "bg-sky-50 text-sky-800 border-sky-200" };
+    if (group === "BED_CABIN" || cat === "BED" || cat === "CABIN" || cat === "IPD_BED") return { label: "BED/CABIN", bg: "bg-amber-50 text-amber-900 border-amber-300" };
+    if (group === "CRITICAL_CARE" || cat === "CRITICAL_CARE") return { label: "ICU/CCU", bg: "bg-red-50 text-red-800 border-red-200" };
+    if (group === "OT_SURGERY" || cat === "OT" || cat === "OT_SURGERY") return { label: "OT/SURGERY", bg: "bg-fuchsia-50 text-fuchsia-800 border-fuchsia-200" };
+    if (group === "EMERGENCY_NURSING" || cat === "AMBULANCE" || cat === "ADMISSION") return { label: "EMERGENCY", bg: "bg-teal-50 text-teal-800 border-teal-200" };
+    return { label: cat || "SERVICE", bg: "bg-slate-50 text-slate-700 border-slate-200" };
+  };
 
   const resetInvoiceModal = () => {
     setIsCreatingNew(false);
@@ -1421,7 +1440,7 @@ function BillingManagementContent() {
                         )}
                         {(selectedPatient.age !== undefined && selectedPatient.age !== null) && (
                           <p className="text-[11px] text-emerald-900">
-                            বয়স: {selectedPatient.age} বছর {selectedPatient.blood_group ? `• রক্ত: [${selectedPatient.blood_group}]` : ""}
+                            বয়স: {selectedPatient.age > 0 ? `${selectedPatient.age} বছর` : "০ বছর (নবজাতক/শিশু)"} {selectedPatient.blood_group ? `• রক্ত: [${selectedPatient.blood_group}]` : ""}
                           </p>
                         )}
                       </div>
@@ -1657,77 +1676,95 @@ function BillingManagementContent() {
                 {/* Category Filter Pills */}
                 <div className="flex gap-1.5 overflow-x-auto pb-1 text-[10px] font-bold scrollbar-none">
                   {[
-                    { id: "ALL", label: `সকল সেবা (${allServices.length})` },
-                    { id: "LAB", label: "ল্যাব ও প্যাথলজি টেস্ট" },
-                    { id: "IMAGING", label: "এক্স-রে / USG / ECG" },
-                    { id: "CONSULTATION", label: "ডাক্তার কনসাল্টেশন" },
-                    { id: "BED_CABIN", label: "বেড ও কেবিন (IPD)" },
-                    { id: "CRITICAL_CARE", label: "ICU / CCU / HDU" },
-                    { id: "OT_SURGERY", label: "অপারেশন ও OT" },
-                    { id: "EMERGENCY_NURSING", label: "ইমার্জেন্সি ও নার্সিং" },
-                  ].map((grp) => (
-                    <button
-                      key={grp.id}
-                      type="button"
-                      onClick={() => setServiceFilterGroup(grp.id)}
-                      className={`px-2.5 py-1 rounded-lg shrink-0 transition ${
-                        serviceFilterGroup === grp.id
-                          ? "bg-emerald-700 text-white shadow-xs font-black"
-                          : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                      }`}
-                    >
-                      {grp.label}
-                    </button>
-                  ))}
+                    { id: "ALL", label: "সকল সেবা", icon: "🧪" },
+                    { id: "LAB", label: "ল্যাব ও প্যাথলজি টেস্ট", icon: "🔬" },
+                    { id: "IMAGING", label: "রেডিওলজি ও ইমেজিং", icon: "🩻" },
+                    { id: "CONSULTATION", label: "ডাক্তার কনসাল্টেশন", icon: "🩺" },
+                    { id: "BED_CABIN", label: "বেড ও কেবিন (IPD)", icon: "🛏️" },
+                    { id: "CRITICAL_CARE", label: "ICU / CCU / HDU", icon: "🏥" },
+                    { id: "OT_SURGERY", label: "অপারেশন ও OT", icon: "🔪" },
+                    { id: "EMERGENCY_NURSING", label: "ইমার্জেন্সি ও নার্সিং", icon: "🚑" },
+                  ].map((grp) => {
+                    const count = serviceGroupCounts[grp.id] || 0;
+                    return (
+                      <button
+                        key={grp.id}
+                        type="button"
+                        onClick={() => setServiceFilterGroup(grp.id)}
+                        className={`px-3 py-1.5 rounded-xl shrink-0 transition flex items-center gap-1.5 border ${
+                          serviceFilterGroup === grp.id
+                            ? "bg-emerald-700 text-white border-emerald-800 shadow-sm font-black scale-102"
+                            : "bg-white hover:bg-slate-100 text-slate-700 border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <span>{grp.icon}</span>
+                        <span>{grp.label}</span>
+                        <span
+                          className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono ${
+                            serviceFilterGroup === grp.id
+                              ? "bg-emerald-800 text-emerald-100"
+                              : "bg-slate-100 text-slate-600 font-bold"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {/* Service Cards Grid (Scrollable Quick Adder) */}
-                <div className="max-h-48 overflow-y-auto pr-1 border border-slate-200 rounded-xl p-2 bg-slate-50/60 divide-y divide-slate-100">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
-                    {filteredServices.map((srv) => (
-                      <button
-                        key={srv.id}
-                        type="button"
-                        onClick={() => addItemRow(srv.category, srv.name, srv.price)}
-                        className="text-left p-2 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 hover:shadow-2xs transition group flex items-start justify-between gap-1.5"
-                        title={srv.description || srv.name}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <span
-                            className={`text-[9px] font-bold px-1 py-0.2 rounded inline-block mb-0.5 ${
-                              srv.group === "LAB"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : srv.group === "IMAGING"
-                                ? "bg-indigo-100 text-indigo-800"
-                                : srv.group === "CONSULTATION"
-                                ? "bg-sky-100 text-sky-800"
-                                : srv.group === "BED_CABIN"
-                                ? "bg-amber-100 text-amber-800"
-                                : srv.group === "CRITICAL_CARE"
-                                ? "bg-rose-100 text-rose-800"
-                                : srv.group === "OT_SURGERY"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-teal-100 text-teal-800"
-                            }`}
-                          >
-                            {srv.category}
-                          </span>
-                          <p className="text-[11px] font-bold text-slate-800 truncate group-hover:text-emerald-950">
-                            {srv.name}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-[11px] font-mono font-black text-emerald-700 block">
-                            {formatCurrencyBDT(srv.price)}
-                          </span>
-                          <span className="text-[9px] font-bold text-slate-400 group-hover:text-emerald-700">
-                            + যোগ করুন
-                          </span>
-                        </div>
-                      </button>
-                    ))}
+                {/* Service Cards Grid (Scrollable Quick Adder with 3D feel & smart badges) */}
+                <div className="max-h-56 overflow-y-auto pr-1 border border-slate-200/90 rounded-2xl p-2.5 bg-slate-50/70 shadow-inner">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {filteredServices.map((srv) => {
+                      const badge = getCategoryBadgeStyle(srv.category, srv.group);
+                      const inInvoiceCount = items.filter(
+                        (it) => it.itemName.trim().toLowerCase() === srv.name.trim().toLowerCase()
+                      ).length;
+
+                      return (
+                        <button
+                          key={srv.id}
+                          type="button"
+                          onClick={() => addItemRow(srv.category, srv.name, srv.price)}
+                          className="text-left p-2.5 rounded-xl bg-white border border-slate-200/90 hover:border-emerald-500 hover:bg-emerald-50/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 group flex flex-col justify-between gap-1.5"
+                          title={srv.description || srv.name}
+                        >
+                          <div className="w-full flex items-start justify-between gap-1.5">
+                            <span
+                              className={`text-[9px] font-black px-1.5 py-0.5 rounded-md border tracking-wider shrink-0 ${badge.bg}`}
+                            >
+                              {badge.label}
+                            </span>
+                            {inInvoiceCount > 0 && (
+                              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200 flex items-center gap-0.5">
+                                <Check className="w-2.5 h-2.5" /> {inInvoiceCount}টি
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1 my-0.5">
+                            <p className="text-[11px] font-bold text-slate-900 group-hover:text-emerald-950 line-clamp-2 leading-tight">
+                              {srv.name}
+                            </p>
+                            {srv.description && (
+                              <p className="text-[9px] text-slate-400 truncate mt-0.5">
+                                {srv.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="w-full flex items-center justify-between border-t border-slate-100 pt-1 mt-0.5">
+                            <span className="text-xs font-mono font-black text-emerald-700">
+                              {formatCurrencyBDT(srv.price)}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-emerald-700 flex items-center gap-0.5 transition">
+                              <Plus className="w-3 h-3 group-hover:scale-125 transition" /> যোগ করুন
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
                     {filteredServices.length === 0 && (
-                      <div className="col-span-full py-4 text-center text-slate-400 text-xs">
+                      <div className="col-span-full py-8 text-center text-slate-400 text-xs">
                         কোনো সার্ভিস বা টেস্ট পাওয়া যায়নি। অনুগ্রহ করে সার্চ ফিল্টার পরিবর্তন করুন।
                       </div>
                     )}
@@ -1854,7 +1891,7 @@ function BillingManagementContent() {
                           next[idx] = {
                             ...next[idx],
                             itemName: matched.name,
-                            category: matched.category,
+                            category: toDbInvoiceCategory(matched.category),
                             unitPrice: matched.price,
                           };
                         } else {

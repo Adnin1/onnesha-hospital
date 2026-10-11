@@ -1,11 +1,11 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.86
+# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.87
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit Reference:** Production Release `v1.1.86`  
+**Head Commit Reference:** Production Release `v1.1.87`  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
-**Historical Release Tags:** `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
+**Historical Release Tags:** `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
 **Ledger Reconciliation Date:** October 11, 2026  
@@ -20,18 +20,18 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 129/129 suites passed (1,175 active passes, 0 failed, 7 standard skips) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 130/130 suites passed (1,179 active passes, 0 failed) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Real Browser E2E** | 156/156 real browser tests passed across Chromium (52), Firefox (52), and Mobile-Chrome (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 158/158 applied (100% parity, 0 drift, newest: `20261011190000`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 159/159 applied (100% parity, 0 drift, newest: `20261011193500`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB | `npx supabase db lint --linked` | ✅ PASS |
 | **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
 | **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
 | **System UI 3D Dimensional Engine** | Tactile 3D cards, elevated floating metrics, beveled buttons, glassmorphic panels | `app/globals.css`, `components/dashboard/*`, `app/(hospital)/*` | ✅ PASS |
-| **Pharmacy Schema Relationship Resilience** | Foreign key relation between `medicines(generic_id)` and `medicine_generics(id)` hardened with automatic schema-cache fallback query | `lib/pharmacy/actions.ts` & migration `20261011082000` | ✅ PASS |
-| **Official Hospital Diagnostic Tariffs** | Complete official rate chart seeded across 16 categories, 185 tests with exact BDT tariffs, resilient RLS policies allowing authenticated staff & anon query | `lib/lab/actions.ts`, `lib/billing/serviceCatalog.ts` & migration `20261011190000` | ✅ PASS |
-| **Native Windows Desktop Installers (v1.1.86)** | Authentic native NSIS EXE (13.66 MB) & WiX MSI (15.56 MB) matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
+| **Billing Catalog Classification & Deduplication** | Deterministic domain categorization (Bed/ICU/OT/Doctor/Imaging/Lab), 0 duplicates, 3D quick adder | `lib/billing/serviceCatalog.ts`, `app/billing/page.tsx` & migration `20261011193500` | ✅ PASS |
+| **Official Hospital Diagnostic Tariffs** | Complete official rate chart seeded across 16 categories, 185 tests with exact BDT tariffs | `lib/lab/actions.ts`, `lib/billing/serviceCatalog.ts` & migration `20261011190000` | ✅ PASS |
+| **Native Windows Desktop Installers (v1.1.87)** | Authentic native NSIS EXE (39.98 MB) & WiX MSI (44.54 MB) matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
 | **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
@@ -67,20 +67,21 @@
   - The discharge folder prints **EXACTLY 4 PAGES** (Sheets: 4) bounded to 279mm A4 dimensions.
   - Printing the admission sheet prints **EXACTLY 1 PAGE** (`.print-pad`).
 
-### D. Native Windows Desktop Packaging (v1.1.86)
+### D. Native Windows Desktop Packaging (v1.1.87)
 - **Toolchains:** Host WiX 3.11 (`C:\Users\mahin khan\wix311`) and NSIS 3.10 (`C:\Users\mahin khan\nsis310\nsis-3.10`).
 - **Compiled & Verified Binaries (Synchronized with `latest.json`):**
-  - `Onnesha-Hospital-Setup-1.1.86.exe`: exactly **13,656,186 bytes**, SHA-256: `F6223396E02C6F6164595E68FA55DED8A556D9833D657C7E5D83C754905395DC`
-  - `Onnesha-Hospital-1.1.86.msi`: exactly **15,556,608 bytes**, SHA-256: `53471B7455BD0A5B3CF8626E454C585BA48965FE1DCCA9ECE31B4174BB9188EB`
+  - `Onnesha-Hospital-Setup-1.1.87.exe`: exactly **39,984,087 bytes**, SHA-256: `0B04524697D1870EC786604DDD1BE38B1A910BF87ABE85EBAFE3A99B8766FB57`
+  - `Onnesha-Hospital-1.1.87.msi`: exactly **44,544,000 bytes**, SHA-256: `D6345BD080439FEB9A4EE4F3AD1AC7395F6563544FAD9ED63F8495A570A1EC57`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
 
-### E. Supabase Database Migration Parity (158/158)
-- All 158 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
-- Verified via `npx supabase migration list` ending at `20261011190000` on both local and remote.
+### E. Supabase Database Migration Parity (159/159)
+- All 159 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
+- Verified via `npx supabase migration list` ending at `20261011193500` on both local and remote.
 - Key recent migrations:
   - `20261011082000_fix_medicines_generics_foreign_key.sql`: Explicit foreign key relation between `public.medicines(generic_id)` and `public.medicine_generics(id)` with schema cache notification.
   - `20261011083000_seed_official_hospital_rate_chart.sql`: Seeding and synchronization of official hospital tariffs into `diagnostic_tests` and `hospital_service_tariffs`.
   - `20261011190000_diagnostic_tariffs_rls_and_complete_rate_chart.sql`: Full RLS policy resolution on `diagnostic_categories` and `diagnostic_tests` allowing authenticated staff and anon reads, plus complete 185 tests across 16 categories with exact hospital tariffs and synchronization with `hospital_service_tariffs`.
+  - `20261011193500_fix_hospital_service_tariffs_categories_and_dedup.sql`: Normalized tariff categories into medical groups, categorized CT Scans (`CT_SCAN`), MRIs (`MRI`), X-Rays (`XRAY`), Ultrasounds (`USG`), Consultations (`CONSULTATION`), Beds (`IPD_BED`), Critical Care (`CRITICAL_CARE`), Surgeries (`OT_SURGERY`), and eliminated duplicate tariff entries.
 - Schema verification via `npx supabase db lint --linked` confirmed 0 fatal schema or security errors.
 
 ### F. Medical Certificates Overhaul & Cashier Billing Permission Governance
@@ -93,8 +94,15 @@
   - Super Admin toggle for Cashier invoice editing authorization stored in `organization_settings.cashier_can_edit_bills`.
   - Super Admin exclusive invoice deletion via atomic stored procedure `delete_invoice_super_admin_atomic` (hard delete if 0 payments, safe void/soft-delete if payments exist to preserve accounting integrity).
 - **System 3D Dimensional Design Engine (`app/globals.css`, `app/(hospital)/*`, `components/*`):**
-  - Tactile depth utility classes: `.card-3d`, `.card-3d-interactive`, `.stat-card-3d`, `.btn-3d-*`, `.glass-panel-3d`, `.input-3d`, `.badge-3d`.
-  - Applied across Dashboard, Billing, Registrar, Sidebar, and system widgets.
+
+### G. Video Diagnostics Resolution & 3D Interactive Billing Upgrade (v1.1.87)
+- **Root-Cause Analysis from User Screen Recording (`Screen Recording 2026-10-11 192117.mp4`):**
+  1. *Category Leak in Doctor Consultation:* The previous fallback `(t.category === "LAB" ? "LAB" : "CONSULTATION")` caused beds, cabins, OT surgeries, CT scans, and lab items to leak into "ডাক্তার কনসালটেশন". Resolved with deterministic `classifyServiceGroup()`.
+  2. *Service Catalog Duplication:* Master services, dynamic lab tests, and database tariffs previously concatenated with partial matches. Resolved with unified `getAllHospitalServices` deduplication with case/punctuation normalization.
+  3. *CT Scan & MRI Categorization:* CT scans and MRIs now grouped under "রেডিওলজি ও ইমেজিং" with dedicated `CT_SCAN` and `MRI` badges instead of `LAB`.
+  4. *3D Interactive Card Styling:* Added tactile 3D hover elevation (`hover:-translate-y-0.5 hover:shadow-md`), custom category badges (Cyan for CT, Blue for MRI, Rose for ECG, Indigo for X-Ray, etc.), and a real-time `✓ Xটি ইনভয়েসে যুক্ত` badge.
+  5. *Patient Demographics:* Newborn/infant age display formatted into contextual Bengali (`০ বছর (নবজাতক/শিশু)`).
+  6. *Invoice Items DB Mapping:* Implemented `toDbInvoiceCategory()` ensuring extended categories safely map to PostgreSQL's 11-category CHECK constraint (`'CONSULTATION'`, `'LAB'`, `'XRAY'`, `'USG'`, `'ECG'`, `'PHARMACY'`, `'BED'`, `'CABIN'`, `'OT'`, `'AMBULANCE'`, `'MISC'`).
 
 ---
 

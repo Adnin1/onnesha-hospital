@@ -58,6 +58,9 @@ public/downloads/desktop/*.exe
 public/downloads/desktop/*.zip
 /logs/
 *.log
+docs/discharge_video_frames/
+docs/user_video_analysis/
+scripts/check_tariffs.mjs
 
 # Database snapshot archives and manifests (strictly uncommitted, prevents PHI/PII leakage)
 supabase/backups/
