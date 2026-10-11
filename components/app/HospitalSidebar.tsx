@@ -197,17 +197,17 @@ export function HospitalSidebar() {
       >
         {/* Brand Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
-          <Link href="/app/dashboard" className="flex items-center space-x-3 overflow-hidden focus:outline-none focus:ring-2 focus:ring-sky-500 rounded-lg">
-            <div className="w-9 h-9 rounded-xl bg-sky-600 text-white font-bold flex items-center justify-center text-lg shrink-0 shadow-md">
-              OH
+          <Link href="/app/dashboard" className="flex items-center space-x-3 overflow-hidden focus:outline-none focus:ring-2 focus:ring-sky-500 rounded-lg group">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-sky-700 text-white font-black flex items-center justify-center text-sm shrink-0 shadow-lg shadow-sky-600/30 border border-sky-400/30 transition-transform group-hover:scale-105">
+              AH
             </div>
             {!collapsed && (
               <div className="truncate">
-                <span className="font-bold text-sm text-white tracking-tight block">
-                  ONNESHA ERP
+                <span className="font-black text-xs text-white tracking-tight block leading-tight">
+                  ANNESHA HOSPITAL
                 </span>
-                <span className="text-[10px] text-sky-400 font-medium block">
-                  Hospital Portal
+                <span className="text-[9px] font-bold text-sky-400 block tracking-wider uppercase leading-tight">
+                  & DIAGNOSTIC
                 </span>
               </div>
             )}

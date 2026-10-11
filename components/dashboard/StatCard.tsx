@@ -49,16 +49,16 @@ export function StatCard({
   }
 
   const themeStyles = {
-    sky: "bg-gradient-to-br from-sky-50/70 to-white border-sky-100/90",
-    teal: "bg-gradient-to-br from-emerald-50/70 to-white border-emerald-100/90",
-    blue: "bg-gradient-to-br from-blue-50/70 to-white border-blue-100/90",
-    indigo: "bg-gradient-to-br from-indigo-50/70 to-white border-indigo-100/90",
-    default: "bg-white border-slate-200/90",
+    sky: "bg-gradient-to-br from-sky-50/80 via-white to-white border-sky-200/80 shadow-sky-500/5",
+    teal: "bg-gradient-to-br from-emerald-50/80 via-white to-white border-emerald-200/80 shadow-emerald-500/5",
+    blue: "bg-gradient-to-br from-blue-50/80 via-white to-white border-blue-200/80 shadow-blue-500/5",
+    indigo: "bg-gradient-to-br from-indigo-50/80 via-white to-white border-indigo-200/80 shadow-indigo-500/5",
+    default: "bg-gradient-to-br from-slate-50/60 via-white to-white border-slate-200/90 shadow-slate-900/5",
   }[cardTheme];
 
   return (
     <div
-      className={`p-5 rounded-2xl border shadow-xs hover:border-slate-300 transition duration-200 flex flex-col justify-between ${themeStyles}`}
+      className={`stat-card-3d p-5 rounded-2xl flex flex-col justify-between ${themeStyles}`}
     >
       <div className="flex items-start justify-between">
         <div>
@@ -78,7 +78,7 @@ export function StatCard({
           )}
         </div>
         <div
-          className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-black/5 shadow-2xs ${bgColor}`}
+          className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border border-white/60 shadow-md ${bgColor}`}
         >
           <Icon className={`w-5 h-5 ${iconColor}`} />
         </div>

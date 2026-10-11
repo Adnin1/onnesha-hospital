@@ -1,11 +1,11 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.83
+# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.84
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit Reference:** Production Release `v1.1.83`  
+**Head Commit Reference:** Production Release `v1.1.84`  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
-**Historical Release Tags:** `v1.1.82` (`b161a1ed4edcfdc539e77e6e4ea389c8046de3c2`), `v1.1.81` (`48779e110b9f3e8e0ee7967ae2cc4bbaeb949f25`), `v1.1.80` (`2dd3b0121a8ef32120a0002522caf0055e5f3074`)  
+**Historical Release Tags:** `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
 **Ledger Reconciliation Date:** October 11, 2026  
@@ -24,13 +24,16 @@
 | **Playwright Real Browser E2E** | 52/52 real browser tests passed (Chromium headless) | `npx playwright test --project=chromium` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 154/154 applied (100% parity, 0 drift, newest: `20261011043000`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 155/155 applied (100% parity, 0 drift, newest: `20261011074500`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB | `npx supabase db lint --linked` | ✅ PASS |
+| **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
+| **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
+| **System UI 3D Dimensional Engine** | Tactile 3D cards, elevated floating metrics, beveled buttons, glassmorphic panels | `app/globals.css`, `components/dashboard/*`, `app/(hospital)/*` | ✅ PASS |
 | **Lab Diagnostic Catalog Actions** | Zero fake fallback, cryptographically safe unique code generator with insert retry loop | `lib/lab/actions.ts` | ✅ PASS |
 | **Billing Patient Demographics & Half-Letter Slip** | Mandatory validation (Name, UHID, Phone, Address, Age), Half-Letter (5.5" x 8.5") print | `components/print/HalfLetterInvoicePrint.tsx` & `app/billing/page.tsx` | ✅ PASS |
 | **Hospital Expense Management & Voucher GL** | 20+ categories, voucher numbering, atomic GL posting, UI console | `app/expenses/page.tsx`, `lib/expenses/actions.ts` | ✅ PASS |
 | **IPD 4-Part Discharge Certificate Folder** | Authentic 4-page medical pad folder with decoupled print streams (Sheets: 4) | `components/print/DischargeSummaryPrint.tsx` & `app/ipd/page.tsx` | ✅ PASS |
-| **Native Windows Desktop Installers (v1.1.83)** | MSI (74,035,200 B) and EXE (69,896,839 B) compiled & verified | `node scripts/build-desktop.mjs` & `public/downloads/desktop/latest.json` | ✅ PASS |
+| **Native Windows Desktop Installers (v1.1.83/v1.1.84)** | MSI and EXE compiled, packaged, verified | `node scripts/build-desktop.mjs` & `public/downloads/desktop/latest.json` | ✅ PASS |
 | **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
@@ -73,10 +76,23 @@
   - `Onnesha-Hospital-1.1.83.msi` (74,035,200 bytes, SHA-256: `79646764E2642F1E0B13A47F4956567B19084D26191F26F3B9FC1AEFAB55B2BA`)
 - **Manifest:** `public/downloads/desktop/latest.json` updated with exact bytes, hashes, and version `1.1.83`.
 
-### E. Supabase Database Migration Parity (154/154)
-- All 154 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
-- Verified via `npx supabase migration list` ending at `20261011043000` on both local and remote.
+### E. Supabase Database Migration Parity (155/155)
+- All 155 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
+- Verified via `npx supabase migration list` ending at `20261011074500` on both local and remote.
 - Schema verification via `npx supabase db lint --linked` confirmed 0 fatal schema or security errors.
+
+### F. Medical Certificates Overhaul & Cashier Billing Permission Governance
+- **Medical Certificates (`components/registrar/*`, `lib/registrar/actions.ts`):**
+  - International standard A4 layout bounded to 1 printable sheet.
+  - Authentic clinical fields: Clinical diagnosis, vital signs, physical identification mark, bed rest from/to dates, total days calculated, fit-to-resume duty date, fitness radio pills (Fit, Temporarily Unfit, Light Duty Only, Unfit), circular hospital seal stamp, and anti-tamper QR code with SHA-256 integrity hash.
+  - Complete clinical CRUD: Create/Issue, View/Print, Edit/Modify, and Delete/Void with audit logging.
+- **Billing Permissions & Cashier Control (`app/billing/page.tsx`, `lib/billing/actions.ts`):**
+  - Invoice editing (`Edit Bill`) enabled for Receptionists, Administrators, and Super Admins.
+  - Super Admin toggle for Cashier invoice editing authorization stored in `organization_settings.cashier_can_edit_bills`.
+  - Super Admin exclusive invoice deletion via atomic stored procedure `delete_invoice_super_admin_atomic` (hard delete if 0 payments, safe void/soft-delete if payments exist to preserve accounting integrity).
+- **System 3D Dimensional Design Engine (`app/globals.css`, `app/(hospital)/*`, `components/*`):**
+  - Tactile depth utility classes: `.card-3d`, `.card-3d-interactive`, `.stat-card-3d`, `.btn-3d-*`, `.glass-panel-3d`, `.input-3d`, `.badge-3d`.
+  - Applied across Dashboard, Billing, Registrar, Sidebar, and system widgets.
 
 ---
 

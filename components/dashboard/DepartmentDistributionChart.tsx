@@ -34,7 +34,7 @@ export function DepartmentDistributionChart({
   });
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-slate-300 transition duration-200 flex flex-col justify-between">
+    <div className="card-3d p-5 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between mb-3">
           <div>

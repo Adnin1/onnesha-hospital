@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
+  Edit3,
 } from "lucide-react";
 import {
   InvoiceRecord,
@@ -31,11 +32,16 @@ import {
   createInvoiceAction,
   collectPaymentAction,
   voidInvoiceAction,
+  deleteInvoiceAction,
+  getCashierAuthorizationStatusAction,
+  toggleCashierEditAuthorizationAction,
   getCashRegisterSummaryAction,
   getEpisodeBillingPreviewAction,
   getHospitalServiceTariffsAction,
   HospitalServiceTariffRecord,
 } from "@/lib/billing/actions";
+import { getCurrentUserSession } from "@/lib/auth/session";
+import { EditInvoiceModal } from "@/components/billing/EditInvoiceModal";
 import { searchPatientsAction, updatePatientAction } from "@/lib/patient/actions";
 import { getDoctorsAction } from "@/lib/appointments/actions";
 import { DoctorRecord } from "@/types/appointments";
@@ -72,6 +78,17 @@ function BillingManagementContent() {
   const [voidModalInv, setVoidModalInv] = useState<InvoiceRecord | null>(null);
   const [voidReasonInput, setVoidReasonInput] = useState("");
   const [voidLoading, setVoidLoading] = useState(false);
+
+  // Edit & Delete Modal States
+  const [editModalInv, setEditModalInv] = useState<InvoiceRecord | null>(null);
+  const [deleteModalInv, setDeleteModalInv] = useState<InvoiceRecord | null>(null);
+  const [deleteReasonInput, setDeleteReasonInput] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // User Roles & Cashier Authorization
+  const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [cashierCanEditBills, setCashierCanEditBills] = useState<boolean>(false);
+  const [togglingCashierAuth, setTogglingCashierAuth] = useState(false);
 
   // New Invoice Modal
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -162,10 +179,19 @@ function BillingManagementContent() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const [invRes, regRes] = await Promise.all([
+      const [invRes, regRes, session, cashierStatus] = await Promise.all([
         getInvoicesAction({ status: statusFilter }),
         getCashRegisterSummaryAction(),
+        getCurrentUserSession(),
+        getCashierAuthorizationStatusAction(),
       ]);
+
+      if (session?.roles) {
+        setUserRoles(session.roles);
+      }
+      if (cashierStatus?.success && cashierStatus.data) {
+        setCashierCanEditBills(cashierStatus.data.cashierCanEditBills);
+      }
 
       if (invRes.success && invRes.data) {
         setInvoices(invRes.data.invoices);
@@ -191,12 +217,21 @@ function BillingManagementContent() {
     let isMounted = true;
     async function init() {
       try {
-        const [invRes, regRes] = await Promise.all([
+        const [invRes, regRes, session, cashierStatus] = await Promise.all([
           getInvoicesAction({ status: statusFilter === "ALL" ? undefined : statusFilter }),
           getCashRegisterSummaryAction(),
+          getCurrentUserSession(),
+          getCashierAuthorizationStatusAction(),
         ]);
 
         if (isMounted) {
+          if (session?.roles) {
+            setUserRoles(session.roles);
+          }
+          if (cashierStatus?.success && cashierStatus.data) {
+            setCashierCanEditBills(cashierStatus.data.cashierCanEditBills);
+          }
+
           if (invRes.success && invRes.data) {
             setInvoices(invRes.data.invoices);
           } else {
@@ -840,6 +875,72 @@ function BillingManagementContent() {
     }
   };
 
+  const isSuperAdmin = userRoles.includes("super_admin");
+  const canEditBills =
+    isSuperAdmin ||
+    userRoles.includes("admin") ||
+    userRoles.includes("hospital_administrator") ||
+    userRoles.includes("receptionist") ||
+    userRoles.includes("accountant") ||
+    userRoles.includes("finance_admin") ||
+    (userRoles.includes("cashier") && cashierCanEditBills);
+
+  const handleToggleCashierAuth = async () => {
+    setTogglingCashierAuth(true);
+    try {
+      const nextVal = !cashierCanEditBills;
+      const res = await toggleCashierEditAuthorizationAction({ allowCashierEdit: nextVal });
+      if (res.success && res.data) {
+        setCashierCanEditBills(res.data.cashierCanEditBills);
+        setToast({
+          message: nextVal
+            ? "ক্যাশিয়ারদের বিল এডিট করার অনুমতি দেওয়া হয়েছে।"
+            : "ক্যাশিয়ারদের বিল এডিট করার অনুমতি স্থগিত করা হয়েছে।",
+          type: "success",
+        });
+      } else {
+        setToast({ message: res.error || "Failed to update authorization", type: "error" });
+      }
+    } catch (err: unknown) {
+      console.error("[handleToggleCashierAuth] error:", err);
+      setToast({ message: "Error updating cashier permission", type: "error" });
+    } finally {
+      setTogglingCashierAuth(false);
+    }
+  };
+
+  const handleConfirmDeleteInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deleteModalInv) return;
+
+    setDeleteLoading(true);
+    try {
+      const res = await deleteInvoiceAction({
+        invoiceId: deleteModalInv.id,
+        reason: deleteReasonInput.trim() || "Purged by Super Admin",
+      });
+
+      if (res.success) {
+        const invNum = deleteModalInv.invoice_number;
+        setDeleteModalInv(null);
+        setDeleteReasonInput("");
+        setSelectedInvoice(null);
+        await loadBillingData();
+        setToast({
+          message: `বিল ${invNum} সফলভাবে মুছে ফেলা বা বাতিল করা হয়েছে (${res.data?.mode})`,
+          type: "success",
+        });
+      } else {
+        setToast({ message: res.error || "Failed to delete invoice", type: "error" });
+      }
+    } catch (err: unknown) {
+      console.error("[handleConfirmDeleteInvoice] error:", err);
+      setToast({ message: "Error deleting invoice", type: "error" });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const filteredInvoices = invoices.filter((inv) => {
     const q = searchQuery.toLowerCase();
     return (
@@ -866,9 +967,24 @@ function BillingManagementContent() {
         </div>
 
         <div className="flex items-center space-x-3">
+          {isSuperAdmin && (
+            <button
+              type="button"
+              onClick={handleToggleCashierAuth}
+              disabled={togglingCashierAuth}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center shadow-xs border cursor-pointer ${
+                cashierCanEditBills
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                  : "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+              }`}
+              title="সুপার অ্যাডমিন অনুমতি: ক্যাশিয়ারদের বিল এডিট করার অনুমতি অন/অফ করুন"
+            >
+              {cashierCanEditBills ? "✓ Cashier Edit: Allowed" : "🔒 Cashier Edit: Restricted"}
+            </button>
+          )}
           <button
             onClick={loadBillingData}
-            className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition"
+            className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition cursor-pointer"
             title="Refresh billing data"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -876,7 +992,7 @@ function BillingManagementContent() {
           <EpisodeBillingPanel />
           <button
             onClick={() => setIsCreatingNew(true)}
-            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center shadow-xs"
+            className="btn-3d btn-3d-slate px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center cursor-pointer"
           >
             <Plus className="w-4 h-4 mr-1.5" />
             Generate New Invoice
@@ -893,7 +1009,7 @@ function BillingManagementContent() {
       {/* CASH COUNTER SUMMARY STRIP */}
       {registerSummary && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print:hidden">
-          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-2xs">
+          <div className="stat-card-3d p-4 bg-white">
             <span className="text-[11px] font-bold text-slate-500 uppercase">Today&apos;s Invoiced</span>
             <div className="text-2xl font-black text-slate-900 mt-1">
               {formatCurrencyBDT(registerSummary.todayTotalInvoiced)}
@@ -901,7 +1017,7 @@ function BillingManagementContent() {
             <span className="text-[10px] text-slate-400">{registerSummary.activeInvoiceCount} Active Bills</span>
           </div>
 
-          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 shadow-2xs">
+          <div className="stat-card-3d p-4 bg-gradient-to-br from-emerald-50/80 to-white border-emerald-200">
             <span className="text-[11px] font-bold text-emerald-800 uppercase">Cash Collected</span>
             <div className="text-2xl font-black text-emerald-700 mt-1">
               {formatCurrencyBDT(registerSummary.todayCashCollected)}
@@ -909,7 +1025,7 @@ function BillingManagementContent() {
             <span className="text-[10px] text-emerald-700 font-medium">Physical cash register</span>
           </div>
 
-          <div className="p-4 rounded-xl bg-sky-50 border border-sky-200 shadow-2xs">
+          <div className="stat-card-3d p-4 bg-gradient-to-br from-sky-50/80 to-white border-sky-200">
             <span className="text-[11px] font-bold text-sky-800 uppercase">MFS (bKash/Nagad)</span>
             <div className="text-2xl font-black text-sky-700 mt-1">
               {formatCurrencyBDT(registerSummary.todayMfsCollected)}
@@ -917,7 +1033,7 @@ function BillingManagementContent() {
             <span className="text-[10px] text-sky-700 font-medium">Digital gateway receipts</span>
           </div>
 
-          <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-200 shadow-2xs">
+          <div className="stat-card-3d p-4 bg-gradient-to-br from-indigo-50/80 to-white border-indigo-200">
             <span className="text-[11px] font-bold text-indigo-800 uppercase">Total Collected</span>
             <div className="text-2xl font-black text-indigo-700 mt-1">
               {formatCurrencyBDT(registerSummary.todayTotalCollected)}
@@ -958,7 +1074,7 @@ function BillingManagementContent() {
       {/* MAIN LAYOUT: INVOICES LIST & DETAILS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start print:block print:w-full">
         {/* LEFT COLUMN: INVOICE TABLE */}
-        <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs print:hidden">
+        <div className="lg:col-span-7 card-3d overflow-hidden print:hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
@@ -969,18 +1085,19 @@ function BillingManagementContent() {
                   <th className="py-3 px-4 text-right">Paid</th>
                   <th className="py-3 px-4 text-right">Due</th>
                   <th className="py-3 px-4 text-center">Status</th>
+                  <th className="py-3 px-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-slate-500">
+                    <td colSpan={7} className="text-center py-8 text-slate-500">
                       Loading invoices...
                     </td>
                   </tr>
                 ) : filteredInvoices.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-slate-500">
+                    <td colSpan={7} className="text-center py-8 text-slate-500">
                       No invoices found.
                     </td>
                   </tr>
@@ -1022,6 +1139,51 @@ function BillingManagementContent() {
                           {inv.status}
                         </span>
                       </td>
+                      <td className="py-3 px-4 text-center">
+                        <div
+                          className="flex items-center justify-center gap-1.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {canEditBills && !inv.is_voided && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedInvoice(inv);
+                                setEditModalInv(inv);
+                              }}
+                              className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition"
+                              title="Edit Bill Details"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedInvoice(inv);
+                              setHalfLetterPrintInv(inv);
+                            }}
+                            className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition"
+                            title="Print Half-Letter Slip"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                          </button>
+                          {isSuperAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedInvoice(inv);
+                                setDeleteModalInv(inv);
+                                setDeleteReasonInput("");
+                              }}
+                              className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition"
+                              title="Delete Bill (Super Admin Only)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -1031,7 +1193,7 @@ function BillingManagementContent() {
         </div>
 
         {/* RIGHT COLUMN: INVOICE PREVIEW / PRINT SLIP */}
-        <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4 print:col-span-12 print:border-none print:p-0 print:shadow-none print:w-full print:block">
+        <div className="lg:col-span-5 card-3d p-6 space-y-4 print:col-span-12 print:border-none print:p-0 print:shadow-none print:w-full print:block">
           {selectedInvoice ? (
             <div>
               <div className="flex justify-between items-center pb-4 border-b border-slate-200 print:hidden">
@@ -1039,7 +1201,7 @@ function BillingManagementContent() {
                   <span className="text-[10px] font-bold text-slate-400 uppercase">Official Invoice</span>
                   <h3 className="text-base font-black text-slate-900 font-mono">{selectedInvoice.invoice_number}</h3>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     onClick={() => handlePrintInvoice(selectedInvoice)}
                     className="p-2 border rounded-xl hover:bg-slate-50 text-slate-700 transition"
@@ -1055,6 +1217,16 @@ function BillingManagementContent() {
                     <FileText className="w-3.5 h-3.5 mr-1" />
                     Half-Letter Slip
                   </button>
+                  {canEditBills && !selectedInvoice.is_voided && (
+                    <button
+                      onClick={() => setEditModalInv(selectedInvoice)}
+                      className="px-2.5 py-1.5 border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl text-xs transition flex items-center shadow-2xs"
+                      title="Edit Invoice Items & Adjustments"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 mr-1" />
+                      Edit Bill
+                    </button>
+                  )}
                   {selectedInvoice.due_amount > 0 && !selectedInvoice.is_voided && (
                     <button
                       onClick={() => {
@@ -1067,10 +1239,23 @@ function BillingManagementContent() {
                       Collect Due
                     </button>
                   )}
+                  {isSuperAdmin && (
+                    <button
+                      onClick={() => {
+                        setDeleteModalInv(selectedInvoice);
+                        setDeleteReasonInput("");
+                      }}
+                      className="px-2.5 py-1.5 border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition flex items-center shadow-2xs"
+                      title="Delete Invoice (Super Admin Exclusive)"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />
+                      Delete Bill
+                    </button>
+                  )}
                   {!selectedInvoice.is_voided && (
                     <button
                       onClick={() => handleVoidInvoice(selectedInvoice)}
-                      className="p-2 border border-rose-200 rounded-xl hover:bg-rose-50 text-rose-600 transition"
+                      className="p-2 border border-slate-200 rounded-xl hover:bg-slate-100 text-slate-600 transition"
                       title="Void Invoice"
                     >
                       <Ban className="w-4 h-4" />
@@ -2207,6 +2392,93 @@ function BillingManagementContent() {
                 dueAmount={halfLetterPrintInv.due_amount}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT INVOICE MODAL */}
+      {editModalInv && (
+        <EditInvoiceModal
+          isOpen={!!editModalInv}
+          invoice={editModalInv}
+          onClose={() => setEditModalInv(null)}
+          onSuccess={async () => {
+            setEditModalInv(null);
+            await loadBillingData();
+            setToast({
+              message: "ইনভয়েস বিল সফলভাবে পরিমার্জন ও আপডেট করা হয়েছে (Bill Updated Successfully)",
+              type: "success",
+            });
+          }}
+        />
+      )}
+
+      {/* SUPER ADMIN ONLY DELETE INVOICE CONFIRMATION MODAL */}
+      {deleteModalInv && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-rose-200 shadow-2xl p-6 space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-rose-100 text-rose-700 rounded-xl">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                    Super Admin Exclusive
+                  </span>
+                  <h3 className="text-base font-black text-slate-900 mt-0.5">Delete Billing Invoice</h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteModalInv(null)}
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-rose-50/70 border border-rose-100 rounded-2xl p-3.5 text-xs text-rose-900 space-y-1">
+              <p className="font-bold">সতর্কবার্তা: বিল নম্বর #{deleteModalInv.invoice_number}</p>
+              <p className="text-[11px] text-rose-800 leading-relaxed">
+                এই বিলটি সিস্টেম থেকে মুছে ফেলা বা বাতিল করা হবে। যদি কোনো পেমেন্ট রেকর্ড থাকে, তবে অডিট ও লেজার সুরক্ষার জন্য বিলটি নিরাপদভাবে Void ও Soft-Delete হিসেবে চিহ্নিত হবে। কোনো পেমেন্ট না থাকলে এটি সম্পূর্ণ ডিলিট হবে।
+              </p>
+            </div>
+
+            <form onSubmit={handleConfirmDeleteInvoice} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  মুছে ফেলার কারণ বা সুপার অ্যাডমিন অডিট নোট (Reason / Audit Note)
+                </label>
+                <textarea
+                  required
+                  rows={2}
+                  value={deleteReasonInput}
+                  onChange={(e) => setDeleteReasonInput(e.target.value)}
+                  placeholder="যেমন: ভুল এন্ট্রি, রোগীর ডুপ্লিকেট ইনভয়েস সংশোধন..."
+                  className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 font-medium"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteModalInv(null)}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={deleteLoading}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-md shadow-rose-600/20 cursor-pointer"
+                >
+                  {deleteLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Confirm Permanent Delete
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -36,7 +36,7 @@ export const DASHBOARD_QUICK_ACTIONS: QuickAction[] = [
 
 export function QuickActionsWidget() {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs">
+    <div className="card-3d p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-slate-800 flex items-center">
           <PlusCircle className="w-4 h-4 mr-2 text-sky-600" />
@@ -51,7 +51,7 @@ export function QuickActionsWidget() {
             <Link
               key={action.href}
               href={action.href}
-              className={`p-3 rounded-xl border border-transparent font-semibold text-xs flex flex-col items-center text-center transition ${action.color}`}
+              className={`p-3 rounded-xl border font-semibold text-xs flex flex-col items-center text-center transition-all duration-200 shadow-2xs hover:-translate-y-1 hover:shadow-md active:translate-y-0 ${action.color}`}
             >
               <Icon className="w-5 h-5 mb-1.5" />
               <span>{action.title}</span>
@@ -78,7 +78,7 @@ export function TriageQueueWidget({
 }: TriageQueueWidgetProps) {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs animate-pulse">
+      <div className="card-3d p-5 animate-pulse">
         <div className="h-5 bg-slate-200 rounded w-1/3 mb-4"></div>
         <div className="space-y-2">
           <div className="h-12 bg-slate-100 rounded-xl"></div>
@@ -89,7 +89,7 @@ export function TriageQueueWidget({
   }
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs">
+    <div className="card-3d p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-bold text-slate-800 flex items-center">

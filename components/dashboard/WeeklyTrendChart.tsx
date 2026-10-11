@@ -69,7 +69,7 @@ export function WeeklyTrendChart({
   const areaPath = hasData ? `${linePath} L ${lastPoint.x},${height - paddingY} L ${firstPoint.x},${height - paddingY} Z` : "";
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-slate-300 transition duration-200">
+    <div className="card-3d p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="flex items-center space-x-2">

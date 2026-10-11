@@ -292,10 +292,10 @@ export default function HospitalDashboardPage() {
       )}
 
       {/* Top Banner / Welcome with Bengali Greetings */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="card-3d p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-sky-700 uppercase tracking-wider flex items-center bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200/80">
+            <span className="badge-3d text-xs font-bold text-sky-700 uppercase tracking-wider flex items-center bg-sky-50 px-2.5 py-0.5 border border-sky-200/80">
               <ShieldCheck className="w-3.5 h-3.5 mr-1 text-emerald-600" />
               Enterprise Central Operations
             </span>
@@ -312,14 +312,14 @@ export default function HospitalDashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="hidden lg:flex items-center space-x-1.5 text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60 font-mono">
+          <div className="hidden lg:flex items-center space-x-1.5 text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/60 font-mono shadow-2xs">
             <Clock className="w-3.5 h-3.5 text-sky-600" />
             <span>{lastSyncTime ? `Last updated: ${lastSyncTime}` : "Auto-refresh active"}</span>
           </div>
 
           <Link
             href="/appointment"
-            className="inline-flex items-center text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 px-4 py-2.5 rounded-xl shadow-2xs transition focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[36px]"
+            className="btn-3d btn-3d-primary text-xs px-4 py-2.5 rounded-xl min-h-[36px]"
           >
             <span>Online Serial Desk</span>
             <ArrowUpRight className="w-3.5 h-3.5 ml-1" />

@@ -19,15 +19,22 @@ export function IssueCertificateModal({
   onSuccess,
   defaultCertType = "medical_fitness",
 }: IssueCertificateModalProps) {
-  const [certType, setCertType] = useState<
-    "birth" | "death" | "medical_fitness" | "discharge" | "overseas_clearance"
-  >((defaultCertType === "ALL" ? "medical_fitness" : defaultCertType) as "medical_fitness");
+  const [certType, setCertType] = useState<MedicalCertificate["certificate_type"]>(
+    (defaultCertType === "ALL" ? "medical_fitness" : defaultCertType) as MedicalCertificate["certificate_type"]
+  );
 
   const [patientSearch, setPatientSearch] = useState("");
   const [patients, setPatients] = useState<PatientMaster[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientMaster | null>(null);
   const [doctorName, setDoctorName] = useState("Prof. Dr. M. A. Jalil, FCPS, FRCP");
   const [doctorDesignation, setDoctorDesignation] = useState("Chief Medical Officer & Professor of Medicine");
+  const [doctorBmdc, setDoctorBmdc] = useState("BMDC Reg No: A-48291");
+  const [doctorDept, setDoctorDept] = useState("Department of Medicine & Critical Care");
+  const [diagnosis, setDiagnosis] = useState("Acute Febrile Illness with Severe Physical Exhaustion");
+  const [idMark, setIdMark] = useState("A visible mole/scar noted on physical examination");
+  const [restFromDate, setRestFromDate] = useState("");
+  const [restToDate, setRestToDate] = useState("");
+  const [fitToResumeDate, setFitToResumeDate] = useState("");
   const [remarks, setRemarks] = useState("Clinically examined and found physically and mentally sound.");
 
   // Type specific states
@@ -39,7 +46,9 @@ export function IssueCertificateModal({
   const [causeOfDeath, setCauseOfDeath] = useState("");
   const [timeOfDeath, setTimeOfDeath] = useState("10:15 PM");
   const [destinationCountry, setDestinationCountry] = useState("Kingdom of Saudi Arabia (KSA)");
-  const [fitStatus, setFitStatus] = useState<"FIT" | "UNFIT" | "TEMPORARILY_UNFIT">("FIT");
+  const [fitStatus, setFitStatus] = useState<
+    "FIT" | "UNFIT" | "TEMPORARILY_UNFIT" | "FIT_FOR_LIGHT_DUTY_ONLY"
+  >("FIT");
 
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -74,12 +83,15 @@ export function IssueCertificateModal({
   if (!isOpen) return null;
 
   function generateCertNumber(): string {
-    const prefixMap = {
+    const prefixMap: Record<string, string> = {
       birth: "BC",
       death: "DC",
       medical_fitness: "FC",
       discharge: "DSC",
       overseas_clearance: "OC",
+      sick_leave: "SLC",
+      fitness_to_work: "FWC",
+      treatment: "TC",
     };
     const prefix = prefixMap[certType] || "MC";
     const dateStr = new Date().toISOString().slice(0, 7).replace("-", "");
@@ -108,9 +120,26 @@ export function IssueCertificateModal({
       .join("");
     const hash = `sha256:${hashHex}`;
 
+    const durationDays = (() => {
+      if (!restFromDate || !restToDate) return undefined;
+      const from = new Date(restFromDate);
+      const to = new Date(restToDate);
+      const diff = Math.round((to.getTime() - from.getTime()) / (1000 * 3600 * 24)) + 1;
+      return diff > 0 ? diff : undefined;
+    })();
+
     const content_payload: MedicalCertificate["content_payload"] = {
       doctor_name: doctorName,
       doctor_designation: doctorDesignation,
+      doctor_bmdc_reg: doctorBmdc,
+      doctor_department: doctorDept,
+      diagnosis: diagnosis.trim(),
+      identification_mark: idMark.trim(),
+      rest_from_date: restFromDate || undefined,
+      rest_to_date: restToDate || undefined,
+      rest_days_count: durationDays,
+      fit_to_resume_date: fitToResumeDate || undefined,
+      fitness_status: fitStatus,
       remarks: remarks.trim(),
     };
 
@@ -123,8 +152,6 @@ export function IssueCertificateModal({
     } else if (certType === "death") {
       content_payload.cause_of_death = causeOfDeath;
       content_payload.time_of_death = timeOfDeath;
-    } else if (certType === "medical_fitness") {
-      content_payload.fitness_status = fitStatus;
     } else if (certType === "overseas_clearance") {
       content_payload.destination_country = destinationCountry;
       content_payload.fit_for_travel = true;
@@ -193,16 +220,19 @@ export function IssueCertificateModal({
               value={certType}
               onChange={(e) =>
                 setCertType(
-                  e.target.value as "birth" | "death" | "medical_fitness" | "discharge" | "overseas_clearance"
+                  e.target.value as MedicalCertificate["certificate_type"]
                 )
               }
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none"
             >
               <option value="medical_fitness">Medical Fitness Certificate (শারীরিক সুস্থতা সনদ)</option>
-              <option value="birth">Official Birth Certificate (হাসপাতাল জন্ম সনদ)</option>
-              <option value="death">Official Death Certificate (হাসপাতাল মৃত্যু সনদ)</option>
+              <option value="sick_leave">Sick Leave & Bed Rest Certificate (ছুটি ও বিশ্রাম সনদপত্র)</option>
+              <option value="fitness_to_work">Fitness to Resume Duty (কর্মে যোগদানের সুস্থতা সনদ)</option>
+              <option value="treatment">Treatment & Illness Certificate (চিকিৎসা গ্রহণ ও অসুস্থতা সনদ)</option>
               <option value="discharge">Hospital Discharge Certificate (ছাড়পত্র সনদ)</option>
               <option value="overseas_clearance">Overseas Health Clearance (বিদেশগামী স্বাস্থ্য ছাড়পত্র)</option>
+              <option value="birth">Official Birth Certificate (হাসপাতাল জন্ম সনদ)</option>
+              <option value="death">Official Death Certificate (হাসপাতাল মৃত্যু সনদ)</option>
             </select>
           </div>
 
@@ -348,18 +378,92 @@ export function IssueCertificateModal({
             </div>
           )}
 
-          {certType === "medical_fitness" && (
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl">
-              <label className="block text-xs font-bold text-emerald-900 mb-1">ফিটনেস স্ট্যাটাস (Medical Assessment)</label>
-              <select
-                value={fitStatus}
-                onChange={(e) => setFitStatus(e.target.value as "FIT" | "UNFIT" | "TEMPORARILY_UNFIT")}
-                className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white font-semibold"
-              >
-                <option value="FIT">✅ FIT (সম্পূর্ণ শারীরিক ও মানসিকভাবে সুস্থ)</option>
-                <option value="TEMPORARILY_UNFIT">⚠️ TEMPORARILY UNFIT (সাময়িক অসুস্থ)</option>
-                <option value="UNFIT">❌ UNFIT (চিকিৎসাগতভাবে অনুপযুক্ত)</option>
-              </select>
+          {(certType === "medical_fitness" ||
+            certType === "sick_leave" ||
+            certType === "fitness_to_work" ||
+            certType === "treatment") && (
+            <div className="p-3.5 bg-amber-50/60 border border-amber-200 rounded-xl space-y-3">
+              <p className="text-xs font-bold text-amber-950">
+                ক্লিনিকাল ডায়াগনোসিস ও ছুটির তথ্য (Clinical Assessment & Rest Dates)
+              </p>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                  রোগ নির্ণয় / ডায়াগনোসিস (Clinical Diagnosis) *
+                </label>
+                <input
+                  type="text"
+                  value={diagnosis}
+                  onChange={(e) => setDiagnosis(e.target.value)}
+                  placeholder="e.g. Acute Febrile Illness, Bronchial Asthma..."
+                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-0.5">
+                  সনাক্তকরণ চিহ্ন (Identification Mark) *
+                </label>
+                <input
+                  type="text"
+                  value={idMark}
+                  onChange={(e) => setIdMark(e.target.value)}
+                  placeholder="e.g. Mole on neck, scar on right arm..."
+                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[10px] text-slate-600 mb-0.5">বিশ্রাম শুরু (Rest From)</label>
+                  <input
+                    type="date"
+                    value={restFromDate}
+                    onChange={(e) => setRestFromDate(e.target.value)}
+                    className="w-full px-2.5 py-1 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-slate-600 mb-0.5">বিশ্রাম শেষ (Rest To)</label>
+                  <input
+                    type="date"
+                    value={restToDate}
+                    onChange={(e) => setRestToDate(e.target.value)}
+                    className="w-full px-2.5 py-1 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-slate-600 mb-0.5">যোগদানের তারিখ (Resume Duty)</label>
+                  <input
+                    type="date"
+                    value={fitToResumeDate}
+                    onChange={(e) => setFitToResumeDate(e.target.value)}
+                    className="w-full px-2.5 py-1 text-xs border border-slate-300 rounded-lg bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  সুস্থতা মূল্যায়ন (Duty Fitness Assessment)
+                </label>
+                <select
+                  value={fitStatus}
+                  onChange={(e) =>
+                    setFitStatus(
+                      e.target.value as "FIT" | "UNFIT" | "TEMPORARILY_UNFIT" | "FIT_FOR_LIGHT_DUTY_ONLY"
+                    )
+                  }
+                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white font-semibold"
+                >
+                  <option value="FIT">✅ FIT FOR NORMAL DUTY (সম্পূর্ণ সুস্থ)</option>
+                  <option value="TEMPORARILY_UNFIT">⚠️ TEMPORARILY UNFIT (সাময়িক অসুস্থ / বিশ্রাম প্রয়োজন)</option>
+                  <option value="FIT_FOR_LIGHT_DUTY_ONLY">🔹 FIT FOR LIGHT DUTY ONLY (ভারী কাজ নিষেধ)</option>
+                  <option value="UNFIT">❌ UNFIT FOR DUTY (অযোগ্য)</option>
+                </select>
+              </div>
             </div>
           )}
 
@@ -388,11 +492,30 @@ export function IssueCertificateModal({
               />
             </div>
             <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">BMDC রেজিস্ট্রেশন (BMDC Reg No)</label>
+              <input
+                type="text"
+                value={doctorBmdc}
+                onChange={(e) => setDoctorBmdc(e.target.value)}
+                placeholder="e.g. BMDC Reg No: A-48291"
+                className="w-full px-3 py-2 text-xs font-mono font-bold border border-slate-300 rounded-xl bg-slate-50"
+              />
+            </div>
+            <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">পদবী (Designation)</label>
               <input
                 type="text"
                 value={doctorDesignation}
                 onChange={(e) => setDoctorDesignation(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-slate-50"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">বিভাগ (Department)</label>
+              <input
+                type="text"
+                value={doctorDept}
+                onChange={(e) => setDoctorDept(e.target.value)}
                 className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-slate-50"
               />
             </div>

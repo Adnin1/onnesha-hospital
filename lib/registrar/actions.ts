@@ -7,18 +7,48 @@ export interface MedicalCertificate {
   organization_id: string;
   certificate_number: string;
   patient_id: string;
-  certificate_type: "birth" | "death" | "medical_fitness" | "discharge" | "overseas_clearance";
+  certificate_type:
+    | "birth"
+    | "death"
+    | "medical_fitness"
+    | "discharge"
+    | "overseas_clearance"
+    | "sick_leave"
+    | "treatment"
+    | "fitness_to_work";
   issued_by: string;
   issue_date: string;
   qr_verification_hash: string;
   content_payload: {
+    purpose?: string;
+    examination_date?: string;
+    identification_mark?: string;
+    diagnosis?: string;
+    vitals?: {
+      bp?: string;
+      pulse?: string;
+      temp?: string;
+      spo2?: string;
+      weight?: string;
+      height?: string;
+    };
+    medical_advice?: string;
+    rest_from_date?: string;
+    rest_to_date?: string;
+    rest_days_count?: number;
+    fit_to_resume_date?: string;
+    fitness_status?: "FIT" | "UNFIT" | "TEMPORARILY_UNFIT" | "FIT_FOR_LIGHT_DUTY_ONLY";
     doctor_name?: string;
     doctor_designation?: string;
+    doctor_bmdc_reg?: string;
+    doctor_department?: string;
+    hospital_name?: string;
+    hospital_address?: string;
     remarks?: string;
-    fitness_status?: "FIT" | "UNFIT" | "TEMPORARILY_UNFIT";
     child_name?: string;
     father_name?: string;
     mother_name?: string;
+    spouse_name?: string;
     birth_weight_kg?: number;
     time_of_birth?: string;
     cause_of_death?: string;
@@ -29,7 +59,11 @@ export interface MedicalCertificate {
   };
   is_void: boolean;
   void_reason?: string;
+  is_deleted?: boolean;
+  deleted_at?: string;
+  deleted_by?: string;
   created_at: string;
+  updated_at?: string;
   patients?: {
     id: string;
     patient_code: string;
@@ -37,6 +71,9 @@ export interface MedicalCertificate {
     phone?: string;
     gender?: string;
     date_of_birth?: string;
+    address?: string;
+    age?: number;
+    blood_group?: string;
   };
 }
 
@@ -56,8 +93,9 @@ export async function getMedicalCertificatesAction(certType?: string): Promise<{
     const supabase = createClient();
     let query = supabase
       .from("medical_certificates")
-      .select("*, patients(id, patient_code, full_name, phone, gender, date_of_birth)")
+      .select("*, patients(id, patient_code, full_name, phone, gender, date_of_birth, address, age, blood_group)")
       .eq("organization_id", session.organizationId)
+      .eq("is_deleted", false)
       .order("issue_date", { ascending: false });
 
     if (certType && certType !== "ALL") {
@@ -78,7 +116,7 @@ export async function getMedicalCertificatesAction(certType?: string): Promise<{
 export async function issueMedicalCertificateAction(payload: {
   certificate_number: string;
   patient_id: string;
-  certificate_type: "birth" | "death" | "medical_fitness" | "discharge" | "overseas_clearance";
+  certificate_type: MedicalCertificate["certificate_type"];
   qr_verification_hash: string;
   content_payload?: MedicalCertificate["content_payload"];
   patient_name?: string;
@@ -101,7 +139,7 @@ export async function issueMedicalCertificateAction(payload: {
     // Verify patient belongs to organization
     const { data: patient, error: patientErr } = await supabase
       .from("patients")
-      .select("id, patient_code, full_name, phone, gender, date_of_birth")
+      .select("id, patient_code, full_name, phone, gender, date_of_birth, address, age, blood_group")
       .eq("id", payload.patient_id)
       .eq("organization_id", orgId)
       .single();
@@ -147,12 +185,99 @@ export async function issueMedicalCertificateAction(payload: {
         phone: patient.phone,
         gender: patient.gender,
         date_of_birth: patient.date_of_birth,
+        address: patient.address,
+        age: patient.age,
+        blood_group: patient.blood_group,
       },
     };
 
     return { success: true, data: newCert };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to issue certificate.";
+    return { success: false, error: msg };
+  }
+}
+
+export async function updateMedicalCertificateAction(payload: {
+  certificate_id: string;
+  certificate_type?: MedicalCertificate["certificate_type"];
+  qr_verification_hash?: string;
+  content_payload: MedicalCertificate["content_payload"];
+}): Promise<{ success: boolean; data?: MedicalCertificate; error?: string }> {
+  try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    await requirePermission(PERMISSIONS.REGISTRAR_MANAGE);
+
+    const supabase = createClient();
+
+    const updateFields: Record<string, unknown> = {
+      content_payload: payload.content_payload,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (payload.certificate_type) {
+      updateFields.certificate_type = payload.certificate_type;
+    }
+    if (payload.qr_verification_hash) {
+      updateFields.qr_verification_hash = payload.qr_verification_hash;
+    }
+
+    const { data: updated, error: updateErr } = await supabase
+      .from("medical_certificates")
+      .update(updateFields)
+      .eq("id", payload.certificate_id)
+      .eq("organization_id", session.organizationId)
+      .select("*, patients(id, patient_code, full_name, phone, gender, date_of_birth, address, age, blood_group)")
+      .single();
+
+    if (updateErr || !updated) {
+      return { success: false, error: updateErr ? updateErr.message : "Failed to update certificate." };
+    }
+
+    return { success: true, data: updated as MedicalCertificate };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to update certificate.";
+    return { success: false, error: msg };
+  }
+}
+
+export async function deleteMedicalCertificateAction(params: {
+  certificateId: string;
+  reason?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    await requirePermission(PERMISSIONS.REGISTRAR_MANAGE);
+
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("medical_certificates")
+      .update({
+        is_deleted: true,
+        is_void: true,
+        void_reason: params.reason || "Voided & Deleted from Registry",
+        deleted_at: new Date().toISOString(),
+        deleted_by: session.userId,
+      })
+      .eq("id", params.certificateId)
+      .eq("organization_id", session.organizationId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to delete certificate.";
     return { success: false, error: msg };
   }
 }

@@ -1330,4 +1330,280 @@ export async function saveHospitalServiceTariffAction(params: {
   }
 }
 
+/**
+ * 15. Check Cashier Bill Edit Authorization Status
+ */
+export async function getCashierAuthorizationStatusAction(): Promise<
+  ActionResult<{ cashierCanEditBills: boolean }>
+> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("organization_settings")
+      .select("cashier_can_edit_bills")
+      .eq("organization_id", session.organizationId)
+      .maybeSingle();
+
+    if (error) {
+      return { success: true, data: { cashierCanEditBills: false } };
+    }
+
+    return {
+      success: true,
+      data: { cashierCanEditBills: Boolean(data?.cashier_can_edit_bills) },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to load cashier status";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 16. Toggle Cashier Bill Edit Authorization (Super Admin Exclusive)
+ */
+export async function toggleCashierEditAuthorizationAction(params: {
+  allowCashierEdit: boolean;
+}): Promise<ActionResult<{ cashierCanEditBills: boolean }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  // Strict check: Only Super Admin can grant Cashier authorization
+  const isSuperAdmin = session.roles.includes("super_admin");
+  if (!isSuperAdmin) {
+    return {
+      success: false,
+      error: "403 Forbidden: Only Super Admin can authorize cashier bill editing.",
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("organization_settings")
+      .update({
+        cashier_can_edit_bills: params.allowCashierEdit,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("organization_id", session.organizationId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "BILLING",
+      entityType: "organization_settings",
+      entityId: session.organizationId,
+      newValues: { cashier_can_edit_bills: params.allowCashierEdit },
+    });
+
+    return {
+      success: true,
+      data: { cashierCanEditBills: params.allowCashierEdit },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to update cashier authorization";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 17. Edit Existing Invoice (Register, Receptionist, Admin, or Authorized Cashier)
+ */
+export async function editInvoiceAction(params: {
+  invoiceId: string;
+  items: Array<{
+    category: InvoiceItemRecord["service_category"];
+    itemName: string;
+    unitPrice: number;
+    quantity: number;
+    referenceId?: string;
+  }>;
+  discountAmount?: number;
+  discountReason?: string;
+  taxAmount?: number;
+  notes?: string;
+}): Promise<ActionResult<{ success: boolean; subtotal: number; grandTotal: number; dueAmount: number }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  // Role and authorization validation
+  const userRoles = session.roles;
+  const isSuperAdmin = userRoles.includes("super_admin");
+  const isAdmin = userRoles.includes("admin") || userRoles.includes("hospital_administrator");
+  const isRegistrarOrReceptionist =
+    userRoles.includes("receptionist") ||
+    userRoles.includes("accountant") ||
+    userRoles.includes("finance_admin");
+
+  if (!isSuperAdmin && !isAdmin && !isRegistrarOrReceptionist) {
+    // If user has cashier/other role, check if cashier is specifically authorized
+    const authStatus = await getCashierAuthorizationStatusAction();
+    if (!authStatus.success || !authStatus.data?.cashierCanEditBills) {
+      return {
+        success: false,
+        error:
+          "403 Forbidden: Cashier bill editing is not permitted. Please request authorization from Super Admin.",
+      };
+    }
+  }
+
+  if (!params.items || params.items.length === 0) {
+    return { success: false, error: "Invoice must contain at least one item." };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Map items to JSON payload
+    const formattedItems = params.items.map((it) => ({
+      category: it.category,
+      reference_id: it.referenceId || null,
+      item_name: it.itemName.trim(),
+      unit_price: Math.max(0, it.unitPrice),
+      quantity: Math.max(0.01, it.quantity),
+      total_price: Math.max(0, Math.round(it.unitPrice * it.quantity * 100) / 100),
+    }));
+
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("update_invoice_atomic", {
+      p_org_id: session.organizationId,
+      p_invoice_id: params.invoiceId,
+      p_user_id: session.userId,
+      p_items: formattedItems,
+      p_discount_amount: Math.max(0, params.discountAmount || 0),
+      p_discount_reason: params.discountReason?.trim() || "Bill edited by authorized staff",
+      p_tax_amount: Math.max(0, params.taxAmount || 0),
+    });
+
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message };
+    }
+
+    const res = rpcRes as {
+      success?: boolean;
+      subtotal?: number;
+      grand_total?: number;
+      due_amount?: number;
+      error?: string;
+    };
+
+    if (res && res.success === false) {
+      return { success: false, error: res.error || "Failed to update invoice." };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "BILLING",
+      entityType: "invoice",
+      entityId: params.invoiceId,
+      newValues: {
+        itemCount: params.items.length,
+        discountAmount: params.discountAmount,
+        notes: params.notes,
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        success: true,
+        subtotal: Number(res.subtotal || 0),
+        grandTotal: Number(res.grand_total || 0),
+        dueAmount: Number(res.due_amount || 0),
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to update invoice";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 18. Delete Invoice (Super Admin Exclusive Action)
+ */
+export async function deleteInvoiceAction(params: {
+  invoiceId: string;
+  reason?: string;
+}): Promise<ActionResult<{ success: boolean; mode: string; message: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  // Strict enforcement: Only Super Admin can delete bills from the system!
+  const isSuperAdmin = session.roles.includes("super_admin");
+  if (!isSuperAdmin) {
+    return {
+      success: false,
+      error: "403 Forbidden: Only Super Admin can delete bills from the hospital system.",
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("delete_invoice_super_admin_atomic", {
+      p_org_id: session.organizationId,
+      p_invoice_id: params.invoiceId,
+      p_admin_id: session.userId,
+      p_reason: params.reason?.trim() || "Purged by Super Admin",
+    });
+
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message };
+    }
+
+    const res = rpcRes as {
+      success?: boolean;
+      mode?: string;
+      message?: string;
+      error?: string;
+    };
+
+    if (res && res.success === false) {
+      return { success: false, error: res.error || "Failed to delete invoice." };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "DELETE",
+      module: "BILLING",
+      entityType: "invoice",
+      entityId: params.invoiceId,
+      newValues: {
+        reason: params.reason,
+        mode: res.mode,
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        success: true,
+        mode: res.mode || "DELETED",
+        message: res.message || "Invoice deleted successfully.",
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to delete invoice";
+    return { success: false, error: msg };
+  }
+}
+
+
 

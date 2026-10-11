@@ -21,7 +21,7 @@ export function RecentPatientsTable({
   patients?: RecentPatientRecord[];
 }) {
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-slate-300 transition duration-200">
+    <div className="card-3d p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center">
