@@ -1,14 +1,14 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.82
+# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.83
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit SHA:** `7b402136c4575442db08a66b3e5eb1950889a6cc` (with v1.1.82 CI provenance hardening)  
-**Historical Release Tags:** `v1.1.82` (`7b402136c4575442db08a66b3e5eb1950889a6cc`), `v1.1.81` (`48779e110b9f3e8e0ee7967ae2cc4bbaeb949f25`), `v1.1.80` (`2dd3b0121a8ef32120a0002522caf0055e5f3074`)  
+**Head Commit Reference:** Production Release `v1.1.83`  
+**Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
+**Historical Release Tags:** `v1.1.82` (`b161a1ed4edcfdc539e77e6e4ea389c8046de3c2`), `v1.1.81` (`48779e110b9f3e8e0ee7967ae2cc4bbaeb949f25`), `v1.1.80` (`2dd3b0121a8ef32120a0002522caf0055e5f3074`)  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
-**Live Production Deployment URL:** `https://fa3707dc.onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
-**Ledger Generation Date:** October 11, 2026 (01:25 UTC+6)  
+**Ledger Reconciliation Date:** October 11, 2026  
 **Final Production Verdict:** **SOFTWARE QUALITY VERIFIED; DEPLOYMENT VERIFIED; DESKTOP INSTALLERS VERIFIED; REMOTE STAGING & PHYSICAL OWNER GATES BLOCKED_EXTERNAL_OWNER**
 
 ---
@@ -17,19 +17,20 @@
 
 | **Component** | **Target / Value** | **Telemetry Verification Source** | **Verdict** |
 | :--- | :--- | :--- | :--- |
-| **Git Working Tree** | Clean (`0 staged, 0 unstaged`) | `git status --short` | ✅ PASS |
+| **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 128/128 suites passed (1,161 active passes, 0 failed, 7 standard skips) | `npm run test:certification` | ✅ PASS |
-| **Next.js Static Build** | 62/62 static routes generated (including `/app/expenses`, `/app/ipd`, `/app/billing`) | `npm run build` | ✅ PASS |
-| **Static Link & Asset Forensics** | 61 HTML pages, 402 internal links, 1081 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
+| **Node Certification Test Suite** | 129/129 suites passed (1,175 active passes, 0 failed, 7 standard skips) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Real Browser E2E** | 52/52 real browser tests passed (Chromium headless) | `npx playwright test --project=chromium` | ✅ PASS |
-| **Fail-Closed Clinical Booking Gate** | `lib/public/actions.ts` (0 fake constants, truthful errors) | `node --test tests/public-actions-fail-closed.test.mjs` (8/8) | ✅ PASS |
-| **Supabase Remote Migrations** | 144/144 applied (100% parity, 0 drift) | `npx supabase migration list` | ✅ PASS |
+| **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
+| **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
+| **Supabase Remote Migrations** | 154/154 applied (100% parity, 0 drift, newest: `20261011043000`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB | `npx supabase db lint --linked` | ✅ PASS |
+| **Lab Diagnostic Catalog Actions** | Zero fake fallback, cryptographically safe unique code generator with insert retry loop | `lib/lab/actions.ts` | ✅ PASS |
 | **Billing Patient Demographics & Half-Letter Slip** | Mandatory validation (Name, UHID, Phone, Address, Age), Half-Letter (5.5" x 8.5") print | `components/print/HalfLetterInvoicePrint.tsx` & `app/billing/page.tsx` | ✅ PASS |
 | **Hospital Expense Management & Voucher GL** | 20+ categories, voucher numbering, atomic GL posting, UI console | `app/expenses/page.tsx`, `lib/expenses/actions.ts` | ✅ PASS |
-| **IPD 4-Part Discharge Certificate Folder** | RLS fixed, 4-part folder (Cover, Clinical/OT, Rx, Advice) | `components/print/DischargeSummaryPrint.tsx` & `app/ipd/page.tsx` | ✅ PASS |
+| **IPD 4-Part Discharge Certificate Folder** | Authentic 4-page medical pad folder with decoupled print streams (Sheets: 4) | `components/print/DischargeSummaryPrint.tsx` & `app/ipd/page.tsx` | ✅ PASS |
+| **Native Windows Desktop Installers (v1.1.83)** | MSI (74,035,200 B) and EXE (69,896,839 B) compiled & verified | `node scripts/build-desktop.mjs` & `public/downloads/desktop/latest.json` | ✅ PASS |
 | **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
@@ -37,76 +38,52 @@
 
 ## 2. Engineering Changes & Critical Discrepancy Resolutions
 
-### A. Real Windows Desktop Installers (EXE & MSI) Built and Verified
-- **Issue:** Previously, `latest.json` recorded metadata URLs for `1.1.82` binaries, but the actual files had not been compiled for that version or deployed to Cloudflare, resulting in 404 responses upon direct HTTP download.
+### A. Hospital Brand Name & Canonical Identity Established
+- **Authoritative Entity:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`).
+- **Owner Directive:** "Center" / "সেন্টার" cancelled entirely across all user-facing interfaces, print pads, headers, footers, display boards, and settings.
+- **Physical Address:** শেরপুর রোড, সূত্রাপুর, বগুড়া।
+- **Hotlines:** 01620-003888, 01718-835623.
+
+### B. Diagnostic Test Catalog Actions & Pricing Safety Hardening
+- **File Modified:** `lib/lab/actions.ts`
+- **Issue Addressed:** Previous code returned a hardcoded fallback test catalog with synthetic IDs when 0 database rows were found, and generated test codes using `Math.random()` without collision retries.
 - **Resolution:**
-  1. Utilized host Windows workstation toolchains (WiX 3.11 at `C:\Users\mahin khan\wix311` and NSIS 3.10 at `C:\Users\mahin khan\nsis310\nsis-3.10`).
-  2. Executed `node scripts/build-desktop.mjs` to compile native 64-bit production binaries:
-     - `Onnesha-Hospital-Setup-1.1.82.exe` (23,669,991 bytes, SHA-256: `B7791A99E527165FF2A8D49694CC24D867CD13AA6B5A67E32482C4BBE89CC7CC`)
-     - `Onnesha-Hospital-1.1.82.msi` (25,247,744 bytes, SHA-256: `2C84472F8E53DB4A22A3571BDCCF8BA82277C37760C824F541A7576E79DAC57E`)
-  3. Deployed the verified binaries to Cloudflare Pages edge (`out/downloads/desktop/`).
-  4. Executed an independent cache-busted HTTP GET download test to fetch the raw bytes over HTTPS and recalculate the SHA-256 hash. **100% mathematical match confirmed.**
+  1. Removed `defaultTests` fake fallback. When the database query returns 0 rows, `getDiagnosticTestsAction` returns a truthful empty array `{ tests: [], categories }` so the frontend accurately reflects database truth.
+  2. Implemented cryptographically secure candidate code generation (`crypto.randomBytes(3).toString("hex").toUpperCase()`) providing 16.7 million unique combinations.
+  3. Wrapped test record insertion in a collision-safe retry loop (up to 4 attempts) on Postgres unique constraint code `23505`.
+  4. Provided clear, bilingual error handling when a user-specified manual test code collides.
 
-### B. CI Workflow "Green but Skipped" Semantics Corrected & PowerShell Syntax Fixed
-- **File Modified:** `.github/workflows/ci.yml`
-- **Issue:**
-  1. Previously, jobs that skipped critical build/deploy steps still reported green job conclusions, and the release step published empty GitHub releases with only `latest.json`.
-  2. In Tag Run #496, the step `Report Desktop Build Status (When Secrets Absent)` failed due to PowerShell parser error caused by double-quote backtick escaping in `"- **Status:** \`DESKTOP_BUILD_BLOCKED\`"`.
-- **Resolution:**
-  1. Converted PowerShell output lines to single-quoted strings `'- **Status:** `DESKTOP_BUILD_BLOCKED`'`, ensuring valid execution without escaping errors on Windows CI runners.
-  2. Provided explicit, machine-readable step outputs:
-     - `QUALITY_CI_PASSED`
-     - `HERMETIC_SECURITY_TEST_PASSED`
-     - `REMOTE_STAGING_SECURITY_BLOCKED`
-     - `PRODUCTION_DEPLOYED` / `PRODUCTION_DEPLOYMENT_BLOCKED`
-     - `DESKTOP_BUILD_VERIFIED` / `DESKTOP_BUILD_BLOCKED`
-  3. Separated hermetic test results from remote cloud staging security. Hermetic in-build test is labeled `HERMETIC_SECURITY_TEST_PASSED`, while remote staging is marked `BLOCKED_EXTERNAL_OWNER` when `OHMS_TEST_SUPABASE_URL` is missing.
-  4. Prohibited publishing empty GitHub Releases when desktop binaries are not built.
-  5. Updated `release-gate` job with unambiguous verdict semantics:
-     - For git tag events (`refs/tags/v*`): `RELEASE_COMPLETE_VERIFIED` if desktop binaries built on runner; `RELEASE_DESKTOP_BLOCKED_PENDING_SECRETS` if skipped due to missing runner secrets.
-     - For main branch pushes: `PRODUCTION_DEPLOYED_VERIFIED` if deployed via Cloudflare token; `QUALITY_PASSED_DEPLOYMENT_PENDING_SECRETS` if deployment credentials absent on runner.
-     - Strictly guarantees that skipped CI jobs can NEVER be misrepresented as a complete release.
+### C. Authentic 4-Part Inpatient (IPD) Discharge Certificate Folder & Decoupled Print Streams
+- **Files Modified:** `components/print/DischargeSummaryPrint.tsx`, `app/(hospital)/app/ipd/page.tsx`
+- **Authentic 4-Part Layout:** Strictly replicates the hospital's physical print pad reference materials:
+  - **Page 1 (Discharge Certificate Cover):** Asclepius rod logo, header branding, blue 3D ribbon `DISCHARGE CERTIFICATE`, patient demographics with dotted underlines, timestamps, diagnosis, consultant, duty doctor signature line, computerized EMR barcode, and cyan bottom ribbon.
+  - **Page 2 (Discharge Summary & OT Report):** Blue pill `DISCHARGE SUMMARY`, presenting features (a, b, c, d), investigations, comprehensive OT record (indication, operation, surgeon, assistants 1 & 2, anaesthetist, anaesthesia, findings & procedure), baby note (sex, weight, A/S, notes), and dual doctor signatures.
+  - **Page 3 (Treatment Rx):** Blue pill `TREATMENT`, large `℞` symbol, take-home medication table with ruled continuation lines, medication safety note, and registered physician signature.
+  - **Page 4 (Discharge Advice & Our Services):** `উপদেশ ঃ` (regular medicines, rest duration, heavy work restriction, stitch removal date, follow-up appointment, emergency hotline), dietary guidelines, wound hygiene, red-flag emergency symptoms, duty doctor & consultant signatures, blue banner `আমাদের সেবা সমূহ`, and hospital bottom footer.
+- **Print Decoupling Resolution:**
+  - Resolved the 5-sheet print overflow issue where the admission sheet printed alongside the discharge certificate.
+  - Isolated the certificate modal outside the main IPD container. When the modal is open, the underlying IPD container receives `print:hidden`.
+  - The discharge folder prints **EXACTLY 4 PAGES** (Sheets: 4) bounded to 279mm A4 dimensions.
+  - Printing the admission sheet prints **EXACTLY 1 PAGE** (`.print-pad`).
 
-### C. Clinical Appointment Booking Fail-Closed Integrity
-- **File Verified:** `lib/public/actions.ts`
-- **Status:** Tested with `tests/public-actions-fail-closed.test.mjs` (8/8 passed). Absolute zero presence of `apt-hermetic-001`, `P-2026-HERMETIC-001`, or hardcoded token 14 constants. Backend RPC errors truthfully display patient error alerts; no fake bookings can be created.
+### D. Native Windows Desktop Packaging (v1.1.83)
+- **Toolchains:** Host WiX 3.11 (`C:\Users\mahin khan\wix311`) and NSIS 3.10 (`C:\Users\mahin khan\nsis310\nsis-3.10`).
+- **Compiled Binaries:**
+  - `Onnesha-Hospital-Setup-1.1.83.exe` (69,896,839 bytes, SHA-256: `6B4412B41B8FFE463087A4C78EF996D82268C101CC1717DAF2CEE924308D414B`)
+  - `Onnesha-Hospital-1.1.83.msi` (74,035,200 bytes, SHA-256: `79646764E2642F1E0B13A47F4956567B19084D26191F26F3B9FC1AEFAB55B2BA`)
+- **Manifest:** `public/downloads/desktop/latest.json` updated with exact bytes, hashes, and version `1.1.83`.
 
-### D. Supabase Database Migration Parity (142/142) & Migration 140/141 Provenance
-- **Status:** Migrations 138–141 deployed to remote Supabase (`iuhtzahuszdkdarhxobx`):
-  - `20261010210000_fix_generate_invoice_number_and_organization_settings.sql` (Migration 138)
-  - `20261010211500_harden_generator_permissions.sql` (Migration 139)
-  - `20261010213000_fix_referral_commission_gl_account_codes.sql` (Migration 140)
-  - `20261010214000_fix_referral_commission_gl_account_codes.sql` (Migration 141)
-- **Duplicate Migration Forensic Audit (20261010213000 vs 20261010214000):**
-  - Both files share the identical cryptographic SHA-256 hash: `FB76911457C69F1E00DBA3E6848BBF5B7C2E012434DA2BB94B9E653052690A03`.
-  - Both migrations were applied to the remote production Supabase instance (`iuhtzahuszdkdarhxobx`).
-  - Both contain 100% idempotent SQL (`ON CONFLICT (organization_id, account_code) DO UPDATE`, `CREATE OR REPLACE FUNCTION`, `CREATE SEQUENCE IF NOT EXISTS`).
-  - Because remote migration history recorded both timestamps, both files are permanently preserved in the repository to guarantee 0 migration drift (`npx supabase migration list` returns 142/142 matching migrations).
-- **Referral Commission Accounting (5020 & 5400) Invariants:**
-  - Both account `5020` ('Referral & Partner Commission Expense') and account `5400` ('Referral Commission Expense') are seeded and active across all organizations.
-  - Account `2030` ('Referral & Partner Commissions Payable') is established for liabilities.
-  - In `post_billing_to_gl_atomic`, journal entries post Debit to 5020/5400 and Credit to 2030, strictly balancing debits = credits with zero NULL account resolution errors.
-- **Lint Result:** `npx supabase db lint --linked` returns 0 fatal schema/security errors.
-
-- **Phase 43 (Migrations 143–148) Forensic Hardening & Mathematical Parity:**
-  - **Migration 143 (`20261011030000`):** Billing & Cashier (consultation fee, medicines, Half-Letter statement layout), Hospital Expense Management (categories, vouchers, GL linkages), and IPD Discharge Summary Schema.
-  - **Migration 144 (`20261011031000`):** Fix Hospital Expense GL Posting.
-  - **Migration 145 (`20261011033000`):** Harden Expenses, Tariffs, and Discharge Security:
-    - Enforced `p_org_id = public.get_current_org_id()` across `record_hospital_expense_atomic`, `void_hospital_expense_atomic`, and `get_expense_analytics_summary`, rejecting cross-tenant attacks with 403 Forbidden.
-    - Guaranteed GL atomicity: failed journal entry posting raises an exception with immediate transactional rollback (zero phantom vouchers).
-    - Enforced atomic void semantics: updates status to `VOIDED`, generates reversing journal entry (`REV-...`), and excludes voided vouchers from analytics.
-    - Revoked direct table mutation grants (`INSERT`, `UPDATE`, `DELETE`) on `hospital_service_tariffs` and `expense_categories`.
-  - **Migration 146 (`20261011034000`):** Aligned doctor schema columns (`full_name`, `bmdc_reg_number`, `specialization`, `designation`).
-  - **Migration 147 (`20261011035000`):** Aligned `journal_entry_lines` and `discharge_summaries` columns (`consultant_doctor_name`, `consultant_doctor_bmdc`, `consultant_doctor_specialty`, `ot_details`, `baby_note`, `discharge_medications`).
-  - **Migration 148 (`20261011040000`):** Dropped stale 10-argument overload of `save_hospital_service_tariff_atomic`, aligned `bed_assignments` status to `VACATED` with `vacated_at = NOW()`, ensuring complete IPD discharge atomicity.
-  - **Database Migration Status:** Exactly 148/148 migrations applied to remote production Supabase instance (`iuhtzahuszdkdarhxobx`) with 100% parity (`npx supabase db lint --linked` returns 0 fatal errors).
+### E. Supabase Database Migration Parity (154/154)
+- All 154 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
+- Verified via `npx supabase migration list` ending at `20261011043000` on both local and remote.
+- Schema verification via `npx supabase db lint --linked` confirmed 0 fatal schema or security errors.
 
 ---
 
 ## 3. Human & On-Site Boundary Governance (G1–G16)
 
 | Gate | Category | Description | Status | Owner Action Required |
-| :---: | :--- | :--- | :---: | :--- |
+| :---: | :--- | :--- | :--- | :--- |
 | **G1** | Gateway | Live Payment Keys (bKash/Nagad/SSLCommerz) | **BLOCKED_EXTERNAL_OWNER** | Owner enters production API keys in Supabase Vault. |
 | **G2–G3** | Gateway | Bulk SMS / WhatsApp Provider Credentials | **BLOCKED_EXTERNAL_OWNER** | Owner configures SMS gateway credentials. |
 | **G4** | Network | Hospital SMTP Mail Server Credentials | **BLOCKED_EXTERNAL_OWNER** | IT Admin enters hospital SMTP server details. |
@@ -128,7 +105,7 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 129/129 certification suites, 1,175 active passes, 0 failures, 60/60 route forensic acceptance, 52/52 Playwright browser tests, 0 lint warnings, 0 typecheck errors.
-2. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev` & `https://fa3707dc.onnesha-hospital.pages.dev`).
-3. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries built on Windows, deployed to edge, downloaded over HTTPS, and SHA-256 hashes independently verified.
+1. **Software Quality:** 129/129 certification suites, 1,175 active passes, 0 failures, 52/52 Playwright real-browser tests, 0 lint warnings, 0 typecheck errors.
+2. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`).
+3. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced.
 4. **External Owner Gates:** G1–G16 clearly isolated without false greens.

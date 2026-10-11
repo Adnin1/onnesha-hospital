@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { HOSPITAL_METADATA } from "@/config/hospital";
 import { generateSvgBarcode } from "@/lib/print/barcode";
 
 export interface DischargeSummaryPrintProps {
