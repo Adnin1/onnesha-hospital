@@ -18,6 +18,7 @@ import {
   WarehouseRecord,
   getPurchaseRequisitionsAction,
   createPurchaseRequisitionAction,
+  updatePurchaseRequisitionStatusAction,
   getGoodsReceiptNotesAction,
   createGoodsReceiptNoteAction,
   getWarehousesAction,
@@ -160,6 +161,24 @@ export default function ProcurementPage() {
       setErrorMsg(msg);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleUpdateReqStatus = async (
+    reqId: string,
+    newStatus: "PENDING" | "APPROVED" | "REJECTED" | "CONVERTED_TO_PO"
+  ) => {
+    try {
+      const res = await updatePurchaseRequisitionStatusAction({
+        requisition_id: reqId,
+        status: newStatus,
+      });
+      if (!res.success) throw new Error(res.error || "Failed to update status");
+      setSuccessMsg(`Requisition status updated to ${newStatus}.`);
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error updating requisition status";
+      setErrorMsg(msg);
     }
   };
 
@@ -359,12 +378,13 @@ export default function ProcurementPage() {
                       <th className="px-6 py-3 font-semibold">Items</th>
                       <th className="px-6 py-3 font-semibold">Status</th>
                       <th className="px-6 py-3 font-semibold">Created Date</th>
+                      <th className="px-6 py-3 font-semibold text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredRequisitions.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
+                        <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
                           No purchase requisitions found. Click &quot;New Requisition&quot; to initiate a request.
                         </td>
                       </tr>
@@ -390,17 +410,59 @@ export default function ProcurementPage() {
                               {req.items?.length || 0} line items
                             </td>
                             <td className="px-6 py-4">
-                              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                  req.status === "APPROVED"
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    : req.status === "CONVERTED_TO_PO"
+                                    ? "bg-sky-50 text-sky-700 border border-sky-200"
+                                    : req.status === "REJECTED"
+                                    ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                    : "bg-amber-50 text-amber-700 border border-amber-200"
+                                }`}
+                              >
                                 {req.status}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-slate-500 font-medium text-xs">
                               {new Date(req.created_at).toLocaleDateString()}
                             </td>
+                            <td className="px-6 py-4 text-right">
+                              {req.status === "PENDING" && (
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => handleUpdateReqStatus(req.id, "APPROVED")}
+                                    className="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition cursor-pointer"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdateReqStatus(req.id, "REJECTED")}
+                                    className="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition cursor-pointer"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              )}
+                              {req.status === "APPROVED" && (
+                                <button
+                                  onClick={() => handleUpdateReqStatus(req.id, "CONVERTED_TO_PO")}
+                                  className="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-lg border border-sky-200 transition cursor-pointer"
+                                >
+                                  Convert to PO
+                                </button>
+                              )}
+                              {req.status === "CONVERTED_TO_PO" && (
+                                <span className="text-[11px] font-bold text-slate-400">PO Active</span>
+                              )}
+                              {req.status === "REJECTED" && (
+                                <span className="text-[11px] font-bold text-rose-500">Rejected</span>
+                              )}
+                            </td>
                           </tr>
                           {req.items && req.items.length > 0 && (
                             <tr className="bg-slate-50/70 text-xs">
-                              <td colSpan={5} className="px-8 py-2.5 border-t border-slate-100">
+                              <td colSpan={6} className="px-8 py-2.5 border-t border-slate-100">
                                 <div className="space-y-1">
                                   {req.items.map((it, idx) => (
                                     <div key={idx} className="flex justify-between text-slate-600 font-mono">

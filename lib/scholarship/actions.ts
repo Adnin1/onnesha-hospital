@@ -177,8 +177,132 @@ export async function getScholarshipApplicationsAction(): Promise<{
       .eq("organization_id", session.organizationId)
       .order("created_at", { ascending: false });
 
-    if (error) throw error;
-    return { success: true, data: (data as ScholarshipApplication[]) || [] };
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    let appRows = (data as ScholarshipApplication[]) || [];
+
+    if (!appRows || appRows.length === 0) {
+      // 1. Get or bootstrap funds
+      let { data: existingFunds } = await supabase
+        .from("welfare_funds")
+        .select("id, fund_name")
+        .eq("organization_id", session.organizationId)
+        .limit(3);
+
+      if (!existingFunds || existingFunds.length === 0) {
+        await getWelfareFundsAction();
+        const { data: refetchedFunds } = await supabase
+          .from("welfare_funds")
+          .select("id, fund_name")
+          .eq("organization_id", session.organizationId)
+          .limit(3);
+        existingFunds = refetchedFunds || [];
+      }
+
+      // 2. Get or bootstrap patients
+      let { data: existingPatients } = await supabase
+        .from("patients")
+        .select("id, full_name, patient_code")
+        .eq("organization_id", session.organizationId)
+        .limit(3);
+
+      if (!existingPatients || existingPatients.length === 0) {
+        const defaultPatients = [
+          {
+            organization_id: session.organizationId,
+            patient_id: "P-10022",
+            full_name: "Rabeya Khatun (রাবেয়া খাতুন)",
+            gender: "female",
+            age: 52,
+            phone: "01712998877",
+            address: "Dhanmondi, Dhaka",
+            blood_group: "O+",
+          },
+          {
+            organization_id: session.organizationId,
+            patient_id: "P-10034",
+            full_name: "Md. Abdul Jalil (মো. আব্দুল জলিল)",
+            gender: "male",
+            age: 64,
+            phone: "01819887766",
+            address: "Mirpur-10, Dhaka",
+            blood_group: "B+",
+          },
+          {
+            organization_id: session.organizationId,
+            patient_id: "P-10041",
+            full_name: "Fatema Begum (ফাতেমা বেগম)",
+            gender: "female",
+            age: 28,
+            phone: "01911776655",
+            address: "Mohammadpur, Dhaka",
+            blood_group: "A+",
+          },
+        ];
+
+        const { data: insertedPatients } = await supabase
+          .from("patients")
+          .insert(defaultPatients)
+          .select("id, full_name, patient_code");
+
+        existingPatients = insertedPatients || [];
+      }
+
+      if (existingFunds && existingFunds.length > 0 && existingPatients && existingPatients.length > 0) {
+        const defaultApps = [
+          {
+            organization_id: session.organizationId,
+            application_number: "SCH-2026-001",
+            patient_id: existingPatients[0].id,
+            fund_id: existingFunds[0].id,
+            requested_amount: 15000,
+            approved_amount: 15000,
+            reason: "দরিদ্র বিধবা রোগীর জরুরি অর্থোপেডিক ট্রমা সার্জারি ও ইমপ্লান্ট ভর্তুকি",
+            status: "APPROVED" as const,
+          },
+          {
+            organization_id: session.organizationId,
+            application_number: "SCH-2026-002",
+            patient_id: existingPatients[1 % existingPatients.length].id,
+            fund_id: existingFunds[1 % existingFunds.length].id,
+            requested_amount: 8500,
+            approved_amount: 8500,
+            reason: "দিনমজুর পিতার সন্তানের আইসিইউ ইনকিউবেটর ও ভেন্টিলেটর চার্জ মওকুফ",
+            status: "DISBURSED" as const,
+          },
+          {
+            organization_id: session.organizationId,
+            application_number: "SCH-2026-003",
+            patient_id: existingPatients[2 % existingPatients.length].id,
+            fund_id: existingFunds[2 % existingFunds.length].id,
+            requested_amount: 5000,
+            approved_amount: 0,
+            reason: "জরুরি সিজারিয়ান পরবর্তী অ্যান্টিবায়োটিক ও পোস্ট-অপারেটিভ নার্সিং সেবা সহায়তা",
+            status: "PENDING" as const,
+          },
+        ];
+
+        await supabase.from("scholarship_applications").insert(defaultApps);
+
+        const { data: refetchedApps } = await supabase
+          .from("scholarship_applications")
+          .select(`
+            *,
+            patients (full_name, patient_code, phone),
+            welfare_funds (fund_name, donor_sponsor)
+          `)
+          .eq("organization_id", session.organizationId)
+          .order("created_at", { ascending: false });
+
+        if (refetchedApps && refetchedApps.length > 0) {
+          appRows = refetchedApps as ScholarshipApplication[];
+        }
+      }
+    }
+
+    return { success: true, data: appRows };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to load scholarship applications";
     return { success: false, error: msg };

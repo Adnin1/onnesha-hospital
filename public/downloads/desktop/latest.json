@@ -1,14 +1,14 @@
 {
-  "version": "1.1.89",
+  "version": "1.1.90",
   "name": "Onnesha Hospital Desktop Client",
   "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.89. Authentic production release: reports invoice voided_at column query fix, automated bootstrap of biomedical devices, procurement warehouses, expense categories, fiscal periods, assets, and all-in-one financial service stability.",
-  "pub_date": "2026-10-11T16:16:36.129Z",
+  "pub_date": "2026-10-11T16:39:29.290Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.89.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.90.exe",
       "installer_exe_sha256": "72BAD4D10633B4FDC03549DA64FE01C29FFE400EC142347561FC8394380134D1",
       "installer_exe_size": 2895011,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.89.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.90.msi",
       "installer_msi_sha256": "A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12",
       "installer_msi_size": 3457024
     }

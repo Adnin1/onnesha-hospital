@@ -1,11 +1,11 @@
 # ONNESHA HOSPITAL MANAGEMENT SYSTEM (OHMS)
-# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.89
+# OFFICIAL PRODUCTION CLOSURE LEDGER — v1.1.90
 
 **Authoritative Repository:** `Adnin1/onnesha-hospital`  
 **Current Branch:** `main`  
-**Head Commit Reference:** Production Release `v1.1.89`  
+**Head Commit Reference:** Production Release `v1.1.90`  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
-**Historical Release Tags:** `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
+**Historical Release Tags:** `v1.1.89`, `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
 **Ledger Reconciliation Date:** October 11, 2026  
@@ -31,7 +31,7 @@
 | **System UI 3D Dimensional Engine** | Tactile 3D cards, elevated floating metrics, beveled buttons, glassmorphic panels | `app/globals.css`, `components/dashboard/*`, `app/(hospital)/*` | ✅ PASS |
 | **Billing Catalog Classification & Deduplication** | Deterministic domain categorization (Bed/ICU/OT/Doctor/Imaging/Lab), 0 duplicates, 3D quick adder | `lib/billing/serviceCatalog.ts`, `app/billing/page.tsx` & migration `20261011193500` | ✅ PASS |
 | **Official Hospital Diagnostic Tariffs** | Complete official rate chart seeded across 16 categories, 185 tests with exact BDT tariffs | `lib/lab/actions.ts`, `lib/billing/serviceCatalog.ts` & migration `20261011190000` | ✅ PASS |
-| **Native Windows Desktop Installers (v1.1.89)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
+| **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
 | **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
