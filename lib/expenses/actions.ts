@@ -85,6 +85,76 @@ export async function getExpenseCategoriesAction(): Promise<
       return { success: false, error: error.message };
     }
 
+    if (!data || data.length === 0) {
+      const defaultCategories = [
+        {
+          organization_id: session.organizationId,
+          name: "Doctor Consultation & Honorarium",
+          category_code: "EXP-DOC",
+          description: "Visiting specialist fees, surgeon share, and clinical honorarium",
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          name: "OT & Surgical Consumables",
+          category_code: "EXP-OT",
+          description: "Operation theater sterile packs, anesthesia gas, suture, surgical consumables",
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          name: "Pharmacy & Medicine Inventory",
+          category_code: "EXP-PHARM",
+          description: "Direct pharmaceutical stock purchase and wholesale supplies",
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          name: "Staff & Nursing Honorarium",
+          category_code: "EXP-NURSE",
+          description: "Shift allowances, nursing overtime, and clinical support honorarium",
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          name: "Diagnostic Reagents & Lab Kits",
+          category_code: "EXP-LAB",
+          description: "Biochemistry reagents, control sera, test tubes, and blood bank bags",
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          name: "Hospital Utilities & Energy",
+          category_code: "EXP-UTIL",
+          description: "Electricity, generator fuel, medical oxygen, and municipal water",
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          name: "Biomedical Maintenance & Repair",
+          category_code: "EXP-MAINT",
+          description: "Equipment calibration, spare parts, radiology servicing",
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          name: "General Administration & Office",
+          category_code: "EXP-ADMIN",
+          description: "Office supplies, printing, internet, software licensing",
+          is_active: true,
+        },
+      ];
+
+      const { data: inserted, error: insertError } = await supabase
+        .from("expense_categories")
+        .insert(defaultCategories)
+        .select("*");
+
+      if (!insertError && inserted && inserted.length > 0) {
+        return { success: true, data: { categories: inserted as ExpenseCategoryRecord[] } };
+      }
+    }
+
     return { success: true, data: { categories: (data || []) as ExpenseCategoryRecord[] } };
   } catch (err: unknown) {
     return {

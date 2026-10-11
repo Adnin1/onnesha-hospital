@@ -644,9 +644,109 @@ export async function getFiscalPeriodsAction(): Promise<ActionResult<{ periods: 
       return { success: false, error: error.message };
     }
 
+    if (!data || data.length === 0) {
+      const defaultPeriods = [
+        {
+          organization_id: session.organizationId,
+          period_name: "FY 2026-2027 Full Year",
+          start_date: "2026-07-01",
+          end_date: "2027-06-30",
+          is_closed: false,
+        },
+        {
+          organization_id: session.organizationId,
+          period_name: "Q1 FY26-27 (Jul - Sep 2026)",
+          start_date: "2026-07-01",
+          end_date: "2026-09-30",
+          is_closed: true,
+          closed_at: "2026-10-01T00:00:00Z",
+        },
+        {
+          organization_id: session.organizationId,
+          period_name: "Q2 FY26-27 (Oct - Dec 2026)",
+          start_date: "2026-10-01",
+          end_date: "2026-12-31",
+          is_closed: false,
+        },
+        {
+          organization_id: session.organizationId,
+          period_name: "Q3 FY26-27 (Jan - Mar 2027)",
+          start_date: "2027-01-01",
+          end_date: "2027-03-31",
+          is_closed: false,
+        },
+        {
+          organization_id: session.organizationId,
+          period_name: "Q4 FY26-27 (Apr - Jun 2027)",
+          start_date: "2027-04-01",
+          end_date: "2027-06-30",
+          is_closed: false,
+        },
+      ];
+
+      const { data: inserted, error: insertError } = await supabase
+        .from("fiscal_periods")
+        .insert(defaultPeriods)
+        .select("*");
+
+      if (!insertError && inserted && inserted.length > 0) {
+        return { success: true, data: { periods: inserted as FiscalPeriodRecord[] } };
+      }
+    }
+
     return { success: true, data: { periods: (data as FiscalPeriodRecord[]) || [] } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to fetch fiscal periods";
+    return { success: false, error: msg };
+  }
+}
+
+export async function createFiscalPeriodAction(input: {
+  period_name: string;
+  start_date: string;
+  end_date: string;
+}): Promise<ActionResult<{ period: FiscalPeriodRecord }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.ACCOUNTING_MANAGE);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
+  }
+
+  if (!input.period_name?.trim()) {
+    return { success: false, error: "Period name is required." };
+  }
+  if (!input.start_date || !input.end_date) {
+    return { success: false, error: "Start and End dates are required." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const payload = {
+      organization_id: session.organizationId,
+      period_name: input.period_name.trim(),
+      start_date: input.start_date,
+      end_date: input.end_date,
+      is_closed: false,
+    };
+
+    const { data, error } = await supabase
+      .from("fiscal_periods")
+      .insert(payload)
+      .select("*")
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: { period: data as FiscalPeriodRecord } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to create fiscal period";
     return { success: false, error: msg };
   }
 }

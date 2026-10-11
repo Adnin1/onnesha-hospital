@@ -36,6 +36,15 @@ console.log(`  • WiX Directory:  ${WIX_DIR}`);
 console.log(`  • NSIS Directory: ${NSIS_DIR}`);
 console.log(`  • Version:        ${version}`);
 
+// Purge legacy installer binaries from public/downloads/desktop to prevent recursive bundling
+const publicDesktopDir = path.join(ROOT, "public/downloads/desktop");
+if (fs.existsSync(publicDesktopDir)) {
+  const legacyFiles = fs.readdirSync(publicDesktopDir).filter((f) => f.endsWith(".msi") || f.endsWith(".exe"));
+  for (const f of legacyFiles) {
+    fs.unlinkSync(path.join(publicDesktopDir, f));
+  }
+}
+
 console.log(`\n[2/4] Running Tauri build (npx tauri build)...`);
 const isWindows = process.platform === "win32";
 const npmCmd = isWindows ? "npx.cmd" : "npx";

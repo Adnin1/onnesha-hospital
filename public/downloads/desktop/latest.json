@@ -1,16 +1,16 @@
 {
-  "version": "1.1.88",
+  "version": "1.1.89",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.88. Authentic production release: full category scroll controls, OPD queue hook loop resilience, LIS simulation mode G9 boundary transparency, and radiology modality query fixes.",
-  "pub_date": "2026-10-11T15:23:51.650Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.89. Authentic production release: reports invoice voided_at column query fix, automated bootstrap of biomedical devices, procurement warehouses, expense categories, fiscal periods, assets, and all-in-one financial service stability.",
+  "pub_date": "2026-10-11T16:16:36.129Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.88.exe",
-      "installer_exe_sha256": "210DABDE63BD3E7EA267569A13BB9A61E6E4A0FE4673BF59DB7D73AC9473D52C",
-      "installer_exe_size": 8905122,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.88.msi",
-      "installer_msi_sha256": "965C9406323EF1DA1C2F98658BF28092DE55A1CE2954ADE6C2B77B921849E338",
-      "installer_msi_size": 9539584
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.89.exe",
+      "installer_exe_sha256": "72BAD4D10633B4FDC03549DA64FE01C29FFE400EC142347561FC8394380134D1",
+      "installer_exe_size": 2895011,
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.89.msi",
+      "installer_msi_sha256": "A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12",
+      "installer_msi_size": 3457024
     }
   },
   "signing": {

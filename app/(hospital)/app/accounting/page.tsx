@@ -25,6 +25,7 @@ import {
   getTrialBalanceAction,
   createAccountAction,
   getFiscalPeriodsAction,
+  createFiscalPeriodAction,
   closeFiscalPeriodAction,
   reopenFiscalPeriodAction,
   reverseJournalEntryAction,
@@ -70,6 +71,12 @@ export default function AccountingPage() {
   const [newAccCode, setNewAccCode] = useState("");
   const [newAccName, setNewAccName] = useState("");
   const [newAccType, setNewAccType] = useState<AccountType>("EXPENSE");
+
+  // New Fiscal Period Modal
+  const [isPeriodModalOpen, setIsPeriodModalOpen] = useState(false);
+  const [periodName, setPeriodName] = useState("");
+  const [periodStartDate, setPeriodStartDate] = useState("");
+  const [periodEndDate, setPeriodEndDate] = useState("");
 
   const loadData = async () => {
     setLoading(true);
@@ -271,6 +278,35 @@ export default function AccountingPage() {
       await loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error creating account";
+      setErrorMsg(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCreatePeriod = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!periodName.trim() || !periodStartDate || !periodEndDate) {
+      setErrorMsg("Period Name, Start Date, and End Date are required.");
+      return;
+    }
+    setSubmitting(true);
+    setErrorMsg(null);
+    try {
+      const res = await createFiscalPeriodAction({
+        period_name: periodName.trim(),
+        start_date: periodStartDate,
+        end_date: periodEndDate,
+      });
+      if (!res.success) throw new Error(res.error || "Failed to create fiscal period");
+      setSuccessMsg(`Fiscal period "${res.data?.period.period_name}" created successfully.`);
+      setIsPeriodModalOpen(false);
+      setPeriodName("");
+      setPeriodStartDate("");
+      setPeriodEndDate("");
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error creating fiscal period";
       setErrorMsg(msg);
     } finally {
       setSubmitting(false);
@@ -646,6 +682,12 @@ export default function AccountingPage() {
                   <h3 className="text-sm font-bold text-slate-900">Accounting Period Control</h3>
                   <p className="text-xs text-slate-500 mt-0.5">Prevent historical ledger postings and enforce audit period locking.</p>
                 </div>
+                <button
+                  onClick={() => setIsPeriodModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-sky-600 text-white hover:bg-sky-700 shadow-xs transition cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" /> + New Fiscal Period
+                </button>
               </div>
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase text-xs">
@@ -996,6 +1038,84 @@ export default function AccountingPage() {
                   className="px-4 py-2 text-xs font-semibold bg-rose-600 text-white rounded-xl hover:bg-rose-700 disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
                   {reversing ? "Reversing..." : "Confirm Reversal"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: NEW FISCAL PERIOD */}
+      {isPeriodModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3 border-slate-200">
+              <h3 className="text-lg font-extrabold text-slate-900">Add New Fiscal Period</h3>
+              <button
+                type="button"
+                onClick={() => setIsPeriodModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePeriod} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  Period Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Q1 FY 2026-2027 (Jul - Sep)"
+                  value={periodName}
+                  onChange={(e) => setPeriodName(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={periodStartDate}
+                    onChange={(e) => setPeriodStartDate(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    End Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={periodEndDate}
+                    onChange={(e) => setPeriodEndDate(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setIsPeriodModalOpen(false)}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 text-sm font-semibold bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 cursor-pointer shadow-2xs"
+                >
+                  {submitting ? "Saving..." : "Create Period"}
                 </button>
               </div>
             </form>

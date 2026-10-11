@@ -21,6 +21,7 @@ import {
   getGoodsReceiptNotesAction,
   createGoodsReceiptNoteAction,
   getWarehousesAction,
+  createWarehouseAction,
 } from "@/lib/procurement/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
 
@@ -58,6 +59,12 @@ export default function ProcurementPage() {
   >([
     { item_name: "", quantity_received: 1, unit_cost: 0, batch_number: "", expiry_date: "" },
   ]);
+
+  // Warehouse Modal
+  const [isWarehouseModalOpen, setIsWarehouseModalOpen] = useState(false);
+  const [whCode, setWhCode] = useState("");
+  const [whName, setWhName] = useState("");
+  const [whLocation, setWhLocation] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -187,6 +194,35 @@ export default function ProcurementPage() {
       await loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error creating GRN";
+      setErrorMsg(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCreateWarehouse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!whCode.trim() || !whName.trim()) {
+      setErrorMsg("Warehouse Code and Name are required.");
+      return;
+    }
+    setSubmitting(true);
+    setErrorMsg(null);
+    try {
+      const res = await createWarehouseAction({
+        warehouse_code: whCode,
+        warehouse_name: whName,
+        location: whLocation || undefined,
+      });
+      if (!res.success) throw new Error(res.error || "Failed to create warehouse");
+      setSuccessMsg(`Warehouse "${res.data?.warehouse.warehouse_code}" created successfully.`);
+      setIsWarehouseModalOpen(false);
+      setWhCode("");
+      setWhName("");
+      setWhLocation("");
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error creating warehouse";
       setErrorMsg(msg);
     } finally {
       setSubmitting(false);
@@ -454,6 +490,21 @@ export default function ProcurementPage() {
           {/* TAB 3: WAREHOUSES */}
           {activeTab === "WAREHOUSES" && (
             <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+              <div className="p-4 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Hospital Storage Vaults & Warehouses</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Manage centralized pharmaceutical storage, OT consumable vaults, and logistics depots.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setWhCode(`WH-${Date.now().toString().slice(-4)}`);
+                    setIsWarehouseModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-sky-600 text-white hover:bg-sky-700 shadow-xs transition cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" /> + Add Warehouse
+                </button>
+              </div>
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase text-xs">
                   <tr>
@@ -795,6 +846,87 @@ export default function ProcurementPage() {
                   className="px-4 py-2 text-sm font-semibold bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 cursor-pointer shadow-2xs"
                 >
                   {submitting ? "Verifying..." : "Verify & Receive"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: NEW WAREHOUSE */}
+      {isWarehouseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-3 border-slate-200">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-sky-600" />
+                <h3 className="text-lg font-extrabold text-slate-900">Add Storage Warehouse</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsWarehouseModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateWarehouse} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  Warehouse Code <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. WH-EMERGENCY"
+                  value={whCode}
+                  onChange={(e) => setWhCode(e.target.value.toUpperCase())}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  Warehouse Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Emergency Room Consumable Vault"
+                  value={whName}
+                  onChange={(e) => setWhName(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  Location / Floor
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ground Floor, ER Triage Wing"
+                  value={whLocation}
+                  onChange={(e) => setWhLocation(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setIsWarehouseModalOpen(false)}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 text-sm font-semibold bg-sky-600 text-white rounded-xl hover:bg-sky-700 disabled:opacity-50 cursor-pointer shadow-2xs"
+                >
+                  {submitting ? "Creating..." : "Save Warehouse"}
                 </button>
               </div>
             </form>

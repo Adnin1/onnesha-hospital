@@ -461,7 +461,6 @@ export async function getPaginatedReportInvoicesAction(params: {
         status,
         is_voided,
         void_reason,
-        voided_at,
         voided_by,
         created_at,
         updated_at,
@@ -520,7 +519,7 @@ export async function getPaginatedReportInvoicesAction(params: {
       status: InvoiceRecord["status"];
       is_voided: boolean;
       void_reason: string | null;
-      voided_at: string | null;
+      voided_at?: string | null;
       voided_by: string | null;
       created_at: string;
       updated_at: string;
@@ -552,7 +551,7 @@ export async function getPaginatedReportInvoicesAction(params: {
       status: row.status,
       is_voided: Boolean(row.is_voided),
       void_reason: row.void_reason,
-      voided_at: row.voided_at,
+      voided_at: row.voided_at ?? (row.is_voided ? row.updated_at : null),
       voided_by: row.voided_by,
       created_at: row.created_at,
       updated_at: row.updated_at,

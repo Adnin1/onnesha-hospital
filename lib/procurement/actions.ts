@@ -379,9 +379,94 @@ export async function getWarehousesAction(): Promise<ActionResult<{ warehouses: 
       return { success: false, error: error.message };
     }
 
+    if (!data || data.length === 0) {
+      const defaultWarehouses = [
+        {
+          organization_id: session.organizationId,
+          warehouse_code: "WH-CENTRAL",
+          warehouse_name: "Central Medical Supply & General Store",
+          location: "Ground Floor, Logistics & Distribution Wing",
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          warehouse_code: "WH-PHARM",
+          warehouse_name: "Main Pharmacy Storage & Bulk Dispensary",
+          location: "1st Floor, Hospital Pharmacy Annex",
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          warehouse_code: "WH-OT",
+          warehouse_name: "OT Sterile Consumables & Surgical Vault",
+          location: "2nd Floor, Surgical Operation Theater Wing",
+          is_active: true,
+        },
+      ];
+
+      const { data: inserted, error: insertError } = await supabase
+        .from("warehouses")
+        .insert(defaultWarehouses)
+        .select("*");
+
+      if (!insertError && inserted && inserted.length > 0) {
+        return { success: true, data: { warehouses: inserted as WarehouseRecord[] } };
+      }
+    }
+
     return { success: true, data: { warehouses: (data as WarehouseRecord[]) || [] } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to fetch warehouses";
+    return { success: false, error: msg };
+  }
+}
+
+export async function createWarehouseAction(input: {
+  warehouse_code: string;
+  warehouse_name: string;
+  location?: string;
+}): Promise<ActionResult<{ warehouse: WarehouseRecord }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.PROCUREMENT_MANAGE);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
+  }
+
+  if (!input.warehouse_code?.trim()) {
+    return { success: false, error: "Warehouse code is required." };
+  }
+  if (!input.warehouse_name?.trim()) {
+    return { success: false, error: "Warehouse name is required." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const payload = {
+      organization_id: session.organizationId,
+      warehouse_code: input.warehouse_code.trim().toUpperCase(),
+      warehouse_name: input.warehouse_name.trim(),
+      location: input.location?.trim() || null,
+      is_active: true,
+    };
+
+    const { data, error } = await supabase
+      .from("warehouses")
+      .insert(payload)
+      .select("*")
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: { warehouse: data as WarehouseRecord } };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to create warehouse";
     return { success: false, error: msg };
   }
 }
