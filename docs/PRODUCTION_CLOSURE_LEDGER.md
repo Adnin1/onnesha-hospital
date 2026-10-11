@@ -20,8 +20,8 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 131/131 suites passed (1,189 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
-| **Playwright Real Browser E2E** | 156/156 real browser tests passed across Chromium (52), Firefox (52), and Mobile-Chrome (52) | `npx playwright test` | ✅ PASS |
+| **Node Certification Test Suite** | 131/131 suites passed (1,193 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1104 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
 | **Supabase Remote Migrations** | 162/162 applied (100% parity, 0 drift, newest: `20261011233000`) | `npx supabase migration list` | ✅ PASS |
@@ -74,9 +74,9 @@
   - `Onnesha-Hospital-1.1.90.msi`: exactly **3,457,024 bytes**, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
 
-### E. Supabase Database Migration Parity (161/161)
-- All 161 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
-- Verified via `npx supabase migration list` ending at `20261011231500` on both local and remote.
+### E. Supabase Database Migration Parity (162/162)
+- All 162 local migrations in `supabase/migrations/*.sql` match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`).
+- Verified via `npx supabase migration list` ending at `20261011233000` (`20261011233000_quarantine_synthetic_bootstrap_data.sql`) on both local and remote with 0 drift.
 - Key recent migrations:
   - `20261011082000_fix_medicines_generics_foreign_key.sql`: Explicit foreign key relation between `public.medicines(generic_id)` and `public.medicine_generics(id)` with schema cache notification.
   - `20261011083000_seed_official_hospital_rate_chart.sql`: Seeding and synchronization of official hospital tariffs into `diagnostic_tests` and `hospital_service_tariffs`.
@@ -84,6 +84,7 @@
   - `20261011193500_fix_hospital_service_tariffs_categories_and_dedup.sql`: Normalized tariff categories into medical groups, categorized CT Scans (`CT_SCAN`), MRIs (`MRI`), X-Rays (`XRAY`), Ultrasounds (`USG`), Consultations (`CONSULTATION`), Beds (`IPD_BED`), Critical Care (`CRITICAL_CARE`), Surgeries (`OT_SURGERY`), and eliminated duplicate tariff entries.
   - `20261011215800_add_voided_at_to_invoices.sql`: Added `voided_at` timestamp column to `invoices` table with backfill for audit logs and accounting reports compatibility.
   - `20261011231500_add_date_of_birth_column_to_patients.sql`: Harmonized `date_of_birth` and `dob` columns on `patients` table with two-way trigger sync, resolving schema join compatibility across medical certificates and laboratory orders.
+  - `20261011233000_quarantine_synthetic_bootstrap_data.sql`: Quarantined and permanently purged synthetic test/bootstrap operational records (accounting journal entries, welfare applications, demo patients with 0 invoices/episodes, purchase requisitions, goods receipts, biomedical devices, and asset registers) to enforce zero auto-fabrication and maintain pristine operational data integrity.
 - Schema verification via `npx supabase db lint --linked` confirmed 0 fatal schema or security errors.
 
 ### F. Medical Certificates Overhaul & Cashier Billing Permission Governance
@@ -149,7 +150,7 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 131/131 certification suites, 1,189 active passes, 0 failures, 7 skipped, 52/52 Playwright real-browser tests, 0 lint warnings, 0 typecheck errors.
+1. **Software Quality:** 131/131 certification suites, 1,193 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
 2. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`).
 3. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced.
 4. **External Owner Gates:** G1–G16 clearly isolated without false greens.

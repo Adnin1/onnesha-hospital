@@ -429,7 +429,7 @@ export default function HardwareManagementPage() {
           }`}
         >
           <Activity className="w-4 h-4" />
-          LIS Laboratory Analyzers
+          LIS Analyzers (G9)
         </button>
 
         <button
@@ -441,7 +441,7 @@ export default function HardwareManagementPage() {
           }`}
         >
           <Layers className="w-4 h-4" />
-          PACS & DICOM Node
+          PACS DICOM (G8)
         </button>
 
         <button
@@ -919,11 +919,16 @@ export default function HardwareManagementPage() {
             <div className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-4 shadow-xs">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Activity className="w-5 h-5 text-sky-600" />
-                Laboratory Information System (LIS) Bridge
+                Laboratory Information System (LIS) Bridge (Gate 9)
               </h2>
               <p className="text-xs text-slate-500 font-medium">
                 Direct bidirectional interface for clinical laboratory analyzers. Supports ASTM E1381/E1394 (Mindray BC-5000, Sysmex XN) and HL7 v2.x ORU^R01 (Roche Cobas c311, Bio-Rad).
               </p>
+
+              {/* Zero-False-Green Operational Notice */}
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed font-medium">
+                ⚠️ <strong>Zero False-Green Notice:</strong> ASTM E1394 and HL7 v2.5.1 parser engines and observation ingestion drivers are fully verified in software. Automated live analyzer transmission requires physical RS-232 serial cabling / TCP-to-Serial converter box on hospital LAN (Operational Gate G9).
+              </div>
 
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
                 <div className="flex justify-between">
@@ -987,7 +992,7 @@ export default function HardwareManagementPage() {
         <div className="space-y-4">
           <div className="p-4 bg-white rounded-2xl border border-slate-200/80 flex items-center justify-between shadow-xs">
             <div>
-              <h2 className="text-sm font-bold text-slate-900">PACS Imaging Node Diagnostic Console</h2>
+              <h2 className="text-sm font-bold text-slate-900">PACS Imaging Node Diagnostic Console (Gate 8)</h2>
               <p className="text-xs text-slate-500 font-medium">
                 DICOM C-STORE receiver bridge and embedded viewer. Supports XR, CR, DX, CT, MR, and US modalities.
               </p>
@@ -996,6 +1001,11 @@ export default function HardwareManagementPage() {
               <span className="text-slate-500">AE Title: <b className="text-slate-900">OHMS_PACS</b></span>
               <span className="text-slate-500">Port: <b className="text-emerald-700">104 / 11112</b></span>
             </div>
+          </div>
+
+          {/* Zero-False-Green Operational Notice */}
+          <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed font-medium">
+            ⚠️ <strong>Zero False-Green Notice:</strong> DICOM parser, C-STORE protocol receiver, and multi-frame cornerstone canvas viewer are verified in software. Modality streaming requires on-site hospital LAN routing and modality AE Title pairing (Operational Gate G8).
           </div>
 
           <DicomViewer />
