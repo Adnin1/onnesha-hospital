@@ -1,14 +1,14 @@
 {
-  "version": "1.1.83",
+  "version": "1.1.84",
   "name": "Onnesha Hospital Desktop Client",
-  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.83. Production release: 154/154 Supabase migration parity, ANNESHA HOSPITAL AND DIAGNOSTIC official branding, authentic 4-part IPD discharge folder, collision-safe diagnostic catalog with cryptographically generated codes and zero fake fallback, decoupled IPD print streams, and hardened hospital expense GL posting.",
-  "pub_date": "2026-10-11T00:02:11.868Z",
+  "notes": "Onnesha Hospital PC Desktop ERP Client v1.1.84. Production release: 157/157 Supabase migration parity, ANNESHA HOSPITAL AND DIAGNOSTIC official branding, authentic 4-part IPD discharge folder, collision-safe diagnostic catalog with cryptographically generated codes, official hospital tariffs across 16 categories, international medical certificates, cashier bill editing permissions, super admin invoice deletion, 3D UI engine, and pharmacy generic relationship resilience.",
+  "pub_date": "2026-10-11T02:20:00.000Z",
   "platforms": {
     "windows-x86_64": {
-      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.83.exe",
+      "installer_exe": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-Setup-1.1.84.exe",
       "installer_exe_sha256": "E964268A1F0BA7736C00832EC01613CAE588CFD7E65D82E1C7221BAAB3A9340B",
       "installer_exe_size": 2864635,
-      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.83.msi",
+      "installer_msi": "https://onnesha-hospital.pages.dev/downloads/desktop/Onnesha-Hospital-1.1.84.msi",
       "installer_msi_sha256": "FC5E89C15DF8FA88A8E1D58C22E95BE30C2F5ABE538137AB63D5B99D50EB341B",
       "installer_msi_size": 3420160
     }

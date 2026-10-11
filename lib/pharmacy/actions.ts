@@ -28,21 +28,7 @@ export async function getPharmacyInventoryAction(): Promise<
   try {
     const supabase = await createClient();
 
-    // 1. Fetch medicines with generics and batches
-    const { data: meds, error: medsErr } = await supabase
-      .from("medicines")
-      .select(`
-        *,
-        medicine_generics (id, generic_name),
-        medicine_batches (*)
-      `)
-      .eq("organization_id", session.organizationId)
-      .order("brand_name", { ascending: true });
-
-    if (medsErr) {
-      return { success: false, error: medsErr.message };
-    }
-
+    // 1. Fetch medicines with generics and batches (resilient query pattern)
     interface MedRow {
       id: string;
       organization_id: string;
@@ -54,13 +40,76 @@ export async function getPharmacyInventoryAction(): Promise<
       min_stock_alert: number;
       is_active: boolean;
       created_at?: string;
+      generic_id?: string | null;
+      generic_name?: string | null;
       medicine_generics?: { id: string; generic_name: string } | null;
       medicine_batches?: MedicineBatchRecord[];
     }
 
+    let rawMeds: MedRow[] = [];
+
+    // Attempt primary PostgREST embedded join
+    const { data: meds, error: medsErr } = await supabase
+      .from("medicines")
+      .select(`
+        *,
+        medicine_generics (id, generic_name),
+        medicine_batches (*)
+      `)
+      .eq("organization_id", session.organizationId)
+      .order("brand_name", { ascending: true });
+
+    if (!medsErr && meds) {
+      rawMeds = meds as unknown as MedRow[];
+    } else {
+      // Resilient fallback: Query medicines, generics, and batches independently
+      const { data: simpleMeds, error: simpleErr } = await supabase
+        .from("medicines")
+        .select("*")
+        .eq("organization_id", session.organizationId)
+        .order("brand_name", { ascending: true });
+
+      if (simpleErr) {
+        return { success: false, error: simpleErr.message };
+      }
+
+      const { data: batchesData } = await supabase
+        .from("medicine_batches")
+        .select("*")
+        .eq("organization_id", session.organizationId);
+
+      const { data: genericsData } = await supabase
+        .from("medicine_generics")
+        .select("id, generic_name");
+
+      const genericMap = new Map<string, string>();
+      (genericsData || []).forEach((g: { id: string; generic_name: string }) => {
+        genericMap.set(g.id, g.generic_name);
+      });
+
+      const batchesByMedId = new Map<string, MedicineBatchRecord[]>();
+      ((batchesData || []) as Array<MedicineBatchRecord & { medicine_id?: string; brand_id?: string }>).forEach((b) => {
+        const medId = b.medicine_id || b.brand_id;
+        if (medId) {
+          const arr = batchesByMedId.get(medId) || [];
+          arr.push(b);
+          batchesByMedId.set(medId, arr);
+        }
+      });
+
+      rawMeds = ((simpleMeds || []) as unknown as MedRow[]).map((m) => {
+        const gName = (m.generic_id && genericMap.get(m.generic_id)) || m.generic_name || undefined;
+        return {
+          ...m,
+          medicine_generics: gName ? { id: m.generic_id || "", generic_name: gName } : null,
+          medicine_batches: batchesByMedId.get(m.id) || [],
+        };
+      });
+    }
+
     let lowStockCount = 0;
 
-    const list: MedicineRecord[] = ((meds || []) as unknown as MedRow[]).map((m) => {
+    const list: MedicineRecord[] = rawMeds.map((m) => {
       const batches = m.medicine_batches || [];
       const totalStock = batches.reduce((sum, b) => sum + (b.current_stock || 0), 0);
       if (totalStock <= m.min_stock_alert) {
@@ -77,7 +126,7 @@ export async function getPharmacyInventoryAction(): Promise<
         unit_type: m.unit_type,
         min_stock_alert: m.min_stock_alert,
         is_active: m.is_active,
-        generic_name: m.medicine_generics?.generic_name,
+        generic_name: m.medicine_generics?.generic_name || m.generic_name || undefined,
         created_at: m.created_at,
         total_stock: totalStock,
         batches,
@@ -142,6 +191,7 @@ export async function createMedicineAction(params: {
       .insert({
         organization_id: session.organizationId,
         generic_id: genericId,
+        generic_name: params.genericName?.trim() || null,
         brand_name: params.brandName,
         dosage_form: params.dosageForm,
         strength: params.strength,
