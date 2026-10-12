@@ -130,6 +130,40 @@ export interface ReferralSummaryMetrics {
   totalCommissionSettled: number;
 }
 
+export interface PatientReferralServiceSummary {
+  patientId: string;
+  patientCode: string;
+  fullName: string;
+  phone: string;
+  attributedAt: string;
+  visitId?: string | null;
+  totalBilled: number;
+  invoicesCount: number;
+  services: Array<{
+    name: string;
+    category?: string;
+    quantity: number;
+    amount: number;
+    invoiceNumber: string;
+  }>;
+  invoices: Array<{
+    id: string;
+    invoiceNumber: string;
+    grandTotal: number;
+    status: string;
+    createdAt: string;
+  }>;
+}
+
+export interface PeriodicBillingStats {
+  todayBilled: number;
+  weekBilled: number;
+  monthBilled: number;
+  yearBilled: number;
+  allTimeBilled: number;
+  referredPatientsCount: number;
+}
+
 // -------------------------------------------------------------------------------------
 // Actions
 // -------------------------------------------------------------------------------------
@@ -168,6 +202,8 @@ export async function getReferralAgentByIdAction(agentId: string): Promise<{
     settlements: ReferralSettlement[];
     rateHistory: ReferralRateHistory[];
     attributions: ReferralAttribution[];
+    patientServicesSummary: PatientReferralServiceSummary[];
+    periodicBilling: PeriodicBillingStats;
   };
   error?: string;
 }> {
@@ -212,14 +248,201 @@ export async function getReferralAgentByIdAction(agentId: string): Promise<{
         .limit(100),
     ]);
 
+    const attributionsList = (attribRes.data as ReferralAttribution[]) || [];
+    const commissionsList = (commissionsRes.data as ReferralCommission[]) || [];
+
+    // Collect all attributed patient IDs
+    const patientIdSet = new Set<string>();
+    for (const a of attributionsList) {
+      if (a.patient_id) patientIdSet.add(a.patient_id);
+    }
+    for (const c of commissionsList) {
+      if (c.patient_id) patientIdSet.add(c.patient_id);
+    }
+    const patientIds = Array.from(patientIdSet);
+
+    // Query non-voided patient invoices and line items
+    interface InvoiceQueryRow {
+      id: string;
+      invoice_number: string;
+      patient_id: string;
+      grand_total: number;
+      net_amount: number;
+      status: string;
+      is_voided: boolean;
+      created_at: string;
+      invoice_items?: Array<{
+        id: string;
+        item_name: string;
+        category?: string;
+        quantity: number;
+        unit_price: number;
+        total_amount: number;
+      }>;
+    }
+
+    let patientInvoices: InvoiceQueryRow[] = [];
+    if (patientIds.length > 0) {
+      const { data: invData } = await supabase
+        .from("invoices")
+        .select(`
+          id, invoice_number, patient_id, grand_total, net_amount, status, is_voided, created_at,
+          invoice_items (id, item_name, category, quantity, unit_price, total_amount)
+        `)
+        .in("patient_id", patientIds)
+        .eq("is_voided", false)
+        .order("created_at", { ascending: false });
+      patientInvoices = (invData as unknown as InvoiceQueryRow[]) || [];
+    }
+
+    // Dhaka (+06:00) Date Ranges
+    const now = new Date();
+    const dhakaOffsetMs = 6 * 60 * 60 * 1000;
+    const dhakaNow = new Date(now.getTime() + dhakaOffsetMs);
+    const y = dhakaNow.getUTCFullYear();
+    const m = dhakaNow.getUTCMonth();
+    const d = dhakaNow.getUTCDate();
+    const startOfToday = new Date(Date.UTC(y, m, d) - dhakaOffsetMs).getTime();
+    const startOfMonth = new Date(Date.UTC(y, m, 1) - dhakaOffsetMs).getTime();
+    const startOfYear = new Date(Date.UTC(y, 0, 1) - dhakaOffsetMs).getTime();
+    const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+
+    let todayBilled = 0;
+    let weekBilled = 0;
+    let monthBilled = 0;
+    let yearBilled = 0;
+    let allTimeBilled = 0;
+
+    for (const inv of patientInvoices) {
+      const amt = Number(inv.grand_total || inv.net_amount || 0);
+      const time = new Date(inv.created_at).getTime();
+      allTimeBilled += amt;
+      if (time >= startOfToday) todayBilled += amt;
+      if (time >= sevenDaysAgo) weekBilled += amt;
+      if (time >= startOfMonth) monthBilled += amt;
+      if (time >= startOfYear) yearBilled += amt;
+    }
+
+    // Graceful fallback to commission rows if invoices table has no direct matches
+    if (allTimeBilled === 0 && commissionsList.length > 0) {
+      for (const c of commissionsList) {
+        const amt = Number(c.billing_subtotal || c.commission_base_amount || 0);
+        const time = new Date(c.created_at).getTime();
+        allTimeBilled += amt;
+        if (time >= startOfToday) todayBilled += amt;
+        if (time >= sevenDaysAgo) weekBilled += amt;
+        if (time >= startOfMonth) monthBilled += amt;
+        if (time >= startOfYear) yearBilled += amt;
+      }
+    }
+
+    // Patient Map for Patient-Centric Service Breakdown
+    const patientMap = new Map<string, { code: string; name: string; phone: string; assignedAt: string; visitId?: string | null }>();
+    for (const attr of attributionsList) {
+      if (!patientMap.has(attr.patient_id)) {
+        patientMap.set(attr.patient_id, {
+          code: attr.patients?.patient_code || "",
+          name: attr.patients?.full_name || attr.referral_name_snapshot || "Patient",
+          phone: attr.patients?.phone || "",
+          assignedAt: attr.assigned_at,
+          visitId: attr.visit_id,
+        });
+      }
+    }
+    for (const c of commissionsList) {
+      if (c.patient_id && !patientMap.has(c.patient_id)) {
+        patientMap.set(c.patient_id, {
+          code: c.patients?.patient_code || "",
+          name: c.patients?.full_name || c.referral_name_snapshot || "Patient",
+          phone: "",
+          assignedAt: c.created_at,
+          visitId: c.visit_id,
+        });
+      }
+    }
+
+    const patientServicesSummary: PatientReferralServiceSummary[] = [];
+    for (const [pId, pInfo] of patientMap.entries()) {
+      const pInvoices = patientInvoices.filter((i) => i.patient_id === pId);
+      const totalBilled = pInvoices.reduce((sum, i) => sum + Number(i.grand_total || i.net_amount || 0), 0);
+      const services = pInvoices.flatMap((i) =>
+        (i.invoice_items || []).map((it) => ({
+          name: it.item_name || "Hospital Service",
+          category: it.category || "GENERAL",
+          quantity: Number(it.quantity || 1),
+          amount: Number(it.total_amount || 0),
+          invoiceNumber: i.invoice_number,
+        }))
+      );
+
+      if (pInvoices.length === 0) {
+        const commRows = commissionsList.filter((c) => c.patient_id === pId);
+        const commBilled = commRows.reduce((sum, c) => sum + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
+        patientServicesSummary.push({
+          patientId: pId,
+          patientCode: pInfo.code,
+          fullName: pInfo.name,
+          phone: pInfo.phone,
+          attributedAt: pInfo.assignedAt,
+          visitId: pInfo.visitId,
+          totalBilled: commBilled,
+          invoicesCount: commRows.length,
+          services: commRows.map((c) => ({
+            name: c.invoices?.invoice_number ? `Invoice ${c.invoices.invoice_number}` : "Hospital Care Service",
+            category: "ADMISSION",
+            quantity: 1,
+            amount: Number(c.billing_subtotal || c.commission_base_amount || 0),
+            invoiceNumber: c.invoices?.invoice_number || "INV-REC",
+          })),
+          invoices: commRows.map((c) => ({
+            id: c.invoice_id || c.id,
+            invoiceNumber: c.invoices?.invoice_number || "INV-REC",
+            grandTotal: Number(c.billing_subtotal || c.commission_base_amount || 0),
+            status: c.invoices?.status || "POSTED",
+            createdAt: c.created_at,
+          })),
+        });
+      } else {
+        patientServicesSummary.push({
+          patientId: pId,
+          patientCode: pInfo.code,
+          fullName: pInfo.name,
+          phone: pInfo.phone,
+          attributedAt: pInfo.assignedAt,
+          visitId: pInfo.visitId,
+          totalBilled,
+          invoicesCount: pInvoices.length,
+          services,
+          invoices: pInvoices.map((i) => ({
+            id: i.id,
+            invoiceNumber: i.invoice_number,
+            grandTotal: Number(i.grand_total || i.net_amount || 0),
+            status: i.status,
+            createdAt: i.created_at,
+          })),
+        });
+      }
+    }
+
+    const periodicBilling: PeriodicBillingStats = {
+      todayBilled,
+      weekBilled,
+      monthBilled,
+      yearBilled,
+      allTimeBilled,
+      referredPatientsCount: patientMap.size,
+    };
+
     return {
       success: true,
       data: {
         agent: agent as ReferralAgent,
-        commissions: (commissionsRes.data as ReferralCommission[]) || [],
+        commissions: commissionsList,
         settlements: (settlementsRes.data as ReferralSettlement[]) || [],
         rateHistory: (ratesRes.data as ReferralRateHistory[]) || [],
-        attributions: (attribRes.data as ReferralAttribution[]) || [],
+        attributions: attributionsList,
+        patientServicesSummary,
+        periodicBilling,
       },
     };
   } catch (err: unknown) {
@@ -555,6 +778,27 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
     const orgId = profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
+    // 1. Execute Atomic PostgreSQL RPC
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("record_discretionary_referral_payout_atomic", {
+      p_org_id: orgId,
+      p_agent_id: params.agentId,
+      p_amount: params.amount,
+      p_payment_method: params.paymentMethod,
+      p_transaction_reference: params.transactionReference?.trim() || null,
+      p_notes: params.notes?.trim() || "Discretionary partner payout",
+      p_idempotency_key: params.transactionReference?.trim() || null,
+    });
+
+    if (!rpcErr && rpcRes && typeof rpcRes === "object" && (rpcRes as { success?: boolean }).success) {
+      const res = rpcRes as { settlement_number: string; voucher_number?: string };
+      return {
+        success: true,
+        settlementNumber: res.settlement_number,
+        expenseVoucher: res.voucher_number,
+      };
+    }
+
+    // 2. Direct transactional fallback if RPC returns unhandled error
     const { data: agent, error: agentErr } = await supabase
       .from("referral_agents")
       .select("id, agent_code, full_name, total_commission_settled, total_commission_earned")
@@ -625,7 +869,7 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
 
     let voucherNumber = `VOUCH-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
     if (categoryId) {
-      const { data: rpcRes, error: rpcErr } = await supabase.rpc("record_hospital_expense_atomic", {
+      const { data: expRes, error: expErr } = await supabase.rpc("record_hospital_expense_atomic", {
         p_org_id: orgId,
         p_category_id: categoryId,
         p_title: `Referral Commission Payout - ${agent.full_name} (${agent.agent_code})`,
@@ -642,8 +886,8 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
         p_created_by: user.id,
       });
 
-      if (!rpcErr && rpcRes && typeof rpcRes === "object" && "voucher_number" in rpcRes) {
-        voucherNumber = (rpcRes as { voucher_number: string }).voucher_number;
+      if (!expErr && expRes && typeof expRes === "object" && "voucher_number" in expRes) {
+        voucherNumber = (expRes as { voucher_number: string }).voucher_number;
       }
     }
 

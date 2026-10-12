@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { createClient } from "@/lib/supabase/client";
 import { requirePermission, hasPermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
@@ -907,25 +908,103 @@ export async function createIpdAdmissionAction(params: {
     }
     const visitNumber = visitNoData;
 
-    // Create Inpatient Visit
-    const { data: newVisit, error: vErr } = await supabase
+    const admFee = params.admissionFee !== undefined ? Number(params.admissionFee) : 300;
+    const dailySvcCharge = params.dailyServiceCharge !== undefined ? Number(params.dailyServiceCharge) : 500;
+
+    // Create Inpatient Visit with durable snapshot charges
+    const visitPayload: Record<string, unknown> = {
+      organization_id: session.organizationId,
+      patient_id: params.patientId,
+      visit_number: visitNumber,
+      visit_type: "IPD",
+      status: "ACTIVE",
+      department_id: params.departmentId || null,
+      doctor_id: params.doctorId || null,
+      chief_complaint: params.provisionalDiagnosis,
+      admitted_at: new Date().toISOString(),
+      admission_fee_snapshot: admFee,
+      daily_service_rate_snapshot: dailySvcCharge,
+    };
+
+    let { data: newVisit, error: vErr } = await supabase
       .from("patient_visits")
-      .insert({
-        organization_id: session.organizationId,
-        patient_id: params.patientId,
-        visit_number: visitNumber,
-        visit_type: "IPD",
-        status: "ACTIVE",
-        department_id: params.departmentId || null,
-        doctor_id: params.doctorId || null,
-        chief_complaint: params.provisionalDiagnosis,
-        admitted_at: new Date().toISOString(),
-      })
+      .insert(visitPayload)
       .select("*")
       .single();
 
+    if (vErr && vErr.code === "PGRST204") {
+      delete visitPayload.admission_fee_snapshot;
+      delete visitPayload.daily_service_rate_snapshot;
+      const retry = await supabase.from("patient_visits").insert(visitPayload).select("*").single();
+      newVisit = retry.data;
+      vErr = retry.error;
+    }
+
     if (vErr || !newVisit) {
       return { success: false, error: vErr?.message || "Failed to create IPD admission." };
+    }
+
+    // Resolve or create active patient care episode and persist snapshot rates
+    try {
+      const { data: activeEp } = await supabase
+        .from("patient_care_episodes")
+        .select("id")
+        .eq("organization_id", session.organizationId)
+        .eq("patient_id", params.patientId)
+        .eq("status", "ACTIVE")
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let epId = activeEp?.id;
+      if (!epId) {
+        const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+        const randStr = crypto.randomBytes(2).toString("hex").toUpperCase();
+        const { data: newEp } = await supabase
+          .from("patient_care_episodes")
+          .insert({
+            organization_id: session.organizationId,
+            patient_id: params.patientId,
+            episode_number: `EP-${dateStr}-${randStr}`,
+            status: "ACTIVE",
+            started_at: new Date().toISOString(),
+            admission_fee_snapshot: admFee,
+            daily_service_rate_snapshot: dailySvcCharge,
+          })
+          .select("id")
+          .maybeSingle();
+        epId = newEp?.id;
+      } else {
+        await supabase
+          .from("patient_care_episodes")
+          .update({
+            admission_fee_snapshot: admFee,
+            daily_service_rate_snapshot: dailySvcCharge,
+          })
+          .eq("id", epId);
+      }
+
+      if (epId) {
+        await supabase.from("patient_visits").update({ episode_id: epId }).eq("id", newVisit.id);
+
+        // Record durable unbilled admission fee charge if > 0
+        if (admFee > 0) {
+          await supabase.from("episode_service_charges").insert({
+            organization_id: session.organizationId,
+            episode_id: epId,
+            patient_id: params.patientId,
+            service_category: "MISC",
+            item_name: "IPD Admission Fee (ভর্তি ফি - এককালীন)",
+            quantity: 1,
+            unit_price: admFee,
+            status: "UNBILLED",
+            notes: "Authoritative IPD admission snapshot fee",
+            created_by: session.userId,
+          });
+        }
+      }
+    } catch (epErr) {
+      console.warn("[createIpdAdmissionAction] Episode snapshot sync notice:", epErr);
     }
 
     // Assign Bed if bedId provided

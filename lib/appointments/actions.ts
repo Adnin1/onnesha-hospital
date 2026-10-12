@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { createClient } from "@/lib/supabase/client";
 import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -133,6 +134,7 @@ export async function createDoctorAction(params: {
         .from("departments")
         .select("id")
         .eq("id", deptId)
+        .eq("organization_id", session.organizationId)
         .maybeSingle();
       deptId = dept?.id;
     }
@@ -141,47 +143,55 @@ export async function createDoctorAction(params: {
         .from("departments")
         .select("id")
         .eq("organization_id", session.organizationId)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
       deptId = dept?.id;
     }
     if (!deptId) {
-      const { data: anyDept } = await supabase
+      const deptCode = `GEN-${crypto.randomBytes(2).toString("hex").toUpperCase()}`;
+      const { data: newDept } = await supabase
         .from("departments")
+        .insert({
+          organization_id: session.organizationId,
+          name: "General Medicine",
+          code: deptCode,
+          is_active: true,
+        })
         .select("id")
-        .limit(1)
         .maybeSingle();
-      if (anyDept?.id) {
-        deptId = anyDept.id;
+      if (newDept?.id) {
+        deptId = newDept.id;
       } else {
-        const { data: newDept } = await supabase
+        const { data: retryDept } = await supabase
           .from("departments")
-          .insert({
-            organization_id: session.organizationId,
-            name: "General Medicine",
-            code: "GEN",
-            is_active: true,
-          })
           .select("id")
+          .eq("organization_id", session.organizationId)
+          .limit(1)
           .maybeSingle();
-        deptId = newDept?.id;
+        deptId = retryDept?.id;
       }
     }
 
-    const specPrefix = (params.specialization || "DOC")
-      .trim()
-      .toUpperCase()
-      .replace(/[^A-Z]/g, "")
-      .slice(0, 4) || "GEN";
-    const doctorCode = `DOC-${specPrefix}-${Date.now().toString().slice(-4)}`;
+    const generateCode = () => {
+      const specPrefix = (params.specialization || "DOC")
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z]/g, "")
+        .slice(0, 4) || "GEN";
+      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      const rand = crypto.randomBytes(3).toString("hex").toUpperCase();
+      return `DOC-${specPrefix}-${dateStr}-${rand}`;
+    };
 
     const doctorData: Record<string, unknown> = {
       organization_id: session.organizationId,
       department_id: deptId,
-      doctor_code: doctorCode,
+      doctor_code: generateCode(),
       full_name: params.fullName.trim(),
       specialization: params.specialization.trim(),
-      bmdc_reg_number: params.bmdcRegNumber?.trim() || "BMDC-N/A",
+      bmdc_reg_number: params.bmdcRegNumber?.trim() || null,
       degrees: params.degrees?.trim() || "MBBS",
       designation: params.designation?.trim() || "Medical Officer",
       opd_fee: params.consultationFee,
@@ -198,10 +208,16 @@ export async function createDoctorAction(params: {
       .select("*, departments(name)")
       .single();
 
-    for (let attempt = 0; attempt < 4; attempt++) {
+    for (let attempt = 0; attempt < 5; attempt++) {
       if (!insertRes.error) break;
       const errMsg = insertRes.error.message.toLowerCase();
       let modified = false;
+
+      // Handle duplicate code collision retry
+      if (insertRes.error.code === "23505" && (errMsg.includes("doctor_code") || errMsg.includes("code"))) {
+        doctorData.doctor_code = generateCode();
+        modified = true;
+      }
 
       if (insertRes.error.code === "PGRST204" || errMsg.includes("column")) {
         const missingMatch = insertRes.error.message.match(/'([^']+)' column/);
@@ -209,7 +225,7 @@ export async function createDoctorAction(params: {
           delete doctorData[missingMatch[1]];
           modified = true;
         } else {
-          for (const col of ["phone", "doctor_code", "department_id", "degrees", "designation"]) {
+          for (const col of ["phone", "degrees", "designation"]) {
             if (errMsg.includes(`'${col}'`) && col in doctorData) {
               delete doctorData[col];
               modified = true;

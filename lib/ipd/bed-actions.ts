@@ -640,41 +640,52 @@ export async function addBedAction(payload: {
   try {
     const supabase = await createClient();
 
-    // 1. Resolve valid Ward UUID
-    let resolvedWardId = payload.ward_id?.trim();
+    // 1. Resolve valid Ward UUID strictly within caller organization
+    let resolvedWardId: string | undefined = payload.ward_id?.trim();
     const isWardUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedWardId || "");
-    if (!isWardUuid) {
+    if (isWardUuid && resolvedWardId) {
+      const { data: validWard } = await supabase
+        .from("wards")
+        .select("id")
+        .eq("id", resolvedWardId)
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      resolvedWardId = validWard?.id;
+    } else {
+      resolvedWardId = undefined;
+    }
+
+    if (!resolvedWardId) {
       const { data: firstWard } = await supabase
         .from("wards")
         .select("id")
         .eq("organization_id", orgId)
+        .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
       if (firstWard?.id) {
         resolvedWardId = firstWard.id;
       } else {
-        const { data: anyWard } = await supabase.from("wards").select("id").limit(1).maybeSingle();
-        if (anyWard?.id) {
-          resolvedWardId = anyWard.id;
-        } else {
-          const { data: newWard } = await supabase
-            .from("wards")
-            .insert({
-              organization_id: orgId,
-              name: "General Ward",
-              ward_type: "General Ward",
-              floor_number: "Ground Floor",
-              floor: "Ground Floor",
-              total_beds: 10,
-            })
-            .select("id")
-            .maybeSingle();
-          resolvedWardId = newWard?.id;
-        }
+        // Create same-organization General Ward safely without cross-tenant fallback
+        const { data: newWard } = await supabase
+          .from("wards")
+          .insert({
+            organization_id: orgId,
+            name: "General Ward",
+            ward_type: "General Ward",
+            total_beds: 10,
+          })
+          .select("id")
+          .maybeSingle();
+        resolvedWardId = newWard?.id;
       }
     }
 
-    // 2. Resolve bed_type_id if required by schema
+    if (!resolvedWardId) {
+      return { success: false, error: "Failed to resolve valid organization ward for new bed." };
+    }
+
+    // 2. Resolve bed_type_id strictly within caller organization
     const { data: btRow } = await supabase
       .from("bed_types")
       .select("id")
@@ -712,11 +723,11 @@ export async function addBedAction(payload: {
 
       if (insertRes.error.code === "PGRST204" || errMsg.includes("column")) {
         const missingMatch = insertRes.error.message.match(/'([^']+)' column/);
-        if (missingMatch && missingMatch[1] && missingMatch[1] in insertPayload) {
+        if (missingMatch && missingMatch[1] && missingMatch[1] in insertPayload && !["organization_id", "ward_id", "bed_number", "daily_rate"].includes(missingMatch[1])) {
           delete insertPayload[missingMatch[1]];
           modified = true;
         } else {
-          for (const col of ["bed_type", "daily_rate", "bed_type_id", "organization_id", "is_active"]) {
+          for (const col of ["bed_type", "bed_type_id"]) {
             if (errMsg.includes(`'${col}'`) && col in insertPayload) {
               delete insertPayload[col];
               modified = true;
@@ -750,20 +761,24 @@ export async function addBedAction(payload: {
     }
 
     const bedId = inserted.id;
+    const persistedWardId = (inserted as { ward_id?: string }).ward_id || resolvedWardId;
+    const persistedDailyRate = Number((inserted as { daily_rate?: number }).daily_rate ?? payload.daily_rate);
+    const persistedStatus = ((inserted as { status?: string }).status?.toUpperCase() === "AVAILABLE" ? "VACANT" : (inserted as { status?: string }).status) || "VACANT";
+
     const newBed: BedRecord = {
       id: bedId,
       organization_id: orgId,
-      ward_id: payload.ward_id,
-      bed_type_id: "bt-custom",
-      bed_number: payload.bed_number,
-      daily_rate: payload.daily_rate,
-      status: "VACANT",
-      is_active: true,
+      ward_id: persistedWardId,
+      bed_type_id: (inserted as { bed_type_id?: string }).bed_type_id || resolvedBedTypeId || "bt-custom",
+      bed_number: (inserted as { bed_number?: string }).bed_number || payload.bed_number,
+      daily_rate: persistedDailyRate,
+      status: persistedStatus as BedRecord["status"],
+      is_active: (inserted as { is_active?: boolean }).is_active ?? true,
       bed_type: {
-        id: "bt-custom",
+        id: (inserted as { bed_type_id?: string }).bed_type_id || resolvedBedTypeId || "bt-custom",
         organization_id: orgId,
         name: payload.bed_type || "General",
-        daily_rate: payload.daily_rate,
+        daily_rate: persistedDailyRate,
       },
     };
 
@@ -810,7 +825,7 @@ export async function addCabinAction(payload: {
         organization_id: orgId,
         cabin_number: payload.cabin_number.trim(),
         cabin_type: payload.cabin_type,
-        floor_number: payload.floor_number?.trim() || "Ground Floor",
+        floor_number: payload.floor_number?.trim() || null,
         daily_rate: payload.daily_rate,
         status: "VACANT",
         amenities: payload.amenities || "AC, TV, Attached Bath",
@@ -1020,7 +1035,7 @@ export async function updateCabinDetailsAction(payload: {
     const updateFields: Record<string, unknown> = {};
     if (payload.cabin_number?.trim()) updateFields.cabin_number = payload.cabin_number.trim();
     if (payload.cabin_type) updateFields.cabin_type = payload.cabin_type;
-    if (payload.floor_number !== undefined) updateFields.floor_number = payload.floor_number?.trim() || "Ground Floor";
+    if (payload.floor_number !== undefined) updateFields.floor_number = payload.floor_number?.trim() || null;
     if (payload.daily_rate !== undefined && !Number.isNaN(Number(payload.daily_rate))) {
       updateFields.daily_rate = Number(payload.daily_rate);
     }

@@ -30,6 +30,8 @@ import {
   ReferralAttribution,
   ReferralSummaryMetrics,
   ReferralPerformanceAnalyticsData,
+  PatientReferralServiceSummary,
+  PeriodicBillingStats,
   getReferralAgentsAction,
   getReferralAgentByIdAction,
   createReferralAgentAction,
@@ -55,6 +57,8 @@ interface AgentDetailData {
   settlements: ReferralSettlement[];
   rateHistory: ReferralRateHistory[];
   attributions: ReferralAttribution[];
+  patientServicesSummary?: PatientReferralServiceSummary[];
+  periodicBilling?: PeriodicBillingStats;
 }
 
 export default function ReferralManagementPage() {
@@ -1763,37 +1767,38 @@ export default function ReferralManagementPage() {
 
             {/* Performance Stats & Periodic Breakdown */}
             {(() => {
+              const periodic = agentDetailData.periodicBilling || {
+                todayBilled: 0,
+                weekBilled: 0,
+                monthBilled: 0,
+                yearBilled: 0,
+                allTimeBilled: 0,
+                referredPatientsCount: agentDetailData.attributions?.length || 0,
+              };
+
+              const todayBilled = periodic.todayBilled;
+              const weekBilled = periodic.weekBilled;
+              const monthBilled = periodic.monthBilled;
+              const yearBilled = periodic.yearBilled;
+              const allBilled = periodic.allTimeBilled;
+              const referredPatientsCount = periodic.referredPatientsCount;
+
+              const patientServices = agentDetailData.patientServicesSummary || [];
+
               const now = new Date();
-              const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+              const dhakaOffsetMs = 6 * 60 * 60 * 1000;
+              const dhakaNow = new Date(now.getTime() + dhakaOffsetMs);
+              const y = dhakaNow.getUTCFullYear();
+              const m = dhakaNow.getUTCMonth();
+              const d = dhakaNow.getUTCDate();
+              const startOfToday = new Date(Date.UTC(y, m, d) - dhakaOffsetMs).getTime();
+              const startOfMonth = new Date(Date.UTC(y, m, 1) - dhakaOffsetMs).getTime();
+              const startOfYear = new Date(Date.UTC(y, 0, 1) - dhakaOffsetMs).getTime();
               const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
-              const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-              const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
 
-              const todayBilled = agentDetailData.commissions
-                .filter((c: ReferralCommission) => new Date(c.created_at).getTime() >= startOfToday)
-                .reduce((acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
-              const weekBilled = agentDetailData.commissions
-                .filter((c: ReferralCommission) => new Date(c.created_at).getTime() >= sevenDaysAgo)
-                .reduce((acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
-              const monthBilled = agentDetailData.commissions
-                .filter((c: ReferralCommission) => new Date(c.created_at).getTime() >= startOfMonth)
-                .reduce((acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
-              const yearBilled = agentDetailData.commissions
-                .filter((c: ReferralCommission) => new Date(c.created_at).getTime() >= startOfYear)
-                .reduce((acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
-              const allBilled = agentDetailData.commissions.reduce(
-                (acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0),
-                0
-              );
-
-              const referredPatientsCount = Math.max(
-                agentDetailData.attributions?.length || 0,
-                new Set(agentDetailData.commissions.map((c: ReferralCommission) => c.patient_id)).size
-              );
-
-              const filteredCommissions = agentDetailData.commissions.filter((c: ReferralCommission) => {
+              const filteredPatients = patientServices.filter((ps) => {
                 if (agentPeriodFilter === "ALL") return true;
-                const time = new Date(c.created_at).getTime();
+                const time = new Date(ps.attributedAt || (ps.invoices[0]?.createdAt ?? 0)).getTime();
                 if (agentPeriodFilter === "TODAY") return time >= startOfToday;
                 if (agentPeriodFilter === "WEEK") return time >= sevenDaysAgo;
                 if (agentPeriodFilter === "MONTH") return time >= startOfMonth;
@@ -1803,7 +1808,7 @@ export default function ReferralManagementPage() {
 
               return (
                 <div className="space-y-4">
-                  {/* Periodic Billing Analytics Cards */}
+                  {/* Periodic Billing Analytics Cards (Asia/Dhaka) */}
                   <div>
                     <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
                       রোগীর হাসপাতাল সেবার মোট বিল সামারি (Periodic Billing)
@@ -1857,15 +1862,15 @@ export default function ReferralManagementPage() {
                       </strong>
                     </div>
                     <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                      <span className="text-[10px] font-bold text-slate-500 block">পরিশোধিত কমিশন</span>
+                      <span className="text-[10px] font-bold text-slate-500 block">সেবা ইনভয়েস সংখ্যা</span>
                       <strong className="text-xs sm:text-sm text-teal-700 font-black">
-                        {formatCurrencyBDT(agentDetailData.agent.total_commission_settled || 0)}
+                        {patientServices.reduce((sum, p) => sum + p.invoicesCount, 0)} টি
                       </strong>
                     </div>
                     <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                      <span className="text-[10px] font-bold text-slate-500 block">পরিশোধিত কিস্তি</span>
-                      <strong className="text-xs sm:text-sm text-sky-700 font-black">
-                        {agentDetailData.settlements?.length || 0} টি কিস্তি
+                      <span className="text-[10px] font-bold text-slate-500 block">পার্টনার স্ট্যাটাস</span>
+                      <strong className="text-xs sm:text-sm text-emerald-700 font-black">
+                        {agentDetailData.agent.is_active ? "সক্রিয় পার্টনার" : "নিষ্ক্রিয়"}
                       </strong>
                     </div>
                   </div>
@@ -1912,57 +1917,69 @@ export default function ReferralManagementPage() {
                     </div>
                   </div>
 
-                  {/* Invoices & Commissions Sub-ledger */}
+                  {/* Patient Services & Billing Details Sub-ledger */}
                   <div className="space-y-3">
                     <h4 className="font-bold text-slate-800 text-xs flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Receipt className="w-4 h-4 text-sky-600" />
-                        রেফারেল করা রোগীদের সেবার হিসাব ({filteredCommissions.length})
+                        রেফারেল করা রোগীদের সেবার বিস্তারিত ও বিল হিসাব ({filteredPatients.length})
                       </span>
-                      <span className="text-[10px] text-slate-400 font-normal">রোগী কত টাকার সেবা নিয়েছে ও ইনভয়েস হিস্ট্রি</span>
+                      <span className="text-[10px] text-slate-400 font-normal">রোগী কি কি সেবা নিয়েছে এবং মোট কত টাকা বিল হয়েছে</span>
                     </h4>
-                    <div className="border border-slate-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
+                    <div className="border border-slate-200 rounded-xl overflow-hidden max-h-72 overflow-y-auto">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
                           <tr>
                             <th className="p-2">তারিখ</th>
                             <th className="p-2">রোগীর নাম ও কোড</th>
+                            <th className="p-2">মোবাইল</th>
+                            <th className="p-2">গ্রহনকৃত সেবাসমূহ</th>
                             <th className="p-2">ইনভয়েস #</th>
-                            <th className="p-2 text-right">হাসপাতাল সেবা মূল্য (৳)</th>
-                            <th className="p-2 text-center">স্ট্যাটাস</th>
+                            <th className="p-2 text-right">মোট সেবা বিল (৳)</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {filteredCommissions.length === 0 ? (
+                          {filteredPatients.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="p-4 text-center text-slate-400">
-                                নির্বাচিত সময়ে কোনো রেফারেল বিলিং রেকর্ড পাওয়া যায়নি।
+                              <td colSpan={6} className="p-4 text-center text-slate-400">
+                                নির্বাচিত সময়ে কোনো রেফারেল রোগীর সেবা রেকর্ড পাওয়া যায়নি।
                               </td>
                             </tr>
                           ) : (
-                            filteredCommissions.map((c: ReferralCommission) => (
-                              <tr key={c.id} className="hover:bg-slate-50/70">
-                                <td className="p-2 text-slate-500 font-mono text-[11px]">{formatDateBDT(c.created_at)}</td>
+                            filteredPatients.map((ps) => (
+                              <tr key={ps.patientId} className="hover:bg-slate-50/70">
+                                <td className="p-2 text-slate-500 font-mono text-[11px]">
+                                  {ps.attributedAt ? formatDateBDT(ps.attributedAt) : (ps.invoices[0]?.createdAt ? formatDateBDT(ps.invoices[0].createdAt) : "—")}
+                                </td>
                                 <td className="p-2">
-                                  <div className="font-bold text-slate-800">
-                                    {c.patients?.full_name || "Encounter Patient"}
-                                  </div>
-                                  {c.patients?.patient_code && (
-                                    <div className="text-[10px] font-mono text-slate-400">
-                                      {c.patients.patient_code}
-                                    </div>
+                                  <div className="font-bold text-slate-800">{ps.fullName}</div>
+                                  {ps.patientCode && (
+                                    <div className="text-[10px] font-mono text-slate-400">{ps.patientCode}</div>
                                   )}
                                 </td>
-                                <td className="p-2 font-mono font-semibold text-slate-800">
-                                  {c.invoices?.invoice_number || "INV-POSTED"}
+                                <td className="p-2 font-mono text-slate-600 text-[11px]">
+                                  {ps.phone || "—"}
+                                </td>
+                                <td className="p-2">
+                                  <div className="flex flex-wrap gap-1 max-w-xs">
+                                    {ps.services.slice(0, 4).map((s, idx) => (
+                                      <span key={idx} className="px-1.5 py-0.5 text-[10px] bg-slate-100 text-slate-700 rounded font-medium">
+                                        {s.name} {s.quantity > 1 ? `(${s.quantity})` : ""}
+                                      </span>
+                                    ))}
+                                    {ps.services.length > 4 && (
+                                      <span className="text-[10px] text-slate-400 font-medium">+{ps.services.length - 4} more</span>
+                                    )}
+                                    {ps.services.length === 0 && (
+                                      <span className="text-[10px] text-slate-400">হাসপাতাল সাধারণ সেবা</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-2 font-mono font-semibold text-slate-800 text-[11px]">
+                                  {ps.invoices.map((i) => i.invoiceNumber).join(", ") || "INV-POSTED"}
                                 </td>
                                 <td className="p-2 text-right font-black text-slate-900">
-                                  {formatCurrencyBDT(c.billing_subtotal || c.commission_base_amount)}
-                                </td>
-                                <td className="p-2 text-center">
-                                  <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-slate-100 text-slate-700">
-                                    {c.settlement_status === "PAID" ? "পরিশোধিত" : "রেকর্ডকৃত"}
-                                  </span>
+                                  {formatCurrencyBDT(ps.totalBilled)}
                                 </td>
                               </tr>
                             ))
