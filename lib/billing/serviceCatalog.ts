@@ -568,6 +568,22 @@ const BASE_HOSPITAL_SERVICES: HospitalServiceItem[] = [
 
   // --- 4. BEDS & INPATIENT CABINS (IPD) ---
   {
+    id: "srv-ipd-admission-fee",
+    category: "MISC",
+    name: "IPD Admission Fee (ভর্তি ফি - এককালীন)",
+    price: 300,
+    group: "BED_CABIN",
+    description: "IPD one-time admission fee (auto-billable, customizable)",
+  },
+  {
+    id: "srv-ipd-daily-service-charge",
+    category: "MISC",
+    name: "IPD Daily Service Charge (দৈনিক সেবা চার্জ)",
+    price: 500,
+    group: "BED_CABIN",
+    description: "IPD daily hospital service charge ৳500/day (auto-billable, customizable)",
+  },
+  {
     id: "srv-bed-ward-male",
     category: "BED",
     name: "General Ward Bed Daily Tariff (Male)",

@@ -156,9 +156,9 @@ export default function AboutPage() {
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
               <span className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
                 <Phone className="w-4 h-4 text-emerald-600" aria-hidden="true" />
-                জরুরি হটলাইন ও তথ্য
+                যোগাযোগ ও তথ্য
               </span>
-              <p className="text-slate-700">হটলাইন: {HOSPITAL_METADATA.phone || HOSPITAL_METADATA.emergencyHotline}</p>
+              <p className="text-slate-700">ফোন: {HOSPITAL_METADATA.phone}</p>
               <p className="text-slate-700">অ্যাম্বুলেন্স: {HOSPITAL_METADATA.ambulanceHotline}</p>
             </div>
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">

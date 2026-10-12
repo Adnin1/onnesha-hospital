@@ -153,6 +153,23 @@ function ExpensesManagementContent() {
     });
   }, [expenses, searchQuery]);
 
+  const dynamicExpenseStats = useMemo(() => {
+    const active = expenses.filter((e) => e.status !== "VOIDED" && e.status !== "VOID");
+    const total = (analytics?.total_expense_amount && analytics.total_expense_amount > 0)
+      ? analytics.total_expense_amount
+      : active.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const count = (analytics?.expense_count && analytics.expense_count > 0)
+      ? analytics.expense_count
+      : active.length;
+    const cash = (analytics?.cash_paid_total && analytics.cash_paid_total > 0)
+      ? analytics.cash_paid_total
+      : active.filter((e) => (e.payment_method || "").toUpperCase() === "CASH").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const bank = (analytics?.bank_paid_total && analytics.bank_paid_total > 0)
+      ? analytics.bank_paid_total
+      : active.filter((e) => (e.payment_method || "").toUpperCase() !== "CASH").reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    return { total, count, cash, bank };
+  }, [expenses, analytics]);
+
   const handleCreateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formCategory) {
@@ -412,10 +429,10 @@ function ExpensesManagementContent() {
               Total Expenses
             </span>
             <h3 className="text-xl font-black text-slate-900 font-mono mt-1">
-              {formatCurrencyBDT(analytics?.total_expense_amount || 0)}
+              {formatCurrencyBDT(dynamicExpenseStats.total)}
             </h3>
             <span className="text-[10px] text-slate-500">
-              {analytics?.expense_count || 0} active vouchers posted
+              {dynamicExpenseStats.count} active vouchers posted
             </span>
           </div>
           <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
@@ -463,8 +480,8 @@ function ExpensesManagementContent() {
               Cash vs Bank Outflow
             </span>
             <div className="text-xs font-mono font-bold text-slate-800 mt-1 space-y-0.5">
-              <div>Cash: <span className="text-emerald-700">{formatCurrencyBDT(analytics?.cash_paid_total || 0)}</span></div>
-              <div>Bank: <span className="text-sky-700">{formatCurrencyBDT(analytics?.bank_paid_total || 0)}</span></div>
+              <div>Cash: <span className="text-emerald-700">{formatCurrencyBDT(dynamicExpenseStats.cash)}</span></div>
+              <div>Bank: <span className="text-sky-700">{formatCurrencyBDT(dynamicExpenseStats.bank)}</span></div>
             </div>
           </div>
           <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">

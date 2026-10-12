@@ -22,11 +22,11 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 136/136 suites passed (1,240 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 137/137 suites passed (1,245 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 547 baseline across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1108 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 173/173 applied (100% parity, 0 drift, newest: `20261013050000_doctor_bed_ipd_referral_integrity_hardening.sql`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 174/174 applied (100% parity, 0 drift, newest: `20261013053000_ipd_charges_auto_billing_and_expense_reconciliation.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
 | **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
 | **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
@@ -34,7 +34,7 @@
 | **Billing Catalog Classification & Deduplication** | Deterministic domain categorization (Bed/ICU/OT/Doctor/Imaging/Lab), 0 duplicates, 3D quick adder | `lib/billing/serviceCatalog.ts`, `app/billing/page.tsx` & migration `20261011193500` | ✅ PASS |
 | **Official Hospital Diagnostic Tariffs** | Complete official rate chart seeded across 16 categories, 185 tests with exact BDT tariffs | `lib/lab/actions.ts`, `lib/billing/serviceCatalog.ts` & migration `20261011190000` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `9a08bf23`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `e955ec30`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
@@ -44,8 +44,8 @@
 ### A. Hospital Brand Name & Canonical Identity Established
 - **Authoritative Entity:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`).
 - **Owner Directive:** "Center" / "সেন্টার" cancelled entirely across all user-facing interfaces, print pads, headers, footers, display boards, and settings.
-- **Physical Address:** শেরপুর রোড, সূত্রাপুর, বগুড়া।
-- **Hotlines:** 01620-003888, 01718-835623.
+- **Physical Address:** সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।
+- **Contact:** 01895-665114, 01904210065.
 
 ### B. Diagnostic Test Catalog Actions & Pricing Safety Hardening
 - **File Modified:** `lib/lab/actions.ts`

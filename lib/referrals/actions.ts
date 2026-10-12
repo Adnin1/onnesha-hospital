@@ -175,19 +175,46 @@ export async function getReferralAgentsAction(): Promise<{
 }> {
   try {
     const supabase = createClient();
-    const { data, error } = await supabase
-      .from("referral_agents")
-      .select("*")
-      .is("archived_at", null)
-      .order("full_name", { ascending: true });
+    const [agentsRes, settlementsRes, expensesRes] = await Promise.all([
+      supabase.from("referral_agents").select("*").is("archived_at", null).order("full_name", { ascending: true }),
+      supabase.from("referral_commission_settlements").select("referral_agent_id, net_paid_amount"),
+      supabase.from("expenses").select("amount, title, paid_to, status").not("status", "in", '("VOID","VOIDED")'),
+    ]);
 
-    if (error) {
-      if (error.code === "42501" || error.message?.includes("policy") || error.message?.includes("permission")) {
+    if (agentsRes.error) {
+      if (agentsRes.error.code === "42501" || agentsRes.error.message?.includes("policy") || agentsRes.error.message?.includes("permission")) {
         throw new Error("403 Forbidden: Management authority required to view full financial referral agent profiles. Use safe directory for non-financial intake.");
       }
-      throw error;
+      throw agentsRes.error;
     }
-    return { success: true, data: (data as ReferralAgent[]) || [] };
+
+    const settlementsMap = new Map<string, number>();
+    for (const s of (settlementsRes.data || [])) {
+      if (s.referral_agent_id) {
+        settlementsMap.set(s.referral_agent_id, (settlementsMap.get(s.referral_agent_id) || 0) + Number(s.net_paid_amount || 0));
+      }
+    }
+
+    const expensesList = expensesRes.data || [];
+    const agents = ((agentsRes.data as ReferralAgent[]) || []).map((agent) => {
+      let settled = Number(agent.total_commission_settled || 0);
+      const fromSettlements = settlementsMap.get(agent.id) || 0;
+      if (fromSettlements > settled) settled = fromSettlements;
+
+      const matchingExpenses = expensesList.filter((e) =>
+        (e.title && (e.title.includes(agent.agent_code) || e.title.includes(agent.full_name))) ||
+        (e.paid_to && e.paid_to.toLowerCase() === agent.full_name.toLowerCase())
+      );
+      const expenseSum = matchingExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      if (expenseSum > settled) settled = expenseSum;
+
+      return {
+        ...agent,
+        total_commission_settled: settled,
+      };
+    });
+
+    return { success: true, data: agents };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to load referral agents";
     return { success: false, error: msg };
@@ -935,10 +962,12 @@ export async function getReferralSummaryMetricsAction(): Promise<{
 }> {
   try {
     const supabase = createClient();
-    const [agentsRes, commsRes, attribsRes] = await Promise.all([
-      supabase.from("referral_agents").select("id, is_active").is("archived_at", null),
+    const [agentsRes, commsRes, attribsRes, settlementsRes, expensesRes] = await Promise.all([
+      supabase.from("referral_agents").select("id, is_active, total_commission_settled").is("archived_at", null),
       supabase.from("referral_commissions").select("commission_base_amount, commission_amount, amount_paid, amount_pending, settlement_status"),
       supabase.from("patient_referral_attributions").select("id", { count: "exact", head: true }),
+      supabase.from("referral_commission_settlements").select("net_paid_amount"),
+      supabase.from("expenses").select("amount, expense_type, title, status").not("status", "in", '("VOID","VOIDED")'),
     ]);
 
     const agents = agentsRes.data || [];
@@ -961,6 +990,13 @@ export async function getReferralSummaryMetricsAction(): Promise<{
         totalCommissionSettled += Number(c.amount_paid || 0);
       }
     }
+
+    const settlementsSum = (settlementsRes.data || []).reduce((acc, s) => acc + Number(s.net_paid_amount || 0), 0);
+    const agentSettledSum = agents.reduce((acc, a) => acc + Number(a.total_commission_settled || 0), 0);
+    const referralExpensesSum = (expensesRes.data || [])
+      .filter((e) => (e.expense_type || "").toUpperCase().includes("MARKETING") || (e.title || "").toLowerCase().includes("referral"))
+      .reduce((acc, e) => acc + Number(e.amount || 0), 0);
+    totalCommissionSettled = Math.max(totalCommissionSettled, settlementsSum, agentSettledSum, referralExpensesSum);
 
     return {
       success: true,

@@ -330,7 +330,7 @@ export function DischargeSummaryPrint({
                 ANNESHA HOSPITAL AND DIAGNOSTIC
               </h2>
               <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                শেরপুর রোড, সূত্রাপুর, বগুড়া।
+                সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।
               </p>
               <p className="text-xs font-mono font-bold text-slate-800 mt-0.5">
                 ☎ ০১৬২০-০০৩৮৮৮, ০১৭১৮-৮৩৫৬২৩
@@ -901,10 +901,7 @@ export function DischargeSummaryPrint({
                 <div className="space-y-1">
                   <span className="font-bold text-rose-950 block">জরুরি সতর্ক সংকেত (Emergency):</span>
                   <p className="text-rose-900 leading-tight">
-                    • তীব্র জ্বর (১০১°+), অতিরিক্ত রক্তপাত বা ক্ষতস্থানে পুঁজ দেখা দিলে।
-                  </p>
-                  <p className="text-rose-950 font-bold font-mono leading-tight">
-                    • হটলাইন: ০১৬২০-০০৩৮৮৮, ০১৭১৮-৮৩৫৬২৩
+                    • তীব্র জ্বর (১০১°+), অতিরিক্ত রক্তপাত বা ক্ষতস্থানে পুঁজ দেখা দিলে হাসপাতালে যোগাযোগ করুন।
                   </p>
                 </div>
               </div>
@@ -1003,7 +1000,7 @@ export function DischargeSummaryPrint({
                 </div>
               </div>
               <div className="text-right text-[11px] font-semibold text-slate-700">
-                <p>শেরপুর রোড, সূত্রাপুর, বগুড়া।</p>
+                <p>সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।</p>
                 <p className="font-mono font-bold text-slate-900">
                   ☎ ০১৬২০-০০৩৮৮৮, ০১৭১৮-৮৩৫৬২৩
                 </p>

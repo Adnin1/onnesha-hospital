@@ -398,47 +398,92 @@ function BillingManagementContent() {
     setLoadingUnbilledServices(true);
     try {
       const res = await getEpisodeBillingPreviewAction({ patientId: patientIdentifier.trim() });
-      if (res.success && res.data && res.data.lines && res.data.lines.length > 0) {
-        const mappedLines = res.data.lines.map((l) => {
-          let cat: InvoiceItemRecord["service_category"] = "MISC";
-          const rawCat = (l.service_category || "").toUpperCase();
-          if (["CONSULTATION", "LAB", "XRAY", "USG", "ECG", "PHARMACY", "BED", "CABIN", "OT", "AMBULANCE", "MISC"].includes(rawCat)) {
-            cat = rawCat as InvoiceItemRecord["service_category"];
-          } else if (rawCat === "INVESTIGATION") {
-            cat = "LAB";
-          } else if (rawCat === "PROCEDURE") {
-            cat = "OT";
-          } else if (rawCat === "ROOM") {
-            cat = "BED";
+      if (res.success && res.data) {
+        const rawLines = [...(res.data.lines || [])];
+        const isIpd =
+          (res.data.encounters || []).some((e) => e.visit_type === "IPD") ||
+          (res.data.resources || []).length > 0 ||
+          rawLines.some((l) => l.item_name.includes("Bed") || l.item_name.includes("Cabin") || l.item_name.includes("IPD"));
+
+        if (isIpd) {
+          const hasAdmissionFee = rawLines.some(
+            (l) => l.item_name.includes("Admission") || l.item_name.includes("ভর্তি ফি")
+          );
+          if (!hasAdmissionFee) {
+            rawLines.unshift({
+              reference_id: `auto-ipd-adm-${patientIdentifier.trim()}`,
+              service_category: "MISC",
+              item_name: "IPD Admission Fee (ভর্তি ফি - এককালীন)",
+              unit_price: 300,
+              quantity: 1,
+              total_price: 300,
+            });
           }
-          return {
-            referenceId: l.reference_id,
-            category: cat,
-            itemName: l.item_name,
-            unitPrice: Number(l.unit_price || 0),
-            quantity: Number(l.quantity || 1),
-          };
-        });
 
-        setDetectedUnbilledLines(mappedLines);
-        setUnbilledServicesCount(mappedLines.length);
-        const total = mappedLines.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
-        setUnbilledServicesTotal(total);
-
-        // Auto-populate items directly into invoice
-        setItems(mappedLines);
-
-        if (res.data.admissionDiscountAmount && res.data.admissionDiscountAmount > 0) {
-          setDiscountMode("FIXED");
-          setDiscountFixed(res.data.admissionDiscountAmount);
-          setDiscountReason(res.data.admissionDiscountReason || `ভর্তি ছাড়: ৳${res.data.admissionDiscountAmount}`);
-          setInitialPaymentAmount(Math.max(0, total - res.data.admissionDiscountAmount));
-        } else {
-          setInitialPaymentAmount(total);
+          const hasServiceCharge = rawLines.some(
+            (l) => l.item_name.includes("Service Charge") || l.item_name.includes("সার্ভিস চার্জ") || l.item_name.includes("সেবা চার্জ")
+          );
+          if (!hasServiceCharge) {
+            const ipdEnc = (res.data.encounters || []).find((e) => e.visit_type === "IPD");
+            const admitMs = ipdEnc?.admitted_at ? new Date(ipdEnc.admitted_at).getTime() : Date.now();
+            const stayDays = Math.max(1, Math.ceil((Date.now() - admitMs) / (1000 * 60 * 60 * 24)));
+            rawLines.push({
+              reference_id: `auto-ipd-svc-${patientIdentifier.trim()}`,
+              service_category: "MISC",
+              item_name: `IPD Daily Service Charge (দৈনিক সেবা চার্জ - ৳৫০০/দিন × ${stayDays} দিন)`,
+              unit_price: 500,
+              quantity: stayDays,
+              total_price: 500 * stayDays,
+            });
+          }
         }
 
-        if (res.data.referralAgentId && !selectedReferralAgentId) {
-          handleReferralAgentChange(res.data.referralAgentId);
+        if (rawLines.length > 0) {
+          const mappedLines = rawLines.map((l) => {
+            let cat: InvoiceItemRecord["service_category"] = "MISC";
+            const rawCat = (l.service_category || "").toUpperCase();
+            if (["CONSULTATION", "LAB", "XRAY", "USG", "ECG", "PHARMACY", "BED", "CABIN", "OT", "AMBULANCE", "MISC"].includes(rawCat)) {
+              cat = rawCat as InvoiceItemRecord["service_category"];
+            } else if (rawCat === "INVESTIGATION") {
+              cat = "LAB";
+            } else if (rawCat === "PROCEDURE") {
+              cat = "OT";
+            } else if (rawCat === "ROOM") {
+              cat = "BED";
+            }
+            return {
+              referenceId: l.reference_id,
+              category: cat,
+              itemName: l.item_name,
+              unitPrice: Number(l.unit_price || 0),
+              quantity: Number(l.quantity || 1),
+            };
+          });
+
+          setDetectedUnbilledLines(mappedLines);
+          setUnbilledServicesCount(mappedLines.length);
+          const total = mappedLines.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
+          setUnbilledServicesTotal(total);
+
+          // Auto-populate items directly into invoice
+          setItems(mappedLines);
+
+          if (res.data.admissionDiscountAmount && res.data.admissionDiscountAmount > 0) {
+            setDiscountMode("FIXED");
+            setDiscountFixed(res.data.admissionDiscountAmount);
+            setDiscountReason(res.data.admissionDiscountReason || `ভর্তি ছাড়: ৳${res.data.admissionDiscountAmount}`);
+            setInitialPaymentAmount(Math.max(0, total - res.data.admissionDiscountAmount));
+          } else {
+            setInitialPaymentAmount(total);
+          }
+
+          if (res.data.referralAgentId && !selectedReferralAgentId) {
+            handleReferralAgentChange(res.data.referralAgentId);
+          }
+        } else {
+          setDetectedUnbilledLines([]);
+          setUnbilledServicesCount(0);
+          setUnbilledServicesTotal(0);
         }
       } else {
         setDetectedUnbilledLines([]);

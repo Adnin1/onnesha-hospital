@@ -430,6 +430,13 @@ export default function ReferralManagementPage() {
     return matchesSearch && matchesStatus && matchesType;
   });
 
+  const dynamicSettledTotal = (metrics?.totalCommissionSettled && metrics.totalCommissionSettled > 0)
+    ? metrics.totalCommissionSettled
+    : Math.max(
+        settlements.reduce((sum, s) => sum + Number(s.net_paid_amount || 0), 0),
+        agents.reduce((sum, a) => sum + Number(a.total_commission_settled || 0), 0)
+      );
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Alert Banners */}
@@ -526,7 +533,7 @@ export default function ReferralManagementPage() {
             <CheckCircle2 className="w-4 h-4 text-teal-500" />
           </div>
           <div className="text-xl font-black text-teal-600">
-            {formatCurrencyBDT(metrics?.totalCommissionSettled ?? 0)}
+            {formatCurrencyBDT(dynamicSettledTotal)}
           </div>
           <span className="text-[10px] text-slate-400">কর্তৃপক্ষ কর্তৃক পরিশোধিত</span>
         </div>
@@ -689,7 +696,14 @@ export default function ReferralManagementPage() {
                           {formatCurrencyBDT(totalAgentBill)}
                         </td>
                         <td className="p-3.5 text-right font-black text-teal-700">
-                          {formatCurrencyBDT(agent.total_commission_settled || 0)}
+                          {formatCurrencyBDT(
+                            Math.max(
+                              Number(agent.total_commission_settled || 0),
+                              settlements
+                                .filter((s) => s.referral_agent_id === agent.id)
+                                .reduce((sum, s) => sum + Number(s.net_paid_amount || 0), 0)
+                            )
+                          )}
                         </td>
                         <td className="p-3.5 text-center">
                           {agent.is_active ? (

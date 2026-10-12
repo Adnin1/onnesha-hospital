@@ -349,25 +349,62 @@ export async function getExpenseAnalyticsAction(params?: {
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc("get_expense_analytics_summary", {
-      p_org_id: session.organizationId,
-      p_start_date: params?.startDate || null,
-      p_end_date: params?.endDate || null,
-    });
 
-    if (error) {
-      return { success: false, error: error.message };
+    // Query active expenses directly for mathematically guaranteed reconciliation
+    let query = supabase
+      .from("expenses")
+      .select("amount, expense_type, payment_method, status")
+      .eq("organization_id", session.organizationId)
+      .not("status", "in", '("VOID","VOIDED")');
+
+    if (params?.startDate) {
+      query = query.gte("expense_date", params.startDate);
+    }
+    if (params?.endDate) {
+      query = query.lte("expense_date", params.endDate);
     }
 
-    const row = Array.isArray(data) ? data[0] : data;
+    const { data: expRows, error: expErr } = await query;
+    if (expErr) {
+      return { success: false, error: expErr.message };
+    }
+
+    const rows = expRows || [];
+    let totalAmount = 0;
+    let doctorTotal = 0;
+    let otTotal = 0;
+    let utilityTotal = 0;
+    let cashTotal = 0;
+    let bankTotal = 0;
+
+    for (const r of rows) {
+      const amt = Number(r.amount || 0);
+      totalAmount += amt;
+      const type = (r.expense_type || "").toUpperCase();
+      if (type.includes("DOCTOR") || type.includes("HONORARIUM") || type.includes("SURGEON") || type.includes("ANAESTHETIST")) {
+        doctorTotal += amt;
+      } else if (type.includes("OT") || type.includes("SURGERY")) {
+        otTotal += amt;
+      } else if (type.includes("UTILITY") || type.includes("BILL")) {
+        utilityTotal += amt;
+      }
+
+      const pMethod = (r.payment_method || "").toUpperCase();
+      if (pMethod === "CASH") {
+        cashTotal += amt;
+      } else {
+        bankTotal += amt;
+      }
+    }
+
     const summary: ExpenseAnalyticsSummary = {
-      total_expense_amount: Number(row?.total_expense_amount || 0),
-      expense_count: Number(row?.expense_count || 0),
-      doctor_expense_total: Number(row?.doctor_expense_total || 0),
-      ot_expense_total: Number(row?.ot_expense_total || 0),
-      utility_expense_total: Number(row?.utility_expense_total || 0),
-      cash_paid_total: Number(row?.cash_paid_total || 0),
-      bank_paid_total: Number(row?.bank_paid_total || 0),
+      total_expense_amount: totalAmount,
+      expense_count: rows.length,
+      doctor_expense_total: doctorTotal,
+      ot_expense_total: otTotal,
+      utility_expense_total: utilityTotal,
+      cash_paid_total: cashTotal,
+      bank_paid_total: bankTotal,
     };
 
     return { success: true, data: { summary } };
