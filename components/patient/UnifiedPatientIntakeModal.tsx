@@ -122,6 +122,7 @@ export function UnifiedPatientIntakeModal({
   const [opdDoctorId, setOpdDoctorId] = useState("");
   const [opdComplaint, setOpdComplaint] = useState("");
   const [opdPriority, setOpdPriority] = useState<"NORMAL" | "URGENT" | "CRITICAL">("NORMAL");
+  const [opdCustomFee, setOpdCustomFee] = useState<number | "">("");
 
   // IPD Fields
   const [ipdDepartmentId, setIpdDepartmentId] = useState("");
@@ -129,6 +130,9 @@ export function UnifiedPatientIntakeModal({
   const [ipdBedId, setIpdBedId] = useState("");
   const [ipdCabinId, setIpdCabinId] = useState("");
   const [ipdDiagnosis, setIpdDiagnosis] = useState("");
+  const [ipdCustomDailyRate, setIpdCustomDailyRate] = useState<number | "">("");
+  const [ipdCustomServiceCharge, setIpdCustomServiceCharge] = useState<number | "">(500);
+  const [ipdCustomAdmissionFee, setIpdCustomAdmissionFee] = useState<number | "">(300);
   const [referralAgentId, setReferralAgentId] = useState("");
   const [admissionDiscountMode, setAdmissionDiscountMode] = useState<"PERCENT" | "FIXED">("PERCENT");
   const [admissionDiscountPercent, setAdmissionDiscountPercent] = useState<number | "">("");
@@ -146,6 +150,7 @@ export function UnifiedPatientIntakeModal({
   const [criticalBedNumber, setCriticalBedNumber] = useState("");
   const [criticalDoctorId, setCriticalDoctorId] = useState("");
   const [criticalDiagnosis, setCriticalDiagnosis] = useState("");
+  const [criticalCustomDailyCharge, setCriticalCustomDailyCharge] = useState<number | "">("");
   const [ventilatorRequired, setVentilatorRequired] = useState(false);
 
   // OT Surgery Details
@@ -534,6 +539,7 @@ export function UnifiedPatientIntakeModal({
         enabled: opdEnabled,
         departmentId: opdDepartmentId || undefined,
         doctorId: opdDoctorId || undefined,
+        opdFee: opdCustomFee !== "" ? Number(opdCustomFee) : undefined,
         chiefComplaint: opdComplaint || undefined,
         priority: opdPriority,
       },
@@ -543,6 +549,9 @@ export function UnifiedPatientIntakeModal({
         doctorId: ipdDoctorId || undefined,
         bedId: ipdBedId || undefined,
         cabinId: ipdCabinId || undefined,
+        dailyRate: ipdCustomDailyRate !== "" ? Number(ipdCustomDailyRate) : undefined,
+        dailyServiceCharge: ipdCustomServiceCharge !== "" ? Number(ipdCustomServiceCharge) : 500,
+        admissionFee: ipdCustomAdmissionFee !== "" ? Number(ipdCustomAdmissionFee) : 300,
         provisionalDiagnosis: ipdDiagnosis || undefined,
         referralAgentId: referralAgentId || undefined,
       },
@@ -550,6 +559,7 @@ export function UnifiedPatientIntakeModal({
         enabled: criticalEnabled,
         unitId: criticalUnitId || undefined,
         bedNumber: criticalBedNumber || undefined,
+        dailyCharge: criticalCustomDailyCharge !== "" ? Number(criticalCustomDailyCharge) : undefined,
         doctorId: criticalDoctorId || undefined,
         initialDiagnosis: criticalDiagnosis || undefined,
         ventilatorRequired,
@@ -1372,7 +1382,7 @@ export function UnifiedPatientIntakeModal({
                       ✕ বাদ দিন (Remove OPD)
                     </button>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <Field label="Department">
                       <select value={opdDepartmentId} onChange={(e) => setOpdDepartmentId(e.target.value)} className={inputCls}>
                         <option value="">{loadingOptions ? "Loading departments..." : "Select department"}</option>
@@ -1380,10 +1390,30 @@ export function UnifiedPatientIntakeModal({
                       </select>
                     </Field>
                     <Field label="Doctor">
-                      <select value={opdDoctorId} onChange={(e) => setOpdDoctorId(e.target.value)} className={inputCls}>
+                      <select
+                        value={opdDoctorId}
+                        onChange={(e) => {
+                          const docId = e.target.value;
+                          setOpdDoctorId(docId);
+                          const doc = doctors.find((d) => d.id === docId);
+                          if (doc) setOpdCustomFee(doc.opd_fee || 500);
+                        }}
+                        className={inputCls}
+                      >
                         <option value="">{loadingOptions ? "Loading doctors..." : "Select doctor"}</option>
                         {doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name} — {d.specialization || "Consultant"}</option>)}
                       </select>
+                    </Field>
+                    <Field label="OPD Fee (৳)">
+                      <input
+                        type="number"
+                        min="0"
+                        value={opdCustomFee}
+                        onChange={(e) => setOpdCustomFee(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="500"
+                        className={inputCls + " font-mono font-bold text-sky-800"}
+                        title="OPD Consultation Fee - প্রয়োজন অনুযায়ী কাস্টমাইজ করুন"
+                      />
                     </Field>
                     <Field label="Priority">
                       <select value={opdPriority} onChange={(e) => setOpdPriority(e.target.value as "NORMAL" | "URGENT" | "CRITICAL")} className={inputCls}>
@@ -1446,7 +1476,14 @@ export function UnifiedPatientIntakeModal({
                       <select
                         id="field-ipd-bed"
                         value={ipdBedId}
-                        onChange={(e) => { setIpdBedId(e.target.value); setIpdCabinId(""); setErrorMsg(null); }}
+                        onChange={(e) => {
+                          const bedId = e.target.value;
+                          setIpdBedId(bedId);
+                          setIpdCabinId("");
+                          setErrorMsg(null);
+                          const b = availableBeds.find((x) => x.id === bedId);
+                          if (b) setIpdCustomDailyRate(b.daily_rate);
+                        }}
                         className={inputCls + (highlightField === "field-ipd-bed" ? " ring-2 ring-rose-500 border-rose-500" : "")}
                       >
                         <option value="">{loadingOptions ? "Loading beds..." : availableBeds.length === 0 ? "No available beds" : "Select available bed"}</option>
@@ -1456,12 +1493,54 @@ export function UnifiedPatientIntakeModal({
                     <Field label="Available Cabin (খালি কেবিন)">
                       <select
                         value={ipdCabinId}
-                        onChange={(e) => { setIpdCabinId(e.target.value); setIpdBedId(""); setErrorMsg(null); }}
+                        onChange={(e) => {
+                          const cabId = e.target.value;
+                          setIpdCabinId(cabId);
+                          setIpdBedId("");
+                          setErrorMsg(null);
+                          const c = availableCabins.find((x) => x.id === cabId);
+                          if (c) setIpdCustomDailyRate(c.daily_rate);
+                        }}
                         className={inputCls}
                       >
                         <option value="">{loadingOptions ? "Loading cabins..." : availableCabins.length === 0 ? "No available cabins" : "Select available cabin"}</option>
                         {availableCabins.map((c) => <option key={c.id} value={c.id}>{c.cabin_number} • {c.cabin_type || "Cabin"} • {c.daily_rate} BDT/day</option>)}
                       </select>
+                    </Field>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <Field label="বেড/কেবিন দৈনিক চার্জ (৳/দিন)">
+                      <input
+                        type="number"
+                        min="0"
+                        value={ipdCustomDailyRate}
+                        onChange={(e) => setIpdCustomDailyRate(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="e.g. 500"
+                        className={inputCls + " font-mono font-bold text-indigo-900"}
+                        title="বেড বা কেবিনের দৈনিক চার্জ - প্রয়োজন অনুযায়ী পরিবর্তনযোগ্য"
+                      />
+                    </Field>
+                    <Field label="দৈনিক সার্ভিস চার্জ (৳/দিন) *">
+                      <input
+                        type="number"
+                        min="0"
+                        value={ipdCustomServiceCharge}
+                        onChange={(e) => setIpdCustomServiceCharge(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="500"
+                        className={inputCls + " font-mono font-bold text-indigo-900"}
+                        title="প্রতিদিনের সার্ভিস চার্জ (ডিফল্ট ৫০০ টাকা/দিন)"
+                      />
+                    </Field>
+                    <Field label="ভর্তি ফি - এককালীন (৳) *">
+                      <input
+                        type="number"
+                        min="0"
+                        value={ipdCustomAdmissionFee}
+                        onChange={(e) => setIpdCustomAdmissionFee(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="300"
+                        className={inputCls + " font-mono font-bold text-indigo-900"}
+                        title="আইপিডি এককালীন ভর্তি ফি (ডিফল্ট ৩০০ টাকা)"
+                      />
                     </Field>
                   </div>
                   <Field label="Provisional Diagnosis">
@@ -1489,7 +1568,7 @@ export function UnifiedPatientIntakeModal({
                       <span>Loading Critical Care availability...</span>
                     </div>
                   )}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <Field label="Unit *">
                       <select
                         id="field-critical-unit"
@@ -1503,6 +1582,8 @@ export function UnifiedPatientIntakeModal({
                           } else {
                             setCriticalBedNumber("");
                           }
+                          const foundUnit = units.find((u) => u.id === unitId);
+                          if (foundUnit) setCriticalCustomDailyCharge(foundUnit.daily_charge || 5000);
                           setErrorMsg(null);
                         }}
                         className={inputCls + (highlightField === "field-critical-unit" ? " ring-2 ring-rose-500 border-rose-500" : "")}
@@ -1540,6 +1621,17 @@ export function UnifiedPatientIntakeModal({
                           ⚠️ Selected Critical Care unit-এর কোনো vacant bed নেই।
                         </p>
                       )}
+                    </Field>
+                    <Field label="দৈনিক চার্জ (৳/দিন)">
+                      <input
+                        type="number"
+                        min="0"
+                        value={criticalCustomDailyCharge}
+                        onChange={(e) => setCriticalCustomDailyCharge(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="5000"
+                        className={inputCls + " font-mono font-bold text-rose-800"}
+                        title="Critical Care (ICU/CCU) দৈনিক চার্জ - কাস্টমাইজযোগ্য"
+                      />
                     </Field>
                     <Field label="Admitting Doctor">
                       <select value={criticalDoctorId} onChange={(e) => setCriticalDoctorId(e.target.value)} className={inputCls}>

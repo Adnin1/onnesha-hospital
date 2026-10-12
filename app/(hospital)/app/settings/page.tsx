@@ -32,10 +32,14 @@ const DEFAULT_HOSPITAL_PROFILE = {
   name: "ANNESHA HOSPITAL AND DIAGNOSTIC",
   banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক",
   phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01895-665114",
+  officePhone: "01904210065",
   emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "01904210065",
   ambulanceHotline: process.env.NEXT_PUBLIC_AMBULANCE_HOTLINE || "01904210065",
   email: process.env.NEXT_PUBLIC_HOSPITAL_EMAIL || "aaih.apon@gmail.com",
   address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
+  diagnosticLicense: "HSM4521681",
+  clinicLicense: "HSM4312356",
+  regNo: "10022715",
 };
 
 export default function SettingsAndAuditPage() {
@@ -59,10 +63,14 @@ export default function SettingsAndAuditPage() {
   const [hospitalName, setHospitalName] = useState(DEFAULT_HOSPITAL_PROFILE.name);
   const [hospitalBanglaName, setHospitalBanglaName] = useState(DEFAULT_HOSPITAL_PROFILE.banglaName);
   const [hospitalPhone, setHospitalPhone] = useState(DEFAULT_HOSPITAL_PROFILE.phone);
+  const [hospitalOfficePhone, setHospitalOfficePhone] = useState(DEFAULT_HOSPITAL_PROFILE.officePhone);
   const [hospitalEmergency, setHospitalEmergency] = useState(DEFAULT_HOSPITAL_PROFILE.emergencyHotline);
   const [hospitalAmbulance, setHospitalAmbulance] = useState(DEFAULT_HOSPITAL_PROFILE.ambulanceHotline);
   const [hospitalEmail, setHospitalEmail] = useState(DEFAULT_HOSPITAL_PROFILE.email);
   const [hospitalAddress, setHospitalAddress] = useState(DEFAULT_HOSPITAL_PROFILE.address);
+  const [hospitalDiagnosticLicense, setHospitalDiagnosticLicense] = useState(DEFAULT_HOSPITAL_PROFILE.diagnosticLicense);
+  const [hospitalClinicLicense, setHospitalClinicLicense] = useState(DEFAULT_HOSPITAL_PROFILE.clinicLicense);
+  const [hospitalRegNo, setHospitalRegNo] = useState(DEFAULT_HOSPITAL_PROFILE.regNo);
   const [savingHospital, setSavingHospital] = useState(false);
 
   // Real Database Audit Logs State
@@ -132,10 +140,14 @@ export default function SettingsAndAuditPage() {
           setHospitalName(res.data.name);
           setHospitalBanglaName(res.data.banglaName);
           setHospitalPhone(res.data.phone);
+          if (res.data.officePhone) setHospitalOfficePhone(res.data.officePhone);
           setHospitalEmergency(res.data.emergencyHotline);
           setHospitalAmbulance(res.data.ambulanceHotline);
           setHospitalEmail(res.data.email);
           setHospitalAddress(res.data.address);
+          if (res.data.diagnosticLicense) setHospitalDiagnosticLicense(res.data.diagnosticLicense);
+          if (res.data.clinicLicense) setHospitalClinicLicense(res.data.clinicLicense);
+          if (res.data.regNo) setHospitalRegNo(res.data.regNo);
         }
       } catch (err) {
         console.error("Failed to load hospital master data", err);
@@ -177,10 +189,14 @@ export default function SettingsAndAuditPage() {
     setHospitalName(APPROVED_HOSPITAL_DATA.name);
     setHospitalBanglaName(APPROVED_HOSPITAL_DATA.banglaName);
     setHospitalPhone(APPROVED_HOSPITAL_DATA.phone);
+    setHospitalOfficePhone(APPROVED_HOSPITAL_DATA.officePhone || "01904210065");
     setHospitalEmergency(APPROVED_HOSPITAL_DATA.emergencyHotline);
     setHospitalAmbulance(APPROVED_HOSPITAL_DATA.ambulanceHotline);
     setHospitalEmail(APPROVED_HOSPITAL_DATA.email);
     setHospitalAddress(APPROVED_HOSPITAL_DATA.address);
+    setHospitalDiagnosticLicense(APPROVED_HOSPITAL_DATA.diagnosticLicense || "HSM4521681");
+    setHospitalClinicLicense(APPROVED_HOSPITAL_DATA.clinicLicense || "HSM4312356");
+    setHospitalRegNo(APPROVED_HOSPITAL_DATA.regNo || "10022715");
     setSavedToast("Reset form values to official approved hospital master data.");
     setTimeout(() => setSavedToast(""), 4000);
   };
@@ -772,7 +788,7 @@ export default function SettingsAndAuditPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
                 Reception Phone (রিসিপশন)
@@ -791,6 +807,18 @@ export default function SettingsAndAuditPage() {
               </label>
               <input
                 type="text"
+                value={hospitalOfficePhone}
+                onChange={(e) => setHospitalOfficePhone(e.target.value)}
+                placeholder="01904210065"
+                className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Emergency Hotline (জরুরি)
+              </label>
+              <input
+                type="text"
                 value={hospitalEmergency}
                 onChange={(e) => setHospitalEmergency(e.target.value)}
                 placeholder="01904210065"
@@ -806,6 +834,45 @@ export default function SettingsAndAuditPage() {
                 value={hospitalAmbulance}
                 onChange={(e) => setHospitalAmbulance(e.target.value)}
                 placeholder="01904210065"
+                className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Diagnostic License No. (ডায়াগনস্টিক লাইসেন্স)
+              </label>
+              <input
+                type="text"
+                value={hospitalDiagnosticLicense}
+                onChange={(e) => setHospitalDiagnosticLicense(e.target.value)}
+                placeholder="HSM4521681"
+                className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Clinic License No. (ক্লিনিক লাইসেন্স)
+              </label>
+              <input
+                type="text"
+                value={hospitalClinicLicense}
+                onChange={(e) => setHospitalClinicLicense(e.target.value)}
+                placeholder="HSM4312356"
+                className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                DGHS Registry No. (রেজিস্ট্রেশন নং)
+              </label>
+              <input
+                type="text"
+                value={hospitalRegNo}
+                onChange={(e) => setHospitalRegNo(e.target.value)}
+                placeholder="10022715"
                 className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
               />
             </div>

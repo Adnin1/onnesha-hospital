@@ -1462,6 +1462,7 @@ export interface UnifiedPatientIntakePayload {
       enabled: boolean;
       departmentId?: string;
       doctorId?: string;
+      opdFee?: number;
       chiefComplaint?: string;
       priority?: "NORMAL" | "URGENT" | "CRITICAL";
     };
@@ -1472,6 +1473,9 @@ export interface UnifiedPatientIntakePayload {
       wardId?: string;
       bedId?: string;
       cabinId?: string;
+      dailyRate?: number;
+      dailyServiceCharge?: number;
+      admissionFee?: number;
       provisionalDiagnosis?: string;
       referralAgentId?: string;
     };
@@ -1479,6 +1483,7 @@ export interface UnifiedPatientIntakePayload {
       enabled: boolean;
       unitId?: string;
       bedNumber?: string;
+      dailyCharge?: number;
       doctorId?: string;
       initialDiagnosis?: string;
       ventilatorRequired?: boolean;

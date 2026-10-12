@@ -163,7 +163,10 @@ export function HalfLetterInvoicePrint({
             {HOSPITAL_METADATA.address}
           </p>
           <p className="text-[9px] text-slate-600 leading-tight">
-            হটলাইন: 01620-003888, 01718-835623 | ২৪ ঘণ্টা জরুরি সেবা
+            রিসিপশন: {HOSPITAL_METADATA.receptionPhone || "01895-665114"} | অফিস: {HOSPITAL_METADATA.officePhone || "01904210065"}
+          </p>
+          <p className="text-[8px] text-slate-500 leading-tight">
+            ডায়াগনস্টিক লাইসেন্স: {HOSPITAL_METADATA.diagnosticLicense || "HSM4521681"} | ক্লিনিক লাইসেন্স: {HOSPITAL_METADATA.clinicLicense || "HSM4312356"} | DGHS: {HOSPITAL_METADATA.regNo || "10022715"}
           </p>
         </div>
 

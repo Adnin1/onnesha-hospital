@@ -20,29 +20,36 @@ export interface HospitalMasterData {
   banglaName: string;
   code: string;
   phone: string;
+  officePhone?: string;
+  receptionPhone?: string;
   emergencyHotline: string;
   ambulanceHotline: string;
   email: string;
   address: string;
   regNo?: string;
+  diagnosticLicense?: string;
+  clinicLicense?: string;
   updatedAt?: string;
 }
 
 // Baseline approved master profile aligned with authoritative config/hospital.ts
-// [CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED]
-// Physical address (Khandar vs Sherpur Road) and English brand name transliteration
-// ("Annesha" vs "Onnesha") require final owner verification.
+// [CONTENT TRUTH AUDIT & RECONCILIATION AUDIT]:
+// Historical baseline: 'Annesha Hospital and Diagnostic Center', 'অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার', '01718835623', 'সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া', '01904210065', 'aaih.apon@gmail.com'.
 export const APPROVED_HOSPITAL_DATA: HospitalMasterData = {
   id: HOSPITAL_METADATA.id,
-  name: "Annesha Hospital and Diagnostic Center",
-  banglaName: "অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার",
+  name: "ANNESHA HOSPITAL AND DIAGNOSTIC",
+  banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক",
   code: "OH",
-  phone: "01718835623",
-  emergencyHotline: "01718835623",
+  phone: "01895-665114",
+  officePhone: "01904210065",
+  receptionPhone: "01895-665114",
+  emergencyHotline: "01904210065",
   ambulanceHotline: "01904210065",
   email: "aaih.apon@gmail.com",
-  address: "সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া",
-  regNo: HOSPITAL_METADATA.regNo || "",
+  address: "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
+  regNo: HOSPITAL_METADATA.regNo || "10022715",
+  diagnosticLicense: "HSM4521681",
+  clinicLicense: "HSM4312356",
 };
 
 export async function getHospitalMasterDataAction(): Promise<{
@@ -100,7 +107,11 @@ export async function getHospitalMasterDataAction(): Promise<{
         ambulanceHotline: settings?.ambulance_hotline || APPROVED_HOSPITAL_DATA.ambulanceHotline,
         email: org?.email || APPROVED_HOSPITAL_DATA.email,
         address: org?.address || APPROVED_HOSPITAL_DATA.address,
-        regNo: HOSPITAL_METADATA.regNo || "",
+        regNo: HOSPITAL_METADATA.regNo || "10022715",
+        officePhone: APPROVED_HOSPITAL_DATA.officePhone,
+        receptionPhone: org?.phone || APPROVED_HOSPITAL_DATA.receptionPhone,
+        diagnosticLicense: APPROVED_HOSPITAL_DATA.diagnosticLicense,
+        clinicLicense: APPROVED_HOSPITAL_DATA.clinicLicense,
         updatedAt: org?.updated_at || new Date().toISOString(),
       },
     };

@@ -553,6 +553,14 @@ function BillingManagementContent() {
   const netTotal = Math.max(0, subtotal - calculatedDiscountAmount);
   const dueAmount = Math.max(0, netTotal - initialPaymentAmount);
 
+  const recalcTotals = (updatedItems: typeof items) => {
+    const newSub = updatedItems.reduce((acc, it) => acc + (Number(it.unitPrice) || 0) * (Number(it.quantity) || 0), 0);
+    const newDisc = discountMode === "PERCENT"
+      ? (discountPercent !== "" && Number(discountPercent) > 0 ? Math.round((newSub * Number(discountPercent)) / 100) : 0)
+      : (discountFixed !== "" && Number(discountFixed) > 0 ? Math.min(newSub, Number(discountFixed)) : 0);
+    setInitialPaymentAmount(Math.max(0, newSub - newDisc));
+  };
+
   const addItemRow = (
     category: ServiceCategory | InvoiceItemRecord["service_category"],
     name: string,
@@ -572,21 +580,13 @@ function BillingManagementContent() {
       next = [...items, { category: dbCategory, itemName: name, unitPrice: price, quantity }];
     }
     setItems(next);
-    const newSub = next.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
-    const newDisc = discountMode === "PERCENT"
-      ? (discountPercent !== "" && Number(discountPercent) > 0 ? Math.round((newSub * Number(discountPercent)) / 100) : 0)
-      : (discountFixed !== "" && Number(discountFixed) > 0 ? Number(discountFixed) : 0);
-    setInitialPaymentAmount(Math.max(0, newSub - newDisc));
+    recalcTotals(next);
   };
 
   const removeItemRow = (idx: number) => {
     const next = items.filter((_, i) => i !== idx);
     setItems(next);
-    const newSub = next.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
-    const newDisc = discountMode === "PERCENT"
-      ? (discountPercent !== "" && Number(discountPercent) > 0 ? Math.round((newSub * Number(discountPercent)) / 100) : 0)
-      : (discountFixed !== "" && Number(discountFixed) > 0 ? Number(discountFixed) : 0);
-    setInitialPaymentAmount(Math.max(0, newSub - newDisc));
+    recalcTotals(next);
   };
 
   const handleSavePatientDemographics = async () => {
@@ -2013,99 +2013,133 @@ function BillingManagementContent() {
                   ))}
                 </datalist>
 
+                {items.length > 0 && (
+                  <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-slate-500 uppercase px-2 py-1 bg-slate-100 rounded-lg">
+                    <div className="col-span-2">ক্যাটাগরি</div>
+                    <div className="col-span-4">সার্ভিস / টেস্টের নাম</div>
+                    <div className="col-span-2 text-center">পরিমাণ (Qty)</div>
+                    <div className="col-span-2 text-right">ইউনিট মূল্য (৳)</div>
+                    <div className="col-span-2 text-right pr-6">মোট টাকা (৳)</div>
+                  </div>
+                )}
+
                 {items.map((it, idx) => (
-                  <div key={idx} className="flex gap-2 items-center">
-                    <select
-                      value={it.category}
-                      onChange={(e) => {
-                        const next = [...items];
-                        next[idx].category = e.target.value as InvoiceItemRecord["service_category"];
-                        setItems(next);
-                      }}
-                      className="w-28 px-2 py-1.5 border rounded-lg bg-slate-50 font-semibold text-[11px]"
-                    >
-                      <option value="CONSULTATION">Consultation</option>
-                      <option value="LAB">Lab</option>
-                      <option value="XRAY">X-Ray</option>
-                      <option value="USG">USG</option>
-                      <option value="BED">Bed</option>
-                      <option value="OT">OT</option>
-                      <option value="PHARMACY">Pharmacy</option>
-                      <option value="AMBULANCE">Ambulance</option>
-                      <option value="MISC">Misc</option>
-                    </select>
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-slate-50/70 hover:bg-slate-50 p-1.5 rounded-xl border border-slate-200/80 transition">
+                    <div className="col-span-2">
+                      <select
+                        value={it.category}
+                        onChange={(e) => {
+                          const next = [...items];
+                          next[idx].category = e.target.value as InvoiceItemRecord["service_category"];
+                          setItems(next);
+                        }}
+                        className="w-full px-2 py-1.5 border rounded-lg bg-white font-semibold text-[11px]"
+                      >
+                        <option value="CONSULTATION">Consultation</option>
+                        <option value="LAB">Lab</option>
+                        <option value="XRAY">X-Ray</option>
+                        <option value="USG">USG</option>
+                        <option value="BED">Bed</option>
+                        <option value="OT">OT</option>
+                        <option value="PHARMACY">Pharmacy</option>
+                        <option value="AMBULANCE">Ambulance</option>
+                        <option value="MISC">Misc</option>
+                      </select>
+                    </div>
 
-                    <input
-                      type="text"
-                      list="all-hospital-services-datalist"
-                      required
-                      placeholder="সার্ভিস বা টেস্টের নাম"
-                      value={it.itemName}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const next = [...items];
-                        const matched = allServices.find((s) => s.name.toLowerCase() === val.toLowerCase());
-                        if (matched) {
-                          next[idx] = {
-                            ...next[idx],
-                            itemName: matched.name,
-                            category: toDbInvoiceCategory(matched.category),
-                            unitPrice: matched.price,
-                          };
-                        } else {
-                          next[idx].itemName = val;
-                        }
-                        setItems(next);
-                        const newSub = next.reduce((acc, x) => acc + x.unitPrice * x.quantity, 0);
-                        const newDisc = discountPercent !== "" && Number(discountPercent) > 0
-                          ? Math.round((newSub * Number(discountPercent)) / 100)
-                          : 0;
-                        setInitialPaymentAmount(Math.max(0, newSub - newDisc));
-                      }}
-                      className="flex-1 px-2.5 py-1.5 border rounded-lg bg-slate-50 font-semibold text-[11px]"
-                    />
+                    <div className="col-span-4">
+                      <input
+                        type="text"
+                        list="all-hospital-services-datalist"
+                        required
+                        placeholder="সার্ভিস বা টেস্টের নাম"
+                        value={it.itemName}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const next = [...items];
+                          const matched = allServices.find((s) => s.name.toLowerCase() === val.toLowerCase());
+                          if (matched) {
+                            next[idx] = {
+                              ...next[idx],
+                              itemName: matched.name,
+                              category: toDbInvoiceCategory(matched.category),
+                              unitPrice: matched.price,
+                            };
+                          } else {
+                            next[idx].itemName = val;
+                          }
+                          setItems(next);
+                          recalcTotals(next);
+                        }}
+                        className="w-full px-2.5 py-1.5 border rounded-lg bg-white font-semibold text-[11px]"
+                      />
+                    </div>
 
-                    <input
-                      type="number"
-                      min="1"
-                      value={it.quantity}
-                      onChange={(e) => {
-                        const next = [...items];
-                        next[idx].quantity = Number(e.target.value);
-                        setItems(next);
-                        const newSub = next.reduce((acc, x) => acc + x.unitPrice * x.quantity, 0);
-                        const newDisc = discountPercent !== "" && Number(discountPercent) > 0
-                          ? Math.round((newSub * Number(discountPercent)) / 100)
-                          : 0;
-                        setInitialPaymentAmount(Math.max(0, newSub - newDisc));
-                      }}
-                      className="w-16 px-2 py-1.5 border rounded-lg bg-slate-50 font-mono text-center text-[11px]"
-                    />
+                    <div className="col-span-2">
+                      <input
+                        type="number"
+                        step="any"
+                        min="0.01"
+                        placeholder="Qty"
+                        value={it.quantity}
+                        onChange={(e) => {
+                          const next = [...items];
+                          const rawVal = e.target.value;
+                          next[idx].quantity = rawVal === "" ? 0 : Number(rawVal);
+                          setItems(next);
+                          recalcTotals(next);
+                        }}
+                        className="w-full px-2 py-1.5 border rounded-lg bg-white font-mono text-center text-[11px] font-bold text-sky-900"
+                        title="পরিমাণ (Quantity) - পরিবর্তন করলে স্বয়ংক্রিয় গুণফল হিসাব হবে"
+                      />
+                    </div>
 
-                    <input
-                      type="number"
-                      min="0"
-                      value={it.unitPrice}
-                      onChange={(e) => {
-                        const next = [...items];
-                        next[idx].unitPrice = Number(e.target.value);
-                        setItems(next);
-                        const newSub = next.reduce((acc, x) => acc + x.unitPrice * x.quantity, 0);
-                        const newDisc = discountPercent !== "" && Number(discountPercent) > 0
-                          ? Math.round((newSub * Number(discountPercent)) / 100)
-                          : 0;
-                        setInitialPaymentAmount(Math.max(0, newSub - newDisc));
-                      }}
-                      className="w-24 px-2 py-1.5 border rounded-lg bg-slate-50 font-mono text-right text-[11px]"
-                    />
+                    <div className="col-span-2">
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        placeholder="Rate"
+                        value={it.unitPrice}
+                        onChange={(e) => {
+                          const next = [...items];
+                          const rawVal = e.target.value;
+                          next[idx].unitPrice = rawVal === "" ? 0 : Number(rawVal);
+                          setItems(next);
+                          recalcTotals(next);
+                        }}
+                        className="w-full px-2 py-1.5 border rounded-lg bg-white font-mono text-right text-[11px]"
+                        title="প্রতি ইউনিটের মূল্য (Unit Price)"
+                      />
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() => removeItemRow(idx)}
-                      className="p-1.5 text-rose-500 hover:text-rose-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="col-span-2 flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        placeholder="Total"
+                        value={Math.round((Number(it.quantity) || 0) * (Number(it.unitPrice) || 0) * 100) / 100}
+                        onChange={(e) => {
+                          const lineTotal = Number(e.target.value) || 0;
+                          const next = [...items];
+                          const curQty = Number(next[idx].quantity) || 1;
+                          next[idx].unitPrice = curQty > 0 ? Math.round((lineTotal / curQty) * 100) / 100 : lineTotal;
+                          setItems(next);
+                          recalcTotals(next);
+                        }}
+                        className="flex-1 min-w-0 px-2 py-1.5 border border-emerald-300 rounded-lg bg-emerald-50/70 font-mono text-right text-[11px] font-black text-emerald-800"
+                        title="মোট মূল্য (Qty * Unit Rate) - সরাসরি টাইপ করেও পরিবর্তনযোগ্য"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeItemRow(idx)}
+                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition shrink-0"
+                        title="আইটেমটি বাদ দিন"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
 

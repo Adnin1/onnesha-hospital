@@ -31,13 +31,11 @@ export function HospitalPrintHeader({
               {HOSPITAL_METADATA.banglaName}
             </p>
             <p className="text-xs text-slate-600 mt-0.5">
-              {[HOSPITAL_METADATA.address, HOSPITAL_METADATA.phone ? `Hotline: ${HOSPITAL_METADATA.phone}` : null, `Emergency: ${HOSPITAL_METADATA.emergencyHotline}`].filter(Boolean).join(" | ")}
+              {HOSPITAL_METADATA.address} | রিসিপশন: {HOSPITAL_METADATA.receptionPhone || "01895-665114"} | অফিস: {HOSPITAL_METADATA.officePhone || "01904210065"}
             </p>
-            {HOSPITAL_METADATA.regNo && (
-              <p className="text-[10px] text-slate-500">
-                Govt. Reg No: {HOSPITAL_METADATA.regNo}
-              </p>
-            )}
+            <p className="text-[10px] text-slate-500 mt-0.5">
+              ডায়াগনস্টিক লাইসেন্স: {HOSPITAL_METADATA.diagnosticLicense || "HSM4521681"} | ক্লিনিক লাইসেন্স: {HOSPITAL_METADATA.clinicLicense || "HSM4312356"} | DGHS Reg: {HOSPITAL_METADATA.regNo || "10022715"}
+            </p>
           </div>
         </div>
 

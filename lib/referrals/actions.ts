@@ -527,6 +527,137 @@ export async function settleReferralCommissionsAction(params: {
   }
 }
 
+export async function recordDiscretionaryCommissionPayoutAction(params: {
+  agentId: string;
+  amount: number;
+  paymentMethod: "CASH" | "BANK_TRANSFER" | "BKASH" | "NAGAD" | "ROCKET" | "UPAY";
+  transactionReference?: string;
+  notes?: string;
+}): Promise<{ success: boolean; settlementNumber?: string; expenseVoucher?: string; error?: string }> {
+  try {
+    if (!params.agentId) {
+      return { success: false, error: "Referral partner ID is required." };
+    }
+    if (!params.amount || params.amount <= 0) {
+      return { success: false, error: "Payout amount must be greater than zero." };
+    }
+
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Authentication required");
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", user.id)
+      .single();
+
+    const orgId = profile?.organization_id;
+    if (!orgId) throw new Error("Organization profile not resolved");
+
+    const { data: agent, error: agentErr } = await supabase
+      .from("referral_agents")
+      .select("id, agent_code, full_name, total_commission_settled, total_commission_earned")
+      .eq("id", params.agentId)
+      .eq("organization_id", orgId)
+      .single();
+
+    if (agentErr || !agent) {
+      return { success: false, error: "Referral agent not found" };
+    }
+
+    const settlementNumber = `SETTLE-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const { error: setErr } = await supabase
+      .from("referral_commission_settlements")
+      .insert({
+        organization_id: orgId,
+        settlement_number: settlementNumber,
+        referral_agent_id: params.agentId,
+        settlement_date: new Date().toISOString(),
+        gross_commission_selected: params.amount,
+        adjustment_amount: 0,
+        net_paid_amount: params.amount,
+        payment_method: params.paymentMethod,
+        transaction_reference: params.transactionReference?.trim() || null,
+        paid_by: user.id,
+        notes: params.notes?.trim() || "Discretionary partner payout",
+      });
+
+    if (setErr) {
+      console.warn("[recordDiscretionaryCommissionPayoutAction] settlement table:", setErr.message);
+    }
+
+    const newSettled = Number(agent.total_commission_settled || 0) + Number(params.amount);
+    await supabase
+      .from("referral_agents")
+      .update({
+        total_commission_settled: newSettled,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.agentId)
+      .eq("organization_id", orgId);
+
+    let categoryId: string | null = null;
+    const { data: expCat } = await supabase
+      .from("expense_categories")
+      .select("id")
+      .eq("organization_id", orgId)
+      .or("category_code.eq.EXP-MARKETING,name.ilike.%Marketing%,name.ilike.%Referral%")
+      .limit(1)
+      .maybeSingle();
+
+    if (expCat?.id) {
+      categoryId = expCat.id;
+    } else {
+      const { data: newCat } = await supabase
+        .from("expense_categories")
+        .insert({
+          organization_id: orgId,
+          name: "Marketing & Referral Commission (মার্কেটিং ও রেফারেল কমিশন)",
+          category_code: "EXP-MARKETING",
+          is_active: true,
+        })
+        .select("id")
+        .single();
+      categoryId = newCat?.id || null;
+    }
+
+    let voucherNumber = `VOUCH-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+    if (categoryId) {
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc("record_hospital_expense_atomic", {
+        p_org_id: orgId,
+        p_category_id: categoryId,
+        p_title: `Referral Commission Payout - ${agent.full_name} (${agent.agent_code})`,
+        p_amount: params.amount,
+        p_payment_method: params.paymentMethod,
+        p_payment_reference: params.transactionReference?.trim() || settlementNumber,
+        p_paid_to: agent.full_name,
+        p_expense_date: new Date().toISOString().split("T")[0],
+        p_expense_type: "MARKETING",
+        p_doctor_id: null,
+        p_duty_shift: null,
+        p_department: "Marketing",
+        p_notes: `Settlement #${settlementNumber}: ${params.notes || "Discretionary partner commission payout"}`,
+        p_created_by: user.id,
+      });
+
+      if (!rpcErr && rpcRes && typeof rpcRes === "object" && "voucher_number" in rpcRes) {
+        voucherNumber = (rpcRes as { voucher_number: string }).voucher_number;
+      }
+    }
+
+    return {
+      success: true,
+      settlementNumber,
+      expenseVoucher: voucherNumber,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to record discretionary commission payout";
+    return { success: false, error: msg };
+  }
+}
+
 export async function getReferralSettlementsAction(agentId?: string): Promise<{
   success: boolean;
   data?: ReferralSettlement[];

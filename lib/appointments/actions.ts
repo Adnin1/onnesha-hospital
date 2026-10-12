@@ -149,23 +149,39 @@ export async function createDoctorAction(params: {
       deptId = dept?.id;
     }
 
-    const { data: newDoc, error } = await supabase
+    const doctorData: Record<string, unknown> = {
+      organization_id: session.organizationId,
+      department_id: deptId,
+      full_name: params.fullName.trim(),
+      specialization: params.specialization.trim(),
+      bmdc_reg_number: params.bmdcRegNumber?.trim() || null,
+      degrees: params.degrees?.trim() || "MBBS",
+      designation: params.designation?.trim() || "Medical Officer",
+      opd_fee: params.consultationFee,
+      room_number: params.roomNumber.trim(),
+      is_active: true,
+    };
+    if (params.phone?.trim()) {
+      doctorData.phone = params.phone.trim();
+    }
+
+    let insertRes = await supabase
       .from("doctors")
-      .insert({
-        organization_id: session.organizationId,
-        department_id: deptId,
-        full_name: params.fullName.trim(),
-        specialization: params.specialization.trim(),
-        bmdc_reg_number: params.bmdcRegNumber?.trim() || null,
-        degrees: params.degrees?.trim() || "MBBS",
-        designation: params.designation?.trim() || "Medical Officer",
-        phone: params.phone?.trim() || null,
-        opd_fee: params.consultationFee,
-        room_number: params.roomNumber.trim(),
-        is_active: true,
-      })
+      .insert(doctorData)
       .select("*, departments(name)")
       .single();
+
+    if (insertRes.error && (insertRes.error.message.includes("'phone'") || insertRes.error.code === "PGRST204")) {
+      delete doctorData.phone;
+      insertRes = await supabase
+        .from("doctors")
+        .insert(doctorData)
+        .select("*, departments(name)")
+        .single();
+    }
+
+    const newDoc = insertRes.data;
+    const error = insertRes.error;
 
     if (error || !newDoc) {
       return { success: false, error: error?.message || "Failed to add doctor" };
@@ -286,13 +302,27 @@ export async function updateDoctorAction(params: {
       updatePayload.is_active = params.isActive;
     }
 
-    const { data: updatedDoc, error } = await supabase
+    let updateRes = await supabase
       .from("doctors")
       .update(updatePayload)
       .eq("id", params.doctorId)
       .eq("organization_id", session.organizationId)
       .select("*, departments(name)")
       .single();
+
+    if (updateRes.error && (updateRes.error.message.includes("'phone'") || updateRes.error.code === "PGRST204")) {
+      delete updatePayload.phone;
+      updateRes = await supabase
+        .from("doctors")
+        .update(updatePayload)
+        .eq("id", params.doctorId)
+        .eq("organization_id", session.organizationId)
+        .select("*, departments(name)")
+        .single();
+    }
+
+    const updatedDoc = updateRes.data;
+    const error = updateRes.error;
 
     if (error || !updatedDoc) {
       return { success: false, error: error?.message || "Failed to update doctor" };

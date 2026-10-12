@@ -44,6 +44,7 @@ import {
   getReferralPerformanceAnalyticsAction,
   approveCommissionAction,
   rejectCommissionAction,
+  recordDiscretionaryCommissionPayoutAction,
 } from "@/lib/referrals/actions";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -79,6 +80,14 @@ export default function ReferralManagementPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
   const [agentToArchive, setAgentToArchive] = useState<ReferralAgent | null>(null);
+  const [agentPeriodFilter, setAgentPeriodFilter] = useState<"ALL" | "TODAY" | "WEEK" | "MONTH" | "YEAR">("ALL");
+  const [showDiscretionaryPayoutModal, setShowDiscretionaryPayoutModal] = useState(false);
+  const [discretionaryPayoutAmount, setDiscretionaryPayoutAmount] = useState<number | "">("");
+  const [discretionaryPaymentMethod, setDiscretionaryPaymentMethod] = useState<"CASH" | "BANK_TRANSFER" | "BKASH" | "NAGAD">("CASH");
+  const [discretionaryPaymentRef, setDiscretionaryPaymentRef] = useState("");
+  const [discretionaryPaymentNotes, setDiscretionaryPaymentNotes] = useState("");
+  const [discretionaryPayoutLoading, setDiscretionaryPayoutLoading] = useState(false);
+  const [payoutToast, setPayoutToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   // Performance Analytics State
   const [performanceData, setPerformanceData] = useState<ReferralPerformanceAnalyticsData | null>(null);
@@ -223,6 +232,40 @@ export default function ReferralManagementPage() {
       setAlertError("Network error loading agent details");
     } finally {
       setLoadingDetail(false);
+    }
+  };
+
+  // Submit discretionary commission payout directly posting to hospital expenses
+  const handleDiscretionaryPayoutSubmit = async () => {
+    if (!agentDetailData?.agent.id || !discretionaryPayoutAmount || Number(discretionaryPayoutAmount) <= 0) {
+      setPayoutToast({ message: "অনুগ্রহ করে বৈধ কমিশন টাকার পরিমাণ লিখুন", type: "error" });
+      return;
+    }
+    setDiscretionaryPayoutLoading(true);
+    setPayoutToast(null);
+    try {
+      const res = await recordDiscretionaryCommissionPayoutAction({
+        agentId: agentDetailData.agent.id,
+        amount: Number(discretionaryPayoutAmount),
+        paymentMethod: discretionaryPaymentMethod,
+        transactionReference: discretionaryPaymentRef.trim() || undefined,
+        notes: discretionaryPaymentNotes.trim() || undefined,
+      });
+      if (res.success) {
+        setPayoutToast({ message: "কমিশন সফলভাবে পরিশোধ ও হাসপাতাল খরচে যোগ করা হয়েছে!", type: "success" });
+        setShowDiscretionaryPayoutModal(false);
+        setDiscretionaryPayoutAmount("");
+        setDiscretionaryPaymentRef("");
+        setDiscretionaryPaymentNotes("");
+        await handleOpenAgentDetail(agentDetailData.agent.id);
+        await refreshAll();
+      } else {
+        setPayoutToast({ message: res.error || "কমিশন প্রদান ব্যর্থ হয়েছে", type: "error" });
+      }
+    } catch {
+      setPayoutToast({ message: "নেটওয়ার্ক ত্রুটি ঘটেছে", type: "error" });
+    } finally {
+      setDiscretionaryPayoutLoading(false);
     }
   };
 
@@ -1796,127 +1839,229 @@ export default function ReferralManagementPage() {
               </button>
             </div>
 
-            {/* Performance Stats */}
+            {/* Performance Stats & Periodic Breakdown */}
             {(() => {
-              const totalHospitalServicesBilled = agentDetailData.commissions.reduce(
+              const now = new Date();
+              const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+              const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+              const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+              const startOfYear = new Date(now.getFullYear(), 0, 1).getTime();
+
+              const todayBilled = agentDetailData.commissions
+                .filter((c: ReferralCommission) => new Date(c.created_at).getTime() >= startOfToday)
+                .reduce((acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
+              const weekBilled = agentDetailData.commissions
+                .filter((c: ReferralCommission) => new Date(c.created_at).getTime() >= sevenDaysAgo)
+                .reduce((acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
+              const monthBilled = agentDetailData.commissions
+                .filter((c: ReferralCommission) => new Date(c.created_at).getTime() >= startOfMonth)
+                .reduce((acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
+              const yearBilled = agentDetailData.commissions
+                .filter((c: ReferralCommission) => new Date(c.created_at).getTime() >= startOfYear)
+                .reduce((acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
+              const allBilled = agentDetailData.commissions.reduce(
                 (acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0),
                 0
               );
+
               const referredPatientsCount = Math.max(
                 agentDetailData.attributions?.length || 0,
                 new Set(agentDetailData.commissions.map((c: ReferralCommission) => c.patient_id)).size
               );
+
+              const filteredCommissions = agentDetailData.commissions.filter((c: ReferralCommission) => {
+                if (agentPeriodFilter === "ALL") return true;
+                const time = new Date(c.created_at).getTime();
+                if (agentPeriodFilter === "TODAY") return time >= startOfToday;
+                if (agentPeriodFilter === "WEEK") return time >= sevenDaysAgo;
+                if (agentPeriodFilter === "MONTH") return time >= startOfMonth;
+                if (agentPeriodFilter === "YEAR") return time >= startOfYear;
+                return true;
+              });
+
               return (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="p-3 bg-sky-50/70 rounded-xl border border-sky-200 text-center">
-                    <span className="text-[10px] font-bold text-sky-700 block uppercase">রেফার করা রোগী</span>
-                    <strong className="text-base text-sky-950 font-black">
-                      {referredPatientsCount} জন
-                    </strong>
+                <div className="space-y-4">
+                  {/* Periodic Billing Analytics Cards */}
+                  <div>
+                    <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      রোগীর হাসপাতাল সেবার মোট বিল সামারি (Periodic Billing)
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                      <div className="p-2.5 bg-sky-50/80 rounded-xl border border-sky-200 text-center">
+                        <span className="text-[10px] font-bold text-sky-700 block">আজ (Daily)</span>
+                        <strong className="text-xs sm:text-sm text-sky-950 font-black">
+                          {formatCurrencyBDT(todayBilled)}
+                        </strong>
+                      </div>
+                      <div className="p-2.5 bg-blue-50/80 rounded-xl border border-blue-200 text-center">
+                        <span className="text-[10px] font-bold text-blue-700 block">এই সপ্তাহ (Weekly)</span>
+                        <strong className="text-xs sm:text-sm text-blue-950 font-black">
+                          {formatCurrencyBDT(weekBilled)}
+                        </strong>
+                      </div>
+                      <div className="p-2.5 bg-indigo-50/80 rounded-xl border border-indigo-200 text-center">
+                        <span className="text-[10px] font-bold text-indigo-700 block">এই মাস (Monthly)</span>
+                        <strong className="text-xs sm:text-sm text-indigo-950 font-black">
+                          {formatCurrencyBDT(monthBilled)}
+                        </strong>
+                      </div>
+                      <div className="p-2.5 bg-purple-50/80 rounded-xl border border-purple-200 text-center">
+                        <span className="text-[10px] font-bold text-purple-700 block">এই বছর (Yearly)</span>
+                        <strong className="text-xs sm:text-sm text-purple-950 font-black">
+                          {formatCurrencyBDT(yearBilled)}
+                        </strong>
+                      </div>
+                      <div className="p-2.5 bg-emerald-50/80 rounded-xl border border-emerald-200 text-center col-span-2 sm:col-span-1">
+                        <span className="text-[10px] font-bold text-emerald-700 block">সর্বমোট (All-Time)</span>
+                        <strong className="text-xs sm:text-sm text-emerald-950 font-black">
+                          {formatCurrencyBDT(allBilled)}
+                        </strong>
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200 text-center">
-                    <span className="text-[10px] font-bold text-emerald-700 block uppercase">হাসপাতাল সেবার মোট মূল্য</span>
-                    <strong className="text-base text-emerald-950 font-black">
-                      {formatCurrencyBDT(totalHospitalServicesBilled)}
-                    </strong>
+
+                  {/* General Status Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                      <span className="text-[10px] font-bold text-slate-500 block">রেফার করা রোগী</span>
+                      <strong className="text-xs sm:text-sm text-slate-900 font-black">
+                        {referredPatientsCount} জন
+                      </strong>
+                    </div>
+                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                      <span className="text-[10px] font-bold text-slate-500 block">অর্জিত কমিশন</span>
+                      <strong className="text-xs sm:text-sm text-slate-900 font-black">
+                        {formatCurrencyBDT(agentDetailData.agent.total_commission_earned || 0)}
+                      </strong>
+                    </div>
+                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                      <span className="text-[10px] font-bold text-slate-500 block">পরিশোধিত</span>
+                      <strong className="text-xs sm:text-sm text-teal-700 font-black">
+                        {formatCurrencyBDT(agentDetailData.agent.total_commission_settled || 0)}
+                      </strong>
+                    </div>
+                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                      <span className="text-[10px] font-bold text-slate-500 block">বকেয়া কমিশন</span>
+                      <strong className="text-xs sm:text-sm text-rose-600 font-black">
+                        {formatCurrencyBDT(
+                          Math.max(
+                            0,
+                            Number(agentDetailData.agent.total_commission_earned || 0) -
+                              Number(agentDetailData.agent.total_commission_settled || 0)
+                          )
+                        )}
+                      </strong>
+                    </div>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                    <span className="text-[10px] font-bold text-slate-400 block uppercase">কমিশন রেট</span>
-                    <strong className="text-sm text-amber-700 font-black">
-                      {agentDetailData.agent.commission_rate_percent}%
-                    </strong>
+
+                  {/* Authority Discretionary Payout Button */}
+                  <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div>
+                      <h5 className="font-bold text-emerald-950 text-xs">কর্তৃপক্ষ কমিশন প্রদান ও খরচ বুকিং</h5>
+                      <p className="text-[11px] text-emerald-800">
+                        রোগীর মোট সেবা যাচাই করে এজেন্টের অনুকূলে যে কোনো কাস্টম কমিশন প্রদান করুন। এটি সরাসরি হাসপাতাল খরচ হিসেবে রেকর্ড হবে।
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowDiscretionaryPayoutModal(true)}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow-xs transition shrink-0"
+                    >
+                      কমিশন পরিশোধ করুন
+                    </button>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                    <span className="text-[10px] font-bold text-slate-400 block uppercase">অর্জিত কমিশন</span>
-                    <strong className="text-sm text-slate-900 font-black">
-                      {formatCurrencyBDT(agentDetailData.agent.total_commission_earned || 0)}
-                    </strong>
+
+                  {/* Period Filter Buttons for Ledger */}
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-xs font-bold text-slate-700">হিস্ট্রি ফিল্টার:</span>
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-[11px] font-semibold">
+                      {(["ALL", "TODAY", "WEEK", "MONTH", "YEAR"] as const).map((period) => (
+                        <button
+                          key={period}
+                          type="button"
+                          onClick={() => setAgentPeriodFilter(period)}
+                          className={`px-2 py-1 rounded transition ${
+                            agentPeriodFilter === period
+                              ? "bg-white text-sky-700 shadow-xs font-bold"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          {period === "ALL" && "সকল সময়"}
+                          {period === "TODAY" && "আজ"}
+                          {period === "WEEK" && "এই সপ্তাহ"}
+                          {period === "MONTH" && "এই মাস"}
+                          {period === "YEAR" && "এই বছর"}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                    <span className="text-[10px] font-bold text-slate-400 block uppercase">পরিশোধিত</span>
-                    <strong className="text-sm text-teal-700 font-black">
-                      {formatCurrencyBDT(agentDetailData.agent.total_commission_settled || 0)}
-                    </strong>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                    <span className="text-[10px] font-bold text-slate-400 block uppercase">বকেয়া কমিশন</span>
-                    <strong className="text-sm text-rose-600 font-black">
-                      {formatCurrencyBDT(
-                        Math.max(
-                          0,
-                          Number(agentDetailData.agent.total_commission_earned || 0) -
-                            Number(agentDetailData.agent.total_commission_settled || 0)
-                        )
-                      )}
-                    </strong>
+
+                  {/* Invoices & Commissions Sub-ledger */}
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-slate-800 text-xs flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Receipt className="w-4 h-4 text-sky-600" />
+                        রেফারেল করা রোগীদের সেবার হিসাব ({filteredCommissions.length})
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-normal">রোগী কত টাকার সেবা নিয়েছে ও ইনভয়েস হিস্ট্রি</span>
+                    </h4>
+                    <div className="border border-slate-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
+                          <tr>
+                            <th className="p-2">তারিখ</th>
+                            <th className="p-2">রোগীর নাম ও কোড</th>
+                            <th className="p-2">ইনভয়েস #</th>
+                            <th className="p-2 text-right">হাসপাতাল সেবা মূল্য</th>
+                            <th className="p-2 text-right">কমিশন</th>
+                            <th className="p-2 text-center">স্ট্যাটাস</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {filteredCommissions.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="p-4 text-center text-slate-400">
+                                নির্বাচিত সময়ে কোনো রেফারেল বিলিং রেকর্ড পাওয়া যায়নি।
+                              </td>
+                            </tr>
+                          ) : (
+                            filteredCommissions.map((c: ReferralCommission) => (
+                              <tr key={c.id} className="hover:bg-slate-50/70">
+                                <td className="p-2 text-slate-500 font-mono text-[11px]">{formatDateBDT(c.created_at)}</td>
+                                <td className="p-2">
+                                  <div className="font-bold text-slate-800">
+                                    {c.patients?.full_name || "Encounter Patient"}
+                                  </div>
+                                  {c.patients?.patient_code && (
+                                    <div className="text-[10px] font-mono text-slate-400">
+                                      {c.patients.patient_code}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="p-2 font-mono font-semibold text-slate-800">
+                                  {c.invoices?.invoice_number || "INV-POSTED"}
+                                </td>
+                                <td className="p-2 text-right font-black text-slate-900">
+                                  {formatCurrencyBDT(c.billing_subtotal || c.commission_base_amount)}
+                                </td>
+                                <td className="p-2 text-right font-black text-emerald-700">
+                                  {formatCurrencyBDT(c.commission_amount)}
+                                </td>
+                                <td className="p-2 text-center">
+                                  <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-slate-100 text-slate-700">
+                                    {c.settlement_status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               );
             })()}
-
-            {/* Invoices & Commissions Sub-ledger */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-slate-800 text-xs flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Receipt className="w-4 h-4 text-sky-600" />
-                  রেফারেল করা রোগীদের সেবার হিসাব ও কমিশন হিস্ট্রি ({agentDetailData.commissions.length})
-                </span>
-                <span className="text-[10px] text-slate-400 font-normal">রোগী কত টাকার সেবা নিয়েছে ও ইনভয়েস হিস্ট্রি</span>
-              </h4>
-              <div className="border border-slate-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
-                    <tr>
-                      <th className="p-2">তারিখ</th>
-                      <th className="p-2">রোগীর নাম ও কোড</th>
-                      <th className="p-2">ইনভয়েস #</th>
-                      <th className="p-2 text-right">হাসপাতাল সেবা মূল্য</th>
-                      <th className="p-2 text-right">কমিশন</th>
-                      <th className="p-2 text-center">স্ট্যাটাস</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {agentDetailData.commissions.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="p-4 text-center text-slate-400">
-                          এখনো কোনো রেফারেল বিলিং বা কমিশন রেকর্ড নেই।
-                        </td>
-                      </tr>
-                    ) : (
-                      agentDetailData.commissions.map((c: ReferralCommission) => (
-                        <tr key={c.id} className="hover:bg-slate-50/70">
-                          <td className="p-2 text-slate-500 font-mono text-[11px]">{formatDateBDT(c.created_at)}</td>
-                          <td className="p-2">
-                            <div className="font-bold text-slate-800">
-                              {c.patients?.full_name || "Encounter Patient"}
-                            </div>
-                            {c.patients?.patient_code && (
-                              <div className="text-[10px] font-mono text-slate-400">
-                                {c.patients.patient_code}
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-2 font-mono font-semibold text-slate-800">
-                            {c.invoices?.invoice_number || "INV-POSTED"}
-                          </td>
-                          <td className="p-2 text-right font-black text-slate-900">
-                            {formatCurrencyBDT(c.billing_subtotal || c.commission_base_amount)}
-                          </td>
-                          <td className="p-2 text-right font-black text-emerald-700">
-                            {formatCurrencyBDT(c.commission_amount)}
-                          </td>
-                          <td className="p-2 text-center">
-                            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-slate-100 text-slate-700">
-                              {c.settlement_status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
 
             {/* Patient Intake & Admission Attributions */}
             {agentDetailData.attributions && agentDetailData.attributions.length > 0 && (
@@ -2045,6 +2190,131 @@ export default function ReferralManagementPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: DISCRETIONARY COMMISSION PAYOUT & AUTO-EXPENSE POSTING */}
+      {showDiscretionaryPayoutModal && agentDetailData && (
+        <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-200 space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-slate-800 text-sm">
+                কাস্টম কমিশন পরিশোধ ও খরচ লিপিবদ্ধকরণ
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowDiscretionaryPayoutModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 text-xs text-sky-900 space-y-1">
+              <p className="font-bold">
+                এজেন্ট: {agentDetailData.agent.full_name} ({agentDetailData.agent.agent_code})
+              </p>
+              <p className="text-[11px] text-sky-700">
+                রোগীর মোট বিল ও সেবার উপর ভিত্তি করে কর্তৃপক্ষ ইচ্ছামতো যেকোনো পরিমাণ কমিশন প্রদান করতে পারেন।
+              </p>
+            </div>
+
+            {payoutToast && (
+              <div
+                className={`p-2.5 rounded-lg text-xs font-semibold ${
+                  payoutToast.type === "success"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : "bg-rose-50 text-rose-800 border border-rose-200"
+                }`}
+              >
+                {payoutToast.message}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  কমিশন পরিশোধের পরিমাণ (৳) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={discretionaryPayoutAmount}
+                  onChange={(e) => setDiscretionaryPayoutAmount(e.target.value === "" ? "" : Number(e.target.value))}
+                  placeholder="যেমন: ১০০০"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  পেমেন্ট মাধ্যম <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={discretionaryPaymentMethod}
+                  onChange={(e) => setDiscretionaryPaymentMethod(e.target.value as "CASH" | "BANK_TRANSFER" | "BKASH" | "NAGAD")}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 bg-white"
+                >
+                  <option value="CASH">ক্যাশ (নগদ)</option>
+                  <option value="BANK_TRANSFER">ব্যাংক ট্রান্সফার</option>
+                  <option value="BKASH">বিকাশ (bKash)</option>
+                  <option value="NAGAD">নগদ (Nagad)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  ট্রানজেকশন / ভাউচার রেফারেন্স (ঐচ্ছিক)
+                </label>
+                <input
+                  type="text"
+                  value={discretionaryPaymentRef}
+                  onChange={(e) => setDiscretionaryPaymentRef(e.target.value)}
+                  placeholder="ভাউচার বা ট্রানজেকশন আইডি"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  মন্তব্য / বিবরণ (ঐচ্ছিক)
+                </label>
+                <input
+                  type="text"
+                  value={discretionaryPaymentNotes}
+                  onChange={(e) => setDiscretionaryPaymentNotes(e.target.value)}
+                  placeholder="কমিশন প্রদানের কারণ বা বিবরণ"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-800"
+                />
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-800">
+                <p className="font-semibold">স্বয়ংক্রিয় হাসপাতাল খরচ নোটিশ:</p>
+                <p>
+                  উক্ত অর্থ প্রদান করার সাথে সাথে এটি <strong>&apos;Marketing & Referral Commission&apos;</strong> ক্যাটাগরিতে হাসপাতাল খরচে (Hospital Expenses) এবং আর্থিক লেজারে সরাসরি যুক্ত হবে।
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowDiscretionaryPayoutModal(false)}
+                className="px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg"
+              >
+                বাতিল
+              </button>
+              <button
+                type="button"
+                disabled={discretionaryPayoutLoading || !discretionaryPayoutAmount || Number(discretionaryPayoutAmount) <= 0}
+                onClick={handleDiscretionaryPayoutSubmit}
+                className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg disabled:opacity-50 transition"
+              >
+                {discretionaryPayoutLoading ? "প্রক্রিয়াধীন..." : "কমিশন পরিশোধ করুন"}
+              </button>
             </div>
           </div>
         </div>

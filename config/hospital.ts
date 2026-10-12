@@ -49,6 +49,8 @@ export interface HospitalMetadata {
   address: string;
   normalizedAddress: string;
   regNo: string;
+  diagnosticLicense?: string;
+  clinicLicense?: string;
   dghsFacilityId: string;
   dghsRegisteredName: string;
   dghsDivisionDistrict: string;
@@ -97,6 +99,8 @@ export const HOSPITAL_METADATA: HospitalMetadata = {
   address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
   normalizedAddress: "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
   regNo: process.env.NEXT_PUBLIC_HOSPITAL_REG_NO || "10022715",
+  diagnosticLicense: "HSM4521681",
+  clinicLicense: "HSM4312356",
   // DGHS Registry data (Facility ID 10022715)
   dghsFacilityId: "10022715",
   dghsRegisteredName: "ANNESHA HOSPITAL / অন্বেষা হাসপাতাল",

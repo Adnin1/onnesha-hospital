@@ -72,7 +72,7 @@ export function AddBedOrCabinModal({
     const res = await addCabinAction({
       cabin_number: cabinNumber.trim(),
       cabin_type: cabinType,
-      floor_number: undefined,
+      floor_number: "Ground Floor",
       daily_rate: Number(cabinRate) || 2500,
       amenities: amenities.trim(),
     });

@@ -717,7 +717,7 @@ export async function addCabinAction(payload: {
         organization_id: orgId,
         cabin_number: payload.cabin_number.trim(),
         cabin_type: payload.cabin_type,
-        floor_number: payload.floor_number?.trim() || null,
+        floor_number: payload.floor_number?.trim() || "Ground Floor",
         daily_rate: payload.daily_rate,
         status: "VACANT",
         amenities: payload.amenities || "AC, TV, Attached Bath",
@@ -915,7 +915,7 @@ export async function updateCabinDetailsAction(payload: {
     const updateFields: Record<string, unknown> = {};
     if (payload.cabin_number?.trim()) updateFields.cabin_number = payload.cabin_number.trim();
     if (payload.cabin_type) updateFields.cabin_type = payload.cabin_type;
-    if (payload.floor_number !== undefined) updateFields.floor_number = payload.floor_number?.trim() || null;
+    if (payload.floor_number !== undefined) updateFields.floor_number = payload.floor_number?.trim() || "Ground Floor";
     if (payload.daily_rate !== undefined && !Number.isNaN(Number(payload.daily_rate))) {
       updateFields.daily_rate = Number(payload.daily_rate);
     }
