@@ -133,4 +133,22 @@ describe("Security Definer Direct-RPC Hardening & Financial Reports Basis Triad 
     assert.match(settingsPage, /Reset to Approved Master Data/);
     assert.match(settingsPage, /মুছে ফেলুন \(Clear All\)/);
   });
+
+  // Scenario 11: Schema-aligned RPC forward migrations exist
+  test("11. Forward migrations 167-170 align role lookups and schema tables", () => {
+    const mig170Path = path.join(
+      ROOT,
+      "supabase",
+      "migrations",
+      "20261012181500_harden_delete_invoice_void_reason_schema_aligned.sql"
+    );
+    assert.ok(fs.existsSync(mig170Path), "Migration 170 must exist");
+    const content = fs.readFileSync(mig170Path, "utf8");
+    assert.match(content, /is_voided = TRUE/, "Must use is_voided column");
+    assert.match(content, /void_reason = p_reason/, "Must use void_reason column");
+    assert.match(content, /status = 'VOID'/, "Must use VOID status");
+    assert.match(content, /DELETE FROM public\.payments WHERE invoice_id = p_invoice_id/);
+    assert.match(content, /DELETE FROM public\.journal_entries WHERE reference_id = p_invoice_id/);
+  });
 });
+
