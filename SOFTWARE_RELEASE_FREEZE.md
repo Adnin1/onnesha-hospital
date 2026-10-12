@@ -24,17 +24,17 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 | **Canonical Physical Address** | `শেরপুর রোড, সূত্রাপুর, বগুড়া।` | ✅ SYNCHRONIZED |
 | **Official Telephone Hotlines** | `01620003888, 01718835623` | ✅ SYNCHRONIZED |
 | **DGHS Facility ID** | `10022715` | ✅ CERTIFIED |
-| **Supabase Remote Migrations** | 172 / 172 applied (Latest: `20261013024000_doctor_phone_cabin_floor_and_admission_charges.sql`) | ✅ 100% PARITY |
+| **Supabase Remote Migrations** | 173 / 173 applied (Latest: `20261013050000_doctor_bed_ipd_referral_integrity_hardening.sql`) | ✅ 100% PARITY |
 | **Data Authenticity Policy** | Honest empty states enforced; zero synthetic auto-fabrication in production tenant | ✅ CERTIFIED |
 | **TypeScript Strict Compiler** | `tsc --noEmit` -> 0 errors, 0 warnings | ✅ PASS |
 | **ESLint Quality Gate** | `eslint` -> 0 errors, 0 warnings | ✅ PASS |
-| **Node.js Certification Suites** | 135/135 suites passed (1,234 active pass, 0 fail, 7 skipped) | ✅ PASS |
+| **Node.js Certification Suites** | 136/136 suites passed (1,240 active pass, 0 fail, 7 skipped) | ✅ PASS |
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 547 baseline across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | ✅ PASS |
 | **Next.js Static Export** | 62/62 static routes prerendered into `out/` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1108 assets, 0 broken links | ✅ PASS |
 | **Native Windows MSI Installer** | `Onnesha-Hospital-1.1.90.msi` (3,457,024 bytes, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`) | ✅ VERIFIED |
 | **Native Windows EXE Installer** | `Onnesha-Hospital-Setup-1.1.90.exe` (2,895,011 bytes, SHA-256: `72BAD4D10633B4FDC03549DA64FE01C29FFE400EC142347561FC8394380134D1`) | ✅ VERIFIED |
-| **Cloudflare Edge Deployment** | `https://onnesha-hospital.pages.dev` (Deployment `fb5fd759`, `WORKSTATION_DEPLOY_VERIFIED`) | ✅ DEPLOYED |
+| **Cloudflare Edge Deployment** | `https://onnesha-hospital.pages.dev` (Deployment `9a08bf23`, `WORKSTATION_DEPLOY_VERIFIED`) | ✅ DEPLOYED |
 
 ---
 
@@ -42,10 +42,11 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 
 - **Authoritative Git Repository:** `Adnin1/onnesha-hospital`
 - **Active Branch:** `main`
-- **Engineering HEAD:** `5db787e5794aff70ac8bd731c1e693614fa6ff3b`
+- **Engineering HEAD:** `4d1ecec9517ed9d037f7b55571afb2e1ead19c6d`
 - **Remote Remotes:** `origin` (`https://github.com/Adnin1/onnesha-hospital.git`) & `ssh-origin` (`git@github.com:Adnin1/onnesha-hospital.git`)
-- **Database Parity:** 172 local / 172 remote Supabase migrations applied (`iuhtzahuszdkdarhxobx`)
+- **Database Parity:** 173 local / 173 remote Supabase migrations applied (`iuhtzahuszdkdarhxobx`)
 - **Historical Release Tags Preserved:** `v1.1.88` (`c33728d`), `v1.1.89` (`688d869`), `v1.1.90` (`db8b750`)
+- **Release Freeze Lifecycle:** Previous freeze (`5db787e` / `8be74b4`) marked `SUPERSEDED_BY_POST_UAT_FIX`. Current production release formally re-frozen at `4d1ecec` after full verification of doctor optional BMDC/phone, multi-tenant bed/ward safety, IPD admission snapshots, and referral patient service analytics.
 
 ---
 
