@@ -419,6 +419,7 @@ export async function getPaginatedReportInvoicesAction(params: {
   page?: number;
   pageSize?: number;
   status?: string;
+  basis?: "accrual" | "cash" | "due";
   searchQuery?: string;
   startDate?: string;
   endDate?: string;
@@ -489,6 +490,12 @@ export async function getPaginatedReportInvoicesAction(params: {
       } else {
         query = query.eq("status", params.status);
       }
+    }
+
+    if (params.basis === "cash") {
+      query = query.gt("paid_amount", 0).eq("is_voided", false);
+    } else if (params.basis === "due") {
+      query = query.gt("due_amount", 0).eq("is_voided", false);
     }
 
     const sanitizedSearch = sanitizePostgrestSearchTerm(params.searchQuery);
@@ -587,6 +594,7 @@ export async function getPaginatedReportInvoicesAction(params: {
  */
 export async function getExportReportInvoicesAction(params: {
   status?: string;
+  basis?: "accrual" | "cash" | "due";
   searchQuery?: string;
   startDate?: string;
   endDate?: string;
@@ -649,6 +657,12 @@ export async function getExportReportInvoicesAction(params: {
       } else {
         query = query.eq("status", params.status);
       }
+    }
+
+    if (params.basis === "cash") {
+      query = query.gt("paid_amount", 0).eq("is_voided", false);
+    } else if (params.basis === "due") {
+      query = query.gt("due_amount", 0).eq("is_voided", false);
     }
 
     const sanitizedSearch = sanitizePostgrestSearchTerm(params.searchQuery);

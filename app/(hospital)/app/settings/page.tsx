@@ -31,8 +31,8 @@ import { HospitalTariffManager } from "@/components/billing/HospitalTariffManage
 const DEFAULT_HOSPITAL_PROFILE = {
   name: "ANNESHA HOSPITAL AND DIAGNOSTIC",
   banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক",
-  phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01620003888, 01718835623",
-  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "01620003888",
+  phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01895-665114",
+  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "01904210065",
   ambulanceHotline: process.env.NEXT_PUBLIC_AMBULANCE_HOTLINE || "01904210065",
   email: process.env.NEXT_PUBLIC_HOSPITAL_EMAIL || "aaih.apon@gmail.com",
   address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
@@ -775,34 +775,37 @@ export default function SettingsAndAuditPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                Main Reception Phone
+                Reception Phone (রিসিপশন)
               </label>
               <input
                 type="text"
                 value={hospitalPhone}
                 onChange={(e) => setHospitalPhone(e.target.value)}
+                placeholder="01895-665114"
                 className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
               />
             </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                Emergency Hotline Phone
+                Office & Emergency Phone (অফিস)
               </label>
               <input
                 type="text"
                 value={hospitalEmergency}
                 onChange={(e) => setHospitalEmergency(e.target.value)}
+                placeholder="01904210065"
                 className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
               />
             </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                Ambulance Hotline Phone
+                Ambulance Hotline (অ্যাম্বুলেন্স)
               </label>
               <input
                 type="text"
                 value={hospitalAmbulance}
                 onChange={(e) => setHospitalAmbulance(e.target.value)}
+                placeholder="01904210065"
                 className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
               />
             </div>
@@ -849,6 +852,21 @@ export default function SettingsAndAuditPage() {
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Reset to Approved Master Data</span>
+            </button>
+            <button
+              onClick={() => {
+                setHospitalName("");
+                setHospitalBanglaName("");
+                setHospitalPhone("");
+                setHospitalEmergency("");
+                setHospitalAmbulance("");
+                setHospitalEmail("");
+                setHospitalAddress("");
+              }}
+              type="button"
+              className="px-3.5 py-2.5 border border-rose-200 hover:bg-rose-50 text-rose-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5"
+            >
+              <span>মুছে ফেলুন (Clear All)</span>
             </button>
           </div>
 

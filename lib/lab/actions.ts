@@ -464,29 +464,45 @@ export async function verifyDiagnosticReportAction(params: {
       return { success: false, error: "Diagnostic order not found in current organization" };
     }
 
-    if (orderData.status === "CANCELLED" || orderData.status === "DELIVERED") {
-      return { success: false, error: `Cannot verify order in status '${orderData.status}'` };
+    if (orderData.status !== "PROCESSING" && orderData.status !== "SAMPLE_COLLECTED") {
+      return { success: false, error: `Cannot verify order in status '${orderData.status}'. Order must be in PROCESSING or SAMPLE_COLLECTED.` };
     }
 
-    // Build canonical serialized payload covering full clinical content
+    const items = orderData.diagnostic_order_items || [];
+    const hasAnyResults = items.some(
+      (item) =>
+        (item.diagnostic_results?.[0]?.descriptive_findings?.trim() || "").length > 0 ||
+        (item.diagnostic_results?.[0]?.diagnostic_result_values || []).length > 0
+    );
+
+    if (!hasAnyResults) {
+      return { success: false, error: "Cannot clinically verify order without entered test results or descriptive findings." };
+    }
+
+    // Build canonically sorted serialized payload covering full clinical content
+    const sortedItems = [...items]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((item) => ({
+        itemId: item.id,
+        testId: item.test_id,
+        findings: item.diagnostic_results?.[0]?.descriptive_findings || "",
+        values: [...(item.diagnostic_results?.[0]?.diagnostic_result_values || [])]
+          .sort((va, vb) => va.parameter_name.localeCompare(vb.parameter_name))
+          .map((v) => ({
+            name: v.parameter_name,
+            val: v.observed_value,
+            unit: v.unit,
+            abnormal: v.is_abnormal,
+          })),
+      }));
+
     const canonicalPayload = JSON.stringify({
       orderId: params.orderId,
       organizationId: session.organizationId,
       patientId: orderData.patient_id,
       verifierId: session.userId,
       remarks: params.pathologistRemarks || "",
-      items: (orderData.diagnostic_order_items || []).map((item) => ({
-        itemId: item.id,
-        testId: item.test_id,
-        findings: item.diagnostic_results?.[0]?.descriptive_findings || "",
-        values: (item.diagnostic_results?.[0]?.diagnostic_result_values || []).map((v) => ({
-          name: v.parameter_name,
-          val: v.observed_value,
-          unit: v.unit,
-          abnormal: v.is_abnormal,
-        })),
-      })),
-      timestamp: new Date().toISOString(),
+      items: sortedItems,
     });
 
     // SHA-256 integrity hash for the verification event and canonical report content

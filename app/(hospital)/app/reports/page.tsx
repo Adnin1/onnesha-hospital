@@ -54,7 +54,7 @@ import {
 export default function ReportsManagementPage() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<FinancialPeriod>("this_month");
-  const [reportingBasis, setReportingBasis] = useState<"accrual" | "cash">("accrual");
+  const [reportingBasis, setReportingBasis] = useState<"accrual" | "cash" | "due">("accrual");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "due" | "void">("all");
@@ -172,6 +172,7 @@ export default function ReportsManagementPage() {
             page,
             pageSize,
             status: statusFilter,
+            basis: reportingBasis,
             searchQuery: debouncedSearchQuery,
             startDate: period === "all" ? undefined : dateBounds.startIso,
             endDate: period === "all" ? undefined : dateBounds.endExclusiveIso,
@@ -235,6 +236,7 @@ export default function ReportsManagementPage() {
     dateBounds.endIso,
     dateBounds.endExclusiveIso,
     refreshTrigger,
+    reportingBasis,
   ]);
 
   // Lazy-load doctors only when activeTab === "doctors"
@@ -292,6 +294,7 @@ export default function ReportsManagementPage() {
       setExporting(true);
       const res = await getExportReportInvoicesAction({
         status: statusFilter,
+        basis: reportingBasis,
         searchQuery: debouncedSearchQuery,
         startDate: period === "all" ? undefined : dateBounds.startIso,
         endDate: period === "all" ? undefined : dateBounds.endExclusiveIso,
@@ -302,7 +305,12 @@ export default function ReportsManagementPage() {
       const csv = generateFinancialReportCSV(exportInvoices, {
         periodLabel: period.toUpperCase(),
         organizationName: "Onnesha Hospital & Diagnostic Complex",
-        reportingBasis: reportingBasis === "cash" ? "Cash Collection Basis" : "Accrual Accounting Basis",
+        reportingBasis:
+          reportingBasis === "cash"
+            ? "Cash Collection Basis"
+            : reportingBasis === "due"
+            ? "Due / Receivables Basis"
+            : "Accrual Accounting Basis",
         generatedAt: new Date().toISOString(),
       });
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -332,9 +340,15 @@ export default function ReportsManagementPage() {
           .reduce((sum, row) => sum + Math.abs(Number(row.net_balance || 0)), 0);
 
   const netSurplus =
-    pnlSummary.accrualBasis.netOperatingSurplus !== 0
-      ? pnlSummary.accrualBasis.netOperatingSurplus
-      : aggregates.netRevenue - totalOperatingExpenses;
+    reportingBasis === "cash"
+      ? (pnlSummary.cashMovement.netCashMovement !== 0
+          ? pnlSummary.cashMovement.netCashMovement
+          : aggregates.netCollections - totalOperatingExpenses)
+      : reportingBasis === "due"
+      ? aggregates.historicalArDue
+      : (pnlSummary.accrualBasis.netOperatingSurplus !== 0
+          ? pnlSummary.accrualBasis.netOperatingSurplus
+          : aggregates.netRevenue - totalOperatingExpenses);
 
   return (
     <div className="space-y-6">
@@ -586,11 +600,14 @@ export default function ReportsManagementPage() {
             </button>
           </div>
 
-          {/* Basis Toggle: Accrual vs Cash */}
+          {/* Basis Triad: Accrual vs Cash vs Due */}
           <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
             <span className="text-[10px] text-slate-500 font-bold px-1.5 uppercase">ভিত্তি:</span>
             <button
-              onClick={() => setReportingBasis("accrual")}
+              onClick={() => {
+                setReportingBasis("accrual");
+                setPage(1);
+              }}
               className={`px-2.5 py-1.5 rounded-lg transition ${
                 reportingBasis === "accrual" ? "bg-white font-bold text-sky-800 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
@@ -598,12 +615,26 @@ export default function ReportsManagementPage() {
               অ্যাকাউন্টিং (Accrual)
             </button>
             <button
-              onClick={() => setReportingBasis("cash")}
+              onClick={() => {
+                setReportingBasis("cash");
+                setPage(1);
+              }}
               className={`px-2.5 py-1.5 rounded-lg transition ${
                 reportingBasis === "cash" ? "bg-white font-bold text-emerald-800 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
               নগদ আদায় (Cash)
+            </button>
+            <button
+              onClick={() => {
+                setReportingBasis("due");
+                setPage(1);
+              }}
+              className={`px-2.5 py-1.5 rounded-lg transition ${
+                reportingBasis === "due" ? "bg-white font-bold text-amber-800 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              বকেয়া ভিত্তি (Due)
             </button>
           </div>
         </div>
@@ -848,7 +879,13 @@ export default function ReportsManagementPage() {
         <div className="mb-6">
           <HospitalPrintHeader
             documentTitle="হাসপাতাল আয়-ব্যয় ও সামগ্রিক আর্থিক বিবরণী অডিট"
-            documentSubtitle={`সময়কাল: ${period.toUpperCase()} • হিসাবের ভিত্তি: ${reportingBasis === "cash" ? "Cash Collection Basis" : "Accrual Accounting Basis"}`}
+            documentSubtitle={`সময়কাল: ${period.toUpperCase()} • হিসাবের ভিত্তি: ${
+              reportingBasis === "cash"
+                ? "Cash Collection Basis"
+                : reportingBasis === "due"
+                ? "Due / Receivables Basis"
+                : "Accrual Accounting Basis"
+            }`}
           />
           <div className="text-[11px] text-slate-500 font-mono">
             Timezone: Asia/Dhaka (BST UTC+6) • Official ERP Records
@@ -1079,7 +1116,7 @@ export default function ReportsManagementPage() {
                 </p>
               </div>
               <span className="px-2.5 py-1 bg-sky-50 text-sky-700 text-xs font-bold rounded-lg border border-sky-200">
-                ভিত্তি: {reportingBasis === "cash" ? "নগদ আদায় ভিত্তি (Cash)" : "বকেয়া/অ্যাকাউন্টিং ভিত্তি (Accrual)"}
+                ভিত্তি: {reportingBasis === "cash" ? "নগদ আদায় ভিত্তি (Cash)" : reportingBasis === "due" ? "বকেয়া ভিত্তি (Due)" : "বকেয়া/অ্যাকাউন্টিং ভিত্তি (Accrual)"}
               </span>
             </div>
 

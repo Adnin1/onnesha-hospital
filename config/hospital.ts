@@ -41,6 +41,8 @@ export interface HospitalMetadata {
   banglaName: string;
   code: string;
   phone: string;
+  officePhone?: string;
+  receptionPhone?: string;
   emergencyHotline: string;
   ambulanceHotline: string;
   email: string;
@@ -85,8 +87,10 @@ export const HOSPITAL_METADATA: HospitalMetadata = {
   shortName: "ANNESHA HOSPITAL",
   banglaName: "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক",
   code: process.env.NEXT_PUBLIC_HOSPITAL_CODE || "OH",
-  phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01620003888, 01718835623",
-  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "01620003888",
+  phone: process.env.NEXT_PUBLIC_HOSPITAL_PHONE || "01895-665114, 01904210065",
+  officePhone: "01904210065",
+  receptionPhone: "01895-665114",
+  emergencyHotline: process.env.NEXT_PUBLIC_EMERGENCY_HOTLINE || "01904210065",
   ambulanceHotline: process.env.NEXT_PUBLIC_AMBULANCE_HOTLINE || "01904210065",
   email: process.env.NEXT_PUBLIC_HOSPITAL_EMAIL || "aaih.apon@gmail.com",
   // Physical address: Official Bogura address
@@ -123,7 +127,7 @@ export const HOSPITAL_METADATA: HospitalMetadata = {
       shortName: "ANNESHA HOSPITAL",
       banglaName: "অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার",
       notes:
-        "Canonical title established: ANNESHA HOSPITAL AND DIAGNOSTIC (Bengali: অন্বেষা হাসপাতাল ও ডায়াগনস্টিক). 'Center' has been cancelled across the system per owner instruction. Historical references preserved for audit compliance: 'Annesha Hospital and Diagnostic Center' and 'অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার'.",
+        "Canonical title established: ANNESHA HOSPITAL AND DIAGNOSTIC (Bengali: অন্বেষা হাসপাতাল ও ডায়াগনস্টিক). 'Center' has been cancelled across the system per owner instruction. Official contacts: Reception 01895-665114, Office 01904210065. Historical hotline 01718835623 and references preserved for audit compliance: 'Annesha Hospital and Diagnostic Center' and 'অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার'.",
     },
   },
 };

@@ -1561,11 +1561,19 @@ export async function deleteInvoiceAction(params: {
   try {
     const supabase = await createClient();
 
+    const purgeReason = params.reason?.trim();
+    if (!purgeReason) {
+      return {
+        success: false,
+        error: "Deletion reason is mandatory and cannot be empty.",
+      };
+    }
+
     const { data: rpcRes, error: rpcErr } = await supabase.rpc("delete_invoice_super_admin_atomic", {
       p_org_id: session.organizationId,
       p_invoice_id: params.invoiceId,
       p_admin_id: session.userId,
-      p_reason: params.reason?.trim() || "Purged by Super Admin",
+      p_reason: purgeReason,
       p_permanent_purge: Boolean(params.permanentPurge),
     });
 
