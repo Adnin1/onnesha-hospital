@@ -130,7 +130,7 @@ describe("OHMS IPD Admission Referral Attribution & Billing Commission Auto-Sugg
   // -------------------------------------------------------------------------------------
   // 5. Billing UI Auto-Suggestion & Configurable Commission UI Verification
   // -------------------------------------------------------------------------------------
-  test("13. app/(hospital)/app/billing/page.tsx auto-suggests reference partner from admission and displays commission rate input", () => {
+  test("13. app/(hospital)/app/billing/page.tsx auto-suggests reference partner from admission and hides commission percentages from receptionist", () => {
     const billingPagePath = path.join(ROOT, "app/(hospital)/app/billing/page.tsx");
     const content = fs.readFileSync(billingPagePath, "utf8");
     assert.match(content, /checkAttributionForPatient/);
@@ -138,8 +138,9 @@ describe("OHMS IPD Admission Referral Attribution & Billing Commission Auto-Sugg
     assert.match(content, /searchReferralAgentsForBillingAction/);
     assert.match(content, /isAttributionSuggested/);
     assert.match(content, /ভর্তি থেকে স্বয়ংক্রিয় প্রাপ্ত/);
-    assert.match(content, /কমিশন শতকরা হার \(Commission Rate %\)/);
-    assert.match(content, /প্রাক্কলিত কমিশন \(Estimated Commission\)/);
+    // User invariant: commission percentage and live estimate hidden from billing receptionists
+    assert.doesNotMatch(content, /কমিশন শতকরা হার \(Commission Rate %\)/);
+    assert.doesNotMatch(content, /প্রাক্কলিত কমিশন \(Estimated Commission\)/);
   });
 
   // -------------------------------------------------------------------------------------

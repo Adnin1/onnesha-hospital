@@ -42,6 +42,11 @@ export interface ReferralAttribution {
   status: "ACTIVE" | "DISCHARGED" | "CANCELLED";
   notes?: string | null;
   created_at: string;
+  patients?: {
+    full_name: string;
+    patient_code?: string;
+    phone?: string;
+  };
 }
 
 export interface ReferralCommission {
@@ -201,7 +206,7 @@ export async function getReferralAgentByIdAction(agentId: string): Promise<{
         .order("created_at", { ascending: false }),
       supabase
         .from("patient_referral_attributions")
-        .select("*")
+        .select("*, patients(full_name, patient_code, phone)")
         .eq("referral_agent_id", agentId)
         .order("assigned_at", { ascending: false })
         .limit(100),

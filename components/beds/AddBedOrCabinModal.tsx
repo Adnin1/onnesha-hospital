@@ -31,7 +31,6 @@ export function AddBedOrCabinModal({
   // Cabin Form
   const [cabinNumber, setCabinNumber] = useState("");
   const [cabinType, setCabinType] = useState<"AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE">("AC_DELUXE");
-  const [floorNumber, setFloorNumber] = useState("");
   const [cabinRate, setCabinRate] = useState("2500");
   const [amenities, setAmenities] = useState("Split AC, TV, Attendant Bed, Attached Bath");
 
@@ -73,7 +72,7 @@ export function AddBedOrCabinModal({
     const res = await addCabinAction({
       cabin_number: cabinNumber.trim(),
       cabin_type: cabinType,
-      floor_number: floorNumber.trim() || undefined,
+      floor_number: undefined,
       daily_rate: Number(cabinRate) || 2500,
       amenities: amenities.trim(),
     });
@@ -171,7 +170,7 @@ export function AddBedOrCabinModal({
                 >
                   {wards.map((w) => (
                     <option key={w.id} value={w.id}>
-                      {w.name} ({w.floor_number})
+                      {w.name}
                     </option>
                   ))}
                 </select>
@@ -242,33 +241,19 @@ export function AddBedOrCabinModal({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    কেবিনের ধরন (Cabin Type) *
-                  </label>
-                  <select
-                    value={cabinType}
-                    onChange={(e) => setCabinType(e.target.value as "AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE")}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white"
-                  >
-                    <option value="AC_DELUXE">AC Deluxe (এসি ডিলাক্স)</option>
-                    <option value="VIP_SUITE">VIP Suite (ভিআইপি সুইট)</option>
-                    <option value="NON_AC_STANDARD">Non-AC Standard (নন-এসি)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    ফ্লোর নম্বর (ঐচ্ছিক / Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="যেমন: 5th Floor (ঐচ্ছিক)"
-                    value={floorNumber}
-                    onChange={(e) => setFloorNumber(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  কেবিনের ধরন (Cabin Type) *
+                </label>
+                <select
+                  value={cabinType}
+                  onChange={(e) => setCabinType(e.target.value as "AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE")}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white"
+                >
+                  <option value="AC_DELUXE">AC Deluxe (এসি ডিলাক্স)</option>
+                  <option value="VIP_SUITE">VIP Suite (ভিআইপি সুইট)</option>
+                  <option value="NON_AC_STANDARD">Non-AC Standard (নন-এসি)</option>
+                </select>
               </div>
 
               <div>

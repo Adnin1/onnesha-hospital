@@ -389,11 +389,6 @@ export default function BedManagementPage() {
                         <h2 className="text-base font-black text-slate-900 tracking-tight">
                           {ward.name}
                         </h2>
-                        {ward.floor_number && ward.floor_number !== "N/A" && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
-                            Floor: {ward.floor_number}
-                          </span>
-                        )}
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-sky-50 text-sky-700">
                           {ward.ward_type}
                         </span>
@@ -587,9 +582,6 @@ export default function BedManagementPage() {
                         <div>
                           <div className="flex justify-between items-start mb-2">
                             <span className="text-[10px] font-bold text-slate-500 uppercase">
-                              {cabin.floor_number && cabin.floor_number !== "N/A"
-                                ? `Floor ${cabin.floor_number} • `
-                                : ""}
                               {cabin.cabin_type}
                             </span>
                             <div className="flex items-center gap-1.5">

@@ -552,9 +552,6 @@ function BillingManagementContent() {
         : 0);
   const netTotal = Math.max(0, subtotal - calculatedDiscountAmount);
   const dueAmount = Math.max(0, netTotal - initialPaymentAmount);
-  const estimatedCommission = selectedReferralAgentId && !noReferral
-    ? Math.round(((netTotal * (referralCommissionRate || 0)) / 100) * 100) / 100
-    : 0;
 
   const addItemRow = (
     category: ServiceCategory | InvoiceItemRecord["service_category"],
@@ -2278,12 +2275,12 @@ function BillingManagementContent() {
                 </div>
               </div>
 
-              {/* REFERRAL ATTRIBUTION & COMMISSION CONFIGURATION */}
+              {/* REFERRAL ATTRIBUTION & PARTNER SELECTION */}
               <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
                     <UserCheck className="w-4 h-4 text-emerald-600" />
-                    ২. রেফারেল এজেন্টের কমিশন (Referral Agent Commission — Net টাকার ওপর)
+                    ২. রেফারেল এজেন্ট (Referral Partner / Agent)
                   </span>
                   {checkingAttribution ? (
                     <span className="text-[10px] text-slate-400 flex items-center gap-1">
@@ -2300,65 +2297,23 @@ function BillingManagementContent() {
                 </div>
 
                 {/* Reference Partner Selector */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      রেফারেন্স পার্টনার (Reference Partner)
-                    </label>
-                    <select
-                      value={selectedReferralAgentId}
-                      onChange={(e) => handleReferralAgentChange(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl bg-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
-                    >
-                      <option value="">কোনো রেফারেন্স নেই (No Referral / Direct)</option>
-                      {billingReferralAgents.map((ag) => (
-                        <option key={ag.id} value={ag.id}>
-                          {ag.full_name} ({ag.agent_code}) — {ag.commission_rate_percent}%
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Commission Rate (%) Input */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1 flex items-center justify-between">
-                      <span>কমিশন শতকরা হার (Commission Rate %) *</span>
-                      <span className="text-[9px] text-slate-400">সীমা: ১% - ৪০%</span>
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min="1"
-                        max="40"
-                        step="0.5"
-                        disabled={!selectedReferralAgentId || noReferral}
-                        value={referralCommissionRate}
-                        onChange={(e) => setReferralCommissionRate(Number(e.target.value))}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl bg-white text-xs font-mono font-bold text-emerald-700 disabled:bg-slate-100 disabled:text-slate-400"
-                      />
-                      <span className="font-bold text-slate-500 text-xs">%</span>
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                    রেফারেন্স পার্টনার / এজেন্ট (Referral Partner)
+                  </label>
+                  <select
+                    value={selectedReferralAgentId}
+                    onChange={(e) => handleReferralAgentChange(e.target.value)}
+                    className="w-full px-2.5 py-2 border border-slate-200 rounded-xl bg-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="">কোনো রেফারেন্স নেই (No Referral / Direct)</option>
+                    {billingReferralAgents.map((ag) => (
+                      <option key={ag.id} value={ag.id}>
+                        {ag.full_name} ({ag.agent_code})
+                      </option>
+                    ))}
+                  </select>
                 </div>
-
-                {/* Live Commission Estimate Preview */}
-                {selectedReferralAgentId && !noReferral && (
-                  <div className="p-3 bg-emerald-50/90 border border-emerald-200 rounded-xl space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-emerald-950 font-bold block">
-                        প্রাক্কলিত কমিশন (Estimated Commission):
-                      </span>
-
-                      <span className="font-mono font-black text-emerald-800 text-base">
-                        {formatCurrencyBDT(estimatedCommission)}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-emerald-800 flex flex-wrap items-center justify-between gap-1 pt-1 border-t border-emerald-200/60 font-mono">
-                      <span>হিসাবের নিয়ম: সাবটোটাল ({formatCurrencyBDT(subtotal)}) - রোগীর ছাড় ({formatCurrencyBDT(calculatedDiscountAmount)}) = নিট {formatCurrencyBDT(netTotal)}</span>
-                      <span className="font-bold">এজেন্ট পাবে: নিট টাকার {referralCommissionRate}%</span>
-                    </div>
-                  </div>
-                )}
               </div>
 
 

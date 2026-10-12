@@ -305,28 +305,16 @@ export function EditBedOrCabinModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">ফ্লোর নম্বর (ঐচ্ছিক / Optional)</label>
-                    <input
-                      type="text"
-                      placeholder="যেমন: 5th Floor (ঐচ্ছিক)"
-                      value={floorNumber}
-                      onChange={(e) => setFloorNumber(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">দৈনিক ভাড়া (BDT/day)</label>
-                    <input
-                      type="number"
-                      required
-                      min="0"
-                      value={cabinRate}
-                      onChange={(e) => setCabinRate(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">দৈনিক ভাড়া (BDT/day)</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={cabinRate}
+                    onChange={(e) => setCabinRate(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20"
+                  />
                 </div>
 
                 <div>

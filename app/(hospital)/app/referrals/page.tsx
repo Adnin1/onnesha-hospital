@@ -1797,71 +1797,111 @@ export default function ReferralManagementPage() {
             </div>
 
             {/* Performance Stats */}
-            <div className="grid grid-cols-4 gap-3">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">Rate</span>
-                <strong className="text-sm text-amber-700 font-black">
-                  {agentDetailData.agent.commission_rate_percent}%
-                </strong>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">Earned</span>
-                <strong className="text-sm text-slate-900 font-black">
-                  {formatCurrencyBDT(agentDetailData.agent.total_commission_earned || 0)}
-                </strong>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">Settled</span>
-                <strong className="text-sm text-teal-700 font-black">
-                  {formatCurrencyBDT(agentDetailData.agent.total_commission_settled || 0)}
-                </strong>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">Pending</span>
-                <strong className="text-sm text-rose-600 font-black">
-                  {formatCurrencyBDT(
-                    Math.max(
-                      0,
-                      Number(agentDetailData.agent.total_commission_earned || 0) -
-                        Number(agentDetailData.agent.total_commission_settled || 0)
-                    )
-                  )}
-                </strong>
-              </div>
-            </div>
+            {(() => {
+              const totalHospitalServicesBilled = agentDetailData.commissions.reduce(
+                (acc: number, c: ReferralCommission) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0),
+                0
+              );
+              const referredPatientsCount = Math.max(
+                agentDetailData.attributions?.length || 0,
+                new Set(agentDetailData.commissions.map((c: ReferralCommission) => c.patient_id)).size
+              );
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="p-3 bg-sky-50/70 rounded-xl border border-sky-200 text-center">
+                    <span className="text-[10px] font-bold text-sky-700 block uppercase">রেফার করা রোগী</span>
+                    <strong className="text-base text-sky-950 font-black">
+                      {referredPatientsCount} জন
+                    </strong>
+                  </div>
+                  <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200 text-center">
+                    <span className="text-[10px] font-bold text-emerald-700 block uppercase">হাসপাতাল সেবার মোট মূল্য</span>
+                    <strong className="text-base text-emerald-950 font-black">
+                      {formatCurrencyBDT(totalHospitalServicesBilled)}
+                    </strong>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase">কমিশন রেট</span>
+                    <strong className="text-sm text-amber-700 font-black">
+                      {agentDetailData.agent.commission_rate_percent}%
+                    </strong>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase">অর্জিত কমিশন</span>
+                    <strong className="text-sm text-slate-900 font-black">
+                      {formatCurrencyBDT(agentDetailData.agent.total_commission_earned || 0)}
+                    </strong>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase">পরিশোধিত</span>
+                    <strong className="text-sm text-teal-700 font-black">
+                      {formatCurrencyBDT(agentDetailData.agent.total_commission_settled || 0)}
+                    </strong>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase">বকেয়া কমিশন</span>
+                    <strong className="text-sm text-rose-600 font-black">
+                      {formatCurrencyBDT(
+                        Math.max(
+                          0,
+                          Number(agentDetailData.agent.total_commission_earned || 0) -
+                            Number(agentDetailData.agent.total_commission_settled || 0)
+                        )
+                      )}
+                    </strong>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Invoices & Commissions Sub-ledger */}
             <div className="space-y-3">
-              <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                <Receipt className="w-4 h-4 text-sky-600" />
-                Commission History ({agentDetailData.commissions.length})
+              <h4 className="font-bold text-slate-800 text-xs flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Receipt className="w-4 h-4 text-sky-600" />
+                  রেফারেল করা রোগীদের সেবার হিসাব ও কমিশন হিস্ট্রি ({agentDetailData.commissions.length})
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal">রোগী কত টাকার সেবা নিয়েছে ও ইনভয়েস হিস্ট্রি</span>
               </h4>
-              <div className="border border-slate-200 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+              <div className="border border-slate-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
                     <tr>
-                      <th className="p-2">Date</th>
-                      <th className="p-2">Invoice #</th>
-                      <th className="p-2 text-right">Net Bill</th>
-                      <th className="p-2 text-right">Commission</th>
-                      <th className="p-2 text-center">Status</th>
+                      <th className="p-2">তারিখ</th>
+                      <th className="p-2">রোগীর নাম ও কোড</th>
+                      <th className="p-2">ইনভয়েস #</th>
+                      <th className="p-2 text-right">হাসপাতাল সেবা মূল্য</th>
+                      <th className="p-2 text-right">কমিশন</th>
+                      <th className="p-2 text-center">স্ট্যাটাস</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {agentDetailData.commissions.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-4 text-center text-slate-400">
-                          No commission records yet.
+                        <td colSpan={6} className="p-4 text-center text-slate-400">
+                          এখনো কোনো রেফারেল বিলিং বা কমিশন রেকর্ড নেই।
                         </td>
                       </tr>
                     ) : (
                       agentDetailData.commissions.map((c: ReferralCommission) => (
-                        <tr key={c.id}>
-                          <td className="p-2 text-slate-500">{formatDateBDT(c.created_at)}</td>
+                        <tr key={c.id} className="hover:bg-slate-50/70">
+                          <td className="p-2 text-slate-500 font-mono text-[11px]">{formatDateBDT(c.created_at)}</td>
+                          <td className="p-2">
+                            <div className="font-bold text-slate-800">
+                              {c.patients?.full_name || "Encounter Patient"}
+                            </div>
+                            {c.patients?.patient_code && (
+                              <div className="text-[10px] font-mono text-slate-400">
+                                {c.patients.patient_code}
+                              </div>
+                            )}
+                          </td>
                           <td className="p-2 font-mono font-semibold text-slate-800">
                             {c.invoices?.invoice_number || "INV-POSTED"}
                           </td>
-                          <td className="p-2 text-right">{formatCurrencyBDT(c.commission_base_amount)}</td>
+                          <td className="p-2 text-right font-black text-slate-900">
+                            {formatCurrencyBDT(c.billing_subtotal || c.commission_base_amount)}
+                          </td>
                           <td className="p-2 text-right font-black text-emerald-700">
                             {formatCurrencyBDT(c.commission_amount)}
                           </td>
@@ -1877,6 +1917,57 @@ export default function ReferralManagementPage() {
                 </table>
               </div>
             </div>
+
+            {/* Patient Intake & Admission Attributions */}
+            {agentDetailData.attributions && agentDetailData.attributions.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="font-bold text-slate-800 text-xs flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-teal-600" />
+                    রেজিস্ট্রেশন ও ভর্তি রেফারেল তালিকা ({agentDetailData.attributions.length})
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">রোগী ভর্তি ও রেজিস্ট্রেশন সময়কাল</span>
+                </h4>
+                <div className="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
+                      <tr>
+                        <th className="p-2">তারিখ</th>
+                        <th className="p-2">রোগীর নাম</th>
+                        <th className="p-2">রোগীর কোড</th>
+                        <th className="p-2">মোবাইল নম্বর</th>
+                        <th className="p-2">নোট / সোর্স</th>
+                        <th className="p-2 text-center">স্ট্যাটাস</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {agentDetailData.attributions.map((a: ReferralAttribution) => (
+                        <tr key={a.id} className="hover:bg-slate-50/70">
+                          <td className="p-2 text-slate-500 font-mono text-[11px]">{formatDateBDT(a.assigned_at)}</td>
+                          <td className="p-2 font-bold text-slate-800">
+                            {a.patients?.full_name || a.referral_name_snapshot}
+                          </td>
+                          <td className="p-2 font-mono text-slate-500 text-[11px]">
+                            {a.patients?.patient_code || "—"}
+                          </td>
+                          <td className="p-2 font-mono text-slate-600 text-[11px]">
+                            {a.patients?.phone || "—"}
+                          </td>
+                          <td className="p-2 text-slate-600 text-[11px]">
+                            {a.notes || "ইনটেক রেফারেন্স"}
+                          </td>
+                          <td className="p-2 text-center">
+                            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              {a.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* Rate Change History */}
             <div className="space-y-3">

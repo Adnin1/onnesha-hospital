@@ -1877,6 +1877,44 @@ export async function createUnifiedPatientIntakeAction(
       }
     }
 
+    if (payload.referralAgentId && result.patient_id) {
+      try {
+        const { data: ag } = await supabase
+          .from("referral_agents")
+          .select("id, agent_code, full_name")
+          .eq("id", payload.referralAgentId)
+          .maybeSingle();
+
+        if (ag?.id) {
+          const visitId = result.ipd_visit_id || result.opd_visit_id || null;
+          const { data: existingAttr } = await supabase
+            .from("patient_referral_attributions")
+            .select("id")
+            .eq("patient_id", result.patient_id)
+            .eq("referral_agent_id", ag.id)
+            .eq("status", "ACTIVE")
+            .limit(1)
+            .maybeSingle();
+
+          if (!existingAttr?.id) {
+            await supabase.from("patient_referral_attributions").insert({
+              organization_id: session.organizationId,
+              patient_id: result.patient_id,
+              visit_id: visitId,
+              referral_agent_id: ag.id,
+              referral_code_snapshot: ag.agent_code,
+              referral_name_snapshot: ag.full_name,
+              assigned_by: session.userId,
+              status: "ACTIVE",
+              notes: "Attributed during patient intake registration",
+            });
+          }
+        }
+      } catch (attrErr) {
+        console.warn("[createUnifiedPatientIntakeAction] Attribution notice:", attrErr);
+      }
+    }
+
     return {
       success: true,
       data: {
