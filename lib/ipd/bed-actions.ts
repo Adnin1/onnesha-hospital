@@ -684,7 +684,7 @@ export async function addBedAction(payload: {
 export async function addCabinAction(payload: {
   cabin_number: string;
   cabin_type: "AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE";
-  floor_number: string;
+  floor_number?: string | null;
   daily_rate: number;
   amenities?: string;
 }): Promise<ActionResult<{ cabin: CabinRecord }>> {
@@ -704,7 +704,7 @@ export async function addCabinAction(payload: {
         organization_id: orgId,
         cabin_number: payload.cabin_number.trim(),
         cabin_type: payload.cabin_type,
-        floor_number: payload.floor_number,
+        floor_number: payload.floor_number?.trim() || null,
         daily_rate: payload.daily_rate,
         status: "VACANT",
         amenities: payload.amenities || "AC, TV, Attached Bath",
@@ -722,7 +722,7 @@ export async function addCabinAction(payload: {
       organization_id: orgId,
       cabin_number: payload.cabin_number,
       cabin_type: payload.cabin_type,
-      floor_number: payload.floor_number,
+      floor_number: payload.floor_number?.trim() || null,
       daily_rate: payload.daily_rate,
       status: "VACANT",
       amenities: payload.amenities || "AC, TV, Attached Bath",
@@ -894,7 +894,7 @@ export async function updateCabinDetailsAction(payload: {
     const updateFields: Record<string, unknown> = {};
     if (payload.cabin_number?.trim()) updateFields.cabin_number = payload.cabin_number.trim();
     if (payload.cabin_type) updateFields.cabin_type = payload.cabin_type;
-    if (payload.floor_number) updateFields.floor_number = payload.floor_number;
+    if (payload.floor_number !== undefined) updateFields.floor_number = payload.floor_number?.trim() || null;
     if (payload.daily_rate !== undefined && !Number.isNaN(Number(payload.daily_rate))) {
       updateFields.daily_rate = Number(payload.daily_rate);
     }

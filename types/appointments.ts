@@ -6,7 +6,7 @@ export interface DoctorRecord {
   degrees: string;
   designation: string;
   specialization: string;
-  bmdc_reg_number: string;
+  bmdc_reg_number?: string | null;
   room_number: string;
   opd_fee: number;
   consultation_fee?: number;

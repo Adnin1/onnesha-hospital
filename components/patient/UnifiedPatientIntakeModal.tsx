@@ -14,6 +14,7 @@ import {
   X,
   Scissors,
   Edit,
+  FlaskConical,
   FileSpreadsheet,
   CheckCircle2,
   Wallet,
@@ -155,6 +156,12 @@ export function UnifiedPatientIntakeModal({
   const [otAnesthesia, setOtAnesthesia] = useState("GENERAL");
   const [otScheduledAt, setOtScheduledAt] = useState(dhakaDateTimeLocal());
 
+  // Diagnostic Lab Tests State
+  const [diagnosticsEnabled, setDiagnosticsEnabled] = useState(false);
+  const [diagnosticTests, setDiagnosticTests] = useState<Array<{ id: string; test_name: string; test_code: string; price: number }>>([]);
+  const [selectedTestIds, setSelectedTestIds] = useState<string[]>([]);
+  const [diagnosticNotes, setDiagnosticNotes] = useState("");
+
   // UI Flow States
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [duplicateMatches, setDuplicateMatches] = useState<UnifiedPatientIntakePayload | null>(null);
@@ -208,6 +215,7 @@ export function UnifiedPatientIntakeModal({
           setOtRooms(res.data.otRooms);
           if (res.data.otRooms.length > 0 && !otRoomId) setOtRoomId(res.data.otRooms[0].id);
           setReferrals(res.data.referralAgents);
+          if (res.data.diagnosticTests) setDiagnosticTests(res.data.diagnosticTests);
         } else {
           const supabase = createClient();
           const [depRes, docRes, bedRes, cabinRes, unitRes, otRes, refRes] = await Promise.allSettled([
@@ -443,14 +451,31 @@ export function UnifiedPatientIntakeModal({
     }
   }
 
+  function toggleDiagnostics() {
+    const next = !diagnosticsEnabled;
+    setDiagnosticsEnabled(next);
+    setErrorMsg(null);
+    if (next && selectedTestIds.length === 0 && diagnosticTests.length > 0) {
+      setSelectedTestIds([diagnosticTests[0].id]);
+    }
+  }
+
+  const diagnosticEstimate = useMemo(() => {
+    return selectedTestIds.reduce((sum, tid) => {
+      const t = diagnosticTests.find((x) => x.id === tid);
+      return sum + (t ? Number(t.price || 0) : 0);
+    }, 0);
+  }, [selectedTestIds, diagnosticTests]);
+
   const estimate = useMemo(() => {
     let total = 0;
     if (opdEnabled && selectedOpdDoctor) total += Number(selectedOpdDoctor.opd_fee || 0);
     if (ipdEnabled) total += Number(selectedBed?.daily_rate || selectedCabin?.daily_rate || 0);
     if (criticalEnabled) total += Number(selectedUnit?.daily_charge || 0);
     if (otEnabled) total += Number(otCharge || 6000);
+    if (diagnosticsEnabled) total += diagnosticEstimate;
     return total;
-  }, [opdEnabled, ipdEnabled, criticalEnabled, otEnabled, otCharge, selectedOpdDoctor, selectedBed, selectedCabin, selectedUnit]);
+  }, [opdEnabled, ipdEnabled, criticalEnabled, otEnabled, diagnosticsEnabled, otCharge, diagnosticEstimate, selectedOpdDoctor, selectedBed, selectedCabin, selectedUnit]);
 
   function selectExisting(patient: PatientMaster) {
     setSelectedExisting(patient);
@@ -537,6 +562,11 @@ export function UnifiedPatientIntakeModal({
         estimatedCharge: Number(otCharge || 6000),
         anesthesiaType: otAnesthesia,
         scheduledStart: toDhakaIso(otScheduledAt),
+      },
+      diagnostics: {
+        enabled: diagnosticsEnabled,
+        testIds: diagnosticsEnabled ? selectedTestIds : [],
+        notes: diagnosticNotes.trim() || undefined,
       },
     };
 
@@ -1296,7 +1326,7 @@ export function UnifiedPatientIntakeModal({
               </div>
 
               {/* Service Cards Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 <ServiceCard
                   title="OPD Consultation"
                   enabled={opdEnabled}
@@ -1320,6 +1350,12 @@ export function UnifiedPatientIntakeModal({
                   enabled={otEnabled}
                   onClick={toggleOt}
                   subtitle={otProcedure ? `${otProcedure.slice(0, 15)} • ৳${otCharge}` : "Surgery / Procedure"}
+                />
+                <ServiceCard
+                  title="Lab & Diagnostics"
+                  enabled={diagnosticsEnabled}
+                  onClick={toggleDiagnostics}
+                  subtitle={selectedTestIds.length > 0 ? `${selectedTestIds.length} Tests • ৳${diagnosticEstimate}` : "Blood / X-Ray / USG"}
                 />
               </div>
 
@@ -1591,15 +1627,83 @@ export function UnifiedPatientIntakeModal({
                   </div>
                 </div>
               )}
+
+              {/* Lab & Diagnostic Investigations Sub-Panel */}
+              {diagnosticsEnabled && (
+                <div className="rounded-2xl border border-teal-200 bg-teal-50/40 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FlaskConical className="w-4 h-4 text-teal-700" />
+                      <h4 className="font-bold text-slate-900 text-sm">ল্যাব ও ডায়াগনস্টিক টেস্ট (Lab & Diagnostic Investigations)</h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setDiagnosticsEnabled(false); setErrorMsg(null); }}
+                      className="text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-100/60 hover:bg-rose-100 px-2.5 py-1 rounded-lg transition"
+                    >
+                      ✕ বাদ দিন (Remove Lab Tests)
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] text-slate-600">
+                    রেজিস্ট্রেশনের সময় টেস্ট নির্বাচন করলে তা স্বয়ংক্রিয়ভাবে বিলিং ইনভয়েসে এবং ল্যাব অর্ডারে যুক্ত হবে।
+                  </p>
+
+                  {/* Test Selection Chips */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-slate-700">টেস্ট নির্বাচন করুন (Click to Select / Deselect):</label>
+                    <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1 bg-white/70 rounded-xl border border-teal-100">
+                      {diagnosticTests.map((t) => {
+                        const isSelected = selectedTestIds.includes(t.id);
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedTestIds(selectedTestIds.filter((id) => id !== t.id));
+                              } else {
+                                setSelectedTestIds([...selectedTestIds, t.id]);
+                              }
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition ${
+                              isSelected
+                                ? "bg-teal-700 text-white shadow-xs border border-teal-800"
+                                : "bg-white text-slate-700 border border-slate-200 hover:border-teal-400 hover:bg-teal-50/50"
+                            }`}
+                          >
+                            <span>{isSelected ? "✓" : "+"}</span>
+                            <span>{t.test_name}</span>
+                            <span className={isSelected ? "text-teal-200 font-mono text-[10px]" : "text-slate-400 font-mono text-[10px]"}>
+                              (৳{t.price})
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <Field label="ক্লিনিক্যাল নোট বা নির্দেশিকা (Optional Clinical Notes)">
+                      <input
+                        value={diagnosticNotes}
+                        onChange={(e) => setDiagnosticNotes(e.target.value)}
+                        placeholder="যেমন: Fasting sample required, Urgent report needed..."
+                        className={inputCls}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Estimated Charge Preview */}
-            {(opdEnabled || ipdEnabled || criticalEnabled || otEnabled) && (
+            {(opdEnabled || ipdEnabled || criticalEnabled || otEnabled || diagnosticsEnabled) && (
               <section className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-black text-slate-900 text-sm">Initial Charge Preview</h3>
-                    <p className="text-[11px] text-slate-500">IPD/Critical Care preview is one configured daily unit; OT and OPD are booked procedures; final billing is calculated from exact items.</p>
+                    <p className="text-[11px] text-slate-500">IPD/Critical Care preview is one configured daily unit; OT and OPD are booked procedures; lab tests are verified catalog rates; final billing is calculated from exact items.</p>
                   </div>
                   <div className="text-right">
                     <div className="text-[11px] text-slate-500">Estimated starting charges</div>
@@ -1611,6 +1715,7 @@ export function UnifiedPatientIntakeModal({
                   {ipdEnabled && <span className="px-2 py-1 rounded-lg bg-white border">IPD</span>}
                   {criticalEnabled && <span className="px-2 py-1 rounded-lg bg-white border">Critical Care</span>}
                   {otEnabled && <span className="px-2 py-1 rounded-lg bg-white border text-purple-700 border-purple-200">OT Surgery</span>}
+                  {diagnosticsEnabled && <span className="px-2 py-1 rounded-lg bg-white border text-teal-700 border-teal-200">Lab ({selectedTestIds.length} Tests)</span>}
                 </div>
               </section>
             )}

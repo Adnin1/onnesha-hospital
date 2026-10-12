@@ -55,7 +55,11 @@ export function OccupiedBedPanel({
   const patient = assignment?.patient;
 
   const targetIdentifier = bed ? bed.bed_number : `Cabin ${cabin?.cabin_number}`;
-  const unitName = bed ? bed.ward?.name || "General Ward" : `Floor ${cabin?.floor_number} Cabin`;
+  const unitName = bed
+    ? bed.ward?.name || "General Ward"
+    : cabin?.floor_number && cabin.floor_number !== "N/A"
+    ? `Floor ${cabin.floor_number} Cabin`
+    : `Cabin ${cabin?.cabin_number || ""}`;
   const dailyCharge = bed ? (bed.bed_type?.daily_rate || bed.daily_rate || 600) : (cabin?.daily_rate || 3500);
 
   const handleDischarge = async () => {

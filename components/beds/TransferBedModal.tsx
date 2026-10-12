@@ -182,7 +182,7 @@ export function TransferBedModal({
                   <option value="">-- খালি কেবিন নির্বাচন করুন --</option>
                   {vacantCabins.map((c) => (
                     <option key={c.id} value={c.id}>
-                      Cabin {c.cabin_number} — Floor {c.floor_number} ({formatCurrencyBDT(c.daily_rate)}/দিন)
+                      Cabin {c.cabin_number}{c.floor_number && c.floor_number !== "N/A" ? ` — Floor ${c.floor_number}` : ""} ({formatCurrencyBDT(c.daily_rate)}/দিন)
                     </option>
                   ))}
                 </select>

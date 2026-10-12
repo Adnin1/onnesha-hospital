@@ -31,7 +31,7 @@ export function AddBedOrCabinModal({
   // Cabin Form
   const [cabinNumber, setCabinNumber] = useState("");
   const [cabinType, setCabinType] = useState<"AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE">("AC_DELUXE");
-  const [floorNumber, setFloorNumber] = useState("5th Floor");
+  const [floorNumber, setFloorNumber] = useState("");
   const [cabinRate, setCabinRate] = useState("2500");
   const [amenities, setAmenities] = useState("Split AC, TV, Attendant Bed, Attached Bath");
 
@@ -73,7 +73,7 @@ export function AddBedOrCabinModal({
     const res = await addCabinAction({
       cabin_number: cabinNumber.trim(),
       cabin_type: cabinType,
-      floor_number: floorNumber.trim() || "5th Floor",
+      floor_number: floorNumber.trim() || undefined,
       daily_rate: Number(cabinRate) || 2500,
       amenities: amenities.trim(),
     });
@@ -259,10 +259,11 @@ export function AddBedOrCabinModal({
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    ফ্লোর (Floor Number)
+                    ফ্লোর নম্বর (ঐচ্ছিক / Optional)
                   </label>
                   <input
                     type="text"
+                    placeholder="যেমন: 5th Floor (ঐচ্ছিক)"
                     value={floorNumber}
                     onChange={(e) => setFloorNumber(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none"

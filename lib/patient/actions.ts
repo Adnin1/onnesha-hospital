@@ -1057,9 +1057,6 @@ export async function dischargePatientAction(params: {
   if (!params.consultantName?.trim() && !params.consultantDoctorId) {
     return { success: false, error: "Consultant doctor name or selection is mandatory on discharge certificate." };
   }
-  if (!params.bmdcRegNumber?.trim() && !params.consultantDoctorId) {
-    return { success: false, error: "Doctor BMDC registration number is mandatory on discharge certificate." };
-  }
 
   try {
     const supabase = await createClient();
@@ -1495,6 +1492,11 @@ export interface UnifiedPatientIntakePayload {
       anesthesiaType?: string;
       scheduledStart?: string;
     };
+    diagnostics?: {
+      enabled: boolean;
+      testIds?: string[];
+      notes?: string;
+    };
   };
   referralAgentId?: string;
   admissionDiscountAmount?: number;
@@ -1516,6 +1518,7 @@ export async function createUnifiedPatientIntakeAction(
   criticalCareAdmissionId?: string;
   criticalCareVisitId?: string;
   otBookingId?: string;
+  diagnosticOrderId?: string;
   encounterAt: string;
 }>> {
   const session = await getCurrentUserSession();
@@ -1845,6 +1848,35 @@ export async function createUnifiedPatientIntakeAction(
       }
     }
 
+    let diagnosticOrderId: string | undefined;
+    if (payload.services?.diagnostics?.enabled && payload.services.diagnostics.testIds && payload.services.diagnostics.testIds.length > 0) {
+      const diagDoctorId = payload.services.ipd?.doctorId || payload.services.opd?.doctorId || payload.services.criticalCare?.doctorId || null;
+      const visitId =
+        result.ipd_visit_id ||
+        result.opd_visit_id ||
+        (result as { critical_care_visit_id?: string }).critical_care_visit_id ||
+        null;
+
+      try {
+        const { data: diagRes, error: diagErr } = await supabase.rpc("create_diagnostic_order_atomic", {
+          p_org_id: session.organizationId,
+          p_patient_id: result.patient_id,
+          p_test_ids: payload.services.diagnostics.testIds,
+          p_doctor_id: diagDoctorId,
+          p_visit_id: visitId,
+          p_clinical_notes: payload.services.diagnostics.notes || "Intake Diagnostic Investigation Order",
+        });
+
+        if (diagRes && (diagRes as { order_id?: string }).order_id) {
+          diagnosticOrderId = (diagRes as { order_id?: string }).order_id;
+        } else if (diagErr) {
+          console.warn("[createUnifiedPatientIntakeAction] Diagnostic order notice:", diagErr.message);
+        }
+      } catch (diagExc) {
+        console.error("[createUnifiedPatientIntakeAction] Diagnostic order exception:", diagExc);
+      }
+    }
+
     return {
       success: true,
       data: {
@@ -1857,6 +1889,7 @@ export async function createUnifiedPatientIntakeAction(
         criticalCareAdmissionId: result.critical_care_admission_id,
         criticalCareVisitId: (result as { critical_care_visit_id?: string }).critical_care_visit_id,
         otBookingId,
+        diagnosticOrderId,
         encounterAt: result.encounter_at || encounterAt.toISOString(),
       },
     };
@@ -1882,6 +1915,7 @@ export async function getIntakeDropdownOptionsAction(): Promise<
     units: Array<{ id: string; unit_name: string; unit_type: string; daily_charge: number }>;
     otRooms: Array<{ id: string; room_number: string; room_name: string }>;
     referralAgents: Array<{ id: string; agent_code: string; full_name: string }>;
+    diagnosticTests: Array<{ id: string; test_name: string; test_code: string; price: number }>;
   }>
 > {
   const session = await getCurrentUserSession();
@@ -1889,7 +1923,7 @@ export async function getIntakeDropdownOptionsAction(): Promise<
   const supabase = await createClient();
 
   try {
-    const [depRes, docRes, bedRes, cabinRes, unitRes, otRes, refRes] = await Promise.allSettled([
+    const [depRes, docRes, bedRes, cabinRes, unitRes, otRes, refRes, testRes] = await Promise.allSettled([
       orgId
         ? supabase.from("departments").select("id, name").eq("organization_id", orgId).eq("is_active", true).order("name")
         : supabase.from("departments").select("id, name").eq("is_active", true).order("name"),
@@ -1911,6 +1945,9 @@ export async function getIntakeDropdownOptionsAction(): Promise<
       orgId
         ? supabase.from("referral_agents").select("id, agent_code, full_name").eq("organization_id", orgId).eq("is_active", true).order("full_name")
         : supabase.from("referral_agents").select("id, agent_code, full_name").eq("is_active", true).order("full_name"),
+      orgId
+        ? supabase.from("diagnostic_tests").select("id, test_name, test_code, price").eq("organization_id", orgId).eq("is_active", true).order("test_name")
+        : supabase.from("diagnostic_tests").select("id, test_name, test_code, price").eq("is_active", true).order("test_name"),
     ]);
 
     const departments = depRes.status === "fulfilled" && depRes.value.data && depRes.value.data.length > 0
@@ -1971,6 +2008,19 @@ export async function getIntakeDropdownOptionsAction(): Promise<
       ? (refRes.value.data as Array<{ id: string; agent_code: string; full_name: string }>)
       : [];
 
+    const diagnosticTests = testRes.status === "fulfilled" && testRes.value.data && testRes.value.data.length > 0
+      ? (testRes.value.data as Array<{ id: string; test_name: string; test_code: string; price: number }>).map(t => ({
+          ...t,
+          price: Number(t.price || 0),
+        }))
+      : [
+          { id: "test-cbc-01", test_name: "Complete Blood Count (CBC)", test_code: "CBC-001", price: 400 },
+          { id: "test-rbs-01", test_name: "Random Blood Sugar (RBS)", test_code: "RBS-001", price: 150 },
+          { id: "test-sc-01", test_name: "Serum Creatinine", test_code: "CREAT-001", price: 350 },
+          { id: "test-cxr-01", test_name: "Chest X-Ray P/A View", test_code: "CXR-001", price: 600 },
+          { id: "test-ecg-01", test_name: "12-Lead Electrocardiogram (ECG)", test_code: "ECG-001", price: 400 },
+        ];
+
     return {
       success: true,
       data: {
@@ -1981,6 +2031,7 @@ export async function getIntakeDropdownOptionsAction(): Promise<
         units,
         otRooms,
         referralAgents,
+        diagnosticTests,
       },
     };
   } catch (err: unknown) {

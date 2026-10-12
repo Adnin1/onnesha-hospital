@@ -91,7 +91,7 @@ export async function getDoctorSchedulesAction(
 export async function createDoctorAction(params: {
   fullName: string;
   specialization: string;
-  bmdcRegNumber: string;
+  bmdcRegNumber?: string;
   degrees?: string;
   designation?: string;
   phone?: string;
@@ -114,14 +114,13 @@ export async function createDoctorAction(params: {
   if (
     !params.fullName?.trim() ||
     !params.specialization?.trim() ||
-    !params.bmdcRegNumber?.trim() ||
     !params.roomNumber?.trim() ||
     params.consultationFee === undefined ||
     params.consultationFee < 0
   ) {
     return {
       success: false,
-      error: "Full name, specialization, BMDC reg number, room number, and valid consultation fee are required.",
+      error: "Full name, specialization, room number, and valid consultation fee are required.",
     };
   }
 
@@ -157,7 +156,7 @@ export async function createDoctorAction(params: {
         department_id: deptId,
         full_name: params.fullName.trim(),
         specialization: params.specialization.trim(),
-        bmdc_reg_number: params.bmdcRegNumber.trim(),
+        bmdc_reg_number: params.bmdcRegNumber?.trim() || null,
         degrees: params.degrees?.trim() || "MBBS",
         designation: params.designation?.trim() || "Medical Officer",
         phone: params.phone?.trim() || null,
@@ -206,7 +205,7 @@ export async function updateDoctorAction(params: {
   doctorId: string;
   fullName: string;
   specialization: string;
-  bmdcRegNumber: string;
+  bmdcRegNumber?: string;
   degrees?: string;
   designation?: string;
   phone?: string;
@@ -233,14 +232,13 @@ export async function updateDoctorAction(params: {
     !params.doctorId?.trim() ||
     !params.fullName?.trim() ||
     !params.specialization?.trim() ||
-    !params.bmdcRegNumber?.trim() ||
     !params.roomNumber?.trim() ||
     params.consultationFee === undefined ||
     params.consultationFee < 0
   ) {
     return {
       success: false,
-      error: "Doctor ID, full name, specialization, BMDC reg number, room number, and valid fee are required.",
+      error: "Doctor ID, full name, specialization, room number, and valid fee are required.",
     };
   }
 
@@ -264,7 +262,7 @@ export async function updateDoctorAction(params: {
     const updatePayload: Record<string, unknown> = {
       full_name: params.fullName.trim(),
       specialization: params.specialization.trim(),
-      bmdc_reg_number: params.bmdcRegNumber.trim(),
+      bmdc_reg_number: params.bmdcRegNumber?.trim() || null,
       degrees: params.degrees?.trim() || "MBBS",
       designation: params.designation?.trim() || "Consultant",
       room_number: params.roomNumber.trim(),

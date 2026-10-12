@@ -158,10 +158,10 @@ test("OHMS New Features Verification: Billing, Expenses ERP, and IPD Discharge",
     assert.match(mig148Code, /UPDATE public\.patient_visits\s+SET status = 'DISCHARGED'/, "Visit status must be updated to DISCHARGED");
   });
 
-  await t.test("3.2 Discharge server action enforces mandatory consultant doctor and BMDC registration", () => {
+  await t.test("3.2 Discharge server action enforces mandatory consultant doctor, with optional BMDC registration", () => {
     assert.match(patientActionsCode, /finalDiagnosis\.trim\(\)\.length\s*<\s*2/, "Must mandate final diagnosis");
     assert.match(patientActionsCode, /Consultant doctor name or selection is mandatory/, "Must validate consultant doctor");
-    assert.match(patientActionsCode, /Doctor BMDC registration number is mandatory/, "Must validate BMDC registration");
+    assert.doesNotMatch(patientActionsCode, /Doctor BMDC registration number is mandatory/, "BMDC registration must be optional");
     assert.match(patientActionsCode, /complete_ipd_discharge_atomic/, "Must call complete_ipd_discharge_atomic RPC");
   });
 

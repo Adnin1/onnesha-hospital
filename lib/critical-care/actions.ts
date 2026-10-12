@@ -616,7 +616,7 @@ export async function createCriticalCareUnitAction(payload: {
         organization_id: session.organizationId,
         unit_name: payload.unit_name.trim(),
         unit_type: payload.unit_type,
-        floor: payload.floor || "3rd Floor",
+        floor: payload.floor?.trim() || null,
         total_beds: Number(payload.total_beds) || 1,
         daily_charge: Number(payload.daily_charge) || 8000,
         is_active: true,

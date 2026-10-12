@@ -78,7 +78,7 @@ export function AssignBedModal({
   const targetTitle = selectedBed
     ? `${selectedBed.bed_number} — ${selectedBed.ward?.name || "General Ward"}`
     : selectedCabin
-    ? `Cabin ${selectedCabin.cabin_number} (Floor ${selectedCabin.floor_number})`
+    ? `Cabin ${selectedCabin.cabin_number}${selectedCabin.floor_number && selectedCabin.floor_number !== "N/A" ? ` (Floor ${selectedCabin.floor_number})` : ""}`
     : "বেড বরাদ্দ";
 
   const handleAssign = async (e: React.FormEvent) => {

@@ -20,7 +20,7 @@ export function EditDoctorModal({
 }: EditDoctorModalProps) {
   const [fullName, setFullName] = useState(doctor.full_name);
   const [specialization, setSpecialization] = useState(doctor.specialization);
-  const [bmdcRegNumber, setBmdcRegNumber] = useState(doctor.bmdc_reg_number);
+  const [bmdcRegNumber, setBmdcRegNumber] = useState(doctor.bmdc_reg_number || "");
   const [degrees, setDegrees] = useState(doctor.degrees || "MBBS");
   const [designation, setDesignation] = useState(doctor.designation || "Consultant");
   const [phone, setPhone] = useState(doctor.phone || "");
@@ -36,7 +36,7 @@ export function EditDoctorModal({
   useEffect(() => {
     setFullName(doctor.full_name);
     setSpecialization(doctor.specialization);
-    setBmdcRegNumber(doctor.bmdc_reg_number);
+    setBmdcRegNumber(doctor.bmdc_reg_number || "");
     setDegrees(doctor.degrees || "MBBS");
     setDesignation(doctor.designation || "Consultant");
     setPhone(doctor.phone || "");
@@ -52,8 +52,8 @@ export function EditDoctorModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !specialization.trim() || !bmdcRegNumber.trim() || !roomNumber.trim()) {
-      setErrorMsg("Full name, specialization, BMDC reg number, and chamber room number are mandatory.");
+    if (!fullName.trim() || !specialization.trim() || !roomNumber.trim()) {
+      setErrorMsg("Full name, specialization, and chamber room number are mandatory.");
       return;
     }
 
@@ -71,7 +71,7 @@ export function EditDoctorModal({
         doctorId: doctor.id,
         fullName: fullName.trim(),
         specialization: specialization.trim(),
-        bmdcRegNumber: bmdcRegNumber.trim(),
+        bmdcRegNumber: bmdcRegNumber.trim() || undefined,
         degrees: degrees.trim() || "MBBS",
         designation: designation.trim() || "Consultant",
         phone: phone.trim() || undefined,
@@ -177,14 +177,13 @@ export function EditDoctorModal({
               />
             </div>
             <div>
-              <label className="block font-bold text-slate-700 mb-1">BMDC Reg No. (বিএমডিসি নম্বর) *</label>
+              <label className="block font-bold text-slate-700 mb-1">BMDC Reg No. (বিএমডিসি নম্বর - ঐচ্ছিক / Optional)</label>
               <input
                 type="text"
-                required
                 value={bmdcRegNumber}
                 onChange={(e) => setBmdcRegNumber(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 bg-slate-50 font-mono"
-                placeholder="e.g. A-45210"
+                placeholder="e.g. A-45210 (ঐচ্ছিক)"
               />
             </div>
           </div>

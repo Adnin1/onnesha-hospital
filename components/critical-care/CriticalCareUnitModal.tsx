@@ -29,7 +29,7 @@ export function CriticalCareUnitModal({ isOpen, onClose, onToast, onUpdated }: P
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newUnitName, setNewUnitName] = useState("");
   const [newUnitType, setNewUnitType] = useState<"ICU" | "ICCU" | "CCU" | "SICU" | "MICU" | "PICU">("ICU");
-  const [newFloor, setNewFloor] = useState("3rd Floor");
+  const [newFloor, setNewFloor] = useState("");
   const [newTotalBeds, setNewTotalBeds] = useState("4");
   const [newDailyCharge, setNewDailyCharge] = useState("8000");
 
@@ -105,7 +105,7 @@ export function CriticalCareUnitModal({ isOpen, onClose, onToast, onUpdated }: P
     setEditingUnit(u);
     setEditName(u.unit_name);
     setEditType(u.unit_type);
-    setEditFloor(u.floor || "3rd Floor");
+    setEditFloor(u.floor || "");
     setEditTotalBeds(String(u.total_beds || 1));
     setEditDailyCharge(String(u.daily_charge || 8000));
   };
@@ -270,9 +270,10 @@ export function CriticalCareUnitModal({ isOpen, onClose, onToast, onUpdated }: P
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">ফ্লোর</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">ফ্লোর (ঐচ্ছিক / Optional)</label>
                     <input
                       type="text"
+                      placeholder="যেমন: 3rd Floor (ঐচ্ছিক)"
                       value={newFloor}
                       onChange={(e) => setNewFloor(e.target.value)}
                       className="w-full px-3 py-2 bg-white border rounded-xl text-xs"
@@ -355,9 +356,10 @@ export function CriticalCareUnitModal({ isOpen, onClose, onToast, onUpdated }: P
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">ফ্লোর</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">ফ্লোর (ঐচ্ছিক / Optional)</label>
                     <input
                       type="text"
+                      placeholder="যেমন: 3rd Floor (ঐচ্ছিক)"
                       value={editFloor}
                       onChange={(e) => setEditFloor(e.target.value)}
                       className="w-full px-3 py-2 bg-white border rounded-xl text-xs"
@@ -469,7 +471,9 @@ export function CriticalCareUnitModal({ isOpen, onClose, onToast, onUpdated }: P
                           {u.unit_type}
                         </span>
                         <h4 className="font-black text-slate-900 text-sm">{u.unit_name}</h4>
-                        <span className="text-[10px] text-slate-400 font-medium">({u.floor || "3rd Floor"})</span>
+                        {u.floor && u.floor !== "N/A" && (
+                          <span className="text-[10px] text-slate-400 font-medium">({u.floor})</span>
+                        )}
                       </div>
                       <div className="text-[11px] text-slate-600 mt-1 flex items-center gap-3">
                         <span>

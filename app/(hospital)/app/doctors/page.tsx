@@ -95,14 +95,14 @@ export default function DoctorsAdminPage() {
 
   const handleCreateDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!docName.trim() || !docSpec.trim() || !docBmdc.trim() || !docFee || !docRoom.trim()) return;
+    if (!docName.trim() || !docSpec.trim() || !docFee || !docRoom.trim()) return;
 
     setSavingDoc(true);
     try {
       const res = await createDoctorAction({
         fullName: docName.trim(),
         specialization: docSpec.trim(),
-        bmdcRegNumber: docBmdc.trim(),
+        bmdcRegNumber: docBmdc.trim() || undefined,
         consultationFee: parseFloat(docFee),
         roomNumber: docRoom.trim(),
       });
@@ -194,7 +194,7 @@ export default function DoctorsAdminPage() {
     return (
       doc.full_name.toLowerCase().includes(q) ||
       doc.specialization.toLowerCase().includes(q) ||
-      doc.bmdc_reg_number.toLowerCase().includes(q) ||
+      (doc.bmdc_reg_number && doc.bmdc_reg_number.toLowerCase().includes(q)) ||
       (doc.department_name && doc.department_name.toLowerCase().includes(q))
     );
   });
@@ -273,7 +273,7 @@ export default function DoctorsAdminPage() {
                 <div className="text-xs space-y-1 text-slate-600 py-2 border-t border-slate-100">
                   <p><strong>Designation:</strong> {doc.designation}</p>
                   <p className="text-[11px] text-slate-500">{doc.degrees}</p>
-                  <p><strong>BMDC Reg:</strong> {doc.bmdc_reg_number}</p>
+                  <p><strong>BMDC Reg:</strong> {doc.bmdc_reg_number || "N/A"}</p>
                   <p className="flex items-center text-slate-800 font-medium">
                     <MapPin className="w-3.5 h-3.5 mr-1 text-sky-600" />
                     Chamber: {doc.room_number || "Unassigned"}
@@ -429,11 +429,10 @@ export default function DoctorsAdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">BMDC Reg No.</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">BMDC Reg No. (ঐচ্ছিক / Optional)</label>
                   <input
                     type="text"
-                    required
-                    placeholder="e.g. A-12345"
+                    placeholder="e.g. A-12345 (ঐচ্ছিক)"
                     value={docBmdc}
                     onChange={(e) => setDocBmdc(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500"

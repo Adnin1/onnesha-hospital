@@ -42,7 +42,7 @@ export function EditBedOrCabinModal({
   // Cabin Edit Form
   const [cabinNumber, setCabinNumber] = useState("");
   const [cabinType, setCabinType] = useState<"AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE">("AC_DELUXE");
-  const [floorNumber, setFloorNumber] = useState("5th Floor");
+  const [floorNumber, setFloorNumber] = useState("");
   const [cabinRate, setCabinRate] = useState("2500");
   const [cabinStatus, setCabinStatus] = useState<"VACANT" | "CLEANING" | "MAINTENANCE">("VACANT");
   const [amenities, setAmenities] = useState("Split AC, TV, Attendant Bed, Attached Bath");
@@ -63,7 +63,7 @@ export function EditBedOrCabinModal({
       setCabinType(
         (cabin.cabin_type as "AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE") || "AC_DELUXE"
       );
-      setFloorNumber(cabin.floor_number || "5th Floor");
+      setFloorNumber(cabin.floor_number || "");
       setCabinRate(String(cabin.daily_rate || 2500));
       const s = cabin.status?.toUpperCase();
       setCabinStatus(s === "CLEANING" || s === "MAINTENANCE" ? s : "VACANT");
@@ -111,7 +111,7 @@ export function EditBedOrCabinModal({
       cabinId: cabin.id,
       cabin_number: cabinNumber.trim(),
       cabin_type: cabinType,
-      floor_number: floorNumber.trim(),
+      floor_number: floorNumber.trim() || undefined,
       daily_rate: Number(cabinRate) || 2500,
       status: cabinStatus,
       amenities: amenities.trim(),
@@ -307,9 +307,10 @@ export function EditBedOrCabinModal({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">ফ্লোর নম্বর (Floor)</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">ফ্লোর নম্বর (ঐচ্ছিক / Optional)</label>
                     <input
                       type="text"
+                      placeholder="যেমন: 5th Floor (ঐচ্ছিক)"
                       value={floorNumber}
                       onChange={(e) => setFloorNumber(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20"

@@ -54,11 +54,12 @@ describe("OHMS Phase 21 Source-Level Security, Atomic RPC & MFA Verification (10
     assert.ok(content.includes("SUNDAY"), "Canonical SUNDAY mapping required");
   });
 
-  test("7. Doctor creation action requires mandatory full_name, specialization, and bmdcRegNumber", () => {
+  test("7. Doctor creation action requires mandatory full_name and specialization, with optional BMDC registration", () => {
     const actionsPath = path.join(ROOT, "lib/appointments/actions.ts");
     const content = fs.readFileSync(actionsPath, "utf8");
     assert.ok(content.includes("!params.fullName?.trim()"), "Mandatory full name check required");
-    assert.ok(content.includes("!params.bmdcRegNumber?.trim()"), "Mandatory BMDC registration check required");
+    assert.ok(content.includes("!params.specialization?.trim()"), "Mandatory specialization check required");
+    assert.ok(!content.includes("!params.bmdcRegNumber?.trim()"), "BMDC registration must be optional");
   });
 
   test("8. Staff appointment booking action calls atomic RPC book_staff_appointment_atomic", () => {

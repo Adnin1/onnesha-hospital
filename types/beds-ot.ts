@@ -3,7 +3,7 @@ export interface WardRecord {
   organization_id: string;
   name: string;
   ward_type: string;
-  floor_number: string;
+  floor_number?: string | null;
   total_beds: number;
   created_at?: string;
 }
@@ -57,7 +57,7 @@ export interface CabinRecord {
   organization_id: string;
   cabin_number: string;
   cabin_type: "AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE";
-  floor_number: string;
+  floor_number?: string | null;
   daily_rate: number;
   status: "VACANT" | "OCCUPIED" | "CLEANING" | "MAINTENANCE";
   amenities?: string;
