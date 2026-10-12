@@ -80,6 +80,9 @@ export default function IPDAdmissionsPage() {
     provisionalDiagnosis: "",
     bedId: "",
     referralAgentId: "",
+    dailyRate: "1000",
+    dailyServiceCharge: "500",
+    admissionFee: "300",
   });
   const [availableReferrals, setAvailableReferrals] = useState<
     { id: string; agent_code: string; full_name: string }[]
@@ -451,6 +454,9 @@ export default function IPDAdmissionsPage() {
         bedId: admissionForm.bedId || undefined,
         provisionalDiagnosis: admissionForm.provisionalDiagnosis,
         referralAgentId: admissionForm.referralAgentId || undefined,
+        dailyRate: Number(admissionForm.dailyRate) || 1000,
+        dailyServiceCharge: Number(admissionForm.dailyServiceCharge) || 500,
+        admissionFee: Number(admissionForm.admissionFee) || 300,
       });
 
       if (!res.success) {
@@ -463,6 +469,9 @@ export default function IPDAdmissionsPage() {
           provisionalDiagnosis: "",
           bedId: "",
           referralAgentId: "",
+          dailyRate: "1000",
+          dailyServiceCharge: "500",
+          admissionFee: "300",
         });
         setRefreshIndex((prev) => prev + 1);
       }
@@ -869,6 +878,51 @@ export default function IPDAdmissionsPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-2.5 bg-sky-50/70 rounded-xl border border-sky-100">
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1 text-[11px]">
+                    বেড দৈনিক ভাড়া (৳)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={admissionForm.dailyRate}
+                    onChange={(e) => setAdmissionForm({ ...admissionForm, dailyRate: e.target.value })}
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
+                    placeholder="1000"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1 text-[11px]">
+                    দৈনিক সার্ভিস চার্জ (৳/দিন)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={admissionForm.dailyServiceCharge}
+                    onChange={(e) => setAdmissionForm({ ...admissionForm, dailyServiceCharge: e.target.value })}
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
+                    placeholder="500"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold text-slate-700 block mb-1 text-[11px]">
+                    ভর্তি ফি (এককালীন ৳)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={admissionForm.admissionFee}
+                    onChange={(e) => setAdmissionForm({ ...admissionForm, admissionFee: e.target.value })}
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
+                    placeholder="300"
+                  />
+                </div>
+                <div className="col-span-full text-[10px] text-sky-700 font-medium">
+                  * ভর্তি ফি (৳৩০০) এবং দৈনিক সার্ভিস চার্জ (৳৫০০) স্বয়ংক্রিয়ভাবে বিলিং তালিকায় যুক্ত হবে এবং কর্তৃপক্ষ প্রয়োজনমতো পরিবর্তন করতে পারবে।
+                </div>
               </div>
 
               <div>

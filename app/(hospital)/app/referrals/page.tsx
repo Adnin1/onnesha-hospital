@@ -6,11 +6,9 @@ import {
   UserCheck,
   Plus,
   Search,
-  DollarSign,
   TrendingUp,
   Receipt,
   CheckCircle2,
-  Clock,
   AlertCircle,
   X,
   CreditCard,
@@ -270,7 +268,7 @@ export default function ReferralManagementPage() {
   };
 
   // Open Settle Modal for an agent
-  const handleOpenSettleModal = async (agent: ReferralAgent) => {
+  const _handleOpenSettleModal = async (agent: ReferralAgent) => {
     setSettleForm({
       agentId: agent.id,
       selectedCommissionIds: [],
@@ -307,7 +305,7 @@ export default function ReferralManagementPage() {
   };
 
   // Open Adjust Rate Modal
-  const handleOpenRateModal = (agent: ReferralAgent) => {
+  const _handleOpenRateModal = (agent: ReferralAgent) => {
     setRateForm({
       agentId: agent.id,
       currentRate: Number(agent.commission_rate_percent || 10),
@@ -484,7 +482,7 @@ export default function ReferralManagementPage() {
       </div>
 
       {/* KPI Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-400 mb-1">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Active Partners</span>
@@ -509,46 +507,24 @@ export default function ReferralManagementPage() {
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-400 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Net Patient Bill</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Patient Bill</span>
             <Receipt className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-xl font-black text-emerald-600">
             {formatCurrencyBDT(metrics?.totalBilledBase ?? 0)}
           </div>
-          <span className="text-[10px] text-slate-400">After approved discounts</span>
+          <span className="text-[10px] text-slate-400">রেফারেল রোগীদের মোট সেবা বিল</span>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-400 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Commission Accrued</span>
-            <DollarSign className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-xl font-black text-amber-600">
-            {formatCurrencyBDT(metrics?.totalCommissionEarned ?? 0)}
-          </div>
-          <span className="text-[10px] text-slate-400">1% - 40% snapshot</span>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-400 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Payable / Pending</span>
-            <Clock className="w-4 h-4 text-rose-500" />
-          </div>
-          <div className="text-xl font-black text-rose-600">
-            {formatCurrencyBDT(metrics?.totalCommissionPending ?? 0)}
-          </div>
-          <span className="text-[10px] text-slate-400">Awaiting treasury payout</span>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between text-slate-400 mb-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Settled & Paid</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Settled Commission Paid</span>
             <CheckCircle2 className="w-4 h-4 text-teal-500" />
           </div>
           <div className="text-xl font-black text-teal-600">
             {formatCurrencyBDT(metrics?.totalCommissionSettled ?? 0)}
           </div>
-          <span className="text-[10px] text-slate-400">Disbursed to date</span>
+          <span className="text-[10px] text-slate-400">কর্তৃপক্ষ কর্তৃক পরিশোধিত</span>
         </div>
       </div>
 
@@ -574,7 +550,7 @@ export default function ReferralManagementPage() {
           }`}
         >
           <Receipt className="w-4 h-4" />
-          Commission Ledger ({commissions.length})
+          রেফারেল রোগীদের সেবা ও বিল হিস্ট্রি ({commissions.length})
         </button>
         <button
           onClick={() => setActiveTab("SETTLEMENTS")}
@@ -647,10 +623,9 @@ export default function ReferralManagementPage() {
                   <th className="p-3.5">Referral ID</th>
                   <th className="p-3.5">Partner Profile</th>
                   <th className="p-3.5">Type & Contact</th>
-                  <th className="p-3.5 text-center">Commission Rate</th>
-                  <th className="p-3.5 text-right">Earned</th>
-                  <th className="p-3.5 text-right">Settled</th>
-                  <th className="p-3.5 text-right">Outstanding</th>
+                  <th className="p-3.5 text-center">Referred Cases</th>
+                  <th className="p-3.5 text-right">Total Patient Bills (৳)</th>
+                  <th className="p-3.5 text-right">Settled Payout (৳)</th>
                   <th className="p-3.5 text-center">Status</th>
                   <th className="p-3.5 text-right">Actions</th>
                 </tr>
@@ -658,22 +633,25 @@ export default function ReferralManagementPage() {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="p-12 text-center text-slate-400">
+                    <td colSpan={8} className="p-12 text-center text-slate-400">
                       Loading referral partner directory...
                     </td>
                   </tr>
                 ) : filteredAgents.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="p-12 text-center text-slate-400">
+                    <td colSpan={8} className="p-12 text-center text-slate-400">
                       No referral partners match your criteria.
                     </td>
                   </tr>
                 ) : (
                   filteredAgents.map((agent) => {
-                    const outstanding = Math.max(
-                      0,
-                      Number(agent.total_commission_earned || 0) - Number(agent.total_commission_settled || 0)
+                    const agentComms = commissions.filter((c) => c.referral_agent_id === agent.id);
+                    const totalAgentBill = agentComms.reduce(
+                      (acc, c) => acc + Number(c.billing_subtotal || c.commission_base_amount || 0),
+                      0
                     );
+                    const agentPatients = new Set(agentComms.map((c) => c.patient_id)).size;
+
                     return (
                       <tr key={agent.id} className="hover:bg-slate-50/80 transition">
                         <td className="p-3.5 font-mono font-bold text-sky-700">
@@ -700,19 +678,14 @@ export default function ReferralManagementPage() {
                           </div>
                           <span className="text-[11px] text-slate-500 font-mono">{agent.phone}</span>
                         </td>
-                        <td className="p-3.5 text-center">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                            {agent.commission_rate_percent}%
-                          </span>
+                        <td className="p-3.5 text-center font-bold text-slate-800">
+                          {agentPatients} জন
                         </td>
-                        <td className="p-3.5 text-right font-semibold text-slate-900">
-                          {formatCurrencyBDT(agent.total_commission_earned || 0)}
+                        <td className="p-3.5 text-right font-black text-slate-900">
+                          {formatCurrencyBDT(totalAgentBill)}
                         </td>
-                        <td className="p-3.5 text-right font-semibold text-teal-700">
+                        <td className="p-3.5 text-right font-black text-teal-700">
                           {formatCurrencyBDT(agent.total_commission_settled || 0)}
-                        </td>
-                        <td className="p-3.5 text-right font-bold text-rose-600">
-                          {formatCurrencyBDT(outstanding)}
                         </td>
                         <td className="p-3.5 text-center">
                           {agent.is_active ? (
@@ -728,27 +701,21 @@ export default function ReferralManagementPage() {
                         <td className="p-3.5 text-right space-x-1.5 whitespace-nowrap">
                           <button
                             onClick={() => handleOpenAgentDetail(agent.id)}
-                            className="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md transition"
-                            title="View full chronological history"
+                            className="px-2.5 py-1 text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-md transition border border-sky-200"
+                            title="রোগীর সেবা হিস্ট্রি ও প্রোফাইল"
                           >
-                            Profile
+                            প্রোফাইল
                           </button>
                           <button
-                            onClick={() => handleOpenRateModal(agent)}
-                            className="px-2.5 py-1 text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-md transition"
-                            title="Adjust future commission rate (1-40%)"
+                            onClick={() => {
+                              handleOpenAgentDetail(agent.id);
+                              setShowDiscretionaryPayoutModal(true);
+                            }}
+                            className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md transition border border-emerald-200"
+                            title="কর্তৃপক্ষ কমিশন প্রদান"
                           >
-                            Rate
+                            কমিশন প্রদান
                           </button>
-                          {outstanding > 0 && agent.is_active && (
-                            <button
-                              onClick={() => handleOpenSettleModal(agent)}
-                              className="px-2.5 py-1 text-[11px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition"
-                              title="Process payout settlement"
-                            >
-                              Settle
-                            </button>
-                          )}
                           {agent.is_active && (
                             <button
                               onClick={() => handleDeactivate(agent)}
@@ -769,18 +736,18 @@ export default function ReferralManagementPage() {
         </div>
       )}
 
-      {/* TAB 2: COMMISSION LEDGER */}
+      {/* TAB 2: PATIENT SERVICE & BILL HISTORY */}
       {activeTab === "COMMISSIONS" && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
             <div>
-              <h3 className="font-bold text-slate-800 text-xs">Immutable Commission Ledger</h3>
+              <h3 className="font-bold text-slate-800 text-xs">রেফারেল রোগীদের সেবা ও বিল হিস্ট্রি</h3>
               <p className="text-[11px] text-slate-500">
-                Snapshotted on invoice finalization. Commission base is strictly net of approved discounts.
+                কোন রেফারেল পার্টনারের মাধ্যমে কোন রোগী কত টাকার সেবা নিয়েছেন তার সম্পূর্ণ তালিকা।
               </p>
             </div>
             <span className="text-xs font-mono font-bold text-slate-600">
-              {commissions.length} Ledger Entries
+              {commissions.length} টি রেকর্ড
             </span>
           </div>
 
@@ -788,25 +755,20 @@ export default function ReferralManagementPage() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50/75 border-b border-slate-200 text-slate-600 font-bold">
-                  <th className="p-3">Date</th>
-                  <th className="p-3">Partner Code & Name</th>
-                  <th className="p-3">Patient</th>
-                  <th className="p-3">Invoice #</th>
-                  <th className="p-3 text-right">Subtotal</th>
-                  <th className="p-3 text-right">Discount</th>
-                  <th className="p-3 text-right">Net Bill (Base)</th>
-                  <th className="p-3 text-center">Rate</th>
-                  <th className="p-3 text-right">Commission</th>
-                  <th className="p-3 text-center">Settlement</th>
-                  <th className="p-3 text-center">Approval</th>
-                  <th className="p-3 text-center">Actions</th>
+                  <th className="p-3">তারিখ</th>
+                  <th className="p-3">পার্টনার কোড ও নাম</th>
+                  <th className="p-3">রোগীর নাম ও বিবরণ</th>
+                  <th className="p-3">ইনভয়েস #</th>
+                  <th className="p-3 text-right">মোট সেবা মূল্য (৳)</th>
+                  <th className="p-3 text-center">কমিশন স্ট্যাটাস</th>
+                  <th className="p-3 text-center">অ্যাকশন</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {commissions.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="p-12 text-center text-slate-400">
-                      No commission records generated yet.
+                    <td colSpan={7} className="p-12 text-center text-slate-400">
+                      কোনো রেফারেল রোগীর বিলিং রেকর্ড এখনো তৈরি হয়নি।
                     </td>
                   </tr>
                 ) : (
@@ -822,27 +784,20 @@ export default function ReferralManagementPage() {
                         <span className="text-slate-800 font-medium">{comm.referral_name_snapshot}</span>
                       </td>
                       <td className="p-3 text-slate-700">
-                        {comm.patients?.full_name || "Encounter Patient"}
+                        <div className="font-bold text-slate-900">
+                          {comm.patients?.full_name || "Encounter Patient"}
+                        </div>
+                        {comm.patients?.patient_code && (
+                          <div className="text-[10px] font-mono text-slate-400">
+                            {comm.patients.patient_code}
+                          </div>
+                        )}
                       </td>
                       <td className="p-3 font-mono font-semibold text-slate-900">
                         {comm.invoices?.invoice_number || "INV-POSTED"}
                       </td>
-                      <td className="p-3 text-right text-slate-500">
-                        {formatCurrencyBDT(comm.billing_subtotal)}
-                      </td>
-                      <td className="p-3 text-right text-rose-600">
-                        -{formatCurrencyBDT(comm.discount_amount)}
-                      </td>
-                      <td className="p-3 text-right font-bold text-slate-900">
-                        {formatCurrencyBDT(comm.commission_base_amount)}
-                      </td>
-                      <td className="p-3 text-center">
-                        <span className="font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded text-[11px]">
-                          {comm.commission_rate_percent}%
-                        </span>
-                      </td>
-                      <td className="p-3 text-right font-black text-emerald-700">
-                        {formatCurrencyBDT(comm.commission_amount)}
+                      <td className="p-3 text-right font-black text-slate-900">
+                        {formatCurrencyBDT(comm.billing_subtotal || comm.commission_base_amount)}
                       </td>
                       <td className="p-3 text-center">
                         <span
@@ -851,57 +806,24 @@ export default function ReferralManagementPage() {
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : comm.settlement_status === "PARTIAL"
                               ? "bg-sky-50 text-sky-700 border border-sky-200"
-                              : comm.settlement_status === "CANCELLED" || comm.settlement_status === "REVERSED"
-                              ? "bg-rose-50 text-rose-700 border border-rose-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-slate-100 text-slate-700 border border-slate-200"
                           }`}
                         >
-                          {comm.settlement_status}
+                          {comm.settlement_status === "PAID" ? "পরিশোধিত" : "অপোরিশোধিত"}
                         </span>
                       </td>
                       <td className="p-3 text-center">
-                        <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                            comm.approval_status === "APPROVED"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : comm.approval_status === "REJECTED"
-                              ? "bg-rose-50 text-rose-700 border border-rose-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
-                          }`}
+                        <button
+                          onClick={() => {
+                            const foundAgent = agents.find((a) => a.id === comm.referral_agent_id);
+                            if (foundAgent) {
+                              handleOpenAgentDetail(foundAgent.id);
+                            }
+                          }}
+                          className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-200"
                         >
-                          {comm.approval_status || "PENDING"}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        {comm.approval_status === "PENDING" && comm.settlement_status === "PENDING" ? (
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => setCommToApprove(comm)}
-                              className="px-2 py-1 text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded transition"
-                              title="Authorize commission"
-                            >
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => {
-                                setCommToReject(comm);
-                                setRejectReason("");
-                              }}
-                              className="px-2 py-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded transition"
-                              title="Reject commission"
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-[11px] text-slate-400">
-                            {comm.approval_status === "APPROVED"
-                              ? "Authorized"
-                              : comm.approval_status === "REJECTED"
-                              ? "Rejected"
-                              : "Locked"}
-                          </span>
-                        )}
+                          বোনাস / প্রোফাইল
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -1929,27 +1851,21 @@ export default function ReferralManagementPage() {
                       </strong>
                     </div>
                     <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                      <span className="text-[10px] font-bold text-slate-500 block">অর্জিত কমিশন</span>
+                      <span className="text-[10px] font-bold text-slate-500 block">মোট রোগীর সেবা বিল</span>
                       <strong className="text-xs sm:text-sm text-slate-900 font-black">
-                        {formatCurrencyBDT(agentDetailData.agent.total_commission_earned || 0)}
+                        {formatCurrencyBDT(allBilled)}
                       </strong>
                     </div>
                     <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                      <span className="text-[10px] font-bold text-slate-500 block">পরিশোধিত</span>
+                      <span className="text-[10px] font-bold text-slate-500 block">পরিশোধিত কমিশন</span>
                       <strong className="text-xs sm:text-sm text-teal-700 font-black">
                         {formatCurrencyBDT(agentDetailData.agent.total_commission_settled || 0)}
                       </strong>
                     </div>
                     <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                      <span className="text-[10px] font-bold text-slate-500 block">বকেয়া কমিশন</span>
-                      <strong className="text-xs sm:text-sm text-rose-600 font-black">
-                        {formatCurrencyBDT(
-                          Math.max(
-                            0,
-                            Number(agentDetailData.agent.total_commission_earned || 0) -
-                              Number(agentDetailData.agent.total_commission_settled || 0)
-                          )
-                        )}
+                      <span className="text-[10px] font-bold text-slate-500 block">পরিশোধিত কিস্তি</span>
+                      <strong className="text-xs sm:text-sm text-sky-700 font-black">
+                        {agentDetailData.settlements?.length || 0} টি কিস্তি
                       </strong>
                     </div>
                   </div>
@@ -2012,15 +1928,14 @@ export default function ReferralManagementPage() {
                             <th className="p-2">তারিখ</th>
                             <th className="p-2">রোগীর নাম ও কোড</th>
                             <th className="p-2">ইনভয়েস #</th>
-                            <th className="p-2 text-right">হাসপাতাল সেবা মূল্য</th>
-                            <th className="p-2 text-right">কমিশন</th>
+                            <th className="p-2 text-right">হাসপাতাল সেবা মূল্য (৳)</th>
                             <th className="p-2 text-center">স্ট্যাটাস</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {filteredCommissions.length === 0 ? (
                             <tr>
-                              <td colSpan={6} className="p-4 text-center text-slate-400">
+                              <td colSpan={5} className="p-4 text-center text-slate-400">
                                 নির্বাচিত সময়ে কোনো রেফারেল বিলিং রেকর্ড পাওয়া যায়নি।
                               </td>
                             </tr>
@@ -2044,12 +1959,9 @@ export default function ReferralManagementPage() {
                                 <td className="p-2 text-right font-black text-slate-900">
                                   {formatCurrencyBDT(c.billing_subtotal || c.commission_base_amount)}
                                 </td>
-                                <td className="p-2 text-right font-black text-emerald-700">
-                                  {formatCurrencyBDT(c.commission_amount)}
-                                </td>
                                 <td className="p-2 text-center">
                                   <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-slate-100 text-slate-700">
-                                    {c.settlement_status}
+                                    {c.settlement_status === "PAID" ? "পরিশোধিত" : "রেকর্ডকৃত"}
                                   </span>
                                 </td>
                               </tr>

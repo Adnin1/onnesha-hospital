@@ -861,6 +861,9 @@ export async function createIpdAdmissionAction(params: {
   bedId?: string;
   provisionalDiagnosis: string;
   referralAgentId?: string;
+  dailyRate?: number;
+  dailyServiceCharge?: number;
+  admissionFee?: number;
 }): Promise<ActionResult<{ visit: PatientVisit }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
@@ -927,14 +930,22 @@ export async function createIpdAdmissionAction(params: {
 
     // Assign Bed if bedId provided
     if (params.bedId) {
-      await supabase.from("bed_assignments").insert({
+      const bedAsgPayload: Record<string, unknown> = {
         organization_id: session.organizationId,
         visit_id: newVisit.id,
         patient_id: params.patientId,
         bed_id: params.bedId,
         assigned_at: new Date().toISOString(),
         status: "ACTIVE",
-      });
+      };
+      if (params.dailyRate !== undefined && !Number.isNaN(Number(params.dailyRate))) {
+        bedAsgPayload.daily_charge = Number(params.dailyRate);
+      }
+      let bAsgRes = await supabase.from("bed_assignments").insert(bedAsgPayload);
+      if (bAsgRes.error && bAsgRes.error.code === "PGRST204") {
+        delete bedAsgPayload.daily_charge;
+        bAsgRes = await supabase.from("bed_assignments").insert(bedAsgPayload);
+      }
 
       // Mark bed occupied
       await supabase

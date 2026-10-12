@@ -754,23 +754,71 @@ export async function getEpisodeBillingPreviewAction(params: {
       return { success: false, error: result?.error || "Unable to calculate episode billing preview." };
     }
 
+    const rawLines = (result.lines || []).map((line) => ({
+      reference_id: String(line.reference_id),
+      charge_id: line.charge_id || null,
+      is_custom_charge: !!line.is_custom_charge,
+      service_category: String(line.service_category),
+      item_name: String(line.item_name),
+      unit_price: Number(line.unit_price || 0),
+      quantity: Number(line.quantity || 0),
+      total_price: Number(line.total_price || 0),
+      started_at: line.started_at || undefined,
+    }));
+
+    const ipdEncounter = (result.encounters || []).find((e) => e.visit_type === "IPD") ||
+      ((result.resources || []).length > 0 ? { admitted_at: result.resources![0].assigned_at } : null);
+
+    if (ipdEncounter) {
+      const hasAdmFee = rawLines.some(
+        (l) => l.service_category === "ADMISSION" || l.item_name.includes("Admission") || l.item_name.includes("ভর্তি ফি")
+      );
+      if (!hasAdmFee) {
+        rawLines.unshift({
+          reference_id: `ipd-adm-fee-${targetPatientId}`,
+          charge_id: null,
+          is_custom_charge: true,
+          service_category: "ADMISSION",
+          item_name: "IPD Admission Fee (ভর্তি ফি - এককালীন)",
+          unit_price: 300,
+          quantity: 1,
+          total_price: 300,
+          started_at: ipdEncounter.admitted_at || new Date().toISOString(),
+        });
+      }
+
+      const hasSvcCharge = rawLines.some(
+        (l) => l.service_category === "SERVICE_CHARGE" || l.item_name.includes("Service Charge") || l.item_name.includes("সার্ভিস চার্জ")
+      );
+      if (!hasSvcCharge) {
+        const admitMs = ipdEncounter.admitted_at ? new Date(ipdEncounter.admitted_at).getTime() : Date.now();
+        const stayDays = Math.max(1, Math.ceil((Date.now() - admitMs) / (1000 * 60 * 60 * 24)));
+        rawLines.push({
+          reference_id: `ipd-svc-charge-${targetPatientId}`,
+          charge_id: null,
+          is_custom_charge: true,
+          service_category: "SERVICE_CHARGE",
+          item_name: `IPD Daily Service Charge (দৈনিক সার্ভিস চার্জ - ৳৫০০/দিন × ${stayDays} দিন)`,
+          unit_price: 500,
+          quantity: stayDays,
+          total_price: 500 * stayDays,
+          started_at: ipdEncounter.admitted_at || new Date().toISOString(),
+        });
+      }
+    }
+
+    const calculatedTotal = rawLines.reduce((acc, l) => acc + (Number(l.total_price) || 0), 0);
+    const effTotal = Math.max(Number(result.total || 0), calculatedTotal);
+    const prevPaidAmount = Number(result.previous_paid || 0);
+    const effEpisodeDue = Math.max(0, effTotal - prevPaidAmount);
+
     return {
       success: true,
       data: {
         episodeId: resolvedEpisodeId || undefined,
         episodeNumber: resolvedEpisodeNumber || undefined,
         primaryVisitId: result.primary_visit_id || undefined,
-        lines: (result.lines || []).map((line) => ({
-          reference_id: String(line.reference_id),
-          charge_id: line.charge_id || null,
-          is_custom_charge: !!line.is_custom_charge,
-          service_category: String(line.service_category),
-          item_name: String(line.item_name),
-          unit_price: Number(line.unit_price || 0),
-          quantity: Number(line.quantity || 0),
-          total_price: Number(line.total_price || 0),
-          started_at: line.started_at || undefined,
-        })),
+        lines: rawLines,
         waived_items: (result.waived_items || []).map((item) => ({
           id: String(item.id),
           reference_id: String(item.reference_id),
@@ -803,16 +851,16 @@ export async function getEpisodeBillingPreviewAction(params: {
           ventilator_required: Boolean(item.ventilator_required),
         })),
         invoiceHistory: result.invoice_history || [],
-        total: Number(result.total || 0),
+        total: effTotal,
         admissionDiscountAmount: Number(result.admission_discount_amount || 0),
         admissionDiscountReason: result.admission_discount_reason || null,
         referralAgentId: result.referral_agent_id || null,
         previousInvoiced: Number(result.previous_invoiced || 0),
-        previousPaid: Number(result.previous_paid || 0),
+        previousPaid: prevPaidAmount,
         previousDue: Number(result.previous_due || 0),
         episodeInvoiced: Number(result.episode_invoiced || 0),
         episodePaid: Number(result.episode_paid || 0),
-        episodeDue: Number(result.episode_due || 0),
+        episodeDue: effEpisodeDue,
         lifetimeInvoiced: Number(result.lifetime_invoiced ?? result.previous_invoiced ?? 0),
         lifetimePaid: Number(result.lifetime_paid ?? result.previous_paid ?? 0),
         lifetimeDue: Number(result.lifetime_due ?? result.previous_due ?? 0),

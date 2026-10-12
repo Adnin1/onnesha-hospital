@@ -45,9 +45,10 @@ export function AddBedOrCabinModal({
       return;
     }
     setSubmitting(true);
+    const effectiveWardId = wardId || wards[0]?.id || "";
     const res = await addBedAction({
       bed_number: bedNumber.trim(),
-      ward_id: wardId || wards[0]?.id || "ward-001-male",
+      ward_id: effectiveWardId,
       daily_rate: Number(dailyRate) || 500,
       bed_type: bedCategory,
     });

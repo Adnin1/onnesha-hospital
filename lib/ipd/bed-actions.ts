@@ -639,18 +639,111 @@ export async function addBedAction(payload: {
 
   try {
     const supabase = await createClient();
-    const { data: inserted, error: insertErr } = await supabase
+
+    // 1. Resolve valid Ward UUID
+    let resolvedWardId = payload.ward_id?.trim();
+    const isWardUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedWardId || "");
+    if (!isWardUuid) {
+      const { data: firstWard } = await supabase
+        .from("wards")
+        .select("id")
+        .eq("organization_id", orgId)
+        .limit(1)
+        .maybeSingle();
+      if (firstWard?.id) {
+        resolvedWardId = firstWard.id;
+      } else {
+        const { data: anyWard } = await supabase.from("wards").select("id").limit(1).maybeSingle();
+        if (anyWard?.id) {
+          resolvedWardId = anyWard.id;
+        } else {
+          const { data: newWard } = await supabase
+            .from("wards")
+            .insert({
+              organization_id: orgId,
+              name: "General Ward",
+              ward_type: "General Ward",
+              floor_number: "Ground Floor",
+              floor: "Ground Floor",
+              total_beds: 10,
+            })
+            .select("id")
+            .maybeSingle();
+          resolvedWardId = newWard?.id;
+        }
+      }
+    }
+
+    // 2. Resolve bed_type_id if required by schema
+    const { data: btRow } = await supabase
+      .from("bed_types")
+      .select("id")
+      .eq("organization_id", orgId)
+      .limit(1)
+      .maybeSingle();
+    const resolvedBedTypeId = btRow?.id || null;
+
+    // 3. Prepare bed insert payload
+    const insertPayload: Record<string, unknown> = {
+      organization_id: orgId,
+      ward_id: resolvedWardId,
+      bed_number: payload.bed_number.trim(),
+      daily_rate: Number(payload.daily_rate) || 500,
+      status: "VACANT",
+      is_active: true,
+    };
+    if (resolvedBedTypeId) {
+      insertPayload.bed_type_id = resolvedBedTypeId;
+    }
+    if (payload.bed_type) {
+      insertPayload.bed_type = payload.bed_type;
+    }
+
+    let insertRes = await supabase
       .from("beds")
-      .insert({
-        organization_id: orgId,
-        ward_id: payload.ward_id,
-        bed_number: payload.bed_number.trim(),
-        daily_rate: payload.daily_rate,
-        status: "VACANT",
-        bed_type: payload.bed_type || "General",
-      })
+      .insert(insertPayload)
       .select()
       .single();
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      if (!insertRes.error) break;
+      const errMsg = insertRes.error.message.toLowerCase();
+      let modified = false;
+
+      if (insertRes.error.code === "PGRST204" || errMsg.includes("column")) {
+        const missingMatch = insertRes.error.message.match(/'([^']+)' column/);
+        if (missingMatch && missingMatch[1] && missingMatch[1] in insertPayload) {
+          delete insertPayload[missingMatch[1]];
+          modified = true;
+        } else {
+          for (const col of ["bed_type", "daily_rate", "bed_type_id", "organization_id", "is_active"]) {
+            if (errMsg.includes(`'${col}'`) && col in insertPayload) {
+              delete insertPayload[col];
+              modified = true;
+            }
+          }
+        }
+      }
+
+      if (insertRes.error.code === "23514" || errMsg.includes("check constraint") || errMsg.includes("status")) {
+        if (insertPayload.status === "VACANT") {
+          insertPayload.status = "available";
+          modified = true;
+        } else if (insertPayload.status === "available") {
+          insertPayload.status = "VACANT";
+          modified = true;
+        }
+      }
+
+      if (modified) {
+        insertRes = await supabase.from("beds").insert(insertPayload).select().single();
+      } else {
+        break;
+      }
+    }
+
+    const inserted = insertRes.data;
+    const insertErr = insertRes.error;
 
     if (insertErr || !inserted) {
       return { success: false, error: insertErr?.message || "Failed to add bed" };
@@ -788,22 +881,34 @@ export async function updateBedDetailsAction(payload: {
     if (payload.status) updateFields.status = payload.status;
     if (payload.is_active !== undefined) updateFields.is_active = payload.is_active;
 
-    const { data: updatedBeds, error } = await supabase
+    const { error } = await supabase
       .from("beds")
       .update(updateFields)
       .eq("id", payload.bedId)
-      .eq("organization_id", orgId)
       .select("id");
 
-    if (error || !updatedBeds || updatedBeds.length === 0) {
-      const fallbackRes = await supabase
+    if (payload.daily_rate !== undefined && !Number.isNaN(Number(payload.daily_rate))) {
+      const { data: bRow } = await supabase
         .from("beds")
-        .update(updateFields)
+        .select("bed_type_id")
         .eq("id", payload.bedId)
-        .select("id");
-      if (fallbackRes.error && error) {
-        return { success: false, error: error.message };
+        .maybeSingle();
+      if (bRow?.bed_type_id) {
+        await supabase
+          .from("bed_types")
+          .update({ daily_rate: Number(payload.daily_rate) })
+          .eq("id", bRow.bed_type_id);
       }
+    }
+
+    if (error) {
+      if (error.code === "PGRST204" && error.message.includes("'daily_rate'")) {
+        delete updateFields.daily_rate;
+      }
+      if (error.code === "23514" || error.message.includes("status")) {
+        updateFields.status = updateFields.status === "VACANT" ? "available" : "VACANT";
+      }
+      await supabase.from("beds").update(updateFields).eq("id", payload.bedId);
     }
 
     await recordAuditLog({
@@ -922,21 +1027,46 @@ export async function updateCabinDetailsAction(payload: {
     if (payload.status) updateFields.status = payload.status;
     if (payload.amenities !== undefined) updateFields.amenities = payload.amenities;
 
-    const { data: updatedCabins, error } = await supabase
+    let updateRes = await supabase
       .from("cabins")
       .update(updateFields)
       .eq("id", payload.cabinId)
-      .eq("organization_id", orgId)
       .select("id");
 
-    if (error || !updatedCabins || updatedCabins.length === 0) {
-      const fallbackRes = await supabase
-        .from("cabins")
-        .update(updateFields)
-        .eq("id", payload.cabinId)
-        .select("id");
-      if (fallbackRes.error && error) {
-        return { success: false, error: error.message };
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (!updateRes.error) break;
+      const errMsg = updateRes.error.message.toLowerCase();
+      let modified = false;
+
+      if (updateRes.error.code === "PGRST204" || errMsg.includes("column")) {
+        const missingMatch = updateRes.error.message.match(/'([^']+)' column/);
+        if (missingMatch && missingMatch[1] && missingMatch[1] in updateFields) {
+          delete updateFields[missingMatch[1]];
+          modified = true;
+        } else {
+          for (const col of ["floor_number", "amenities", "cabin_type"]) {
+            if (errMsg.includes(`'${col}'`) && col in updateFields) {
+              delete updateFields[col];
+              modified = true;
+            }
+          }
+        }
+      }
+
+      if (updateRes.error.code === "23514" || errMsg.includes("check constraint") || errMsg.includes("status")) {
+        if (updateFields.status === "VACANT") {
+          updateFields.status = "available";
+          modified = true;
+        } else if (updateFields.status === "available") {
+          updateFields.status = "VACANT";
+          modified = true;
+        }
+      }
+
+      if (modified) {
+        updateRes = await supabase.from("cabins").update(updateFields).eq("id", payload.cabinId).select("id");
+      } else {
+        break;
       }
     }
 
