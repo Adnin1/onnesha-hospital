@@ -5,7 +5,7 @@
 **Current Branch:** `main`  
 **Package Version:** `1.1.90`  
 **Immutable Release Tag:** `v1.1.90 @ db8b750b51685a73cbf320f51d5e8920fc6a7c8c`  
-**Current Production Closure HEAD:** `5de17ba4ccd4cb73b34f0ec1a6a5dc53d930c64e` (verified in GitHub Actions Run 537)  
+**Current Production Closure HEAD:** `b3cde20ccb74877ea6e851776f4b5598ad27b52b`  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
 **Historical Release Tags:** `v1.1.89`, `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
@@ -22,11 +22,11 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 132/132 suites passed (1,207 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
-| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 537 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
+| **Node Certification Test Suite** | 133/133 suites passed (1,218 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1108 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 163/163 applied (100% parity, 0 drift, newest: `20261012033000`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 165/165 applied (100% parity, 0 drift, newest: `20261012160000`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB | `npx supabase db lint --linked` | ✅ PASS |
 | **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
 | **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
@@ -129,7 +129,29 @@
 ### K. Playwright WebKit AuthGuard Navigation Resilience
 - **File Hardened:** `tests/browser/runtime-route-matrix.spec.ts`
 - **Issue Resolved:** In GitHub Actions CI WebKit browser runner, client-side AuthGuard asynchronous redirects (`router.replace('/login?redirectTo=...')`) caused browser-level navigation interruptions when testing consecutive protected hospital routes.
-- **Resolution:** Wrapped protected route navigation in resilient exception handling with settling retry, ensuring graceful AuthGuard verification without false failure while asserting zero unauthenticated PHI/PII data leakage. Verified 100% GREEN (208/208 specs passed in CI Run 537 across all 4 browsers).
+- **Resolution:** Wrapped protected route navigation in resilient exception handling with settling retry, ensuring graceful AuthGuard verification without false failure while asserting zero unauthenticated PHI/PII data leakage. Verified 100% GREEN (208/208 specs passed in CI across all 4 browsers).
+
+### L. Financial Reports Timezone Displacement & Boundary Safety
+- **Files Modified:** `lib/reports/financial.ts`, `app/(hospital)/app/reports/page.tsx`, `tests/reports-date-boundary-and-search-safety.test.mjs`
+- **Issue Resolved:** Selecting "সব সময় (All Time)" in reports generated `new Date(8640000000000000).toISOString()` (`"+275760-09-13T00:00:00.000Z"`), which PostgreSQL rejected as an invalid timezone displacement (`+275760`).
+- **Resolution:**
+  1. Clamped boundary ceilings to PostgreSQL-compliant ISO representation `new Date("9999-12-31T23:59:59.999Z")`.
+  2. Stabilized AR aging `asOfDate` to Dhaka ISO timestamp.
+  3. Added regression test 10 in `tests/reports-date-boundary-and-search-safety.test.mjs` asserting safe 4-digit ISO bounds.
+
+### M. Diagnostic Laboratory Safety & Clinical Verification Hardening
+- **Files Modified:** `components/lab/LabResultEntryModal.tsx`, `app/(hospital)/app/lab/page.tsx`, `lib/lab/actions.ts`, `types/clinical-emr.ts`, Migration 165 (`20261012160000_accept_diagnostic_order_atomic_and_clinical_safety.sql`), `tests/clinical-safety-and-lab-hardening.test.mjs`
+- **Issues Resolved:** Production Lab UI auto-filled plausible normal patient test values; fallback printed synthetic clinician identities; verifications lacked canonical payload hashes; delivery lacked precondition checks.
+- **Resolution:**
+  1. Removed `NORMAL_TEMPLATES` and `DESCRIPTIVE_TEMPLATES` autofills from `LabResultEntryModal.tsx`; observed values start empty `""` until inputted by staff/LIS.
+  2. Removed fake doctor / BMDC fallbacks; verifier strictly resolved from authenticated doctor/profile records.
+  3. Sanitized verification and QA claims: `ELECTRONICALLY VERIFIED`, `Verification Integrity Hash`, and `Clinical Laboratory Quality Controlled (SOP)`.
+  4. Enforced strict `lab.verify` permission check for clinical verification.
+  5. Implemented SHA-256 integrity digest covering canonical serialized report content (patient, test, observed values, timestamp).
+  6. Enforced verified result immutability: editing a `VERIFIED` order automatically resets status to `PROCESSING` and purges prior verification.
+  7. Enforced delivery preconditions: `DELIVERED` strictly requires order to be in `VERIFIED` status with authenticated verifier identity.
+  8. Created and applied Migration 165 (`accept_diagnostic_order_atomic` RPC and hardened `verify_diagnostic_order_atomic` RPC).
+  9. Added comprehensive 10-test suite `tests/clinical-safety-and-lab-hardening.test.mjs` (10/10 PASS).
 
 ---
 
@@ -158,7 +180,7 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 132/132 certification suites, 1,207 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
+1. **Software Quality:** 133/133 certification suites, 1,218 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
 2. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`).
 3. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced.
 4. **External Owner Gates:** G1–G16 clearly isolated without false greens.

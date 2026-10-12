@@ -8,7 +8,6 @@ import {
   FileText,
   Activity,
   Microscope,
-  Sparkles,
   ClipboardList,
   Plus,
 } from "lucide-react";
@@ -23,117 +22,7 @@ interface Props {
   onToast: (msg: string, type: "success" | "error" | "info") => void;
 }
 
-// Preset clinical normal values for rapid entry
-const NORMAL_TEMPLATES: Record<string, Record<string, string>> = {
-  CBC: {
-    "Hemoglobin (Hb)": "14.2",
-    "Erythrocyte Sedimentation Rate (ESR)": "10",
-    "Total White Blood Cell Count (WBC)": "7500",
-    "Platelet Count": "280",
-    "Neutrophils": "62",
-    "Lymphocytes": "30",
-    "Monocytes": "04",
-    "Eosinophils": "04",
-    "Basophils": "00",
-    "PCV / Hematocrit": "42",
-  },
-  FBS: {
-    "Fasting Blood Sugar (FBS)": "95",
-  },
-  RBS: {
-    "Random Blood Sugar (RBS)": "115",
-  },
-  "2HABF": {
-    "2 Hours After Breakfast (2h-ABF)": "110",
-  },
-  HBA1C: {
-    "HbA1c (Glycated Hemoglobin)": "5.4",
-  },
-  CREATININE: {
-    "Serum Creatinine": "0.95",
-    "Blood Urea": "24",
-    "Blood Urea Nitrogen (BUN)": "12",
-    "Serum Uric Acid": "4.8",
-  },
-  LFT: {
-    "Serum Bilirubin (Total)": "0.8",
-    "Serum Bilirubin (Direct)": "0.2",
-    "SGPT (ALT)": "28",
-    "SGOT (AST)": "24",
-    "Alkaline Phosphatase (ALP)": "85",
-    "Total Protein": "7.2",
-    "Serum Albumin": "4.2",
-  },
-  ELECTROLYTES: {
-    "Serum Sodium (Na+)": "140",
-    "Serum Potassium (K+)": "4.2",
-    "Serum Chloride (Cl-)": "102",
-    "Serum Bicarbonate (HCO3-)": "24",
-  },
-  LIPID: {
-    "Total Cholesterol": "175",
-    "Triglycerides": "135",
-    "HDL Cholesterol": "46",
-    "LDL Cholesterol": "98",
-    "VLDL Cholesterol": "24",
-  },
-  THYROID: {
-    "TSH (Thyroid Stimulating Hormone)": "2.1",
-    "Free T4 (FT4)": "1.2",
-    "Free T3 (FT3)": "3.1",
-  },
-  URINE_RE: {
-    "Colour": "Straw",
-    "Appearance": "Clear",
-    "Reaction (pH)": "6.0",
-    "Specific Gravity": "1.015",
-    "Pus Cells": "2-3",
-    "RBCs": "Nil",
-    "Epithelial Cells": "1-2",
-    "Albumin": "Nil",
-    "Sugar": "Nil",
-    "Casts": "Nil",
-    "Crystals": "Nil",
-  },
-  STOOL: {
-    "Colour": "Yellowish Brown",
-    "Consistency": "Formed",
-    "Mucus": "Negative",
-    "Occult Blood (OBT)": "Negative",
-    "Pus Cells": "0-1",
-    "RBCs": "Nil",
-    "Ova / Parasites": "Not Found",
-  },
-  WIDAL: {
-    "S. Typhi 'O' Antigen": "1:40",
-    "S. Typhi 'H' Antigen": "1:40",
-    "S. Paratyphi 'AH' Antigen": "1:20",
-    "S. Paratyphi 'BH' Antigen": "1:20",
-  },
-  DENGUE: {
-    "Dengue NS1 Antigen": "Negative",
-    "Dengue IgM Antibody": "Negative",
-    "Dengue IgG Antibody": "Negative",
-  },
-  BLOOD_GROUP: {
-    "ABO Grouping": "B Positive (+ve)",
-    "Rh (D) Factor": "Positive",
-  },
-  CALCIUM: {
-    "Serum Calcium": "9.4",
-  },
-};
-
-const DESCRIPTIVE_TEMPLATES: Record<string, string> = {
-  XRAY_CHEST:
-    "CHEST X-RAY (P/A VIEW):\n• Bilateral lung fields appear normal without any focal consolidation or active infiltration.\n• Both costophrenic and cardiophrenic angles are sharp and clear.\n• Cardiac silhouette and cardiothoracic ratio are within normal limits (CTR < 50%).\n• Thoracic bony cage, ribs, and surrounding soft tissues appear unremarkable.\n\nIMPRESSION: Normal radiological study of chest.",
-  USG_WHOLE_ABDOMEN:
-    "ULTRASONOGRAPHY OF WHOLE ABDOMEN:\n• Liver: Normal in size, contour, and homogeneous echotexture. No focal lesion or mass.\n• Gallbladder: Well distended, wall thickness normal (< 3mm), lumen acoustic-free, no calculus.\n• Spleen & Pancreas: Normal in size, outline, and parenchyma.\n• Kidneys: Both kidneys are normal in size, shape, and cortical thickness. Corticomedullary differentiation preserved. No hydronephrosis or calculus.\n• Urinary Bladder: Smooth mucosal wall, well distended, lumen free of mass/calculus.\n\nIMPRESSION: Normal whole abdominal ultrasound study.",
-  ECG_12_LEAD:
-    "12-LEAD RESTING ELECTROCARDIOGRAM:\n• Heart Rate: 74 bpm (Regular sinus rhythm).\n• P-wave, PR interval: 0.16 sec (Normal).\n• QRS Complex: 0.08 sec (Normal axis, no hypertrophy pattern).\n• ST-T Segment: Isoelectric, no significant ST elevation, depression, or T-wave inversion.\n\nIMPRESSION: Normal 12-lead Electrocardiogram (Sinus Rhythm).",
-  ECHO_2D:
-    "2D ECHOCARDIOGRAPHY WITH COLOR DOPPLER:\n• Normal cardiac chamber dimensions.\n• Left ventricular systolic function preserved (LVEF: 62%).\n• Normal wall motion at rest, no regional wall motion abnormality (RWMA).\n• Normal valve morphology with laminar color Doppler flow patterns.\n• Pericardium is normal, no effusion.\n\nIMPRESSION: Normal 2D Echocardiogram with preserved LV systolic function.",
-};
+// Production Clinical Entry: Observed values start empty until measured by staff or imported from LIS.
 
 export function LabResultEntryModal({ isOpen, onClose, order, onSaved, onToast }: Props) {
   const [selectedTestIndex, setSelectedTestIndex] = useState(0);
@@ -339,61 +228,6 @@ export function LabResultEntryModal({ isOpen, onClose, order, onSaved, onToast }
     }));
   };
 
-  const handleApplyNormalTemplate = () => {
-    if (!currentTest) return;
-    const code = currentTest.test_code?.toUpperCase() || "";
-    const name = currentTest.test_name?.toUpperCase() || "";
-
-    // Find matching template
-    let matchedTemplate: Record<string, string> | null = null;
-    if (code.includes("CBC") || name.includes("CBC") || name.includes("HEMOGRAM")) matchedTemplate = NORMAL_TEMPLATES.CBC;
-    else if (code.includes("FBS") || name.includes("FASTING") || name.includes("SUGAR")) matchedTemplate = NORMAL_TEMPLATES.FBS;
-    else if (code.includes("RBS") || name.includes("RANDOM")) matchedTemplate = NORMAL_TEMPLATES.RBS;
-    else if (code.includes("2HABF") || name.includes("2H") || name.includes("PPBS")) matchedTemplate = NORMAL_TEMPLATES["2HABF"];
-    else if (code.includes("HBA1C") || name.includes("HBA1C") || name.includes("GLYCATED")) matchedTemplate = NORMAL_TEMPLATES.HBA1C;
-    else if (code.includes("CREAT") || code.includes("KFT") || name.includes("CREATININE") || name.includes("RENAL") || name.includes("KIDNEY")) matchedTemplate = NORMAL_TEMPLATES.CREATININE;
-    else if (code.includes("LFT") || code.includes("LIVER") || code.includes("SGPT") || name.includes("LIVER") || name.includes("SGPT") || name.includes("BILIRUBIN")) matchedTemplate = NORMAL_TEMPLATES.LFT;
-    else if (code.includes("ELECTROLYTE") || name.includes("ELECTROLYTE")) matchedTemplate = NORMAL_TEMPLATES.ELECTROLYTES;
-    else if (code.includes("LIPID") || code.includes("CHOLESTEROL") || name.includes("LIPID") || name.includes("CHOLESTEROL")) matchedTemplate = NORMAL_TEMPLATES.LIPID;
-    else if (code.includes("THYROID") || code.includes("TSH") || name.includes("THYROID") || name.includes("TSH")) matchedTemplate = NORMAL_TEMPLATES.THYROID;
-    else if (code.includes("URINE") || name.includes("URINE")) matchedTemplate = NORMAL_TEMPLATES.URINE_RE;
-    else if (code.includes("STOOL") || name.includes("STOOL")) matchedTemplate = NORMAL_TEMPLATES.STOOL;
-    else if (code.includes("WIDAL") || name.includes("WIDAL") || name.includes("TYPHOID")) matchedTemplate = NORMAL_TEMPLATES.WIDAL;
-    else if (code.includes("DENGUE") || name.includes("DENGUE")) matchedTemplate = NORMAL_TEMPLATES.DENGUE;
-    else if (code.includes("GROUP") || name.includes("BLOOD GROUP") || name.includes("GROUPING")) matchedTemplate = NORMAL_TEMPLATES.BLOOD_GROUP;
-    else if (code.includes("CALCIUM") || name.includes("CALCIUM")) matchedTemplate = NORMAL_TEMPLATES.CALCIUM;
-
-    if (matchedTemplate) {
-      setParamValues((prev) => {
-        const next = { ...prev };
-        Object.entries(matchedTemplate!).forEach(([pName, pVal]) => {
-          const key = `${currentTestKey}_${pName}`;
-          next[key] = {
-            ...(prev[key] || { parameterName: pName }),
-            observedValue: pVal,
-            isAbnormal: false,
-          };
-        });
-        return next;
-      });
-      onToast("স্ট্যান্ডার্ড স্বাভাবিক ভ্যালুসমূহ সফলভাবে বসানো হয়েছে।", "info");
-    } else {
-      // Generic fallback
-      onToast("এই টেস্টের জন্য স্বয়ংক্রিয় টেমপ্লেট প্রযোজ্য নয়। ম্যানুয়ালি ভ্যালু প্রদান করুন।", "info");
-    }
-  };
-
-  const handleApplyDescriptiveTemplate = (templateKey: string) => {
-    const templateText = DESCRIPTIVE_TEMPLATES[templateKey];
-    if (templateText && currentTestKey) {
-      setDescriptiveFindings((prev) => ({
-        ...prev,
-        [currentTestKey]: templateText,
-      }));
-      onToast("স্ট্যান্ডার্ড ক্লিনিক্যাল ফাইন্ডিংস টেমপ্লেট লোড হয়েছে।", "info");
-    }
-  };
-
   const handleSaveAllResults = async () => {
     if (!order) return;
     setSaving(true);
@@ -517,56 +351,10 @@ export function LabResultEntryModal({ isOpen, onClose, order, onSaved, onToast }
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {!isDescriptiveTest ? (
-                <button
-                  type="button"
-                  onClick={handleApplyNormalTemplate}
-                  className="px-3 py-1.5 bg-white hover:bg-sky-100 border border-sky-300 text-sky-700 font-bold text-xs rounded-lg transition flex items-center gap-1.5 shadow-2xs"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-                  <span>নরমাল ভ্যালু অটো-ফিল করুন</span>
-                </button>
-              ) : (
-                <div className="flex gap-1.5">
-                  {currentTest?.test_code?.includes("XRAY") && (
-                    <button
-                      type="button"
-                      onClick={() => handleApplyDescriptiveTemplate("XRAY_CHEST")}
-                      className="px-2.5 py-1 bg-white hover:bg-sky-100 border border-sky-300 text-sky-700 font-bold text-xs rounded-lg transition"
-                    >
-                      Chest X-Ray টেমপ্লেট
-                    </button>
-                  )}
-                  {currentTest?.test_code?.includes("USG") && (
-                    <button
-                      type="button"
-                      onClick={() => handleApplyDescriptiveTemplate("USG_WHOLE_ABDOMEN")}
-                      className="px-2.5 py-1 bg-white hover:bg-sky-100 border border-sky-300 text-sky-700 font-bold text-xs rounded-lg transition"
-                    >
-                      USG Abdomen টেমপ্লেট
-                    </button>
-                  )}
-                  {currentTest?.test_code?.includes("ECG") && (
-                    <button
-                      type="button"
-                      onClick={() => handleApplyDescriptiveTemplate("ECG_12_LEAD")}
-                      className="px-2.5 py-1 bg-white hover:bg-sky-100 border border-sky-300 text-sky-700 font-bold text-xs rounded-lg transition"
-                    >
-                      ECG টেমপ্লেট
-                    </button>
-                  )}
-                  {currentTest?.test_code?.includes("ECHO") && (
-                    <button
-                      type="button"
-                      onClick={() => handleApplyDescriptiveTemplate("ECHO_2D")}
-                      className="px-2.5 py-1 bg-white hover:bg-sky-100 border border-sky-300 text-sky-700 font-bold text-xs rounded-lg transition"
-                    >
-                      Echo টেমপ্লেট
-                    </button>
-                  )}
-                </div>
-              )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs">
+                🔬 ক্লিনিক্যাল ফলাফল এন্ট্রি (Measured Values Entry)
+              </span>
             </div>
           </div>
 

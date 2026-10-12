@@ -95,4 +95,14 @@ describe("OHMS Financial Reports Date Boundary, Search Sanitization & Service Wo
     assert.ok(code.includes('canonical: "/"'), "app/layout.tsx must declare canonical: '/'");
     assert.ok(!code.includes('canonical: "./"'), "app/layout.tsx must not declare relative './'");
   });
+
+  test("10. getDhakaDateRange('all') exports valid PostgreSQL-compatible ISO bounds without +275760 timezone displacement", () => {
+    const allRange = getDhakaDateRange("all");
+    assert.equal(allRange.startIso, "1970-01-01T00:00:00.000Z");
+    assert.equal(allRange.endIso, "9999-12-31T23:59:59.999Z");
+    assert.equal(allRange.endExclusiveIso, "9999-12-31T23:59:59.999Z");
+    assert.ok(!allRange.endIso.includes("+275760"), "Must not contain +275760 year overflow");
+    assert.ok(!allRange.endExclusiveIso.includes("+275760"), "Must not contain +275760 year overflow");
+    assert.match(allRange.endIso, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  });
 });

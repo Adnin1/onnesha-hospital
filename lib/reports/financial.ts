@@ -199,8 +199,8 @@ export function getDhakaDateRange(
     case "all":
     default: {
       const start = new Date(0);
-      const end = new Date(8640000000000000);
-      const endExclusive = new Date(8640000000000000);
+      const end = new Date("9999-12-31T23:59:59.999Z");
+      const endExclusive = new Date("9999-12-31T23:59:59.999Z");
       return { start, end, startIso: start.toISOString(), endIso: end.toISOString(), endExclusive, endExclusiveIso: endExclusive.toISOString() };
     }
   }

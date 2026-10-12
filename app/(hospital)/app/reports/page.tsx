@@ -162,7 +162,7 @@ export default function ReportsManagementPage() {
             endDate: dateBounds.endExclusiveIso,
           }),
           getAccountsReceivableAgingAction({
-            asOfDate: dateBounds.endIso,
+            asOfDate: period === "all" ? new Date().toISOString() : dateBounds.endIso,
           }),
           getProfitAndLossSummaryAction({
             startDate: dateBounds.startIso,

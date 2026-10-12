@@ -49,9 +49,9 @@ describe("OHMS Phase 5 Prescriptions & Diagnostic Lab EMR Suite (10 Scenarios)",
   });
 
   // Scenario 6: verifyDiagnosticReportAction updates status and saves electronic signature
-  test("6. verifyDiagnosticReportAction asserts lab.manage permission and generates pathologist verification signature", () => {
+  test("6. verifyDiagnosticReportAction asserts lab.verify permission and generates pathologist verification signature", () => {
     const actionsContent = fs.readFileSync(path.join(rootDir, "lib", "lab", "actions.ts"), "utf8");
-    assert.match(actionsContent, /requirePermission\("lab\.manage"\)/);
+    assert.match(actionsContent, /requirePermission\("lab\.verify"\)/);
     assert.match(actionsContent, /status:\s*"VERIFIED"/);
     assert.match(actionsContent, /diagnostic_report_verifications/);
     assert.match(actionsContent, /signature_hash/);

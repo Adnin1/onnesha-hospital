@@ -89,6 +89,12 @@ export interface DiagnosticOrderRecord {
   verified_by_doctor?: {
     id: string;
     full_name: string;
+    designation?: string;
+    bmdc_reg_no?: string;
+  };
+  verified_by_profile?: {
+    id: string;
+    full_name: string;
   };
   tests?: Array<{
     id: string;

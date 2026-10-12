@@ -828,11 +828,11 @@ export default function LabManagementPage() {
                       Method: {getDiagnosticMethod(selectedOrder)}
                     </p>
                     <p className="text-[10px] text-slate-400">
-                      Standard Quality Control: Bio-Rad External Quality Assurance Certified
+                      Standard Quality Control: Clinical Laboratory Quality Controlled (SOP)
                     </p>
                     {selectedOrder.status === "VERIFIED" && selectedOrder.signature_hash && (
                       <p className="font-mono text-[9px] text-slate-400">
-                        Digital Verification Hash: {selectedOrder.signature_hash.slice(0, 24)}...
+                        Verification Integrity Hash: {selectedOrder.signature_hash.slice(0, 24)}...
                       </p>
                     )}
                   </div>
@@ -843,15 +843,16 @@ export default function LabManagementPage() {
                       <div className="inline-block p-3 bg-emerald-50/70 border-2 border-dashed border-emerald-400 rounded-xl text-right">
                         <div className="flex items-center justify-end space-x-1 text-emerald-800 text-[9.5px] font-bold uppercase tracking-wider mb-1">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>DIGITALLY SIGNED & VERIFIED</span>
+                          <span>ELECTRONICALLY VERIFIED</span>
                         </div>
                         <p className="font-bold text-slate-900 text-xs">
                           {selectedOrder.verified_by_doctor?.full_name
                             ? `Dr. ${selectedOrder.verified_by_doctor.full_name}`
-                            : "Dr. Farhana Yasmin, MBBS, MPhil"}
+                            : selectedOrder.verified_by_profile?.full_name || "Authorized Clinical Pathologist"}
                         </p>
                         <p className="text-[10px] text-slate-600">
-                          Consultant Clinical Pathologist • BMDC Reg: A-68421
+                          {selectedOrder.verified_by_doctor?.designation || "Consultant Clinical Pathologist"}
+                          {selectedOrder.verified_by_doctor?.bmdc_reg_no ? ` • BMDC Reg: ${selectedOrder.verified_by_doctor.bmdc_reg_no}` : ""}
                         </p>
                         <p className="text-[9px] text-emerald-700 font-mono mt-0.5">
                           {selectedOrder.verified_at ? formatDateBDT(selectedOrder.verified_at) : "Electronically Authorized"}
@@ -861,7 +862,7 @@ export default function LabManagementPage() {
                       <div>
                         <div className="w-44 border-b border-slate-400 mb-1 ml-auto"></div>
                         <p className="font-bold text-slate-400 italic">
-                          স্বাক্ষর অপেক্ষমান (Pending Doctor Signature)
+                          স্বাক্ষর অপেক্ষমান (Pending Clinical Verification)
                         </p>
                         <p className="text-[10px] text-slate-400">
                           Consultant Clinical Pathologist
