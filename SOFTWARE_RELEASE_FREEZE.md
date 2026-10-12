@@ -6,7 +6,7 @@
 **Canonical Bengali Name:** অন্বেষা হাসপাতাল ও ডায়াগনস্টিক  
 **Release Status:** **FROZEN — PRODUCTION COMPLETE**  
 **Package Version:** `1.1.90`  
-**Effective Freeze Date:** October 11, 2026  
+**Effective Freeze Date:** October 13, 2026  
 **Final Verdict:** `SOFTWARE_COMPLETE_EXTERNAL_OWNER_COMMISSIONING_REMAINS`  
 
 ---
@@ -24,17 +24,17 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 | **Canonical Physical Address** | `শেরপুর রোড, সূত্রাপুর, বগুড়া।` | ✅ SYNCHRONIZED |
 | **Official Telephone Hotlines** | `01620003888, 01718835623` | ✅ SYNCHRONIZED |
 | **DGHS Facility ID** | `10022715` | ✅ CERTIFIED |
-| **Supabase Remote Migrations** | 163 / 163 applied (Latest: `20261012033000_super_admin_permanent_invoice_purge.sql`) | ✅ 100% PARITY |
+| **Supabase Remote Migrations** | 172 / 172 applied (Latest: `20261013024000_doctor_phone_cabin_floor_and_admission_charges.sql`) | ✅ 100% PARITY |
 | **Data Authenticity Policy** | Honest empty states enforced; zero synthetic auto-fabrication in production tenant | ✅ CERTIFIED |
 | **TypeScript Strict Compiler** | `tsc --noEmit` -> 0 errors, 0 warnings | ✅ PASS |
 | **ESLint Quality Gate** | `eslint` -> 0 errors, 0 warnings | ✅ PASS |
-| **Node.js Certification Suites** | 132/132 suites passed (1,207 active pass, 0 fail, 7 skipped) | ✅ PASS |
-| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 537 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | ✅ PASS |
+| **Node.js Certification Suites** | 135/135 suites passed (1,234 active pass, 0 fail, 7 skipped) | ✅ PASS |
+| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 547 baseline across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | ✅ PASS |
 | **Next.js Static Export** | 62/62 static routes prerendered into `out/` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1108 assets, 0 broken links | ✅ PASS |
 | **Native Windows MSI Installer** | `Onnesha-Hospital-1.1.90.msi` (3,457,024 bytes, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`) | ✅ VERIFIED |
 | **Native Windows EXE Installer** | `Onnesha-Hospital-Setup-1.1.90.exe` (2,895,011 bytes, SHA-256: `72BAD4D10633B4FDC03549DA64FE01C29FFE400EC142347561FC8394380134D1`) | ✅ VERIFIED |
-| **Cloudflare Edge Deployment** | `https://onnesha-hospital.pages.dev` | ✅ DEPLOYED |
+| **Cloudflare Edge Deployment** | `https://onnesha-hospital.pages.dev` (Deployment `fb5fd759`, `WORKSTATION_DEPLOY_VERIFIED`) | ✅ DEPLOYED |
 
 ---
 
@@ -42,7 +42,9 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 
 - **Authoritative Git Repository:** `Adnin1/onnesha-hospital`
 - **Active Branch:** `main`
+- **Engineering HEAD:** `5db787e5794aff70ac8bd731c1e693614fa6ff3b`
 - **Remote Remotes:** `origin` (`https://github.com/Adnin1/onnesha-hospital.git`) & `ssh-origin` (`git@github.com:Adnin1/onnesha-hospital.git`)
+- **Database Parity:** 172 local / 172 remote Supabase migrations applied (`iuhtzahuszdkdarhxobx`)
 - **Historical Release Tags Preserved:** `v1.1.88` (`c33728d`), `v1.1.89` (`688d869`), `v1.1.90` (`db8b750`)
 
 ---

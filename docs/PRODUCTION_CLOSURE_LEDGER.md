@@ -5,12 +5,12 @@
 **Current Branch:** `main`  
 **Package Version:** `1.1.90`  
 **Immutable Release Tag:** `v1.1.90 @ db8b750b51685a73cbf320f51d5e8920fc6a7c8c`  
-**Current Production Closure HEAD:** `b3cde20ccb74877ea6e851776f4b5598ad27b52b`  
+**Current Production Closure HEAD:** `5db787e5794aff70ac8bd731c1e693614fa6ff3b` (Engineering HEAD)  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
 **Historical Release Tags:** `v1.1.89`, `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
-**Ledger Reconciliation Date:** October 12, 2026  
+**Ledger Reconciliation Date:** October 13, 2026  
 **Final Production Verdict:** **SOFTWARE_COMPLETE_EXTERNAL_OWNER_COMMISSIONING_REMAINS**
 
 ---
@@ -22,11 +22,11 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 134/134 suites passed (1,228 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
-| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
+| **Node Certification Test Suite** | 135/135 suites passed (1,234 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 547 baseline across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1108 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 170/170 applied (100% parity, 0 drift, newest: `20261012181500`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 172/172 applied (100% parity, 0 drift, newest: `20261013024000_doctor_phone_cabin_floor_and_admission_charges.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
 | **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
 | **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
@@ -34,7 +34,7 @@
 | **Billing Catalog Classification & Deduplication** | Deterministic domain categorization (Bed/ICU/OT/Doctor/Imaging/Lab), 0 duplicates, 3D quick adder | `lib/billing/serviceCatalog.ts`, `app/billing/page.tsx` & migration `20261011193500` | ✅ PASS |
 | **Official Hospital Diagnostic Tariffs** | Complete official rate chart seeded across 16 categories, 185 tests with exact BDT tariffs | `lib/lab/actions.ts`, `lib/billing/serviceCatalog.ts` & migration `20261011190000` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `fb5fd759`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
@@ -153,6 +153,44 @@
   8. Created and applied Migration 165 (`accept_diagnostic_order_atomic` RPC and hardened `verify_diagnostic_order_atomic` RPC).
   9. Added comprehensive 10-test suite `tests/clinical-safety-and-lab-hardening.test.mjs` (10/10 PASS).
 
+### N. Doctor Addition & BMDC Optionality + Auto Doctor Code Generation
+- **Files Modified:** `lib/appointments/actions.ts`, Migration 172 (`20261013024000_doctor_phone_cabin_floor_and_admission_charges.sql`).
+- **Issues Resolved:** Adding a doctor failed when BMDC registration was omitted or when non-nullable columns (`doctor_code`, `department_id`, `phone`) were constrained.
+- **Resolution:**
+  1. `doctor_code` is auto-generated if missing (`DOC-XXXXXX`).
+  2. `bmdc_reg_no` made nullable/optional across database schema and UI.
+  3. Default clinical department automatically resolved or created if omitted.
+  4. Phone column made optional; insertion implements schema-adaptive column retries.
+
+### O. Bed & Cabin Matrix Tariff Persistence & Dynamic Ward Resolution
+- **Files Modified:** `lib/ipd/bed-actions.ts`, `components/beds/AddBedOrCabinModal.tsx`, Migration 172.
+- **Issues Resolved:** Adding beds/cabins failed due to missing ward foreign keys; editing rates failed to persist new tariff.
+- **Resolution:**
+  1. Automated lookup/creation of active general ward UUID when ward is omitted.
+  2. Rate editing now synchronizes directly into both `beds.daily_rate` and `bed_types.base_daily_rate`.
+  3. Floor text decoupled and made optional across all bed & cabin forms and displays.
+
+### P. IPD Admission Fees & Daily Service Charges Auto-Injection into Billing
+- **Files Modified:** `app/(hospital)/app/ipd/page.tsx`, `lib/patient/actions.ts`, `lib/billing/actions.ts`, Migration 172.
+- **Resolution:**
+  1. Standard IPD admission defaults: 300 BDT one-time admission fee + 500 BDT/day service charge + bed daily rate.
+  2. All rates are completely customizable during both admission and billing time.
+  3. Auto-injection logic in `getUnbilledItemsForPatientAction` synthesizes admission fee and stay service charges into patient's pending bill.
+
+### Q. Referral Agent Value Dashboard & Discretionary Bonus Governance
+- **Files Modified:** `app/(hospital)/app/referrals/page.tsx`, `lib/billing/actions.ts`.
+- **Resolution:**
+  1. Removed hardcoded agent commission percentages from billing to protect financial integrity.
+  2. Streamlined referral dashboard into 4 core KPI cards: Total Agents, Total Referred Patients, Total Revenue Generated, and Total Discretionary Bonuses Paid.
+  3. Dedicated patient service and billing history view showing exact services availed.
+  4. Discretionary bonuses granted by hospital authority automatically booked as operational hospital expenses (`EXPENSES`).
+
+### R. Diagnostic Test Catalog Multi-Select Bulk Deletion & Category Grouping
+- **Files Modified:** `app/(hospital)/app/lab/page.tsx`, `components/lab/LabTestList.tsx`, `lib/lab/actions.ts`.
+- **Resolution:**
+  1. Added multi-select checkbox filtering and bulk delete action (`bulkDeleteDiagnosticTestsAction`).
+  2. Grouped category tabs with quick search and test counts for 350+ hospital test services.
+
 ---
 
 ## 3. Human & On-Site Boundary Governance (G1–G16)
@@ -180,7 +218,8 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 133/133 certification suites, 1,218 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
-2. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`).
-3. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced.
-4. **External Owner Gates:** G1–G16 clearly isolated without false greens.
+1. **Software Quality:** 135/135 certification suites, 1,234 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
+2. **Database Parity:** 172/172 Supabase migrations applied (100% parity, 0 drift).
+3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `fb5fd759`, `WORKSTATION_DEPLOY_VERIFIED`).
+4. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced to v1.1.90.
+5. **External Owner Gates:** G1–G16 clearly isolated without false greens.
