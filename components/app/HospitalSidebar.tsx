@@ -198,9 +198,11 @@ export function HospitalSidebar() {
         {/* Brand Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
           <Link href="/app/dashboard" className="flex items-center space-x-3 overflow-hidden focus:outline-none focus:ring-2 focus:ring-sky-500 rounded-lg group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-sky-700 text-white font-black flex items-center justify-center text-sm shrink-0 shadow-lg shadow-sky-600/30 border border-sky-400/30 transition-transform group-hover:scale-105">
-              AH
-            </div>
+            <img
+              src="/logo.png"
+              alt="ANNESHA HOSPITAL Logo"
+              className="w-9 h-9 rounded-xl object-contain bg-white/10 p-0.5 shrink-0 shadow-lg shadow-sky-600/30 border border-sky-400/30 transition-transform group-hover:scale-105"
+            />
             {!collapsed && (
               <div className="truncate">
                 <span className="font-black text-xs text-white tracking-tight block leading-tight">

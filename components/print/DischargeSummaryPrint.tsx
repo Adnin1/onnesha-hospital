@@ -124,31 +124,14 @@ function parseAddress(
   };
 }
 
-// Authentic Hospital Logo SVG (House shape enclosing the Rod of Asclepius)
+// Authentic Hospital Logo Image
 function HospitalAsclepiusLogo({ className = "w-14 h-14" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 100 100" fill="none" stroke="currentColor">
-      {/* House structure */}
-      <path
-        d="M 50 10 L 92 42 L 82 42 L 82 90 L 18 90 L 18 42 L 8 42 Z"
-        stroke="currentColor"
-        strokeWidth="3.5"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      {/* Horizontal divider beam */}
-      <line x1="22" y1="46" x2="78" y2="46" stroke="currentColor" strokeWidth="2.5" />
-      {/* Rod of Asclepius staff */}
-      <line x1="50" y1="26" x2="50" y2="82" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      {/* Serpent wrapped around rod */}
-      <path
-        d="M 43 38 C 57 34, 57 48, 50 50 C 43 52, 43 64, 50 66 C 57 68, 57 78, 45 78"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        fill="none"
-      />
-    </svg>
+    <img
+      src="/logo.png"
+      alt="ANNESHA HOSPITAL Logo"
+      className={`${className} object-contain shrink-0`}
+    />
   );
 }
 

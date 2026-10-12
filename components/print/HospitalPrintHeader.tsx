@@ -18,9 +18,11 @@ export function HospitalPrintHeader({
     <div className="border-b-2 border-sky-800 pb-3 mb-4">
       <div className="flex justify-between items-start">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-sky-700 text-white rounded-lg flex items-center justify-center font-bold text-xl tracking-wider">
-            OH
-          </div>
+          <img
+            src="/logo.png"
+            alt="ANNESHA HOSPITAL Logo"
+            className="w-12 h-12 object-contain rounded-lg shrink-0 print:w-12 print:h-12"
+          />
           <div>
             <h1 className="text-xl font-bold uppercase tracking-wide text-sky-950">
               {HOSPITAL_METADATA.name}

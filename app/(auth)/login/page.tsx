@@ -108,10 +108,12 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-6">
         {/* Logo & Header */}
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center space-x-2">
-            <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white font-bold flex items-center justify-center text-2xl shadow-lg">
-              OH
-            </div>
+          <Link href="/" className="inline-flex items-center justify-center">
+            <img
+              src="/logo.png"
+              alt="ANNESHA HOSPITAL Logo"
+              className="w-16 h-16 rounded-2xl object-contain bg-white/10 p-1 shadow-lg"
+            />
           </Link>
           <h1 className="mt-3 text-2xl font-extrabold text-white tracking-tight">
             {HOSPITAL_METADATA.name}

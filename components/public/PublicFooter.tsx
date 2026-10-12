@@ -11,9 +11,11 @@ export function PublicFooter() {
           {/* Col 1: About */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-sky-600 text-white font-bold flex items-center justify-center text-lg">
-                OH
-              </div>
+              <img
+                src="/logo.png"
+                alt="ANNESHA HOSPITAL Logo"
+                className="w-8 h-8 rounded-lg object-contain bg-white/10 p-0.5 shrink-0"
+              />
               <span className="text-lg font-bold text-white tracking-wide">
                 {(HOSPITAL_METADATA.shortName || "ONNESHA HOSPITAL").toUpperCase()}
               </span>

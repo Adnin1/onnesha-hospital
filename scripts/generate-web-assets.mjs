@@ -10,26 +10,20 @@ const publicDir = path.join(rootDir, "public");
 const iconsDir = path.join(publicDir, "icons");
 
 async function generateAssets() {
-  console.log("Generating missing web assets (logo.png, favicon.ico, PNG icons)...");
+  console.log("Generating web assets from master logo (favicon.ico, PNG icons)...");
 
-  const svg512 = fs.readFileSync(path.join(iconsDir, "icon-512.svg"));
-
-  // 1. Generate public/logo.png (512x512 PNG)
-  const logoPath = path.join(publicDir, "logo.png");
-  await sharp(svg512)
-    .resize(512, 512)
-    .png()
-    .toFile(logoPath);
-  console.log("✓ Generated public/logo.png");
+  const masterLogo = fs.existsSync(path.join(publicDir, "logo.png"))
+    ? fs.readFileSync(path.join(publicDir, "logo.png"))
+    : fs.readFileSync(path.join(iconsDir, "icon-512.svg"));
 
   // 2. Generate PNG icons
-  await sharp(svg512)
+  await sharp(masterLogo)
     .resize(192, 192)
     .png()
     .toFile(path.join(iconsDir, "icon-192.png"));
   console.log("✓ Generated public/icons/icon-192.png");
 
-  await sharp(svg512)
+  await sharp(masterLogo)
     .resize(512, 512)
     .png()
     .toFile(path.join(iconsDir, "icon-512.png"));
@@ -39,7 +33,7 @@ async function generateAssets() {
   const sizes = [16, 32, 48];
   const pngBuffers = [];
   for (const size of sizes) {
-    const buf = await sharp(svg512)
+    const buf = await sharp(masterLogo)
       .resize(size, size)
       .png()
       .toBuffer();

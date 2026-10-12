@@ -138,7 +138,12 @@ export function PrintCertificateModal({
             </div>
 
             {/* 1. Official Letterhead */}
-            <div className="text-center pt-3 pb-4 border-b-2 border-slate-900">
+            <div className="text-center pt-3 pb-4 border-b-2 border-slate-900 flex flex-col items-center">
+              <img
+                src="/logo.png"
+                alt="ANNESHA HOSPITAL Logo"
+                className="w-16 h-16 object-contain mb-2 shrink-0"
+              />
               <div className="inline-block px-3 py-0.5 bg-sky-950 text-white font-sans text-[10px] font-black tracking-widest uppercase rounded mb-2">
                 GOVERNMENT & BMDC RECOGNIZED MEDICAL RECORD
               </div>

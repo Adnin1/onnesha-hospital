@@ -86,9 +86,11 @@ export function PublicNavbar() {
         <div className="flex justify-between items-center h-18">
           {/* Logo */}
           <Link href="/" prefetch={false} className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-600 text-white font-bold flex items-center justify-center text-xl shadow-md shrink-0">
-              OH
-            </div>
+            <img
+              src="/logo.png"
+              alt="ANNESHA HOSPITAL Logo"
+              className="w-10 h-10 object-contain rounded-xl shadow-sm shrink-0"
+            />
             <div className="min-w-0">
               <span className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight block truncate max-w-[150px] sm:max-w-none">
                 {(HOSPITAL_METADATA.shortName || "ONNESHA HOSPITAL").toUpperCase()}

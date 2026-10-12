@@ -274,9 +274,11 @@ export default function QueueDisplayPage() {
       {/* Top Banner / TV Kiosk Header */}
       <header className="h-20 bg-slate-900 border-b border-slate-800 px-6 flex items-center justify-between shadow-lg shrink-0">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white font-black flex items-center justify-center text-2xl shadow-md border border-sky-400/40">
-            OH
-          </div>
+          <img
+            src="/logo.png"
+            alt="ANNESHA HOSPITAL Logo"
+            className="w-12 h-12 rounded-2xl object-contain bg-white/10 p-1 shadow-md border border-sky-400/40 shrink-0"
+          />
           <div>
             <h1 className="text-xl lg:text-2xl font-bold tracking-tight text-white">
               {isBangla ? "অন্বেষা হাসপাতাল ও ডায়াগনস্টিক" : "ANNESHA HOSPITAL & DIAGNOSTIC"}

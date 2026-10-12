@@ -145,9 +145,11 @@ export function HalfLetterInvoicePrint({
       <div className="border-b-2 border-sky-900 pb-2 mb-2 flex justify-between items-start">
         <div className="space-y-0.5">
           <div className="flex items-center space-x-2">
-            <span className="w-8 h-8 rounded bg-sky-800 text-white font-bold flex items-center justify-center text-xs">
-              OH
-            </span>
+            <img
+              src="/logo.png"
+              alt="ANNESHA HOSPITAL Logo"
+              className="w-8 h-8 rounded object-contain shrink-0"
+            />
             <div>
               <h1 className="text-base font-black uppercase tracking-tight text-sky-950 leading-tight">
                 {HOSPITAL_METADATA.name}
