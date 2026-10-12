@@ -1070,7 +1070,7 @@ export async function updateDiagnosticTestAction(params: {
 /**
  * 8. Delete / Deactivate Diagnostic Test
  */
-export async function deleteDiagnosticTestAction(id: string): Promise<ActionResult<{ success: boolean }>> {
+export async function deleteDiagnosticTestAction(id: string): Promise<ActionResult<{ success: boolean; hardDeleted?: boolean }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "401 Unauthorized" };
@@ -1079,12 +1079,36 @@ export async function deleteDiagnosticTestAction(id: string): Promise<ActionResu
   try {
     const supabase = await createClient();
 
-    // Soft-delete / deactivate to preserve historical medical orders and invoices
-    await supabase
-      .from("diagnostic_tests")
-      .update({ is_active: false })
-      .eq("id", id)
-      .eq("organization_id", session.organizationId);
+    // Check if test is referenced by any existing diagnostic orders
+    const { data: orderItem } = await supabase
+      .from("diagnostic_order_items")
+      .select("id")
+      .eq("test_id", id)
+      .limit(1)
+      .maybeSingle();
+
+    let hardDeleted = false;
+    if (!orderItem) {
+      // Safe to hard delete permanently
+      const { error: delErr } = await supabase
+        .from("diagnostic_tests")
+        .delete()
+        .eq("id", id)
+        .eq("organization_id", session.organizationId);
+
+      if (!delErr) {
+        hardDeleted = true;
+      }
+    }
+
+    if (!hardDeleted) {
+      // Soft-delete / deactivate to preserve historical medical orders and invoices
+      await supabase
+        .from("diagnostic_tests")
+        .update({ is_active: false })
+        .eq("id", id)
+        .eq("organization_id", session.organizationId);
+    }
 
     try {
       await recordAuditLog({
@@ -1094,15 +1118,93 @@ export async function deleteDiagnosticTestAction(id: string): Promise<ActionResu
         module: "LAB",
         entityType: "diagnostic_test",
         entityId: id,
-        newValues: { is_active: false },
+        newValues: { is_active: false, hardDeleted },
       });
     } catch (err: unknown) {
       console.error("[LabActions] recordAuditLog error:", err);
     }
 
-    return { success: true, data: { success: true } };
+    return { success: true, data: { success: true, hardDeleted } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to delete diagnostic test";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * 8.1. Bulk Delete / Deactivate Multiple Diagnostic Tests
+ */
+export async function bulkDeleteDiagnosticTestsAction(ids: string[]): Promise<ActionResult<{ success: boolean; deletedCount: number }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+  if (!ids || ids.length === 0) {
+    return { success: false, error: "কোনো টেস্ট নির্বাচন করা হয়নি" };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Check which tests are referenced by existing diagnostic order items
+    const { data: refItems } = await supabase
+      .from("diagnostic_order_items")
+      .select("test_id")
+      .in("test_id", ids);
+
+    const referencedIds = new Set((refItems || []).map((r) => r.test_id));
+    const unreferencedIds = ids.filter((id) => !referencedIds.has(id));
+    const toDeactivateIds = ids.filter((id) => referencedIds.has(id));
+
+    let hardDeletedCount = 0;
+    if (unreferencedIds.length > 0) {
+      const { error: hardErr } = await supabase
+        .from("diagnostic_tests")
+        .delete()
+        .in("id", unreferencedIds)
+        .eq("organization_id", session.organizationId);
+
+      if (!hardErr) {
+        hardDeletedCount = unreferencedIds.length;
+      }
+    }
+
+    let softDeletedCount = 0;
+    if (toDeactivateIds.length > 0) {
+      const { error: softErr } = await supabase
+        .from("diagnostic_tests")
+        .update({ is_active: false })
+        .in("id", toDeactivateIds)
+        .eq("organization_id", session.organizationId);
+
+      if (!softErr) {
+        softDeletedCount = toDeactivateIds.length;
+      }
+    }
+
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "DELETE",
+        module: "LAB",
+        entityType: "diagnostic_test_bulk",
+        entityId: session.organizationId,
+        newValues: { ids, hardDeletedCount, softDeletedCount },
+      });
+    } catch (err: unknown) {
+      console.error("[LabActions] recordAuditLog bulk error:", err);
+    }
+
+    return {
+      success: true,
+      data: {
+        success: true,
+        deletedCount: hardDeletedCount + softDeletedCount,
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to bulk delete diagnostic tests";
     return { success: false, error: msg };
   }
 }

@@ -32,7 +32,7 @@ export function AssignBedModal({
   const [admissionType, setAdmissionType] = useState("IPD Admission");
   const [consultantName, setConsultantName] = useState("Dr. Inpatient Consultant");
   const [admissionReason, setAdmissionReason] = useState("Acute observation and treatment");
-  const defaultRate = String(selectedBed?.bed_type?.daily_rate || selectedBed?.daily_rate || selectedCabin?.daily_rate || 600);
+  const defaultRate = String(selectedBed?.daily_rate ?? selectedBed?.bed_type?.daily_rate ?? selectedCabin?.daily_rate ?? 600);
   const [customDailyRate, setCustomDailyRate] = useState<string | null>(null);
   const dailyRate = customDailyRate !== null ? customDailyRate : defaultRate;
   const [submitting, setSubmitting] = useState(false);

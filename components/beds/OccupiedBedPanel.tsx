@@ -58,7 +58,7 @@ export function OccupiedBedPanel({
   const unitName = bed
     ? bed.ward?.name || "General Ward"
     : `Cabin ${cabin?.cabin_number || ""}`;
-  const dailyCharge = bed ? (bed.bed_type?.daily_rate || bed.daily_rate || 600) : (cabin?.daily_rate || 3500);
+  const dailyCharge = bed ? (bed.daily_rate ?? bed.bed_type?.daily_rate ?? 600) : (cabin?.daily_rate || 3500);
 
   const handleDischarge = async () => {
     if (!assignment?.id && !bed?.id && !cabin?.id) return;

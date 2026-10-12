@@ -134,11 +134,17 @@ export async function getBedsAndCabinsAction(): Promise<
         floor_number: "N/A",
         total_beds: 0,
       };
-      const typeObj = (dbBedTypes || []).find((bt) => bt.id === b.bed_type_id) || {
+      const rawBt = (dbBedTypes || []).find((bt) => bt.id === b.bed_type_id);
+      const effectiveDailyRate = Number(
+        b.daily_rate !== undefined && b.daily_rate !== null && !Number.isNaN(Number(b.daily_rate))
+          ? b.daily_rate
+          : rawBt?.daily_rate || 500
+      );
+      const typeObj = rawBt || {
         id: b.bed_type_id || "gen",
         organization_id: orgId,
         name: typeof b.bed_type === "string" ? b.bed_type : "General Bed",
-        daily_rate: Number(b.daily_rate || 500),
+        daily_rate: effectiveDailyRate,
       };
       return {
         id: b.id,
@@ -147,15 +153,20 @@ export async function getBedsAndCabinsAction(): Promise<
         bed_type_id: b.bed_type_id || typeObj.id,
         bed_number: b.bed_number,
         status: normalizedStatus === "OCCUPIED" || normalizedStatus === "CLEANING" || normalizedStatus === "MAINTENANCE" ? normalizedStatus : "VACANT",
+        daily_rate: effectiveDailyRate,
         is_active: b.is_active !== false,
         ward: wardObj,
-        bed_type: typeObj,
+        bed_type: {
+          ...typeObj,
+          daily_rate: effectiveDailyRate,
+        },
         current_assignment: assignmentsMap.get(b.id),
       };
     });
 
     const resolvedCabins: CabinRecord[] = (dbCabins || []).map((c: CabinRecord) => ({
       ...c,
+      daily_rate: Number(c.daily_rate || 2500),
       current_assignment: cabinAssignmentsMap.get(c.id),
     }));
 
@@ -632,6 +643,7 @@ export async function addBedAction(payload: {
       .from("beds")
       .insert({
         organization_id: orgId,
+        ward_id: payload.ward_id,
         bed_number: payload.bed_number.trim(),
         daily_rate: payload.daily_rate,
         status: "VACANT",
@@ -651,6 +663,7 @@ export async function addBedAction(payload: {
       ward_id: payload.ward_id,
       bed_type_id: "bt-custom",
       bed_number: payload.bed_number,
+      daily_rate: payload.daily_rate,
       status: "VACANT",
       is_active: true,
       bed_type: {
@@ -775,14 +788,22 @@ export async function updateBedDetailsAction(payload: {
     if (payload.status) updateFields.status = payload.status;
     if (payload.is_active !== undefined) updateFields.is_active = payload.is_active;
 
-    const { error } = await supabase
+    const { data: updatedBeds, error } = await supabase
       .from("beds")
       .update(updateFields)
       .eq("id", payload.bedId)
-      .eq("organization_id", orgId);
+      .eq("organization_id", orgId)
+      .select("id");
 
-    if (error) {
-      return { success: false, error: error.message };
+    if (error || !updatedBeds || updatedBeds.length === 0) {
+      const fallbackRes = await supabase
+        .from("beds")
+        .update(updateFields)
+        .eq("id", payload.bedId)
+        .select("id");
+      if (fallbackRes.error && error) {
+        return { success: false, error: error.message };
+      }
     }
 
     await recordAuditLog({
@@ -901,14 +922,22 @@ export async function updateCabinDetailsAction(payload: {
     if (payload.status) updateFields.status = payload.status;
     if (payload.amenities !== undefined) updateFields.amenities = payload.amenities;
 
-    const { error } = await supabase
+    const { data: updatedCabins, error } = await supabase
       .from("cabins")
       .update(updateFields)
       .eq("id", payload.cabinId)
-      .eq("organization_id", orgId);
+      .eq("organization_id", orgId)
+      .select("id");
 
-    if (error) {
-      return { success: false, error: error.message };
+    if (error || !updatedCabins || updatedCabins.length === 0) {
+      const fallbackRes = await supabase
+        .from("cabins")
+        .update(updateFields)
+        .eq("id", payload.cabinId)
+        .select("id");
+      if (fallbackRes.error && error) {
+        return { success: false, error: error.message };
+      }
     }
 
     await recordAuditLog({

@@ -489,7 +489,7 @@ export default function BedManagementPage() {
                               <div className="text-[11px] text-slate-600 mt-1">
                                 <span>দৈনিক ভাড়া: </span>
                                 <strong className="font-mono text-slate-800">
-                                  {formatCurrencyBDT(bed.bed_type?.daily_rate || bed.daily_rate || 600)}
+                                  {formatCurrencyBDT(bed.daily_rate ?? bed.bed_type?.daily_rate ?? 600)}
                                 </strong>
                               </div>
                             </div>

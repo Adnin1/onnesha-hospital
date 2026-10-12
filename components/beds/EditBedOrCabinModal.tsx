@@ -55,7 +55,7 @@ export function EditBedOrCabinModal({
     if (bed) {
       setBedNumber(bed.bed_number || "");
       setWardId(bed.ward_id || wards[0]?.id || "");
-      setDailyRate(String(bed.daily_rate || 500));
+      setDailyRate(String(bed.daily_rate ?? bed.bed_type?.daily_rate ?? 500));
       const s = bed.status?.toUpperCase();
       setBedStatus(s === "CLEANING" || s === "MAINTENANCE" ? s : "VACANT");
     } else if (cabin) {
@@ -64,7 +64,7 @@ export function EditBedOrCabinModal({
         (cabin.cabin_type as "AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE") || "AC_DELUXE"
       );
       setFloorNumber(cabin.floor_number || "");
-      setCabinRate(String(cabin.daily_rate || 2500));
+      setCabinRate(String(cabin.daily_rate ?? 2500));
       const s = cabin.status?.toUpperCase();
       setCabinStatus(s === "CLEANING" || s === "MAINTENANCE" ? s : "VACANT");
       setAmenities(cabin.amenities || "Split AC, TV, Attendant Bed, Attached Bath");
