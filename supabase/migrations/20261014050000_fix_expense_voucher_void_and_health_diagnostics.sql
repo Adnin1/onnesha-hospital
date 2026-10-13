@@ -776,7 +776,7 @@ RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, public, pg_temp
-AS $
+AS $ohms$
 DECLARE
     v_user_id UUID := auth.uid();
     v_jwt_role TEXT := COALESCE(auth.role(), '');
@@ -907,7 +907,7 @@ BEGIN
 
     RETURN v_incident_id;
 END;
-$;
+$ohms$;
 
 REVOKE ALL ON FUNCTION public.log_system_runtime_issue(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.log_system_runtime_issue(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB) FROM anon;
@@ -922,7 +922,7 @@ RETURNS INT
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, public, pg_temp
-AS $
+AS $ohms$
 DECLARE
     v_user_id UUID := auth.uid();
     v_jwt_role TEXT := COALESCE(auth.role(), '');
@@ -998,7 +998,7 @@ BEGIN
     GET DIAGNOSTICS v_count = ROW_COUNT;
     RETURN v_count;
 END;
-$;
+$ohms$;
 
 REVOKE ALL ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) FROM anon;
