@@ -59,6 +59,7 @@ function ExpensesManagementContent() {
   const [printVoucher, setPrintVoucher] = useState<ExpenseRecord | null>(null);
   const [voidModalExpense, setVoidModalExpense] = useState<ExpenseRecord | null>(null);
   const [voidReason, setVoidReason] = useState("");
+  const [voidFundsRecoveredConfirmed, setVoidFundsRecoveredConfirmed] = useState(false);
 
   // Edit Modal State
   const [editModalExpense, setEditModalExpense] = useState<ExpenseRecord | null>(null);
@@ -268,8 +269,20 @@ function ExpensesManagementContent() {
       return;
     }
 
+    const unpostedStatuses = ["DRAFT", "PENDING_APPROVAL", "APPROVED"];
+    const requiresFundsConfirmation = !unpostedStatuses.includes(
+      String(voidModalExpense.status || "").toUpperCase()
+    );
+    if (requiresFundsConfirmation && !voidFundsRecoveredConfirmed) {
+      setToast({
+        message: "This voucher was posted as a cash/bank disbursement. Confirm that the money was not paid or was returned to the hospital before voiding.",
+        type: "error",
+      });
+      return;
+    }
+
     try {
-      const res = await voidExpenseAction(voidModalExpense.id, voidReason);
+      const res = await voidExpenseAction(voidModalExpense.id, voidReason, voidFundsRecoveredConfirmed);
       if (res.success) {
         setToast({
           message: res.error
@@ -279,6 +292,7 @@ function ExpensesManagementContent() {
         });
         setVoidModalExpense(null);
         setVoidReason("");
+        setVoidFundsRecoveredConfirmed(false);
         await loadData();
       } else {
         setToast({ message: res.error || "Failed to void voucher", type: "error" });
@@ -1174,16 +1188,52 @@ function ExpensesManagementContent() {
                 className="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-rose-500"
               />
             </div>
+            {!["DRAFT", "PENDING_APPROVAL", "APPROVED"].includes(
+              String(voidModalExpense.status || "").toUpperCase()
+            ) && (
+              <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950">
+                <p className="font-bold mb-2">Financial confirmation required</p>
+                <p className="mb-3">
+                  This voucher is posted as a cash/bank disbursement. Voiding it reverses that ledger entry, so continue only if
+                  the money was never paid or has actually been returned to the hospital.
+                </p>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={voidFundsRecoveredConfirmed}
+                    onChange={(event) => setVoidFundsRecoveredConfirmed(event.target.checked)}
+                    className="mt-0.5 accent-rose-600"
+                  />
+                  <span>
+                    I confirm that the amount was not disbursed or was returned to the hospital, and the reason above is accurate.
+                  </span>
+                </label>
+              </div>
+            )}
             <div className="flex justify-end space-x-3">
               <button
-                onClick={() => setVoidModalExpense(null)}
+                onClick={() => {
+                  setVoidModalExpense(null);
+                  setVoidReason("");
+                  setVoidFundsRecoveredConfirmed(false);
+                }}
                 className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 text-xs font-bold hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleVoidExpense}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl"
+                disabled={
+                  !voidReason.trim() ||
+                  voidReason.trim().length < 4 ||
+                  (
+                    !["DRAFT", "PENDING_APPROVAL", "APPROVED"].includes(
+                      String(voidModalExpense.status || "").toUpperCase()
+                    ) &&
+                    !voidFundsRecoveredConfirmed
+                  )
+                }
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Confirm Void
               </button>
