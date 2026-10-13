@@ -34,7 +34,7 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 | **Static Link & Asset Forensics** | 61 HTML pages, 395 internal links, 1172 assets, 0 broken links | ✅ PASS |
 | **Native Windows MSI Installer** | `Onnesha-Hospital-1.1.90.msi` (3,457,024 bytes, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`) | ✅ VERIFIED |
 | **Native Windows EXE Installer** | `Onnesha-Hospital-Setup-1.1.90.exe` (2,895,011 bytes, SHA-256: `72BAD4D10633B4FDC03549DA64FE01C29FFE400EC142347561FC8394380134D1`) | ✅ VERIFIED |
-| **Cloudflare Edge Deployment** | `https://onnesha-hospital.pages.dev` (Deployment `06b88f16`, `WORKSTATION_DEPLOY_VERIFIED`) | ✅ DEPLOYED |
+| **Cloudflare Edge Deployment** | `https://onnesha-hospital.pages.dev` (Deployment `ead5e2ca`, `WORKSTATION_DEPLOY_VERIFIED`) | ✅ DEPLOYED |
 
 ---
 
