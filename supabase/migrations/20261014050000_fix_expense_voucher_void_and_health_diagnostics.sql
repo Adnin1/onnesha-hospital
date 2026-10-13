@@ -1289,7 +1289,7 @@ BEGIN
         v_expense_id,
         v_expense_description,
         v_expense_description,
-        'POSTED',
+        'PENDING',
         p_amount,
         p_amount,
         v_created_by,
@@ -1312,6 +1312,20 @@ BEGIN
         p_amount,
         'Disbursement via ' || v_payment_method
     );
+
+    -- The journal-line immutability trigger rejects INSERTs into POSTED entries.
+    -- Therefore lines are written while the header is PENDING; the immutable trigger
+    -- validates line count and debit/credit totals during the PENDING -> POSTED transition.
+    UPDATE public.journal_entries
+    SET status = 'POSTED'
+    WHERE id = v_je_id
+      AND organization_id = p_org_id
+      AND status = 'PENDING';
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Expense journal could not be posted after balanced lines were inserted; transaction rolled back'
+            USING ERRCODE = '40001';
+    END IF;
 
     UPDATE public.expenses
     SET journal_entry_id = v_je_id
