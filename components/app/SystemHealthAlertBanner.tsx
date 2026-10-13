@@ -31,6 +31,7 @@ export default function SystemHealthAlertBanner({
   variant = "full",
 }: SystemHealthAlertBannerProps) {
   const [data, setData] = useState<SystemHealthDiagnosticResult | null>(null);
+  const [localIncidents, setLocalIncidents] = useState<SystemHealthIssue[]>([]);
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -39,35 +40,54 @@ export default function SystemHealthAlertBanner({
     startTransition(async () => {
       try {
         const res = await getSystemHealthDiagnosticsAction(organizationId);
-        setData(res);
+        setData((previous) => {
+          const pendingLocal = localIncidents.filter(
+            (localIssue) => !res.issues.some((issue) => issue.id === localIssue.id)
+          );
+          const issues = [...res.issues, ...pendingLocal];
+          const criticalExtra = pendingLocal.filter((issue) => issue.severity === "CRITICAL").length;
+          const warningExtra = pendingLocal.filter((issue) => issue.severity === "WARNING").length;
+          const infoExtra = pendingLocal.filter((issue) => issue.severity === "INFO").length;
+          return {
+            ...res,
+            is_healthy: res.is_healthy && pendingLocal.length === 0,
+            health_score: pendingLocal.length > 0 ? Math.min(res.health_score, 90) : res.health_score,
+            critical_count: res.critical_count + criticalExtra,
+            warning_count: res.warning_count + warningExtra,
+            info_count: res.info_count + infoExtra,
+            total_issues: res.total_issues + pendingLocal.length,
+            issues,
+          };
+        });
       } catch (e) {
         const message = e instanceof Error ? e.message : "Unknown diagnostic client error";
         console.error("[HealthDiagnostics] Failed to load diagnostics; state is UNKNOWN:", message);
+        const failureIssue: SystemHealthIssue = {
+          id: "DIAGNOSTIC_CLIENT_FETCH_FAILED",
+          severity: "WARNING",
+          module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
+          location: "components/app/SystemHealthAlertBanner.tsx:fetchDiagnostics",
+          title: "ডায়াগনস্টিক ফলাফল পাওয়া যায়নি",
+          reason: message,
+          recommendation: "সিস্টেম হেলথ RPC, authenticated organization এবং Supabase connection যাচাই করুন।",
+          timestamp: new Date().toISOString(),
+        };
         setData({
           is_healthy: false,
           health_score: 0,
           critical_count: 0,
-          warning_count: 1,
-          info_count: 0,
-          total_issues: 1,
+          warning_count: 1 + localIncidents.filter((issue) => issue.severity === "WARNING").length,
+          info_count: localIncidents.filter((issue) => issue.severity === "INFO").length,
+          total_issues: 1 + localIncidents.length,
           checked_at: new Date().toISOString(),
           organization_id: organizationId || null,
-          issues: [{
-            id: "DIAGNOSTIC_CLIENT_FETCH_FAILED",
-            severity: "WARNING",
-            module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
-            location: "components/app/SystemHealthAlertBanner.tsx:fetchDiagnostics",
-            title: "ডায়াগনস্টিক ফলাফল পাওয়া যায়নি",
-            reason: message,
-            recommendation: "সিস্টেম হেলথ RPC, authenticated organization এবং Supabase connection যাচাই করুন।",
-            timestamp: new Date().toISOString(),
-          }],
+          issues: [failureIssue, ...localIncidents],
           passed_checks: [],
           error: message,
         });
       }
     });
-  }, [organizationId]);
+  }, [organizationId, localIncidents]);
 
   useEffect(() => {
     fetchDiagnostics();
@@ -75,7 +95,33 @@ export default function SystemHealthAlertBanner({
     const interval = setInterval(fetchDiagnostics, 60000);
 
     // Real-time listener for runtime incidents
-    const handleIncident = () => {
+    const handleIncident = (event: Event) => {
+      setIsDismissed(false);
+      const detail = (event as CustomEvent<Partial<SystemHealthIssue>>).detail;
+      if (detail?.id && detail.module && detail.location && detail.title) {
+        const localIssue: SystemHealthIssue = {
+          id: detail.id,
+          severity: detail.severity || "CRITICAL",
+          module: detail.module,
+          location: detail.location,
+          title: detail.title,
+          reason: detail.reason || "An operational failure was captured; persistence is being verified.",
+          recommendation: detail.recommendation || "Review the affected workflow and retry only after checking its state.",
+          timestamp: detail.timestamp || new Date().toISOString(),
+        };
+        setLocalIncidents((current) => [
+          ...current.filter((issue) => issue.id !== localIssue.id),
+          localIssue,
+        ].slice(-20));
+      }
+      fetchDiagnostics();
+    };
+
+    const handlePersisted = (event: Event) => {
+      const detail = (event as CustomEvent<{ ephemeralId?: string; issueId?: string }>).detail;
+      if (detail?.ephemeralId) {
+        setLocalIncidents((current) => current.filter((issue) => issue.id !== detail.ephemeralId));
+      }
       setIsDismissed(false);
       fetchDiagnostics();
     };
@@ -86,6 +132,7 @@ export default function SystemHealthAlertBanner({
 
     if (typeof window !== "undefined") {
       window.addEventListener("system-health-incident-reported", handleIncident);
+      window.addEventListener("system-health-incident-persisted", handlePersisted);
       window.addEventListener("system-health-incident-resolved", handleResolved);
     }
 
@@ -93,6 +140,7 @@ export default function SystemHealthAlertBanner({
       clearInterval(interval);
       if (typeof window !== "undefined") {
         window.removeEventListener("system-health-incident-reported", handleIncident);
+        window.removeEventListener("system-health-incident-persisted", handlePersisted);
         window.removeEventListener("system-health-incident-resolved", handleResolved);
       }
     };
