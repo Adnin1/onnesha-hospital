@@ -925,7 +925,6 @@ SET search_path = pg_catalog, public, pg_temp
 AS $ohms$
 DECLARE
     v_user_id UUID := auth.uid();
-    v_jwt_role TEXT := COALESCE(auth.role(), '');
     v_active_org UUID;
     v_authorized BOOLEAN := FALSE;
     v_count INTEGER := 0;
