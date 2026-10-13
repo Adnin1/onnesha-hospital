@@ -49,6 +49,7 @@ function ExpensesManagementContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedDoctor, setSelectedDoctor] = useState("ALL");
+  const [selectedStatus, setSelectedStatus] = useState("ACTIVE");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -102,6 +103,7 @@ function ExpensesManagementContent() {
         getExpensesAction({
           categoryId: selectedCategory,
           doctorId: selectedDoctor,
+          status: selectedStatus,
           startDate: startDate || undefined,
           endDate: endDate || undefined,
         }),
@@ -137,7 +139,7 @@ function ExpensesManagementContent() {
 
   useEffect(() => {
     loadData();
-  }, [selectedCategory, selectedDoctor, startDate, endDate]);
+  }, [selectedCategory, selectedDoctor, selectedStatus, startDate, endDate]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
@@ -269,10 +271,15 @@ function ExpensesManagementContent() {
     try {
       const res = await voidExpenseAction(voidModalExpense.id, voidReason);
       if (res.success) {
-        setToast({ message: `Voucher ${voidModalExpense.voucher_number} voided`, type: "success" });
+        setToast({
+          message: res.error
+            ? `Voucher ${voidModalExpense.voucher_number || voidModalExpense.id} was voided and verified, but follow-up needs attention: ${res.error}`
+            : `Voucher ${voidModalExpense.voucher_number || voidModalExpense.id} voided successfully. Its accounting audit trail has been preserved.`,
+          type: res.error ? "info" : "success",
+        });
         setVoidModalExpense(null);
         setVoidReason("");
-        loadData();
+        await loadData();
       } else {
         setToast({ message: res.error || "Failed to void voucher", type: "error" });
       }
@@ -502,6 +509,17 @@ function ExpensesManagementContent() {
             className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
           />
         </div>
+
+        <select
+          aria-label="Voucher status"
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:ring-2 focus:ring-rose-500"
+        >
+          <option value="ACTIVE">Active vouchers</option>
+          <option value="VOIDED">Voided history</option>
+          <option value="ALL">All vouchers</option>
+        </select>
 
         <select
           value={selectedCategory}
