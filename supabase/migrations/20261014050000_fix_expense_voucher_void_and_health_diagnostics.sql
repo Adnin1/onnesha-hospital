@@ -850,7 +850,7 @@ $;
 
 REVOKE ALL ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) FROM anon;
-GRANT EXECUTE ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) TO authenticated;
 
 COMMIT;
 
