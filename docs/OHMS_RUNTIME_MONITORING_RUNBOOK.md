@@ -43,7 +43,7 @@ Workflow evidence is not complete until the workflow is merged, the secrets are 
 The expense page performs a **void** operation, not an unconditional hard delete.
 
 - Draft/unposted records with no linked posted journal may be voided.
-- A posted voucher must preserve the original posted journal. The void RPC verifies organization ownership, accounting permission, source journal state, balanced headers and lines, and account ownership. It creates a separate balanced reversing journal, posts it, marks the source journal as reversed, and marks the voucher voided in the same transaction.
+- A posted voucher must preserve the original posted journal. The void RPC verifies organization ownership, accounting permission, source journal state, balanced headers and lines, and account ownership. It creates a separate balanced reversing journal and marks the voucher voided in the same transaction. The original journal remains immutable and POSTED because reports aggregate POSTED entries; both the original and reversal must remain visible so their debit/credit effects offset correctly.
 - The same voucher is idempotent: an already-voided voucher does not generate another reversal.
 - If the source journal is missing, malformed, unbalanced, from another tenant, already reversed, or inconsistent with a previous reversal, the RPC fails closed and the user must reconcile it instead of retrying blindly.
 - The client verifies the stored expense status after the RPC and never trusts a success-shaped transport response alone.
