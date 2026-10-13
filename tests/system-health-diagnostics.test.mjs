@@ -63,7 +63,7 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
     assert.match(bannerContent, /system-health-incident-reported/);
     assert.match(bannerContent, /system-health-incident-resolved/);
     assert.match(bannerContent, /সমস্যা সমাধান সম্পন্ন/);
-    assert.match(bannerContent, /সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা/);
+    assert.match(bannerContent, /সমাধান যাচাই করে incident resolve করুন/);
 
     const headerPath = path.join(ROOT, "components/app/HospitalHeader.tsx");
     const headerContent = fs.readFileSync(headerPath, "utf8");
@@ -104,7 +104,7 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
   });
 
   // 5. Remote Database Live Diagnostics
-  await t.test("5. Remote database RPC returns healthy standby status for anon, and full 10-point audits for auth", async () => {
+  await t.test("5. Anonymous diagnostic access is fail-closed and never reports a private database as healthy", async () => {
     const envPath = path.join(ROOT, ".env.local");
     if (!fs.existsSync(envPath)) return;
 
@@ -125,15 +125,24 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
     const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !key) return;
 
-    const client = createClient(url, key);
+    // The hermetic build uses deliberately unreachable placeholder credentials.
+    // Treat that environment as NOT_RUN; do not assert a live database permission result.
+    if (
+      url.includes("ci-hermetic-build-placeholder") ||
+      key.includes("placeholder_key_not_a_real_credential")
+    ) {
+      return;
+    }
 
-    // Initial check: anonymous call safely returns healthy standby without leaking tenant records
+    const client = createClient(url, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // Private diagnostic RPC execution itself must be denied to anonymous callers.
+    // The browser action independently maps failed health reads to a degraded UNKNOWN state.
     const { data: initData, error: initErr } = await client.rpc("check_system_health_diagnostics");
-    assert.ifError(initErr);
-    assert.ok(initData, "Diagnostic data must be returned");
-    assert.equal(initData.is_healthy, true, "Database and system must initially be healthy");
-    assert.equal(initData.health_score, 100, "Health score must be 100");
-    assert.equal(initData.total_issues, 0, "There must be 0 active issues");
-    assert.ok(initData.passed_checks.includes("PUBLIC_PORTAL_SAFE_STANDBY") || initData.passed_checks.includes("GENERAL_LEDGER_DOUBLE_ENTRY_BALANCED"));
+    assert.ok(initErr, "Anonymous caller must not execute private health diagnostics");
+    assert.equal(initData, null, "Denied private diagnostics must not disclose a health payload");
+    assert.match(String(initErr.message || initErr.code || ""), /permission|execute|not allowed|unauthorized/i);
   });
 });

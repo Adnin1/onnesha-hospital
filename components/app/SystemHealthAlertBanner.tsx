@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useCallback } from "react";
+import React, { useState, useEffect, useTransition, useCallback, useRef } from "react";
 import {
   ShieldCheck,
   AlertTriangle,
@@ -32,47 +32,142 @@ export default function SystemHealthAlertBanner({
   variant = "full",
 }: SystemHealthAlertBannerProps) {
   const [data, setData] = useState<SystemHealthDiagnosticResult | null>(null);
+  const localIncidentsRef = useRef<SystemHealthIssue[]>([]);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [isResolvingIssueId, setIsResolvingIssueId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
   const [justResolvedMessage, setJustResolvedMessage] = useState<string | null>(null);
 
-  const fetchDiagnostics = useCallback(() => {
+  const fetchDiagnostics = useCallback((): void => {
     startTransition(async () => {
       try {
-        const res = await getSystemHealthDiagnosticsAction(organizationId);
-        setData(res);
-      } catch (e) {
-        console.error("Failed to load diagnostics:", e);
+        const result = await getSystemHealthDiagnosticsAction(organizationId);
+        const durableIds = new Set(result.issues.map((issue) => issue.id));
+        const pendingLocal = localIncidentsRef.current.filter((issue) => !durableIds.has(issue.id));
+        const issues = [...result.issues, ...pendingLocal];
+        const totalIssues = Math.max(result.total_issues, result.issues.length) + pendingLocal.length;
+
+        setData({
+          ...result,
+          is_healthy: result.is_healthy === true && totalIssues === 0 && issues.length === 0,
+          health_score: pendingLocal.length > 0 ? Math.min(result.health_score, 90) : result.health_score,
+          critical_count: result.critical_count + pendingLocal.filter((issue) => issue.severity === "CRITICAL").length,
+          warning_count: result.warning_count + pendingLocal.filter((issue) => issue.severity === "WARNING").length,
+          info_count: result.info_count + pendingLocal.filter((issue) => issue.severity === "INFO").length,
+          total_issues: totalIssues,
+          issues,
+        });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown diagnostic UI exception";
+        console.error("[HealthDiagnostics] UI fetch failed; state is UNKNOWN:", message);
+        const timestamp = new Date().toISOString();
+        const issue: SystemHealthIssue = {
+          id: "DIAGNOSTIC_CLIENT_FETCH_FAILED",
+          severity: "WARNING",
+          module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
+          location: "components/app/SystemHealthAlertBanner.tsx:fetchDiagnostics",
+          title: "ডায়াগনস্টিক ফলাফল পাওয়া যায়নি",
+          reason: message,
+          recommendation: "Authenticated organization, Supabase connection এবং diagnostic RPC state পরীক্ষা করুন।",
+          timestamp,
+        };
+        setData({
+          is_healthy: false,
+          health_score: 0,
+          critical_count: 0,
+          warning_count: 1 + localIncidentsRef.current.filter((item) => item.severity === "WARNING").length,
+          info_count: localIncidentsRef.current.filter((item) => item.severity === "INFO").length,
+          total_issues: 1 + localIncidentsRef.current.length,
+          checked_at: timestamp,
+          organization_id: null,
+          issues: [issue, ...localIncidentsRef.current],
+          passed_checks: [],
+          error: message,
+        });
       }
     });
-  }, [organizationId]);
+  }, [organizationId, startTransition]);
 
   useEffect(() => {
     fetchDiagnostics();
-    // Auto-refresh diagnostics every 60 seconds
-    const interval = setInterval(fetchDiagnostics, 60000);
+    const interval = setInterval(fetchDiagnostics, 60_000);
+    const cleanupMonitoring = setupGlobalErrorMonitoring();
 
-    // Install global client error monitoring
-    const cleanupMonitoring = setupGlobalErrorMonitoring(organizationId);
+    const handleIncident = (event: Event) => {
+      const detail = (event as CustomEvent<Partial<SystemHealthIssue>>).detail;
+      if (
+        detail?.id &&
+        detail.module &&
+        detail.location &&
+        detail.title
+      ) {
+        const incident: SystemHealthIssue = {
+          id: detail.id,
+          severity: detail.severity || "CRITICAL",
+          module: detail.module,
+          location: detail.location,
+          title: detail.title,
+          reason: detail.reason || "An operation failed; persistence is being verified.",
+          recommendation: detail.recommendation || "Review the failed workflow, fix the cause and rerun diagnostics.",
+          timestamp: detail.timestamp || new Date().toISOString(),
+        };
+        localIncidentsRef.current = [
+          ...localIncidentsRef.current.filter((item) => item.id !== incident.id),
+          incident,
+        ].slice(-20);
+        setData((previous) => {
+          const priorIssues = previous?.issues || [];
+          const alreadyVisible = priorIssues.some((item) => item.id === incident.id);
+          const issues = alreadyVisible ? priorIssues : [...priorIssues, incident];
+          const baseTotal = Math.max(previous?.total_issues || 0, priorIssues.length);
+          const countAdded = alreadyVisible ? 0 : 1;
+          const criticalAdded = countAdded && incident.severity === "CRITICAL" ? 1 : 0;
+          const warningAdded = countAdded && incident.severity === "WARNING" ? 1 : 0;
+          const infoAdded = countAdded && incident.severity === "INFO" ? 1 : 0;
 
-    // Real-time listener for runtime incidents
-    const handleIncident = () => {
-      setIsDismissed(false);
+          return {
+            is_healthy: false,
+            health_score: Math.min(previous?.health_score ?? 0, 90),
+            critical_count: (previous?.critical_count || 0) + criticalAdded,
+            warning_count: (previous?.warning_count || 0) + warningAdded,
+            info_count: (previous?.info_count || 0) + infoAdded,
+            total_issues: baseTotal + countAdded,
+            checked_at: previous?.checked_at || incident.timestamp,
+            organization_id: previous?.organization_id || null,
+            issues,
+            passed_checks: previous?.passed_checks || [],
+            error: previous?.error || null,
+          };
+        });
+      }
+
       setJustResolvedMessage(null);
+      setActionMessage(null);
       fetchDiagnostics();
     };
 
-    const handleResolved = (e: Event) => {
-      const detail = (e as CustomEvent)?.detail;
-      const mod = detail?.module || "সনাক্তকৃত সমস্যা";
-      setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
-      setTimeout(() => setJustResolvedMessage(null), 12000);
+    const handlePersisted = (event: Event) => {
+      const detail = (event as CustomEvent<{ ephemeralId?: string; issueId?: string }>).detail;
+      if (detail?.ephemeralId) {
+        localIncidentsRef.current = localIncidentsRef.current.filter((item) => item.id !== detail.ephemeralId);
+        setData((previous) => {
+          if (!previous) return previous;
+          const issues = previous.issues.filter((item) => item.id !== detail.ephemeralId);
+          return { ...previous, issues, total_issues: Math.max(0, previous.total_issues - (issues.length === previous.issues.length ? 0 : 1)) };
+        });
+      }
+      fetchDiagnostics();
+    };
+
+    const handleResolved = () => {
+      // A DOM event by itself does not prove that the diagnostic condition is fixed.
       fetchDiagnostics();
     };
 
     if (typeof window !== "undefined") {
       window.addEventListener("system-health-incident-reported", handleIncident);
+      window.addEventListener("system-health-incident-persisted", handlePersisted);
       window.addEventListener("system-health-incident-resolved", handleResolved);
     }
 
@@ -81,35 +176,87 @@ export default function SystemHealthAlertBanner({
       cleanupMonitoring();
       if (typeof window !== "undefined") {
         window.removeEventListener("system-health-incident-reported", handleIncident);
+        window.removeEventListener("system-health-incident-persisted", handlePersisted);
         window.removeEventListener("system-health-incident-resolved", handleResolved);
       }
     };
-  }, [fetchDiagnostics, organizationId]);
+  }, [fetchDiagnostics]);
 
   const handleResolveIssue = async (issueId: string, module?: string) => {
-    if (!data?.organization_id && !organizationId) return;
-    const orgId = data?.organization_id || organizationId || "";
-    await resolveSystemRuntimeIssueAction({
-      organizationId: orgId,
-      issueId: issueId.startsWith("ephemeral-") ? undefined : issueId,
-      module: module,
-    });
-    const mod = module || "ইস্যু";
-    setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
-    setTimeout(() => setJustResolvedMessage(null), 12000);
-    fetchDiagnostics();
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const activeOrg = data?.organization_id;
+
+    // Computed database findings may be cleared only by correcting the source data.
+    if (!uuidPattern.test(issueId)) {
+      setActionMessage(
+        issueId.startsWith("ephemeral-")
+          ? "ত্রুটিটি তাৎক্ষণিকভাবে ধরা হয়েছে, কিন্তু database persistence এখনো নিশ্চিত নয়। সংযোগ ঠিক করে পুনরায় পরীক্ষা করুন।"
+          : "এটি computed health finding। মূল database বা workflow সমস্যা ঠিক করে rescan করুন; সরাসরি dismiss করা যাবে না।"
+      );
+      return;
+    }
+
+    if (!activeOrg) {
+      setActionMessage("সক্রিয় organization যাচাই করা যায়নি। Incident পরিবর্তন করা হয়নি।");
+      return;
+    }
+
+    setIsResolvingIssueId(issueId);
+    setActionMessage(null);
+
+    try {
+      const resolvedCount = await resolveSystemRuntimeIssueAction({
+        organizationId: activeOrg,
+        issueId,
+      });
+
+      if (resolvedCount !== 1) {
+        setActionMessage("Incident database-এ resolve হয়নি। Permission, organization scope এবং database response পরীক্ষা করুন।");
+        return;
+      }
+
+      const verification = await getSystemHealthDiagnosticsAction(activeOrg);
+      setData(verification);
+
+      if (verification.issues.some((issue) => issue.id === issueId)) {
+        setActionMessage("Database resolve response দিয়েছে, কিন্তু rescan-এ incident এখনো আছে। Issue-টিকে solved হিসেবে দেখানো হয়নি।");
+        return;
+      }
+
+      const moduleName = module || "সনাক্তকৃত সমস্যা";
+      setJustResolvedMessage(
+        verification.is_healthy && verification.total_issues === 0
+          ? "✅ সমস্যা সমাধান সম্পন্ন (" + moduleName + ") — পুনঃপরীক্ষায় সব সংজ্ঞায়িত health check পাস করেছে।"
+          : "✅ Incident resolve করা হয়েছে (" + moduleName + ") — তবে আরও " + verification.total_issues + "টি health issue বা warning বাকি আছে।"
+      );
+      setTimeout(() => setJustResolvedMessage(null), 12_000);
+      fetchDiagnostics();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown resolution error";
+      setActionMessage("Incident resolve যাচাই করা যায়নি: " + message);
+    } finally {
+      setIsResolvingIssueId(null);
+    }
   };
 
+
   if (!data) {
-    return null;
+    if (variant === "badge") {
+      return <span role="status" className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-900">স্ট্যাটাস যাচাই হচ্ছে…</span>;
+    }
+    return (
+      <aside role="status" aria-live="polite" className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-xs text-amber-950">
+        সিস্টেমের health status যাচাই করা হচ্ছে। ফলাফল পাওয়া না যাওয়া পর্যন্ত সিস্টেমকে healthy ধরা হচ্ছে না।
+      </aside>
+    );
   }
 
-  const hasIssues = !data.is_healthy && data.issues.length > 0;
+  const hasIssues = data.is_healthy !== true || data.total_issues > 0 || data.issues.length > 0;
 
   return (
     <>
       {/* 0. RESOLVED NOTIFICATION BANNER (Shows when an issue was solved) */}
-      {justResolvedMessage && !hasIssues && variant !== "badge" && (
+      {justResolvedMessage && variant !== "badge" && (
         <aside
           role="status"
           aria-live="polite"
@@ -134,8 +281,8 @@ export default function SystemHealthAlertBanner({
         </aside>
       )}
 
-      {/* 1. TOP ALERT BANNER (Only renders if unresolved issues exist and not dismissed for this view) */}
-      {hasIssues && !isDismissed && variant !== "badge" && (
+      {/* 1. Persistent alert banner: unresolved incidents remain visible until a verified rescan clears them. */}
+      {hasIssues && variant !== "badge" && (
         <aside
           role="alert"
           aria-live="assertive"
@@ -167,14 +314,6 @@ export default function SystemHealthAlertBanner({
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
 
-              <button
-                type="button"
-                onClick={() => setIsDismissed(true)}
-                aria-label="অ্যালার্ট সাময়িকভাবে বন্ধ করুন"
-                className="p-1 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-amber-500/10 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
           </div>
         </aside>
@@ -184,10 +323,7 @@ export default function SystemHealthAlertBanner({
       {(variant === "badge" || variant === "full") && (
         <button
           type="button"
-          onClick={() => {
-            setIsDismissed(false);
-            setIsModalOpen(true);
-          }}
+          onClick={() => setIsModalOpen(true)}
           title={
             hasIssues
               ? `সিস্টেমে ${data.total_issues}টি বিষয় সমাধানের অপেক্ষায়`
@@ -272,6 +408,11 @@ export default function SystemHealthAlertBanner({
 
             {/* Modal Content */}
             <div className="p-5 overflow-y-auto space-y-4">
+              {actionMessage && (
+                <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                  {actionMessage}
+                </div>
+              )}
               {hasIssues ? (
                 <>
                   <div className="text-xs text-slate-600 dark:text-slate-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-3 rounded-lg">
@@ -347,15 +488,21 @@ export default function SystemHealthAlertBanner({
                         </div>
 
                         <div className="flex justify-end pt-1">
-                          <button
-                            type="button"
-                            onClick={() => handleResolveIssue(issue.id, issue.module)}
-                            disabled={isPending}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-2xs transition-colors disabled:opacity-50"
-                          >
-                            <Wrench className="h-3.5 w-3.5" />
-                            <span>সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা</span>
-                          </button>
+                          {/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(issue.id) ? (
+                            <button
+                              type="button"
+                              onClick={() => handleResolveIssue(issue.id, issue.module)}
+                              disabled={isPending || isResolvingIssueId === issue.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-2xs transition-colors disabled:opacity-50"
+                            >
+                              <Wrench className="h-3.5 w-3.5" />
+                              <span>{isResolvingIssueId === issue.id ? "পুনঃপরীক্ষা হচ্ছে…" : "সমাধান যাচাই করে incident resolve করুন"}</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                              মূল database বা workflow কারণ ঠিক করে “পুনরায় পরীক্ষা” চাপুন। এই finding সরাসরি dismiss করা যাবে না।
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}

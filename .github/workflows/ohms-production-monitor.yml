@@ -1,0 +1,74 @@
+name: OHMS Production Monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ohms-production-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    name: Production route and database health checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate required monitoring secrets
+        id: preflight
+        shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OHMS_ALERT_WEBHOOK_URL: ${{ secrets.OHMS_ALERT_WEBHOOK_URL }}
+        run: |
+          missing=()
+          if [[ -z "$SUPABASE_URL" && -z "$NEXT_PUBLIC_SUPABASE_URL" ]]; then
+            missing+=("SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL")
+          fi
+          if [[ -z "$SUPABASE_SERVICE_ROLE_KEY" ]]; then
+            missing+=("SUPABASE_SERVICE_ROLE_KEY")
+          fi
+          if (( ${#missing[@]} > 0 )); then
+            {
+              echo "## OHMS production monitor"
+              echo "**BLOCKED_EXTERNAL_OWNER**"
+              echo "Database monitoring is NOT active. Configure required repository secrets: ${missing[*]}."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=OHMS monitoring not configured::Required Supabase secrets are missing; no database health result is available."
+            exit 78
+          fi
+          if [[ -z "$OHMS_ALERT_WEBHOOK_URL" ]]; then
+            {
+              echo ""
+              echo "**OUT_OF_BAND_ALERTS=BLOCKED_EXTERNAL_OWNER**"
+              echo "Monitoring runs may fail visibly in GitHub Actions, but independent webhook notifications are not active until OHMS_ALERT_WEBHOOK_URL is configured."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning title=Independent notification channel missing::Configure OHMS_ALERT_WEBHOOK_URL to deliver alerts outside GitHub Actions."
+          fi
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check public routes and database health for every organization
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OHMS_ALERT_WEBHOOK_URL: ${{ secrets.OHMS_ALERT_WEBHOOK_URL }}
+          OHMS_PRODUCTION_URL: https://onnesha-hospital.pages.dev
+        run: node scripts/monitor-production.mjs
