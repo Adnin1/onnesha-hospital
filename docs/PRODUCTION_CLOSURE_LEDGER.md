@@ -36,7 +36,7 @@
 | **Financial Reports & Accounting** | Resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 mismatch; balanced GL ledger | Migrations 176–180 & `app/reports/page.tsx` | ✅ PASS |
 | **Autonomous System Health Diagnostics** | Real-time PostgreSQL diagnostic engine `check_system_health_diagnostics` auditing 7 domains with auto-clearing UI alert banner & badge (100% healthy) | Migrations 181–183, `lib/diagnostics/actions.ts` & `SystemHealthAlertBanner.tsx` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `38315155`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `d7174526`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
