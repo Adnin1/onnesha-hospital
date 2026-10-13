@@ -29,12 +29,12 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 | **TypeScript Strict Compiler** | `tsc --noEmit` -> 0 errors, 0 warnings | ✅ PASS |
 | **ESLint Quality Gate** | `eslint` -> 0 errors, 0 warnings | ✅ PASS |
 | **Node.js Certification Suites** | 138/138 suites passed (1,250 active pass, 0 fail, 7 skipped) | ✅ PASS |
-| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 547 baseline across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | ✅ PASS |
+| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 555 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | ✅ PASS |
 | **Next.js Static Export** | 62/62 static routes prerendered into `out/` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 396 internal links, 1108 assets, 0 broken links | ✅ PASS |
 | **Native Windows MSI Installer** | `Onnesha-Hospital-1.1.90.msi` (3,457,024 bytes, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`) | ✅ VERIFIED |
 | **Native Windows EXE Installer** | `Onnesha-Hospital-Setup-1.1.90.exe` (2,895,011 bytes, SHA-256: `72BAD4D10633B4FDC03549DA64FE01C29FFE400EC142347561FC8394380134D1`) | ✅ VERIFIED |
-| **Cloudflare Edge Deployment** | `https://onnesha-hospital.pages.dev` (Deployment `f08ca109`, `WORKSTATION_DEPLOY_VERIFIED`) | ✅ DEPLOYED |
+| **Cloudflare Edge Deployment** | `https://onnesha-hospital.pages.dev` (Deployment `ffdee440`, `WORKSTATION_DEPLOY_VERIFIED`) | ✅ DEPLOYED |
 
 ---
 
@@ -42,11 +42,11 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 
 - **Authoritative Git Repository:** `Adnin1/onnesha-hospital`
 - **Active Branch:** `main`
-- **Engineering HEAD:** `4d1ecec9517ed9d037f7b55571afb2e1ead19c6d`
+- **Engineering HEAD:** `61efb93c1bb56f2525faa483e9410c88076ee8b8`
 - **Remote Remotes:** `origin` (`https://github.com/Adnin1/onnesha-hospital.git`) & `ssh-origin` (`git@github.com:Adnin1/onnesha-hospital.git`)
-- **Database Parity:** 173 local / 173 remote Supabase migrations applied (`iuhtzahuszdkdarhxobx`)
+- **Database Parity:** 175 local / 175 remote Supabase migrations applied (`iuhtzahuszdkdarhxobx`)
 - **Historical Release Tags Preserved:** `v1.1.88` (`c33728d`), `v1.1.89` (`688d869`), `v1.1.90` (`db8b750`)
-- **Release Freeze Lifecycle:** Previous freeze (`5db787e` / `8be74b4`) marked `SUPERSEDED_BY_POST_UAT_FIX`. Current production release formally re-frozen at `4d1ecec` after full verification of doctor optional BMDC/phone, multi-tenant bed/ward safety, IPD admission snapshots, and referral patient service analytics.
+- **Release Freeze Lifecycle:** Current production release formally frozen and certified at `61efb93` with CI Run 555 success, 175 migrations, full P&L expense voucher reconciliation, IPD automated admission charges, reception helpline canonicalization, and clean edge deployment.
 
 ---
 
