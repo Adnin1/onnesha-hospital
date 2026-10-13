@@ -127,16 +127,11 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
 
     const client = createClient(url, key);
 
-    // An anonymous caller must not obtain a misleading "100% healthy" result:
-    // private checks were not run and the caller receives no tenant-scoped data.
+    // Private diagnostic RPC execution itself must be denied to anonymous callers.
+    // The browser action independently maps failed health reads to a degraded UNKNOWN state.
     const { data: initData, error: initErr } = await client.rpc("check_system_health_diagnostics");
-    assert.ifError(initErr);
-    assert.ok(initData && typeof initData === "object", "Diagnostic gate must return an explicit unavailable state");
-    assert.equal(initData.is_healthy, false, "An unchecked private database must not be reported as healthy");
-    assert.equal(initData.health_score, 0, "Unknown health state must not have a 100/100 score");
-    assert.equal(initData.total_issues, 1, "One diagnostic access warning should be reported");
-    assert.equal(initData.organization_id, null, "Anonymous callers must not discover a tenant ID");
-    assert.ok(initData.issues.some((issue) => issue.id === "DIAGNOSTICS_AUTH_REQUIRED"));
-    assert.deepEqual(initData.passed_checks, [], "No private health check may be marked passed for an anonymous caller");
+    assert.ok(initErr, "Anonymous caller must not execute private health diagnostics");
+    assert.equal(initData, null, "Denied private diagnostics must not disclose a health payload");
+    assert.match(String(initErr.message || initErr.code || ""), /permission|execute|not allowed|unauthorized/i);
   });
 });
