@@ -36,7 +36,7 @@
 | **Financial Reports & Accounting** | Resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 mismatch; balanced GL ledger | Migrations 176–180 & `app/reports/page.tsx` | ✅ PASS |
 | **Autonomous System Health Diagnostics & Troubleshooter** | Hardened 10-domain PostgreSQL diagnostic engine `check_system_health_diagnostics` + tenant-scoped RLS `system_health_issues_log` + global browser error interceptor + real-time DOM alert banner with 'Issue Solved' notification + dedicated `/app/system-health` control panel | Migrations 181–186, `lib/diagnostics/troubleshooter.ts`, `SystemHealthAlertBanner.tsx`, `app/system-health/page.tsx` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (`WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `f0e5030d`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
@@ -225,8 +225,8 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 141/141 certification suites, 1,274 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
-2. **Database Parity:** 185/185 Supabase migrations applied (100% parity, 0 drift).
-3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `d7174526`, `WORKSTATION_DEPLOY_VERIFIED`).
+1. **Software Quality:** 141/141 certification suites, 1,275 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
+2. **Database Parity:** 186/186 Supabase migrations applied (100% parity, 0 drift).
+3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `f0e5030d`, `WORKSTATION_DEPLOY_VERIFIED`).
 4. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced to v1.1.90.
 5. **External Owner Gates:** G1–G16 clearly isolated without false greens.
