@@ -205,7 +205,11 @@ export async function getExpensesAction(params?: {
     if (params?.doctorId && params.doctorId !== "ALL") {
       query = query.eq("doctor_id", params.doctorId);
     }
-    if (params?.status && params.status !== "ALL") {
+    if (params?.status === "ACTIVE") {
+      query = query.not("status", "in", '("VOID","VOIDED")');
+    } else if (params?.status === "VOIDED") {
+      query = query.in("status", ["VOID", "VOIDED"]);
+    } else if (params?.status && params.status !== "ALL") {
       query = query.eq("status", params.status);
     }
     if (params?.startDate) {
