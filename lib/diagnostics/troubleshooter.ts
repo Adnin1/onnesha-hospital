@@ -102,9 +102,18 @@ export async function resolveSystemRuntimeIncident(params: {
   module?: string;
   issueId?: string;
 }): Promise<number> {
+  // Never resolve every incident in a module as a side effect of a successful
+  // unrelated action. A durable incident ID is required to acknowledge one record.
+  if (!params.issueId) {
+    console.warn(
+      "[OHMS Diagnostics] Incident resolution skipped because no exact incident ID was supplied."
+    );
+    return 0;
+  }
+
   const count = await resolveSystemRuntimeIssueAction(params);
 
-  if (typeof window !== "undefined") {
+  if (count === 1 && typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent("system-health-incident-resolved", {
         detail: params,
