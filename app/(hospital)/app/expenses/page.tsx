@@ -363,11 +363,13 @@ function ExpensesManagementContent() {
 
       if (res.success) {
         setToast({
-          message: `Voucher ${editModalExpense.voucher_number || editModalExpense.id} updated successfully`,
-          type: "success",
+          message: res.error
+            ? `Voucher ${editModalExpense.voucher_number || editModalExpense.id} was saved, but follow-up needs attention: ${res.error}`
+            : `Voucher ${editModalExpense.voucher_number || editModalExpense.id} updated successfully`,
+          type: res.error ? "info" : "success",
         });
         setEditModalExpense(null);
-        loadData();
+        await loadData();
       } else {
         setToast({ message: res.error || "Failed to update expense", type: "error" });
       }
