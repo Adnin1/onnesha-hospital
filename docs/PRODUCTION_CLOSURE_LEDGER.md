@@ -5,7 +5,7 @@
 **Current Branch:** `main`  
 **Package Version:** `1.1.90`  
 **Immutable Release Tag:** `v1.1.90 @ db8b750b51685a73cbf320f51d5e8920fc6a7c8c`  
-**Current Production Closure HEAD:** `3d4e80556da6697b0593b484552b725b87123aa2` (Engineering HEAD)  
+**Current Production Closure HEAD:** `8f55e414c243bc6f1e843236ef6fe9e1a17ef0d9` (Engineering HEAD — CI Run 559 PASS)  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
 **Historical Release Tags:** `v1.1.89`, `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
@@ -23,18 +23,18 @@
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
 | **Node Certification Test Suite** | 138/138 suites passed (1,250 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
-| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 557 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
+| **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 559 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 395 internal links, 1172 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 175/175 applied (100% parity, 0 drift, newest: `20261013063000_reports_reconciliation_and_atomic_ipd_charges.sql`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 178/178 applied (100% parity, 0 drift, newest: `20261013114500_fix_get_episode_billing_overview_schema_and_overload.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
-| **Medical Certificate System** | International Standard A4 certificate, BMDC ethics, full clinical CRUD, SHA-256 QR | `components/registrar/*` & `lib/registrar/actions.ts` | ✅ PASS |
-| **Billing & Cashier Permissions** | Super Admin exclusive invoice deletion, Receptionist/Cashier authorized edit | `components/billing/*` & `lib/billing/actions.ts` | ✅ PASS |
-| **System UI 3D Dimensional Engine** | Tactile 3D cards, elevated floating metrics, beveled buttons, glassmorphic panels | `app/globals.css`, `components/dashboard/*`, `app/(hospital)/*` | ✅ PASS |
-| **Billing Catalog Classification & Deduplication** | Deterministic domain categorization (Bed/ICU/OT/Doctor/Imaging/Lab), 0 duplicates, 3D quick adder | `lib/billing/serviceCatalog.ts`, `app/billing/page.tsx` & migration `20261011193500` | ✅ PASS |
-| **Official Hospital Diagnostic Tariffs** | Complete official rate chart seeded across 16 categories, 185 tests with exact BDT tariffs | `lib/lab/actions.ts`, `lib/billing/serviceCatalog.ts` & migration `20261011190000` | ✅ PASS |
+| **Doctor & Roster UX** | Doctor creation roomNumber fallback (`Chamber 1`) + validation feedback toast | `app/doctors/page.tsx` & `lib/appointments/actions.ts` | ✅ PASS |
+| **Bed & Cabin Matrix** | Asynchronous ward sync in modal + auto-resolution of default `bed_types` | `components/beds/AddBedOrCabinModal.tsx` & `lib/ipd/bed-actions.ts` | ✅ PASS |
+| **IPD Admission & Auto-Billing** | Fixed 428C9 & 42883 errors; atomic stored procedures auto-book ৳300 admission fee + ৳500/day charge | Migrations 176–178 (`admit_patient_to_bed_atomic`, `get_episode_billing_overview`) | ✅ PASS |
+| **Referrals & Expense Booking** | Discretionary payouts post immediately to Hospital Expenses (`/app/expenses`) with `status: 'POSTED'` | `lib/referrals/actions.ts` & `app/referrals/page.tsx` | ✅ PASS |
+| **Financial Reports & P&L** | Server-aggregated P&L, AR aging, cash movement, payment channels verified | RPCs & `app/reports/page.tsx` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `68036a33`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `d7463f26`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
