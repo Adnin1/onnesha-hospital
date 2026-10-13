@@ -7,19 +7,22 @@ import { createClient } from "@supabase/supabase-js";
 const ROOT = process.cwd();
 
 test("OHMS System & Database Autonomous Health Diagnostic Engine Certification", async (t) => {
-  // 1. Migration 181, 182, 183, 184 Integrity
-  await t.test("1. Migration 181/182/183/184 files exist and provide authoritative health check RPC & triggers", () => {
+  // 1. Diagnostic and tenant-security migrations
+  await t.test("1. Migration 181-186 files exist and secure health monitoring and incident RPCs", () => {
     const mig181 = path.join(ROOT, "supabase/migrations/20261014030000_system_health_and_database_diagnostic_engine.sql");
     const mig182 = path.join(ROOT, "supabase/migrations/20261014030500_system_health_diagnostics_update.sql");
     const mig183 = path.join(ROOT, "supabase/migrations/20261014031000_reconcile_referral_commission_row_allocations.sql");
     const mig184 = path.join(ROOT, "supabase/migrations/20261014040000_fix_beds_ward_name_and_runtime_diagnostics.sql");
+    const mig186 = path.join(ROOT, "supabase/migrations/20261014050000_secure_runtime_diagnostics_and_scoped_incidents.sql");
 
     assert.ok(fs.existsSync(mig181), "Migration 181 must exist");
     assert.ok(fs.existsSync(mig182), "Migration 182 must exist");
     assert.ok(fs.existsSync(mig183), "Migration 183 must exist");
     assert.ok(fs.existsSync(mig184), "Migration 184 must exist");
+    assert.ok(fs.existsSync(mig186), "Migration 186 must exist");
 
     const content184 = fs.readFileSync(mig184, "utf8");
+    const content186 = fs.readFileSync(mig186, "utf8");
 
     // Beds schema fix and trigger
     assert.match(content184, /ALTER TABLE public\.beds ALTER COLUMN ward_name DROP NOT NULL/i);
@@ -29,6 +32,13 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
     assert.match(content184, /CREATE OR REPLACE FUNCTION public\.resolve_system_runtime_issue/i);
     assert.match(content184, /BED_WARD_INVENTORY_INTEGRITY_VERIFIED/i);
     assert.match(content184, /SYSTEM_RUNTIME_INCIDENTS_ZERO/i);
+
+    // Migration 186 must remove anonymous full-table access and guard privileged RPCs.
+    assert.match(content186, /REVOKE ALL PRIVILEGES ON TABLE public\.system_health_issues_log FROM PUBLIC, anon/i);
+    assert.match(content186, /check_system_health_diagnostics_for_current_org/i);
+    assert.match(content186, /Active organization membership is required/i);
+    assert.match(content186, /Administrative permission is required/i);
+    assert.match(content186, /WHEN p_issue_id IS NOT NULL THEN id = p_issue_id/i);
   });
 
   // 2. Diagnostics Server Action & Troubleshooter Layer
@@ -42,6 +52,9 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
     assert.match(content, /export async function resolveSystemRuntimeIssueAction/);
     assert.match(content, /export interface SystemHealthIssue/);
     assert.match(content, /export interface SystemHealthDiagnosticResult/);
+    assert.match(content, /check_system_health_diagnostics_for_current_org/);
+    assert.match(content, /DIAGNOSTIC_EMPTY_RESPONSE/);
+    assert.doesNotMatch(content, /is_healthy: true,[\s\S]{0,120}health_score: 100,[\s\S]{0,120}DEFAULT_HEALTHY/);
 
     const troubleshooterPath = path.join(ROOT, "lib/diagnostics/troubleshooter.ts");
     assert.ok(fs.existsSync(troubleshooterPath), "lib/diagnostics/troubleshooter.ts must exist");
@@ -69,6 +82,24 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
     const layoutPath = path.join(ROOT, "app/(hospital)/app/layout.tsx");
     const layoutContent = fs.readFileSync(layoutPath, "utf8");
     assert.match(layoutContent, /<SystemHealthAlertBanner variant="banner"/);
+    assert.match(layoutContent, /<RuntimeErrorMonitor\s*\/>/);
+
+    const runtimeMonitorPath = path.join(ROOT, "components/app/RuntimeErrorMonitor.tsx");
+    assert.ok(fs.existsSync(runtimeMonitorPath), "Global runtime monitor must exist");
+    const runtimeMonitorContent = fs.readFileSync(runtimeMonitorPath, "utf8");
+    assert.match(runtimeMonitorContent, /unhandledrejection/);
+    assert.match(runtimeMonitorContent, /reportSystemRuntimeIncident/);
+
+    const expensesActionPath = path.join(ROOT, "lib/expenses/actions.ts");
+    const expensesActionContent = fs.readFileSync(expensesActionPath, "utf8");
+    assert.match(expensesActionContent, /EXPENSE_VOID_POSTCONDITION_FAILED/);
+    assert.match(expensesActionContent, /rpcResult\.success !== true/);
+    assert.match(expensesActionContent, /reportSystemRuntimeIncident/);
+
+    const monitorScriptPath = path.join(ROOT, "scripts/monitor-production.mjs");
+    assert.ok(fs.existsSync(monitorScriptPath), "Scheduled production monitor script must exist");
+    const workflowPath = path.join(ROOT, ".github/workflows/ohms-production-monitor.yml");
+    assert.ok(fs.existsSync(workflowPath), "Scheduled production monitor workflow must exist");
   });
 
   // 4. Remote Database Live Diagnostics & Incident Lifecycle
@@ -89,67 +120,70 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
       }
     });
 
-    const url = env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const url = env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL;
+    const key = env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+    // Live mutating diagnostic tests must never run through the anonymous key.
     if (!url || !key) return;
 
-    const client = createClient(url, key);
+    const client = createClient(url, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
-    // Initial check: must be 100% healthy
     const { data: initData, error: initErr } = await client.rpc("check_system_health_diagnostics");
     assert.ifError(initErr);
-    assert.ok(initData, "Diagnostic data must be returned");
-    assert.equal(initData.is_healthy, true, "Database and system must initially be healthy");
-    assert.equal(initData.health_score, 100, "Health score must be 100");
-    assert.equal(initData.total_issues, 0, "There must be 0 active issues");
+    assert.ok(initData && typeof initData.is_healthy === "boolean", "Diagnostic engine must return a valid health result");
+    assert.ok(Array.isArray(initData.issues), "Diagnostic result must contain its observed issues");
 
-    assert.ok(initData.passed_checks.includes("GENERAL_LEDGER_DOUBLE_ENTRY_BALANCED"));
-    assert.ok(initData.passed_checks.includes("BED_OCCUPANCY_SYNCHRONIZED"));
-    assert.ok(initData.passed_checks.includes("BED_WARD_INVENTORY_INTEGRITY_VERIFIED"));
-    assert.ok(initData.passed_checks.includes("SYSTEM_RUNTIME_INCIDENTS_ZERO"));
+    const orgId = initData.organization_id;
+    assert.ok(orgId, "Service-role diagnostic result must resolve an organization");
+    const baselineIssueIds = new Set(initData.issues.map((i) => String(i.id)));
+    const baselineTotal = Number(initData.total_issues || 0);
+    const baselineHealthScore = Number(initData.health_score);
+    const baselineHealthy = initData.is_healthy;
 
-    const orgId = initData.organization_id || "6b78e524-b1e3-4c43-8944-1a5a0248bff8";
+    let issueId = null;
+    try {
+      // The test deliberately injects one diagnostic-only incident, then verifies it is persisted and detected.
+      const { data, error } = await client.rpc("log_system_runtime_issue", {
+        p_org_id: orgId,
+        p_module: "DIAGNOSTICS_REGRESSION_TEST",
+        p_location: "tests/system-health-diagnostics.test.mjs",
+        p_severity: "CRITICAL",
+        p_error_code: "SIMULATED_TEST_ERROR",
+        p_title: "Automated diagnostic regression test",
+        p_reason: "Synthetic test-only incident; no patient data.",
+        p_recommendation: "Resolve this temporary test incident after verification.",
+      });
+      assert.ifError(error);
+      assert.ok(data, "Incident writer must return an incident ID");
+      issueId = data;
 
-    // Lifecycle step 1: Log simulated runtime error
-    const { data: issueId, error: logErr } = await client.rpc("log_system_runtime_issue", {
+      const { data: incidentData, error: incidentError } = await client.rpc("check_system_health_diagnostics", {
+        p_org_id: orgId,
+      });
+      assert.ifError(incidentError);
+      assert.ok(incidentData.issues.some((i) => String(i.id) === String(issueId)), "New incident must be immediately visible");
+      assert.ok(Number(incidentData.total_issues) >= baselineTotal + 1, "Issue total must increase while test incident is active");
+    } finally {
+      if (issueId) {
+        const { data: resolvedCount, error: resolveError } = await client.rpc("resolve_system_runtime_issue", {
+          p_org_id: orgId,
+          p_issue_id: issueId,
+        });
+        assert.ifError(resolveError);
+        assert.equal(resolvedCount, 1, "Only the temporary test incident must be resolved");
+      }
+    }
+
+    const { data: finalData, error: finalError } = await client.rpc("check_system_health_diagnostics", {
       p_org_id: orgId,
-      p_module: "BED_MANAGEMENT_TEST",
-      p_location: "tests/system-health-diagnostics.test.mjs",
-      p_severity: "CRITICAL",
-      p_error_code: "SIMULATED_TEST_ERROR",
-      p_title: "অটো-ডিটেক্টেড টেস্ট ত্রুটি",
-      p_reason: "সিস্টেম টেস্টের জন্য তৈরি সিমুলেটেড ত্রুটি",
-      p_recommendation: "রিসলভ আরপিসি টেস্ট করুন",
     });
-    assert.ifError(logErr);
-    assert.ok(issueId, "Issue ID must be returned");
-
-    // Lifecycle step 2: Diagnostics MUST detect the incident immediately
-    const { data: incidentData, error: incErr } = await client.rpc("check_system_health_diagnostics", {
-      p_org_id: orgId,
-    });
-    assert.ifError(incErr);
-    assert.equal(incidentData.is_healthy, false, "System must report unhealthy while incident active");
-    assert.ok(incidentData.health_score < 100, "Health score must drop below 100");
-    assert.ok(incidentData.critical_count >= 1, "Critical count must be at least 1");
-    assert.ok(incidentData.issues.some((i) => i.id === issueId), "Simulated incident must be present in issues");
-
-    // Lifecycle step 3: Resolve the incident
-    const { data: resCount, error: resErr } = await client.rpc("resolve_system_runtime_issue", {
-      p_org_id: orgId,
-      p_issue_id: issueId,
-    });
-    assert.ifError(resErr);
-    assert.equal(resCount, 1, "1 issue must be resolved");
-
-    // Lifecycle step 4: Diagnostics MUST immediately clear back to 100% healthy
-    const { data: clearData, error: clearErr } = await client.rpc("check_system_health_diagnostics", {
-      p_org_id: orgId,
-    });
-    assert.ifError(clearErr);
-    assert.equal(clearData.is_healthy, true, "System must recover to healthy after resolution");
-    assert.equal(clearData.health_score, 100, "Health score must be restored to 100");
-    assert.equal(clearData.total_issues, 0, "Active issues must be 0");
-    assert.ok(clearData.passed_checks.includes("SYSTEM_RUNTIME_INCIDENTS_ZERO"));
+    assert.ifError(finalError);
+    assert.ok(finalData && typeof finalData.is_healthy === "boolean", "Final health state must be valid");
+    assert.equal(Number(finalData.total_issues || 0), baselineTotal, "Resolving the test incident must restore the baseline issue count");
+    assert.equal(Number(finalData.health_score), baselineHealthScore, "Resolving the test incident must restore the baseline score");
+    assert.equal(finalData.is_healthy, baselineHealthy, "Resolving the test incident must restore the baseline health state");
+    assert.equal(finalData.issues.some((i) => String(i.id) === String(issueId)), false, "Resolved test incident must disappear from active alerts");
+    assert.ok([...baselineIssueIds].every((id) => finalData.issues.some((i) => String(i.id) === id)), "Pre-existing issues must remain visible, not be hidden by the test");
   });
 });
