@@ -469,7 +469,7 @@ $$;
 
 REVOKE ALL ON FUNCTION public.check_system_health_diagnostics(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.check_system_health_diagnostics(UUID) FROM anon;
-GRANT EXECUTE ON FUNCTION public.check_system_health_diagnostics(UUID) TO authenticated, service_role, anon;
+GRANT EXECUTE ON FUNCTION public.check_system_health_diagnostics(UUID) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.void_hospital_expense_atomic(
     p_org_id UUID,
