@@ -761,6 +761,97 @@ REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUI
 REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID) FROM anon;
 GRANT EXECUTE ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID) TO authenticated, service_role;
 
+CREATE OR REPLACE FUNCTION public.resolve_system_runtime_issue(
+    p_org_id UUID,
+    p_module TEXT DEFAULT NULL,
+    p_issue_id UUID DEFAULT NULL
+)
+RETURNS INT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, pg_temp
+AS $
+DECLARE
+    v_user_id UUID := auth.uid();
+    v_jwt_role TEXT := COALESCE(auth.role(), '');
+    v_active_org UUID;
+    v_authorized BOOLEAN := FALSE;
+    v_count INTEGER := 0;
+BEGIN
+    -- Never use a hardcoded organization or infer one from table ordering.
+    IF v_user_id IS NULL THEN
+        RAISE EXCEPTION 'Authentication is required to resolve system incidents'
+            USING ERRCODE = '42501';
+    END IF;
+
+    IF p_org_id IS NULL OR p_issue_id IS NULL THEN
+        RAISE EXCEPTION 'An organization and one explicit incident ID are required'
+            USING ERRCODE = '22023';
+    END IF;
+
+    SELECT COALESCE(p.active_organization_id, p.organization_id)
+    INTO v_active_org
+    FROM public.profiles p
+    WHERE p.id = v_user_id
+      AND p.is_active IS DISTINCT FROM FALSE
+    LIMIT 1;
+
+    IF v_active_org IS NULL
+       OR v_active_org IS DISTINCT FROM p_org_id
+       OR NOT EXISTS (
+          SELECT 1
+          FROM public.user_roles ur
+          WHERE ur.user_id = v_user_id
+            AND ur.organization_id = p_org_id
+       ) THEN
+        RAISE EXCEPTION 'Active organization membership is required to resolve this incident'
+            USING ERRCODE = '42501';
+    END IF;
+
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.user_roles ur
+        JOIN public.roles r ON r.id = ur.role_id
+        WHERE ur.user_id = v_user_id
+          AND ur.organization_id = p_org_id
+          AND (
+            LOWER(REPLACE(r.name, ' ', '_')) IN ('super_admin', 'admin', 'hospital_administrator')
+            OR EXISTS (
+                SELECT 1
+                FROM public.role_permissions rp
+                WHERE rp.role_id = ur.role_id
+                  AND rp.permission_key IN (
+                    'system.health.resolve',
+                    'accounting.manage',
+                    'settings.manage_roles',
+                    '*'
+                  )
+            )
+          )
+    ) INTO v_authorized;
+
+    IF NOT v_authorized THEN
+        RAISE EXCEPTION 'Administrative permission is required to resolve system incidents'
+            USING ERRCODE = '42501';
+    END IF;
+
+    UPDATE public.system_health_issues_log
+    SET is_resolved = TRUE,
+        resolved_at = NOW()
+    WHERE organization_id = p_org_id
+      AND id = p_issue_id
+      AND is_resolved = FALSE
+      AND (p_module IS NULL OR module = p_module);
+
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    RETURN v_count;
+END;
+$;
+
+REVOKE ALL ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) FROM anon;
+GRANT EXECUTE ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) TO authenticated, service_role;
+
 COMMIT;
 
 NOTIFY pgrst, 'reload schema';
