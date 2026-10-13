@@ -148,21 +148,28 @@ export async function getSystemHealthDiagnosticsAction(
 
     // Defensive consistency rule: an unhealthy response with no reason is not a
     // trustworthy "100%" result. Surface the missing explanation as its own alert.
-    if (result.is_healthy !== true && totalIssues === 0) {
+    if (
+      totalIssues === 0 &&
+      (
+        result.is_healthy !== true ||
+        score !== 100 ||
+        result.passed_checks.length === 0
+      )
+    ) {
       const timestamp = result.checked_at || new Date().toISOString();
       normalizedIssues = [{
-        id: "DIAGNOSTIC_UNHEALTHY_WITHOUT_ISSUE",
+        id: "DIAGNOSTIC_RESULT_INCONSISTENT",
         severity: "WARNING",
         module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
         location: "public.check_system_health_diagnostics",
-        title: "সিস্টেম অস্বাস্থ্যকর, কিন্তু কোনো কারণ ফেরত আসেনি",
-        reason: "Diagnostic RPC health state FALSE দিয়েছে, কিন্তু issue list/count শূন্য। এই ফলাফল পরস্পরবিরোধী, তাই স্বাস্থ্য নিশ্চিত করা যাচ্ছে না।",
-        recommendation: "RPC implementation, issue aggregation এবং current database diagnostics যাচাই করুন।",
+        title: "ডায়াগনস্টিক ফলাফলে অসামঞ্জস্য পাওয়া গেছে",
+        reason: "কোনো issue report হয়নি, কিন্তু health flag, health score বা completed-check তালিকা healthy result-এর সঙ্গে মেলেনি। এই ফলাফলকে verified healthy হিসেবে ধরা যাবে না।",
+        recommendation: "RPC implementation, issue aggregation, completed-check list এবং current database diagnostics যাচাই করুন।",
         timestamp,
       }];
       totalIssues = 1;
       normalizedWarnings += 1;
-      score = Math.min(score, 0);
+      score = 0;
     }
 
     return {
