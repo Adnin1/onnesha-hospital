@@ -35,6 +35,7 @@ export default function SystemHealthAlertBanner({
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const fetchDiagnostics = useCallback(() => {
     startTransition(async () => {
@@ -146,14 +147,30 @@ export default function SystemHealthAlertBanner({
     };
   }, [fetchDiagnostics]);
 
-  const handleResolveIssue = async (issueId: string, module?: string) => {
-    if (!data?.organization_id && !organizationId) return;
+  const handleResolveIssue = async (issueId: string) => {
     const orgId = data?.organization_id || organizationId || "";
-    await resolveSystemRuntimeIssueAction({
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    // Only durable UUID-backed incidents can be resolved. Computed health findings
+    // must disappear because the underlying condition was repaired, not by clicking dismiss.
+    if (!uuidPattern.test(issueId)) {
+      setActionMessage("এই সমস্যাটি সরাসরি dismiss করা যাবে না। আগে মূল database বা workflow সমস্যা ঠিক করে পুনরায় পরীক্ষা করুন।");
+      fetchDiagnostics();
+      return;
+    }
+    if (!orgId) {
+      setActionMessage("সক্রিয় হাসপাতাল organization শনাক্ত হয়নি; incident পরিবর্তন করা হয়নি।");
+      return;
+    }
+
+    setActionMessage(null);
+    const resolvedCount = await resolveSystemRuntimeIssueAction({
       organizationId: orgId,
-      issueId: issueId.startsWith("ephemeral-") ? undefined : issueId,
-      module: module,
+      issueId,
     });
+    if (resolvedCount !== 1) {
+      setActionMessage("Incident resolve হয়নি। আপনার role/permission, organization scope এবং database response পরীক্ষা করুন।");
+    }
     fetchDiagnostics();
   };
 
@@ -303,6 +320,11 @@ export default function SystemHealthAlertBanner({
 
             {/* Modal Content */}
             <div className="p-5 overflow-y-auto space-y-4">
+              {actionMessage && (
+                <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                  {actionMessage}
+                </div>
+              )}
               {hasIssues ? (
                 <>
                   <div className="text-xs text-slate-600 dark:text-slate-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-3 rounded-lg">
@@ -378,15 +400,21 @@ export default function SystemHealthAlertBanner({
                         </div>
 
                         <div className="flex justify-end pt-1">
-                          <button
-                            type="button"
-                            onClick={() => handleResolveIssue(issue.id, issue.module)}
-                            disabled={isPending}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-2xs transition-colors disabled:opacity-50"
-                          >
-                            <Wrench className="h-3.5 w-3.5" />
-                            <span>সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা</span>
-                          </button>
+                          {/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(issue.id) ? (
+                            <button
+                              type="button"
+                              onClick={() => handleResolveIssue(issue.id)}
+                              disabled={isPending}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-2xs transition-colors disabled:opacity-50"
+                            >
+                              <Wrench className="h-3.5 w-3.5" />
+                              <span>সমাধান যাচাই করে incident resolve করুন</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                              এটি computed health finding। মূল সমস্যা ঠিক করে “পুনরায় পরীক্ষা” চাপুন; সরাসরি dismiss করা যাবে না।
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}
