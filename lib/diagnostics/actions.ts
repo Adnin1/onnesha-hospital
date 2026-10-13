@@ -141,19 +141,40 @@ export async function getSystemHealthDiagnosticsAction(
 
     const issues = result.issues as SystemHealthIssue[];
     const reportedCount = Math.max(0, Math.trunc(result.total_issues));
-    const totalIssues = Math.max(reportedCount, issues.length);
-    const score = Math.max(0, Math.min(100, Math.round(result.health_score)));
+    let totalIssues = Math.max(reportedCount, issues.length);
+    let normalizedIssues = issues;
+    let normalizedWarnings = Math.max(0, Number(result.warning_count) || 0);
+    let score = Math.max(0, Math.min(100, Math.round(result.health_score)));
+
+    // Defensive consistency rule: an unhealthy response with no reason is not a
+    // trustworthy "100%" result. Surface the missing explanation as its own alert.
+    if (result.is_healthy !== true && totalIssues === 0) {
+      const timestamp = result.checked_at || new Date().toISOString();
+      normalizedIssues = [{
+        id: "DIAGNOSTIC_UNHEALTHY_WITHOUT_ISSUE",
+        severity: "WARNING",
+        module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
+        location: "public.check_system_health_diagnostics",
+        title: "সিস্টেম অস্বাস্থ্যকর, কিন্তু কোনো কারণ ফেরত আসেনি",
+        reason: "Diagnostic RPC health state FALSE দিয়েছে, কিন্তু issue list/count শূন্য। এই ফলাফল পরস্পরবিরোধী, তাই স্বাস্থ্য নিশ্চিত করা যাচ্ছে না।",
+        recommendation: "RPC implementation, issue aggregation এবং current database diagnostics যাচাই করুন।",
+        timestamp,
+      }];
+      totalIssues = 1;
+      normalizedWarnings += 1;
+      score = Math.min(score, 0);
+    }
 
     return {
-      is_healthy: result.is_healthy === true && totalIssues === 0 && issues.length === 0,
+      is_healthy: result.is_healthy === true && totalIssues === 0 && normalizedIssues.length === 0,
       health_score: totalIssues > 0 ? Math.min(score, 99) : score,
       critical_count: Math.max(0, Number(result.critical_count) || 0),
-      warning_count: Math.max(0, Number(result.warning_count) || 0),
+      warning_count: normalizedWarnings,
       info_count: Math.max(0, Number(result.info_count) || 0),
       total_issues: totalIssues,
       checked_at: result.checked_at || new Date().toISOString(),
       organization_id: activeOrganizationId,
-      issues,
+      issues: normalizedIssues,
       passed_checks: result.passed_checks as string[],
     };
   } catch (err: unknown) {
