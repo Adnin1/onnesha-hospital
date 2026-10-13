@@ -732,16 +732,11 @@ BEGIN
       AND organization_id = p_org_id
       AND status = 'PENDING';
 
-    UPDATE public.journal_entries
-    SET status = 'REVERSED'
-    WHERE id = v_original_je.id
-      AND organization_id = p_org_id
-      AND status = 'POSTED';
-
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Source journal could not be marked REVERSED; operation rolled back'
-            USING ERRCODE = '40001';
-    END IF;
+    -- Keep the original journal immutable and POSTED. Accounting reports filter on
+    -- POSTED rows; moving the original to REVERSED would hide its original debit/credit
+    -- while leaving this POSTED reversal visible, producing incorrect balances.
+    -- The original entry and this separate reversal must both remain in the ledger so
+    -- their totals offset; the linked expense record itself is marked VOIDED below.
 
     UPDATE public.expenses
     SET status = 'VOIDED',
