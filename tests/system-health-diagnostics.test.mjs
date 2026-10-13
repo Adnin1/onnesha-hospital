@@ -132,13 +132,14 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
 
     const client = createClient(url, key);
 
-    // Initial check: anonymous call safely returns healthy standby without leaking tenant records
+    // Zero false-green verification: anonymous call must fail closed as AUDIT_UNAUTHORIZED
     const { data: initData, error: initErr } = await client.rpc("check_system_health_diagnostics");
     assert.ifError(initErr);
     assert.ok(initData, "Diagnostic data must be returned");
-    assert.equal(initData.is_healthy, true, "Database and system must initially be healthy");
-    assert.equal(initData.health_score, 100, "Health score must be 100");
-    assert.equal(initData.total_issues, 0, "There must be 0 active issues");
-    assert.ok(initData.passed_checks.includes("PUBLIC_PORTAL_SAFE_STANDBY") || initData.passed_checks.includes("GENERAL_LEDGER_DOUBLE_ENTRY_BALANCED"));
+    assert.equal(initData.is_healthy, false, "Anonymous call must not claim healthy");
+    assert.equal(initData.status, "AUDIT_UNAUTHORIZED", "Status must be AUDIT_UNAUTHORIZED");
+    assert.equal(initData.audit_scope, "PUBLIC_PORTAL_ONLY", "Scope must be restricted to PUBLIC_PORTAL_ONLY");
+    assert.equal(initData.health_score, 0, "Health score for unauthorized audit must be 0");
+    assert.ok(initData.issues.some((i) => i.id === "DIAGNOSTIC_PRIVILEGE_REQUIRED"), "Must flag DIAGNOSTIC_PRIVILEGE_REQUIRED");
   });
 });

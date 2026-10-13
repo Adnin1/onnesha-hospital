@@ -3,6 +3,7 @@
 import {
   logSystemRuntimeIssueAction,
   resolveSystemRuntimeIssueAction,
+  verifyAndResolveSystemIssueAction,
   type SystemHealthIssue,
 } from "./actions";
 
@@ -86,6 +87,35 @@ export async function resolveSystemRuntimeIncident(
   }
 
   return count;
+}
+
+/**
+ * Verified recovery lifecycle: verifies the incident is resolved in database
+ * and marks lifecycle_status = 'RESOLVED_VERIFIED' with evidence.
+ */
+export async function verifyAndResolveSystemRuntimeIncident(params: {
+  organizationId: string;
+  issueId: string;
+  verificationEvidence?: Record<string, unknown>;
+}): Promise<boolean> {
+  const res = await verifyAndResolveSystemIssueAction(params);
+
+  if (res.success && res.lifecycle_status === "RESOLVED_VERIFIED") {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("system-health-incident-resolved", {
+          detail: {
+            organizationId: params.organizationId,
+            issueId: params.issueId,
+            status: "RESOLVED_VERIFIED",
+          },
+        })
+      );
+    }
+    return true;
+  }
+
+  return false;
 }
 
 /**

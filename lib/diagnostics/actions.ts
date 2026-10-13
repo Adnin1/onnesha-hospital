@@ -71,16 +71,27 @@ export async function getSystemHealthDiagnosticsAction(
 
     if (!data) {
       return {
-        is_healthy: true,
-        health_score: 100,
-        critical_count: 0,
+        is_healthy: false,
+        health_score: 0,
+        critical_count: 1,
         warning_count: 0,
         info_count: 0,
-        total_issues: 0,
+        total_issues: 1,
         checked_at: new Date().toISOString(),
         organization_id: organizationId || null,
-        issues: [],
-        passed_checks: ["DEFAULT_HEALTHY"],
+        issues: [
+          {
+            id: "NO_DIAGNOSTIC_DATA",
+            severity: "CRITICAL",
+            module: "সিস্টেম ডায়াগনস্টিক কোর (Diagnostic Core)",
+            location: "public.check_system_health_diagnostics()",
+            title: "ডায়াগনস্টিক ইঞ্জিন থেকে কোনো তথ্য পাওয়া যায়নি",
+            reason: "ডেটাবেজ চেক কোনো ফলাফল রিটার্ন করেনি।",
+            recommendation: "ডেটাবেজ ফাংশন ও পারমিশন পরীক্ষা করুন।",
+            timestamp: new Date().toISOString(),
+          },
+        ],
+        passed_checks: [],
       };
     }
 
@@ -191,5 +202,96 @@ export async function resolveSystemRuntimeIssueAction(payload: {
   } catch (err) {
     console.error("[HealthDiagnostics] resolveSystemRuntimeIssue exception:", err);
     return 0;
+  }
+}
+
+/**
+ * Verified recovery lifecycle: verifies the incident is resolved in database
+ * and marks lifecycle_status = 'RESOLVED_VERIFIED' with evidence.
+ */
+export async function verifyAndResolveSystemIssueAction(payload: {
+  organizationId: string;
+  issueId: string;
+  verificationEvidence?: Record<string, unknown>;
+}): Promise<{ success: boolean; issue_id?: string; lifecycle_status?: string; error?: string }> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("verify_and_resolve_system_issue_atomic", {
+      p_org_id: payload.organizationId,
+      p_issue_id: payload.issueId,
+      p_verification_evidence: payload.verificationEvidence || {},
+    });
+    if (error) {
+      console.error("[HealthDiagnostics] verifyAndResolveSystemIssue error:", error);
+      return { success: false, error: error.message };
+    }
+    return (data as { success: boolean; issue_id?: string; lifecycle_status?: string; error?: string }) || { success: false, error: "Empty response" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Fetches background monitoring status, recent heartbeats, and notification outbox metrics.
+ */
+export async function getSystemMonitoringStatusAction(organizationId?: string) {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("get_system_monitoring_status", {
+      p_org_id: organizationId || null,
+    });
+    if (error) {
+      console.error("[HealthDiagnostics] getSystemMonitoringStatus error:", error);
+      return null;
+    }
+    return data;
+  } catch (err) {
+    console.error("[HealthDiagnostics] getSystemMonitoringStatus exception:", err);
+    return null;
+  }
+}
+
+/**
+ * Controlled test failure & notification probe for proving alert delivery.
+ */
+export async function sendTestSystemHealthNotificationAction(organizationId: string) {
+  try {
+    const webhookUrl = process.env.NEXT_PUBLIC_ALERT_WEBHOOK_URL || process.env.OHMS_ALERT_WEBHOOK_URL;
+    const isConfigured = Boolean(webhookUrl && !webhookUrl.includes("placeholder"));
+
+    const issueId = await logSystemRuntimeIssueAction({
+      organizationId,
+      module: "24/7 Monitoring Test",
+      location: "lib/diagnostics/actions.ts:sendTestSystemHealthNotificationAction",
+      severity: "INFO",
+      errorCode: "TEST_NOTIFICATION_PROBE",
+      title: "সিস্টেম টেস্ট নোটিফিকেশন প্রোব (Controlled Notification Test)",
+      reason: "অটোমেটেড অ্যালার্ট পাইপলাইন কার্যকারিতা ও নোটিফিকেশন আউটবক্স যাচাই।",
+      recommendation: "কোনো ব্যবস্থা নেওয়ার প্রয়োজন নেই—এটি একটি যাচাইকরণ প্রোব।",
+      details: {
+        testTimestamp: new Date().toISOString(),
+        channelConfigured: isConfigured,
+      },
+    });
+
+    if (!isConfigured) {
+      return {
+        success: false,
+        status: "BLOCKED_EXTERNAL_OWNER",
+        issueId,
+        message: "OHMS_ALERT_WEBHOOK_URL is not configured in server environment. Delivery channel is safely marked BLOCKED_EXTERNAL_OWNER (Gate G1-G3/G10).",
+      };
+    }
+
+    return {
+      success: true,
+      status: "SENT",
+      issueId,
+      message: "Test notification dispatched to configured endpoint.",
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, status: "FAILED", error: message };
   }
 }

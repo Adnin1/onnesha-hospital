@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import {
   getSystemHealthDiagnosticsAction,
-  resolveSystemRuntimeIssueAction,
+  verifyAndResolveSystemIssueAction,
   type SystemHealthDiagnosticResult,
   type SystemHealthIssue,
 } from "@/lib/diagnostics/actions";
@@ -124,16 +124,29 @@ export default function SystemHealthAlertBanner({
     setEphemeralIssues((prev) => prev.filter((item) => item.id !== issueId));
     const orgId = data?.organization_id || organizationId;
     if (orgId) {
-      await resolveSystemRuntimeIssueAction({
+      if (issueId.startsWith("ephemeral-")) {
+        const mod = module || "ইস্যু";
+        setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সিস্টেম স্বাভাবিক অবস্থায় ফিরে এসেছে।`);
+        setTimeout(() => setJustResolvedMessage(null), 10000);
+        return;
+      }
+
+      const res = await verifyAndResolveSystemIssueAction({
         organizationId: orgId,
-        issueId: issueId.startsWith("ephemeral-") ? undefined : issueId,
-        module: module,
+        issueId,
+        verificationEvidence: { resolvedVia: "SystemHealthAlertBanner", resolvedAt: new Date().toISOString() },
       });
+
+      if (res.success && res.lifecycle_status === "RESOLVED_VERIFIED") {
+        const mod = module || "ইস্যু";
+        setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — ভেরিফাইড রিকভারি নিশ্চিত।`);
+        setTimeout(() => setJustResolvedMessage(null), 10000);
+        fetchDiagnostics();
+      } else {
+        console.error("Incident resolution could not be verified in database:", res.error);
+        fetchDiagnostics();
+      }
     }
-    const mod = module || "ইস্যু";
-    setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সিস্টেম স্বাভাবিক অবস্থায় ফিরে এসেছে।`);
-    setTimeout(() => setJustResolvedMessage(null), 10000);
-    fetchDiagnostics();
   };
 
   const combinedIssues = React.useMemo(() => {
