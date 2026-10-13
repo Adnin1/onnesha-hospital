@@ -104,7 +104,7 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
   });
 
   // 5. Remote Database Live Diagnostics
-  await t.test("5. Remote database RPC returns healthy standby status for anon, and full 10-point audits for auth", async () => {
+  await t.test("5. Anonymous diagnostic access is fail-closed and never reports a private database as healthy", async () => {
     const envPath = path.join(ROOT, ".env.local");
     if (!fs.existsSync(envPath)) return;
 
@@ -127,13 +127,16 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
 
     const client = createClient(url, key);
 
-    // Initial check: anonymous call safely returns healthy standby without leaking tenant records
+    // An anonymous caller must not obtain a misleading "100% healthy" result:
+    // private checks were not run and the caller receives no tenant-scoped data.
     const { data: initData, error: initErr } = await client.rpc("check_system_health_diagnostics");
     assert.ifError(initErr);
-    assert.ok(initData, "Diagnostic data must be returned");
-    assert.equal(initData.is_healthy, true, "Database and system must initially be healthy");
-    assert.equal(initData.health_score, 100, "Health score must be 100");
-    assert.equal(initData.total_issues, 0, "There must be 0 active issues");
-    assert.ok(initData.passed_checks.includes("PUBLIC_PORTAL_SAFE_STANDBY") || initData.passed_checks.includes("GENERAL_LEDGER_DOUBLE_ENTRY_BALANCED"));
+    assert.ok(initData && typeof initData === "object", "Diagnostic gate must return an explicit unavailable state");
+    assert.equal(initData.is_healthy, false, "An unchecked private database must not be reported as healthy");
+    assert.equal(initData.health_score, 0, "Unknown health state must not have a 100/100 score");
+    assert.equal(initData.total_issues, 1, "One diagnostic access warning should be reported");
+    assert.equal(initData.organization_id, null, "Anonymous callers must not discover a tenant ID");
+    assert.ok(initData.issues.some((issue) => issue.id === "DIAGNOSTICS_AUTH_REQUIRED"));
+    assert.deepEqual(initData.passed_checks, [], "No private health check may be marked passed for an anonymous caller");
   });
 });
