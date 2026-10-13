@@ -5,7 +5,7 @@
 **Current Branch:** `main`  
 **Package Version:** `1.1.90`  
 **Immutable Release Tag:** `v1.1.90 @ db8b750b51685a73cbf320f51d5e8920fc6a7c8c`  
-**Current Production Closure HEAD:** `c98eaa19ff821886f425648831af777714c0ee29` (Engineering HEAD — Migration 188 Parity)  
+**Current Production Closure HEAD:** `c0027ed50078e413dd22469ba82660d022037f1d` (Engineering HEAD — Migration 189 Parity)  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
 **Historical Release Tags:** `v1.1.89`, `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
@@ -22,11 +22,11 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 142/142 suites passed (1,284 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 143/143 suites passed (1,291 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 559 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 63/63 static routes generated (including `/app/system-health`) | `npm run build` | ✅ PASS |
-| **Static Link & Asset Forensics** | 62 HTML pages, 402 internal links, 1172 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 188/188 applied (100% parity, 0 drift, newest: `20261014060000_harden_accounting_immutability_and_exact_diagnostics.sql`) | `npx supabase migration list` | ✅ PASS |
+| **Static Link & Asset Forensics** | 62 HTML pages, 394 internal links, 1230 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
+| **Supabase Remote Migrations** | 189/189 applied (100% parity, 0 drift, newest: `20261014070000_harden_incident_lifecycle_outbox_and_heartbeat.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
 | **Doctor & Roster UX** | Doctor creation roomNumber fallback (`Chamber 1`) + validation feedback toast | `app/doctors/page.tsx` & `lib/appointments/actions.ts` | ✅ PASS |
 | **Bed & Cabin Matrix** | Fixed `ward_name` NOT NULL constraint via Migration 184/185; auto-population trigger `trg_beds_auto_populate_ward_name`; real-time occupancy sync trigger + row locking `FOR UPDATE` | `lib/ipd/bed-actions.ts` & Migrations 179, 184, 185 | ✅ PASS |
@@ -34,11 +34,11 @@
 | **Super Admin Invoice Hard Purge** | In-transaction override `app.override_journal_immutability` safely purges invoices with posted journal entries | `lib/billing/actions.ts` & Migrations 179, 186 | ✅ PASS |
 | **Referrals & Per-Patient Payout** | Per-patient commission tracking (earned/paid/due/status) + atomic RPC `record_referral_commission_payout_atomic` + auto GL postings | `lib/referrals/actions.ts` & Migration 180 | ✅ PASS |
 | **Financial Reports & Accounting** | Resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 mismatch; balanced GL ledger | Migrations 176–180 & `app/reports/page.tsx` | ✅ PASS |
-| **Autonomous System Health Diagnostics & Troubleshooter** | Hardened 10-domain PostgreSQL diagnostic engine `check_system_health_diagnostics` + tenant-scoped RLS `system_health_issues_log` + global browser error interceptor + real-time DOM alert banner with 'Issue Solved' notification + dedicated `/app/system-health` control panel | Migrations 181–186, `lib/diagnostics/troubleshooter.ts`, `SystemHealthAlertBanner.tsx`, `app/system-health/page.tsx` | ✅ PASS |
-| **Hospital Expenses Deletion & GL Reversals** | Hardened stored procedure `delete_hospital_expense_super_admin_atomic` (Migration 188) prohibiting permanent purge of posted vouchers, preserving both original and reversal journal entries as POSTED for zero-net GL balancing, and exact location-based incident resolution | Migrations 187–188, `lib/expenses/actions.ts`, `/app/expenses` | ✅ PASS |
-| **24/7 Background Scheduled Health Monitor** | GitHub Actions cron probe (`*/5 * * * *`) + local/edge probe (`scripts/scheduled-health-check.mjs`) continuously verifying HTTP edge and DB invariants without false greens (fails with `CONFIGURATION_ERROR` if unconfigured) | `.github/workflows/health-monitor.yml`, `scripts/scheduled-health-check.mjs` | ✅ PASS |
+| **Autonomous System Health Diagnostics & Troubleshooter** | Hardened 12-domain PostgreSQL diagnostic engine `check_system_health_diagnostics` + tenant-scoped RLS `system_health_issues_log` + verified recovery lifecycle (`OPEN` -> `RESOLVED_VERIFIED`) + real-time DOM alert banner + dedicated `/app/system-health` control panel | Migrations 181–189, `lib/diagnostics/troubleshooter.ts`, `SystemHealthAlertBanner.tsx`, `app/system-health/page.tsx` | ✅ PASS |
+| **Hospital Expenses Deletion & GL Reversals** | Hardened stored procedure `delete_hospital_expense_super_admin_atomic` (Migrations 187–188) prohibiting permanent purge of posted vouchers, preserving both original and reversal journal entries as POSTED for zero-net GL balancing, and exact location-based incident resolution | Migrations 187–188, `lib/expenses/actions.ts`, `/app/expenses` | ✅ PASS |
+| **24/7 Background Scheduled Health Monitor & Heartbeats** | GitHub Actions cron probe (`*/5 * * * *`) + local/edge probe (`scripts/scheduled-health-check.mjs`) continuously verifying HTTP edge and DB invariants, recording persistent heartbeats (`system_monitoring_heartbeats`), and managing notification outbox (`system_notification_outbox`) without false greens | `.github/workflows/health-monitor.yml`, `scripts/scheduled-health-check.mjs`, Migration 189 | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `e91c4cf3`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `68a07038`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
@@ -227,6 +227,15 @@
   4. **Zero False-Green Heartbeat Probe:** Hardened `scripts/scheduled-health-check.mjs` to report `CONFIGURATION_ERROR` and `Database=UNCONFIGURED` with exit code 1 under strict/scheduled mode when credentials are missing. Supported `SUPABASE_SERVICE_ROLE_KEY` for full ERP diagnostic audits and restricted anonymous key runs to `PUBLIC_PORTAL_ONLY`.
   5. **Bengali Locale & Accessibility:** Enforced `<html lang="bn">`, `locale: "bn_BD"`, and `alternateLocale: ["en_US"]` across layout and site configurations.
 
+### V. Persistent Notification Outbox, 24/7 Heartbeats & Verified Incident Lifecycle (Migration 189)
+- **Files Modified:** `supabase/migrations/20261014070000_harden_incident_lifecycle_outbox_and_heartbeat.sql`, `lib/diagnostics/actions.ts`, `lib/diagnostics/troubleshooter.ts`, `components/app/SystemHealthAlertBanner.tsx`, `scripts/scheduled-health-check.mjs`, `tests/system-health-diagnostics.test.mjs`, `tests/expenses-reversal-and-ledger-invariants.test.mjs`.
+- **Resolution:**
+  1. **Persistent Notification Outbox:** Created `public.system_notification_outbox` table tracking delivery channels (webhook, email, sms), attempt count, retry state, and explicit `BLOCKED_EXTERNAL_OWNER` status when provider credentials are unconfigured by owner (Gates G1–G3, G10).
+  2. **24/7 Monitoring Heartbeats:** Created `public.system_monitoring_heartbeats` table and `record_monitoring_heartbeat` RPC. Background probes and GitHub Actions cron runs record heartbeat history, audit scope, and health metrics directly in database.
+  3. **Missed-Heartbeat & Outbox Invariant Checks:** Extended `check_system_health_diagnostics` with Check 11 (detects missed heartbeats if last automated probe > 15m ago) and Check 12 (detects failed deliveries in persistent outbox in last 24h).
+  4. **Strict Zero False-Green Security:** Anonymous/unauthenticated calls to `check_system_health_diagnostics` strictly return `is_healthy = false`, `status = 'AUDIT_UNAUTHORIZED'`, `health_score = 0`, and `audit_scope = 'PUBLIC_PORTAL_ONLY'`, preventing false 100/100 passes without privileged access.
+  5. **Verified Recovery Lifecycle (`OPEN` -> `ACKNOWLEDGED` -> `RESOLVED_VERIFIED`):** Implemented `verify_and_resolve_system_issue_atomic` RPC and updated `SystemHealthAlertBanner.tsx` to verify database acceptance and persistence before showing resolution feedback.
+
 ---
 
 ## 3. Human & On-Site Boundary Governance (G1–G16)
@@ -254,8 +263,8 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 142/142 certification suites, 1,284 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
-2. **Database Parity:** 188/188 Supabase migrations applied (100% parity, 0 drift, newest: `20261014060000_harden_accounting_immutability_and_exact_diagnostics.sql`).
-3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `e91c4cf3`, `WORKSTATION_DEPLOY_VERIFIED`).
+1. **Software Quality:** 143/143 certification suites, 1,291 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
+2. **Database Parity:** 189/189 Supabase migrations applied (100% parity, 0 drift, newest: `20261014070000_harden_incident_lifecycle_outbox_and_heartbeat.sql`).
+3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `68a07038`, `WORKSTATION_DEPLOY_VERIFIED`).
 4. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced to v1.1.90.
 5. **External Owner Gates:** G1–G16 clearly isolated without false greens.
