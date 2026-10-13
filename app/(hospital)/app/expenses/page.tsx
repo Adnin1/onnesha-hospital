@@ -206,9 +206,14 @@ function ExpensesManagementContent() {
       });
 
       if (res.success && res.data) {
-        setToast({ message: `Voucher ${res.data.voucherNumber} created and posted to GL`, type: "success" });
+        setToast({
+          message: res.error
+            ? `Voucher ${res.data.voucherNumber} was created and linked to GL, but follow-up needs attention: ${res.error}`
+            : `Voucher ${res.data.voucherNumber} created and posted to GL`,
+          type: res.error ? "info" : "success",
+        });
         setIsCreateModalOpen(false);
-        // Reset form
+        // Reset form only after the server has confirmed the voucher and linked journal.
         setFormTitle("");
         setFormAmount("");
         setFormPaymentRef("");
@@ -216,7 +221,7 @@ function ExpensesManagementContent() {
         setFormDoctorId("");
         setFormDutyShift("");
         setFormNotes("");
-        loadData();
+        await loadData();
       } else {
         setToast({ message: res.error || "Failed to create expense", type: "error" });
       }
