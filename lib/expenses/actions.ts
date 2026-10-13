@@ -822,6 +822,22 @@ export async function updateExpenseAction(params: {
       categoryId: params.categoryId !== undefined ? params.categoryId : exp.category_id,
       paymentMethod: params.paymentMethod !== undefined ? params.paymentMethod : exp.payment_method,
     };
+    if (requested.categoryId !== exp.category_id) {
+      const { data: category, error: categoryError } = await supabase
+        .from("expense_categories")
+        .select("id")
+        .eq("id", requested.categoryId)
+        .eq("organization_id", session.organizationId)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (categoryError || !category) {
+        return {
+          success: false,
+          error: "Selected expense category was not found or is inactive in this organization. The voucher was not changed.",
+        };
+      }
+    }
     if (requested.title.length < 2) {
       return { success: false, error: "Expense title must be at least 2 characters." };
     }
