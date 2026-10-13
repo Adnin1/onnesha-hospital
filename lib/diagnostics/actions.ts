@@ -171,6 +171,12 @@ export async function logSystemRuntimeIssueAction(payload: {
   details?: Record<string, unknown>;
 }): Promise<string | null> {
   try {
+    const session = await getCurrentUserSession(true);
+    if (!session.userId || !session.organizationId || session.organizationId !== payload.organizationId) {
+      console.warn("[HealthDiagnostics] Runtime issue was not persisted because active organization authorization was unavailable.");
+      return null;
+    }
+
     const supabase = createClient();
     const { data, error } = await supabase.rpc("log_system_runtime_issue", {
       p_org_id: payload.organizationId,
@@ -203,6 +209,12 @@ export async function resolveSystemRuntimeIssueAction(payload: {
   issueId?: string;
 }): Promise<number> {
   try {
+    const session = await getCurrentUserSession(true);
+    if (!session.userId || !session.organizationId || session.organizationId !== payload.organizationId) {
+      console.warn("[HealthDiagnostics] Runtime issue was not resolved because active organization authorization was unavailable.");
+      return 0;
+    }
+
     const supabase = createClient();
     const { data, error } = await supabase.rpc("resolve_system_runtime_issue", {
       p_org_id: payload.organizationId,
