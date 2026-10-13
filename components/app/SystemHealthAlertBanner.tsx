@@ -32,7 +32,6 @@ export default function SystemHealthAlertBanner({
   variant = "full",
 }: SystemHealthAlertBannerProps) {
   const [data, setData] = useState<SystemHealthDiagnosticResult | null>(null);
-  const [localIncidents, setLocalIncidents] = useState<SystemHealthIssue[]>([]);
   const localIncidentsRef = useRef<SystemHealthIssue[]>([]);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [isResolvingIssueId, setIsResolvingIssueId] = useState<string | null>(null);
@@ -118,7 +117,11 @@ export default function SystemHealthAlertBanner({
           ...localIncidentsRef.current.filter((item) => item.id !== incident.id),
           incident,
         ].slice(-20);
-        setLocalIncidents([...localIncidentsRef.current]);
+        setData((previous) => {
+          if (!previous) return previous;
+          const issues = previous.issues.filter((item) => item.id !== incident.id);
+          return { ...previous, issues, total_issues: Math.max(0, previous.total_issues - (issues.length === previous.issues.length ? 0 : 1)), is_healthy: false };
+        });
       }
 
       setIsDismissed(false);
@@ -131,7 +134,11 @@ export default function SystemHealthAlertBanner({
       const detail = (event as CustomEvent<{ ephemeralId?: string; issueId?: string }>).detail;
       if (detail?.ephemeralId) {
         localIncidentsRef.current = localIncidentsRef.current.filter((item) => item.id !== detail.ephemeralId);
-        setLocalIncidents([...localIncidentsRef.current]);
+        setData((previous) => {
+          if (!previous) return previous;
+          const issues = previous.issues.filter((item) => item.id !== detail.ephemeralId);
+          return { ...previous, issues, total_issues: Math.max(0, previous.total_issues - (issues.length === previous.issues.length ? 0 : 1)) };
+        });
       }
       setIsDismissed(false);
       fetchDiagnostics();
