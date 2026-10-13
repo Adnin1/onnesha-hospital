@@ -107,4 +107,61 @@ test("OHMS Real 24/7 Monitoring, Verified Incident Lifecycle, Outbox & Accountin
     assert.equal(anonDiag.audit_scope, "PUBLIC_PORTAL_ONLY");
     assert.equal(anonDiag.health_score, 0);
   });
+
+  // 7. Migration 190 Multi-Tenant Heartbeat & Outbox Hardening
+  await t.test("7. Migration 190 eradicates arbitrary first-tenant fallback and hardens outbox mutation permissions", () => {
+    const migPath = path.join(ROOT, "supabase/migrations/20261014080000_harden_multitenant_heartbeat_and_outbox_security.sql");
+    assert.ok(fs.existsSync(migPath), "Migration 190 must exist");
+    const content = fs.readFileSync(migPath, "utf8");
+
+    // Fail-closed multi-tenancy
+    assert.match(content, /ORGANIZATION_CONTEXT_REQUIRED/);
+    assert.ok(!content.includes("ORDER BY created_at ASC LIMIT 1"), "Silent first-org fallback must be completely eradicated");
+
+    // Outbox security
+    assert.match(content, /REVOKE UPDATE, DELETE ON public\.system_notification_outbox FROM authenticated/);
+    assert.match(content, /CREATE OR REPLACE FUNCTION public\.record_outbox_delivery_attempt_atomic/);
+
+    // pg_cron registration
+    assert.match(content, /pg_cron/);
+    assert.match(content, /ohms-db-health-heartbeat/);
+  });
+
+  // 8. Modern Supabase Secret Key Model Support
+  await t.test("8. Monitor and diagnostic probes support modern SUPABASE_SECRET_KEY alongside legacy service keys", () => {
+    const probePath = path.join(ROOT, "scripts/scheduled-health-check.mjs");
+    const probeContent = fs.readFileSync(probePath, "utf8");
+    assert.match(probeContent, /SUPABASE_SECRET_KEY/);
+
+    const workflowPath = path.join(ROOT, ".github/workflows/health-monitor.yml");
+    const workflowContent = fs.readFileSync(workflowPath, "utf8");
+    assert.match(workflowContent, /SUPABASE_SECRET_KEY/);
+  });
+
+  // 9. Live Supabase Fail-Closed Multi-Tenancy Invariant Verification
+  await t.test("9. Remote Supabase enforces fail-closed multi-tenancy and rejects arbitrary tenant fallbacks", async () => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !anonKey || supabaseUrl.includes("placeholder") || supabaseUrl.includes("127.0.0.1")) {
+      console.log("   [Hermetic CI Mode] Skipping remote database call");
+      return;
+    }
+
+    const supabase = createClient(supabaseUrl, anonKey);
+
+    // Calling record_monitoring_heartbeat anonymously must fail (permission revoked from anon)
+    const { error: hbErr } = await supabase.rpc("record_monitoring_heartbeat", {
+      p_org_id: null,
+    });
+    assert.ok(hbErr, "Anonymous heartbeat must be rejected by PostgreSQL security");
+
+    // Calling record_outbox_delivery_attempt_atomic anonymously must fail
+    const { error: outboxErr } = await supabase.rpc("record_outbox_delivery_attempt_atomic", {
+      p_outbox_id: "00000000-0000-0000-0000-000000000000",
+      p_status: "SENT",
+    });
+    assert.ok(outboxErr, "Anonymous outbox delivery recording must be rejected");
+  });
 });
+

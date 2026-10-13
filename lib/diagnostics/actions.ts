@@ -253,6 +253,34 @@ export async function getSystemMonitoringStatusAction(organizationId?: string) {
 }
 
 /**
+ * Records the outcome of an outbox notification delivery attempt atomically.
+ */
+export async function recordOutboxDeliveryAttemptAction(payload: {
+  outboxId: string;
+  status: "PENDING" | "SENT" | "FAILED" | "BLOCKED_EXTERNAL_OWNER";
+  error?: string;
+  destination?: string;
+}): Promise<{ success: boolean; outbox_id?: string; status?: string; error?: string }> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("record_outbox_delivery_attempt_atomic", {
+      p_outbox_id: payload.outboxId,
+      p_status: payload.status,
+      p_error: payload.error || null,
+      p_destination: payload.destination || null,
+    });
+    if (error) {
+      console.error("[HealthDiagnostics] recordOutboxDeliveryAttempt error:", error);
+      return { success: false, error: error.message };
+    }
+    return (data as { success: boolean; outbox_id?: string; status?: string; error?: string }) || { success: false, error: "Empty response" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, error: message };
+  }
+}
+
+/**
  * Controlled test failure & notification probe for proving alert delivery.
  */
 export async function sendTestSystemHealthNotificationAction(organizationId: string) {
@@ -275,6 +303,33 @@ export async function sendTestSystemHealthNotificationAction(organizationId: str
       },
     });
 
+    if (issueId) {
+      const supabase = createClient();
+      const { data: outboxRows } = await supabase
+        .from("system_notification_outbox")
+        .select("id")
+        .eq("incident_id", issueId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const outboxId = outboxRows?.[0]?.id;
+      if (outboxId) {
+        if (!isConfigured) {
+          await recordOutboxDeliveryAttemptAction({
+            outboxId,
+            status: "BLOCKED_EXTERNAL_OWNER",
+            error: "Notification endpoint not configured (Owner Gate G1-G3/G10)",
+          });
+        } else {
+          await recordOutboxDeliveryAttemptAction({
+            outboxId,
+            status: "SENT",
+            destination: webhookUrl,
+          });
+        }
+      }
+    }
+
     if (!isConfigured) {
       return {
         success: false,
@@ -295,3 +350,4 @@ export async function sendTestSystemHealthNotificationAction(organizationId: str
     return { success: false, status: "FAILED", error: message };
   }
 }
+

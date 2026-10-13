@@ -30,7 +30,7 @@ async function checkEdgeLiveness() {
 
 async function checkDatabaseDiagnostics() {
   let url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  let serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.OHMS_TEST_SERVICE_ROLE_KEY;
+  let serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.OHMS_TEST_SERVICE_ROLE_KEY;
   let anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 
   if (!url || (!serviceKey && !anonKey)) {
@@ -45,7 +45,7 @@ async function checkDatabaseDiagnostics() {
             val = val.slice(1, -1);
           }
           if (m[1] === "NEXT_PUBLIC_SUPABASE_URL" || m[1] === "SUPABASE_URL") url = url || val;
-          if (m[1] === "SUPABASE_SERVICE_ROLE_KEY" || m[1] === "OHMS_TEST_SERVICE_ROLE_KEY") serviceKey = serviceKey || val;
+          if (m[1] === "SUPABASE_SECRET_KEY" || m[1] === "SUPABASE_SERVICE_ROLE_KEY" || m[1] === "OHMS_TEST_SERVICE_ROLE_KEY") serviceKey = serviceKey || val;
           if (m[1] === "NEXT_PUBLIC_SUPABASE_ANON_KEY" || m[1] === "SUPABASE_ANON_KEY") anonKey = anonKey || val;
         }
       });
