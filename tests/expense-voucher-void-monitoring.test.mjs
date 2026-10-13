@@ -29,6 +29,38 @@ test("expense voucher void uses an atomic, tenant-scoped accounting reversal", a
     assert.doesNotMatch(sql, /DELETE FROM public\.journal_entry_lines/i);
   });
 
+  await t.test("expense creation requires a configured ledger account and posts journal lines before POSTED status", () => {
+    const migration = read("supabase/migrations/20261014050000_fix_expense_voucher_void_and_health_diagnostics.sql");
+    const start = migration.indexOf("CREATE OR REPLACE FUNCTION public.record_hospital_expense_atomic(");
+    const end = migration.indexOf("$ohms_expense$;", start);
+    assert.ok(start >= 0 && end > start, "replacement expense creation RPC must exist");
+    const sql = migration.slice(start, end);
+
+    assert.match(sql, /Accounting post or billing create permission is required/i);
+    assert.match(sql, /Active organization membership is required to create an expense voucher/i);
+    assert.match(sql, /missing an active expense account or matching cash\/bank account/i);
+    assert.match(sql, /WHEN[^;]*CASH/i);
+    assert.match(sql, /v_payment_method = 'CASH'/i);
+    const lineInsert = sql.indexOf("INSERT INTO public.journal_entry_lines");
+    const postTransition = sql.indexOf("UPDATE public.journal_entries\n    SET status = 'POSTED'");
+    const expenseLink = sql.indexOf("UPDATE public.expenses\n    SET journal_entry_id = v_je_id");
+    assert.ok(lineInsert >= 0 && postTransition > lineInsert, "balanced journal lines must be inserted while header is PENDING");
+    assert.ok(expenseLink > postTransition, "expense links only after the journal is posted");
+    assert.match(sql, /SET status = 'PENDING'/);
+  });
+
+  await t.test("posted voucher accounting fields cannot be edited without reversal", () => {
+    const action = read("lib/expenses/actions.ts");
+    const start = action.indexOf("export async function updateExpenseAction(");
+    const end = action.indexOf("/**\n * 8. Archive or Toggle Expense", start);
+    assert.ok(start >= 0 && end > start, "updateExpenseAction must exist");
+    const source = action.slice(start, end);
+    assert.match(source, /journal_entry_id/);
+    assert.match(source, /isPostedOrLinked && financialChanges/);
+    assert.match(source, /cannot have its title, amount, payee, category or payment method edited directly/i);
+    assert.match(source, /EXPENSE_UPDATE_WRITE_FAILED/);
+  });
+
   await t.test("application never reports voucher success without database confirmation", () => {
     const source = read("lib/expenses/actions.ts");
     const start = source.indexOf("export async function voidExpenseAction(");
