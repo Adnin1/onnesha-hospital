@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
+import { reportSystemRuntimeIncident } from "@/lib/diagnostics/troubleshooter";
 
 export interface ActionResult<T = unknown> {
   success: boolean;
@@ -423,9 +424,9 @@ export async function voidExpenseAction(
   expenseId: string,
   voidReason: string
 ): Promise<ActionResult<{ success: boolean; status: string }>> {
-  const session = await getCurrentUserSession();
+  const session = await getCurrentUserSession(true);
   if (!session.userId || !session.organizationId) {
-    return { success: false, error: "401 Unauthorized" };
+    return { success: false, error: "401 Unauthorized: active hospital session required." };
   }
 
   try {
@@ -437,41 +438,129 @@ export async function voidExpenseAction(
     };
   }
 
-  if (!voidReason || voidReason.trim().length < 4) {
-    return { success: false, error: "A valid void reason (at least 4 characters) is required." };
+  if (!expenseId?.trim() || !voidReason?.trim() || voidReason.trim().length < 4) {
+    return { success: false, error: "A valid voucher and void reason (at least 4 characters) are required." };
   }
+
+  const reportVoidFailure = async (errorCode: string, reason: string): Promise<void> => {
+    try {
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId as string,
+        module: "ACCOUNTING_EXPENSES",
+        location: "lib/expenses/actions.ts:voidExpenseAction -> public.void_hospital_expense_atomic",
+        severity: "CRITICAL",
+        errorCode,
+        title: "Expense voucher void failed",
+        reason,
+        recommendation: "Review the voucher state, accounting permission, linked journal and RPC response. Preserve posted accounting history; retry only after the root cause has been corrected.",
+        details: {
+          expense_id: expenseId,
+          operation: "VOID_EXPENSE_VOUCHER",
+          rpc_name: "void_hospital_expense_atomic",
+          occurred_at: new Date().toISOString(),
+        },
+      });
+    } catch (reportError: unknown) {
+      // Reporting must never mask the original voucher error returned to the user.
+      console.error("[ExpenseVoid] Incident reporting also failed:", reportError instanceof Error ? reportError.message : "Unknown incident error");
+    }
+  };
 
   try {
     const supabase = await createClient();
-    const { data: _rpcRes, error: rpcErr } = await supabase.rpc("void_hospital_expense_atomic", {
+    const { data, error: rpcError } = await supabase.rpc("void_hospital_expense_atomic", {
       p_org_id: session.organizationId,
       p_expense_id: expenseId,
       p_void_reason: voidReason.trim(),
       p_voided_by: session.userId,
     });
 
-    if (rpcErr) {
-      return { success: false, error: rpcErr.message || "Failed to void expense voucher." };
+    if (rpcError) {
+      const errorCode = rpcError.code || "EXPENSE_VOID_RPC_ERROR";
+      const reason = "Database RPC failed (" + errorCode + "): " + (rpcError.message || "No database error details returned.");
+      await reportVoidFailure(errorCode, reason);
+      return {
+        success: false,
+        error: "Voucher void failed [" + errorCode + "]. System diagnostics has been notified. " +
+          (rpcError.message || "Please contact the system administrator."),
+      };
     }
 
-    await recordAuditLog({
-      organizationId: session.organizationId,
-      userId: session.userId,
-      action: "VOID",
-      module: "ACCOUNTING",
-      entityType: "expenses",
-      entityId: expenseId,
-      newValues: {
-        status: "VOIDED",
-        void_reason: voidReason.trim(),
-      },
-    });
+    const rpcResult = data && typeof data === "object" && !Array.isArray(data)
+      ? data as { success?: unknown; error?: unknown; message?: unknown; status?: unknown }
+      : null;
 
-    return { success: true, data: { success: true, status: "VOIDED" } };
+    // PostgREST may return { success:false } as valid data while the transport error is null.
+    if (!rpcResult || rpcResult.success !== true) {
+      const reason = typeof rpcResult?.error === "string"
+        ? rpcResult.error
+        : typeof rpcResult?.message === "string"
+          ? rpcResult.message
+          : "The database did not confirm that this voucher was voided.";
+      await reportVoidFailure("EXPENSE_VOID_NOT_CONFIRMED", reason);
+      return {
+        success: false,
+        error: "Voucher was not voided. " + reason + " The incident was sent to system diagnostics.",
+      };
+    }
+
+    // Read-after-write verification is required before displaying a success state.
+    const { data: persistedExpense, error: verifyError } = await supabase
+      .from("expenses")
+      .select("id, status, void_reason")
+      .eq("id", expenseId)
+      .eq("organization_id", session.organizationId)
+      .maybeSingle();
+
+    if (
+      verifyError ||
+      !persistedExpense ||
+      !["VOID", "VOIDED"].includes(String(persistedExpense.status || "").toUpperCase())
+    ) {
+      const reason = verifyError
+        ? "RPC returned success but voucher status verification failed (" + (verifyError.code || "DB_READ_ERROR") + "): " + verifyError.message
+        : "RPC returned success but persisted voucher status is not VOID or VOIDED.";
+      await reportVoidFailure("EXPENSE_VOID_POSTCONDITION_FAILED", reason);
+      return {
+        success: false,
+        error: "Voucher status could not be verified in the database. It has not been reported as successful; review the system alert before retrying.",
+      };
+    }
+
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "VOID",
+        module: "ACCOUNTING",
+        entityType: "expenses",
+        entityId: expenseId,
+        newValues: {
+          status: persistedExpense.status,
+          void_reason: voidReason.trim(),
+        },
+      });
+    } catch (auditError: unknown) {
+      const message = auditError instanceof Error ? auditError.message : "Unknown audit log exception";
+      await reportVoidFailure("EXPENSE_VOID_AUDIT_LOG_FAILED", message);
+      // The voucher has already been voided and verified; do not invite a duplicate retry.
+      return {
+        success: true,
+        data: { success: true, status: String(persistedExpense.status) },
+        error: "Voucher was voided and verified, but writing its application audit entry failed. A system alert was raised; contact an administrator.",
+      };
+    }
+
+    return {
+      success: true,
+      data: { success: true, status: String(persistedExpense.status) },
+    };
   } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown expense void exception";
+    await reportVoidFailure("EXPENSE_VOID_UNEXPECTED_EXCEPTION", message);
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Error voiding expense voucher",
+      error: "Unexpected error while voiding the voucher. System diagnostics has been notified; refresh and review its status before retrying.",
     };
   }
 }
