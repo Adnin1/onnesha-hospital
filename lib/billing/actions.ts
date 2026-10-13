@@ -766,12 +766,15 @@ export async function getEpisodeBillingPreviewAction(params: {
       started_at: line.started_at || undefined,
     }));
 
-    const ipdEncounter = (result.encounters || []).find((e) => e.visit_type === "IPD") ||
-      ((result.resources || []).length > 0 ? { admitted_at: result.resources![0].assigned_at } : null);
+    const isIpdCase =
+      (result.encounters || []).some((e) => /ipd|inpatient|admission/i.test(e.visit_type || "")) ||
+      (result.resources || []).length > 0 ||
+      (result.critical_care || []).length > 0 ||
+      rawLines.some((l) => /bed|cabin|ward|ipd|ccu|icu/i.test(l.item_name));
 
-    if (ipdEncounter) {
+    if (isIpdCase) {
       const hasAdmFee = rawLines.some(
-        (l) => l.service_category === "ADMISSION" || l.item_name.includes("Admission") || l.item_name.includes("ভর্তি ফি")
+        (l) => l.service_category === "ADMISSION" || /admission\s*fee|ভর্তি\s*ফি/i.test(l.item_name)
       );
       if (!hasAdmFee) {
         rawLines.unshift({
@@ -783,26 +786,29 @@ export async function getEpisodeBillingPreviewAction(params: {
           unit_price: 300,
           quantity: 1,
           total_price: 300,
-          started_at: ipdEncounter.admitted_at || new Date().toISOString(),
+          started_at: new Date().toISOString(),
         });
       }
 
       const hasSvcCharge = rawLines.some(
-        (l) => l.service_category === "SERVICE_CHARGE" || l.item_name.includes("Service Charge") || l.item_name.includes("সার্ভিস চার্জ")
+        (l) => l.service_category === "SERVICE_CHARGE" || /service\s*charge|সেবা\s*চার্জ|সার্ভিস\s*চার্জ/i.test(l.item_name)
       );
       if (!hasSvcCharge) {
-        const admitMs = ipdEncounter.admitted_at ? new Date(ipdEncounter.admitted_at).getTime() : Date.now();
+        const ipdEnc = (result.encounters || []).find((e) => /ipd|inpatient|admission/i.test(e.visit_type || ""));
+        const admitMs = ipdEnc?.admitted_at
+          ? new Date(ipdEnc.admitted_at).getTime()
+          : (result.resources && result.resources.length > 0 ? new Date(result.resources[0].assigned_at).getTime() : Date.now());
         const stayDays = Math.max(1, Math.ceil((Date.now() - admitMs) / (1000 * 60 * 60 * 24)));
         rawLines.push({
           reference_id: `ipd-svc-charge-${targetPatientId}`,
           charge_id: null,
           is_custom_charge: true,
           service_category: "SERVICE_CHARGE",
-          item_name: `IPD Daily Service Charge (দৈনিক সার্ভিস চার্জ - ৳৫০০/দিন × ${stayDays} দিন)`,
+          item_name: `IPD Daily Service Charge (দৈনিক সেবা চার্জ - ৳৫০০/দিন × ${stayDays} দিন)`,
           unit_price: 500,
           quantity: stayDays,
           total_price: 500 * stayDays,
-          started_at: ipdEncounter.admitted_at || new Date().toISOString(),
+          started_at: ipdEnc?.admitted_at || new Date().toISOString(),
         });
       }
     }

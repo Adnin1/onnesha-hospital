@@ -333,11 +333,9 @@ export default function ReportsManagementPage() {
   };
 
   const totalOperatingExpenses =
-    pnlSummary.accrualBasis.operatingExpenses > 0
-      ? pnlSummary.accrualBasis.operatingExpenses
-      : trialBalance
-          .filter((row) => row.account_type === "EXPENSE")
-          .reduce((sum, row) => sum + Math.abs(Number(row.net_balance || 0)), 0);
+    reportingBasis === "cash"
+      ? pnlSummary.cashMovement.operatingDisbursements
+      : pnlSummary.accrualBasis.operatingExpenses;
 
   const netSurplus =
     reportingBasis === "cash"
@@ -772,7 +770,7 @@ export default function ReportsManagementPage() {
         {/* Net Operating Surplus / Profit */}
         <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
           <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase">
-            <span>নীট উদ্বৃত্ত / লাভ</span>
+            <span>{reportingBasis === "due" ? "মোট বকেয়া পাওনা" : "নীট উদ্বৃত্ত / লাভ"}</span>
             <DollarSign className={`w-4 h-4 ${netSurplus >= 0 ? "text-emerald-600" : "text-rose-600"}`} />
           </div>
           <div className={`text-xl font-black mt-1.5 font-mono ${netSurplus >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
@@ -780,7 +778,9 @@ export default function ReportsManagementPage() {
           </div>
           <div className="text-[10px] font-semibold mt-1">
             <span className={`px-1.5 py-0.2 rounded ${netSurplus >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
-              {netSurplus >= 0 ? "লাভজনক অবস্থান" : "ঘাটতি / ঋণাত্মক"}
+              {reportingBasis === "due"
+                ? (netSurplus > 0 ? "বকেয়া আদায়যোগ্য" : "কোন বকেয়া নেই")
+                : (netSurplus >= 0 ? "লাভজনক অবস্থান" : "ঘাটতি / ঋণাত্মক")}
             </span>
           </div>
         </div>

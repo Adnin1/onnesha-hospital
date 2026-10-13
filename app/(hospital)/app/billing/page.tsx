@@ -22,6 +22,7 @@ import {
   Edit3,
   ChevronLeft,
   ChevronRight,
+  Bed,
 } from "lucide-react";
 import {
   InvoiceRecord,
@@ -105,6 +106,7 @@ function BillingManagementContent() {
     quantity: number;
     referenceId?: string;
   }>>([]);
+  const [billingEncounterType, setBillingEncounterType] = useState<"OPD" | "IPD">("OPD");
   const [loadingUnbilledServices, setLoadingUnbilledServices] = useState(false);
   const [unbilledServicesCount, setUnbilledServicesCount] = useState(0);
   const [unbilledServicesTotal, setUnbilledServicesTotal] = useState(0);
@@ -401,11 +403,13 @@ function BillingManagementContent() {
       if (res.success && res.data) {
         const rawLines = [...(res.data.lines || [])];
         const isIpd =
-          (res.data.encounters || []).some((e) => e.visit_type === "IPD") ||
+          (res.data.encounters || []).some((e) => /ipd|inpatient|admission/i.test(e.visit_type || "")) ||
           (res.data.resources || []).length > 0 ||
-          rawLines.some((l) => l.item_name.includes("Bed") || l.item_name.includes("Cabin") || l.item_name.includes("IPD"));
+          (res.data.criticalCare || []).length > 0 ||
+          rawLines.some((l) => /bed|cabin|ward|icu|ccu|hdu|nicu|picu|ipd|ভর্তি|কেবিন|বেড|ওয়ার্ড/i.test(l.item_name));
 
         if (isIpd) {
+          setBillingEncounterType("IPD");
           const hasAdmissionFee = rawLines.some(
             (l) => l.item_name.includes("Admission") || l.item_name.includes("ভর্তি ফি")
           );
@@ -606,6 +610,41 @@ function BillingManagementContent() {
     setInitialPaymentAmount(Math.max(0, newSub - newDisc));
   };
 
+  const injectIpdAdmissionCharges = (currentItems: typeof items): typeof items => {
+    let updated = [...currentItems];
+    const hasAdmFee = updated.some((it) => /admission\s*fee|ভর্তি\s*ফি/i.test(it.itemName));
+    if (!hasAdmFee) {
+      updated.unshift({
+        category: "MISC",
+        itemName: "IPD Admission Fee (ভর্তি ফি - এককালীন)",
+        unitPrice: 300,
+        quantity: 1,
+      });
+    }
+
+    const hasDailyCharge = updated.some(
+      (it) => /daily\s*service\s*charge|দৈনিক\s*সেবা\s*চার্জ|দৈনিক\s*সার্ভিস\s*চার্জ/i.test(it.itemName)
+    );
+    if (!hasDailyCharge) {
+      updated.push({
+        category: "MISC",
+        itemName: "IPD Daily Service Charge (দৈনিক সেবা চার্জ)",
+        unitPrice: 500,
+        quantity: 1,
+      });
+    }
+    return updated;
+  };
+
+  const handleToggleBillingEncounterType = (type: "OPD" | "IPD") => {
+    setBillingEncounterType(type);
+    if (type === "IPD") {
+      const next = injectIpdAdmissionCharges(items);
+      setItems(next);
+      recalcTotals(next);
+    }
+  };
+
   const addItemRow = (
     category: ServiceCategory | InvoiceItemRecord["service_category"],
     name: string,
@@ -624,6 +663,23 @@ function BillingManagementContent() {
     } else {
       next = [...items, { category: dbCategory, itemName: name, unitPrice: price, quantity }];
     }
+
+    // Auto-inject IPD admission fee (300 BDT) and daily service charge (500 BDT)
+    // when any IPD / Bed / Cabin service is added to the invoice
+    const isIpdService =
+      dbCategory === "BED" ||
+      dbCategory === "CABIN" ||
+      /bed|cabin|ward|icu|ccu|hdu|nicu|picu|ipd|ভর্তি|কেবিন|বেড|ওয়ার্ড/i.test(name);
+    const isAdmFeeItem = /admission\s*fee|ভর্তি\s*ফি/i.test(name);
+    const isDailyChargeItem = /service\s*charge|সেবা\s*চার্জ|সার্ভিস\s*চার্জ/i.test(name);
+
+    if (isIpdService) {
+      setBillingEncounterType("IPD");
+      if (!isAdmFeeItem && !isDailyChargeItem) {
+        next = injectIpdAdmissionCharges(next);
+      }
+    }
+
     setItems(next);
     recalcTotals(next);
   };
@@ -2035,10 +2091,38 @@ function BillingManagementContent() {
                   </div>
                 )}
 
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">
-                    ইনভয়েস আইটেম তালিকা (Invoice Line Items - {items.length}টি):
-                  </span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase block">
+                      ইনভয়েস আইটেম তালিকা (Invoice Line Items - {items.length}টি):
+                    </span>
+                    {/* Billing Encounter Type Selector (OPD vs IPD) */}
+                    <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleBillingEncounterType("OPD")}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition ${
+                          billingEncounterType === "OPD"
+                            ? "bg-white text-slate-800 shadow-2xs"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                      >
+                        OPD (বহির্বিভাগ)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleBillingEncounterType("IPD")}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 ${
+                          billingEncounterType === "IPD"
+                            ? "bg-purple-600 text-white shadow-2xs"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                      >
+                        <span>🛏️ IPD (ভর্তি রোগী)</span>
+                        <span className="text-[9px] bg-purple-800/40 px-1 rounded text-purple-100">+৩০০/৫০০</span>
+                      </button>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => addItemRow("MISC", "Custom Medical Service", 100)}
@@ -2048,6 +2132,17 @@ function BillingManagementContent() {
                     + নতুন কাস্টম আইটেম যোগ করুন
                   </button>
                 </div>
+
+                {billingEncounterType === "IPD" && (
+                  <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-950 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <Bed className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span>
+                        <strong className="font-bold">IPD ইনডোর মোড সক্রিয়:</strong> এককালীন ভর্তি ফি (৳৩০০) এবং দৈনিক সেবা চার্জ (৳৫০০/দিন) স্বয়ংক্রিয়ভাবে ইনভয়েসে যুক্ত হয়েছে। নিচে যে কোনো পরিমাণ বা দর পরিবর্তন করা যাবে।
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Autocomplete Datalist */}
                 <datalist id="all-hospital-services-datalist">
@@ -2074,9 +2169,15 @@ function BillingManagementContent() {
                       <select
                         value={it.category}
                         onChange={(e) => {
-                          const next = [...items];
-                          next[idx].category = e.target.value as InvoiceItemRecord["service_category"];
+                          const val = e.target.value as InvoiceItemRecord["service_category"];
+                          let next = [...items];
+                          next[idx].category = val;
+                          if (val === "BED" || val === "CABIN") {
+                            setBillingEncounterType("IPD");
+                            next = injectIpdAdmissionCharges(next);
+                          }
                           setItems(next);
+                          recalcTotals(next);
                         }}
                         className="w-full px-2 py-1.5 border rounded-lg bg-white font-semibold text-[11px]"
                       >
@@ -2085,6 +2186,7 @@ function BillingManagementContent() {
                         <option value="XRAY">X-Ray</option>
                         <option value="USG">USG</option>
                         <option value="BED">Bed</option>
+                        <option value="CABIN">Cabin</option>
                         <option value="OT">OT</option>
                         <option value="PHARMACY">Pharmacy</option>
                         <option value="AMBULANCE">Ambulance</option>
@@ -2101,7 +2203,7 @@ function BillingManagementContent() {
                         value={it.itemName}
                         onChange={(e) => {
                           const val = e.target.value;
-                          const next = [...items];
+                          let next = [...items];
                           const matched = allServices.find((s) => s.name.toLowerCase() === val.toLowerCase());
                           if (matched) {
                             next[idx] = {
@@ -2110,8 +2212,20 @@ function BillingManagementContent() {
                               category: toDbInvoiceCategory(matched.category),
                               unitPrice: matched.price,
                             };
+                            if (
+                              next[idx].category === "BED" ||
+                              next[idx].category === "CABIN" ||
+                              /bed|cabin|ward|icu|ccu|hdu|nicu|picu|ipd|ভর্তি|কেবিন|বেড|ওয়ার্ড/i.test(matched.name)
+                            ) {
+                              setBillingEncounterType("IPD");
+                              next = injectIpdAdmissionCharges(next);
+                            }
                           } else {
                             next[idx].itemName = val;
+                            if (/bed|cabin|ward|icu|ccu|hdu|nicu|picu|ipd|ভর্তি|কেবিন|বেড|ওয়ার্ড/i.test(val)) {
+                              setBillingEncounterType("IPD");
+                              next = injectIpdAdmissionCharges(next);
+                            }
                           }
                           setItems(next);
                           recalcTotals(next);
