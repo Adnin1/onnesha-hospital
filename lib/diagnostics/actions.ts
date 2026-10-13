@@ -131,17 +131,40 @@ export async function getSystemHealthDiagnosticsAction(
       );
     }
 
+    const reportedIssues = res.issues as SystemHealthIssue[];
+    const passedChecks = res.passed_checks as string[];
+    const deferredChecks = passedChecks.filter((check) => /DEFERRED|SKIPPED|UNAVAILABLE|NOT_RUN|UNKNOWN/i.test(check));
+    const deferredIssues: SystemHealthIssue[] = deferredChecks.map((check) => ({
+      id: "DIAGNOSTIC_CHECK_INCOMPLETE_" + check,
+      severity: "WARNING",
+      module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
+      location: "public.check_system_health_diagnostics -> " + check,
+      title: "একটি স্বাস্থ্য পরীক্ষা সম্পূর্ণ করা যায়নি",
+      reason: "ডায়াগনস্টিক ইঞ্জিন এই পরীক্ষা সম্পূর্ণ করতে পারেনি: " + check,
+      recommendation: "সংশ্লিষ্ট database RPC, permission, schema এবং server logs যাচাই করে পুনরায় পরীক্ষা করুন।",
+      timestamp: res.checked_at || new Date().toISOString(),
+    }));
+    const issues = [...reportedIssues, ...deferredIssues];
+    const totalIssues = Math.max(
+      Number(res.total_issues || 0),
+      reportedIssues.length
+    ) + deferredIssues.length;
+    const criticalCount = Number(res.critical_count || 0);
+    const warningCount = Number(res.warning_count || 0) + deferredIssues.length;
+    const infoCount = Number(res.info_count || 0);
+
     return {
-      is_healthy: res.is_healthy,
+      // INFO-only findings and deferred checks must be visible; neither may show a false green state.
+      is_healthy: res.is_healthy === true && totalIssues === 0,
       health_score: Math.max(0, Math.min(100, res.health_score)),
-      critical_count: Number(res.critical_count || 0),
-      warning_count: Number(res.warning_count || 0),
-      info_count: Number(res.info_count || 0),
-      total_issues: Number(res.total_issues || 0),
+      critical_count: criticalCount,
+      warning_count: warningCount,
+      info_count: infoCount,
+      total_issues: totalIssues,
       checked_at: res.checked_at || new Date().toISOString(),
       organization_id: activeOrganizationId,
-      issues: res.issues as SystemHealthIssue[],
-      passed_checks: res.passed_checks as string[],
+      issues,
+      passed_checks: passedChecks,
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
