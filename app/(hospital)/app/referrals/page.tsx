@@ -44,7 +44,7 @@ import {
   getReferralPerformanceAnalyticsAction,
   approveCommissionAction,
   rejectCommissionAction,
-  recordDiscretionaryCommissionPayoutAction,
+  recordReferralCommissionPayoutAction,
 } from "@/lib/referrals/actions";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -84,6 +84,7 @@ export default function ReferralManagementPage() {
   const [agentToArchive, setAgentToArchive] = useState<ReferralAgent | null>(null);
   const [agentPeriodFilter, setAgentPeriodFilter] = useState<"ALL" | "TODAY" | "WEEK" | "MONTH" | "YEAR">("ALL");
   const [showDiscretionaryPayoutModal, setShowDiscretionaryPayoutModal] = useState(false);
+  const [payoutSelectedPatientId, setPayoutSelectedPatientId] = useState<string>("");
   const [discretionaryPayoutAmount, setDiscretionaryPayoutAmount] = useState<number | "">("");
   const [discretionaryPaymentMethod, setDiscretionaryPaymentMethod] = useState<"CASH" | "BANK_TRANSFER" | "BKASH" | "NAGAD">("CASH");
   const [discretionaryPaymentRef, setDiscretionaryPaymentRef] = useState("");
@@ -237,7 +238,7 @@ export default function ReferralManagementPage() {
     }
   };
 
-  // Submit discretionary commission payout directly posting to hospital expenses
+  // Submit commission payout (per-patient or general) directly posting to hospital expenses & General Ledger
   const handleDiscretionaryPayoutSubmit = async () => {
     if (!agentDetailData?.agent.id || !discretionaryPayoutAmount || Number(discretionaryPayoutAmount) <= 0) {
       setPayoutToast({ message: "অনুগ্রহ করে বৈধ কমিশন টাকার পরিমাণ লিখুন", type: "error" });
@@ -246,16 +247,23 @@ export default function ReferralManagementPage() {
     setDiscretionaryPayoutLoading(true);
     setPayoutToast(null);
     try {
-      const res = await recordDiscretionaryCommissionPayoutAction({
+      const selectedPatient = agentDetailData.patientServicesSummary?.find(
+        (p) => p.patientId === payoutSelectedPatientId
+      );
+      const res = await recordReferralCommissionPayoutAction({
         agentId: agentDetailData.agent.id,
         amount: Number(discretionaryPayoutAmount),
         paymentMethod: discretionaryPaymentMethod,
+        patientId: payoutSelectedPatientId || undefined,
+        patientTotalBill: selectedPatient?.totalBilled,
+        commissionRatePercent: selectedPatient?.commissionRatePercent,
         transactionReference: discretionaryPaymentRef.trim() || undefined,
         notes: discretionaryPaymentNotes.trim() || undefined,
       });
       if (res.success) {
-        setPayoutToast({ message: "কমিশন সফলভাবে পরিশোধ ও হাসপাতাল খরচে যোগ করা হয়েছে!", type: "success" });
+        setPayoutToast({ message: "কমিশন সফলভাবে পরিশোধ, হাসপাতাল খরচে বুকিং ও লেজারে লিপিবদ্ধ হয়েছে!", type: "success" });
         setShowDiscretionaryPayoutModal(false);
+        setPayoutSelectedPatientId("");
         setDiscretionaryPayoutAmount("");
         setDiscretionaryPaymentRef("");
         setDiscretionaryPaymentNotes("");
@@ -778,14 +786,16 @@ export default function ReferralManagementPage() {
                   <th className="p-3">রোগীর নাম ও বিবরণ</th>
                   <th className="p-3">ইনভয়েস #</th>
                   <th className="p-3 text-right">মোট সেবা মূল্য (৳)</th>
-                  <th className="p-3 text-center">সেবা ও বিলিং স্ট্যাটাস</th>
+                  <th className="p-3 text-right">প্রদেয় কমিশন (৳)</th>
+                  <th className="p-3 text-right">পরিশোধিত (৳)</th>
+                  <th className="p-3 text-center">কমিশন স্ট্যাটাস</th>
                   <th className="p-3 text-center">অ্যাকশন</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {commissions.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-12 text-center text-slate-400">
+                    <td colSpan={9} className="p-12 text-center text-slate-400">
                       কোনো রেফারেল রোগীর বিলিং রেকর্ড এখনো তৈরি হয়নি।
                     </td>
                   </tr>
@@ -817,10 +827,28 @@ export default function ReferralManagementPage() {
                       <td className="p-3 text-right font-black text-slate-900">
                         {formatCurrencyBDT(comm.billing_subtotal || comm.commission_base_amount)}
                       </td>
+                      <td className="p-3 text-right font-bold text-indigo-700">
+                        {formatCurrencyBDT(comm.commission_amount)}
+                      </td>
+                      <td className="p-3 text-right font-bold text-emerald-700">
+                        {formatCurrencyBDT(comm.amount_paid || 0)}
+                      </td>
                       <td className="p-3 text-center">
-                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                          বিল্ড পেশেন্ট
-                        </span>
+                        {comm.settlement_status === "PAID" && (
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            পরিশোধিত
+                          </span>
+                        )}
+                        {comm.settlement_status === "PARTIAL" && (
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                            আংশিক
+                          </span>
+                        )}
+                        {(!comm.settlement_status || comm.settlement_status === "PENDING") && (
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                            বকেয়া
+                          </span>
+                        )}
                       </td>
                       <td className="p-3 text-center">
                         <button
@@ -864,18 +892,20 @@ export default function ReferralManagementPage() {
               <thead>
                 <tr className="bg-slate-50/75 border-b border-slate-200 text-slate-600 font-bold">
                   <th className="p-3.5">Settlement #</th>
-                  <th className="p-3.5">Date</th>
+                  <th className="p-3.5">তারিখ</th>
                   <th className="p-3.5">Referral Partner</th>
-                  <th className="p-3.5">Payment Method</th>
-                  <th className="p-3.5">Reference / Txn ID</th>
-                  <th className="p-3.5 text-right">Disbursed Amount</th>
-                  <th className="p-3.5 text-center">Status</th>
+                  <th className="p-3.5">রোগী / খাত</th>
+                  <th className="p-3.5 text-right">রোগীর বিল (৳)</th>
+                  <th className="p-3.5">পেমেন্ট মাধ্যম</th>
+                  <th className="p-3.5">রেফারেন্স / Txn ID</th>
+                  <th className="p-3.5 text-right">পরিশোধিত কমিশন (৳)</th>
+                  <th className="p-3.5 text-center">স্ট্যাটাস</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {settlements.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-12 text-center text-slate-400">
+                    <td colSpan={9} className="p-12 text-center text-slate-400">
                       No payout settlements processed yet.
                     </td>
                   </tr>
@@ -885,14 +915,27 @@ export default function ReferralManagementPage() {
                       <td className="p-3.5 font-mono font-bold text-sky-700">
                         {st.settlement_number}
                       </td>
-                      <td className="p-3.5 text-slate-600">
-                        {st.settlement_date}
+                      <td className="p-3.5 text-slate-600 font-mono text-[11px]">
+                        {formatDateBDT(st.settlement_date || st.created_at)}
                       </td>
                       <td className="p-3.5">
                         <span className="font-mono font-semibold text-slate-800 mr-1.5">
                           {st.referral_agents?.agent_code}
                         </span>
                         <span className="text-slate-600">{st.referral_agents?.full_name}</span>
+                      </td>
+                      <td className="p-3.5">
+                        {st.patient_name ? (
+                          <div>
+                            <span className="font-bold text-slate-800">{st.patient_name}</span>
+                            {st.patient_code && <span className="ml-1 text-[10px] font-mono text-slate-400">({st.patient_code})</span>}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 italic">সাধারণ পার্টনার কমিশন</span>
+                        )}
+                      </td>
+                      <td className="p-3.5 text-right font-semibold text-slate-800">
+                        {st.patient_total_bill ? formatCurrencyBDT(st.patient_total_bill) : "—"}
                       </td>
                       <td className="p-3.5">
                         <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
@@ -1942,12 +1985,17 @@ export default function ReferralManagementPage() {
                             <th className="p-2">গ্রহনকৃত সেবাসমূহ</th>
                             <th className="p-2">ইনভয়েস #</th>
                             <th className="p-2 text-right">মোট সেবা বিল (৳)</th>
+                            <th className="p-2 text-right">প্রদেয় কমিশন (৳)</th>
+                            <th className="p-2 text-right">পরিশোধিত কমিশন (৳)</th>
+                            <th className="p-2 text-right">বকেয়া কমিশন (৳)</th>
+                            <th className="p-2 text-center">কমিশন স্ট্যাটাস</th>
+                            <th className="p-2 text-center">অ্যাকশন</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {filteredPatients.length === 0 ? (
                             <tr>
-                              <td colSpan={6} className="p-4 text-center text-slate-400">
+                              <td colSpan={11} className="p-4 text-center text-slate-400">
                                 নির্বাচিত সময়ে কোনো রেফারেল রোগীর সেবা রেকর্ড পাওয়া যায়নি।
                               </td>
                             </tr>
@@ -1986,6 +2034,46 @@ export default function ReferralManagementPage() {
                                 </td>
                                 <td className="p-2 text-right font-black text-slate-900">
                                   {formatCurrencyBDT(ps.totalBilled)}
+                                </td>
+                                <td className="p-2 text-right">
+                                  <div className="font-bold text-indigo-700">{formatCurrencyBDT(ps.commissionEarned)}</div>
+                                  <span className="text-[10px] text-slate-400 font-medium">({ps.commissionRatePercent}%)</span>
+                                </td>
+                                <td className="p-2 text-right font-bold text-emerald-700">
+                                  {formatCurrencyBDT(ps.commissionPaid)}
+                                </td>
+                                <td className="p-2 text-right font-bold text-rose-600">
+                                  {formatCurrencyBDT(ps.commissionDue)}
+                                </td>
+                                <td className="p-2 text-center">
+                                  {ps.commissionStatus === "PAID" && (
+                                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                      পরিশোধিত (PAID)
+                                    </span>
+                                  )}
+                                  {ps.commissionStatus === "PARTIAL" && (
+                                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                                      আংশিক (PARTIAL)
+                                    </span>
+                                  )}
+                                  {ps.commissionStatus === "PENDING" && (
+                                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-50 text-rose-800 border border-rose-200">
+                                      বকেয়া (PENDING)
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="p-2 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPayoutSelectedPatientId(ps.patientId);
+                                      setDiscretionaryPayoutAmount(ps.commissionDue > 0 ? ps.commissionDue : ps.commissionEarned);
+                                      setShowDiscretionaryPayoutModal(true);
+                                    }}
+                                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 transition shrink-0"
+                                  >
+                                    কমিশন পরিশোধ
+                                  </button>
                                 </td>
                               </tr>
                             ))
@@ -2098,26 +2186,47 @@ export default function ReferralManagementPage() {
                   <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                     <tr>
                       <th className="p-2">Settlement #</th>
-                      <th className="p-2">Date</th>
-                      <th className="p-2">Method</th>
-                      <th className="p-2 text-right">Amount</th>
+                      <th className="p-2">তারিখ</th>
+                      <th className="p-2">রোগী / বিবরণ</th>
+                      <th className="p-2 text-right">রোগীর বিল (৳)</th>
+                      <th className="p-2 text-right">পরিশোধিত কমিশন</th>
+                      <th className="p-2">মাধ্যম</th>
+                      <th className="p-2 text-center">স্ট্যাটাস</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {agentDetailData.settlements.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="p-4 text-center text-slate-400">
+                        <td colSpan={7} className="p-4 text-center text-slate-400">
                           No settlements disbursed yet.
                         </td>
                       </tr>
                     ) : (
                       agentDetailData.settlements.map((s: ReferralSettlement) => (
-                        <tr key={s.id}>
+                        <tr key={s.id} className="hover:bg-slate-50/70">
                           <td className="p-2 font-mono font-bold text-sky-700">{s.settlement_number}</td>
-                          <td className="p-2 text-slate-500">{s.settlement_date}</td>
-                          <td className="p-2 font-semibold text-slate-700">{s.payment_method}</td>
+                          <td className="p-2 text-slate-500 font-mono text-[11px]">{formatDateBDT(s.settlement_date || s.created_at)}</td>
+                          <td className="p-2">
+                            {s.patient_name ? (
+                              <div>
+                                <span className="font-bold text-slate-800">{s.patient_name}</span>
+                                {s.patient_code && <span className="ml-1 text-[10px] font-mono text-slate-400">({s.patient_code})</span>}
+                              </div>
+                            ) : (
+                              <span className="text-slate-600 italic">সাধারণ পার্টনার কমিশন</span>
+                            )}
+                          </td>
+                          <td className="p-2 text-right font-semibold text-slate-800">
+                            {s.patient_total_bill ? formatCurrencyBDT(s.patient_total_bill) : "—"}
+                          </td>
                           <td className="p-2 text-right font-black text-emerald-700">
                             {formatCurrencyBDT(s.net_paid_amount)}
+                          </td>
+                          <td className="p-2 font-semibold text-slate-700 text-[11px]">{s.payment_method}</td>
+                          <td className="p-2 text-center">
+                            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {s.status || "PAID"}
+                            </span>
                           </td>
                         </tr>
                       ))
@@ -2136,11 +2245,14 @@ export default function ReferralManagementPage() {
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-slate-200 space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-800 text-sm">
-                কাস্টম কমিশন পরিশোধ ও খরচ লিপিবদ্ধকরণ
+                কমিশন পরিশোধ ও খরচ লিপিবদ্ধকরণ
               </h3>
               <button
                 type="button"
-                onClick={() => setShowDiscretionaryPayoutModal(false)}
+                onClick={() => {
+                  setShowDiscretionaryPayoutModal(false);
+                  setPayoutSelectedPatientId("");
+                }}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
                 <X className="w-5 h-5" />
@@ -2152,7 +2264,7 @@ export default function ReferralManagementPage() {
                 এজেন্ট: {agentDetailData.agent.full_name} ({agentDetailData.agent.agent_code})
               </p>
               <p className="text-[11px] text-sky-700">
-                রোগীর মোট বিল ও সেবার উপর ভিত্তি করে কর্তৃপক্ষ ইচ্ছামতো যেকোনো পরিমাণ কমিশন প্রদান করতে পারেন।
+                রোগী নির্বাচন করে নির্দিষ্ট রোগীর সেবা বিলের কমিশন পরিশোধ করুন অথবা সাধারণ কমিশন বুকিং দিন।
               </p>
             </div>
 
@@ -2169,6 +2281,58 @@ export default function ReferralManagementPage() {
             )}
 
             <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  কমিশনের ধরণ / নির্দিষ্ট রোগী নির্বাচন
+                </label>
+                <select
+                  value={payoutSelectedPatientId}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    setPayoutSelectedPatientId(selId);
+                    if (selId && agentDetailData?.patientServicesSummary) {
+                      const found = agentDetailData.patientServicesSummary.find((p) => p.patientId === selId);
+                      if (found) {
+                        setDiscretionaryPayoutAmount(found.commissionDue > 0 ? found.commissionDue : found.commissionEarned);
+                      }
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium text-slate-800 bg-white"
+                >
+                  <option value="">সাধারণ পার্টনার কমিশন (কোনো নির্দিষ্ট রোগী নয়)</option>
+                  {agentDetailData.patientServicesSummary?.map((p) => (
+                    <option key={p.patientId} value={p.patientId}>
+                      {p.fullName} ({p.patientCode || "N/A"}) — মোট বিল: ৳{p.totalBilled} (বকেয়া: ৳{p.commissionDue})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {(() => {
+                const sel = agentDetailData.patientServicesSummary?.find((p) => p.patientId === payoutSelectedPatientId);
+                if (!sel) return null;
+                return (
+                  <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl space-y-1.5 text-xs">
+                    <div className="flex justify-between items-center font-bold text-emerald-950">
+                      <span>নির্বাচিত রোগী: {sel.fullName} ({sel.patientCode})</span>
+                      <span className="px-2 py-0.5 text-[10px] rounded-full bg-white text-emerald-800 border border-emerald-200">
+                        {sel.commissionStatus}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                      <div className="text-slate-600">রোগীর মোট সেবা বিল: <strong className="text-slate-900">{formatCurrencyBDT(sel.totalBilled)}</strong></div>
+                      <div className="text-slate-600">কমিশন হার: <strong className="text-indigo-700">{sel.commissionRatePercent}%</strong></div>
+                      <div className="text-slate-600">মোট প্রদেয় কমিশন: <strong className="text-indigo-700">{formatCurrencyBDT(sel.commissionEarned)}</strong></div>
+                      <div className="text-slate-600">ইতোপূর্বে পরিশোধিত: <strong className="text-emerald-700">{formatCurrencyBDT(sel.commissionPaid)}</strong></div>
+                      <div className="text-slate-600 col-span-2 bg-white/80 p-1.5 rounded-lg border border-emerald-100 flex justify-between">
+                        <span>বর্তমান বকেয়া কমিশন:</span>
+                        <strong className="text-rose-700 font-black">{formatCurrencyBDT(sel.commissionDue)}</strong>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   কমিশন পরিশোধের পরিমাণ (৳) <span className="text-rose-500">*</span>

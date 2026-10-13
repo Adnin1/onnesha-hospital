@@ -91,6 +91,13 @@ export interface ReferralSettlement {
   organization_id: string;
   settlement_number: string;
   referral_agent_id: string;
+  patient_id?: string | null;
+  patient_name?: string | null;
+  patient_code?: string | null;
+  patient_total_bill?: number | null;
+  commission_rate_percent?: number | null;
+  expense_id?: string | null;
+  journal_entry_id?: string | null;
   settlement_date: string;
   gross_commission_selected: number;
   adjustment_amount: number;
@@ -139,6 +146,12 @@ export interface PatientReferralServiceSummary {
   visitId?: string | null;
   totalBilled: number;
   invoicesCount: number;
+  commissionRatePercent: number;
+  commissionEarned: number;
+  commissionPaid: number;
+  commissionDue: number;
+  commissionStatus: "PAID" | "PARTIAL" | "PENDING";
+  lastPayoutDate?: string | null;
   services: Array<{
     name: string;
     category?: string;
@@ -402,9 +415,29 @@ export async function getReferralAgentByIdAction(agentId: string): Promise<{
         }))
       );
 
+      const pCommRows = commissionsList.filter((c) => c.patient_id === pId);
+      const pSettlements = ((settlementsRes.data as unknown as ReferralSettlement[]) || []).filter((s) => s.patient_id === pId);
+      const effectiveTotalBilled = pInvoices.length > 0 ? totalBilled : pCommRows.reduce((sum, c) => sum + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
+      const commissionRatePercent = Number(pCommRows[0]?.commission_rate_percent ?? agent.default_commission_rate ?? 10);
+      let commissionEarned = pCommRows.reduce((sum, c) => sum + Number(c.commission_amount || 0), 0);
+      if (commissionEarned <= 0 && effectiveTotalBilled > 0) {
+        commissionEarned = Math.round(((effectiveTotalBilled * commissionRatePercent) / 100) * 100) / 100;
+      }
+      const settledPaid = pSettlements.reduce((sum, s) => sum + Number(s.net_paid_amount || 0), 0);
+      const commissionPaid = Math.max(settledPaid, pCommRows.reduce((sum, c) => sum + Number(c.amount_paid || 0), 0));
+      if (commissionPaid > commissionEarned) {
+        commissionEarned = commissionPaid;
+      }
+      const commissionDue = Math.max(0, Math.round((commissionEarned - commissionPaid) * 100) / 100);
+      let commissionStatus: "PAID" | "PARTIAL" | "PENDING" = "PENDING";
+      if (commissionPaid >= commissionEarned && commissionEarned > 0) {
+        commissionStatus = "PAID";
+      } else if (commissionPaid > 0) {
+        commissionStatus = "PARTIAL";
+      }
+      const lastPayoutDate = pSettlements[0]?.settlement_date || null;
+
       if (pInvoices.length === 0) {
-        const commRows = commissionsList.filter((c) => c.patient_id === pId);
-        const commBilled = commRows.reduce((sum, c) => sum + Number(c.billing_subtotal || c.commission_base_amount || 0), 0);
         patientServicesSummary.push({
           patientId: pId,
           patientCode: pInfo.code,
@@ -412,16 +445,22 @@ export async function getReferralAgentByIdAction(agentId: string): Promise<{
           phone: pInfo.phone,
           attributedAt: pInfo.assignedAt,
           visitId: pInfo.visitId,
-          totalBilled: commBilled,
-          invoicesCount: commRows.length,
-          services: commRows.map((c) => ({
+          totalBilled: effectiveTotalBilled,
+          invoicesCount: pCommRows.length,
+          commissionRatePercent,
+          commissionEarned,
+          commissionPaid,
+          commissionDue,
+          commissionStatus,
+          lastPayoutDate,
+          services: pCommRows.map((c) => ({
             name: c.invoices?.invoice_number ? `Invoice ${c.invoices.invoice_number}` : "Hospital Care Service",
             category: "ADMISSION",
             quantity: 1,
             amount: Number(c.billing_subtotal || c.commission_base_amount || 0),
             invoiceNumber: c.invoices?.invoice_number || "INV-REC",
           })),
-          invoices: commRows.map((c) => ({
+          invoices: pCommRows.map((c) => ({
             id: c.invoice_id || c.id,
             invoiceNumber: c.invoices?.invoice_number || "INV-REC",
             grandTotal: Number(c.billing_subtotal || c.commission_base_amount || 0),
@@ -437,8 +476,14 @@ export async function getReferralAgentByIdAction(agentId: string): Promise<{
           phone: pInfo.phone,
           attributedAt: pInfo.assignedAt,
           visitId: pInfo.visitId,
-          totalBilled,
+          totalBilled: effectiveTotalBilled,
           invoicesCount: pInvoices.length,
+          commissionRatePercent,
+          commissionEarned,
+          commissionPaid,
+          commissionDue,
+          commissionStatus,
+          lastPayoutDate,
           services,
           invoices: pInvoices.map((i) => ({
             id: i.id,
@@ -777,13 +822,28 @@ export async function settleReferralCommissionsAction(params: {
   }
 }
 
-export async function recordDiscretionaryCommissionPayoutAction(params: {
+export interface RecordReferralPayoutParams {
   agentId: string;
   amount: number;
   paymentMethod: "CASH" | "BANK_TRANSFER" | "BKASH" | "NAGAD" | "ROCKET" | "UPAY";
+  patientId?: string;
+  patientTotalBill?: number;
+  commissionRatePercent?: number;
   transactionReference?: string;
   notes?: string;
-}): Promise<{ success: boolean; settlementNumber?: string; expenseVoucher?: string; error?: string }> {
+}
+
+export async function recordReferralCommissionPayoutAction(params: RecordReferralPayoutParams): Promise<{
+  success: boolean;
+  settlementNumber?: string;
+  expenseVoucher?: string;
+  settlementId?: string;
+  expenseId?: string;
+  journalEntryId?: string;
+  settlementStatus?: string;
+  patientId?: string;
+  error?: string;
+}> {
   try {
     if (!params.agentId) {
       return { success: false, error: "Referral partner ID is required." };
@@ -805,27 +865,59 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
     const orgId = profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
-    // 1. Execute Atomic PostgreSQL RPC
-    const { data: rpcRes, error: rpcErr } = await supabase.rpc("record_discretionary_referral_payout_atomic", {
+    // 1. Execute Atomic PostgreSQL Master RPC (Migration 180: record_referral_commission_payout_atomic / record_discretionary_referral_payout_atomic)
+    let { data: rpcRes, error: rpcErr } = await supabase.rpc("record_referral_commission_payout_atomic", {
       p_org_id: orgId,
       p_agent_id: params.agentId,
       p_amount: params.amount,
       p_payment_method: params.paymentMethod,
+      p_patient_id: params.patientId || null,
+      p_patient_total_bill: params.patientTotalBill ?? null,
+      p_commission_rate_percent: params.commissionRatePercent ?? null,
       p_transaction_reference: params.transactionReference?.trim() || null,
-      p_notes: params.notes?.trim() || "Discretionary partner payout",
+      p_notes: params.notes?.trim() || (params.patientId ? "Per-patient referral commission payout" : "Referral partner commission payout"),
       p_idempotency_key: params.transactionReference?.trim() || null,
     });
 
+    if (rpcErr && !params.patientId) {
+      const legacyRes = await supabase.rpc("record_discretionary_referral_payout_atomic", {
+        p_org_id: orgId,
+        p_agent_id: params.agentId,
+        p_amount: params.amount,
+        p_payment_method: params.paymentMethod,
+        p_transaction_reference: params.transactionReference?.trim() || null,
+        p_notes: params.notes?.trim() || "Referral partner commission payout",
+        p_idempotency_key: params.transactionReference?.trim() || null,
+      });
+      if (!legacyRes.error && legacyRes.data) {
+        rpcRes = legacyRes.data;
+        rpcErr = null;
+      }
+    }
+
     if (!rpcErr && rpcRes && typeof rpcRes === "object" && (rpcRes as { success?: boolean }).success) {
-      const res = rpcRes as { settlement_number: string; voucher_number?: string };
+      const res = rpcRes as {
+        settlement_number: string;
+        voucher_number?: string;
+        settlement_id?: string;
+        expense_id?: string;
+        journal_entry_id?: string;
+        settlement_status?: string;
+        patient_id?: string;
+      };
       return {
         success: true,
         settlementNumber: res.settlement_number,
         expenseVoucher: res.voucher_number,
+        settlementId: res.settlement_id,
+        expenseId: res.expense_id,
+        journalEntryId: res.journal_entry_id,
+        settlementStatus: res.settlement_status,
+        patientId: res.patient_id,
       };
     }
 
-    // 2. Direct transactional fallback if RPC returns unhandled error
+    // 2. Direct transactional fallback if RPC is not present
     const { data: agent, error: agentErr } = await supabase
       .from("referral_agents")
       .select("id, agent_code, full_name, total_commission_settled, total_commission_earned")
@@ -837,6 +929,14 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
       return { success: false, error: "Referral agent not found" };
     }
 
+    let patientName: string | null = null;
+    let patientCode: string | null = null;
+    if (params.patientId) {
+      const { data: pData } = await supabase.from("patients").select("full_name, patient_code").eq("id", params.patientId).maybeSingle();
+      patientName = pData?.full_name || null;
+      patientCode = pData?.patient_code || null;
+    }
+
     const settlementNumber = `SETTLE-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const { error: setErr } = await supabase
@@ -845,6 +945,11 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
         organization_id: orgId,
         settlement_number: settlementNumber,
         referral_agent_id: params.agentId,
+        patient_id: params.patientId || null,
+        patient_name: patientName,
+        patient_code: patientCode,
+        patient_total_bill: params.patientTotalBill ?? null,
+        commission_rate_percent: params.commissionRatePercent ?? null,
         settlement_date: new Date().toISOString(),
         gross_commission_selected: params.amount,
         adjustment_amount: 0,
@@ -852,11 +957,11 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
         payment_method: params.paymentMethod,
         transaction_reference: params.transactionReference?.trim() || null,
         paid_by: user.id,
-        notes: params.notes?.trim() || "Discretionary partner payout",
+        notes: params.notes?.trim() || (patientName ? `Commission payout for patient: ${patientName}` : "Discretionary partner payout"),
       });
 
     if (setErr) {
-      console.warn("[recordDiscretionaryCommissionPayoutAction] settlement table:", setErr.message);
+      console.warn("[recordReferralCommissionPayoutAction] settlement table:", setErr.message);
     }
 
     const newSettled = Number(agent.total_commission_settled || 0) + Number(params.amount);
@@ -868,6 +973,34 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
       })
       .eq("id", params.agentId)
       .eq("organization_id", orgId);
+
+    // Update referral_commissions row if patientId provided
+    if (params.patientId) {
+      const { data: commRow } = await supabase
+        .from("referral_commissions")
+        .select("id, commission_amount, amount_paid")
+        .eq("organization_id", orgId)
+        .eq("referral_agent_id", params.agentId)
+        .eq("patient_id", params.patientId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (commRow) {
+        const curPaid = Number(commRow.amount_paid || 0) + Number(params.amount);
+        const commAmt = Number(commRow.commission_amount || 0);
+        const newStatus = curPaid >= commAmt && commAmt > 0 ? "PAID" : "PARTIAL";
+        await supabase
+          .from("referral_commissions")
+          .update({
+            amount_paid: curPaid,
+            amount_pending: Math.max(0, commAmt - curPaid),
+            settlement_status: newStatus,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", commRow.id);
+      }
+    }
 
     let categoryId: string | null = null;
     const { data: expCat } = await supabase
@@ -895,11 +1028,15 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
     }
 
     let voucherNumber = `VOUCH-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const expenseTitle = patientName
+      ? `Referral Commission (${patientName} - Bill ৳${params.patientTotalBill || 0}): ${agent.full_name} (${agent.agent_code})`
+      : `Referral Commission Payout - ${agent.full_name} (${agent.agent_code})`;
+
     if (categoryId) {
       const { data: expRes, error: expErr } = await supabase.rpc("record_hospital_expense_atomic", {
         p_org_id: orgId,
         p_category_id: categoryId,
-        p_title: `Referral Commission Payout - ${agent.full_name} (${agent.agent_code})`,
+        p_title: expenseTitle,
         p_amount: params.amount,
         p_payment_method: params.paymentMethod,
         p_payment_reference: params.transactionReference?.trim() || settlementNumber,
@@ -909,7 +1046,7 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
         p_doctor_id: null,
         p_duty_shift: null,
         p_department: "Marketing",
-        p_notes: `Settlement #${settlementNumber}: ${params.notes || "Discretionary partner commission payout"}`,
+        p_notes: `Settlement #${settlementNumber}: ${params.notes || "Referral partner commission payout"}`,
         p_created_by: user.id,
       });
 
@@ -920,7 +1057,7 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
           organization_id: orgId,
           voucher_number: voucherNumber,
           category_id: categoryId,
-          title: `Referral Partner Payout: ${agent.full_name} (${agent.agent_code})`,
+          title: expenseTitle,
           amount: params.amount,
           payment_method: params.paymentMethod,
           payment_reference: params.transactionReference?.trim() || settlementNumber,
@@ -928,7 +1065,7 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
           expense_date: new Date().toISOString().split("T")[0],
           expense_type: "MARKETING",
           department: "Marketing",
-          notes: `Settlement #${settlementNumber}: ${params.notes || "Discretionary partner commission payout"}`,
+          notes: `Settlement #${settlementNumber}: ${params.notes || "Referral partner commission payout"}`,
           status: "POSTED",
           approved_by: user.id,
         });
@@ -941,9 +1078,19 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
       expenseVoucher: voucherNumber,
     };
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Failed to record discretionary commission payout";
+    const msg = err instanceof Error ? err.message : "Failed to record referral commission payout";
     return { success: false, error: msg };
   }
+}
+
+export async function recordDiscretionaryCommissionPayoutAction(params: {
+  agentId: string;
+  amount: number;
+  paymentMethod: "CASH" | "BANK_TRANSFER" | "BKASH" | "NAGAD" | "ROCKET" | "UPAY";
+  transactionReference?: string;
+  notes?: string;
+}): Promise<{ success: boolean; settlementNumber?: string; expenseVoucher?: string; error?: string }> {
+  return recordReferralCommissionPayoutAction(params);
 }
 
 export async function getReferralSettlementsAction(agentId?: string): Promise<{

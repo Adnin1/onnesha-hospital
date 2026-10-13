@@ -22,18 +22,18 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 139/139 suites passed (1,256 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 140/140 suites passed (1,269 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 559 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 395 internal links, 1172 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 179/179 applied (100% parity, 0 drift, newest: `20261014010000_fix_bed_assignment_conflict_and_invoice_hard_purge.sql`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 180/180 applied (100% parity, 0 drift, newest: `20261014020000_referral_per_patient_commission_and_financial_reports.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
 | **Doctor & Roster UX** | Doctor creation roomNumber fallback (`Chamber 1`) + validation feedback toast | `app/doctors/page.tsx` & `lib/appointments/actions.ts` | ✅ PASS |
 | **Bed & Cabin Matrix** | Real-time occupancy sync trigger + row locking `FOR UPDATE` in `create_patient_intake_atomic` | `lib/patient/actions.ts` & Migration 179 | ✅ PASS |
 | **IPD Admission & Auto-Billing** | Fixed 428C9 & 42883 errors; atomic stored procedures auto-book ৳300 admission fee + ৳500/day charge | Migrations 176–179 (`admit_patient_to_bed_atomic`, `get_episode_billing_overview`) | ✅ PASS |
 | **Super Admin Invoice Hard Purge** | In-transaction override `app.override_journal_immutability` safely purges invoices with posted journal entries | `lib/billing/actions.ts` & Migration 179 | ✅ PASS |
-| **Referrals & Expense Booking** | Discretionary payouts post immediately to Hospital Expenses (`/app/expenses`) with `status: 'POSTED'` | `lib/referrals/actions.ts` & `app/referrals/page.tsx` | ✅ PASS |
-| **Financial Reports & P&L** | Server-aggregated P&L, AR aging, cash movement, payment channels verified | RPCs & `app/reports/page.tsx` | ✅ PASS |
+| **Referrals & Per-Patient Payout** | Per-patient commission tracking (earned/paid/due/status) + atomic RPC `record_referral_commission_payout_atomic` + auto GL postings | `lib/referrals/actions.ts` & Migration 180 | ✅ PASS |
+| **Financial Reports & Accounting** | Resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 mismatch; balanced GL ledger | Migrations 176–180 & `app/reports/page.tsx` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
 | **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `dfadb41e`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
@@ -77,10 +77,11 @@
   - `Onnesha-Hospital-1.1.90.msi`: exactly **3,457,024 bytes**, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
 
-### E. Supabase Database Migration Parity (Historical Checkpoint 163/163 vs. Current Production 179/179)
+### E. Supabase Database Migration Parity (Historical Checkpoint 163/163 vs. Current Production 180/180)
 - **Historical Checkpoint:** 163/163 migrations at the earlier v1.1.90 engineering stage, ending at `20261012033000` (`20261012033000_super_admin_permanent_invoice_purge.sql`).
-- **Current Authoritative Production Parity:** 179/179 local and remote migrations applied match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`) with 0 drift, verified via `npx supabase migration list` and `npx supabase db push` ending at `20261014010000` (`20261014010000_fix_bed_assignment_conflict_and_invoice_hard_purge.sql`).
+- **Current Authoritative Production Parity:** 180/180 local and remote migrations applied match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`) with 0 drift, verified via `npx supabase migration list` and `npx supabase db push` ending at `20261014020000` (`20261014020000_referral_per_patient_commission_and_financial_reports.sql`).
 - Key recent migrations:
+  - `20261014020000_referral_per_patient_commission_and_financial_reports.sql`: Per-patient commission tracking schema additions, authoritative `record_referral_commission_payout_atomic` RPC with auto-GL postings, modern resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 organization mismatch errors, and historical settlement/GL backfill.
   - `20261011082000_fix_medicines_generics_foreign_key.sql`: Explicit foreign key relation between `public.medicines(generic_id)` and `public.medicine_generics(id)` with schema cache notification.
   - `20261011083000_seed_official_hospital_rate_chart.sql`: Seeding and synchronization of official hospital tariffs into `diagnostic_tests` and `hospital_service_tariffs`.
   - `20261011190000_diagnostic_tariffs_rls_and_complete_rate_chart.sql`: Full RLS policy resolution on `diagnostic_categories` and `diagnostic_tests` allowing authenticated staff and anon reads, plus complete 185 tests across 16 categories with exact hospital tariffs and synchronization with `hospital_service_tariffs`.
@@ -220,8 +221,8 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 139/139 certification suites, 1,256 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
-2. **Database Parity:** 179/179 Supabase migrations applied (100% parity, 0 drift).
+1. **Software Quality:** 140/140 certification suites, 1,269 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
+2. **Database Parity:** 180/180 Supabase migrations applied (100% parity, 0 drift).
 3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `dfadb41e`, `WORKSTATION_DEPLOY_VERIFIED`).
 4. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced to v1.1.90.
 5. **External Owner Gates:** G1–G16 clearly isolated without false greens.
