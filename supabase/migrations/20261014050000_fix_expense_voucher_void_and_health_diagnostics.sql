@@ -475,7 +475,8 @@ CREATE OR REPLACE FUNCTION public.void_hospital_expense_atomic(
     p_org_id UUID,
     p_expense_id UUID,
     p_void_reason TEXT,
-    p_voided_by UUID
+    p_voided_by UUID,
+    p_funds_recovered BOOLEAN DEFAULT FALSE
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -615,6 +616,16 @@ BEGIN
         );
     END IF;
 
+    -- This posting routine records an immediate cash/bank disbursement (due_amount=0).
+    -- Reversing it asserts that the funds were never paid or have actually been recovered.
+    IF p_funds_recovered IS DISTINCT FROM TRUE THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'error_code', 'EXPENSE_VOID_FUNDS_NOT_CONFIRMED',
+            'error', 'This voucher is posted as a cash/bank disbursement. Confirm that the amount was never disbursed or has been returned to the hospital before reversing its accounting entry.'
+        );
+    END IF;
+
     IF v_original_je.total_debit IS NULL
        OR v_original_je.total_credit IS NULL
        OR v_original_je.total_debit <= 0
@@ -680,8 +691,10 @@ BEGIN
         'EXPENSE_VOID_REVERSAL',
         p_expense_id,
         'Reversal of expense voucher ' || COALESCE(v_expense.voucher_number, p_expense_id::TEXT),
+        'Reversal of expense voucher ' || COALESCE(v_expense.voucher_number, p_expense_id::TEXT),
         'Reversal of expense voucher ' || COALESCE(v_expense.voucher_number, p_expense_id::TEXT) ||
-            '. Reason: ' || BTRIM(p_void_reason),
+            '. Reason: ' || BTRIM(p_void_reason) ||
+            '. Authorized user confirmed the amount was not disbursed or had been returned to the hospital.',
         'PENDING',
         v_original_je.total_credit,
         v_original_je.total_debit,
@@ -757,9 +770,9 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID) FROM anon;
-GRANT EXECUTE ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID, BOOLEAN) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID, BOOLEAN) FROM anon;
+GRANT EXECUTE ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID, BOOLEAN) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.log_system_runtime_issue(
     p_org_id UUID,
