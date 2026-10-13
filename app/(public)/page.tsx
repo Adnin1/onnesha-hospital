@@ -468,10 +468,10 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
               { icon: Bed, title: "General Ward", desc: "Hygienic beds with separate male/female spaces" },
-              { icon: Building2, title: "Deluxe Cabins", desc: "Private AC rooms with patient attendant bed" },
+              { icon: Building2, title: "Deluxe Cabins", desc: "Private patient rooms with dedicated attendant space" },
               { icon: HeartPulse, title: "Critical Care", desc: "Emergency triage, vitals & oxygen support" },
               { icon: Scissors, title: "Operation Theatre", desc: "Sterile surgical suite with autoclave control" },
-              { icon: Microscope, title: "Digital Lab", desc: "Automated clinical pathology testing" },
+              { icon: Microscope, title: "Digital Lab", desc: "Clinical pathology and diagnostic testing" },
               { icon: Activity, title: "Imaging & USG", desc: "Digital Ultrasound & X-Ray diagnostics" },
             ].map((fac, idx) => {
               const FacIcon = fac.icon;

@@ -25,7 +25,7 @@ export default function ServicesPage() {
             Comprehensive Hospital & Laboratory Services
           </h1>
           <p className="text-sm text-slate-600 mt-2">
-            Modern diagnostic imaging, automated pathology investigations, inpatient wards, and emergency casualty triage with acute care stabilization.
+            Modern diagnostic imaging, clinical pathology investigations, inpatient wards, and emergency casualty triage with acute care stabilization.
           </p>
         </div>
 
@@ -65,7 +65,7 @@ export default function ServicesPage() {
               },
               {
                 title: "Inpatient Wards & Cabins",
-                desc: "Hygienic general inpatient wards, AC and non-AC patient cabins with dedicated nursing attention.",
+                desc: "Hygienic general inpatient wards and private patient cabins with dedicated nursing attention.",
                 points: ["Bedside Clinical Oxygen Support", "Inpatient Dietary Guidance", "Daily Inpatient Ward Rounds"],
               },
             ].map((srv, idx) => (

@@ -142,7 +142,7 @@ const doctorsDirectoryJsonLd = {
               "@type": "MedicalBusiness",
               name: "Pathology & Diagnostic Laboratory",
               description:
-                "Fully automated diagnostic testing including hematology, clinical biochemistry, serology, microbiology, and routine urine/stool analysis.",
+                "Diagnostic laboratory testing including hematology, clinical biochemistry, serology, and routine clinical microscopy.",
             },
           },
           {
@@ -268,8 +268,8 @@ const CLINICAL_SPECIALTIES = [
     icon: Microscope,
     code: "PATH",
     description:
-      "Accredited clinical pathology laboratory conducting automated hematology, clinical biochemistry, serology, and microbiology investigations.",
-    services: ["Automated Complete Blood Count", "Clinical Biochemistry & Lipids", "Urine & Stool Routine Analysis"],
+      "Clinical pathology laboratory conducting diagnostic hematology, clinical biochemistry, serology, and routine microscopy.",
+    services: ["Complete Blood Count (CBC)", "Clinical Biochemistry & Lipids", "Urine & Stool Routine Analysis"],
     chamberInfo: "Diagnostic Lab (Ground Floor)",
   },
   {
