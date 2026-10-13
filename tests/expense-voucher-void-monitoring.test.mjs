@@ -56,6 +56,7 @@ test("expense voucher void uses an atomic, tenant-scoped accounting reversal", a
     assert.match(action, /EXPENSE_LIST_QUERY_FAILED/);
     assert.match(action, /EXPENSE_LIST_UNEXPECTED_EXCEPTION/);
     assert.match(action, /EXPENSE_ANALYTICS_QUERY_FAILED/);
+    assert.match(action, /\.in\("status", \["POSTED", "PAID"\]\)/);
     assert.match(action, /reportSystemRuntimeIncident/);
   });
 
