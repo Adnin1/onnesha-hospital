@@ -761,6 +761,134 @@ REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUI
 REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID) FROM anon;
 GRANT EXECUTE ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID) TO authenticated, service_role;
 
+CREATE OR REPLACE FUNCTION public.log_system_runtime_issue(
+    p_org_id UUID,
+    p_module TEXT,
+    p_location TEXT,
+    p_severity TEXT,
+    p_error_code TEXT,
+    p_title TEXT,
+    p_reason TEXT,
+    p_recommendation TEXT,
+    p_details JSONB DEFAULT '{}'::jsonb
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, pg_temp
+AS $
+DECLARE
+    v_user_id UUID := auth.uid();
+    v_jwt_role TEXT := COALESCE(auth.role(), '');
+    v_active_org UUID;
+    v_effective_org UUID;
+    v_incident_id UUID;
+    v_clean_reason TEXT;
+    v_clean_details JSONB;
+BEGIN
+    IF p_org_id IS NULL OR NOT EXISTS (
+        SELECT 1 FROM public.organizations o WHERE o.id = p_org_id
+    ) THEN
+        RAISE EXCEPTION 'A valid organization is required to record a system incident'
+            USING ERRCODE = '22023';
+    END IF;
+
+    IF v_user_id IS NULL THEN
+        IF v_jwt_role <> 'service_role' THEN
+            RAISE EXCEPTION 'Authentication is required to record a system incident'
+                USING ERRCODE = '42501';
+        END IF;
+        -- Only the private service-role monitor may explicitly choose an organization.
+        v_effective_org := p_org_id;
+    ELSE
+        SELECT COALESCE(p.active_organization_id, p.organization_id)
+        INTO v_active_org
+        FROM public.profiles p
+        WHERE p.id = v_user_id
+          AND p.is_active IS DISTINCT FROM FALSE
+        LIMIT 1;
+
+        IF v_active_org IS NULL
+           OR v_active_org IS DISTINCT FROM p_org_id
+           OR NOT EXISTS (
+                SELECT 1 FROM public.user_roles ur
+                WHERE ur.user_id = v_user_id
+                  AND ur.organization_id = p_org_id
+           ) THEN
+            RAISE EXCEPTION 'Active organization membership is required to record a system incident'
+                USING ERRCODE = '42501';
+        END IF;
+
+        v_effective_org := v_active_org;
+    END IF;
+
+    IF NULLIF(BTRIM(p_module), '') IS NULL
+       OR NULLIF(BTRIM(p_location), '') IS NULL
+       OR NULLIF(BTRIM(p_reason), '') IS NULL THEN
+        RAISE EXCEPTION 'Incident module, location and reason are required'
+            USING ERRCODE = '22023';
+    END IF;
+
+    IF COALESCE(UPPER(p_severity), 'CRITICAL') NOT IN ('CRITICAL', 'WARNING', 'INFO') THEN
+        RAISE EXCEPTION 'Invalid incident severity'
+            USING ERRCODE = '22023';
+    END IF;
+
+    v_clean_reason := LEFT(BTRIM(p_reason), 4000);
+    v_clean_reason := regexp_replace(
+        v_clean_reason,
+        '(password|secret|access_token|refresh_token|service_role|api[_-]?key|authorization|bearer)[[:space:]]*[:=][[:space:]]*[^[:space:],;&]+',
+        '\1=[REDACTED]',
+        'gi'
+    );
+    v_clean_reason := regexp_replace(v_clean_reason, 'https?://[^[:space:]]+', '[URL_REDACTED]', 'gi');
+    v_clean_reason := regexp_replace(v_clean_reason, '(\+?8801[3-9][0-9]{8}|01[3-9][0-9]{8})', '[PHONE_REDACTED]', 'g');
+    v_clean_reason := regexp_replace(v_clean_reason, '[0-9]{10,17}', '[IDENTIFIER_REDACTED]', 'g');
+
+    SELECT COALESCE(
+        jsonb_object_agg(details.key, details.value),
+        '{}'::jsonb
+    )
+    INTO v_clean_details
+    FROM jsonb_each(COALESCE(p_details, '{}'::jsonb)) AS details(key, value)
+    WHERE LOWER(details.key) !~ '(password|secret|token|api.?key|authorization|phone|mobile|nid|patient|diagnosis|medical|bill|email|name)'
+      AND details.key NOT IN ('access_token', 'refresh_token', 'service_role_key');
+
+    INSERT INTO public.system_health_issues_log (
+        organization_id,
+        module,
+        location,
+        severity,
+        error_code,
+        title,
+        reason,
+        recommendation,
+        details,
+        is_resolved,
+        created_at
+    ) VALUES (
+        v_effective_org,
+        LEFT(BTRIM(p_module), 120),
+        LEFT(BTRIM(p_location), 240),
+        COALESCE(UPPER(p_severity), 'CRITICAL'),
+        LEFT(COALESCE(NULLIF(BTRIM(p_error_code), ''), 'RUNTIME_ERROR'), 100),
+        LEFT(COALESCE(NULLIF(BTRIM(p_title), ''), 'System operation failed'), 240),
+        v_clean_reason,
+        LEFT(COALESCE(NULLIF(BTRIM(p_recommendation), ''), 'Inspect the affected workflow and database logs.'), 2000),
+        v_clean_details,
+        FALSE,
+        NOW()
+    )
+    RETURNING id INTO v_incident_id;
+
+    RETURN v_incident_id;
+END;
+$;
+
+REVOKE ALL ON FUNCTION public.log_system_runtime_issue(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.log_system_runtime_issue(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB) FROM anon;
+GRANT EXECUTE ON FUNCTION public.log_system_runtime_issue(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, JSONB) TO authenticated, service_role;
+
 CREATE OR REPLACE FUNCTION public.resolve_system_runtime_issue(
     p_org_id UUID,
     p_module TEXT DEFAULT NULL,
