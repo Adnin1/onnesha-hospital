@@ -37,6 +37,7 @@ export interface ExpenseRecord {
   status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "POSTED" | "PAID" | "VOID" | "VOIDED";
   due_amount: number;
   notes?: string;
+  journal_entry_id?: string;
   created_at: string;
   category?: {
     id: string;
