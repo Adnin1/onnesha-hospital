@@ -163,7 +163,7 @@ export default function HomePage() {
                 24/7 Emergency &amp; Casualty Triage Care
               </h2>
               <p className="text-xs text-white/95">
-                Medical officers on duty 24 hours for acute stabilization, trauma triage, and urgent hospital admissions.
+                Clinical triage, acute first response, and medical stabilization for acute patients.
               </p>
             </div>
           </div>
@@ -318,8 +318,8 @@ export default function HomePage() {
               {
                 icon: ShieldAlert,
                 title: "24/7 Emergency & Casualty",
-                desc: "Immediate clinical triage, acute trauma care, oxygenation, and stabilization with resident duty doctors.",
-                badge: "24/7 Available",
+                desc: "Clinical triage, acute trauma care, oxygenation, and stabilization with resident duty doctors.",
+                badge: "Emergency Care",
               },
               {
                 icon: Bed,
@@ -330,13 +330,13 @@ export default function HomePage() {
               {
                 icon: Microscope,
                 title: "Clinical Diagnostics & Lab",
-                desc: "Biochemistry, hematology, and clinical pathology with fully automated analyzers and certified reports.",
+                desc: "Biochemistry, hematology, and clinical pathology with structured digital reporting.",
                 badge: "Digital Lab",
               },
               {
                 icon: Pill,
                 title: "Hospital Pharmacy",
-                desc: "Round-the-clock internal pharmacy providing genuine inpatient and outpatient pharmaceuticals.",
+                desc: "Hospital dispensary providing authentic inpatient and outpatient pharmaceuticals.",
                 badge: "Pharmacy",
               },
               {

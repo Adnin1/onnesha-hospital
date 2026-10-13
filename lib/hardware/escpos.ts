@@ -724,7 +724,7 @@ export interface OpdTokenData {
 
 export function buildOpdTokenEscPos(data: OpdTokenData): EscPosBuilder {
   const hospital = data.hospitalName || "ANNESHA HOSPITAL & DIAGNOSTIC";
-  const hotline = data.hospitalHotline || "01718835623";
+  const hotline = data.hospitalHotline || "01895-665114";
 
   return new EscPosBuilder()
     .align("center")
@@ -732,7 +732,7 @@ export function buildOpdTokenEscPos(data: OpdTokenData): EscPosBuilder {
     .textLine(hospital)
     .bold(false)
     .textLine("OUTPATIENT CLINIC (OPD)")
-    .textLine(`Hotline: ${hotline}`)
+    .textLine(`Helpline: ${hotline}`)
     .rule("=")
     .textLine("YOUR QUEUE TOKEN")
     .size("double")
@@ -791,7 +791,7 @@ export function buildBillingReceiptEscPos(data: BillingReceiptData): EscPosBuild
     .textLine(hospital)
     .size("normal")
     .bold(false)
-    .textLine("Khandar, Bogura | Tel: 01718835623")
+    .textLine("Khandar, Bogura | Tel: 01895-665114")
     .bold(true)
     .textLine("OFFICIAL CASH RECEIPT")
     .bold(false)
@@ -910,7 +910,7 @@ export function buildBanglaTestTicket(): EscPosBuilder {
     .textUnicode("অন্বেষা হাসপাতাল ও ডায়াগনস্টিক", { bold: true, fontSize: 28, align: "center" })
     .size("normal")
     .bold(false)
-    .textUnicode("খান্দার, শেরপুর রোড, বগুড়া", { fontSize: 20, align: "center" })
+    .textUnicode("সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া", { fontSize: 20, align: "center" })
     .rule("=")
     .align("left")
     .textUnicode("বিভাগ: সাধারণ ওপিডি কনসালটেশন", { fontSize: 22 })

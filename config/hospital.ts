@@ -15,11 +15,7 @@
  * 1. Physical Address Reconciliation:
  *    - Repository Default: 'সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া' (In front of Sonali Bank, Khandar, Bogura)
  *    - External Directory Findings: 'Mofiz Paglar Mor, Sherpur Road, Bogura'
- *    - Status: CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED
- *      * Khandar (Sonali Bank) and Mofiz Paglar Mor (Sherpur Road) are distinct landmark
- *        locations within Bogura municipality.
- *      * Physical verification by hospital executive management / property deed is required
- *        before altering signage, Google Business Profile, or public canonical address.
+ *    - Status: CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED (Canonical Address established per Owner Directive: 'সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।')
  *
  * 2. Hospital Brand Name & Transliteration:
  *    - DGHS Registry (Facility ID 10022715): 'ANNESHA HOSPITAL / অন্বেষা হাসপাতাল', Bogura
@@ -116,11 +112,11 @@ export const HOSPITAL_METADATA: HospitalMetadata = {
       repoDefault: "সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া",
       repoNormalized: "সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া",
       externalDirectory: "শেরপুর রোড, সূত্রাপুর, বগুড়া।",
-      locality: "Sutrapur",
+      locality: "Khandar",
       district: "Bogura",
       division: "Rajshahi",
       notes:
-        "Canonical address verified per physical hospital document: Sherpur Road, Sutrapur, Bogura. Historical baseline preserved for audit: সোনালী ব্যাংকের সামনে,খান্দার ,বগুড়া.",
+        "Canonical physical address established per explicit owner directive: সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া। Historical baseline (Sherpur Road, Sutrapur, Bogura) preserved solely for audit traceability.",
     },
     englishBrandTransliteration: {
       status: "RESOLVED PER OWNER DIRECTIVE",

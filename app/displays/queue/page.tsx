@@ -496,8 +496,8 @@ export default function QueueDisplayPage() {
         </div>
         <div className="truncate text-center text-slate-400 max-w-xl">
           {isBangla
-            ? "আপনার টোকেন নম্বর ডাকলে নির্দিষ্ট কক্ষে প্রবেশ করুন। জরুরী সেবার জন্য হেল্পলাইনে যোগাযোগ করুন: 01718835623"
-            : "Please proceed to your assigned consultation room when your token is called. Emergency Hotline: 01718835623"}
+            ? "আপনার টোকেন নম্বর ডাকলে নির্দিষ্ট কক্ষে প্রবেশ করুন। হেল্পলাইন: 01895-665114"
+            : "Please proceed to your assigned consultation room when your token is called. Reception: 01895-665114"}
         </div>
         <div className="text-slate-500 font-mono text-[11px]">
           OHMS v1.1.81

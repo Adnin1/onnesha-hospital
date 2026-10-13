@@ -611,7 +611,7 @@ function BillingManagementContent() {
   };
 
   const injectIpdAdmissionCharges = (currentItems: typeof items): typeof items => {
-    let updated = [...currentItems];
+    const updated = [...currentItems];
     const hasAdmFee = updated.some((it) => /admission\s*fee|ভর্তি\s*ফি/i.test(it.itemName));
     if (!hasAdmFee) {
       updated.unshift({

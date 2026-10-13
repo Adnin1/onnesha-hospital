@@ -164,7 +164,7 @@ const doctorsDirectoryJsonLd = {
               "@type": "MedicalBusiness",
               name: "Emergency Casualty & Acute Care",
               description:
-                "24/7 casualty triage, emergency resuscitation, cardiac monitoring, and urgent medical stabilization by duty medical officers.",
+                "Casualty triage, emergency resuscitation, cardiac monitoring, and urgent medical stabilization by duty medical officers.",
             },
           },
         ],
@@ -292,8 +292,8 @@ const CLINICAL_SPECIALTIES = [
     icon: Activity,
     code: "EMERG",
     description:
-      "24/7 casualty trauma triage desk, acute emergency resuscitation, vital monitoring, oxygen delivery, and urgent medical stabilization.",
-    services: ["24/7 Casualty Triage Desk", "Oxygen & Cardiac Monitoring", "Acute Trauma First Response"],
+      "Casualty trauma triage desk, acute emergency resuscitation, vital monitoring, oxygen delivery, and urgent medical stabilization.",
+    services: ["Casualty Triage Desk", "Oxygen & Cardiac Monitoring", "Acute Trauma First Response"],
     chamberInfo: "Emergency Wing (Ground Floor Entrance)",
   },
 ];

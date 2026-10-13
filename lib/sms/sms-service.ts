@@ -82,7 +82,7 @@ export function buildAppointmentSMS(
   tokenNumber: string,
   timeSlot: string
 ): string {
-  const hotline = HOSPITAL_METADATA.emergencyHotline || "01718835623";
+  const hotline = HOSPITAL_METADATA.emergencyHotline || HOSPITAL_METADATA.receptionPhone || "01895-665114";
   return `Onnesha Hospital: Your appointment with ${doctorName} is confirmed. Token: ${tokenNumber}. Time: ${timeSlot}. Hotline: ${hotline}.`;
 }
 
