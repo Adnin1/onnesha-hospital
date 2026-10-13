@@ -29,6 +29,9 @@ function sanitizeIncidentText(value: unknown, maxLength = 500): string {
     .replace(/https?:\/\/\S+/gi, "[URL_REDACTED]")
     .replace(/\b(access_token|refresh_token|service_role|api[_-]?key|password|secret|authorization)\b\s*[:=]\s*\S+/gi, "$1=[REDACTED]")
     .replace(/\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, "[TOKEN_REDACTED]")
+    .replace(/\b(?:\+?8801[3-9]\d{8}|01[3-9]\d{8})\b/g, "[PHONE_REDACTED]")
+    .replace(/\b\d{10,17}\b/g, "[IDENTIFIER_REDACTED]")
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi, "[UUID_REDACTED]")
     .slice(0, maxLength);
 }
 
