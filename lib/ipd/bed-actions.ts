@@ -634,12 +634,40 @@ export async function addBedAction(payload: {
   bed_type?: string;
 }): Promise<ActionResult<{ bed: BedRecord }>> {
   const session = await getCurrentUserSession();
-  if (!session.userId || !session.organizationId) {
-    return { success: false, error: "401 Unauthorized" };
-  }
-  await requirePermission("ipd.manage");
-  const orgId = session.organizationId;
+  const orgId = session.organizationId || "6b78e524-b1e3-4c43-8944-1a5a0248bff8";
   const userId = session.userId;
+
+  if (!session.userId || !session.organizationId) {
+    const errorMsg = "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।";
+    await reportSystemRuntimeIncident({
+      organizationId: orgId,
+      module: "আইপিডি ও বেড ব্যবস্থাপনা (Inpatient Beds & Cabins)",
+      location: "lib/ipd/bed-actions.ts:addBedAction",
+      severity: "WARNING",
+      errorCode: "UNAUTHORIZED_SESSION",
+      title: "বেড তৈরির অনুরোধে অথেন্টিকেশন ত্রুটি (401 Unauthorized)",
+      reason: "সেশন পাওয়া যায়নি অথবা ইউজার লগইন অবস্থায় নেই।",
+      recommendation: "হাসপাতাল সিস্টেমে অ্যাডমিন বা স্টাফ হিসেবে লগইন করে পুনরায় চেষ্টা করুন।",
+    });
+    return { success: false, error: errorMsg };
+  }
+
+  try {
+    await requirePermission("ipd.manage");
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "403 Forbidden: ipd.manage required";
+    await reportSystemRuntimeIncident({
+      organizationId: orgId,
+      module: "আইপিডি ও বেড ব্যবস্থাপনা (Inpatient Beds & Cabins)",
+      location: "lib/ipd/bed-actions.ts:addBedAction",
+      severity: "WARNING",
+      errorCode: "INSUFFICIENT_PERMISSION",
+      title: "বেড তৈরিতে অননুমোদিত অ্যাক্সেস (403 Forbidden)",
+      reason: errorMsg,
+      recommendation: "অ্যাডমিনিস্ট্রেটর বা নার্সিং সুপারভাইজার আইডি দিয়ে অপারেশনটি সম্পন্ন করুন।",
+    });
+    return { success: false, error: errorMsg };
+  }
 
   try {
     const supabase = await createClient();
@@ -679,6 +707,7 @@ export async function addBedAction(payload: {
           .insert({
             organization_id: orgId,
             name: "General Ward",
+            floor: "1st Floor",
             ward_type: "General Ward",
             total_beds: 10,
           })
@@ -826,7 +855,7 @@ export async function addBedAction(payload: {
 
     await recordAuditLog({
       organizationId: orgId,
-      userId: userId,
+      userId: userId || undefined,
       action: "CREATE",
       module: "IPD",
       entityType: "bed",
@@ -837,6 +866,16 @@ export async function addBedAction(payload: {
     return { success: true, data: { bed: newBed } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to add bed";
+    await reportSystemRuntimeIncident({
+      organizationId: orgId,
+      module: "আইপিডি ও বেড ব্যবস্থাপনা (Inpatient Beds & Cabins)",
+      location: "lib/ipd/bed-actions.ts:addBedAction",
+      severity: "CRITICAL",
+      errorCode: "ACTION_EXCEPTION",
+      title: "বেড তৈরিতে অপ্রত্যাশিত ত্রুটি",
+      reason: msg,
+      recommendation: "ওয়ার্ড ও বেড নম্বর পরীক্ষা করে পুনরায় চেষ্টা করুন।",
+    });
     return { success: false, error: msg };
   }
 }
@@ -1008,11 +1047,39 @@ export async function updateBedDetailsAction(payload: {
  */
 export async function deleteBedAction(bedId: string): Promise<ActionResult<{ success: boolean }>> {
   const session = await getCurrentUserSession();
+  const orgId = session.organizationId || "6b78e524-b1e3-4c43-8944-1a5a0248bff8";
+
   if (!session.userId || !session.organizationId) {
-    return { success: false, error: "401 Unauthorized" };
+    const errorMsg = "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।";
+    await reportSystemRuntimeIncident({
+      organizationId: orgId,
+      module: "IPD Bed Inventory",
+      location: "lib/ipd/bed-actions.ts:deleteBedAction",
+      severity: "WARNING",
+      errorCode: "UNAUTHORIZED_SESSION",
+      title: "বেড মোছার অনুরোধে অথেন্টিকেশন ত্রুটি (401 Unauthorized)",
+      reason: "সেশন পাওয়া যায়নি অথবা ইউজার লগইন অবস্থায় নেই।",
+      recommendation: "হাসপাতাল সিস্টেমে অ্যাডমিন হিসেবে লগইন করে পুনরায় চেষ্টা করুন।",
+    });
+    return { success: false, error: errorMsg };
   }
-  await requirePermission("ipd.manage");
-  const orgId = session.organizationId;
+
+  try {
+    await requirePermission("ipd.manage");
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "403 Forbidden: ipd.manage required";
+    await reportSystemRuntimeIncident({
+      organizationId: orgId,
+      module: "IPD Bed Inventory",
+      location: "lib/ipd/bed-actions.ts:deleteBedAction",
+      severity: "WARNING",
+      errorCode: "INSUFFICIENT_PERMISSION",
+      title: "বেড মোছায় অননুমোদিত অ্যাক্সেস (403 Forbidden)",
+      reason: errorMsg,
+      recommendation: "অ্যাডমিনিস্ট্রেটর প্রিভিলেজ নিয়ে অপারেশনটি সম্পন্ন করুন।",
+    });
+    return { success: false, error: errorMsg };
+  }
 
   try {
     const supabase = await createClient();

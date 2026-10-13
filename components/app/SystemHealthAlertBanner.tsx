@@ -32,6 +32,7 @@ export default function SystemHealthAlertBanner({
   variant = "full",
 }: SystemHealthAlertBannerProps) {
   const [data, setData] = useState<SystemHealthDiagnosticResult | null>(null);
+  const [ephemeralIssues, setEphemeralIssues] = useState<SystemHealthIssue[]>([]);
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -57,16 +58,33 @@ export default function SystemHealthAlertBanner({
     const cleanupMonitoring = setupGlobalErrorMonitoring(organizationId);
 
     // Real-time listener for runtime incidents
-    const handleIncident = () => {
+    const handleIncident = (e: Event) => {
+      const detail = (e as CustomEvent<SystemHealthIssue>)?.detail;
+      if (detail && detail.title) {
+        setEphemeralIssues((prev) => {
+          const filtered = prev.filter(
+            (item) => !(item.location === detail.location && item.title === detail.title)
+          );
+          return [detail as SystemHealthIssue, ...filtered];
+        });
+      }
       setIsDismissed(false);
       setJustResolvedMessage(null);
       fetchDiagnostics();
     };
 
     const handleResolved = (e: Event) => {
-      const detail = (e as CustomEvent)?.detail;
-      const mod = detail?.module || "সনাক্তকৃত সমস্যা";
-      setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
+      const detail = (e as CustomEvent<{ module?: string; issueId?: string }>)?.detail;
+      const mod = detail?.module;
+      if (mod) {
+        setEphemeralIssues((prev) => prev.filter((item) => item.module !== mod));
+      } else if (detail?.issueId) {
+        setEphemeralIssues((prev) => prev.filter((item) => item.id !== detail.issueId));
+      } else {
+        setEphemeralIssues([]);
+      }
+      const label = mod || "সনাক্তকৃত সমস্যা";
+      setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${label}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
       setTimeout(() => setJustResolvedMessage(null), 12000);
       fetchDiagnostics();
     };
@@ -87,8 +105,8 @@ export default function SystemHealthAlertBanner({
   }, [fetchDiagnostics, organizationId]);
 
   const handleResolveIssue = async (issueId: string, module?: string) => {
-    if (!data?.organization_id && !organizationId) return;
-    const orgId = data?.organization_id || organizationId || "";
+    setEphemeralIssues((prev) => prev.filter((item) => item.id !== issueId && item.module !== module));
+    const orgId = data?.organization_id || organizationId || "6b78e524-b1e3-4c43-8944-1a5a0248bff8";
     await resolveSystemRuntimeIssueAction({
       organizationId: orgId,
       issueId: issueId.startsWith("ephemeral-") ? undefined : issueId,
@@ -100,11 +118,26 @@ export default function SystemHealthAlertBanner({
     fetchDiagnostics();
   };
 
-  if (!data) {
+  const combinedIssues = React.useMemo(() => {
+    const dbIssues = data?.issues || [];
+    const merged = [...ephemeralIssues];
+    for (const issue of dbIssues) {
+      if (!merged.some((m) => m.id === issue.id || (m.location === issue.location && m.title === issue.title))) {
+        merged.push(issue);
+      }
+    }
+    return merged;
+  }, [data?.issues, ephemeralIssues]);
+
+  if (!data && ephemeralIssues.length === 0) {
     return null;
   }
 
-  const hasIssues = !data.is_healthy && data.issues.length > 0;
+  const hasIssues = combinedIssues.length > 0;
+  const totalIssueCount = combinedIssues.length;
+  const effectiveHealthScore = hasIssues
+    ? Math.max(10, Math.min(data?.health_score ?? 100, 100 - totalIssueCount * 20))
+    : (data?.health_score ?? 100);
 
   return (
     <>
@@ -152,8 +185,8 @@ export default function SystemHealthAlertBanner({
                 <span className="font-bold text-amber-700 dark:text-amber-300">
                   সিস্টেম অটো-অ্যালার্ট:
                 </span>{" "}
-                ডেটাবেজ ও সিস্টেমে {data.total_issues}টি অসামঞ্জস্যতা সনাক্ত হয়েছে (স্বাস্থ্য স্কোর:{" "}
-                <span className="font-semibold text-rose-600 dark:text-rose-400">{data.health_score}%</span>)।
+                ডেটাবেজ ও সিস্টেমে {totalIssueCount}টি অসামঞ্জস্যতা সনাক্ত হয়েছে (স্বাস্থ্য স্কোর:{" "}
+                <span className="font-semibold text-rose-600 dark:text-rose-400">{effectiveHealthScore}%</span>)।
               </div>
             </div>
 
@@ -190,7 +223,7 @@ export default function SystemHealthAlertBanner({
           }}
           title={
             hasIssues
-              ? `সিস্টেমে ${data.total_issues}টি বিষয় সমাধানের অপেক্ষায়`
+              ? `সিস্টেমে ${totalIssueCount}টি বিষয় সমাধানের অপেক্ষায়`
               : "সিস্টেম ও ডেটাবেজ ১০০% সুস্থ ও সক্রিয়"
           }
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all shadow-2xs border ${
@@ -202,14 +235,14 @@ export default function SystemHealthAlertBanner({
           {hasIssues ? (
             <>
               <AlertOctagon className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
-              <span>সতর্কবার্তা ({data.total_issues})</span>
+              <span>সতর্কবার্তা ({totalIssueCount})</span>
             </>
           ) : (
             <>
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               <span className="hidden sm:inline">সিস্টেম সুস্থ</span>
               <span className="sm:hidden">সুস্থ</span>
-              <span className="text-[10px] opacity-80">({data.health_score}%)</span>
+              <span className="text-[10px] opacity-80">({effectiveHealthScore}%)</span>
             </>
           )}
         </button>
@@ -244,8 +277,8 @@ export default function SystemHealthAlertBanner({
                     স্বয়ংক্রিয় সিস্টেম ও ডেটাবেজ স্বাস্থ্য নিরীক্ষা
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    সর্বশেষ স্ক্যান: {new Date(data.checked_at).toLocaleTimeString("bn-BD")} | স্কোর:{" "}
-                    <span className="font-semibold">{data.health_score}/100</span>
+                    সর্বশেষ স্ক্যান: {data?.checked_at ? new Date(data.checked_at).toLocaleTimeString("bn-BD") : "এখনই"} | স্কোর:{" "}
+                    <span className="font-semibold">{effectiveHealthScore}/100</span>
                   </p>
                 </div>
               </div>
@@ -280,7 +313,7 @@ export default function SystemHealthAlertBanner({
                   </div>
 
                   <div className="space-y-3">
-                    {data.issues.map((issue: SystemHealthIssue) => (
+                    {combinedIssues.map((issue: SystemHealthIssue) => (
                       <div
                         key={issue.id}
                         className="p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2.5"
@@ -381,7 +414,7 @@ export default function SystemHealthAlertBanner({
                       উত্তীর্ণ অডিটসমূহ (Passed Verification Checks):
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {data.passed_checks.map((check: string) => (
+                      {(data?.passed_checks || []).map((check: string) => (
                         <div
                           key={check}
                           className="flex items-center gap-2 p-2 rounded bg-slate-50 dark:bg-slate-800/40 text-xs text-slate-700 dark:text-slate-300"

@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
+import {
+  reportSystemRuntimeIncident,
+  resolveSystemRuntimeIncident,
+} from "@/lib/diagnostics/troubleshooter";
 
 export interface ActionResult<T = unknown> {
   success: boolean;
@@ -320,6 +324,11 @@ export async function createExpenseAction(params: {
       },
     });
 
+    await resolveSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+    });
+
     return {
       success: true,
       data: {
@@ -328,9 +337,20 @@ export async function createExpenseAction(params: {
       },
     };
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Error creating expense voucher";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+      location: "lib/expenses/actions.ts:createExpenseAction",
+      severity: "CRITICAL",
+      errorCode: "EXPENSE_CREATE_ERROR",
+      title: "ব্যয় ভাউচার তৈরিতে ত্রুটি",
+      reason: msg,
+      recommendation: "ভাউচারের তথ্য ও আর্থিক হিসাব যাচাই করুন।",
+    });
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Error creating expense voucher",
+      error: msg,
     };
   }
 }
@@ -425,15 +445,37 @@ export async function voidExpenseAction(
 ): Promise<ActionResult<{ success: boolean; status: string }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
-    return { success: false, error: "401 Unauthorized" };
+    const errorMsg = "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId || "6b78e524-b1e3-4c43-8944-1a5a0248bff8",
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+      location: "lib/expenses/actions.ts:voidExpenseAction",
+      severity: "WARNING",
+      errorCode: "UNAUTHORIZED_SESSION",
+      title: "ভাউচার ভয়েড করার অনুরোধে অথেন্টিকেশন ত্রুটি",
+      reason: "সেশন পাওয়া যায়নি অথবা ইউজার লগইন অবস্থায় নেই।",
+      recommendation: "হাসপাতাল সিস্টেমে অনুমোদিত স্টাফ হিসেবে লগইন করে পুনরায় চেষ্টা করুন।",
+    });
+    return { success: false, error: errorMsg };
   }
 
   try {
     await requirePermission("accounting.manage");
   } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "403 Forbidden: accounting.manage required";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+      location: "lib/expenses/actions.ts:voidExpenseAction",
+      severity: "WARNING",
+      errorCode: "INSUFFICIENT_PERMISSION",
+      title: "ভাউচার ভয়েড করায় অননুমোদিত অ্যাক্সেস",
+      reason: errorMsg,
+      recommendation: "হিসাবরক্ষণ বা অ্যাডমিন অনুমতি নিয়ে চেষ্টা করুন।",
+    });
     return {
       success: false,
-      error: err instanceof Error ? err.message : "403 Forbidden: accounting.manage required",
+      error: errorMsg,
     };
   }
 
@@ -451,6 +493,16 @@ export async function voidExpenseAction(
     });
 
     if (rpcErr) {
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId,
+        module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+        location: "public.void_hospital_expense_atomic",
+        severity: "CRITICAL",
+        errorCode: "EXPENSE_VOID_RPC_ERROR",
+        title: "ব্যয় ভাউচার ভয়েড করার সময় ডাটাবেজ ত্রুটি",
+        reason: rpcErr.message || "Failed to void expense voucher.",
+        recommendation: "সংশ্লিষ্ট জার্নাল এন্ট্রি ও ব্যালান্স পরীক্ষা করুন।",
+      });
       return { success: false, error: rpcErr.message || "Failed to void expense voucher." };
     }
 
@@ -467,12 +519,148 @@ export async function voidExpenseAction(
       },
     });
 
+    await resolveSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+    });
+
     return { success: true, data: { success: true, status: "VOIDED" } };
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Error voiding expense voucher";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+      location: "lib/expenses/actions.ts:voidExpenseAction",
+      severity: "CRITICAL",
+      errorCode: "ACTION_EXCEPTION",
+      title: "ব্যয় ভাউচার ভয়েড প্রক্রিয়ায় অপ্রত্যাশিত ত্রুটি",
+      reason: msg,
+      recommendation: "পুনরায় চেষ্টা করুন অথবা অ্যান্টিগ্র্যাভিটি দিয়ে লগ পরীক্ষা করুন।",
+    });
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Error voiding expense voucher",
+      error: msg,
     };
+  }
+}
+
+/**
+ * 6.1 Delete or Permanently Purge an Expense Voucher (Draft Delete, Posted Void GL Reversal, or Super Admin Hard Purge)
+ */
+export async function deleteExpenseAction(params: {
+  expenseId: string;
+  reason?: string;
+  permanentPurge?: boolean;
+}): Promise<ActionResult<{ success: boolean; mode: string; message: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    const errorMsg = "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId || "6b78e524-b1e3-4c43-8944-1a5a0248bff8",
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+      location: "lib/expenses/actions.ts:deleteExpenseAction",
+      severity: "WARNING",
+      errorCode: "UNAUTHORIZED_SESSION",
+      title: "ভাউচার মোছার অনুরোধে অথেন্টিকেশন ত্রুটি (401 Unauthorized)",
+      reason: "সেশন পাওয়া যায়নি অথবা ইউজার লগইন অবস্থায় নেই।",
+      recommendation: "হাসপাতাল সিস্টেমে অ্যাডমিন হিসেবে লগইন করে পুনরায় চেষ্টা করুন।",
+    });
+    return { success: false, error: errorMsg };
+  }
+
+  try {
+    await requirePermission("accounting.manage");
+  } catch {
+    const errorMsg = "403 Forbidden: ব্যয় ভাউচার মুছতে বা ভয়েড করতে accounting.manage অনুমতি প্রয়োজন।";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+      location: "lib/expenses/actions.ts:deleteExpenseAction",
+      severity: "WARNING",
+      errorCode: "INSUFFICIENT_PERMISSION",
+      title: "ভাউচার মোছায় অননুমোদিত অ্যাক্সেস (403 Forbidden)",
+      reason: errorMsg,
+      recommendation: "সুপার অ্যাডমিন বা হিসাবরক্ষণ অ্যাডমিন প্রিভিলেজ নিয়ে চেষ্টা করুন।",
+    });
+    return { success: false, error: errorMsg };
+  }
+
+  const purgeReason = params.reason?.trim() || (params.permanentPurge ? "Permanent Purge by Super Admin" : "Voided by Admin");
+
+  try {
+    const supabase = await createClient();
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("delete_hospital_expense_super_admin_atomic", {
+      p_org_id: session.organizationId,
+      p_expense_id: params.expenseId,
+      p_admin_id: session.userId,
+      p_reason: purgeReason,
+      p_permanent_purge: Boolean(params.permanentPurge),
+    });
+
+    if (rpcErr) {
+      const msg = rpcErr.message || "Failed to delete expense voucher.";
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId,
+        module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+        location: "public.delete_hospital_expense_super_admin_atomic",
+        severity: "CRITICAL",
+        errorCode: "EXPENSE_DELETE_RPC_ERROR",
+        title: "ব্যয় ভাউচার মোছার সময় ডাটাবেজ ত্রুটি",
+        reason: msg,
+        recommendation: "ভাউচারের স্ট্যাটাস ও সংশ্লিষ্ট জার্নাল এন্ট্রি পরীক্ষা করুন।",
+      });
+      return { success: false, error: msg };
+    }
+
+    const res = rpcRes as {
+      success?: boolean;
+      mode?: string;
+      message?: string;
+      error?: string;
+    };
+
+    if (res && res.success === false) {
+      const msg = res.error || "Failed to delete expense voucher.";
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId,
+        module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+        location: "public.delete_hospital_expense_super_admin_atomic",
+        severity: "CRITICAL",
+        errorCode: "EXPENSE_DELETE_REJECTED",
+        title: "ব্যয় ভাউচার ডিলিট বাতিল হয়েছে",
+        reason: msg,
+        recommendation: "ভাউচারের বর্তমান অবস্থা ও অনুমতি পরীক্ষা করুন।",
+      });
+      return { success: false, error: msg };
+    }
+
+    // Auto-resolve any previous expense incidents upon success
+    await resolveSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+    });
+
+    return {
+      success: true,
+      data: {
+        success: true,
+        mode: res?.mode || (params.permanentPurge ? "PURGED" : "DELETED"),
+        message: res?.message || "Expense voucher deleted successfully.",
+      },
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Error deleting expense voucher";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+      location: "lib/expenses/actions.ts:deleteExpenseAction",
+      severity: "CRITICAL",
+      errorCode: "ACTION_EXCEPTION",
+      title: "ব্যয় ভাউচার প্রক্রিয়াকরণে অপ্রত্যাশিত ত্রুটি",
+      reason: msg,
+      recommendation: "পুনরায় চেষ্টা করুন অথবা অ্যান্টিগ্র্যাভিটি দিয়ে লগ পরীক্ষা করুন।",
+    });
+    return { success: false, error: msg };
   }
 }
 
@@ -552,11 +740,27 @@ export async function updateExpenseAction(params: {
       newValues: updates,
     });
 
+    await resolveSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+    });
+
     return { success: true, data: { success: true } };
   } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Error updating expense voucher";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+      location: "lib/expenses/actions.ts:updateExpenseAction",
+      severity: "CRITICAL",
+      errorCode: "EXPENSE_UPDATE_ERROR",
+      title: "ব্যয় ভাউচার সংশোধনে ত্রুটি",
+      reason: msg,
+      recommendation: "ভাউচারের তথ্য ও আর্থিক হিসাব যাচাই করুন।",
+    });
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Error updating expense voucher",
+      error: msg,
     };
   }
 }

@@ -17,6 +17,7 @@ import {
   Calendar,
   Archive,
   Check,
+  Trash2,
 } from "lucide-react";
 import {
   getExpensesAction,
@@ -25,6 +26,7 @@ import {
   createExpenseAction,
   updateExpenseAction,
   voidExpenseAction,
+  deleteExpenseAction,
   saveExpenseCategoryAction,
   archiveExpenseCategoryAction,
   generateMonthlyRecurringExpensesAction,
@@ -58,6 +60,12 @@ function ExpensesManagementContent() {
   const [printVoucher, setPrintVoucher] = useState<ExpenseRecord | null>(null);
   const [voidModalExpense, setVoidModalExpense] = useState<ExpenseRecord | null>(null);
   const [voidReason, setVoidReason] = useState("");
+
+  // Delete Modal State
+  const [deleteModalExpense, setDeleteModalExpense] = useState<ExpenseRecord | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deletePermanentPurge, setDeletePermanentPurge] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Edit Modal State
   const [editModalExpense, setEditModalExpense] = useState<ExpenseRecord | null>(null);
@@ -278,6 +286,40 @@ function ExpensesManagementContent() {
       }
     } catch {
       setToast({ message: "Error voiding voucher", type: "error" });
+    }
+  };
+
+  const handleDeleteExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deleteModalExpense) return;
+
+    setDeleteLoading(true);
+    try {
+      const res = await deleteExpenseAction({
+        expenseId: deleteModalExpense.id,
+        reason: deleteReason.trim() || (deletePermanentPurge ? "Permanent Purge by Super Admin" : "Deleted/Voided by Admin"),
+        permanentPurge: deletePermanentPurge,
+      });
+
+      if (res.success) {
+        const vNum = deleteModalExpense.voucher_number || "VOUCHER";
+        setToast({
+          message: deletePermanentPurge
+            ? `ভাউচার ${vNum} এবং এর সমস্ত জার্নাল রেকর্ড ডাটাবেজ থেকে স্থায়ীভাবে মুছে ফেলা হয়েছে`
+            : `ভাউচার ${vNum} সফলভাবে ডিলিট/ভয়েড সম্পন্ন হয়েছে`,
+          type: "success",
+        });
+        setDeleteModalExpense(null);
+        setDeleteReason("");
+        setDeletePermanentPurge(false);
+        loadData();
+      } else {
+        setToast({ message: res.error || "Failed to delete expense voucher", type: "error" });
+      }
+    } catch {
+      setToast({ message: "Network error deleting expense voucher", type: "error" });
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -666,13 +708,24 @@ function ExpensesManagementContent() {
                           </button>
                           <button
                             onClick={() => setVoidModalExpense(exp)}
-                            className="p-1.5 border border-rose-200 rounded-lg hover:bg-rose-50 text-rose-600 transition"
+                            className="p-1.5 border border-amber-200 rounded-lg hover:bg-amber-50 text-amber-600 transition"
                             title="Void Voucher"
                           >
                             <XCircle className="w-3.5 h-3.5" />
                           </button>
                         </>
                       )}
+                      <button
+                        onClick={() => {
+                          setDeleteModalExpense(exp);
+                          setDeleteReason("");
+                          setDeletePermanentPurge(false);
+                        }}
+                        className="p-1.5 border border-rose-200 rounded-lg hover:bg-rose-50 text-rose-600 transition"
+                        title="Delete / Purge Voucher"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -1170,6 +1223,76 @@ function ExpensesManagementContent() {
                 Confirm Void
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE / PURGE EXPENSE VOUCHER MODAL */}
+      {deleteModalExpense && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 print:hidden">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+            <div className="flex items-center space-x-3 text-rose-600 mb-3">
+              <Trash2 className="w-6 h-6" />
+              <h3 className="text-base font-black text-slate-900">
+                {deleteModalExpense.status === "DRAFT" || deleteModalExpense.status === "PENDING_APPROVAL"
+                  ? "Delete Draft Expense Voucher"
+                  : "Delete / Reverse Expense Voucher"}
+              </h3>
+            </div>
+            <p className="text-xs text-slate-600 mb-3">
+              ভাউচার <strong className="font-mono text-slate-900">{deleteModalExpense.voucher_number || "VOUCHER"}</strong>{" "}
+              (পরিমাণ: <strong>{formatCurrencyBDT(deleteModalExpense.amount)}</strong>, স্ট্যাটাস:{" "}
+              <span className="font-bold uppercase text-slate-800">{deleteModalExpense.status}</span>)
+            </p>
+            {deleteModalExpense.status !== "DRAFT" && deleteModalExpense.status !== "PENDING_APPROVAL" && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl mb-3 text-[11px] text-amber-800">
+                <p className="font-bold mb-1">হিসাবরক্ষণ অডিট ও ডাবল-এন্ট্রি ব্যালান্স নোট:</p>
+                পোস্ট করা ভাউচার ডিলিট করলে সাধারণ লেজারে স্বয়ংক্রিয় রিভার্সাল এন্ট্রি তৈরি হয়ে ভাউচারটি &apos;VOIDED&apos; হিসেবে সংরক্ষিত থাকবে।
+              </div>
+            )}
+            <form onSubmit={handleDeleteExpense}>
+              <div className="mb-3">
+                <label className="block text-xs font-bold text-slate-700 mb-1">ডিলিট করার কারণ (Reason) *</label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="ডিলিট বা ভয়েডের কারণ লিখুন..."
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+
+              <div className="mb-4 flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                <input
+                  type="checkbox"
+                  id="expensePermanentPurge"
+                  checked={deletePermanentPurge}
+                  onChange={(e) => setDeletePermanentPurge(e.target.checked)}
+                  className="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                />
+                <label htmlFor="expensePermanentPurge" className="text-[11px] text-slate-700 select-none">
+                  <span className="font-bold text-rose-700">স্থায়ীভাবে মুছে ফেলুন (Super Admin Hard Purge)</span>: ভাউচার ও এর সমস্ত লেজার রেকর্ড ডাটাবেজ থেকে স্থায়ীভাবে মুছে ফেলা হবে।
+                </label>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteModalExpense(null)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 text-xs font-bold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={deleteLoading}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition flex items-center shadow-xs disabled:opacity-50"
+                >
+                  {deleteLoading ? "Processing..." : deletePermanentPurge ? "Confirm Permanent Purge" : "Confirm Delete"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

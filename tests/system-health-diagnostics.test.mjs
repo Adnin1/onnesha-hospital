@@ -121,9 +121,14 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
       }
     });
 
-    const url = env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const url = env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !key) return;
+
+    if (url.includes("placeholder") || url.includes("ci-hermetic") || !url.startsWith("https://")) {
+      t.skip("Hermetic CI environment detected (placeholder Supabase URL). Live network queries safely skipped.");
+      return;
+    }
 
     const client = createClient(url, key);
 
