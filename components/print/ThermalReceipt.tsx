@@ -170,7 +170,9 @@ export function ThermalReceipt({
           Thank you for choosing {HOSPITAL_METADATA.name}
         </p>
         <p className="text-[8px] text-zinc-400">
-          Emergency Hotline: {HOSPITAL_METADATA.emergencyHotline}
+          {HOSPITAL_METADATA.emergencyHotline?.trim()
+            ? `Emergency Hotline: ${HOSPITAL_METADATA.emergencyHotline}`
+            : `Reception Hotline: ${HOSPITAL_METADATA.phone}`}
         </p>
       </div>
     </div>

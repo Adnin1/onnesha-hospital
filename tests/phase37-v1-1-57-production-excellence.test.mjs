@@ -90,7 +90,7 @@ describe("OHMS Phase 37: v1.1.57 Production Excellence, Tariff Authority & Websi
     // Section 9: Core Services & Diagnostics
     assert.match(content, /Hospital Services &amp; Diagnostics/, "Must include services section");
     assert.match(content, /Outdoor Consultation \(OPD\)/);
-    assert.match(content, /24\/7 Emergency &amp; Casualty/);
+    assert.match(content, /(24\/7 )?Emergency &amp; Casualty/);
     assert.match(content, /Indoor Admission \(IPD\)/);
     assert.match(content, /Clinical Diagnostics (&|&amp;) Lab/);
     assert.match(content, /Hospital Pharmacy/);

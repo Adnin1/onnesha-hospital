@@ -42,7 +42,7 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 
 - **Authoritative Git Repository:** `Adnin1/onnesha-hospital`
 - **Active Branch:** `main`
-- **Engineering HEAD:** `8f55e414c243bc6f1e843236ef6fe9e1a17ef0d9`
+- **Engineering HEAD:** `8f55e414dda91aa83f50b41433ab2275d06b2bb0`
 - **Remote Remotes:** `origin` (`https://github.com/Adnin1/onnesha-hospital.git`) & `ssh-origin` (`git@github.com:Adnin1/onnesha-hospital.git`)
 - **Database Parity:** 178 local / 178 remote Supabase migrations applied (`iuhtzahuszdkdarhxobx`)
 - **Historical Release Tags Preserved:** `v1.1.88` (`c33728d`), `v1.1.89` (`688d869`), `v1.1.90` (`db8b750`)

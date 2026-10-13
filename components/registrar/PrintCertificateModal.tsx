@@ -154,7 +154,7 @@ export function PrintCertificateModal({
                 {HOSPITAL_METADATA.banglaName}
               </p>
               <p className="text-[11px] font-sans text-slate-600 mt-1">
-                {HOSPITAL_METADATA.address} • Hotline: {HOSPITAL_METADATA.phone} • Emergency: {HOSPITAL_METADATA.emergencyHotline}
+                {HOSPITAL_METADATA.address} • Hotline: {HOSPITAL_METADATA.phone}{HOSPITAL_METADATA.emergencyHotline?.trim() ? ` • Emergency: ${HOSPITAL_METADATA.emergencyHotline}` : ""}
               </p>
               <p className="text-[10px] font-sans text-slate-500">
                 DGHS Facility ID: {HOSPITAL_METADATA.dghsFacilityId} • Email: {HOSPITAL_METADATA.email} • Web: onnesha-hospital.pages.dev

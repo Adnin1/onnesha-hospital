@@ -67,7 +67,7 @@ export function HospitalPrintFooter() {
     <div className="mt-8 pt-4 border-t border-slate-300 text-[11px] text-slate-500 flex justify-between items-center">
       <div>
         <p>This is a computer-generated official medical document.</p>
-        <p>For report verification or emergency, call: {HOSPITAL_METADATA.emergencyHotline}</p>
+        <p>For report verification or emergency, call: {HOSPITAL_METADATA.emergencyHotline?.trim() || HOSPITAL_METADATA.phone || "Hospital Reception"}</p>
       </div>
       <div className="text-right">
         <div className="w-32 border-b border-slate-400 mb-1"></div>

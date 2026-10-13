@@ -160,7 +160,7 @@ export default function HomePage() {
             </div>
             <div>
               <h2 className="font-bold text-sm sm:text-base tracking-wide">
-                24/7 Emergency &amp; Casualty Triage Care
+                Emergency &amp; Casualty Triage Care
               </h2>
               <p className="text-xs text-white/95">
                 Clinical triage, acute first response, and medical stabilization for acute patients.
@@ -317,14 +317,14 @@ export default function HomePage() {
               },
               {
                 icon: ShieldAlert,
-                title: "24/7 Emergency & Casualty",
+                title: "Emergency & Casualty Care",
                 desc: "Clinical triage, acute trauma care, oxygenation, and stabilization with resident duty doctors.",
                 badge: "Emergency Care",
               },
               {
                 icon: Bed,
                 title: "Indoor Admission (IPD)",
-                desc: "Hygienic general wards and private air-conditioned cabins with around-the-clock attending nursing staff.",
+                desc: "Hygienic general wards and private patient cabins with attending nursing staff.",
                 badge: "IPD Care",
               },
               {
@@ -398,11 +398,11 @@ export default function HomePage() {
                 {[
                   {
                     title: "Experienced Medical Consultants",
-                    desc: "Qualified physicians and surgeons holding verified degrees and medical council registrations.",
+                    desc: "Qualified physicians and clinical consultants dedicated to patient-first medical care.",
                   },
                   {
                     title: "Modern Clinical Diagnostics",
-                    desc: "Automated laboratory testing and ultrasonography with reliable medical technologist reporting.",
+                    desc: "Clinical diagnostics, ultrasonography, and pathology with structured digital reporting.",
                   },
                   {
                     title: "Attentive Nursing & Inpatient Care",
@@ -595,7 +595,7 @@ export default function HomePage() {
               <ul className="text-xs text-slate-600 space-y-1.5 leading-relaxed">
                 <li><strong>OPD Consultations:</strong> Daily 8:00 AM – 10:00 PM</li>
                 <li><strong>Diagnostics &amp; Lab:</strong> 7:30 AM – 10:30 PM</li>
-                <li><strong>Emergency &amp; Casualty:</strong> 24 Hours / 7 Days</li>
+                <li><strong>Emergency &amp; Casualty:</strong> Triage &amp; acute response</li>
                 <li><strong>Inpatient Visiting:</strong> 4:00 PM – 7:00 PM</li>
               </ul>
             </div>
@@ -606,12 +606,14 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-bold text-slate-900 mb-2">Direct Contact Numbers</h3>
               <div className="space-y-2 text-xs text-slate-600">
-                <div>
-                  <span className="text-slate-500 block text-[11px]">Emergency Hotline:</span>
-                  <a href={`tel:${HOSPITAL_METADATA.emergencyHotline}`} className="font-bold text-red-600 hover:underline">
-                    {HOSPITAL_METADATA.emergencyHotline}
-                  </a>
-                </div>
+                {HOSPITAL_METADATA.emergencyHotline?.trim() ? (
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">Emergency Hotline:</span>
+                    <a href={`tel:${HOSPITAL_METADATA.emergencyHotline}`} className="font-bold text-red-600 hover:underline">
+                      {HOSPITAL_METADATA.emergencyHotline}
+                    </a>
+                  </div>
+                ) : null}
                 {HOSPITAL_METADATA.ambulanceHotline ? (
                   <div>
                     <span className="text-slate-500 block text-[11px]">Ambulance Service:</span>
@@ -640,7 +642,7 @@ export default function HomePage() {
               Need Immediate Medical Assistance?
             </h2>
             <p className="text-xs sm:text-sm text-red-100 mt-1 max-w-xl">
-              Our 24-hour casualty emergency desk and on-call medical officers are ready to receive acute patients.
+              Our casualty emergency desk and on-call medical officers are ready to assist acute patients.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 shrink-0 max-w-full">

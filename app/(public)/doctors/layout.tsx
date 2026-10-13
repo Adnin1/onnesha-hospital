@@ -440,12 +440,14 @@ export default function DoctorsLayout({ children }: { children: React.ReactNode 
                       {HOSPITAL_METADATA.phone}
                     </a>
                   </div>
-                  <div>
-                    Emergency Hotline:{" "}
-                    <a href={`tel:${HOSPITAL_METADATA.emergencyHotline}`} className="text-rose-600 hover:underline">
-                      {HOSPITAL_METADATA.emergencyHotline}
-                    </a>
-                  </div>
+                  {HOSPITAL_METADATA.emergencyHotline?.trim() ? (
+                    <div>
+                      Emergency Hotline:{" "}
+                      <a href={`tel:${HOSPITAL_METADATA.emergencyHotline}`} className="text-rose-600 hover:underline">
+                        {HOSPITAL_METADATA.emergencyHotline}
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
