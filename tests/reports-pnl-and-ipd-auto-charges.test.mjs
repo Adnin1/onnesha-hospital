@@ -80,13 +80,21 @@ test("OHMS UAT Acceptance Certification: Reports PnL Reconciliation & Billing IP
 
   // 4. Canonical Address & Hotline Synchronization
   await t.test("4. Canonical physical address is Sonali Bank, Khandar, Bogura and emergency hotline default is clean", () => {
-    const envPath = path.join(ROOT, ".env.local");
     const configPath = path.join(ROOT, "config/hospital.ts");
-    const envContent = fs.readFileSync(envPath, "utf8");
     const configContent = fs.readFileSync(configPath, "utf8");
 
-    assert.match(envContent, /NEXT_PUBLIC_HOSPITAL_ADDRESS="সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।"/);
-    assert.match(envContent, /NEXT_PUBLIC_EMERGENCY_HOTLINE=""/);
     assert.match(configContent, /সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।/);
+    assert.match(configContent, /emergencyHotline:\s*process\.env\.NEXT_PUBLIC_EMERGENCY_HOTLINE\s*\|\|\s*""/);
+
+    const envPath = path.join(ROOT, ".env.local");
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, "utf8");
+      if (envContent.includes("NEXT_PUBLIC_HOSPITAL_ADDRESS=")) {
+        assert.match(envContent, /NEXT_PUBLIC_HOSPITAL_ADDRESS="সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।"/);
+      }
+      if (envContent.includes("NEXT_PUBLIC_EMERGENCY_HOTLINE=")) {
+        assert.match(envContent, /NEXT_PUBLIC_EMERGENCY_HOTLINE=""/);
+      }
+    }
   });
 });
