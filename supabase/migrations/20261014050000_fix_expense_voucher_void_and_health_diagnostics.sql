@@ -784,6 +784,9 @@ DECLARE
     v_effective_org UUID;
     v_incident_id UUID;
     v_clean_reason TEXT;
+    v_clean_title TEXT;
+    v_clean_location TEXT;
+    v_clean_recommendation TEXT;
     v_clean_details JSONB;
 BEGIN
     IF p_org_id IS NULL OR NOT EXISTS (
@@ -844,13 +847,34 @@ BEGIN
     v_clean_reason := regexp_replace(v_clean_reason, 'https?://[^[:space:]]+', '[URL_REDACTED]', 'gi');
     v_clean_reason := regexp_replace(v_clean_reason, '(\+?8801[3-9][0-9]{8}|01[3-9][0-9]{8})', '[PHONE_REDACTED]', 'g');
     v_clean_reason := regexp_replace(v_clean_reason, '[0-9]{10,17}', '[IDENTIFIER_REDACTED]', 'g');
+    v_clean_reason := regexp_replace(v_clean_reason, '[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', '[UUID_REDACTED]', 'gi');
+
+    v_clean_title := LEFT(COALESCE(NULLIF(BTRIM(p_title), ''), 'System operation failed'), 240);
+    v_clean_title := regexp_replace(v_clean_title, '(\+?8801[3-9][0-9]{8}|01[3-9][0-9]{8})', '[PHONE_REDACTED]', 'g');
+    v_clean_title := regexp_replace(v_clean_title, '[0-9]{10,17}', '[IDENTIFIER_REDACTED]', 'g');
+    v_clean_title := regexp_replace(v_clean_title, '[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', '[UUID_REDACTED]', 'gi');
+
+    v_clean_location := LEFT(BTRIM(p_location), 240);
+    v_clean_location := regexp_replace(v_clean_location, '(\+?8801[3-9][0-9]{8}|01[3-9][0-9]{8})', '[PHONE_REDACTED]', 'g');
+    v_clean_location := regexp_replace(v_clean_location, '[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', '[UUID_REDACTED]', 'gi');
+
+    v_clean_recommendation := LEFT(COALESCE(NULLIF(BTRIM(p_recommendation), ''), 'Inspect the affected workflow and database logs.'), 2000);
+    v_clean_recommendation := regexp_replace(v_clean_recommendation, '(\+?8801[3-9][0-9]{8}|01[3-9][0-9]{8})', '[PHONE_REDACTED]', 'g');
+    v_clean_recommendation := regexp_replace(v_clean_recommendation, '[0-9]{10,17}', '[IDENTIFIER_REDACTED]', 'g');
+    v_clean_recommendation := regexp_replace(v_clean_recommendation, '[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', '[UUID_REDACTED]', 'gi');
 
     SELECT COALESCE(
         jsonb_object_agg(details.key, details.value),
         '{}'::jsonb
     )
     INTO v_clean_details
-    FROM jsonb_each(COALESCE(p_details, '{}'::jsonb)) AS details(key, value)
+    FROM jsonb_each(
+        CASE
+            WHEN jsonb_typeof(COALESCE(p_details, '{}'::jsonb)) = 'object'
+            THEN COALESCE(p_details, '{}'::jsonb)
+            ELSE '{}'::jsonb
+        END
+    ) AS details(key, value)
     WHERE LOWER(details.key) !~ '(password|secret|token|api.?key|authorization|phone|mobile|nid|patient|diagnosis|medical|bill|email|name)'
       AND details.key NOT IN ('access_token', 'refresh_token', 'service_role_key');
 
@@ -869,12 +893,12 @@ BEGIN
     ) VALUES (
         v_effective_org,
         LEFT(BTRIM(p_module), 120),
-        LEFT(BTRIM(p_location), 240),
+        v_clean_location,
         COALESCE(UPPER(p_severity), 'CRITICAL'),
         LEFT(COALESCE(NULLIF(BTRIM(p_error_code), ''), 'RUNTIME_ERROR'), 100),
-        LEFT(COALESCE(NULLIF(BTRIM(p_title), ''), 'System operation failed'), 240),
+        v_clean_title,
         v_clean_reason,
-        LEFT(COALESCE(NULLIF(BTRIM(p_recommendation), ''), 'Inspect the affected workflow and database logs.'), 2000),
+        v_clean_recommendation,
         v_clean_details,
         FALSE,
         NOW()
