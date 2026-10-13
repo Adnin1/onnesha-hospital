@@ -24,6 +24,8 @@ export default function SystemHealthPage() {
   const [data, setData] = useState<SystemHealthDiagnosticResult | null>(null);
   const [isPending, startTransition] = useTransition();
   const [justResolvedMessage, setJustResolvedMessage] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [resolvingIssueId, setResolvingIssueId] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
 
   const fetchDiagnostics = useCallback(() => {
@@ -31,8 +33,32 @@ export default function SystemHealthPage() {
       try {
         const res = await getSystemHealthDiagnosticsAction();
         setData(res);
-      } catch (err) {
-        console.error("[SystemHealthPage] fetchDiagnostics error:", err);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Unknown system-health page error";
+        console.error("[SystemHealthPage] Health scan unavailable:", message);
+        const timestamp = new Date().toISOString();
+        setData({
+          is_healthy: false,
+          health_score: 0,
+          critical_count: 0,
+          warning_count: 1,
+          info_count: 0,
+          total_issues: 1,
+          checked_at: timestamp,
+          organization_id: null,
+          issues: [{
+            id: "SYSTEM_HEALTH_PAGE_FETCH_FAILED",
+            severity: "WARNING",
+            module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
+            location: "app/(hospital)/app/system-health/page.tsx:fetchDiagnostics",
+            title: "সিস্টেম health scan সম্পন্ন হয়নি",
+            reason: message,
+            recommendation: "Supabase RPC, active hospital session এবং network status যাচাই করে rescan করুন।",
+            timestamp,
+          }],
+          passed_checks: [],
+          error: message,
+        });
       }
     });
   }, []);
@@ -41,16 +67,49 @@ export default function SystemHealthPage() {
     fetchDiagnostics();
     const interval = setInterval(fetchDiagnostics, 45000);
 
-    const handleIncident = () => {
+    const handleIncident = (event: Event) => {
       setJustResolvedMessage(null);
+      setActionMessage(null);
+      const detail = (event as CustomEvent<Partial<SystemHealthIssue>>).detail;
+
+      if (detail?.id && detail.module && detail.location && detail.title) {
+        const incident: SystemHealthIssue = {
+          id: detail.id,
+          severity: detail.severity || "WARNING",
+          module: detail.module,
+          location: detail.location,
+          title: detail.title,
+          reason: detail.reason || "An operational failure was captured; database persistence is being verified.",
+          recommendation: detail.recommendation || "Inspect the failed operation, correct its root cause and rerun diagnostics.",
+          timestamp: detail.timestamp || new Date().toISOString(),
+        };
+
+        setData((previous) => {
+          const previousIssues = previous?.issues || [];
+          const alreadyPresent = previousIssues.some((issue) => issue.id === incident.id);
+          const issues = alreadyPresent ? previousIssues : [...previousIssues, incident];
+          const increment = alreadyPresent ? 0 : 1;
+          return {
+            is_healthy: false,
+            health_score: Math.min(previous?.health_score ?? 0, 90),
+            critical_count: (previous?.critical_count || 0) + (increment && incident.severity === "CRITICAL" ? 1 : 0),
+            warning_count: (previous?.warning_count || 0) + (increment && incident.severity === "WARNING" ? 1 : 0),
+            info_count: (previous?.info_count || 0) + (increment && incident.severity === "INFO" ? 1 : 0),
+            total_issues: Math.max(previous?.total_issues || 0, previousIssues.length) + increment,
+            checked_at: previous?.checked_at || incident.timestamp,
+            organization_id: previous?.organization_id || null,
+            issues,
+            passed_checks: previous?.passed_checks || [],
+            error: previous?.error || null,
+          };
+        });
+      }
+
       fetchDiagnostics();
     };
 
-    const handleResolved = (e: Event) => {
-      const detail = (e as CustomEvent)?.detail;
-      const mod = detail?.module || "সনাক্তকৃত মডিউল";
-      setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
-      setTimeout(() => setJustResolvedMessage(null), 12000);
+    const handleResolved = () => {
+      // Resolution events are hints only. Show "solved" only after a successful rescan.
       fetchDiagnostics();
     };
 
@@ -65,16 +124,53 @@ export default function SystemHealthPage() {
   }, [fetchDiagnostics]);
 
   const handleResolveIssue = async (issueId: string, module?: string) => {
-    if (!data?.organization_id) return;
-    await resolveSystemRuntimeIssueAction({
-      organizationId: data.organization_id,
-      issueId: issueId.startsWith("ephemeral-") ? undefined : issueId,
-      module: module,
-    });
-    const mod = module || "ইস্যু";
-    setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
-    setTimeout(() => setJustResolvedMessage(null), 12000);
-    fetchDiagnostics();
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const organizationId = data?.organization_id;
+
+    if (!uuidPattern.test(issueId)) {
+      setActionMessage(
+        issueId.startsWith("ephemeral-")
+          ? "ত্রুটিটি এই স্ক্রিনে দেখা যাচ্ছে, কিন্তু database persistence নিশ্চিত নয়। সংযোগ ঠিক করে পুনরায় পরীক্ষা করুন।"
+          : "এটি computed health finding। মূল data বা workflow সমস্যা ঠিক করে rescan করুন; সরাসরি dismiss করা যাবে না।"
+      );
+      return;
+    }
+
+    if (!organizationId) {
+      setActionMessage("সক্রিয় hospital organization যাচাই করা যায়নি। Incident পরিবর্তন করা হয়নি।");
+      return;
+    }
+
+    setResolvingIssueId(issueId);
+    setActionMessage(null);
+    setJustResolvedMessage(null);
+    try {
+      const count = await resolveSystemRuntimeIssueAction({ organizationId, issueId });
+      if (count !== 1) {
+        setActionMessage("Incident resolve হয়নি। Role/permission, organization scope এবং database response পরীক্ষা করুন।");
+        return;
+      }
+
+      const verification = await getSystemHealthDiagnosticsAction(organizationId);
+      setData(verification);
+      if (verification.error || verification.issues.some((issue) => issue.id === issueId)) {
+        setActionMessage("Rescan-এ incident এখনো আছে অথবা health check সম্পন্ন হয়নি। সমস্যাটিকে solved হিসেবে দেখানো হয়নি।");
+        return;
+      }
+
+      const name = module || "সনাক্তকৃত মডিউল";
+      setJustResolvedMessage(
+        verification.is_healthy && verification.total_issues === 0
+          ? "✅ সমস্যা সমাধান সম্পন্ন (" + name + ") — সফল পুনঃপরীক্ষায় সব সংজ্ঞায়িত health check পাস করেছে।"
+          : "✅ Incident resolve হয়েছে (" + name + ") — তবে আরও " + verification.total_issues + "টি health issue বা warning বাকি আছে।"
+      );
+      setTimeout(() => setJustResolvedMessage(null), 12_000);
+    } catch (error: unknown) {
+      setActionMessage("Incident resolve যাচাই করা যায়নি: " + (error instanceof Error ? error.message : "Unknown error"));
+    } finally {
+      setResolvingIssueId(null);
+      fetchDiagnostics();
+    }
   };
 
   // Real-life test demonstration helper: simulates an operational warning and auto-resolves it
@@ -82,7 +178,7 @@ export default function SystemHealthPage() {
     if (!data?.organization_id || isSimulating) return;
     setIsSimulating(true);
     try {
-      await reportSystemRuntimeIncident({
+      const incidentId = await reportSystemRuntimeIncident({
         organizationId: data.organization_id,
         module: "সিস্টেম ডায়াগনস্টিক সিমুলেটর (Live Verification)",
         location: "app/system-health/page.tsx:handleTestSimulation",
@@ -92,13 +188,20 @@ export default function SystemHealthPage() {
         reason: "স্বয়ংক্রিয় টেস্ট অ্যালার্ট সফলভাবে ট্রিগার হয়েছে। সিস্টেম রিয়েল-টাইমে অবস্থান ও কারণ প্রদর্শনে সক্ষম।",
         recommendation: "নিচের 'সমাধান করুন' বাটনে ক্লিক করে 'Issue Solved' স্ট্যাটাস যাচাই করুন।",
       });
+      if (!incidentId) {
+        setActionMessage("Test alert event was raised locally, but database persistence failed. The test was not marked as passed.");
+      } else {
+        setActionMessage("Test incident saved to the database. Verify that it appears in Active Issues, then resolve that exact incident after review.");
+      }
       fetchDiagnostics();
+    } catch (error: unknown) {
+      setActionMessage("Test alert failed: " + (error instanceof Error ? error.message : "Unknown test alert error"));
     } finally {
       setIsSimulating(false);
     }
   };
 
-  const hasIssues = Boolean(data && !data.is_healthy && data.issues.length > 0);
+  const hasIssues = !data || data.is_healthy !== true || data.total_issues > 0 || data.issues.length > 0;
 
   const verificationCheckLabels: Record<string, string> = {
     GENERAL_LEDGER_DOUBLE_ENTRY_BALANCED: "সাধারণ লেজার ডাবল-এন্ট্রি ব্যালান্স (Debits = Credits)",
@@ -177,6 +280,12 @@ export default function SystemHealthPage() {
           >
             বন্ধ করুন
           </button>
+        </div>
+      )}
+
+      {actionMessage && (
+        <div role="alert" aria-live="polite" className="p-3 rounded-lg border border-amber-300 bg-amber-50 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          {actionMessage}
         </div>
       )}
 
@@ -350,15 +459,21 @@ export default function SystemHealthPage() {
                 </div>
 
                 <div className="flex justify-end pt-1">
-                  <button
-                    type="button"
-                    onClick={() => handleResolveIssue(issue.id, issue.module)}
-                    disabled={isPending}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-2xs transition-colors disabled:opacity-50 min-h-[38px]"
-                  >
-                    <Wrench className="h-3.5 w-3.5" />
-                    <span>সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা (Resolve & Verify)</span>
-                  </button>
+                  {/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(issue.id) ? (
+                    <button
+                      type="button"
+                      onClick={() => handleResolveIssue(issue.id, issue.module)}
+                      disabled={isPending || resolvingIssueId === issue.id}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-2xs transition-colors disabled:opacity-50 min-h-[38px]"
+                    >
+                      <Wrench className="h-3.5 w-3.5" />
+                      <span>{resolvingIssueId === issue.id ? "পুনঃপরীক্ষা হচ্ছে…" : "সমাধান যাচাই করে incident resolve করুন"}</span>
+                    </button>
+                  ) : (
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      মূল সমস্যা ঠিক করে পুনরায় scan করুন। এই computed বা unpersisted finding সরাসরি dismiss করা যাবে না।
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
