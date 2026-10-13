@@ -72,6 +72,10 @@ test("system health reporting is fail-closed, tenant-aware, and honest about res
     assert.match(migration, /v_user_active_org/);
     assert.match(migration, /p_org_id IS DISTINCT FROM v_user_active_org/);
     assert.doesNotMatch(migration, /SELECT id INTO v_target_org_id[\s\S]{0,220}ORDER BY created_at ASC/);
+    assert.match(migration, /CREATE OR REPLACE FUNCTION public\.resolve_system_runtime_issue/i);
+    assert.match(migration, /Administrative permission is required to resolve system incidents/i);
+    assert.match(migration, /p_issue_id IS NULL/i);
+    assert.match(migration, /REVOKE ALL ON FUNCTION public\.resolve_system_runtime_issue[\s\S]*FROM anon/i);
   });
 
   await t.test("browser incidents use the authenticated organization and stay visible until persisted", () => {
