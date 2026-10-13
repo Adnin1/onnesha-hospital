@@ -426,7 +426,8 @@ export async function getExpenseAnalyticsAction(params?: {
  */
 export async function voidExpenseAction(
   expenseId: string,
-  voidReason: string
+  voidReason: string,
+  fundsRecoveredConfirmed = false
 ): Promise<ActionResult<{ success: boolean; status: string }>> {
   const session = await getCurrentUserSession(true);
   if (!session.userId || !session.organizationId) {
@@ -477,6 +478,7 @@ export async function voidExpenseAction(
       p_expense_id: expenseId,
       p_void_reason: voidReason.trim(),
       p_voided_by: session.userId,
+      p_funds_recovered: fundsRecoveredConfirmed,
     });
 
     if (rpcError) {
@@ -491,7 +493,7 @@ export async function voidExpenseAction(
     }
 
     const rpcResult = data && typeof data === "object" && !Array.isArray(data)
-      ? data as { success?: unknown; error?: unknown; message?: unknown; status?: unknown }
+      ? data as { success?: unknown; error?: unknown; error_code?: unknown; message?: unknown; status?: unknown }
       : null;
 
     // PostgREST may return { success:false } as valid data while the transport error is null.
@@ -501,10 +503,22 @@ export async function voidExpenseAction(
         : typeof rpcResult?.message === "string"
           ? rpcResult.message
           : "The database did not confirm that this voucher was voided.";
-      await reportVoidFailure("EXPENSE_VOID_NOT_CONFIRMED", reason);
+      const errorCode = typeof rpcResult?.error_code === "string"
+        ? rpcResult.error_code
+        : "EXPENSE_VOID_NOT_CONFIRMED";
+
+      // Missing confirmation is an expected business guard, not a system fault.
+      // The UI prevents this case; this server-side check protects direct RPC callers too.
+      if (errorCode !== "EXPENSE_VOID_FUNDS_NOT_CONFIRMED") {
+        await reportVoidFailure(errorCode, reason);
+      }
+
       return {
         success: false,
-        error: "Voucher was not voided. " + reason + " The incident was sent to system diagnostics.",
+        error: "Voucher was not voided. " + reason +
+          (errorCode === "EXPENSE_VOID_FUNDS_NOT_CONFIRMED"
+            ? ""
+            : " The incident was sent to system diagnostics."),
       };
     }
 
@@ -542,6 +556,7 @@ export async function voidExpenseAction(
         newValues: {
           status: persistedExpense.status,
           void_reason: voidReason.trim(),
+          funds_not_disbursed_or_recovered_confirmed: fundsRecoveredConfirmed,
         },
       });
     } catch (auditError: unknown) {
