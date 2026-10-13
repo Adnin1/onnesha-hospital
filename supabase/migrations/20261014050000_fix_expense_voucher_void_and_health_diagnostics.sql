@@ -771,7 +771,7 @@ $$;
 
 REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID, BOOLEAN) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID, BOOLEAN) FROM anon;
-GRANT EXECUTE ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID, BOOLEAN) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID, BOOLEAN) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.log_system_runtime_issue(
     p_org_id UUID,
