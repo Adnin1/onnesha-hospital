@@ -1015,6 +1015,329 @@ REVOKE ALL ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) FRO
 REVOKE ALL ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) FROM anon;
 GRANT EXECUTE ON FUNCTION public.resolve_system_runtime_issue(UUID, TEXT, UUID) TO authenticated;
 
+CREATE OR REPLACE FUNCTION public.record_hospital_expense_atomic(
+    p_org_id UUID,
+    p_category_id UUID,
+    p_title VARCHAR,
+    p_amount NUMERIC,
+    p_payment_method VARCHAR DEFAULT 'CASH',
+    p_payment_reference VARCHAR DEFAULT NULL,
+    p_paid_to VARCHAR DEFAULT NULL,
+    p_expense_date DATE DEFAULT CURRENT_DATE,
+    p_expense_type VARCHAR DEFAULT 'GENERAL',
+    p_doctor_id UUID DEFAULT NULL,
+    p_duty_shift VARCHAR DEFAULT NULL,
+    p_department VARCHAR DEFAULT NULL,
+    p_notes TEXT DEFAULT NULL,
+    p_created_by UUID DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $ohms_expense$
+DECLARE
+    v_user_id UUID := auth.uid();
+    v_jwt_role TEXT := COALESCE(auth.role(), '');
+    v_active_org UUID;
+    v_authorized BOOLEAN := FALSE;
+    v_created_by UUID;
+    v_voucher_no VARCHAR(50);
+    v_expense_id UUID;
+    v_gl_exp_acc_id UUID;
+    v_gl_cash_acc_id UUID;
+    v_je_id UUID;
+    v_je_number VARCHAR(50);
+    v_payment_method TEXT := UPPER(COALESCE(NULLIF(BTRIM(p_payment_method), ''), 'CASH'));
+    v_expense_description TEXT;
+BEGIN
+    IF p_org_id IS NULL OR NOT EXISTS (
+        SELECT 1 FROM public.organizations o WHERE o.id = p_org_id
+    ) THEN
+        RAISE EXCEPTION 'A valid organization is required to create an expense voucher'
+            USING ERRCODE = '22023';
+    END IF;
+
+    IF p_amount IS NULL OR p_amount <= 0 OR p_amount::NUMERIC(14,2) <> p_amount THEN
+        RAISE EXCEPTION 'Expense amount must be a positive amount with at most two decimal places'
+            USING ERRCODE = '22023';
+    END IF;
+
+    IF NULLIF(BTRIM(p_title), '') IS NULL OR LENGTH(BTRIM(p_title)) < 2 THEN
+        RAISE EXCEPTION 'Expense description is required'
+            USING ERRCODE = '22023';
+    END IF;
+
+    IF p_category_id IS NULL OR NOT EXISTS (
+        SELECT 1
+        FROM public.expense_categories ec
+        WHERE ec.id = p_category_id
+          AND ec.organization_id = p_org_id
+          AND ec.is_active = TRUE
+    ) THEN
+        RAISE EXCEPTION 'An active expense category from the same organization is required'
+            USING ERRCODE = '23503';
+    END IF;
+
+    IF v_user_id IS NULL THEN
+        IF v_jwt_role <> 'service_role' THEN
+            RAISE EXCEPTION 'Authentication is required to record an expense voucher'
+                USING ERRCODE = '42501';
+        END IF;
+        v_created_by := p_created_by;
+        IF v_created_by IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM public.user_roles ur
+            WHERE ur.user_id = v_created_by
+              AND ur.organization_id = p_org_id
+        ) THEN
+            RAISE EXCEPTION 'The supplied creator does not belong to the expense organization'
+                USING ERRCODE = '42501';
+        END IF;
+    ELSE
+        SELECT COALESCE(p.active_organization_id, p.organization_id)
+        INTO v_active_org
+        FROM public.profiles p
+        WHERE p.id = v_user_id
+          AND p.is_active IS DISTINCT FROM FALSE
+        LIMIT 1;
+
+        IF v_active_org IS NULL
+           OR v_active_org IS DISTINCT FROM p_org_id
+           OR NOT EXISTS (
+              SELECT 1 FROM public.user_roles ur
+              WHERE ur.user_id = v_user_id
+                AND ur.organization_id = p_org_id
+           ) THEN
+            RAISE EXCEPTION 'Active organization membership is required to create an expense voucher'
+                USING ERRCODE = '42501';
+        END IF;
+
+        IF p_created_by IS NOT NULL AND p_created_by IS DISTINCT FROM v_user_id THEN
+            RAISE EXCEPTION 'The caller cannot spoof the expense creator'
+                USING ERRCODE = '42501';
+        END IF;
+
+        SELECT EXISTS (
+            SELECT 1
+            FROM public.user_roles ur
+            JOIN public.roles r ON r.id = ur.role_id
+            WHERE ur.user_id = v_user_id
+              AND ur.organization_id = p_org_id
+              AND (
+                LOWER(REPLACE(r.name, ' ', '_')) IN ('super_admin', 'admin', 'accountant', 'finance_manager', 'hospital_administrator')
+                OR EXISTS (
+                    SELECT 1
+                    FROM public.role_permissions rp
+                    WHERE rp.role_id = ur.role_id
+                      AND rp.permission_key IN ('accounting.post', 'accounting.manage', 'billing.create', '*')
+                )
+              )
+        ) INTO v_authorized;
+
+        IF NOT v_authorized THEN
+            RAISE EXCEPTION 'Accounting post or billing create permission is required'
+                USING ERRCODE = '42501';
+        END IF;
+
+        v_created_by := v_user_id;
+    END IF;
+
+    IF p_doctor_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM public.doctors d
+        WHERE d.id = p_doctor_id
+          AND d.organization_id = p_org_id
+    ) THEN
+        RAISE EXCEPTION 'Selected doctor does not belong to the expense organization'
+            USING ERRCODE = '23503';
+    END IF;
+
+    -- Resolve a valid expense account before writing any voucher.
+    SELECT coa.id
+    INTO v_gl_exp_acc_id
+    FROM public.chart_of_accounts coa
+    WHERE coa.organization_id = p_org_id
+      AND coa.account_code IN ('5010', '5020', '5400', '5100')
+      AND coa.is_active = TRUE
+      AND coa.account_type = 'EXPENSE'
+    ORDER BY coa.account_code ASC
+    LIMIT 1;
+
+    IF v_gl_exp_acc_id IS NULL THEN
+        SELECT coa.id
+        INTO v_gl_exp_acc_id
+        FROM public.chart_of_accounts coa
+        WHERE coa.organization_id = p_org_id
+          AND coa.account_type = 'EXPENSE'
+          AND coa.is_active = TRUE
+        ORDER BY coa.account_code ASC
+        LIMIT 1;
+    END IF;
+
+    -- Only true cash transactions credit cash-in-hand. Non-cash rails credit bank.
+    IF v_payment_method = 'CASH' THEN
+        SELECT coa.id INTO v_gl_cash_acc_id
+        FROM public.chart_of_accounts coa
+        WHERE coa.organization_id = p_org_id
+          AND coa.account_code = '1010'
+          AND coa.account_type = 'ASSET'
+          AND coa.is_active = TRUE
+        LIMIT 1;
+
+        IF v_gl_cash_acc_id IS NULL THEN
+            SELECT coa.id INTO v_gl_cash_acc_id
+            FROM public.chart_of_accounts coa
+            WHERE coa.organization_id = p_org_id
+              AND coa.account_type = 'ASSET'
+              AND coa.is_active = TRUE
+              AND (LOWER(coa.account_name) LIKE '%cash%' OR LOWER(coa.account_name) LIKE '%hand%')
+            ORDER BY coa.account_code ASC
+            LIMIT 1;
+        END IF;
+    ELSE
+        SELECT coa.id INTO v_gl_cash_acc_id
+        FROM public.chart_of_accounts coa
+        WHERE coa.organization_id = p_org_id
+          AND coa.account_code = '1020'
+          AND coa.account_type = 'ASSET'
+          AND coa.is_active = TRUE
+        LIMIT 1;
+
+        IF v_gl_cash_acc_id IS NULL THEN
+            SELECT coa.id INTO v_gl_cash_acc_id
+            FROM public.chart_of_accounts coa
+            WHERE coa.organization_id = p_org_id
+              AND coa.account_type = 'ASSET'
+              AND coa.is_active = TRUE
+              AND (LOWER(coa.account_name) LIKE '%bank%' OR LOWER(coa.account_name) LIKE '%mobile wallet%')
+            ORDER BY coa.account_code ASC
+            LIMIT 1;
+        END IF;
+    END IF;
+
+    -- Do not create a POSTED voucher unless its two accounts are available.
+    -- Raising here rolls back the entire RPC transaction, including all inserts.
+    IF v_gl_exp_acc_id IS NULL OR v_gl_cash_acc_id IS NULL THEN
+        RAISE EXCEPTION 'Expense was not recorded: the organization is missing an active expense account or matching cash/bank account'
+            USING ERRCODE = '23514';
+    END IF;
+
+    v_voucher_no := public.generate_expense_voucher_number(p_org_id);
+    v_expense_description := LEFT(BTRIM(p_title), 500);
+
+    INSERT INTO public.expenses (
+        organization_id,
+        category_id,
+        title,
+        amount,
+        voucher_number,
+        paid_to,
+        expense_date,
+        payment_method,
+        payment_reference,
+        expense_type,
+        doctor_id,
+        duty_shift,
+        department,
+        status,
+        due_amount,
+        notes,
+        approved_by,
+        created_at
+    ) VALUES (
+        p_org_id,
+        p_category_id,
+        v_expense_description,
+        p_amount,
+        v_voucher_no,
+        TRIM(COALESCE(NULLIF(p_paid_to, ''), 'Vendor/Payee')),
+        COALESCE(p_expense_date, CURRENT_DATE),
+        v_payment_method,
+        p_payment_reference,
+        COALESCE(p_expense_type, 'GENERAL'),
+        p_doctor_id,
+        p_duty_shift,
+        p_department,
+        'POSTED',
+        0.00,
+        p_notes,
+        v_created_by,
+        NOW()
+    )
+    RETURNING id INTO v_expense_id;
+
+    v_je_number := LEFT('JE-EXP-' || v_voucher_no, 50);
+    v_expense_description := 'Hospital Expense: ' || BTRIM(p_title) || ' (Voucher: ' || v_voucher_no || ')';
+
+    INSERT INTO public.journal_entries (
+        organization_id,
+        entry_number,
+        entry_date,
+        reference_type,
+        reference_id,
+        description,
+        narration,
+        status,
+        total_debit,
+        total_credit,
+        posted_by,
+        created_by
+    ) VALUES (
+        p_org_id,
+        v_je_number,
+        COALESCE(p_expense_date, CURRENT_DATE),
+        'EXPENSE_PAYMENT',
+        v_expense_id,
+        v_expense_description,
+        v_expense_description,
+        'POSTED',
+        p_amount,
+        p_amount,
+        v_created_by,
+        v_created_by
+    )
+    RETURNING id INTO v_je_id;
+
+    INSERT INTO public.journal_entry_lines (
+        journal_entry_id, account_id, debit, credit, description
+    ) VALUES (
+        v_je_id, v_gl_exp_acc_id, p_amount, 0.00, BTRIM(p_title)
+    );
+
+    INSERT INTO public.journal_entry_lines (
+        journal_entry_id, account_id, debit, credit, description
+    ) VALUES (
+        v_je_id,
+        v_gl_cash_acc_id,
+        0.00,
+        p_amount,
+        'Disbursement via ' || v_payment_method
+    );
+
+    UPDATE public.expenses
+    SET journal_entry_id = v_je_id
+    WHERE id = v_expense_id
+      AND organization_id = p_org_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Expense voucher was created but failed to receive its journal link; transaction rolled back'
+            USING ERRCODE = '40001';
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'expense_id', v_expense_id,
+        'voucher_number', v_voucher_no,
+        'amount', p_amount,
+        'journal_entry_id', v_je_id,
+        'journal_entry_number', v_je_number
+    );
+END;
+$ohms_expense$;
+
+REVOKE ALL ON FUNCTION public.record_hospital_expense_atomic(UUID, UUID, VARCHAR, NUMERIC, VARCHAR, VARCHAR, VARCHAR, DATE, VARCHAR, UUID, VARCHAR, VARCHAR, TEXT, UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.record_hospital_expense_atomic(UUID, UUID, VARCHAR, NUMERIC, VARCHAR, VARCHAR, VARCHAR, DATE, VARCHAR, UUID, VARCHAR, VARCHAR, TEXT, UUID) FROM anon;
+GRANT EXECUTE ON FUNCTION public.record_hospital_expense_atomic(UUID, UUID, VARCHAR, NUMERIC, VARCHAR, VARCHAR, VARCHAR, DATE, VARCHAR, UUID, VARCHAR, VARCHAR, TEXT, UUID) TO authenticated, service_role;
+
 COMMIT;
 
 NOTIFY pgrst, 'reload schema';
