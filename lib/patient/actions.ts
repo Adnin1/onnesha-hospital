@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/client";
 import { requirePermission, hasPermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
 import { HOSPITAL_METADATA } from "@/config/hospital";
+import {
+  reportSystemRuntimeIncident,
+  resolveSystemRuntimeIncident,
+} from "@/lib/diagnostics/troubleshooter";
 import { normalizeBDPhone, isValidNormalizedBDPhone } from "./phone";
 import { detectDuplicatePatients } from "./duplicate-detection";
 import { getPatientTimeline } from "./timeline";
@@ -1858,6 +1862,18 @@ export async function createUnifiedPatientIntakeAction(
         message.includes("TENANT_CONTEXT_MISMATCH") ? "Hospital organization context could not be verified." :
         message.includes("CALLER_MISMATCH") ? "Authenticated user context changed. Please refresh and retry." :
         message;
+
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId,
+        module: "Patient Intake & Admission",
+        location: "public.create_patient_intake_atomic",
+        severity: "CRITICAL",
+        errorCode: "PATIENT_INTAKE_RPC_ERROR",
+        title: "রোগী রেজিস্ট্রেশন বা ভর্তি ব্যর্থ হয়েছে (Patient Intake Failed)",
+        reason: readable,
+        recommendation: "প্রদত্ত তথ্যের সঠিকতা যাচাই করুন (NID, বেড নম্বর, ডক্টর সিলেকশন)।",
+      });
+
       return { success: false, error: readable };
     }
 
@@ -1876,7 +1892,18 @@ export async function createUnifiedPatientIntakeAction(
     };
 
     if (!result?.success || !result.patient_id) {
-      return { success: false, error: result?.error || "Unified patient intake did not complete." };
+      const msg = result?.error || "Unified patient intake did not complete.";
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId,
+        module: "Patient Intake & Admission",
+        location: "public.create_patient_intake_atomic",
+        severity: "CRITICAL",
+        errorCode: "PATIENT_INTAKE_INCOMPLETE",
+        title: "রোগী রেজিস্ট্রেশন অসফল (Incomplete Intake)",
+        reason: msg,
+        recommendation: "রোগীর তথ্য পুনরায় যাচাই করে চেষ্টা করুন।",
+      });
+      return { success: false, error: msg };
     }
 
     const { data: patientRow, error: patientError } = await supabase
@@ -2022,6 +2049,12 @@ export async function createUnifiedPatientIntakeAction(
       }
     }
 
+    // Auto-resolve any previous intake incidents upon successful completion
+    await resolveSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "Patient Intake & Admission",
+    });
+
     return {
       success: true,
       data: {
@@ -2039,9 +2072,22 @@ export async function createUnifiedPatientIntakeAction(
       },
     };
   } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Unified patient intake transaction failed.";
+    if (session?.organizationId) {
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId,
+        module: "Patient Intake & Admission",
+        location: "lib/patient/actions.ts:createUnifiedPatientIntakeAction",
+        severity: "CRITICAL",
+        errorCode: "INTAKE_ACTION_EXCEPTION",
+        title: "রোগী ভর্তি প্রক্রিয়ায় অপ্রত্যাশিত ত্রুটি",
+        reason: errorMsg,
+        recommendation: "পৃষ্ঠাটি রিফ্রেশ করে পুনরায় চেষ্টা করুন।",
+      });
+    }
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Unified patient intake transaction failed.",
+      error: errorMsg,
     };
   }
 }

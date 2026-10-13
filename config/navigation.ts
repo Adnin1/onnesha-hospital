@@ -284,6 +284,12 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         icon: Settings,
         perm: PERMISSIONS.SETTINGS_VIEW,
       },
+      {
+        href: "/app/system-health",
+        label: "সিস্টেম ও ডেটাবেজ স্বাস্থ্য নিরীক্ষা (System Health)",
+        icon: Activity,
+        perm: PERMISSIONS.SETTINGS_VIEW,
+      },
     ],
   },
 ];

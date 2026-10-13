@@ -4,6 +4,10 @@ import { recordAuditLog } from "@/lib/audit/logger";
 import { getDhakaDateString } from "@/lib/datetime";
 import { normalizeBDPhone } from "@/lib/patient/phone";
 import {
+  reportSystemRuntimeIncident,
+  resolveSystemRuntimeIncident,
+} from "@/lib/diagnostics/troubleshooter";
+import {
   InvoiceRecord,
   InvoiceItemRecord,
   PaymentRecord,
@@ -1603,12 +1607,26 @@ export async function deleteInvoiceAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
-  // Strict enforcement: Only Super Admin can delete bills from the system!
-  const isSuperAdmin = session.roles.includes("super_admin");
+  // Strict enforcement: Super Admin or Hospital Admin can delete bills from the system!
+  const isSuperAdmin =
+    session.roles.includes("super_admin") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("hospital_administrator");
   if (!isSuperAdmin) {
+    const errorMsg = "403 Forbidden: Only Hospital Administrator or Super Admin can delete bills from the hospital system.";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "Patient Billing",
+      location: "lib/billing/actions.ts:deleteInvoiceAction",
+      severity: "WARNING",
+      errorCode: "INSUFFICIENT_PRIVILEGE",
+      title: "অননুমোদিত বিল মোছার চেষ্টা (Unauthorized Invoice Deletion Attempt)",
+      reason: errorMsg,
+      recommendation: "সুপার অ্যাডমিন বা হাসপাতাল অ্যাডমিন প্রিভিলেজ নিয়ে চেষ্টা করুন।",
+    });
     return {
       success: false,
-      error: "403 Forbidden: Only Super Admin can delete bills from the hospital system.",
+      error: errorMsg,
     };
   }
 
@@ -1635,6 +1653,16 @@ export async function deleteInvoiceAction(params: {
       const msg = rpcErr.message?.includes("Immutable Journal Error")
         ? "ইনভয়েসের সাথে সংশ্লিষ্ট জার্নাল এন্ট্রি থাকায় ডিলিট করা যায়নি। অনুগ্রহ করে লেটেস্ট ডাটাবেজ মাইগ্রেশন প্রয়োগ করুন (Cannot delete posted journal entry)."
         : rpcErr.message;
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId,
+        module: "Patient Billing",
+        location: "public.delete_invoice_super_admin_atomic",
+        severity: "CRITICAL",
+        errorCode: "INVOICE_PURGE_RPC_ERROR",
+        title: "বিল মোছার সময় ডাটাবেজ ত্রুটি (Invoice Deletion Failed)",
+        reason: msg || "ইনভয়েস বা সংশ্লিষ্ট রেকর্ড প্রক্রিয়াকরণে সমস্যা হয়েছে।",
+        recommendation: "ইনভয়েসের সাথে সংযুক্ত জার্নাল বা পেমেন্ট স্ট্যাটাস পরীক্ষা করুন অথবা ভয়েড বিকল্পটি ব্যবহার করুন।",
+      });
       return { success: false, error: msg };
     }
 
@@ -1646,7 +1674,18 @@ export async function deleteInvoiceAction(params: {
     };
 
     if (res && res.success === false) {
-      return { success: false, error: res.error || "Failed to delete invoice." };
+      const msg = res.error || "Failed to delete invoice.";
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId,
+        module: "Patient Billing",
+        location: "public.delete_invoice_super_admin_atomic",
+        severity: "CRITICAL",
+        errorCode: "INVOICE_PURGE_REJECTED",
+        title: "ইনভয়েস ডিলিট বাতিল হয়েছে (Invoice Purge Rejected)",
+        reason: msg,
+        recommendation: "ইনভয়েসের বর্তমান স্ট্যাটাস ও কালেকশন রেকর্ড যাচাই করুন।",
+      });
+      return { success: false, error: msg };
     }
 
     await recordAuditLog({
@@ -1662,6 +1701,12 @@ export async function deleteInvoiceAction(params: {
       },
     });
 
+    // Auto-resolve any previous billing incidents upon successful resolution
+    await resolveSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "Patient Billing",
+    });
+
     return {
       success: true,
       data: {
@@ -1672,6 +1717,16 @@ export async function deleteInvoiceAction(params: {
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to delete invoice";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "Patient Billing",
+      location: "lib/billing/actions.ts:deleteInvoiceAction",
+      severity: "CRITICAL",
+      errorCode: "ACTION_EXCEPTION",
+      title: "ইনভয়েস ডিলিট প্রক্রিয়ায় অপ্রত্যাশিত ত্রুটি",
+      reason: msg,
+      recommendation: "পুনরায় চেষ্টা করুন অথবা অ্যান্টিগ্র্যাভিটি দিয়ে লগ পরীক্ষা করুন।",
+    });
     return { success: false, error: msg };
   }
 }

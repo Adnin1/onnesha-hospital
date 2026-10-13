@@ -20,6 +20,7 @@ import {
   type SystemHealthDiagnosticResult,
   type SystemHealthIssue,
 } from "@/lib/diagnostics/actions";
+import { setupGlobalErrorMonitoring } from "@/lib/diagnostics/troubleshooter";
 
 interface SystemHealthAlertBannerProps {
   organizationId?: string;
@@ -34,6 +35,7 @@ export default function SystemHealthAlertBanner({
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [justResolvedMessage, setJustResolvedMessage] = useState<string | null>(null);
 
   const fetchDiagnostics = useCallback(() => {
     startTransition(async () => {
@@ -51,13 +53,21 @@ export default function SystemHealthAlertBanner({
     // Auto-refresh diagnostics every 60 seconds
     const interval = setInterval(fetchDiagnostics, 60000);
 
+    // Install global client error monitoring
+    const cleanupMonitoring = setupGlobalErrorMonitoring(organizationId);
+
     // Real-time listener for runtime incidents
     const handleIncident = () => {
       setIsDismissed(false);
+      setJustResolvedMessage(null);
       fetchDiagnostics();
     };
 
-    const handleResolved = () => {
+    const handleResolved = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      const mod = detail?.module || "সনাক্তকৃত সমস্যা";
+      setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
+      setTimeout(() => setJustResolvedMessage(null), 12000);
       fetchDiagnostics();
     };
 
@@ -68,12 +78,13 @@ export default function SystemHealthAlertBanner({
 
     return () => {
       clearInterval(interval);
+      cleanupMonitoring();
       if (typeof window !== "undefined") {
         window.removeEventListener("system-health-incident-reported", handleIncident);
         window.removeEventListener("system-health-incident-resolved", handleResolved);
       }
     };
-  }, [fetchDiagnostics]);
+  }, [fetchDiagnostics, organizationId]);
 
   const handleResolveIssue = async (issueId: string, module?: string) => {
     if (!data?.organization_id && !organizationId) return;
@@ -83,6 +94,9 @@ export default function SystemHealthAlertBanner({
       issueId: issueId.startsWith("ephemeral-") ? undefined : issueId,
       module: module,
     });
+    const mod = module || "ইস্যু";
+    setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
+    setTimeout(() => setJustResolvedMessage(null), 12000);
     fetchDiagnostics();
   };
 
@@ -94,6 +108,32 @@ export default function SystemHealthAlertBanner({
 
   return (
     <>
+      {/* 0. RESOLVED NOTIFICATION BANNER (Shows when an issue was solved) */}
+      {justResolvedMessage && !hasIssues && variant !== "badge" && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="relative bg-emerald-500/15 border-b border-emerald-500/30 px-4 py-2.5 text-slate-800 dark:text-slate-100 shadow-sm"
+        >
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div className="text-xs sm:text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+                {justResolvedMessage}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setJustResolvedMessage(null)}
+              aria-label="বার্তা বন্ধ করুন"
+              className="p-1 rounded-md text-emerald-700 hover:text-emerald-900 hover:bg-emerald-500/10 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </aside>
+      )}
+
       {/* 1. TOP ALERT BANNER (Only renders if unresolved issues exist and not dismissed for this view) */}
       {hasIssues && !isDismissed && variant !== "badge" && (
         <aside

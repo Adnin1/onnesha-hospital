@@ -1063,9 +1063,24 @@ export async function deleteBedAction(bedId: string): Promise<ActionResult<{ suc
       newValues: { deleted_or_deactivated: true },
     });
 
+    await resolveSystemRuntimeIncident({
+      organizationId: orgId,
+      module: "IPD Bed Inventory",
+    });
+
     return { success: true, data: { success: true } };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to delete bed";
+    await reportSystemRuntimeIncident({
+      organizationId: orgId,
+      module: "IPD Bed Inventory",
+      location: "lib/ipd/bed-actions.ts:deleteBedAction",
+      severity: "CRITICAL",
+      errorCode: "BED_DELETE_ERROR",
+      title: "বেড মোছার সময় ত্রুটি (Bed Deletion Failed)",
+      reason: msg,
+      recommendation: "বেডের অ্যাসাইনমেন্ট ও হিস্ট্রি যাচাই করুন।",
+    });
     return { success: false, error: msg };
   }
 }

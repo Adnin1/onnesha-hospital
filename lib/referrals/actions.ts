@@ -1,6 +1,10 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import {
+  reportSystemRuntimeIncident,
+  resolveSystemRuntimeIncident,
+} from "@/lib/diagnostics/troubleshooter";
 
 export interface ReferralAgent {
   id: string;
@@ -1072,6 +1076,11 @@ export async function recordReferralCommissionPayoutAction(params: RecordReferra
       }
     }
 
+    await resolveSystemRuntimeIncident({
+      organizationId: orgId,
+      module: "Referral Commission & Payouts",
+    });
+
     return {
       success: true,
       settlementNumber,
@@ -1079,6 +1088,25 @@ export async function recordReferralCommissionPayoutAction(params: RecordReferra
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to record referral commission payout";
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("organization_id").eq("id", user.id).maybeSingle();
+        if (profile?.organization_id) {
+          await reportSystemRuntimeIncident({
+            organizationId: profile.organization_id,
+            module: "Referral Commission & Payouts",
+            location: "lib/referrals/actions.ts:recordReferralCommissionPayoutAction",
+            severity: "CRITICAL",
+            errorCode: "PAYOUT_EXCEPTION",
+            title: "কমিশন পে-আউট প্রক্রিয়াকরণে ত্রুটি",
+            reason: msg,
+            recommendation: "এজেন্টের ব্যালান্স ও পেমেন্ট রেকর্ড পুনরায় যাচাই করুন।",
+          });
+        }
+      }
+    } catch {}
     return { success: false, error: msg };
   }
 }

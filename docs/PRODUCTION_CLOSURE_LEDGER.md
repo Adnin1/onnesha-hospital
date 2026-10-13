@@ -22,21 +22,21 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 141/141 suites passed (1,274 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 141/141 suites passed (1,275 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 559 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
-| **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
-| **Static Link & Asset Forensics** | 61 HTML pages, 395 internal links, 1172 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 185/185 applied (100% parity, 0 drift, newest: `20261014040500_sync_beds_and_prioritize_org.sql`) | `npx supabase migration list` | ✅ PASS |
+| **Next.js Static Build** | 63/63 static routes generated (including `/app/system-health`) | `npm run build` | ✅ PASS |
+| **Static Link & Asset Forensics** | 62 HTML pages, 402 internal links, 1172 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
+| **Supabase Remote Migrations** | 186/186 applied (100% parity, 0 drift, newest: `20261014041000_harden_diagnostics_security_and_system_checks.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
 | **Doctor & Roster UX** | Doctor creation roomNumber fallback (`Chamber 1`) + validation feedback toast | `app/doctors/page.tsx` & `lib/appointments/actions.ts` | ✅ PASS |
 | **Bed & Cabin Matrix** | Fixed `ward_name` NOT NULL constraint via Migration 184/185; auto-population trigger `trg_beds_auto_populate_ward_name`; real-time occupancy sync trigger + row locking `FOR UPDATE` | `lib/ipd/bed-actions.ts` & Migrations 179, 184, 185 | ✅ PASS |
 | **IPD Admission & Auto-Billing** | Fixed 428C9 & 42883 errors; atomic stored procedures auto-book ৳300 admission fee + ৳500/day charge | Migrations 176–179 (`admit_patient_to_bed_atomic`, `get_episode_billing_overview`) | ✅ PASS |
-| **Super Admin Invoice Hard Purge** | In-transaction override `app.override_journal_immutability` safely purges invoices with posted journal entries | `lib/billing/actions.ts` & Migration 179 | ✅ PASS |
+| **Super Admin Invoice Hard Purge** | In-transaction override `app.override_journal_immutability` safely purges invoices with posted journal entries | `lib/billing/actions.ts` & Migrations 179, 186 | ✅ PASS |
 | **Referrals & Per-Patient Payout** | Per-patient commission tracking (earned/paid/due/status) + atomic RPC `record_referral_commission_payout_atomic` + auto GL postings | `lib/referrals/actions.ts` & Migration 180 | ✅ PASS |
 | **Financial Reports & Accounting** | Resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 mismatch; balanced GL ledger | Migrations 176–180 & `app/reports/page.tsx` | ✅ PASS |
-| **Autonomous System Health Diagnostics & Troubleshooter** | Real-time PostgreSQL diagnostic engine `check_system_health_diagnostics` auditing 9 domains + real-time incident logger (`system_health_issues_log`), live DOM alert dispatch and 1-click remediation in `SystemHealthAlertBanner.tsx` | Migrations 181–185, `lib/diagnostics/troubleshooter.ts` & `SystemHealthAlertBanner.tsx` | ✅ PASS |
+| **Autonomous System Health Diagnostics & Troubleshooter** | Hardened 10-domain PostgreSQL diagnostic engine `check_system_health_diagnostics` + tenant-scoped RLS `system_health_issues_log` + global browser error interceptor + real-time DOM alert banner with 'Issue Solved' notification + dedicated `/app/system-health` control panel | Migrations 181–186, `lib/diagnostics/troubleshooter.ts`, `SystemHealthAlertBanner.tsx`, `app/system-health/page.tsx` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `fad33a2c`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (`WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
