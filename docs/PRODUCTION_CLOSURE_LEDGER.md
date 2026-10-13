@@ -22,11 +22,11 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 140/140 suites passed (1,269 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 141/141 suites passed (1,274 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 559 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 395 internal links, 1172 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 180/180 applied (100% parity, 0 drift, newest: `20261014020000_referral_per_patient_commission_and_financial_reports.sql`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 183/183 applied (100% parity, 0 drift, newest: `20261014031000_reconcile_referral_commission_row_allocations.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
 | **Doctor & Roster UX** | Doctor creation roomNumber fallback (`Chamber 1`) + validation feedback toast | `app/doctors/page.tsx` & `lib/appointments/actions.ts` | ✅ PASS |
 | **Bed & Cabin Matrix** | Real-time occupancy sync trigger + row locking `FOR UPDATE` in `create_patient_intake_atomic` | `lib/patient/actions.ts` & Migration 179 | ✅ PASS |
@@ -34,6 +34,7 @@
 | **Super Admin Invoice Hard Purge** | In-transaction override `app.override_journal_immutability` safely purges invoices with posted journal entries | `lib/billing/actions.ts` & Migration 179 | ✅ PASS |
 | **Referrals & Per-Patient Payout** | Per-patient commission tracking (earned/paid/due/status) + atomic RPC `record_referral_commission_payout_atomic` + auto GL postings | `lib/referrals/actions.ts` & Migration 180 | ✅ PASS |
 | **Financial Reports & Accounting** | Resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 mismatch; balanced GL ledger | Migrations 176–180 & `app/reports/page.tsx` | ✅ PASS |
+| **Autonomous System Health Diagnostics** | Real-time PostgreSQL diagnostic engine `check_system_health_diagnostics` auditing 7 domains with auto-clearing UI alert banner & badge (100% healthy) | Migrations 181–183, `lib/diagnostics/actions.ts` & `SystemHealthAlertBanner.tsx` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
 | **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `38315155`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
@@ -77,10 +78,13 @@
   - `Onnesha-Hospital-1.1.90.msi`: exactly **3,457,024 bytes**, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
 
-### E. Supabase Database Migration Parity (Historical Checkpoint 163/163 vs. Current Production 180/180)
+### E. Supabase Database Migration Parity (Historical Checkpoint 163/163 vs. Current Production 183/183)
 - **Historical Checkpoint:** 163/163 migrations at the earlier v1.1.90 engineering stage, ending at `20261012033000` (`20261012033000_super_admin_permanent_invoice_purge.sql`).
-- **Current Authoritative Production Parity:** 180/180 local and remote migrations applied match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`) with 0 drift, verified via `npx supabase migration list` and `npx supabase db push` ending at `20261014020000` (`20261014020000_referral_per_patient_commission_and_financial_reports.sql`).
+- **Current Authoritative Production Parity:** 183/183 local and remote migrations applied match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`) with 0 drift, verified via `npx supabase migration list` and `npx supabase db push` ending at `20261014031000` (`20261014031000_reconcile_referral_commission_row_allocations.sql`).
 - Key recent migrations:
+  - `20261014031000_reconcile_referral_commission_row_allocations.sql`: Reconciled row-level referral commission allocations against two historical settlements (SETTLE-261012-5804 and SETTLE-20261013-4BCAF9) so every commission line item stays strictly within `amount_paid <= commission_amount`.
+  - `20261014030500_system_health_diagnostics_update.sql`: Function update for `public.check_system_health_diagnostics` aligning invoice column constraints (`due_amount`, `paid_amount`) and robust exception sub-blocks.
+  - `20261014030000_system_health_and_database_diagnostic_engine.sql`: Authoritative PostgreSQL diagnostic engine auditing GL double-entry immutability, bed occupancy status desync, referral commission parity, unlinked expenses, negative invoices, doctor chambers, and trial balance parity.
   - `20261014020000_referral_per_patient_commission_and_financial_reports.sql`: Per-patient commission tracking schema additions, authoritative `record_referral_commission_payout_atomic` RPC with auto-GL postings, modern resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 organization mismatch errors, and historical settlement/GL backfill.
   - `20261011082000_fix_medicines_generics_foreign_key.sql`: Explicit foreign key relation between `public.medicines(generic_id)` and `public.medicine_generics(id)` with schema cache notification.
   - `20261011083000_seed_official_hospital_rate_chart.sql`: Seeding and synchronization of official hospital tariffs into `diagnostic_tests` and `hospital_service_tariffs`.

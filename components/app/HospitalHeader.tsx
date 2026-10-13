@@ -11,6 +11,7 @@ import {
   Menu,
 } from "lucide-react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
+import SystemHealthAlertBanner from "@/components/app/SystemHealthAlertBanner";
 
 interface SystemActivityItem {
   id: string;
@@ -142,8 +143,11 @@ export function HospitalHeader() {
         </div>
       </div>
 
-      {/* Right: Recent System Activity & Link to Public Portal */}
+      {/* Right: Health Status, Recent System Activity & Link to Public Portal */}
       <div className="flex items-center space-x-3">
+        {/* Real-time System & Database Health Diagnostic Badge */}
+        <SystemHealthAlertBanner variant="badge" />
+
         {/* Recent System Activity Menu */}
         <div className="relative" ref={dropdownRef}>
           <button
