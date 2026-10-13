@@ -500,12 +500,13 @@ export async function getExpenseAnalyticsAction(params?: {
   try {
     const supabase = await createClient();
 
-    // Query active expenses directly for mathematically guaranteed reconciliation
+    // Management analytics must include only posted economic events, not drafts,
+    // approvals, voids or reversed vouchers. GL reversals remain represented in the ledger.
     let query = supabase
       .from("expenses")
       .select("amount, expense_type, payment_method, status")
       .eq("organization_id", session.organizationId)
-      .not("status", "in", '("VOID","VOIDED")');
+      .in("status", ["POSTED", "PAID"]);
 
     if (params?.startDate) {
       query = query.gte("expense_date", params.startDate);
