@@ -691,7 +691,6 @@ BEGIN
         'EXPENSE_VOID_REVERSAL',
         p_expense_id,
         'Reversal of expense voucher ' || COALESCE(v_expense.voucher_number, p_expense_id::TEXT),
-        'Reversal of expense voucher ' || COALESCE(v_expense.voucher_number, p_expense_id::TEXT),
         'Reversal of expense voucher ' || COALESCE(v_expense.voucher_number, p_expense_id::TEXT) ||
             '. Reason: ' || BTRIM(p_void_reason) ||
             '. Authorized user confirmed the amount was not disbursed or had been returned to the hospital.',
