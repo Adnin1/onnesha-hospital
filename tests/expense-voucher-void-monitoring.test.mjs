@@ -23,6 +23,8 @@ test("expense voucher void uses an atomic, tenant-scoped accounting reversal", a
     assert.match(sql, /v_reversal_debit <> v_reversal_credit/i);
     assert.match(sql, /p_funds_recovered BOOLEAN DEFAULT FALSE/i);
     assert.match(sql, /EXPENSE_VOID_FUNDS_NOT_CONFIRMED/i);
+    assert.match(sql, /to_regprocedure\('public\.void_hospital_expense_atomic\(uuid,uuid,text,uuid\)'\)/i);
+    assert.match(sql, /REVOKE ALL ON FUNCTION public\.void_hospital_expense_atomic\(uuid, uuid, text, uuid\) FROM PUBLIC, anon, authenticated/i);
     assert.match(sql, /REVOKE ALL ON FUNCTION public\.void_hospital_expense_atomic[\s\S]*FROM PUBLIC/i);
     assert.match(sql, /FROM anon/i);
     assert.doesNotMatch(sql, /DELETE FROM public\.journal_entries/i);
