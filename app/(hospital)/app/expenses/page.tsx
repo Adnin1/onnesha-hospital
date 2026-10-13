@@ -275,9 +275,9 @@ function ExpensesManagementContent() {
     }
 
     const unpostedStatuses = ["DRAFT", "PENDING_APPROVAL", "APPROVED"];
-    const requiresFundsConfirmation = !unpostedStatuses.includes(
-      String(voidModalExpense.status || "").toUpperCase()
-    );
+    const requiresFundsConfirmation =
+      !unpostedStatuses.includes(String(voidModalExpense.status || "").toUpperCase()) ||
+      Boolean(voidModalExpense.journal_entry_id);
     if (requiresFundsConfirmation && !voidFundsRecoveredConfirmed) {
       setToast({
         message: "This voucher was posted as a cash/bank disbursement. Confirm that the money was not paid or was returned to the hospital before voiding.",
@@ -1195,8 +1195,11 @@ function ExpensesManagementContent() {
                 className="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-rose-500"
               />
             </div>
-            {!["DRAFT", "PENDING_APPROVAL", "APPROVED"].includes(
-              String(voidModalExpense.status || "").toUpperCase()
+            {(
+              !["DRAFT", "PENDING_APPROVAL", "APPROVED"].includes(
+                String(voidModalExpense.status || "").toUpperCase()
+              ) ||
+              Boolean(voidModalExpense.journal_entry_id)
             ) && (
               <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950">
                 <p className="font-bold mb-2">Financial confirmation required</p>
@@ -1234,8 +1237,11 @@ function ExpensesManagementContent() {
                   !voidReason.trim() ||
                   voidReason.trim().length < 4 ||
                   (
-                    !["DRAFT", "PENDING_APPROVAL", "APPROVED"].includes(
-                      String(voidModalExpense.status || "").toUpperCase()
+                    (
+                      !["DRAFT", "PENDING_APPROVAL", "APPROVED"].includes(
+                        String(voidModalExpense.status || "").toUpperCase()
+                      ) ||
+                      Boolean(voidModalExpense.journal_entry_id)
                     ) &&
                     !voidFundsRecoveredConfirmed
                   )
