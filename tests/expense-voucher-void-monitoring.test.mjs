@@ -114,6 +114,7 @@ test("expense voucher void uses an atomic, tenant-scoped accounting reversal", a
     assert.match(page, /<option value="ALL">All vouchers<\/option>/);
     assert.match(page, /accounting audit trail has been preserved/i);
     assert.match(page, /voidFundsRecoveredConfirmed/);
+    assert.match(page, /journal_entry_id/);
     assert.match(page, /returned to the hospital/i);
   });
 });
