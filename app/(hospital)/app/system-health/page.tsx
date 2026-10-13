@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useCallback } from "react";
+import React, { useState, useEffect, useTransition, useCallback, useRef } from "react";
 import {
   Activity,
   ShieldCheck,
@@ -22,6 +22,7 @@ import { reportSystemRuntimeIncident } from "@/lib/diagnostics/troubleshooter";
 
 export default function SystemHealthPage() {
   const [data, setData] = useState<SystemHealthDiagnosticResult | null>(null);
+  const localIncidentsRef = useRef<SystemHealthIssue[]>([]);
   const [isPending, startTransition] = useTransition();
   const [justResolvedMessage, setJustResolvedMessage] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -32,30 +33,48 @@ export default function SystemHealthPage() {
     startTransition(async () => {
       try {
         const res = await getSystemHealthDiagnosticsAction();
-        setData(res);
+        const persistedIds = new Set(res.issues.map((issue) => issue.id));
+        const pendingLocal = localIncidentsRef.current.filter((issue) => !persistedIds.has(issue.id));
+        const issues = [...res.issues, ...pendingLocal];
+        const totalIssues = Math.max(res.total_issues, res.issues.length) + pendingLocal.length;
+        setData({
+          ...res,
+          is_healthy: res.is_healthy === true && totalIssues === 0 && issues.length === 0,
+          health_score: pendingLocal.length > 0 ? Math.min(res.health_score, 90) : res.health_score,
+          critical_count: res.critical_count + pendingLocal.filter((issue) => issue.severity === "CRITICAL").length,
+          warning_count: res.warning_count + pendingLocal.filter((issue) => issue.severity === "WARNING").length,
+          info_count: res.info_count + pendingLocal.filter((issue) => issue.severity === "INFO").length,
+          total_issues: totalIssues,
+          issues,
+        });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Unknown system-health page error";
         console.error("[SystemHealthPage] Health scan unavailable:", message);
         const timestamp = new Date().toISOString();
+        const failureIssue: SystemHealthIssue = {
+          id: "SYSTEM_HEALTH_PAGE_FETCH_FAILED",
+          severity: "WARNING",
+          module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
+          location: "app/(hospital)/app/system-health/page.tsx:fetchDiagnostics",
+          title: "সিস্টেম health scan সম্পন্ন হয়নি",
+          reason: message,
+          recommendation: "Supabase RPC, active hospital session এবং network status যাচাই করে rescan করুন।",
+          timestamp,
+        };
+        const issues = [
+          failureIssue,
+          ...localIncidentsRef.current.filter((issue) => issue.id !== failureIssue.id),
+        ];
         setData({
           is_healthy: false,
           health_score: 0,
-          critical_count: 0,
-          warning_count: 1,
-          info_count: 0,
-          total_issues: 1,
+          critical_count: localIncidentsRef.current.filter((issue) => issue.severity === "CRITICAL").length,
+          warning_count: 1 + localIncidentsRef.current.filter((issue) => issue.severity === "WARNING").length,
+          info_count: localIncidentsRef.current.filter((issue) => issue.severity === "INFO").length,
+          total_issues: issues.length,
           checked_at: timestamp,
           organization_id: null,
-          issues: [{
-            id: "SYSTEM_HEALTH_PAGE_FETCH_FAILED",
-            severity: "WARNING",
-            module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
-            location: "app/(hospital)/app/system-health/page.tsx:fetchDiagnostics",
-            title: "সিস্টেম health scan সম্পন্ন হয়নি",
-            reason: message,
-            recommendation: "Supabase RPC, active hospital session এবং network status যাচাই করে rescan করুন।",
-            timestamp,
-          }],
+          issues,
           passed_checks: [],
           error: message,
         });
@@ -84,6 +103,12 @@ export default function SystemHealthPage() {
           timestamp: detail.timestamp || new Date().toISOString(),
         };
 
+        const previousLocal = localIncidentsRef.current;
+        const alreadyLocal = previousLocal.some((issue) => issue.id === incident.id);
+        localIncidentsRef.current = alreadyLocal
+          ? previousLocal
+          : [...previousLocal, incident].slice(-20);
+
         setData((previous) => {
           const previousIssues = previous?.issues || [];
           const alreadyPresent = previousIssues.some((issue) => issue.id === incident.id);
@@ -108,17 +133,27 @@ export default function SystemHealthPage() {
       fetchDiagnostics();
     };
 
+    const handlePersisted = (event: Event) => {
+      const detail = (event as CustomEvent<{ ephemeralId?: string; issueId?: string }>).detail;
+      if (detail?.ephemeralId) {
+        localIncidentsRef.current = localIncidentsRef.current.filter((issue) => issue.id !== detail.ephemeralId);
+      }
+      fetchDiagnostics();
+    };
+
     const handleResolved = () => {
       // Resolution events are hints only. Show "solved" only after a successful rescan.
       fetchDiagnostics();
     };
 
     window.addEventListener("system-health-incident-reported", handleIncident);
+    window.addEventListener("system-health-incident-persisted", handlePersisted);
     window.addEventListener("system-health-incident-resolved", handleResolved);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener("system-health-incident-reported", handleIncident);
+      window.removeEventListener("system-health-incident-persisted", handlePersisted);
       window.removeEventListener("system-health-incident-resolved", handleResolved);
     };
   }, [fetchDiagnostics]);
@@ -152,7 +187,6 @@ export default function SystemHealthPage() {
       }
 
       const verification = await getSystemHealthDiagnosticsAction(organizationId);
-      setData(verification);
       if (verification.error || verification.issues.some((issue) => issue.id === issueId)) {
         setActionMessage("Rescan-এ incident এখনো আছে অথবা health check সম্পন্ন হয়নি। সমস্যাটিকে solved হিসেবে দেখানো হয়নি।");
         return;
@@ -382,11 +416,16 @@ export default function SystemHealthPage() {
               <span>সমাধানের অপেক্ষায় থাকা সমস্যা ও অবস্থান (Active Issues & Locations)</span>
             </h2>
             <span className="text-xs text-slate-500">
-              মোট: {data?.total_issues} টি সমস্যা
+              মোট: {data ? data.total_issues : "—"} টি সমস্যা
             </span>
           </div>
 
           <div className="space-y-3.5">
+            {!data && (
+              <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                Health scan-এর বৈধ ফলাফল পাওয়া যায়নি। সিস্টেম healthy বলে নিশ্চিত করা যাচ্ছে না; network এবং diagnostic RPC যাচাই করে আবার scan করুন।
+              </div>
+            )}
             {data?.issues.map((issue: SystemHealthIssue) => (
               <div
                 key={issue.id}
