@@ -421,6 +421,12 @@ export async function createExpenseAction(params: {
       };
     }
 
+    // Runtime validation above proves these fields exist; narrow the unknown JSON payload
+    // explicitly for TypeScript before passing it to typed audit APIs.
+    const confirmedExpenseId = res.expense_id as string;
+    const confirmedVoucherNumber = res.voucher_number as string;
+    const confirmedJournalEntryId = res.journal_entry_id as string;
+
     let auditWarning: string | undefined;
     try {
       await recordAuditLog({
@@ -429,12 +435,12 @@ export async function createExpenseAction(params: {
         action: "CREATE",
         module: "ACCOUNTING",
         entityType: "expenses",
-        entityId: res.expense_id,
+        entityId: confirmedExpenseId,
         newValues: {
           title: params.title.trim(),
           amount: params.amount,
-          voucher_number: res.voucher_number,
-          journal_entry_id: res.journal_entry_id,
+          voucher_number: confirmedVoucherNumber,
+          journal_entry_id: confirmedJournalEntryId,
           payment_method: params.paymentMethod || "CASH",
           doctor_id: params.doctorId || null,
         },
@@ -453,7 +459,7 @@ export async function createExpenseAction(params: {
           recommendation: "Verify the durable expense/journal linkage and repair the audit log without creating another expense.",
           details: {
             operation: "CREATE_EXPENSE_VOUCHER_AUDIT",
-            expense_id: res.expense_id,
+            expense_id: confirmedExpenseId,
             rpc_name: "record_hospital_expense_atomic",
             occurred_at: new Date().toISOString(),
           },
@@ -466,8 +472,8 @@ export async function createExpenseAction(params: {
     return {
       success: true,
       data: {
-        expenseId: res.expense_id,
-        voucherNumber: res.voucher_number,
+        expenseId: confirmedExpenseId,
+        voucherNumber: confirmedVoucherNumber,
       },
       ...(auditWarning ? { error: auditWarning } : {}),
     };
