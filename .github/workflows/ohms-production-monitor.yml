@@ -1,0 +1,71 @@
+name: OHMS Production Monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ohms-production-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    name: Public routes and tenant-scoped database health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check required monitoring configuration
+        id: preflight
+        shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          missing=()
+          if [[ -z "$SUPABASE_URL" && -z "$NEXT_PUBLIC_SUPABASE_URL" ]]; then
+            missing+=("SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL")
+          fi
+          if [[ -z "$SUPABASE_SERVICE_ROLE_KEY" ]]; then
+            missing+=("SUPABASE_SERVICE_ROLE_KEY")
+          fi
+          if (( ${#missing[@]} > 0 )); then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## OHMS production monitor"
+              echo "**BLOCKED_EXTERNAL_OWNER**"
+              echo "Scheduled database monitoring is NOT ACTIVE. Configure repository secrets: ${missing[*]}."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning title=OHMS monitoring not configured::Set required Supabase secrets before claiming 24/7 monitoring."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.preflight.outputs.ready == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: steps.preflight.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.preflight.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Monitor production website and all organizations
+        if: steps.preflight.outputs.ready == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OHMS_ALERT_WEBHOOK_URL: ${{ secrets.OHMS_ALERT_WEBHOOK_URL }}
+          OHMS_PRODUCTION_URL: https://onnesha-hospital.pages.dev
+        run: node scripts/monitor-production.mjs
