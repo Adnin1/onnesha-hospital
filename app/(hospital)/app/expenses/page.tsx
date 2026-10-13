@@ -269,10 +269,14 @@ function ExpensesManagementContent() {
     try {
       const res = await voidExpenseAction(voidModalExpense.id, voidReason);
       if (res.success) {
-        setToast({ message: `Voucher ${voidModalExpense.voucher_number} voided`, type: "success" });
+        const warning = res.error ? `Voucher ${voidModalExpense.voucher_number || voidModalExpense.id} was voided, but follow-up needs attention: ${res.error}` : "";
+        setToast({
+          message: warning || `Voucher ${voidModalExpense.voucher_number || voidModalExpense.id} voided successfully. The financial audit history is retained.`,
+          type: warning ? "info" : "success",
+        });
         setVoidModalExpense(null);
         setVoidReason("");
-        loadData();
+        await loadData();
       } else {
         setToast({ message: res.error || "Failed to void voucher", type: "error" });
       }
