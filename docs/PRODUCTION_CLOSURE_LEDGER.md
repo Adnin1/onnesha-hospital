@@ -22,15 +22,16 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 138/138 suites passed (1,250 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 139/139 suites passed (1,256 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 559 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 395 internal links, 1172 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 178/178 applied (100% parity, 0 drift, newest: `20261013114500_fix_get_episode_billing_overview_schema_and_overload.sql`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 179/179 applied (100% parity, 0 drift, newest: `20261014010000_fix_bed_assignment_conflict_and_invoice_hard_purge.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
 | **Doctor & Roster UX** | Doctor creation roomNumber fallback (`Chamber 1`) + validation feedback toast | `app/doctors/page.tsx` & `lib/appointments/actions.ts` | ✅ PASS |
-| **Bed & Cabin Matrix** | Asynchronous ward sync in modal + auto-resolution of default `bed_types` | `components/beds/AddBedOrCabinModal.tsx` & `lib/ipd/bed-actions.ts` | ✅ PASS |
-| **IPD Admission & Auto-Billing** | Fixed 428C9 & 42883 errors; atomic stored procedures auto-book ৳300 admission fee + ৳500/day charge | Migrations 176–178 (`admit_patient_to_bed_atomic`, `get_episode_billing_overview`) | ✅ PASS |
+| **Bed & Cabin Matrix** | Real-time occupancy sync trigger + row locking `FOR UPDATE` in `create_patient_intake_atomic` | `lib/patient/actions.ts` & Migration 179 | ✅ PASS |
+| **IPD Admission & Auto-Billing** | Fixed 428C9 & 42883 errors; atomic stored procedures auto-book ৳300 admission fee + ৳500/day charge | Migrations 176–179 (`admit_patient_to_bed_atomic`, `get_episode_billing_overview`) | ✅ PASS |
+| **Super Admin Invoice Hard Purge** | In-transaction override `app.override_journal_immutability` safely purges invoices with posted journal entries | `lib/billing/actions.ts` & Migration 179 | ✅ PASS |
 | **Referrals & Expense Booking** | Discretionary payouts post immediately to Hospital Expenses (`/app/expenses`) with `status: 'POSTED'` | `lib/referrals/actions.ts` & `app/referrals/page.tsx` | ✅ PASS |
 | **Financial Reports & P&L** | Server-aggregated P&L, AR aging, cash movement, payment channels verified | RPCs & `app/reports/page.tsx` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
@@ -76,9 +77,9 @@
   - `Onnesha-Hospital-1.1.90.msi`: exactly **3,457,024 bytes**, SHA-256: `A87065466C27346EC54F100419E5FBDC740D1FDB3D934BDF966AFDF6CB394A12`
 - **Manifest Provenance:** `public/downloads/desktop/latest.json` declares these exact byte lengths and cryptographic hashes with `artifact_status: "BUILT_AND_VERIFIED"`.
 
-### E. Supabase Database Migration Parity (Historical Checkpoint 163/163 vs. Current Production 178/178)
+### E. Supabase Database Migration Parity (Historical Checkpoint 163/163 vs. Current Production 179/179)
 - **Historical Checkpoint:** 163/163 migrations at the earlier v1.1.90 engineering stage, ending at `20261012033000` (`20261012033000_super_admin_permanent_invoice_purge.sql`).
-- **Current Authoritative Production Parity:** 178/178 local and remote migrations applied match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`) with 0 drift, verified via `npx supabase migration list` and `npx supabase db push --dry-run` ending at `20261013114500` (`20261013114500_fix_get_episode_billing_overview_schema_and_overload.sql`).
+- **Current Authoritative Production Parity:** 179/179 local and remote migrations applied match 100% against remote Supabase (`iuhtzahuszdkdarhxobx`) with 0 drift, verified via `npx supabase migration list` and `npx supabase db push` ending at `20261014010000` (`20261014010000_fix_bed_assignment_conflict_and_invoice_hard_purge.sql`).
 - Key recent migrations:
   - `20261011082000_fix_medicines_generics_foreign_key.sql`: Explicit foreign key relation between `public.medicines(generic_id)` and `public.medicine_generics(id)` with schema cache notification.
   - `20261011083000_seed_official_hospital_rate_chart.sql`: Seeding and synchronization of official hospital tariffs into `diagnostic_tests` and `hospital_service_tariffs`.
@@ -88,6 +89,7 @@
   - `20261011231500_add_date_of_birth_column_to_patients.sql`: Harmonized `date_of_birth` and `dob` columns on `patients` table with two-way trigger sync, resolving schema join compatibility across medical certificates and laboratory orders.
   - `20261011233000_quarantine_synthetic_bootstrap_data.sql`: Quarantined and permanently purged synthetic test/bootstrap operational records (accounting journal entries, welfare applications, demo patients with 0 invoices/episodes, purchase requisitions, goods receipts, biomedical devices, and asset registers) to enforce zero auto-fabrication and maintain pristine operational data integrity.
   - `20261012033000_super_admin_permanent_invoice_purge.sql`: Enhanced `delete_invoice_super_admin_atomic` stored procedure with dual-mode operational support (Safe Void vs Permanent Purge), enabling Super Admins to permanently purge invoices and eliminate all linked payments, line items, and audit history from the database.
+  - `20261014010000_fix_bed_assignment_conflict_and_invoice_hard_purge.sql`: Added in-transaction override (`app.override_journal_immutability`) for Super Admin invoice purge; real-time occupancy synchronization trigger (`trg_sync_bed_occupancy`) between `bed_assignments` and `beds`/`cabins`; hardened `create_patient_intake_atomic` with row locking (`FOR UPDATE`) and concurrency conflict prevention.
 - Schema verification via `npx supabase db lint --linked` confirmed 0 fatal schema or security errors.
 
 ### F. Medical Certificates Overhaul & Cashier Billing Permission Governance
@@ -218,8 +220,8 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 138/138 certification suites, 1,250 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
-2. **Database Parity:** 178/178 Supabase migrations applied (100% parity, 0 drift).
+1. **Software Quality:** 139/139 certification suites, 1,256 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
+2. **Database Parity:** 179/179 Supabase migrations applied (100% parity, 0 drift).
 3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `ead5e2ca`, `WORKSTATION_DEPLOY_VERIFIED`).
 4. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced to v1.1.90.
 5. **External Owner Gates:** G1–G16 clearly isolated without false greens.

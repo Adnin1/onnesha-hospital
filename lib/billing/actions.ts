@@ -1632,7 +1632,10 @@ export async function deleteInvoiceAction(params: {
     });
 
     if (rpcErr) {
-      return { success: false, error: rpcErr.message };
+      const msg = rpcErr.message?.includes("Immutable Journal Error")
+        ? "ইনভয়েসের সাথে সংশ্লিষ্ট জার্নাল এন্ট্রি থাকায় ডিলিট করা যায়নি। অনুগ্রহ করে লেটেস্ট ডাটাবেজ মাইগ্রেশন প্রয়োগ করুন (Cannot delete posted journal entry)."
+        : rpcErr.message;
+      return { success: false, error: msg };
     }
 
     const res = rpcRes as {

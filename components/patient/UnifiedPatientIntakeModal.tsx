@@ -223,7 +223,7 @@ export function UnifiedPatientIntakeModal({
           if (res.data.diagnosticTests) setDiagnosticTests(res.data.diagnosticTests);
         } else {
           const supabase = createClient();
-          const [depRes, docRes, bedRes, cabinRes, unitRes, otRes, refRes] = await Promise.allSettled([
+          const [depRes, docRes, bedRes, cabinRes, unitRes, otRes, refRes, asgRes] = await Promise.allSettled([
             supabase.from("departments").select("id, name").eq("is_active", true).order("name"),
             supabase.from("doctors").select("id, full_name, opd_fee, specialization").eq("is_active", true).order("full_name"),
             supabase.from("beds").select("id, bed_number, status, daily_rate, critical_care_unit_id, wards(name)").eq("is_active", true).order("bed_number"),
@@ -231,20 +231,34 @@ export function UnifiedPatientIntakeModal({
             supabase.from("critical_care_units").select("id, unit_name, unit_type, daily_charge").eq("is_active", true).order("unit_name"),
             supabase.from("ot_rooms").select("id, room_number, room_name").order("room_number"),
             searchReferralAgentsAction(""),
+            supabase.from("bed_assignments").select("bed_id, cabin_id").eq("status", "ACTIVE"),
           ]);
           if (!alive) return;
+          const activeBedIds = new Set<string>();
+          const activeCabinIds = new Set<string>();
+          if (asgRes.status === "fulfilled" && asgRes.value.data) {
+            for (const a of asgRes.value.data as Array<{ bed_id?: string | null; cabin_id?: string | null }>) {
+              if (a.bed_id) activeBedIds.add(a.bed_id);
+              if (a.cabin_id) activeCabinIds.add(a.cabin_id);
+            }
+          }
           if (depRes.status === "fulfilled" && depRes.value.data) setDepartments(depRes.value.data as Option[]);
           if (docRes.status === "fulfilled" && docRes.value.data) setDoctors(docRes.value.data as DoctorOption[]);
           if (bedRes.status === "fulfilled" && bedRes.value.data) {
             setBeds((bedRes.value.data as unknown as Array<BedOption & { wards?: { name?: string } | null }>).map((b) => ({
               ...b,
+              status: activeBedIds.has(b.id) ? "OCCUPIED" : b.status,
               daily_rate: Number(b.daily_rate || 0),
               ward_name: b.wards?.name,
               critical_care_unit_id: b.critical_care_unit_id,
             })));
           }
           if (cabinRes.status === "fulfilled" && cabinRes.value.data) {
-            setCabins((cabinRes.value.data as CabinOption[]).map((c) => ({ ...c, daily_rate: Number(c.daily_rate || 0) })));
+            setCabins((cabinRes.value.data as CabinOption[]).map((c) => ({
+              ...c,
+              status: activeCabinIds.has(c.id) ? "OCCUPIED" : c.status,
+              daily_rate: Number(c.daily_rate || 0),
+            })));
           }
           if (unitRes.status === "fulfilled" && unitRes.value.data) {
             setUnits((unitRes.value.data as UnitOption[]).map((u) => ({ ...u, daily_charge: Number(u.daily_charge || 0) })));
@@ -634,6 +648,21 @@ export function UnifiedPatientIntakeModal({
           return;
         }
         setErrorMsg(result.error || "Patient intake failed. No partial admission was committed.");
+        if (result.error && (result.error.includes("বেড") || result.error.includes("bed") || result.error.includes("Bed"))) {
+          setHighlightField("field-ipd-bed");
+          getIntakeDropdownOptionsAction().then((optRes) => {
+            if (optRes.success && optRes.data) {
+              setBeds(optRes.data.beds as BedOption[]);
+            }
+          });
+        } else if (result.error && (result.error.includes("কেবিন") || result.error.includes("cabin") || result.error.includes("Cabin"))) {
+          setHighlightField("field-ipd-cabin");
+          getIntakeDropdownOptionsAction().then((optRes) => {
+            if (optRes.success && optRes.data) {
+              setCabins(optRes.data.cabins as CabinOption[]);
+            }
+          });
+        }
         return;
       }
 

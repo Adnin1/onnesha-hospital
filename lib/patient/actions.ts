@@ -1025,6 +1025,18 @@ export async function createIpdAdmissionAction(params: {
         delete bedAsgPayload.daily_charge;
         bAsgRes = await supabase.from("bed_assignments").insert(bedAsgPayload);
       }
+      if (bAsgRes.error) {
+        const isConflict =
+          bAsgRes.error.message?.includes("idx_unique_active_bed_assignment") ||
+          bAsgRes.error.code === "23505" ||
+          bAsgRes.error.message?.includes("BED_NOT_VACANT");
+        return {
+          success: false,
+          error: isConflict
+            ? "নির্বাচিত বেডটি ইতোমধ্যে অন্য রোগীকে বরাদ্দ করা হয়েছে। অনুগ্রহ করে অন্য বেড নির্বাচন করুন (Selected bed is already occupied)."
+            : bAsgRes.error.message,
+        };
+      }
 
       // Mark bed occupied
       await supabase
@@ -1833,8 +1845,8 @@ export async function createUnifiedPatientIntakeAction(
       const message = error.message || "Unified patient intake transaction failed.";
       const readable =
         message.includes("DUPLICATE_NID") ? "This National ID (NID) / Birth Certificate number is already registered for another patient in this hospital." :
-        message.includes("BED_NOT_VACANT") || message.includes("BED_UNAVAILABLE") || message.includes("DOUBLE_ASSIGNMENT_PREVENTED") ? "The selected bed is already occupied or unavailable. Please select another bed." :
-        message.includes("CABIN_NOT_VACANT") ? "The selected cabin is already occupied or unavailable. Please select another cabin." :
+        message.includes("BED_NOT_VACANT") || message.includes("BED_UNAVAILABLE") || message.includes("DOUBLE_ASSIGNMENT_PREVENTED") || message.includes("idx_unique_active_bed_assignment") || message.includes("CONCURRENCY_CONFLICT") ? "The selected bed is already occupied or unavailable. Please select another bed." :
+        message.includes("CABIN_NOT_VACANT") || message.includes("CABIN_UNAVAILABLE") || message.includes("idx_unique_active_cabin_assignment") ? "The selected cabin is already occupied or unavailable. Please select another cabin." :
         message.includes("CRITICAL_CARE_BED_OCCUPIED") || message.includes("CRITICAL_CARE_BED_NOT_FOUND") || message.includes("CRITICAL_CARE_BED_NOT_VACANT") || message.includes("CRITICAL_CARE_BED_UNAVAILABLE") || message.includes("CRITICAL_CARE_DOUBLE_ASSIGNMENT") ? "The selected Critical Care bed is already occupied or unavailable. Please select another bed." :
         message.includes("CRITICAL_CARE_UNIT_INACTIVE") ? "The selected Critical Care unit is currently inactive." :
         message.includes("CRITICAL_CARE_UNIT_AND_BED_REQUIRED") ? "Both Critical Care unit and bed number are required." :
@@ -2056,7 +2068,7 @@ export async function getIntakeDropdownOptionsAction(): Promise<
   const supabase = await createClient();
 
   try {
-    const [depRes, docRes, bedRes, cabinRes, unitRes, otRes, refRes, testRes] = await Promise.allSettled([
+    const [depRes, docRes, bedRes, cabinRes, unitRes, otRes, refRes, testRes, asgRes] = await Promise.allSettled([
       orgId
         ? supabase.from("departments").select("id, name").eq("organization_id", orgId).eq("is_active", true).order("name")
         : supabase.from("departments").select("id, name").eq("is_active", true).order("name"),
@@ -2081,7 +2093,20 @@ export async function getIntakeDropdownOptionsAction(): Promise<
       orgId
         ? supabase.from("diagnostic_tests").select("id, test_name, test_code, price").eq("organization_id", orgId).eq("is_active", true).order("test_name")
         : supabase.from("diagnostic_tests").select("id, test_name, test_code, price").eq("is_active", true).order("test_name"),
+      orgId
+        ? supabase.from("bed_assignments").select("bed_id, cabin_id").eq("organization_id", orgId).eq("status", "ACTIVE")
+        : supabase.from("bed_assignments").select("bed_id, cabin_id").eq("status", "ACTIVE"),
     ]);
+
+    const activeAssignments = asgRes && asgRes.status === "fulfilled" && asgRes.value.data
+      ? (asgRes.value.data as Array<{ bed_id?: string | null; cabin_id?: string | null }>)
+      : [];
+    const activeBedIds = new Set<string>();
+    const activeCabinIds = new Set<string>();
+    for (const asg of activeAssignments) {
+      if (asg.bed_id) activeBedIds.add(asg.bed_id);
+      if (asg.cabin_id) activeCabinIds.add(asg.cabin_id);
+    }
 
     const departments = depRes.status === "fulfilled" && depRes.value.data && depRes.value.data.length > 0
       ? (depRes.value.data as Array<{ id: string; name: string }>)
@@ -2112,6 +2137,7 @@ export async function getIntakeDropdownOptionsAction(): Promise<
     const beds = bedRes.status === "fulfilled" && bedRes.value.data && bedRes.value.data.length > 0
       ? (bedRes.value.data as Array<{ id: string; bed_number: string; status: string; daily_rate: number; critical_care_unit_id?: string | null }>).map(b => ({
           ...b,
+          status: activeBedIds.has(b.id) ? "OCCUPIED" : b.status,
           daily_rate: Number(b.daily_rate || 1000),
           ward_name: b.bed_number.startsWith("ICU") ? "ICU Ward" : b.bed_number.startsWith("CCU") ? "CCU Ward" : "General Inpatient Ward",
         }))
@@ -2124,7 +2150,11 @@ export async function getIntakeDropdownOptionsAction(): Promise<
         ];
 
     const cabins = cabinRes.status === "fulfilled" && cabinRes.value.data && cabinRes.value.data.length > 0
-      ? (cabinRes.value.data as Array<{ id: string; cabin_number: string; status: string; daily_rate: number; cabin_type?: string }>).map(c => ({ ...c, daily_rate: Number(c.daily_rate || 2500) }))
+      ? (cabinRes.value.data as Array<{ id: string; cabin_number: string; status: string; daily_rate: number; cabin_type?: string }>).map(c => ({
+          ...c,
+          status: activeCabinIds.has(c.id) ? "OCCUPIED" : c.status,
+          daily_rate: Number(c.daily_rate || 2500),
+        }))
       : [
           { id: "cabin-vip-01", cabin_number: "CABIN-VIP-01", status: "VACANT", daily_rate: 3500, cabin_type: "VIP" },
           { id: "cabin-std-01", cabin_number: "CABIN-201", status: "VACANT", daily_rate: 2200, cabin_type: "DELUXE" },
