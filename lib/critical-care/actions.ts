@@ -777,11 +777,14 @@ export async function addCriticalCareBedAction(payload: {
 
   try {
     const supabase = await createClient();
+    const effectiveRate = Number(payload.daily_rate) || 8000;
     const { error } = await supabase.from("beds").insert({
       organization_id: session.organizationId,
       critical_care_unit_id: payload.unitId,
+      ward_name: "Critical Care Unit",
       bed_number: payload.bed_number.trim(),
-      daily_rate: Number(payload.daily_rate) || 8000,
+      daily_rate: effectiveRate,
+      daily_charge: effectiveRate,
       status: "VACANT",
       is_active: true,
     });

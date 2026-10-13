@@ -3,6 +3,10 @@ import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
 import { PERMISSIONS } from "@/lib/permissions";
 import { recordAuditLog } from "@/lib/audit/logger";
 import { BedRecord, CabinRecord, WardRecord, BedAssignmentRecord } from "@/types/beds-ot";
+import {
+  reportSystemRuntimeIncident,
+  resolveSystemRuntimeIncident,
+} from "@/lib/diagnostics/troubleshooter";
 
 export interface ActionResult<T = unknown> {
   success: boolean;
@@ -642,15 +646,17 @@ export async function addBedAction(payload: {
 
     // 1. Resolve valid Ward UUID strictly within caller organization
     let resolvedWardId: string | undefined = payload.ward_id?.trim();
+    let resolvedWardName = "General Ward";
     const isWardUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedWardId || "");
     if (isWardUuid && resolvedWardId) {
       const { data: validWard } = await supabase
         .from("wards")
-        .select("id")
+        .select("id, name")
         .eq("id", resolvedWardId)
         .eq("organization_id", orgId)
         .maybeSingle();
       resolvedWardId = validWard?.id;
+      if (validWard?.name) resolvedWardName = validWard.name;
     } else {
       resolvedWardId = undefined;
     }
@@ -658,13 +664,14 @@ export async function addBedAction(payload: {
     if (!resolvedWardId) {
       const { data: firstWard } = await supabase
         .from("wards")
-        .select("id")
+        .select("id, name")
         .eq("organization_id", orgId)
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
       if (firstWard?.id) {
         resolvedWardId = firstWard.id;
+        if (firstWard.name) resolvedWardName = firstWard.name;
       } else {
         // Create same-organization General Ward safely without cross-tenant fallback
         const { data: newWard } = await supabase
@@ -675,9 +682,10 @@ export async function addBedAction(payload: {
             ward_type: "General Ward",
             total_beds: 10,
           })
-          .select("id")
+          .select("id, name")
           .maybeSingle();
         resolvedWardId = newWard?.id;
+        resolvedWardName = newWard?.name || "General Ward";
       }
     }
 
@@ -708,11 +716,14 @@ export async function addBedAction(payload: {
     const resolvedBedTypeId = btRow?.id || null;
 
     // 3. Prepare bed insert payload
+    const effectiveDaily = Number(payload.daily_rate) || 500;
     const insertPayload: Record<string, unknown> = {
       organization_id: orgId,
       ward_id: resolvedWardId,
+      ward_name: resolvedWardName,
       bed_number: payload.bed_number.trim(),
-      daily_rate: Number(payload.daily_rate) || 500,
+      daily_rate: effectiveDaily,
+      daily_charge: effectiveDaily,
       status: "VACANT",
       is_active: true,
     };
@@ -736,7 +747,7 @@ export async function addBedAction(payload: {
 
       if (insertRes.error.code === "PGRST204" || errMsg.includes("column")) {
         const missingMatch = insertRes.error.message.match(/'([^']+)' column/);
-        if (missingMatch && missingMatch[1] && missingMatch[1] in insertPayload && !["organization_id", "ward_id", "bed_number", "daily_rate"].includes(missingMatch[1])) {
+        if (missingMatch && missingMatch[1] && missingMatch[1] in insertPayload && !["organization_id", "ward_id", "bed_number", "daily_rate", "ward_name"].includes(missingMatch[1])) {
           delete insertPayload[missingMatch[1]];
           modified = true;
         } else {
@@ -770,8 +781,26 @@ export async function addBedAction(payload: {
     const insertErr = insertRes.error;
 
     if (insertErr || !inserted) {
-      return { success: false, error: insertErr?.message || "Failed to add bed" };
+      const errText = insertErr?.message || "Failed to add bed";
+      await reportSystemRuntimeIncident({
+        organizationId: orgId,
+        module: "আইপিডি ও বেড ব্যবস্থাপনা (Inpatient Beds & Cabins)",
+        location: "lib/ipd/bed-actions.ts -> addBedAction",
+        severity: "CRITICAL",
+        errorCode: insertErr?.code || "BED_INSERT_ERROR",
+        title: "নতুন বেড তৈরিতে ডাটাবেজ ত্রুটি",
+        reason: `বেড #${payload.bed_number} (${resolvedWardName}) তৈরিতে ডাটাবেজ ত্রুটি: ${errText}`,
+        recommendation: "ওয়ার্ড ও বেড নম্বর সঠিক আছে কিনা পরীক্ষা করুন।",
+        details: { payload, error: insertErr },
+      });
+      return { success: false, error: errText };
     }
+
+    // Auto-resolve any previous bed creation issues
+    await resolveSystemRuntimeIncident({
+      organizationId: orgId,
+      module: "আইপিডি ও বেড ব্যবস্থাপনা (Inpatient Beds & Cabins)",
+    });
 
     const bedId = inserted.id;
     const persistedWardId = (inserted as { ward_id?: string }).ward_id || resolvedWardId;
@@ -847,8 +876,26 @@ export async function addCabinAction(payload: {
       .single();
 
     if (insertErr || !inserted) {
-      return { success: false, error: insertErr?.message || "Failed to add cabin" };
+      const errText = insertErr?.message || "Failed to add cabin";
+      await reportSystemRuntimeIncident({
+        organizationId: orgId,
+        module: "আইপিডি ও কেবিন ব্যবস্থাপনা (Inpatient Cabins)",
+        location: "lib/ipd/bed-actions.ts -> addCabinAction",
+        severity: "CRITICAL",
+        errorCode: insertErr?.code || "CABIN_INSERT_ERROR",
+        title: "নতুন কেবিন তৈরিতে ডাটাবেজ ত্রুটি",
+        reason: `কেবিন #${payload.cabin_number} তৈরিতে ডাটাবেজ ত্রুটি: ${errText}`,
+        recommendation: "কেবিন নম্বর ইউনিক আছে কিনা পরীক্ষা করুন।",
+        details: { payload, error: insertErr },
+      });
+      return { success: false, error: errText };
     }
+
+    // Auto-resolve any previous cabin creation issues
+    await resolveSystemRuntimeIncident({
+      organizationId: orgId,
+      module: "আইপিডি ও কেবিন ব্যবস্থাপনা (Inpatient Cabins)",
+    });
 
     const cabinId = inserted.id;
     const newCabin: CabinRecord = {

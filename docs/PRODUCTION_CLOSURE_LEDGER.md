@@ -26,17 +26,17 @@
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 559 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 62/62 static routes generated | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 61 HTML pages, 395 internal links, 1172 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 183/183 applied (100% parity, 0 drift, newest: `20261014031000_reconcile_referral_commission_row_allocations.sql`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 185/185 applied (100% parity, 0 drift, newest: `20261014040500_sync_beds_and_prioritize_org.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
 | **Doctor & Roster UX** | Doctor creation roomNumber fallback (`Chamber 1`) + validation feedback toast | `app/doctors/page.tsx` & `lib/appointments/actions.ts` | ✅ PASS |
-| **Bed & Cabin Matrix** | Real-time occupancy sync trigger + row locking `FOR UPDATE` in `create_patient_intake_atomic` | `lib/patient/actions.ts` & Migration 179 | ✅ PASS |
+| **Bed & Cabin Matrix** | Fixed `ward_name` NOT NULL constraint via Migration 184/185; auto-population trigger `trg_beds_auto_populate_ward_name`; real-time occupancy sync trigger + row locking `FOR UPDATE` | `lib/ipd/bed-actions.ts` & Migrations 179, 184, 185 | ✅ PASS |
 | **IPD Admission & Auto-Billing** | Fixed 428C9 & 42883 errors; atomic stored procedures auto-book ৳300 admission fee + ৳500/day charge | Migrations 176–179 (`admit_patient_to_bed_atomic`, `get_episode_billing_overview`) | ✅ PASS |
 | **Super Admin Invoice Hard Purge** | In-transaction override `app.override_journal_immutability` safely purges invoices with posted journal entries | `lib/billing/actions.ts` & Migration 179 | ✅ PASS |
 | **Referrals & Per-Patient Payout** | Per-patient commission tracking (earned/paid/due/status) + atomic RPC `record_referral_commission_payout_atomic` + auto GL postings | `lib/referrals/actions.ts` & Migration 180 | ✅ PASS |
 | **Financial Reports & Accounting** | Resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 mismatch; balanced GL ledger | Migrations 176–180 & `app/reports/page.tsx` | ✅ PASS |
-| **Autonomous System Health Diagnostics** | Real-time PostgreSQL diagnostic engine `check_system_health_diagnostics` auditing 7 domains with auto-clearing UI alert banner & badge (100% healthy) | Migrations 181–183, `lib/diagnostics/actions.ts` & `SystemHealthAlertBanner.tsx` | ✅ PASS |
+| **Autonomous System Health Diagnostics & Troubleshooter** | Real-time PostgreSQL diagnostic engine `check_system_health_diagnostics` auditing 9 domains + real-time incident logger (`system_health_issues_log`), live DOM alert dispatch and 1-click remediation in `SystemHealthAlertBanner.tsx` | Migrations 181–185, `lib/diagnostics/troubleshooter.ts` & `SystemHealthAlertBanner.tsx` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `d7174526`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `fad33a2c`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
@@ -225,8 +225,8 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 140/140 certification suites, 1,269 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
-2. **Database Parity:** 180/180 Supabase migrations applied (100% parity, 0 drift).
-3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `38315155`, `WORKSTATION_DEPLOY_VERIFIED`).
+1. **Software Quality:** 141/141 certification suites, 1,274 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
+2. **Database Parity:** 185/185 Supabase migrations applied (100% parity, 0 drift).
+3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `d7174526`, `WORKSTATION_DEPLOY_VERIFIED`).
 4. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced to v1.1.90.
 5. **External Owner Gates:** G1–G16 clearly isolated without false greens.

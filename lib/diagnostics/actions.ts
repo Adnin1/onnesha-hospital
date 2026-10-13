@@ -126,3 +126,68 @@ export async function getSystemHealthDiagnosticsAction(
     };
   }
 }
+
+/**
+ * Logs a runtime system error or operational failure to the PostgreSQL
+ * system_health_issues_log table so it immediately triggers the alert engine.
+ */
+export async function logSystemRuntimeIssueAction(payload: {
+  organizationId: string;
+  module: string;
+  location: string;
+  severity?: "CRITICAL" | "WARNING" | "INFO";
+  errorCode?: string;
+  title: string;
+  reason: string;
+  recommendation: string;
+  details?: Record<string, unknown>;
+}): Promise<string | null> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("log_system_runtime_issue", {
+      p_org_id: payload.organizationId,
+      p_module: payload.module,
+      p_location: payload.location,
+      p_severity: payload.severity || "CRITICAL",
+      p_error_code: payload.errorCode || "RUNTIME_ERROR",
+      p_title: payload.title,
+      p_reason: payload.reason,
+      p_recommendation: payload.recommendation,
+      p_details: payload.details || {},
+    });
+    if (error) {
+      console.error("[HealthDiagnostics] Failed to log runtime issue:", error);
+      return null;
+    }
+    return data as string;
+  } catch (err) {
+    console.error("[HealthDiagnostics] logSystemRuntimeIssue exception:", err);
+    return null;
+  }
+}
+
+/**
+ * Resolves one or all active runtime issues for a specific module or ID.
+ */
+export async function resolveSystemRuntimeIssueAction(payload: {
+  organizationId: string;
+  module?: string;
+  issueId?: string;
+}): Promise<number> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("resolve_system_runtime_issue", {
+      p_org_id: payload.organizationId,
+      p_module: payload.module || null,
+      p_issue_id: payload.issueId || null,
+    });
+    if (error) {
+      console.error("[HealthDiagnostics] Failed to resolve runtime issue:", error);
+      return 0;
+    }
+    return Number(data || 0);
+  } catch (err) {
+    console.error("[HealthDiagnostics] resolveSystemRuntimeIssue exception:", err);
+    return 0;
+  }
+}

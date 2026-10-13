@@ -12,9 +12,11 @@ import {
   Database,
   Activity,
   CheckCircle2,
+  Wrench,
 } from "lucide-react";
 import {
   getSystemHealthDiagnosticsAction,
+  resolveSystemRuntimeIssueAction,
   type SystemHealthDiagnosticResult,
   type SystemHealthIssue,
 } from "@/lib/diagnostics/actions";
@@ -48,8 +50,41 @@ export default function SystemHealthAlertBanner({
     fetchDiagnostics();
     // Auto-refresh diagnostics every 60 seconds
     const interval = setInterval(fetchDiagnostics, 60000);
-    return () => clearInterval(interval);
+
+    // Real-time listener for runtime incidents
+    const handleIncident = () => {
+      setIsDismissed(false);
+      fetchDiagnostics();
+    };
+
+    const handleResolved = () => {
+      fetchDiagnostics();
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("system-health-incident-reported", handleIncident);
+      window.addEventListener("system-health-incident-resolved", handleResolved);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("system-health-incident-reported", handleIncident);
+        window.removeEventListener("system-health-incident-resolved", handleResolved);
+      }
+    };
   }, [fetchDiagnostics]);
+
+  const handleResolveIssue = async (issueId: string, module?: string) => {
+    if (!data?.organization_id && !organizationId) return;
+    const orgId = data?.organization_id || organizationId || "";
+    await resolveSystemRuntimeIssueAction({
+      organizationId: orgId,
+      issueId: issueId.startsWith("ephemeral-") ? undefined : issueId,
+      module: module,
+    });
+    fetchDiagnostics();
+  };
 
   if (!data) {
     return null;
@@ -269,6 +304,18 @@ export default function SystemHealthAlertBanner({
                           <p className="text-slate-700 dark:text-slate-300">
                             {issue.recommendation}
                           </p>
+                        </div>
+
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleResolveIssue(issue.id, issue.module)}
+                            disabled={isPending}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-2xs transition-colors disabled:opacity-50"
+                          >
+                            <Wrench className="h-3.5 w-3.5" />
+                            <span>সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা</span>
+                          </button>
                         </div>
                       </div>
                     ))}
