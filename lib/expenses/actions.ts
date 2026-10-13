@@ -271,8 +271,12 @@ export async function createExpenseAction(params: {
   if (!params.title || params.title.trim().length < 2) {
     return { success: false, error: "Expense description is required." };
   }
-  if (!params.amount || params.amount <= 0) {
-    return { success: false, error: "Expense amount must be greater than zero." };
+  if (
+    !Number.isFinite(params.amount) ||
+    params.amount <= 0 ||
+    Math.round(params.amount * 100) !== params.amount * 100
+  ) {
+    return { success: false, error: "Expense amount must be greater than zero and have at most two decimal places." };
   }
   if (!params.categoryId) {
     return { success: false, error: "Please select an expense category." };
@@ -299,31 +303,124 @@ export async function createExpenseAction(params: {
     });
 
     if (error) {
-      return { success: false, error: error.message };
+      const errorCode = error.code || "EXPENSE_CREATE_RPC_FAILED";
+      try {
+        await reportSystemRuntimeIncident({
+          organizationId: session.organizationId,
+          module: "ACCOUNTING_EXPENSES",
+          location: "lib/expenses/actions.ts:createExpenseAction -> public.record_hospital_expense_atomic",
+          severity: "CRITICAL",
+          errorCode,
+          title: "Expense voucher creation failed",
+          reason: "Database rejected expense voucher creation (" + errorCode + "): " + (error.message || "No database error details returned."),
+          recommendation: "Check the category and organization, active expense/cash/bank accounts, journal constraints and database migration state. If the response was lost, check voucher history before retrying.",
+          details: {
+            operation: "CREATE_EXPENSE_VOUCHER",
+            rpc_name: "record_hospital_expense_atomic",
+            occurred_at: new Date().toISOString(),
+          },
+        });
+      } catch (reportError: unknown) {
+        console.error("[ExpenseCreate] Could not persist the failure incident:", reportError instanceof Error ? reportError.message : "Unknown incident error");
+      }
+      return {
+        success: false,
+        error: "Expense voucher was not confirmed as created (" + errorCode + "). Check voucher history before retrying. " + error.message,
+      };
     }
 
-    const res = data as {
-      success: boolean;
-      expense_id: string;
-      voucher_number: string;
-      gl_result?: unknown;
-    };
+    const res = data && typeof data === "object" && !Array.isArray(data)
+      ? data as {
+          success?: unknown;
+          expense_id?: unknown;
+          voucher_number?: unknown;
+          journal_entry_id?: unknown;
+          journal_entry_number?: unknown;
+        }
+      : null;
 
-    await recordAuditLog({
-      organizationId: session.organizationId,
-      userId: session.userId,
-      action: "CREATE",
-      module: "ACCOUNTING",
-      entityType: "expenses",
-      entityId: res.expense_id,
-      newValues: {
-        title: params.title,
-        amount: params.amount,
-        voucher_number: res.voucher_number,
-        payment_method: params.paymentMethod,
-        doctor_id: params.doctorId,
-      },
-    });
+    const validCreation = Boolean(
+      res &&
+      res.success === true &&
+      typeof res.expense_id === "string" &&
+      res.expense_id.length > 0 &&
+      typeof res.voucher_number === "string" &&
+      res.voucher_number.length > 0 &&
+      typeof res.journal_entry_id === "string" &&
+      res.journal_entry_id.length > 0
+    );
+
+    if (!validCreation || !res) {
+      const reason = res && typeof res.success === "boolean" && res.success === false
+        ? "The database RPC returned a business failure."
+        : "The database RPC did not return a confirmed expense ID, voucher number and linked journal ID.";
+      try {
+        await reportSystemRuntimeIncident({
+          organizationId: session.organizationId,
+          module: "ACCOUNTING_EXPENSES",
+          location: "lib/expenses/actions.ts:createExpenseAction -> public.record_hospital_expense_atomic response validation",
+          severity: "CRITICAL",
+          errorCode: "EXPENSE_CREATE_NOT_CONFIRMED",
+          title: "Expense voucher creation was not confirmed",
+          reason,
+          recommendation: "Inspect the database transaction and recent voucher/journal records before retrying. Do not assume an invalid RPC response means no write occurred.",
+          details: {
+            operation: "CREATE_EXPENSE_VOUCHER",
+            rpc_name: "record_hospital_expense_atomic",
+            occurred_at: new Date().toISOString(),
+          },
+        });
+      } catch (reportError: unknown) {
+        console.error("[ExpenseCreate] Could not persist the response validation incident:", reportError instanceof Error ? reportError.message : "Unknown incident error");
+      }
+
+      return {
+        success: false,
+        error: "The database did not confirm the expense and its GL journal link. Refresh voucher history and verify whether a voucher was created before retrying.",
+      };
+    }
+
+    let auditWarning: string | undefined;
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "CREATE",
+        module: "ACCOUNTING",
+        entityType: "expenses",
+        entityId: res.expense_id,
+        newValues: {
+          title: params.title.trim(),
+          amount: params.amount,
+          voucher_number: res.voucher_number,
+          journal_entry_id: res.journal_entry_id,
+          payment_method: params.paymentMethod || "CASH",
+          doctor_id: params.doctorId || null,
+        },
+      });
+    } catch (auditError: unknown) {
+      auditWarning = "Voucher and GL journal were created, but the application audit log could not be confirmed. Do not retry the creation; refresh history and contact an administrator.";
+      try {
+        await reportSystemRuntimeIncident({
+          organizationId: session.organizationId,
+          module: "ACCOUNTING_EXPENSES",
+          location: "lib/expenses/actions.ts:createExpenseAction -> recordAuditLog",
+          severity: "CRITICAL",
+          errorCode: "EXPENSE_CREATE_AUDIT_LOG_FAILED",
+          title: "Expense created but audit logging failed",
+          reason: auditError instanceof Error ? auditError.message : "Unknown audit logging error",
+          recommendation: "Verify the durable expense/journal linkage and repair the audit log without creating another expense.",
+          details: {
+            operation: "CREATE_EXPENSE_VOUCHER_AUDIT",
+            expense_id: res.expense_id,
+            rpc_name: "record_hospital_expense_atomic",
+            occurred_at: new Date().toISOString(),
+          },
+        });
+      } catch (reportError: unknown) {
+        console.error("[ExpenseCreate] Audit warning incident could not be persisted:", reportError instanceof Error ? reportError.message : "Unknown incident error");
+      }
+    }
 
     return {
       success: true,
@@ -331,6 +428,7 @@ export async function createExpenseAction(params: {
         expenseId: res.expense_id,
         voucherNumber: res.voucher_number,
       },
+      ...(auditWarning ? { error: auditWarning } : {}),
     };
   } catch (err: unknown) {
     return {
@@ -610,62 +708,144 @@ export async function updateExpenseAction(params: {
     };
   }
 
+  if (!params.expenseId?.trim()) {
+    return { success: false, error: "A valid expense voucher ID is required." };
+  }
+  if (params.amount !== undefined && (
+    !Number.isFinite(params.amount) ||
+    params.amount <= 0 ||
+    Math.round(params.amount * 100) !== params.amount * 100
+  )) {
+    return { success: false, error: "Expense amount must be positive and have at most two decimal places." };
+  }
+
+  const reportUpdateFailure = async (errorCode: string, location: string, reason: string) => {
+    try {
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId as string,
+        module: "ACCOUNTING_EXPENSES",
+        location,
+        severity: "CRITICAL",
+        errorCode,
+        title: "Expense voucher update failed",
+        reason,
+        recommendation: "Inspect the voucher's current status, linked journal, tenant scope and database constraints. Do not retry until the persisted voucher state has been checked.",
+        details: {
+          operation: "UPDATE_EXPENSE_VOUCHER",
+          expense_id: params.expenseId,
+          occurred_at: new Date().toISOString(),
+        },
+      });
+    } catch (reportError: unknown) {
+      console.error("[ExpenseUpdate] Could not persist incident:", reportError instanceof Error ? reportError.message : "Unknown incident error");
+    }
+  };
+
   try {
     const supabase = await createClient();
-
-    // Check expense exists and is not voided
-    const { data: exp, error: fetchErr } = await supabase
+    const { data: exp, error: fetchError } = await supabase
       .from("expenses")
-      .select("id, status, title, amount")
+      .select("id, status, title, amount, paid_to, category_id, payment_method, journal_entry_id")
       .eq("id", params.expenseId)
       .eq("organization_id", session.organizationId)
-      .single();
+      .maybeSingle();
 
-    if (fetchErr || !exp) {
-      return { success: false, error: "Expense voucher not found." };
+    if (fetchError || !exp) {
+      const message = fetchError
+        ? "Could not read voucher before editing (" + (fetchError.code || "DB_READ_ERROR") + "): " + fetchError.message
+        : "Expense voucher was not found in the active organization.";
+      await reportUpdateFailure("EXPENSE_UPDATE_LOOKUP_FAILED", "lib/expenses/actions.ts:updateExpenseAction -> public.expenses SELECT", message);
+      return { success: false, error: message };
     }
 
-    if (exp.status === "VOID" || exp.status === "VOIDED") {
+    const status = String(exp.status || "").toUpperCase();
+    if (status === "VOID" || status === "VOIDED") {
       return { success: false, error: "Cannot edit a voided expense voucher." };
+    }
+
+    const requested = {
+      title: params.title !== undefined ? params.title.trim() : exp.title,
+      amount: params.amount !== undefined ? params.amount : Number(exp.amount),
+      paidTo: params.paidTo !== undefined ? params.paidTo.trim() : exp.paid_to,
+      categoryId: params.categoryId !== undefined ? params.categoryId : exp.category_id,
+      paymentMethod: params.paymentMethod !== undefined ? params.paymentMethod : exp.payment_method,
+    };
+    if (requested.title.length < 2) {
+      return { success: false, error: "Expense title must be at least 2 characters." };
+    }
+
+    const financialChanges =
+      requested.title !== exp.title ||
+      Number(requested.amount) !== Number(exp.amount) ||
+      requested.paidTo !== exp.paid_to ||
+      requested.categoryId !== exp.category_id ||
+      requested.paymentMethod !== exp.payment_method;
+
+    // The creation RPC posts the voucher and an immediate cash/bank journal together.
+    // Editing these values without a reversal would desynchronize source transaction and GL.
+    const isPostedOrLinked =
+      ["POSTED", "PAID", "REVERSED"].includes(status) ||
+      Boolean(exp.journal_entry_id);
+
+    if (isPostedOrLinked && financialChanges) {
+      return {
+        success: false,
+        error: "This voucher is posted or linked to a journal and cannot have its title, amount, payee, category or payment method edited directly. Use the authorized void/reversal workflow (confirm funds were not paid or were returned), then create a corrected voucher. Notes-only edits are allowed.",
+      };
     }
 
     const updates: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
-    if (params.title && params.title.trim()) updates.title = params.title.trim();
-    if (params.amount !== undefined && params.amount > 0) updates.amount = params.amount;
-    if (params.paidTo && params.paidTo.trim()) updates.paid_to = params.paidTo.trim();
+    if (params.title !== undefined) updates.title = requested.title;
+    if (params.amount !== undefined) updates.amount = requested.amount;
+    if (params.paidTo !== undefined) updates.paid_to = requested.paidTo || exp.paid_to;
     if (params.notes !== undefined) updates.notes = params.notes.trim() || null;
-    if (params.categoryId) updates.category_id = params.categoryId;
-    if (params.paymentMethod) updates.payment_method = params.paymentMethod;
+    if (params.categoryId !== undefined) updates.category_id = requested.categoryId;
+    if (params.paymentMethod !== undefined) updates.payment_method = requested.paymentMethod;
 
-    const { error: updateErr } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from("expenses")
       .update(updates)
       .eq("id", params.expenseId)
-      .eq("organization_id", session.organizationId);
+      .eq("organization_id", session.organizationId)
+      .select("id, status, title, amount")
+      .maybeSingle();
 
-    if (updateErr) {
-      return { success: false, error: updateErr.message };
+    if (updateError || !updated) {
+      const message = updateError
+        ? "Voucher update failed (" + (updateError.code || "DB_UPDATE_ERROR") + "): " + updateError.message
+        : "Voucher update did not confirm an affected row.";
+      await reportUpdateFailure("EXPENSE_UPDATE_WRITE_FAILED", "lib/expenses/actions.ts:updateExpenseAction -> public.expenses UPDATE", message);
+      return { success: false, error: message };
     }
 
-    await recordAuditLog({
-      organizationId: session.organizationId,
-      userId: session.userId,
-      action: "UPDATE",
-      module: "ACCOUNTING",
-      entityType: "expenses",
-      entityId: params.expenseId,
-      oldValues: { title: exp.title, amount: exp.amount },
-      newValues: updates,
-    });
+    try {
+      await recordAuditLog({
+        organizationId: session.organizationId,
+        userId: session.userId,
+        action: "UPDATE",
+        module: "ACCOUNTING",
+        entityType: "expenses",
+        entityId: params.expenseId,
+        oldValues: { title: exp.title, amount: exp.amount, paid_to: exp.paid_to, category_id: exp.category_id, payment_method: exp.payment_method },
+        newValues: updates,
+      });
+    } catch (auditError: unknown) {
+      const message = auditError instanceof Error ? auditError.message : "Unknown audit log error";
+      await reportUpdateFailure("EXPENSE_UPDATE_AUDIT_LOG_FAILED", "lib/expenses/actions.ts:updateExpenseAction -> recordAuditLog", message);
+      return {
+        success: true,
+        data: { success: true },
+        error: "Voucher changes were saved, but the application audit log failed. Do not retry this update; contact an administrator.",
+      };
+    }
 
     return { success: true, data: { success: true } };
   } catch (err: unknown) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "Error updating expense voucher",
-    };
+    const message = err instanceof Error ? err.message : "Unknown expense update exception";
+    await reportUpdateFailure("EXPENSE_UPDATE_UNEXPECTED_EXCEPTION", "lib/expenses/actions.ts:updateExpenseAction", message);
+    return { success: false, error: "Unexpected error while updating the expense voucher. System diagnostics has been notified." };
   }
 }
 
