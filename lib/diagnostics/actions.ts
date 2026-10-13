@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { getCurrentUserSession } from "@/lib/auth/session";
 
 export interface SystemHealthIssue {
   id: string;
@@ -31,99 +32,139 @@ export interface SystemHealthDiagnosticResult {
  * Executes the authoritative PostgreSQL diagnostic engine to detect
  * any application, ledger, bed, referral, invoice, or schema anomalies.
  */
-export async function getSystemHealthDiagnosticsAction(
-  organizationId?: string
-): Promise<SystemHealthDiagnosticResult> {
-  try {
-    const supabase = createClient();
+function diagnosticUnavailable(
+  organizationId: string | null,
+  id: string,
+  title: string,
+  reason: string
+): SystemHealthDiagnosticResult {
+  const timestamp = new Date().toISOString();
+  return {
+    is_healthy: false,
+    health_score: 0,
+    critical_count: 0,
+    warning_count: 1,
+    info_count: 0,
+    total_issues: 1,
+    checked_at: timestamp,
+    organization_id: organizationId,
+    issues: [{
+      id,
+      severity: "WARNING",
+      module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
+      location: "lib/diagnostics/actions.ts:getSystemHealthDiagnosticsAction",
+      title,
+      reason,
+      recommendation: "সক্রিয় organization, Supabase সংযোগ, migration state এবং diagnostic RPC permissions পরীক্ষা করে পুনরায় scan চালান।",
+      timestamp,
+    }],
+    passed_checks: [],
+    error: reason,
+  };
+}
 
+/**
+ * Reads only the authenticated user's active organization.
+ * Any missing, inaccessible, empty or malformed health response is UNKNOWN/degraded,
+ * never an invented healthy score.
+ */
+export async function getSystemHealthDiagnosticsAction(
+  requestedOrganizationId?: string
+): Promise<SystemHealthDiagnosticResult> {
+  let activeOrganizationId: string | null = null;
+
+  try {
+    const session = await getCurrentUserSession(true);
+    activeOrganizationId = session.organizationId;
+
+    if (!session.userId || !activeOrganizationId) {
+      return diagnosticUnavailable(
+        null,
+        "DIAGNOSTIC_AUTH_CONTEXT_MISSING",
+        "প্রাইভেট সিস্টেম পরীক্ষা চালানোর জন্য authenticated hospital session প্রয়োজন",
+        "No authenticated user or active organization was resolved. Database health was not checked."
+      );
+    }
+
+    if (requestedOrganizationId && requestedOrganizationId !== activeOrganizationId) {
+      return diagnosticUnavailable(
+        activeOrganizationId,
+        "DIAGNOSTIC_ORG_SCOPE_MISMATCH",
+        "অনুমোদিত organization-এর সঙ্গে অনুরোধের মিল নেই",
+        "The requested organization did not match the authenticated user's active organization. No cross-tenant query was performed."
+      );
+    }
+
+    const supabase = createClient();
     const { data, error } = await supabase.rpc("check_system_health_diagnostics", {
-      p_org_id: organizationId || null,
+      p_org_id: activeOrganizationId,
     });
 
     if (error) {
-      console.error("[HealthDiagnostics] RPC execution error:", error);
-      return {
-        is_healthy: false,
-        health_score: 50,
-        critical_count: 1,
-        warning_count: 0,
-        info_count: 0,
-        total_issues: 1,
-        checked_at: new Date().toISOString(),
-        organization_id: organizationId || null,
-        issues: [
-          {
-            id: "RPC_DIAGNOSTIC_FAILURE",
-            severity: "CRITICAL",
-            module: "সিস্টেম ডায়াগনস্টিক কোর (Diagnostic Core)",
-            location: "public.check_system_health_diagnostics()",
-            title: "ডায়াগনস্টিক ইঞ্জিন এক্সিকিউশন ত্রুটি",
-            reason: error.message || "ডেটাবেজ ফাংশন রান করতে সমস্যা হয়েছে।",
-            recommendation: "সুপারবেস সংযোগ ও মাইগ্রেশন স্ট্যাটাস যাচাই করুন।",
-            timestamp: new Date().toISOString(),
-          },
-        ],
-        passed_checks: [],
-        error: error.message,
-      };
+      const code = error.code || "UNKNOWN";
+      const message = error.message || "No database error details were returned.";
+      console.error("[HealthDiagnostics] RPC failed:", code, message);
+      return diagnosticUnavailable(
+        activeOrganizationId,
+        "RPC_DIAGNOSTIC_FAILURE",
+        "ডায়াগনস্টিক ইঞ্জিন পরীক্ষা চালাতে পারেনি",
+        "Health RPC failed (" + code + "): " + message
+      );
     }
 
-    if (!data) {
-      return {
-        is_healthy: true,
-        health_score: 100,
-        critical_count: 0,
-        warning_count: 0,
-        info_count: 0,
-        total_issues: 0,
-        checked_at: new Date().toISOString(),
-        organization_id: organizationId || null,
-        issues: [],
-        passed_checks: ["DEFAULT_HEALTHY"],
-      };
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      return diagnosticUnavailable(
+        activeOrganizationId,
+        "DIAGNOSTIC_EMPTY_RESPONSE",
+        "ডায়াগনস্টিক ইঞ্জিন থেকে কোনো বৈধ ফলাফল পাওয়া যায়নি",
+        "The health RPC returned null or a non-object response. System health remains UNKNOWN."
+      );
     }
 
-    const res = data as SystemHealthDiagnosticResult;
+    const result = data as Partial<SystemHealthDiagnosticResult>;
+    if (
+      typeof result.is_healthy !== "boolean" ||
+      typeof result.health_score !== "number" ||
+      !Number.isFinite(result.health_score) ||
+      typeof result.total_issues !== "number" ||
+      !Number.isFinite(result.total_issues) ||
+      !Array.isArray(result.issues) ||
+      !Array.isArray(result.passed_checks)
+    ) {
+      return diagnosticUnavailable(
+        activeOrganizationId,
+        "DIAGNOSTIC_INVALID_RESPONSE",
+        "ডায়াগনস্টিক ফলাফলের data structure বৈধ নয়",
+        "Required health fields were missing or malformed. System health cannot be confirmed."
+      );
+    }
+
+    const issues = result.issues as SystemHealthIssue[];
+    const reportedCount = Math.max(0, Math.trunc(result.total_issues));
+    const totalIssues = Math.max(reportedCount, issues.length);
+    const score = Math.max(0, Math.min(100, Math.round(result.health_score)));
+
     return {
-      is_healthy: Boolean(res.is_healthy),
-      health_score: typeof res.health_score === "number" ? res.health_score : 100,
-      critical_count: Number(res.critical_count || 0),
-      warning_count: Number(res.warning_count || 0),
-      info_count: Number(res.info_count || 0),
-      total_issues: Number(res.total_issues || 0),
-      checked_at: res.checked_at || new Date().toISOString(),
-      organization_id: res.organization_id || null,
-      issues: Array.isArray(res.issues) ? res.issues : [],
-      passed_checks: Array.isArray(res.passed_checks) ? res.passed_checks : [],
+      is_healthy: result.is_healthy === true && totalIssues === 0 && issues.length === 0,
+      health_score: totalIssues > 0 ? Math.min(score, 99) : score,
+      critical_count: Math.max(0, Number(result.critical_count) || 0),
+      warning_count: Math.max(0, Number(result.warning_count) || 0),
+      info_count: Math.max(0, Number(result.info_count) || 0),
+      total_issues: totalIssues,
+      checked_at: result.checked_at || new Date().toISOString(),
+      organization_id: activeOrganizationId,
+      issues,
+      passed_checks: result.passed_checks as string[],
     };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("[HealthDiagnostics] Action caught exception:", message);
-    return {
-      is_healthy: false,
-      health_score: 50,
-      critical_count: 1,
-      warning_count: 0,
-      info_count: 0,
-      total_issues: 1,
-      checked_at: new Date().toISOString(),
-      organization_id: organizationId || null,
-      issues: [
-        {
-          id: "SERVER_ACTION_EXCEPTION",
-          severity: "CRITICAL",
-          module: "সিস্টেম সার্ভার অ্যাকশন (Server Action Layer)",
-          location: "lib/diagnostics/actions.ts",
-          title: "সার্ভার অ্যাকশন রানটাইম ত্রুটি",
-          reason: message,
-          recommendation: "অ্যাপ্লিকেশন লগ ও নেটওয়ার্ক সংযোগ যাচাই করুন।",
-          timestamp: new Date().toISOString(),
-        },
-      ],
-      passed_checks: [],
-      error: message,
-    };
+    const message = err instanceof Error ? err.message : "Unknown diagnostic action exception";
+    console.error("[HealthDiagnostics] Diagnostic action failed:", message);
+    return diagnosticUnavailable(
+      activeOrganizationId,
+      "DIAGNOSTIC_ACTION_EXCEPTION",
+      "ডায়াগনস্টিক সার্ভিসে অপ্রত্যাশিত ত্রুটি",
+      message
+    );
   }
 }
 
@@ -143,6 +184,11 @@ export async function logSystemRuntimeIssueAction(payload: {
   details?: Record<string, unknown>;
 }): Promise<string | null> {
   try {
+    const session = await getCurrentUserSession(true);
+    if (!session.userId || !session.organizationId || session.organizationId !== payload.organizationId) {
+      console.warn("[HealthDiagnostics] Incident write blocked: missing or mismatched active organization.");
+      return null;
+    }
     const supabase = createClient();
     const { data, error } = await supabase.rpc("log_system_runtime_issue", {
       p_org_id: payload.organizationId,
@@ -175,6 +221,11 @@ export async function resolveSystemRuntimeIssueAction(payload: {
   issueId?: string;
 }): Promise<number> {
   try {
+    const session = await getCurrentUserSession(true);
+    if (!session.userId || !session.organizationId || session.organizationId !== payload.organizationId) {
+      console.warn("[HealthDiagnostics] Incident resolution blocked: missing or mismatched active organization.");
+      return 0;
+    }
     const supabase = createClient();
     const { data, error } = await supabase.rpc("resolve_system_runtime_issue", {
       p_org_id: payload.organizationId,
