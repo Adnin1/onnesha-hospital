@@ -72,6 +72,11 @@ test("system health reporting is fail-closed, tenant-aware, and honest about res
     assert.match(migration, /v_user_active_org/);
     assert.match(migration, /p_org_id IS DISTINCT FROM v_user_active_org/);
     assert.doesNotMatch(migration, /SELECT id INTO v_target_org_id[\s\S]{0,220}ORDER BY created_at ASC/);
+    assert.match(migration, /REVOKE ALL ON FUNCTION public\.check_system_health_diagnostics\(UUID\) FROM anon/i);
+    assert.match(migration, /CREATE OR REPLACE FUNCTION public\.log_system_runtime_issue/i);
+    assert.match(migration, /Active organization membership is required to record a system incident/i);
+    assert.match(migration, /REVOKE ALL ON FUNCTION public\.log_system_runtime_issue[\s\S]*FROM anon/i);
+    assert.doesNotMatch(migration, /v_effective_org_id\s*:=\s*'6b78e524-b1e3-4c43-8944-1a5a0248bff8'/i);
     assert.match(migration, /CREATE OR REPLACE FUNCTION public\.resolve_system_runtime_issue/i);
     assert.match(migration, /Administrative permission is required to resolve system incidents/i);
     assert.match(migration, /p_issue_id IS NULL/i);
