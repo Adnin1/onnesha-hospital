@@ -9,10 +9,10 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 w-full max-w-full overflow-x-hidden">
       <HospitalJsonLd />
       <PublicNavbar />
-      <main id="main-content" className="grow">{children}</main>
+      <main id="main-content" className="grow w-full max-w-full overflow-x-hidden">{children}</main>
       <PublicFooter />
     </div>
   );

@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div>
+    <div className="w-full max-w-full overflow-x-hidden">
       {/* 1. HERO SECTION — static server-rendered */}
       <section className="relative bg-gradient-to-br from-sky-900 via-sky-800 to-slate-900 text-white overflow-hidden py-16 lg:py-24">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]" aria-hidden="true"></div>
@@ -106,18 +106,18 @@ export default function HomePage() {
               </div>
 
               {/* Quick stats strip */}
-              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-sky-700/60 max-w-lg">
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold text-white">OPD &amp; IPD</div>
-                  <div className="text-xs text-sky-200">Consultant Care</div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-6 border-t border-sky-700/60 max-w-lg">
+                <div className="min-w-0">
+                  <div className="text-base sm:text-2xl font-bold text-white truncate">OPD &amp; IPD</div>
+                  <div className="text-xs text-sky-200 truncate">Consultant Care</div>
                 </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold text-white">Modern</div>
-                  <div className="text-xs text-sky-200">Beds &amp; Cabins</div>
+                <div className="min-w-0">
+                  <div className="text-base sm:text-2xl font-bold text-white truncate">Modern</div>
+                  <div className="text-xs text-sky-200 truncate">Beds &amp; Cabins</div>
                 </div>
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold text-emerald-400">Emergency</div>
-                  <div className="text-xs text-sky-200">Triage &amp; Lab</div>
+                <div className="min-w-0">
+                  <div className="text-base sm:text-2xl font-bold text-emerald-400 truncate">Emergency</div>
+                  <div className="text-xs text-sky-200 truncate">Triage &amp; Lab</div>
                 </div>
               </div>
 
@@ -192,56 +192,56 @@ export default function HomePage() {
       {/* 7. QUICK ACTION CARDS */}
       <section className="py-8 bg-slate-50 border-b border-slate-200" aria-label="Quick Actions">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <Link
               href="/appointment"
-              className="p-4 bg-white rounded-xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition group text-left flex items-start space-x-3.5 min-h-[72px]"
+              className="p-4 bg-white rounded-xl border border-slate-200 hover:border-emerald-500 hover:shadow-md transition group text-left flex items-start space-x-3.5 min-h-[72px] min-w-0"
             >
               <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition" aria-hidden="true">
                 <Calendar className="w-5 h-5" />
               </div>
-              <div>
-                <span className="text-sm font-bold text-slate-800 block group-hover:text-emerald-700 transition">Book Appointment</span>
-                <span className="text-xs text-slate-500">Specialist consultations</span>
+              <div className="min-w-0">
+                <span className="text-sm font-bold text-slate-800 block group-hover:text-emerald-700 transition truncate">Book Appointment</span>
+                <span className="text-xs text-slate-500 truncate block">Specialist consultations</span>
               </div>
             </Link>
 
             <Link
               href="/doctors"
-              className="p-4 bg-white rounded-xl border border-slate-200 hover:border-sky-500 hover:shadow-md transition group text-left flex items-start space-x-3.5 min-h-[72px]"
+              className="p-4 bg-white rounded-xl border border-slate-200 hover:border-sky-500 hover:shadow-md transition group text-left flex items-start space-x-3.5 min-h-[72px] min-w-0"
             >
               <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 group-hover:bg-sky-600 group-hover:text-white transition" aria-hidden="true">
                 <Stethoscope className="w-5 h-5" />
               </div>
-              <div>
-                <span className="text-sm font-bold text-slate-800 block group-hover:text-sky-700 transition">Our Doctors</span>
-                <span className="text-xs text-slate-500">Find doctors &amp; visiting hours</span>
+              <div className="min-w-0">
+                <span className="text-sm font-bold text-slate-800 block group-hover:text-sky-700 transition truncate">Our Doctors</span>
+                <span className="text-xs text-slate-500 truncate block">Find doctors &amp; visiting hours</span>
               </div>
             </Link>
 
             <Link
               href="/services"
-              className="p-4 bg-white rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md transition group text-left flex items-start space-x-3.5 min-h-[72px]"
+              className="p-4 bg-white rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md transition group text-left flex items-start space-x-3.5 min-h-[72px] min-w-0"
             >
               <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition" aria-hidden="true">
                 <Microscope className="w-5 h-5" />
               </div>
-              <div>
-                <span className="text-sm font-bold text-slate-800 block group-hover:text-indigo-700 transition">Services &amp; Tests</span>
-                <span className="text-xs text-slate-500">OPD, IPD, OT &amp; Diagnostics</span>
+              <div className="min-w-0">
+                <span className="text-sm font-bold text-slate-800 block group-hover:text-indigo-700 transition truncate">Services &amp; Tests</span>
+                <span className="text-xs text-slate-500 truncate block">OPD, IPD, OT &amp; Diagnostics</span>
               </div>
             </Link>
 
             <Link
               href="/check-token"
-              className="p-4 bg-white rounded-xl border border-slate-200 hover:border-amber-500 hover:shadow-md transition group text-left flex items-start space-x-3.5 min-h-[72px]"
+              className="p-4 bg-white rounded-xl border border-slate-200 hover:border-amber-500 hover:shadow-md transition group text-left flex items-start space-x-3.5 min-h-[72px] min-w-0"
             >
               <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 group-hover:bg-amber-600 group-hover:text-white transition" aria-hidden="true">
                 <Clock className="w-5 h-5" />
               </div>
-              <div>
-                <span className="text-sm font-bold text-slate-800 block group-hover:text-amber-700 transition">Check Live Token</span>
-                <span className="text-xs text-slate-500">Live OPD queue status</span>
+              <div className="min-w-0">
+                <span className="text-sm font-bold text-slate-800 block group-hover:text-amber-700 transition truncate">Check Live Token</span>
+                <span className="text-xs text-slate-500 truncate block">Live OPD queue status</span>
               </div>
             </Link>
           </div>
@@ -276,15 +276,15 @@ export default function HomePage() {
               return (
                 <div
                   key={i}
-                  className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md hover:border-sky-200 transition text-center"
+                  className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md hover:border-sky-200 transition text-center min-w-0"
                 >
                   <div className={`w-11 h-11 rounded-xl mx-auto flex items-center justify-center mb-2.5 ${spec.color}`} aria-hidden="true">
                     <Icon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-800">
+                  <h3 className="font-bold text-sm text-slate-800 truncate">
                     {spec.title}
                   </h3>
-                  <p className="text-[11px] text-slate-500 mt-1">{spec.desc}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{spec.desc}</p>
                 </div>
               );
             })}
@@ -476,12 +476,12 @@ export default function HomePage() {
             ].map((fac, idx) => {
               const FacIcon = fac.icon;
               return (
-                <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-center">
+                <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-center min-w-0">
                   <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-700 mx-auto flex items-center justify-center mb-2" aria-hidden="true">
                     <FacIcon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-xs text-slate-800">{fac.title}</h3>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-normal">{fac.desc}</p>
+                  <h3 className="font-bold text-xs text-slate-800 truncate">{fac.title}</h3>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-normal line-clamp-2">{fac.desc}</p>
                 </div>
               );
             })}
@@ -643,7 +643,7 @@ export default function HomePage() {
               Our 24-hour casualty emergency desk and on-call medical officers are ready to receive acute patients.
             </p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center justify-center gap-3 shrink-0 max-w-full">
             {HOSPITAL_METADATA.emergencyHotline ? (
               <a
                 href={`tel:${HOSPITAL_METADATA.emergencyHotline}`}

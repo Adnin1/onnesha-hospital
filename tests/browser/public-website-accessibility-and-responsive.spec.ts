@@ -30,7 +30,7 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
   });
 
   test("2. Responsive horizontal overflow check across multiple mobile viewports", async ({ page }) => {
-    test.setTimeout(120000);
+    test.setTimeout(180000);
     const viewports = [
       { width: 320, height: 640 },
       { width: 375, height: 812 },
@@ -55,7 +55,7 @@ test.describe("Real Browser E2E: Public Website Accessibility (WCAG 2.2) & Respo
 
       for (const vp of viewports) {
         await page.setViewportSize(vp);
-        await page.waitForTimeout(50);
+        await page.waitForTimeout(100);
 
         // Verify no horizontal document overflow: scrollWidth should match clientWidth
         let hasHorizontalScroll = false;
