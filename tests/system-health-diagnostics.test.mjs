@@ -125,7 +125,18 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
     const key = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !key) return;
 
-    const client = createClient(url, key);
+    // The hermetic build uses deliberately unreachable placeholder credentials.
+    // Treat that environment as NOT_RUN; do not assert a live database permission result.
+    if (
+      url.includes("ci-hermetic-build-placeholder") ||
+      key.includes("placeholder_key_not_a_real_credential")
+    ) {
+      return;
+    }
+
+    const client = createClient(url, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
     // Private diagnostic RPC execution itself must be denied to anonymous callers.
     // The browser action independently maps failed health reads to a degraded UNKNOWN state.
