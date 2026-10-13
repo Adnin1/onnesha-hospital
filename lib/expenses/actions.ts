@@ -69,6 +69,34 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
   { category_code: "EXP-LAB", name: "Diagnostic Reagents & Lab Kits" },
 ];
 
+async function reportExpenseReadFailure(params: {
+  organizationId: string;
+  operation: string;
+  location: string;
+  errorCode: string;
+  reason: string;
+}): Promise<void> {
+  try {
+    await reportSystemRuntimeIncident({
+      organizationId: params.organizationId,
+      module: "ACCOUNTING_EXPENSES",
+      location: params.location,
+      severity: "WARNING",
+      errorCode: params.errorCode,
+      title: "Expense data could not be loaded",
+      reason: params.reason,
+      recommendation: "Verify the current session and organization, Supabase availability, read permissions, and the relevant query/schema. Retry after checking whether the issue persists.",
+      details: {
+        operation: params.operation,
+        occurred_at: new Date().toISOString(),
+      },
+    });
+  } catch (reportError: unknown) {
+    console.error("[ExpenseRead] Diagnostic reporting also failed:", reportError instanceof Error ? reportError.message : "Unknown incident error");
+  }
+}
+
+
 /**
  * 1. Fetch Expense Categories for Active Organization
  */
@@ -221,15 +249,27 @@ export async function getExpensesAction(params?: {
 
     const { data, error } = await query;
     if (error) {
+      await reportExpenseReadFailure({
+        organizationId: session.organizationId,
+        operation: "READ_EXPENSE_VOUCHERS",
+        location: "lib/expenses/actions.ts:getExpensesAction -> public.expenses SELECT",
+        errorCode: error.code || "EXPENSE_LIST_QUERY_FAILED",
+        reason: "Expense voucher query failed (" + (error.code || "UNKNOWN") + "): " + error.message,
+      });
       return { success: false, error: error.message };
     }
 
     return { success: true, data: { expenses: (data || []) as unknown as ExpenseRecord[] } };
   } catch (err: unknown) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "Error loading expenses",
-    };
+    const message = err instanceof Error ? err.message : "Unknown error loading expenses";
+    await reportExpenseReadFailure({
+      organizationId: session.organizationId,
+      operation: "READ_EXPENSE_VOUCHERS",
+      location: "lib/expenses/actions.ts:getExpensesAction",
+      errorCode: "EXPENSE_LIST_UNEXPECTED_EXCEPTION",
+      reason: message,
+    });
+    return { success: false, error: message };
   }
 }
 
@@ -469,6 +509,13 @@ export async function getExpenseAnalyticsAction(params?: {
 
     const { data: expRows, error: expErr } = await query;
     if (expErr) {
+      await reportExpenseReadFailure({
+        organizationId: session.organizationId,
+        operation: "READ_EXPENSE_ANALYTICS",
+        location: "lib/expenses/actions.ts:getExpenseAnalyticsAction -> public.expenses SELECT",
+        errorCode: expErr.code || "EXPENSE_ANALYTICS_QUERY_FAILED",
+        reason: "Expense analytics query failed (" + (expErr.code || "UNKNOWN") + "): " + expErr.message,
+      });
       return { success: false, error: expErr.message };
     }
 
@@ -512,10 +559,15 @@ export async function getExpenseAnalyticsAction(params?: {
 
     return { success: true, data: { summary } };
   } catch (err: unknown) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "Error loading expense analytics",
-    };
+    const message = err instanceof Error ? err.message : "Unknown expense analytics exception";
+    await reportExpenseReadFailure({
+      organizationId: session.organizationId,
+      operation: "READ_EXPENSE_ANALYTICS",
+      location: "lib/expenses/actions.ts:getExpenseAnalyticsAction",
+      errorCode: "EXPENSE_ANALYTICS_UNEXPECTED_EXCEPTION",
+      reason: message,
+    });
+    return { success: false, error: message };
   }
 }
 
