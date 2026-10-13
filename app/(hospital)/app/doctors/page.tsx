@@ -95,7 +95,10 @@ export default function DoctorsAdminPage() {
 
   const handleCreateDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!docName.trim() || !docSpec.trim() || !docFee || !docRoom.trim()) return;
+    if (!docName.trim() || !docSpec.trim() || !docFee) {
+      setToast({ message: "Please enter Doctor Name, Specialization, and Consultation Fee.", type: "error" });
+      return;
+    }
 
     setSavingDoc(true);
     try {
@@ -104,7 +107,7 @@ export default function DoctorsAdminPage() {
         specialization: docSpec.trim(),
         bmdcRegNumber: docBmdc.trim() || undefined,
         consultationFee: parseFloat(docFee),
-        roomNumber: docRoom.trim(),
+        roomNumber: docRoom.trim() || "Chamber 1",
       });
 
       if (res.success) {

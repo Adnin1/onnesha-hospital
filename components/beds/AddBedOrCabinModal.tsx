@@ -28,6 +28,12 @@ export function AddBedOrCabinModal({
   const [dailyRate, setDailyRate] = useState("500");
   const [bedCategory, setBedCategory] = useState("General Bed");
 
+  React.useEffect(() => {
+    if (!wardId && wards.length > 0) {
+      setWardId(wards[0].id);
+    }
+  }, [wards, wardId]);
+
   // Cabin Form
   const [cabinNumber, setCabinNumber] = useState("");
   const [cabinType, setCabinType] = useState<"AC_DELUXE" | "NON_AC_STANDARD" | "VIP_SUITE">("AC_DELUXE");

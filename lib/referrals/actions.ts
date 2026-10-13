@@ -915,6 +915,23 @@ export async function recordDiscretionaryCommissionPayoutAction(params: {
 
       if (!expErr && expRes && typeof expRes === "object" && "voucher_number" in expRes) {
         voucherNumber = (expRes as { voucher_number: string }).voucher_number;
+      } else {
+        await supabase.from("expenses").insert({
+          organization_id: orgId,
+          voucher_number: voucherNumber,
+          category_id: categoryId,
+          title: `Referral Partner Payout: ${agent.full_name} (${agent.agent_code})`,
+          amount: params.amount,
+          payment_method: params.paymentMethod,
+          payment_reference: params.transactionReference?.trim() || settlementNumber,
+          paid_to: agent.full_name,
+          expense_date: new Date().toISOString().split("T")[0],
+          expense_type: "MARKETING",
+          department: "Marketing",
+          notes: `Settlement #${settlementNumber}: ${params.notes || "Discretionary partner commission payout"}`,
+          status: "POSTED",
+          approved_by: user.id,
+        });
       }
     }
 

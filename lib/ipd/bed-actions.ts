@@ -686,12 +686,25 @@ export async function addBedAction(payload: {
     }
 
     // 2. Resolve bed_type_id strictly within caller organization
-    const { data: btRow } = await supabase
+    let { data: btRow } = await supabase
       .from("bed_types")
       .select("id")
       .eq("organization_id", orgId)
       .limit(1)
       .maybeSingle();
+
+    if (!btRow?.id && payload.bed_type) {
+      const { data: newBt } = await supabase
+        .from("bed_types")
+        .insert({
+          organization_id: orgId,
+          name: payload.bed_type || "General Bed",
+          daily_rate: Number(payload.daily_rate) || 500,
+        })
+        .select("id")
+        .maybeSingle();
+      if (newBt?.id) btRow = newBt;
+    }
     const resolvedBedTypeId = btRow?.id || null;
 
     // 3. Prepare bed insert payload

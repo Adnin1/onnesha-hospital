@@ -112,16 +112,16 @@ export async function createDoctorAction(params: {
     return { success: false, error: msg };
   }
 
+  const roomNumber = params.roomNumber?.trim() || "Chamber 1";
   if (
     !params.fullName?.trim() ||
     !params.specialization?.trim() ||
-    !params.roomNumber?.trim() ||
     params.consultationFee === undefined ||
     params.consultationFee < 0
   ) {
     return {
       success: false,
-      error: "Full name, specialization, room number, and valid consultation fee are required.",
+      error: "Full name, specialization, and valid consultation fee are required.",
     };
   }
 
@@ -195,7 +195,7 @@ export async function createDoctorAction(params: {
       degrees: params.degrees?.trim() || "MBBS",
       designation: params.designation?.trim() || "Medical Officer",
       opd_fee: params.consultationFee,
-      room_number: params.roomNumber.trim(),
+      room_number: roomNumber,
       is_active: true,
     };
     if (params.phone?.trim()) {
