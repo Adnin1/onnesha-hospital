@@ -63,7 +63,7 @@ test("OHMS System & Database Autonomous Health Diagnostic Engine Certification",
     assert.match(bannerContent, /system-health-incident-reported/);
     assert.match(bannerContent, /system-health-incident-resolved/);
     assert.match(bannerContent, /সমস্যা সমাধান সম্পন্ন/);
-    assert.match(bannerContent, /সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা/);
+    assert.match(bannerContent, /সমাধান যাচাই করে incident resolve করুন/);
 
     const headerPath = path.join(ROOT, "components/app/HospitalHeader.tsx");
     const headerContent = fs.readFileSync(headerPath, "utf8");
