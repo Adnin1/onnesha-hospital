@@ -1078,6 +1078,20 @@ BEGIN
             USING ERRCODE = '22023';
     END IF;
 
+    IF v_payment_method NOT IN (
+        'CASH',
+        'BANK',
+        'BANK_TRANSFER',
+        'CHEQUE',
+        'BKASH',
+        'NAGAD',
+        'MFS_BKASH',
+        'MFS_NAGAD'
+    ) THEN
+        RAISE EXCEPTION 'Unsupported expense payment method: %', v_payment_method
+            USING ERRCODE = '22023';
+    END IF;
+
     IF p_category_id IS NULL OR NOT EXISTS (
         SELECT 1
         FROM public.expense_categories ec
