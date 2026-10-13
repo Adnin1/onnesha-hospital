@@ -42,6 +42,8 @@ test("expense voucher void uses an atomic, tenant-scoped accounting reversal", a
     assert.match(sql, /Active organization membership is required to create an expense voucher/i);
     assert.match(sql, /missing an active expense account or matching cash\/bank account/i);
     assert.match(sql, /v_payment_method = 'CASH'/i);
+    assert.match(sql, /Unsupported expense payment method/i);
+    assert.match(sql, /'BANK_TRANSFER'[\s\S]*'CHEQUE'[\s\S]*'BKASH'[\s\S]*'NAGAD'/i);
     const lineInsert = sql.indexOf("INSERT INTO public.journal_entry_lines");
     const postTransition = sql.indexOf("UPDATE public.journal_entries\n    SET status = 'POSTED'");
     const expenseLink = sql.indexOf("UPDATE public.expenses\n    SET journal_entry_id = v_je_id");
