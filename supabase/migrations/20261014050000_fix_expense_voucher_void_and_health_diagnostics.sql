@@ -769,6 +769,16 @@ BEGIN
 END;
 $$;
 
+-- If a legacy four-argument overload exists in the remote database, disable direct API execution.
+-- The updated application calls the five-argument, funds-confirmed overload only.
+DO $ohms_revoke_legacy$
+BEGIN
+    IF pg_catalog.to_regprocedure('public.void_hospital_expense_atomic(uuid,uuid,text,uuid)') IS NOT NULL THEN
+        EXECUTE 'REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(uuid, uuid, text, uuid) FROM PUBLIC, anon, authenticated';
+    END IF;
+END
+$ohms_revoke_legacy$;
+
 REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID, BOOLEAN) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID, BOOLEAN) FROM anon;
 GRANT EXECUTE ON FUNCTION public.void_hospital_expense_atomic(UUID, UUID, TEXT, UUID, BOOLEAN) TO authenticated;
