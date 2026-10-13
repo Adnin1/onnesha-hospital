@@ -34,7 +34,8 @@ export const metadata: Metadata = {
     description: SITE_CONFIG.description,
     url: SITE_CONFIG.canonicalUrl,
     siteName: SITE_CONFIG.shortName,
-    locale: "en_US",
+    locale: SITE_CONFIG.locale,
+    alternateLocale: ["en_US"],
     type: "website",
     images: [
       {
@@ -68,7 +69,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="bn" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900">
         <a href="#main-content" className="skip-to-content" lang="bn">মূল বিষয়বস্তুতে যান</a>
         <NetworkStatus />

@@ -173,13 +173,15 @@ export async function resolveSystemRuntimeIssueAction(payload: {
   organizationId: string;
   module?: string;
   issueId?: string;
+  location?: string;
 }): Promise<number> {
   try {
     const supabase = createClient();
     const { data, error } = await supabase.rpc("resolve_system_runtime_issue", {
-      p_org_id: payload.organizationId,
+      p_org_id: payload.organizationId || null,
       p_module: payload.module || null,
       p_issue_id: payload.issueId || null,
+      p_location: payload.location || null,
     });
     if (error) {
       console.error("[HealthDiagnostics] Failed to resolve runtime issue:", error);

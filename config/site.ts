@@ -19,7 +19,7 @@ export const SITE_CONFIG = {
   canonicalUrl: (process.env.NEXT_PUBLIC_SITE_URL || "https://onnesha-hospital.pages.dev").replace(/\/$/, ""),
   deploymentUrl: "https://onnesha-hospital.pages.dev",
   futureCustomDomain: "https://onneshahospital.com",
-  locale: "en_US",
+  locale: "bn_BD",
   defaultCurrency: HOSPITAL_METADATA.currency,
   currencySymbol: HOSPITAL_METADATA.currencySymbol,
   timezone: HOSPITAL_METADATA.timezone,

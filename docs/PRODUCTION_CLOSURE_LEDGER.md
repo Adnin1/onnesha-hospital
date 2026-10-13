@@ -5,7 +5,7 @@
 **Current Branch:** `main`  
 **Package Version:** `1.1.90`  
 **Immutable Release Tag:** `v1.1.90 @ db8b750b51685a73cbf320f51d5e8920fc6a7c8c`  
-**Current Production Closure HEAD:** `7396b2e3160dd8d1eaae050f2257bb57b2f6ef1e` (Engineering HEAD — Migration 187 Parity)  
+**Current Production Closure HEAD:** `7396b2e82fff2acc82407c4f7945baa4adb2a033` (Engineering HEAD — Migration 187 Parity)  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
 **Historical Release Tags:** `v1.1.89`, `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  

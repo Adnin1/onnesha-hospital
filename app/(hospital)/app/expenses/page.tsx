@@ -1263,18 +1263,24 @@ function ExpensesManagementContent() {
                 />
               </div>
 
-              <div className="mb-4 flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                <input
-                  type="checkbox"
-                  id="expensePermanentPurge"
-                  checked={deletePermanentPurge}
-                  onChange={(e) => setDeletePermanentPurge(e.target.checked)}
-                  className="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
-                />
-                <label htmlFor="expensePermanentPurge" className="text-[11px] text-slate-700 select-none">
-                  <span className="font-bold text-rose-700">স্থায়ীভাবে মুছে ফেলুন (Super Admin Hard Purge)</span>: ভাউচার ও এর সমস্ত লেজার রেকর্ড ডাটাবেজ থেকে স্থায়ীভাবে মুছে ফেলা হবে।
-                </label>
-              </div>
+              {deleteModalExpense.status === "DRAFT" || deleteModalExpense.status === "PENDING_APPROVAL" ? (
+                <div className="mb-4 flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <input
+                    type="checkbox"
+                    id="expensePermanentPurge"
+                    checked={deletePermanentPurge}
+                    onChange={(e) => setDeletePermanentPurge(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                  />
+                  <label htmlFor="expensePermanentPurge" className="text-[11px] text-slate-700 select-none">
+                    <span className="font-bold text-rose-700">স্থায়ীভাবে মুছে ফেলুন (Super Admin Hard Purge)</span>: ড্রাফট ভাউচার ডাটাবেজ থেকে সম্পূর্ণ মুছে ফেলা হবে।
+                  </label>
+                </div>
+              ) : (
+                <div className="mb-4 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[11px] text-slate-600">
+                  <span className="font-bold text-slate-800">অডিট ট্রেইল সুরক্ষা:</span> পোস্ট করা ভাউচারের ক্ষেত্রে হিসাবরক্ষণ আইন অনুযায়ী হার্ড ডিলিট নিষিদ্ধ। লেজার ব্যালান্স অটুট রাখতে এটি রিভার্সাল এন্ট্রির মাধ্যমে ভয়েড করা হবে।
+                </div>
+              )}
 
               <div className="flex justify-end space-x-3">
                 <button
@@ -1289,7 +1295,13 @@ function ExpensesManagementContent() {
                   disabled={deleteLoading}
                   className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition flex items-center shadow-xs disabled:opacity-50"
                 >
-                  {deleteLoading ? "Processing..." : deletePermanentPurge ? "Confirm Permanent Purge" : "Confirm Delete"}
+                  {deleteLoading
+                    ? "Processing..."
+                    : deletePermanentPurge
+                    ? "Confirm Permanent Purge"
+                    : deleteModalExpense.status === "DRAFT" || deleteModalExpense.status === "PENDING_APPROVAL"
+                    ? "Confirm Delete"
+                    : "Confirm Void & Reverse GL"}
                 </button>
               </div>
             </form>

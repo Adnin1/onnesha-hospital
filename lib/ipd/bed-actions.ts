@@ -634,23 +634,11 @@ export async function addBedAction(payload: {
   bed_type?: string;
 }): Promise<ActionResult<{ bed: BedRecord }>> {
   const session = await getCurrentUserSession();
-  const orgId = session.organizationId || "6b78e524-b1e3-4c43-8944-1a5a0248bff8";
-  const userId = session.userId;
-
   if (!session.userId || !session.organizationId) {
-    const errorMsg = "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।";
-    await reportSystemRuntimeIncident({
-      organizationId: orgId,
-      module: "আইপিডি ও বেড ব্যবস্থাপনা (Inpatient Beds & Cabins)",
-      location: "lib/ipd/bed-actions.ts:addBedAction",
-      severity: "WARNING",
-      errorCode: "UNAUTHORIZED_SESSION",
-      title: "বেড তৈরির অনুরোধে অথেন্টিকেশন ত্রুটি (401 Unauthorized)",
-      reason: "সেশন পাওয়া যায়নি অথবা ইউজার লগইন অবস্থায় নেই।",
-      recommendation: "হাসপাতাল সিস্টেমে অ্যাডমিন বা স্টাফ হিসেবে লগইন করে পুনরায় চেষ্টা করুন।",
-    });
-    return { success: false, error: errorMsg };
+    return { success: false, error: "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।" };
   }
+  const orgId = session.organizationId;
+  const userId = session.userId;
 
   try {
     await requirePermission("ipd.manage");
@@ -1047,22 +1035,10 @@ export async function updateBedDetailsAction(payload: {
  */
 export async function deleteBedAction(bedId: string): Promise<ActionResult<{ success: boolean }>> {
   const session = await getCurrentUserSession();
-  const orgId = session.organizationId || "6b78e524-b1e3-4c43-8944-1a5a0248bff8";
-
   if (!session.userId || !session.organizationId) {
-    const errorMsg = "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।";
-    await reportSystemRuntimeIncident({
-      organizationId: orgId,
-      module: "IPD Bed Inventory",
-      location: "lib/ipd/bed-actions.ts:deleteBedAction",
-      severity: "WARNING",
-      errorCode: "UNAUTHORIZED_SESSION",
-      title: "বেড মোছার অনুরোধে অথেন্টিকেশন ত্রুটি (401 Unauthorized)",
-      reason: "সেশন পাওয়া যায়নি অথবা ইউজার লগইন অবস্থায় নেই।",
-      recommendation: "হাসপাতাল সিস্টেমে অ্যাডমিন হিসেবে লগইন করে পুনরায় চেষ্টা করুন।",
-    });
-    return { success: false, error: errorMsg };
+    return { success: false, error: "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।" };
   }
+  const orgId = session.organizationId;
 
   try {
     await requirePermission("ipd.manage");

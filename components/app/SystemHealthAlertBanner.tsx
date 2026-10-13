@@ -74,18 +74,34 @@ export default function SystemHealthAlertBanner({
     };
 
     const handleResolved = (e: Event) => {
-      const detail = (e as CustomEvent<{ module?: string; issueId?: string }>)?.detail;
-      const mod = detail?.module;
-      if (mod) {
-        setEphemeralIssues((prev) => prev.filter((item) => item.module !== mod));
-      } else if (detail?.issueId) {
-        setEphemeralIssues((prev) => prev.filter((item) => item.id !== detail.issueId));
-      } else {
-        setEphemeralIssues([]);
+      const detail = (e as CustomEvent<{ module?: string; issueId?: string; location?: string; errorCode?: string }>)?.detail;
+      const { issueId, location, errorCode, module: mod } = detail || {};
+
+      let matchedCount = 0;
+      setEphemeralIssues((prev) => {
+        return prev.filter((item) => {
+          if (issueId && item.id === issueId) {
+            matchedCount++;
+            return false;
+          }
+          if (location && item.location === location) {
+            matchedCount++;
+            return false;
+          }
+          if (errorCode && (item as unknown as { errorCode?: string }).errorCode === errorCode) {
+            matchedCount++;
+            return false;
+          }
+          return true;
+        });
+      });
+
+      // Only display "Issue Solved" if an active incident was actually matched and resolved
+      if (matchedCount > 0 || issueId) {
+        const label = location || mod || "সনাক্তকৃত সমস্যা";
+        setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${label}) — সিস্টেম স্বাভাবিক অবস্থায় ফিরে এসেছে।`);
+        setTimeout(() => setJustResolvedMessage(null), 10000);
       }
-      const label = mod || "সনাক্তকৃত সমস্যা";
-      setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${label}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
-      setTimeout(() => setJustResolvedMessage(null), 12000);
       fetchDiagnostics();
     };
 
@@ -105,16 +121,18 @@ export default function SystemHealthAlertBanner({
   }, [fetchDiagnostics, organizationId]);
 
   const handleResolveIssue = async (issueId: string, module?: string) => {
-    setEphemeralIssues((prev) => prev.filter((item) => item.id !== issueId && item.module !== module));
-    const orgId = data?.organization_id || organizationId || "6b78e524-b1e3-4c43-8944-1a5a0248bff8";
-    await resolveSystemRuntimeIssueAction({
-      organizationId: orgId,
-      issueId: issueId.startsWith("ephemeral-") ? undefined : issueId,
-      module: module,
-    });
+    setEphemeralIssues((prev) => prev.filter((item) => item.id !== issueId));
+    const orgId = data?.organization_id || organizationId;
+    if (orgId) {
+      await resolveSystemRuntimeIssueAction({
+        organizationId: orgId,
+        issueId: issueId.startsWith("ephemeral-") ? undefined : issueId,
+        module: module,
+      });
+    }
     const mod = module || "ইস্যু";
-    setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
-    setTimeout(() => setJustResolvedMessage(null), 12000);
+    setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সিস্টেম স্বাভাবিক অবস্থায় ফিরে এসেছে।`);
+    setTimeout(() => setJustResolvedMessage(null), 10000);
     fetchDiagnostics();
   };
 

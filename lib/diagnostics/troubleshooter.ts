@@ -61,14 +61,20 @@ export async function reportSystemRuntimeIncident(
   return issueId;
 }
 
-/**
- * Resolves an active incident in the database and notifies the UI banner.
- */
-export async function resolveSystemRuntimeIncident(params: {
+export interface ResolveIncidentParams {
   organizationId: string;
   module?: string;
   issueId?: string;
-}): Promise<number> {
+  location?: string;
+  errorCode?: string;
+}
+
+/**
+ * Resolves an active incident in the database and notifies the UI banner.
+ */
+export async function resolveSystemRuntimeIncident(
+  params: ResolveIncidentParams
+): Promise<number> {
   const count = await resolveSystemRuntimeIssueAction(params);
 
   if (typeof window !== "undefined") {
@@ -89,7 +95,7 @@ export async function resolveSystemRuntimeIncident(params: {
  */
 let globalMonitoringInstalled = false;
 
-export function setupGlobalErrorMonitoring(defaultOrgId = "6b78e524-b1e3-4c43-8944-1a5a0248bff8"): () => void {
+export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
   if (typeof window === "undefined" || globalMonitoringInstalled) {
     return () => {};
   }
@@ -100,17 +106,19 @@ export function setupGlobalErrorMonitoring(defaultOrgId = "6b78e524-b1e3-4c43-89
       return;
     }
     const location = `${event.filename ? event.filename.split("/").slice(-2).join("/") : window.location.pathname}:${event.lineno || 0}`;
-    void reportSystemRuntimeIncident({
-      organizationId: defaultOrgId,
-      module: window.location.pathname || "Frontend UI",
-      location: location,
-      severity: "CRITICAL",
-      errorCode: "UNCAUGHT_BROWSER_ERROR",
-      title: "ব্রাউজার রানটাইম ত্রুটি (Uncaught Client Error)",
-      reason: event.message || "অপ্রত্যাশিত ক্লায়েন্ট সাইড ত্রুটি সনাক্ত হয়েছে।",
-      recommendation: "পৃষ্ঠাটি রিফ্রেশ করুন অথবা অ্যান্টিগ্র্যাভিটি দিয়ে কোড ঠিক করুন।",
-      details: { stack: event.error?.stack?.slice(0, 300) },
-    });
+    if (defaultOrgId) {
+      void reportSystemRuntimeIncident({
+        organizationId: defaultOrgId,
+        module: window.location.pathname || "Frontend UI",
+        location: location,
+        severity: "CRITICAL",
+        errorCode: "UNCAUGHT_BROWSER_ERROR",
+        title: "ব্রাউজার রানটাইম ত্রুটি (Uncaught Client Error)",
+        reason: event.message || "অপ্রত্যাশিত ক্লায়েন্ট সাইড ত্রুটি সনাক্ত হয়েছে।",
+        recommendation: "পৃষ্ঠাটি রিফ্রেশ করুন অথবা সাপোর্ট টিমকে অবহিত করুন।",
+        details: { stack: event.error?.stack?.slice(0, 300) },
+      });
+    }
   };
 
   const rejectionHandler = (event: PromiseRejectionEvent) => {
@@ -118,16 +126,18 @@ export function setupGlobalErrorMonitoring(defaultOrgId = "6b78e524-b1e3-4c43-89
     if (!reasonText || reasonText.includes("ResizeObserver") || reasonText.includes("AbortError")) {
       return;
     }
-    void reportSystemRuntimeIncident({
-      organizationId: defaultOrgId,
-      module: window.location.pathname || "Frontend UI",
-      location: `Promise Rejection at ${window.location.pathname}`,
-      severity: "WARNING",
-      errorCode: "UNHANDLED_PROMISE_REJECTION",
-      title: "অমীমাংসিত প্রমিজ ত্রুটি (Unhandled Promise Rejection)",
-      reason: reasonText,
-      recommendation: "নেটওয়ার্ক সংযোগ ও এপিআই স্ট্যাটাস পরীক্ষা করুন।",
-    });
+    if (defaultOrgId) {
+      void reportSystemRuntimeIncident({
+        organizationId: defaultOrgId,
+        module: window.location.pathname || "Frontend UI",
+        location: `Promise Rejection at ${window.location.pathname}`,
+        severity: "WARNING",
+        errorCode: "UNHANDLED_PROMISE_REJECTION",
+        title: "অমীমাংসিত প্রমিজ ত্রুটি (Unhandled Promise Rejection)",
+        reason: reasonText,
+        recommendation: "নেটওয়ার্ক সংযোগ ও এপিআই স্ট্যাটাস পরীক্ষা করুন।",
+      });
+    }
   };
 
   window.addEventListener("error", errorHandler);

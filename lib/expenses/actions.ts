@@ -326,6 +326,7 @@ export async function createExpenseAction(params: {
 
     await resolveSystemRuntimeIncident({
       organizationId: session.organizationId,
+      location: "lib/expenses/actions.ts:createExpenseAction",
       module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
     });
 
@@ -445,18 +446,7 @@ export async function voidExpenseAction(
 ): Promise<ActionResult<{ success: boolean; status: string }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
-    const errorMsg = "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।";
-    await reportSystemRuntimeIncident({
-      organizationId: session.organizationId || "6b78e524-b1e3-4c43-8944-1a5a0248bff8",
-      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
-      location: "lib/expenses/actions.ts:voidExpenseAction",
-      severity: "WARNING",
-      errorCode: "UNAUTHORIZED_SESSION",
-      title: "ভাউচার ভয়েড করার অনুরোধে অথেন্টিকেশন ত্রুটি",
-      reason: "সেশন পাওয়া যায়নি অথবা ইউজার লগইন অবস্থায় নেই।",
-      recommendation: "হাসপাতাল সিস্টেমে অনুমোদিত স্টাফ হিসেবে লগইন করে পুনরায় চেষ্টা করুন।",
-    });
-    return { success: false, error: errorMsg };
+    return { success: false, error: "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।" };
   }
 
   try {
@@ -521,6 +511,7 @@ export async function voidExpenseAction(
 
     await resolveSystemRuntimeIncident({
       organizationId: session.organizationId,
+      location: "lib/expenses/actions.ts:voidExpenseAction",
       module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
     });
 
@@ -554,18 +545,7 @@ export async function deleteExpenseAction(params: {
 }): Promise<ActionResult<{ success: boolean; mode: string; message: string }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
-    const errorMsg = "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।";
-    await reportSystemRuntimeIncident({
-      organizationId: session.organizationId || "6b78e524-b1e3-4c43-8944-1a5a0248bff8",
-      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
-      location: "lib/expenses/actions.ts:deleteExpenseAction",
-      severity: "WARNING",
-      errorCode: "UNAUTHORIZED_SESSION",
-      title: "ভাউচার মোছার অনুরোধে অথেন্টিকেশন ত্রুটি (401 Unauthorized)",
-      reason: "সেশন পাওয়া যায়নি অথবা ইউজার লগইন অবস্থায় নেই।",
-      recommendation: "হাসপাতাল সিস্টেমে অ্যাডমিন হিসেবে লগইন করে পুনরায় চেষ্টা করুন।",
-    });
-    return { success: false, error: errorMsg };
+    return { success: false, error: "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।" };
   }
 
   try {
@@ -634,9 +614,10 @@ export async function deleteExpenseAction(params: {
       return { success: false, error: msg };
     }
 
-    // Auto-resolve any previous expense incidents upon success
+    // Auto-resolve any previous expense delete incidents upon success
     await resolveSystemRuntimeIncident({
       organizationId: session.organizationId,
+      location: "lib/expenses/actions.ts:deleteExpenseAction",
       module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
     });
 
@@ -742,6 +723,7 @@ export async function updateExpenseAction(params: {
 
     await resolveSystemRuntimeIncident({
       organizationId: session.organizationId,
+      location: "lib/expenses/actions.ts:updateExpenseAction",
       module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
     });
 
