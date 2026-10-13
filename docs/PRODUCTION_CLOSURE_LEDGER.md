@@ -5,12 +5,12 @@
 **Current Branch:** `main`  
 **Package Version:** `1.1.90`  
 **Immutable Release Tag:** `v1.1.90 @ db8b750b51685a73cbf320f51d5e8920fc6a7c8c`  
-**Current Production Closure HEAD:** `8f55e414dda91aa83f50b41433ab2275d06b2bb0` (Engineering HEAD — CI Run 559 PASS)  
+**Current Production Closure HEAD:** `7396b2e3160dd8d1eaae050f2257bb57b2f6ef1e` (Engineering HEAD — Migration 187 Parity)  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
 **Historical Release Tags:** `v1.1.89`, `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
 **Database Project ID:** `iuhtzahuszdkdarhxobx` (Supabase Production Database)  
-**Ledger Reconciliation Date:** October 13, 2026  
+**Ledger Reconciliation Date:** October 14, 2026  
 **Final Production Verdict:** **SOFTWARE_COMPLETE_EXTERNAL_OWNER_COMMISSIONING_REMAINS**
 
 ---
@@ -22,11 +22,11 @@
 | **Git Working Tree** | Clean & Synced with `origin/main` | `git status --short` | ✅ PASS |
 | **TypeScript Strict Compiler** | `0 errors, 0 warnings` | `npx tsc --noEmit` (exit code 0) | ✅ PASS |
 | **ESLint Zero-Warning Gate** | `0 errors, 0 warnings` | `npx eslint . --max-warnings 0` (exit code 0) | ✅ PASS |
-| **Node Certification Test Suite** | 141/141 suites passed (1,275 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
+| **Node Certification Test Suite** | 142/142 suites passed (1,283 active passes, 0 failed, 7 skipped) | `npm test` & `npm run test:certification` | ✅ PASS |
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 559 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 63/63 static routes generated (including `/app/system-health`) | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 62 HTML pages, 402 internal links, 1172 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 186/186 applied (100% parity, 0 drift, newest: `20261014041000_harden_diagnostics_security_and_system_checks.sql`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 187/187 applied (100% parity, 0 drift, newest: `20261014050000_harden_expenses_deletion_voiding_and_diagnostics.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
 | **Doctor & Roster UX** | Doctor creation roomNumber fallback (`Chamber 1`) + validation feedback toast | `app/doctors/page.tsx` & `lib/appointments/actions.ts` | ✅ PASS |
 | **Bed & Cabin Matrix** | Fixed `ward_name` NOT NULL constraint via Migration 184/185; auto-population trigger `trg_beds_auto_populate_ward_name`; real-time occupancy sync trigger + row locking `FOR UPDATE` | `lib/ipd/bed-actions.ts` & Migrations 179, 184, 185 | ✅ PASS |
@@ -35,8 +35,10 @@
 | **Referrals & Per-Patient Payout** | Per-patient commission tracking (earned/paid/due/status) + atomic RPC `record_referral_commission_payout_atomic` + auto GL postings | `lib/referrals/actions.ts` & Migration 180 | ✅ PASS |
 | **Financial Reports & Accounting** | Resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 mismatch; balanced GL ledger | Migrations 176–180 & `app/reports/page.tsx` | ✅ PASS |
 | **Autonomous System Health Diagnostics & Troubleshooter** | Hardened 10-domain PostgreSQL diagnostic engine `check_system_health_diagnostics` + tenant-scoped RLS `system_health_issues_log` + global browser error interceptor + real-time DOM alert banner with 'Issue Solved' notification + dedicated `/app/system-health` control panel | Migrations 181–186, `lib/diagnostics/troubleshooter.ts`, `SystemHealthAlertBanner.tsx`, `app/system-health/page.tsx` | ✅ PASS |
+| **Hospital Expenses Deletion & GL Reversals** | Stored procedure `delete_hospital_expense_super_admin_atomic` supporting draft delete, posted void with GL reversal, and super-admin permanent purge | Migration 187, `lib/expenses/actions.ts`, `/app/expenses` | ✅ PASS |
+| **24/7 Background Scheduled Health Monitor** | GitHub Actions cron probe (`*/5 * * * *`) + local/edge probe (`scripts/scheduled-health-check.mjs`) continuously verifying HTTP edge and DB invariants | `.github/workflows/health-monitor.yml`, `scripts/scheduled-health-check.mjs` | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `f0e5030d`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `9526cfd5`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
@@ -198,6 +200,24 @@
   1. Added multi-select checkbox filtering and bulk delete action (`bulkDeleteDiagnosticTestsAction`).
   2. Grouped category tabs with quick search and test counts for 350+ hospital test services.
 
+### S. Hospital Expense Voucher Atomic Deletion, Voiding & General Ledger Reversal (Migration 187)
+- **Files Modified:** `supabase/migrations/20261014050000_harden_expenses_deletion_voiding_and_diagnostics.sql`, `lib/expenses/actions.ts`, `app/(hospital)/app/expenses/page.tsx`, `tests/hospital-expenses-deletion-and-diagnostics.test.mjs`.
+- **Resolution:**
+  1. Implemented `public.delete_hospital_expense_super_admin_atomic` supporting:
+     - Safe deletion of `DRAFT` / `PENDING_APPROVAL` vouchers.
+     - Atomic general ledger reversal (`post_journal_entry_atomic`) with inverted debits/credits and `'VOIDED'` status for posted expenses.
+     - Authorized Super-Admin permanent purge with `app.override_journal_immutability` for erroneous test vouchers.
+  2. Integrated reactive incident reporting and resolution (`reportSystemRuntimeIncident` / `resolveSystemRuntimeIncident`) into all expense lifecycle actions (`createExpenseAction`, `updateExpenseAction`, `voidExpenseAction`, `deleteExpenseAction`).
+  3. Added Delete / Purge Modal in `/app/expenses` with draft delete, GL reversal notices, and super-admin purge options.
+
+### T. 24/7 Background Scheduled Health Monitor & Real-Time Reactive Troubleshooter
+- **Files Modified:** `.github/workflows/health-monitor.yml`, `scripts/scheduled-health-check.mjs`, `components/app/SystemHealthAlertBanner.tsx`, `lib/diagnostics/troubleshooter.ts`, `lib/ipd/bed-actions.ts`.
+- **Resolution:**
+  1. Established scheduled GitHub Actions heartbeat probe running every 5 minutes (`*/5 * * * *`), testing both live edge HTTP 200 and remote Supabase 10-point diagnostics.
+  2. Hardened `SystemHealthAlertBanner.tsx` to handle client-side ephemeral incidents (`system-health-incident-reported` / `system-health-incident-resolved`) with immediate on-screen visibility of exact location (কোথায়) and cause (কেন).
+  3. Added interactive resolution feedback banner displaying "সমস্যা সমাধান সম্পন্ন" when an operation succeeds, automatically fading out to pristine green.
+  4. Instrumented bed and cabin management actions (`addBedAction`, `deleteBedAction`) to report actionable Bengali incidents on permission or validation failures instead of silent failures.
+
 ---
 
 ## 3. Human & On-Site Boundary Governance (G1–G16)
@@ -225,8 +245,8 @@
 
 $$\mathbf{SOFTWARE\ QUALITY\ VERIFIED\ \bullet\ DEPLOYMENT\ VERIFIED\ \bullet\ INSTALLERS\ VERIFIED}$$
 
-1. **Software Quality:** 141/141 certification suites, 1,275 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
-2. **Database Parity:** 186/186 Supabase migrations applied (100% parity, 0 drift).
-3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `f0e5030d`, `WORKSTATION_DEPLOY_VERIFIED`).
+1. **Software Quality:** 142/142 certification suites, 1,283 active passes, 0 failures, 7 skipped, 208/208 multi-browser Playwright specs (Chromium, Firefox, Mobile Chrome, WebKit), 0 lint warnings, 0 typecheck errors.
+2. **Database Parity:** 187/187 Supabase migrations applied (100% parity, 0 drift, newest: `20261014050000_harden_expenses_deletion_voiding_and_diagnostics.sql`).
+3. **Edge Deployment:** Live on Cloudflare Pages edge (`https://onnesha-hospital.pages.dev`, deployment `9526cfd5`, `WORKSTATION_DEPLOY_VERIFIED`).
 4. **Installer Delivery:** Native WiX MSI and NSIS EXE binaries compiled on Windows, verified, and manifest synced to v1.1.90.
 5. **External Owner Gates:** G1–G16 clearly isolated without false greens.
