@@ -37,7 +37,6 @@ export default function SystemHealthAlertBanner({
   const [isResolvingIssueId, setIsResolvingIssueId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(false);
   const [justResolvedMessage, setJustResolvedMessage] = useState<string | null>(null);
 
   const fetchDiagnostics = useCallback((): void => {
@@ -118,13 +117,31 @@ export default function SystemHealthAlertBanner({
           incident,
         ].slice(-20);
         setData((previous) => {
-          if (!previous) return previous;
-          const issues = previous.issues.filter((item) => item.id !== incident.id);
-          return { ...previous, issues, total_issues: Math.max(0, previous.total_issues - (issues.length === previous.issues.length ? 0 : 1)), is_healthy: false };
+          const priorIssues = previous?.issues || [];
+          const alreadyVisible = priorIssues.some((item) => item.id === incident.id);
+          const issues = alreadyVisible ? priorIssues : [...priorIssues, incident];
+          const baseTotal = Math.max(previous?.total_issues || 0, priorIssues.length);
+          const countAdded = alreadyVisible ? 0 : 1;
+          const criticalAdded = countAdded && incident.severity === "CRITICAL" ? 1 : 0;
+          const warningAdded = countAdded && incident.severity === "WARNING" ? 1 : 0;
+          const infoAdded = countAdded && incident.severity === "INFO" ? 1 : 0;
+
+          return {
+            is_healthy: false,
+            health_score: Math.min(previous?.health_score ?? 0, 90),
+            critical_count: (previous?.critical_count || 0) + criticalAdded,
+            warning_count: (previous?.warning_count || 0) + warningAdded,
+            info_count: (previous?.info_count || 0) + infoAdded,
+            total_issues: baseTotal + countAdded,
+            checked_at: previous?.checked_at || incident.timestamp,
+            organization_id: previous?.organization_id || null,
+            issues,
+            passed_checks: previous?.passed_checks || [],
+            error: previous?.error || null,
+          };
         });
       }
 
-      setIsDismissed(false);
       setJustResolvedMessage(null);
       setActionMessage(null);
       fetchDiagnostics();
@@ -140,7 +157,6 @@ export default function SystemHealthAlertBanner({
           return { ...previous, issues, total_issues: Math.max(0, previous.total_issues - (issues.length === previous.issues.length ? 0 : 1)) };
         });
       }
-      setIsDismissed(false);
       fetchDiagnostics();
     };
 
@@ -213,7 +229,6 @@ export default function SystemHealthAlertBanner({
           ? "✅ সমস্যা সমাধান সম্পন্ন (" + moduleName + ") — পুনঃপরীক্ষায় সব সংজ্ঞায়িত health check পাস করেছে।"
           : "✅ Incident resolve করা হয়েছে (" + moduleName + ") — তবে আরও " + verification.total_issues + "টি health issue বা warning বাকি আছে।"
       );
-      setIsDismissed(false);
       setTimeout(() => setJustResolvedMessage(null), 12_000);
       fetchDiagnostics();
     } catch (error: unknown) {
@@ -241,7 +256,7 @@ export default function SystemHealthAlertBanner({
   return (
     <>
       {/* 0. RESOLVED NOTIFICATION BANNER (Shows when an issue was solved) */}
-      {justResolvedMessage && !hasIssues && variant !== "badge" && (
+      {justResolvedMessage && variant !== "badge" && (
         <aside
           role="status"
           aria-live="polite"
@@ -266,8 +281,8 @@ export default function SystemHealthAlertBanner({
         </aside>
       )}
 
-      {/* 1. TOP ALERT BANNER (Only renders if unresolved issues exist and not dismissed for this view) */}
-      {hasIssues && !isDismissed && variant !== "badge" && (
+      {/* 1. Persistent alert banner: unresolved incidents remain visible until a verified rescan clears them. */}
+      {hasIssues && variant !== "badge" && (
         <aside
           role="alert"
           aria-live="assertive"
@@ -299,14 +314,6 @@ export default function SystemHealthAlertBanner({
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
 
-              <button
-                type="button"
-                onClick={() => setIsDismissed(true)}
-                aria-label="অ্যালার্ট সাময়িকভাবে বন্ধ করুন"
-                className="p-1 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-amber-500/10 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
           </div>
         </aside>
@@ -316,10 +323,7 @@ export default function SystemHealthAlertBanner({
       {(variant === "badge" || variant === "full") && (
         <button
           type="button"
-          onClick={() => {
-            setIsDismissed(false);
-            setIsModalOpen(true);
-          }}
+          onClick={() => setIsModalOpen(true)}
           title={
             hasIssues
               ? `সিস্টেমে ${data.total_issues}টি বিষয় সমাধানের অপেক্ষায়`
