@@ -475,11 +475,11 @@ export async function voidExpenseAction(
 
     if (rpcErr) {
       const code = rpcErr.code || "EXPENSE_VOID_RPC_ERROR";
-      const reason = \`The void RPC failed (\${code}): \${rpcErr.message || "No database error detail returned"}\`;
+      const reason = `The void RPC failed (${code}): ${rpcErr.message || "No database error detail returned"}`;
       await reportVoidFailure(code, reason);
       return {
         success: false,
-        error: \`Voucher void failed [\${code}]. The error has been reported to system diagnostics. \${rpcErr.message || "Please contact the system administrator."}\`,
+        error: `Voucher void failed [${code}]. The error has been reported to system diagnostics. ${rpcErr.message || "Please contact the system administrator."}`,
       };
     }
 
@@ -498,7 +498,7 @@ export async function voidExpenseAction(
       await reportVoidFailure("EXPENSE_VOID_NOT_CONFIRMED", rpcMessage);
       return {
         success: false,
-        error: \`Voucher was not confirmed as voided. \${rpcMessage} System diagnostics has been notified.\`,
+        error: `Voucher was not confirmed as voided. ${rpcMessage} System diagnostics has been notified.`,
       };
     }
 
@@ -516,7 +516,7 @@ export async function voidExpenseAction(
       !["VOID", "VOIDED"].includes(String(persisted.status).toUpperCase())
     ) {
       const reason = verifyErr
-        ? \`The void RPC returned success but the persisted status could not be verified (\${verifyErr.code || "DB_READ_ERROR"}): \${verifyErr.message}\`
+        ? `The void RPC returned success but the persisted status could not be verified (${verifyErr.code || "DB_READ_ERROR"}): ${verifyErr.message}`
         : "The void RPC returned success, but the expense record does not show status VOID or VOIDED after the operation.";
       await reportVoidFailure("EXPENSE_VOID_POSTCONDITION_FAILED", reason);
       return {
