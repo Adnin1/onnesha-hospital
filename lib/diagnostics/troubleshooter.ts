@@ -26,18 +26,20 @@ export interface ReportIncidentParams {
 export async function reportSystemRuntimeIncident(
   params: ReportIncidentParams
 ): Promise<string | null> {
-  // Fire immediate client-side custom event so user sees alert right away
+  const ephemeralId = "ephemeral-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+  const eventPayload: Partial<SystemHealthIssue> = {
+    id: ephemeralId,
+    module: params.module,
+    location: params.location,
+    severity: params.severity || "CRITICAL",
+    title: params.title,
+    reason: params.reason,
+    recommendation: params.recommendation,
+    timestamp: new Date().toISOString(),
+  };
+
+  // Show the event immediately even if the database logger is currently unavailable.
   if (typeof window !== "undefined") {
-    const eventPayload: Partial<SystemHealthIssue> = {
-      id: "ephemeral-" + Date.now(),
-      module: params.module,
-      location: params.location,
-      severity: params.severity || "CRITICAL",
-      title: params.title,
-      reason: params.reason,
-      recommendation: params.recommendation,
-      timestamp: new Date().toISOString(),
-    };
     window.dispatchEvent(
       new CustomEvent("system-health-incident-reported", {
         detail: eventPayload,
@@ -45,7 +47,7 @@ export async function reportSystemRuntimeIncident(
     );
   }
 
-  // Persist to Supabase database
+  // Persist to Supabase database; the health UI keeps the local incident until this succeeds.
   const issueId = await logSystemRuntimeIssueAction({
     organizationId: params.organizationId,
     module: params.module,
@@ -57,6 +59,14 @@ export async function reportSystemRuntimeIncident(
     recommendation: params.recommendation,
     details: params.details,
   });
+
+  if (issueId && typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("system-health-incident-persisted", {
+        detail: { ephemeralId, issueId },
+      })
+    );
+  }
 
   return issueId;
 }
