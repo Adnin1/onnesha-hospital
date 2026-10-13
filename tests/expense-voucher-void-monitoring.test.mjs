@@ -18,7 +18,8 @@ test("expense voucher void uses an atomic, tenant-scoped accounting reversal", a
     assert.match(sql, /Accounting management permission is required/i);
     assert.match(sql, /FOR UPDATE/i);
     assert.match(sql, /EXPENSE_VOID_REVERSAL/i);
-    assert.match(sql, /SET status = 'REVERSED'/i);
+    assert.doesNotMatch(sql, /UPDATE public\.journal_entries\s+SET status = 'REVERSED'/i);
+    assert.match(sql, /Keep the original journal immutable and POSTED/i);
     assert.match(sql, /SET status = 'VOIDED'/i);
     assert.match(sql, /v_reversal_debit <> v_reversal_credit/i);
     assert.match(sql, /p_funds_recovered BOOLEAN DEFAULT FALSE/i);
