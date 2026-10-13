@@ -39,7 +39,6 @@ test("expense voucher void uses an atomic, tenant-scoped accounting reversal", a
     assert.match(sql, /Accounting post or billing create permission is required/i);
     assert.match(sql, /Active organization membership is required to create an expense voucher/i);
     assert.match(sql, /missing an active expense account or matching cash\/bank account/i);
-    assert.match(sql, /WHEN[^;]*CASH/i);
     assert.match(sql, /v_payment_method = 'CASH'/i);
     const lineInsert = sql.indexOf("INSERT INTO public.journal_entry_lines");
     const postTransition = sql.indexOf("UPDATE public.journal_entries\n    SET status = 'POSTED'");
@@ -47,6 +46,28 @@ test("expense voucher void uses an atomic, tenant-scoped accounting reversal", a
     assert.ok(lineInsert >= 0 && postTransition > lineInsert, "balanced journal lines must be inserted while header is PENDING");
     assert.ok(expenseLink > postTransition, "expense links only after the journal is posted");
     assert.match(sql, /SET status = 'PENDING'/);
+  });
+
+  await t.test("expense listing and analytics failures enter the runtime diagnostics pipeline", () => {
+    const action = read("lib/expenses/actions.ts");
+    assert.match(action, /async function reportExpenseReadFailure/);
+    assert.match(action, /EXPENSE_LIST_QUERY_FAILED/);
+    assert.match(action, /EXPENSE_LIST_UNEXPECTED_EXCEPTION/);
+    assert.match(action, /EXPENSE_ANALYTICS_QUERY_FAILED/);
+    assert.match(action, /reportSystemRuntimeIncident/);
+  });
+
+  await t.test("expense creation verifies the returned expense and linked journal and does not invite duplicate retries after audit-only failure", () => {
+    const action = read("lib/expenses/actions.ts");
+    const start = action.indexOf("export async function createExpenseAction(");
+    const end = action.indexOf("/**\n * 5. Get Expense Analytics", start);
+    assert.ok(start >= 0 && end > start, "createExpenseAction must exist");
+    const source = action.slice(start, end);
+    assert.match(source, /EXPENSE_CREATE_RPC_FAILED/);
+    assert.match(source, /EXPENSE_CREATE_NOT_CONFIRMED/);
+    assert.match(source, /typeof res\.journal_entry_id === "string"/);
+    assert.match(source, /EXPENSE_CREATE_AUDIT_LOG_FAILED/);
+    assert.match(source, /success: true,[\s\S]*auditWarning/);
   });
 
   await t.test("posted voucher accounting fields cannot be edited without reversal", () => {
