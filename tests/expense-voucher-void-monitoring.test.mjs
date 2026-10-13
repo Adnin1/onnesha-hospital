@@ -84,6 +84,9 @@ test("system health reporting is fail-closed, tenant-aware, and honest about res
     assert.match(troubleshooter, /getCurrentUserSession\(true\)/);
     assert.match(troubleshooter, /system-health-incident-persisted/);
     assert.match(troubleshooter, /sanitizeIncidentDetails/);
+    assert.match(troubleshooter, /PHONE_REDACTED/);
+    assert.match(troubleshooter, /IDENTIFIER_REDACTED/);
+    assert.match(troubleshooter, /UUID_REDACTED/);
     assert.doesNotMatch(troubleshooter, /defaultOrgId = "6b78e524-b1e3-4c43-8944-1a5a0248bff8"/);
     assert.match(banner, /system-health-incident-reported/);
     assert.match(banner, /system-health-incident-persisted/);
