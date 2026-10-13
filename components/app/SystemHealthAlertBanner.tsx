@@ -41,7 +41,30 @@ export default function SystemHealthAlertBanner({
         const res = await getSystemHealthDiagnosticsAction(organizationId);
         setData(res);
       } catch (e) {
-        console.error("Failed to load diagnostics:", e);
+        const message = e instanceof Error ? e.message : "Unknown diagnostic client error";
+        console.error("[HealthDiagnostics] Failed to load diagnostics; state is UNKNOWN:", message);
+        setData({
+          is_healthy: false,
+          health_score: 0,
+          critical_count: 0,
+          warning_count: 1,
+          info_count: 0,
+          total_issues: 1,
+          checked_at: new Date().toISOString(),
+          organization_id: organizationId || null,
+          issues: [{
+            id: "DIAGNOSTIC_CLIENT_FETCH_FAILED",
+            severity: "WARNING",
+            module: "সিস্টেম ডায়াগনস্টিক ও মনিটরিং",
+            location: "components/app/SystemHealthAlertBanner.tsx:fetchDiagnostics",
+            title: "ডায়াগনস্টিক ফলাফল পাওয়া যায়নি",
+            reason: message,
+            recommendation: "সিস্টেম হেলথ RPC, authenticated organization এবং Supabase connection যাচাই করুন।",
+            timestamp: new Date().toISOString(),
+          }],
+          passed_checks: [],
+          error: message,
+        });
       }
     });
   }, [organizationId]);
