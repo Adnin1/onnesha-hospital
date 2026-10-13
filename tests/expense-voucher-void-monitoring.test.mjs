@@ -81,7 +81,11 @@ test("expense voucher void uses an atomic, tenant-scoped accounting reversal", a
     assert.match(source, /journal_entry_id/);
     assert.match(source, /isPostedOrLinked && financialChanges/);
     assert.match(source, /cannot have its title, amount, payee, category or payment method edited directly/i);
+    assert.match(source, /expense_categories/);
+    assert.match(source, /eq\("organization_id", session\.organizationId\)/);
     assert.match(source, /EXPENSE_UPDATE_WRITE_FAILED/);
+    const page = read("app/(hospital)/app/expenses/page.tsx");
+    assert.match(page, /follow-up needs attention:/);
   });
 
   await t.test("application never reports voucher success without database confirmation", () => {
