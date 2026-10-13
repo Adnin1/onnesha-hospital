@@ -148,6 +148,17 @@ test("system health reporting is fail-closed, tenant-aware, and honest about res
     assert.match(migration, /REVOKE ALL ON FUNCTION public\.resolve_system_runtime_issue[\s\S]*FROM anon/i);
   });
 
+  await t.test("dedicated health dashboard cannot show a false-green state or claim solved before rescan", () => {
+    const page = read("app/(hospital)/app/system-health/page.tsx");
+    assert.match(page, /const hasIssues = !data \|\| data\.is_healthy !== true \|\| data\.total_issues > 0/);
+    assert.match(page, /count !== 1/);
+    assert.match(page, /verification\.issues\.some/);
+    assert.match(page, /system-health-incident-persisted/);
+    assert.match(page, /const handleResolved = \(\) => \{/);
+    assert.doesNotMatch(page, /const handleResolved = \(e: Event\) => \{[\s\S]{0,500}setJustResolvedMessage/);
+    assert.match(page, /Health scan-এর বৈধ ফলাফল পাওয়া যায়নি/);
+  });
+
   await t.test("browser incidents use the authenticated organization and stay visible until persisted", () => {
     const troubleshooter = read("lib/diagnostics/troubleshooter.ts");
     const banner = read("components/app/SystemHealthAlertBanner.tsx");
