@@ -306,7 +306,7 @@ export function HalfLetterInvoicePrint({
             dateStr={dateStr}
             cashierName={cashierName}
             receiptNumber={payments[0]?.receiptNumber}
-            size="sm"
+            size="compact"
           />
         </div>
         {/* Left: Payments Ledger & Words */}

@@ -129,7 +129,7 @@ export function A4InvoicePrint({
             totalAmount={totalAmount}
             dateStr={dateStr}
             receiptNumber={payments[0]?.receiptNumber}
-            size="md"
+            size="sm"
           />
         </div>
         {/* Payment History */}
