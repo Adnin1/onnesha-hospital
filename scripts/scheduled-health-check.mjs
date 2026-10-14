@@ -255,6 +255,53 @@ async function run() {
     },
   };
 
+  const machineOutputs = {
+    public_edge_status: edgeOk ? "PASS" : "FAIL",
+    privileged_audit_executed: String(Boolean(dbResult.is_privileged)),
+    internal_erp_status: dbResult.is_privileged
+      ? (dbResult.is_healthy ? "FULL_INTERNAL_ERP_HEALTHY" : (dbResult.status || "DEFECT_DETECTED"))
+      : "NOT_VERIFIED",
+    authoritative_score: String(dbResult.is_privileged ? (typeof dbResult.health_score === "number" ? dbResult.health_score : 0) : "N/A"),
+    authoritative_snapshot_id: String(dbResult.snapshot_id || "N/A"),
+    warnings: String(typeof dbResult.warning_count === "number" ? dbResult.warning_count : 0),
+    critical_issues: String(typeof dbResult.critical_count === "number" ? dbResult.critical_count : (dbResult.is_privileged ? 0 : 1)),
+    unknown_checks: String(typeof dbResult.unknown_count === "number" ? dbResult.unknown_count : 0),
+    blocked_checks: String(!dbResult.is_privileged ? 1 : 0),
+    open_incidents: String(typeof dbResult.total_issues === "number" ? dbResult.total_issues : 0),
+    scheduler_status: dbResult.cron_telemetry?.status || "BLOCKED_PLATFORM_CAPABILITY",
+    notification_status: "BLOCKED_EXTERNAL_OWNER",
+    overall_status: !edgeOk
+      ? "CRITICAL"
+      : !dbResult.is_privileged
+      ? "NOT_FULLY_VERIFIED"
+      : (dbResult.is_healthy ? "HEALTHY" : (dbResult.status || "DEGRADED")),
+  };
+
+  // 1. Write to GITHUB_OUTPUT if running inside GitHub Actions
+  if (process.env.GITHUB_OUTPUT) {
+    try {
+      const outputLines = Object.entries(machineOutputs)
+        .map(([k, v]) => `${k}=${v}`)
+        .join("\n") + "\n";
+      fs.appendFileSync(process.env.GITHUB_OUTPUT, outputLines, "utf8");
+    } catch (e) {
+      console.warn("[Health Monitor] Notice writing to GITHUB_OUTPUT:", e.message);
+    }
+  }
+
+  // 2. Persist machine-readable telemetry JSON artifact
+  try {
+    const testResultsDir = path.join(process.cwd(), "test-results");
+    if (!fs.existsSync(testResultsDir)) fs.mkdirSync(testResultsDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(testResultsDir, "health-monitor-summary.json"),
+      JSON.stringify({ ...structuredSummary, machineOutputs }, null, 2),
+      "utf8"
+    );
+  } catch (e) {
+    console.warn("[Health Monitor] Notice writing health-monitor-summary.json:", e.message);
+  }
+
   console.log("==================================================");
   console.log("📊 OHMS MULTI-TIER SYSTEM HEALTH TELEMETRY SUMMARY");
   console.log("==================================================");

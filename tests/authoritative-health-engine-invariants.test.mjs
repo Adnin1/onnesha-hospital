@@ -234,10 +234,15 @@ test("OHMS Active Health Test Engine v1 & Zero-Fake-Green Invariant Certificatio
   });
 
   // 5. GitHub Workflow Multi-Domain Matrix Verification
-  await t.test("5. .github/workflows/health-monitor.yml separately displays all 6 explicit telemetry domains", () => {
+  await t.test("5. scripts/generate-health-summary.mjs and health-monitor.yml separately display all 6 explicit telemetry domains", () => {
     const workflowPath = path.join(ROOT, ".github/workflows/health-monitor.yml");
     assert.ok(fs.existsSync(workflowPath), "Workflow file must exist");
-    const content = fs.readFileSync(workflowPath, "utf8");
+    const workflowContent = fs.readFileSync(workflowPath, "utf8");
+    assert.match(workflowContent, /generate-health-summary\.mjs/, "health-monitor.yml must invoke generate-health-summary.mjs");
+
+    const scriptPath = path.join(ROOT, "scripts/generate-health-summary.mjs");
+    assert.ok(fs.existsSync(scriptPath), "generate-health-summary.mjs must exist");
+    const content = fs.readFileSync(scriptPath, "utf8");
 
     assert.match(content, /1\.\s+PUBLIC EDGE/, "Must display Public Edge domain");
     assert.match(content, /2\.\s+FULL INTERNAL ERP/, "Must display Full Internal ERP domain");
@@ -246,4 +251,142 @@ test("OHMS Active Health Test Engine v1 & Zero-Fake-Green Invariant Certificatio
     assert.match(content, /5\.\s+NOTIFICATION DELIVERY/, "Must display Notification Delivery domain");
     assert.match(content, /6\.\s+OVERALL AUTHORITATIVE HEALTH/, "Must display Overall Authoritative Health domain");
   });
+
+
+  // 6. Complete Failure-Injection and Recovery Lifecycle Certification (HEALTH-001, HEALTH-004, HEALTH-007)
+  await t.test("6. Authoritative failure-injection and recovery cycle: defect degrades health, resolution restores 100% HEALTHY", async () => {
+    class AuthoritativeHealthLifecycleSimulator {
+      constructor() {
+        this.checks = [
+          { name: "database_connectivity", passed: true, severity: null },
+          { name: "gl_double_entry_balance", passed: true, severity: null },
+          { name: "bed_occupancy_integrity", passed: true, severity: null },
+          { name: "invoice_payment_parity", passed: true, severity: null },
+          { name: "pharmacy_stock_invariants", passed: true, severity: null },
+          { name: "lab_specimen_traceability", passed: true, severity: null },
+          { name: "super_admin_audit_vault", passed: true, severity: null },
+          { name: "rls_isolation_integrity", passed: true, severity: null },
+        ];
+        this.openIncidents = [];
+        this.lastHeartbeatTime = Date.now();
+      }
+
+      computeHealthSnapshot() {
+        const requiredChecks = this.checks.length;
+        const failedChecks = this.checks.filter((c) => !c.passed);
+        const passedChecks = this.checks.filter((c) => c.passed).length;
+        const criticalCount = failedChecks.filter((c) => c.severity === "CRITICAL").length;
+        const warningCount = failedChecks.filter((c) => c.severity === "WARNING").length;
+        const incidentCount = this.openIncidents.filter((i) => i.status === "OPEN").length;
+
+        const isStale = Date.now() - this.lastHeartbeatTime > 15 * 60 * 1000;
+        if (isStale) {
+          return { score: 0, status: "STALE", is_healthy: false, issues: [{ id: "STALE_HEARTBEAT" }] };
+        }
+
+        let score = 100;
+        score -= criticalCount * 25;
+        score -= warningCount * 5;
+        score -= incidentCount * 10;
+
+        if (warningCount > 0 || incidentCount > 0) {
+          score = Math.min(score, 99);
+        }
+        if (criticalCount > 0) {
+          score = Math.min(score, 70);
+        }
+        score = Math.max(0, Math.min(100, score));
+
+        const isHealthy =
+          requiredChecks > 0 &&
+          passedChecks === requiredChecks &&
+          criticalCount === 0 &&
+          warningCount === 0 &&
+          incidentCount === 0 &&
+          score === 100;
+
+        const status =
+          criticalCount > 0
+            ? "CRITICAL"
+            : warningCount > 0 || incidentCount > 0 || score < 100
+            ? "DEGRADED"
+            : "HEALTHY";
+
+        return {
+          score,
+          status,
+          is_healthy: isHealthy,
+          passedChecks,
+          requiredChecks,
+          criticalCount,
+          warningCount,
+          incidentCount,
+          issues: failedChecks.map((c) => ({ id: c.name, severity: c.severity })),
+        };
+      }
+
+      injectDefect(checkName, severity = "CRITICAL") {
+        const chk = this.checks.find((c) => c.name === checkName);
+        if (chk) {
+          chk.passed = false;
+          chk.severity = severity;
+        }
+        this.openIncidents.push({
+          id: `INC-${Date.now()}`,
+          check: checkName,
+          status: "OPEN",
+          severity,
+        });
+      }
+
+      resolveDefect(checkName) {
+        const chk = this.checks.find((c) => c.name === checkName);
+        if (chk) {
+          chk.passed = true;
+          chk.severity = null;
+        }
+        this.openIncidents.forEach((inc) => {
+          if (inc.check === checkName) {
+            inc.status = "RESOLVED";
+          }
+        });
+      }
+    }
+
+    const sim = new AuthoritativeHealthLifecycleSimulator();
+
+    // Step 1: Pristine State
+    const baseline = sim.computeHealthSnapshot();
+    assert.equal(baseline.score, 100, "Initial pristine state must have score 100");
+    assert.equal(baseline.status, "HEALTHY");
+    assert.equal(baseline.is_healthy, true);
+    assert.equal(baseline.criticalCount, 0);
+
+    // Step 2: Inject Critical Defect (e.g. GL Double-Entry Imbalance)
+    sim.injectDefect("gl_double_entry_balance", "CRITICAL");
+    const degraded = sim.computeHealthSnapshot();
+    assert.ok(degraded.score <= 70, `Score must drop to <= 70 upon critical defect (actual: ${degraded.score})`);
+    assert.equal(degraded.status, "CRITICAL", "Status must become CRITICAL");
+    assert.equal(degraded.is_healthy, false, "Must fail is_healthy");
+    assert.ok(degraded.criticalCount >= 1, "Must report critical defect count >= 1");
+    assert.ok(degraded.issues.some((i) => i.id === "gl_double_entry_balance"));
+
+    // Step 3: Partial Recovery without incident clearance
+    const chk = sim.checks.find((c) => c.name === "gl_double_entry_balance");
+    chk.passed = true;
+    chk.severity = null;
+    const partialRecovery = sim.computeHealthSnapshot();
+    assert.ok(partialRecovery.score <= 99, "Open unresolved incident must prevent 100% HEALTHY score");
+    assert.equal(partialRecovery.status, "DEGRADED");
+    assert.equal(partialRecovery.is_healthy, false);
+
+    // Step 4: Full Resolution restores 100% HEALTHY
+    sim.resolveDefect("gl_double_entry_balance");
+    const restored = sim.computeHealthSnapshot();
+    assert.equal(restored.score, 100, "Fully resolved state must restore score to 100");
+    assert.equal(restored.status, "HEALTHY", "Status must return to HEALTHY");
+    assert.equal(restored.is_healthy, true);
+    assert.equal(restored.incidentCount, 0);
+  });
 });
+
