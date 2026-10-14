@@ -27,7 +27,7 @@ export function HospitalPrintHeader({
             <h1 className="text-xl font-bold uppercase tracking-wide text-sky-950">
               {HOSPITAL_METADATA.name}
             </h1>
-            <p className="text-xs text-sky-800 font-medium">
+            <p className="text-sm sm:text-base font-black text-sky-950 leading-tight tracking-normal font-sans py-0.5">
               {HOSPITAL_METADATA.banglaName}
             </p>
             <p className="text-xs text-slate-600 mt-0.5">

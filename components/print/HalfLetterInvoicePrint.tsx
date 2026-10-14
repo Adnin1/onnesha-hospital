@@ -154,7 +154,7 @@ export function HalfLetterInvoicePrint({
               <h1 className="text-base font-black uppercase tracking-tight text-sky-950 leading-tight">
                 {HOSPITAL_METADATA.name}
               </h1>
-              <p className="text-[11px] font-semibold text-sky-800 leading-none">
+              <p className="text-xs sm:text-sm font-black text-sky-950 leading-tight tracking-normal font-sans pt-0.5">
                 {HOSPITAL_METADATA.banglaName}
               </p>
             </div>

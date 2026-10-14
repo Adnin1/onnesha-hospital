@@ -232,9 +232,14 @@ function BillingManagementContent() {
       }
 
       if (invRes.success && invRes.data) {
-        setInvoices(invRes.data.invoices);
-        if (invRes.data.invoices.length > 0 && !selectedInvoice) {
-          setSelectedInvoice(invRes.data.invoices[0]);
+        const invoicesList = invRes.data.invoices;
+        setInvoices(invoicesList);
+        if (invoicesList.length > 0) {
+          setSelectedInvoice((prev) => {
+            if (!prev) return invoicesList[0];
+            const updated = invoicesList.find((i) => i.id === prev.id);
+            return updated || invoicesList[0];
+          });
         }
       } else {
         setErrorMsg(invRes.error || "Failed to load invoices");
@@ -923,9 +928,9 @@ function BillingManagementContent() {
       if (res.success && res.data) {
         const newlyCreatedInv = res.data.invoice;
         resetInvoiceModal();
-        await loadBillingData();
         setSelectedInvoice(newlyCreatedInv);
         setHalfLetterPrintInv(newlyCreatedInv);
+        await loadBillingData();
         setTimeout(() => {
           window.print();
         }, 350);
@@ -966,10 +971,18 @@ function BillingManagementContent() {
       const result = await printBillingInvoiceReceipt(receiptData);
       if (result.success && result.transport !== "BROWSER_PRINT") {
         setToast({ message: `Receipt sent to ${result.deviceName || result.transport}`, type: "success" });
+      } else {
+        setHalfLetterPrintInv(inv);
+        setTimeout(() => {
+          window.print();
+        }, 300);
       }
     } catch (err) {
       console.error("[handlePrintInvoice] error:", err);
-      window.print();
+      setHalfLetterPrintInv(inv);
+      setTimeout(() => {
+        window.print();
+      }, 300);
     }
   };
 
@@ -1260,7 +1273,7 @@ function BillingManagementContent() {
       </div>
 
       {/* MAIN LAYOUT: INVOICES LIST & DETAILS */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start print:block print:w-full">
+      <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 items-start ${halfLetterPrintInv ? "print:hidden" : "print:block print:w-full"}`}>
         {/* LEFT COLUMN: INVOICE TABLE */}
         <div className="lg:col-span-7 card-3d overflow-hidden print:hidden">
           <div className="overflow-x-auto">
@@ -1397,7 +1410,7 @@ function BillingManagementContent() {
         </div>
 
         {/* RIGHT COLUMN: INVOICE PREVIEW / PRINT SLIP */}
-        <div className="lg:col-span-5 card-3d p-6 space-y-4 print:col-span-12 print:border-none print:p-0 print:shadow-none print:w-full print:block">
+        <div className={`lg:col-span-5 card-3d p-6 space-y-4 ${halfLetterPrintInv ? "print:hidden" : "print:col-span-12 print:border-none print:p-0 print:shadow-none print:w-full print:block"}`}>
           {selectedInvoice ? (
             <div>
               <div className="flex justify-between items-center pb-4 border-b border-slate-200 print:hidden">
@@ -1409,7 +1422,7 @@ function BillingManagementContent() {
                   <button
                     onClick={() => handlePrintInvoice(selectedInvoice)}
                     className="p-2 border rounded-xl hover:bg-slate-50 text-slate-700 transition"
-                    title="Print Invoice (Thermal / Configured Workstation Printer)"
+                    title="Print Invoice / Thermal Slip"
                   >
                     <Printer className="w-4 h-4" />
                   </button>
