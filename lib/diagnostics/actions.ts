@@ -45,7 +45,7 @@ export async function getSystemHealthDiagnosticsAction(
       console.error("[HealthDiagnostics] RPC execution error:", error);
       return {
         is_healthy: false,
-        health_score: 50,
+        health_score: 0,
         critical_count: 1,
         warning_count: 0,
         info_count: 0,
@@ -98,7 +98,7 @@ export async function getSystemHealthDiagnosticsAction(
     const res = data as SystemHealthDiagnosticResult;
     return {
       is_healthy: Boolean(res.is_healthy),
-      health_score: typeof res.health_score === "number" ? res.health_score : 100,
+      health_score: typeof res.health_score === "number" ? res.health_score : 0,
       critical_count: Number(res.critical_count || 0),
       warning_count: Number(res.warning_count || 0),
       info_count: Number(res.info_count || 0),
@@ -113,7 +113,7 @@ export async function getSystemHealthDiagnosticsAction(
     console.error("[HealthDiagnostics] Action caught exception:", message);
     return {
       is_healthy: false,
-      health_score: 50,
+      health_score: 0,
       critical_count: 1,
       warning_count: 0,
       info_count: 0,

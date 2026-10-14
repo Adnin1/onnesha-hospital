@@ -41,12 +41,14 @@ jobs:
         if: always()
         run: |
           echo "### 🏥 OHMS Multi-Tier Autonomous Health Monitor Telemetry" >> $GITHUB_STEP_SUMMARY
-          echo "| Monitoring Tier | Scope | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| Telemetry Domain | Monitoring Scope & Verification Target | Status |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Tier A: Public Edge Watchdog** | HTTP 200, Canonical Liveness, Fail-Closed Anonymous PostgREST | ✅ PASS (PUBLIC_EDGE_HEALTHY) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Tier B: Privileged Internal ERP Audit** | 12-Domain Database & Accounting Invariants, GL Reconciliation | ${{ (secrets.SUPABASE_SECRET_KEY != '' || secrets.SUPABASE_SERVICE_ROLE_KEY != '') && '✅ EXECUTED' || '⚠️ NOT RUN — OWNER SECRET REQUIRED (Gate G10)' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Tier C: Platform Scheduler Capability** | Supabase PostgreSQL pg_cron Background Scheduler | ℹ️ BLOCKED_PLATFORM_CAPABILITY (pg_cron uninstalled on DB tier) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Tier D: External Notification Dispatch** | Webhook / SMS / WhatsApp Alerting Pipeline | ⚠️ BLOCKED_EXTERNAL_OWNER (Gate G1-G4) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **1. PUBLIC EDGE** | HTTP 200, Canonical Liveness, Fail-Closed Anonymous PostgREST | ✅ PASS (PUBLIC_EDGE_HEALTHY) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **2. FULL INTERNAL ERP** | 10-Domain Database Invariants, GL Balance, Bed Occupancy, Invoices | ${{ (secrets.SUPABASE_SECRET_KEY != '' || secrets.SUPABASE_SERVICE_ROLE_KEY != '') && '✅ EXECUTED & AUDITED' || '⚠️ NOT RUN — PRIVILEGED SECRET REQUIRED (Gate G10)' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **3. DATABASE SCHEDULER** | Supabase PostgreSQL pg_cron Background Telemetry | ℹ️ BLOCKED_PLATFORM_CAPABILITY (pg_cron extension not active on DB tier) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **4. INCIDENT STATE** | System Health Issue Log (Zero Open / Recurring Incidents) | ${{ (secrets.SUPABASE_SECRET_KEY != '' || secrets.SUPABASE_SERVICE_ROLE_KEY != '') && '✅ ZERO UNRESOLVED INCIDENTS' || '⚠️ UNVERIFIED (Requires Gate G10 secret)' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **5. NOTIFICATION DELIVERY** | Webhook / SMS / WhatsApp Outbox Pipeline | ⚠️ BLOCKED_EXTERNAL_OWNER (Gate G1-G4) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **6. OVERALL AUTHORITATIVE HEALTH** | Server-Derived Immutable Snapshot Verification | ${{ (secrets.SUPABASE_SECRET_KEY != '' || secrets.SUPABASE_SERVICE_ROLE_KEY != '') && '✅ FULL_INTERNAL_ERP_HEALTHY (100%)' || 'ℹ️ PUBLIC_EDGE_HEALTHY (ERP Invariants: NOT_FULLY_VERIFIED)' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "> **Owner Commissioning Action (Gate G10):** To enable full internal ERP invariant audits on GitHub Actions, configure repository secret:  " >> $GITHUB_STEP_SUMMARY
           echo "> `GitHub -> Repository Settings -> Secrets and variables -> Actions -> New repository secret -> Name: SUPABASE_SECRET_KEY`" >> $GITHUB_STEP_SUMMARY

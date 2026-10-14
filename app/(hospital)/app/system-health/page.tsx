@@ -193,7 +193,15 @@ export default function SystemHealthPage() {
               <span className="text-sm font-normal text-slate-400">/ 100</span>
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
-              {data?.is_healthy ? "১০/১০ সাব-সিস্টেম সক্রিয় ও স্বাভাবিক" : "সংশোধন আবশ্যক"}
+              {data?.health_score === 100 && data?.is_healthy
+                ? "সব সাব-সিস্টেম সক্রিয় ও ত্রুটিমুক্ত (100% HEALTHY)"
+                : data?.critical_count && data.critical_count > 0
+                ? "গুরুতর ত্রুটি সনাক্ত — দ্রুত সমাধান আবশ্যক (CRITICAL)"
+                : data?.warning_count && data.warning_count > 0
+                ? "সতর্কতা সক্রিয় — পারফরম্যান্স হ্রাসপ্রাপ্ত (DEGRADED)"
+                : data?.is_healthy
+                ? "সিস্টেম স্বাভাবিক রয়েছে"
+                : "নিরীক্ষা অসম্পূর্ণ বা যাচাই আবশ্যক"}
             </div>
           </div>
           <div

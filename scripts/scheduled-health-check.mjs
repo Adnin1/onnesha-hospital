@@ -117,14 +117,18 @@ async function checkDatabaseDiagnostics() {
     }
 
     if (isPrivileged) {
-      console.log(`[Database Probe] [Scope: ${auditScope}] Diagnostics Health Score: ${data?.health_score}/100, Issues: ${data?.total_issues || 0}`);
+      const authoritativeScore = typeof data?.health_score === "number" ? data.health_score : 0;
+      const authoritativeStatus = data?.status || (data?.is_healthy ? "HEALTHY" : "MONITOR_ERROR");
+      const authoritativeIssues = typeof data?.total_issues === "number" ? data.total_issues : 1;
+
+      console.log(`[Database Probe] [Scope: ${auditScope}] Diagnostics Health Score: ${authoritativeScore}/100, Issues: ${authoritativeIssues}`);
       try {
         await client.rpc("record_monitoring_heartbeat", {
           p_org_id: ORG_ID,
           p_source: process.env.GITHUB_ACTIONS === "true" ? "GITHUB_ACTIONS_CRON" : "SCHEDULED_PROBE",
-          p_status: data?.is_healthy ? "OK" : "DEGRADED",
-          p_health_score: data?.health_score ?? 100,
-          p_active_issues: data?.total_issues ?? 0,
+          p_status: authoritativeStatus,
+          p_health_score: authoritativeScore,
+          p_active_issues: authoritativeIssues,
           p_audit_scope: auditScope,
         });
 
@@ -135,7 +139,16 @@ async function checkDatabaseDiagnostics() {
           console.log(`[Monitoring Status] Total Heartbeats: ${monStatus.total_heartbeats}, Active Issues: ${monStatus.active_issues_count}, Outbox: (Pending: ${monStatus.notification_metrics?.pending}, Sent: ${monStatus.notification_metrics?.sent}, Failed: ${monStatus.notification_metrics?.failed}, Blocked: ${monStatus.notification_metrics?.blocked_external_owner})`);
         }
       } catch (hbErr) {
-        console.warn("[Database Probe] Heartbeat logging notice:", hbErr.message);
+        console.error("[Database Probe] Heartbeat logging failure:", hbErr.message);
+        return {
+          skipped: false,
+          is_healthy: false,
+          status: "MONITOR_ERROR",
+          error: `AUTHORITATIVE_HEALTH_PERSISTENCE_FAILED: ${hbErr.message}`,
+          audit_scope: auditScope,
+          is_privileged: true,
+          cron_telemetry: cronTelemetry,
+        };
       }
     } else {
       console.log(`[Database Probe] Public RPC Response: status=${data?.status}, message="${data?.message || 'N/A'}" (Fail-Closed Protection Active)`);
@@ -194,16 +207,16 @@ async function run() {
     tier: "TIER_B_PRIVILEGED_ERP_MONITOR",
     privileged_credential_present: dbResult.is_privileged,
     status: dbResult.is_privileged
-      ? (dbResult.is_healthy ? "FULL_INTERNAL_ERP_HEALTHY" : "DEFECT_DETECTED")
+      ? (dbResult.is_healthy ? "FULL_INTERNAL_ERP_HEALTHY" : (dbResult.status || "DEFECT_DETECTED"))
       : "NOT_VERIFIED",
     verdict: dbResult.is_privileged
       ? (dbResult.is_healthy ? "PASS" : "FAIL")
       : "BLOCKED_EXTERNAL_OWNER",
     reason: dbResult.is_privileged
-      ? (dbResult.is_healthy ? "All 12 ERP diagnostic domains passed" : "Database invariants violated")
+      ? (dbResult.is_healthy ? "All required ERP diagnostic domains passed" : (dbResult.error || "Database invariants violated"))
       : "Owner Gate G10: SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY required in environment",
-    health_score: dbResult.is_privileged ? (dbResult.health_score ?? 100) : null,
-    active_issues: dbResult.is_privileged ? (dbResult.total_issues ?? 0) : null,
+    health_score: dbResult.is_privileged ? (typeof dbResult.health_score === "number" ? dbResult.health_score : 0) : null,
+    active_issues: dbResult.is_privileged ? (typeof dbResult.total_issues === "number" ? dbResult.total_issues : 1) : null,
   };
 
   // Tier C: PLATFORM_SCHEDULER_STATE
@@ -263,7 +276,8 @@ async function run() {
     }
     console.log("ℹ️  Public Watchdog Tier: Edge liveness is operational.");
     console.log("ℹ️  Owner Gate G10 Notice: Full internal ERP accounting & clinical invariants audit is gated by SUPABASE_SERVICE_ROLE_KEY.");
-    console.log("✅ 24/7 Production Watchdog Heartbeat PASSED (Verdict: PUBLIC_EDGE_HEALTHY).");
+    console.log("ℹ️  Authoritative Whole-System ERP Health: NOT_FULLY_VERIFIED (Public Edge Watchdog Mode Only).");
+    console.log("✅ 24/7 Production Public Edge Watchdog PASSED (Verdict: PUBLIC_EDGE_HEALTHY).");
     process.exit(0);
   }
 
