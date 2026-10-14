@@ -3,9 +3,10 @@
 
 **Document Classification:** Authoritative Cross-Session Production Ledger  
 **Release Version:** `1.1.90`  
-**Anchor Commit HEAD:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (HEAD)  
+**Repository HEAD SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (`fe50783`)  
+**Application Source SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (`85368f9`)  
 **Mainline Provenance:** Verified fast-forward commit on `main` tracked by `ssh-origin/main`  
-**Last Verification Timestamp:** `2026-10-15T05:10:00+06:00`  
+**Last Verification Timestamp:** `2026-10-15T05:30:00+06:00`  
 **Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**
 
 ---
@@ -15,13 +16,14 @@
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
 | **Release Version Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
-| **Commit HEAD SHA** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | `git rev-parse HEAD` on `main` |
-| **Lineage Parent** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | `git log -1 --pretty=%P` |
+| **Repository HEAD SHA** | `fe507831a23146bd5ec8be9b541de6358ff09c6f` | `git rev-parse HEAD` on `main` |
+| **Application Source SHA** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | Core application code & migrations release |
+| **Lineage Parent** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push ssh-origin main` |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK, HSTS preload, CSP) |
-| **Cloudflare Deployment ID** | `37d00836` | Wrangler Pages production deployment |
+| **Cloudflare Deployment ID** | `653b5791` (prev: `37d00836`) | Wrangler Pages production deployment |
 | **GitHub Actions Pipeline** | `OHMS CI Quality, Security & Desktop Pipeline` | GitHub Actions API |
-| **CI Exact-HEAD Run** | **Run #640 (SUCCESS)** on `85368f9` | Verified via GitHub REST API |
+| **CI Exact-HEAD Run** | **Run #641 (SUCCESS)** on `fe50783` | Verified via GitHub REST API |
 | **CI Staging Gate Semantics** | G10 Live Staging Isolated as Owner Prerequisite; Hermetic Pass | Zero False-Green Verification |
 
 ---

@@ -4,9 +4,11 @@
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Linked & Active)  
-**Execution Timestamp:** `2026-10-15T05:10:00+06:00`  
-**Current HEAD SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (`85368f9`)  
-**Latest CI Run:** GitHub Actions Run #640 (SUCCESS on `85368f9`)  
+**Execution Timestamp:** `2026-10-15T05:30:00+06:00`  
+**Repository HEAD SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (`fe50783`)  
+**Application Source SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (`85368f9`)  
+**Deployed Production SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (`fe50783` — Deployment `653b5791`)  
+**Latest CI Run:** GitHub Actions Run #641 (SUCCESS on `fe50783`)  
 **Overall Delivery Status:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**  
 
 ---
@@ -24,9 +26,8 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 ## 2. Git Provenance & Immutability Record
 
 In adherence to strict zero-false-green Git governance:
-- **Active Release Version `1.1.90`:** Maintained across `package.json`, `tauri.conf.json`, `Cargo.toml`, and `latest.json`.
-- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (`85368f9`).
-- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `37d00836`).
+- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at repository HEAD commit `fe507831a23146bd5ec8be9b541de6358ff09c6f` (`fe50783`), which is a documentation-only descendant of application source release `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (`85368f9`).
+- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `653b5791-229f-4aaa-a2b3-686298db991c`, previous release `37d00836-acba-4caa-866f-ec97989e6c85`).
 - **Edge Manifest Parity:** Probed `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` returns `"version": "1.1.90"`.
 
 ---
@@ -52,7 +53,7 @@ In adherence to strict zero-false-green Git governance:
 | **Static Asset References** | Zero Broken Links/Assets | **0 broken references** (62 pages, 394 links, 1231 assets) | `npm run audit:assets` |
 | **Browser Runtime E2E** | Zero Regressions / Zero Flakes | **7 / 7 Chromium specs passed on live production** | Playwright test suite |
 | **Service Worker Cache** | Exact Version Match | **`CACHE_VERSION = 'ohms-static-v5-1.1.90'`** | `tests/sw-cache-*.test.mjs` |
-| **Cloudflare Edge Deployment**| Live Global Anycast CDN | **200 OK across all public routes (Deployment 37d00836)** | `https://onnesha-hospital.pages.dev` |
+| **Cloudflare Edge Deployment**| Live Global Anycast CDN | **200 OK across all public routes (Deployment 653b5791)** | `https://onnesha-hospital.pages.dev` |
 | **Windows Desktop Config** | Release 1.1.90 Ready | **Verified v1.1.90 binaries (EXE 2.8 MB, MSI 3.3 MB)** | `public/downloads/desktop/latest.json` |
 
 ---

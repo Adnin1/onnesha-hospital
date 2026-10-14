@@ -1,11 +1,12 @@
 # OHMS FINAL AUTONOMOUS DELIVERY LEDGER
 
 **Project:** Onnesha Hospital Management System (OHMS)  
-**Baseline SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb`  
+**Repository HEAD SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (`fe50783`)  
+**Application Source SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (`85368f9`)  
 **Version:** `1.1.90`  
-**Target Live Host:** `https://onnesha-hospital.pages.dev`  
+**Target Live Host:** `https://onnesha-hospital.pages.dev` (Deployment `653b5791`)  
 **Supabase Instance:** `iuhtzahuszdkdarhxobx.supabase.co`  
-**Last Updated:** 2026-10-15T05:10:00+06:00  
+**Last Updated:** 2026-10-15T05:30:00+06:00  
 
 ---
 
@@ -14,16 +15,16 @@
 ### TRACK 1: Current HEAD & CI Provenance Reconciliation
 - **ID:** `TRK-01-CI-PROVENANCE`
 - **DOMAIN:** `DevOps / CI / Git Provenance`
-- **PREVIOUS STATE:** Commit `571efe5` (Run #639) verified.
-- **CURRENT STATE:** Commit `85368f9` verified. CI Run #640 completed successfully (conclusion: `success`). Check runs API queried directly.
-- **DELTA EVIDENCE:** GitHub Actions Run ID `38649438609` (Run #640).
+- **PREVIOUS STATE:** Commit `85368f9` (Run #640) verified.
+- **CURRENT STATE:** Commit `fe50783` verified. CI Run #641 completed successfully (conclusion: `success`). Check runs API queried directly.
+- **DELTA EVIDENCE:** GitHub Actions Run ID `38652670713` (Run #641).
 - **STATUS:** `VERIFIED`
 - **BLOCKER:** None
 - **OWNER ACTION:** Configure GitHub Actions secrets for staging gate G10.
 - **NEXT ACTION:** Maintain fail-closed verification loop.
-- **COMMIT SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb`
-- **TEST COMMAND:** `node -e "fetch('https://api.github.com/repos/Adnin1/onnesha-hospital/actions/runs/38649438609')"`
-- **TEST RESULT:** `PASS: Run #640 green`
+- **COMMIT SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (docs) / `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (app)
+- **TEST COMMAND:** `node -e "fetch('https://api.github.com/repos/Adnin1/onnesha-hospital/actions/runs/38652670713')"`
+- **TEST RESULT:** `PASS: Run #641 green`
 
 ---
 
@@ -62,14 +63,14 @@
 ### TRACK 4: Cloudflare Live Edge Deployment, Headers & Service Worker
 - **ID:** `TRK-04-CLOUDFLARE-EDGE`
 - **DOMAIN:** `Deployment / Edge Security / PWA`
-- **PREVIOUS STATE:** Needed fresh deployment proof matching latest clean git commit.
-- **CURRENT STATE:** Live deployment `https://37d00836.onnesha-hospital.pages.dev` active on Cloudflare Pages (`commit-dirty=false`). All security headers (HSTS, CSP without unsafe-eval, DENY) verified live. Service worker purges old caches on activate.
+- **PREVIOUS STATE:** Deployment `37d00836` on commit `85368f9` verified.
+- **CURRENT STATE:** Live deployment `https://653b5791.onnesha-hospital.pages.dev` active on Cloudflare Pages (`commit-dirty=false`). All security headers (HSTS, CSP without unsafe-eval, DENY) verified live. Service worker purges old caches on activate.
 - **DELTA EVIDENCE:** Live HTTP response headers and four-layer smoke test (24/24 checks passed).
 - **STATUS:** `VERIFIED`
 - **BLOCKER:** None
 - **OWNER ACTION:** Point custom domain DNS to Cloudflare (Gate G16).
 - **NEXT ACTION:** Monitor Cloudflare Web Analytics.
-- **COMMIT SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb`
+- **COMMIT SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (docs) / `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (app)
 - **TEST COMMAND:** `node scripts/smoke_test.mjs`
 - **TEST RESULT:** `PASS: Layer A (15/15), Layer B (4/4), Layer C (3/3), Layer D (2/2) all 100%`
 
@@ -85,7 +86,7 @@
 - **BLOCKER:** CI release job skipped due to Gate G10.
 - **OWNER ACTION:** Authenticode EV Code Signing (Gate G15) and G10 secrets.
 - **NEXT ACTION:** Attach signed binaries to GitHub Release `v1.1.90`.
-- **COMMIT SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb`
+- **COMMIT SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (docs) / `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (app)
 - **TEST COMMAND:** `node -e "assert.equal(require('./public/downloads/desktop/latest.json').version, '1.1.90')"`
 - **TEST RESULT:** `PASS: Manifest reconciled, SHA-256 verified for v1.1.90`
 

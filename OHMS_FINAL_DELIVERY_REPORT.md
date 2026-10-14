@@ -4,9 +4,9 @@
 **Document Version:** `1.1.90`  
 **Classification:** Authoritative Technical Baseline & Production Certification  
 **Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**  
-**Execution Timestamp:** `2026-10-15T05:10:00+06:00`  
+**Execution Timestamp:** `2026-10-15T05:30:00+06:00`  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
-**Cloudflare Deployment Preview:** `https://37d00836.onnesha-hospital.pages.dev`  
+**Cloudflare Deployment Preview:** `https://653b5791.onnesha-hospital.pages.dev`  
 **Live Supabase Database:** `https://iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, 203 migrations synchronized)  
 
 ---
@@ -15,13 +15,14 @@
 
 | Dimension | Measured Production Ground Truth | Verification Command / Evidence |
 |:---|:---|:---:|
-| **Synchronized Git HEAD** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | `git rev-parse HEAD` on `main` |
-| **Immediate Parent Commit** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | `git log -1 --pretty=%P` |
-| **Deployed Code Commit** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | Wrangler Deployment Record (`--commit-dirty=false`) |
+| **Repository HEAD SHA** | `fe507831a23146bd5ec8be9b541de6358ff09c6f` | `git rev-parse HEAD` on `main` |
+| **Application Source Release SHA** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | Core application code & migrations release |
+| **Immediate Parent Commit** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | `git log -1 --pretty=%P` |
+| **Deployed Code Commit** | `fe507831a23146bd5ec8be9b541de6358ff09c6f` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Release Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml`, `latest.json` |
 | **Remote Parity** | `origin/main` & `ssh-origin/main` in 100% sync | `git push ssh-origin main` (clean) |
-| **Cloudflare Deployment ID**| `37d00836` | Wrangler Cloudflare Pages deployment API |
-| **Observed GitHub Actions** | Run ID `38649438609` (Run #640 - **SUCCESS**) | GitHub Actions REST API (`head_sha: 85368f9`) |
+| **Cloudflare Deployment ID**| `653b5791` (prev: `37d00836`) | Wrangler Cloudflare Pages deployment API |
+| **Observed GitHub Actions** | Run ID `38652670713` (Run #641 - **SUCCESS**) | GitHub Actions REST API (`head_sha: fe50783`) |
 | **CI Staging Gate Behavior** | Fail-Closed at Gate G10 (`OHMS_TEST_SUPABASE_URL` / Service Key missing) | Security Invariant Verified |
 
 ---
