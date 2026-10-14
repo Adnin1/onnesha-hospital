@@ -5,7 +5,7 @@
 **Current Branch:** `main`  
 **Package Version:** `1.1.90`  
 **Immutable Release Tag:** `v1.1.90 @ db8b750b51685a73cbf320f51d5e8920fc6a7c8c`  
-**Current Production Closure HEAD:** `fb0606b` (Engineering HEAD — Migration 191 Parity)  
+**Current Production Closure HEAD:** `6b1fa13` (Engineering HEAD — Migration 192 Parity, SHA: `6b1fa131b0f47a3b5699470685a0ddf25d08fb49`)  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
 **Historical Release Tags:** `v1.1.89`, `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
@@ -42,7 +42,7 @@
 | **Autonomous System Health Diagnostics & Troubleshooter** | Hardened 12-domain PostgreSQL diagnostic engine `check_system_health_diagnostics` + tenant-scoped RLS `system_health_issues_log` + verified recovery lifecycle (`OPEN` -> `RESOLVED_VERIFIED`) + real-time DOM alert banner + dedicated `/app/system-health` control panel | Migrations 181–192, `lib/diagnostics/troubleshooter.ts`, `SystemHealthAlertBanner.tsx`, `app/system-health/page.tsx` | ✅ PASS |
 | **24/7 Background Scheduled Health Monitor & Heartbeats** | GitHub Actions cron probe (`*/5 * * * *`) + local/edge probe (`scripts/scheduled-health-check.mjs`) continuously verifying HTTP edge and DB invariants, recording persistent heartbeats (`system_monitoring_heartbeats`), and managing notification outbox (`system_notification_outbox`) without false greens | `.github/workflows/health-monitor.yml`, `scripts/scheduled-health-check.mjs`, Migration 189–192 | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `0ee74855`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `8c791280`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
