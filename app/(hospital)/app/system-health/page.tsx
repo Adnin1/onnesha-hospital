@@ -8,23 +8,22 @@ import {
   AlertOctagon,
   RefreshCw,
   CheckCircle2,
-  Wrench,
-  Sparkles,
   FileCheck,
 } from "lucide-react";
 import {
   getSystemHealthDiagnosticsAction,
-  resolveSystemRuntimeIssueAction,
+  acknowledgeSystemIncidentAction,
+  verifySystemIncidentResolutionAction,
+  runAuthoritativeHealthCycleAction,
   type SystemHealthDiagnosticResult,
   type SystemHealthIssue,
 } from "@/lib/diagnostics/actions";
-import { reportSystemRuntimeIncident } from "@/lib/diagnostics/troubleshooter";
 
 export default function SystemHealthPage() {
   const [data, setData] = useState<SystemHealthDiagnosticResult | null>(null);
   const [isPending, startTransition] = useTransition();
   const [justResolvedMessage, setJustResolvedMessage] = useState<string | null>(null);
-  const [isSimulating, setIsSimulating] = useState(false);
+  const [isRunningCycle, setIsRunningCycle] = useState(false);
 
   const fetchDiagnostics = useCallback(() => {
     startTransition(async () => {
@@ -64,44 +63,52 @@ export default function SystemHealthPage() {
     };
   }, [fetchDiagnostics]);
 
-  const handleResolveIssue = async (issueId: string, module?: string) => {
-    const orgId = data?.organization_id || "6b78e524-b1e3-4c43-8944-1a5a0248bff8";
-    const isAggregateIncident =
-      issueId === "OPEN_RUNTIME_INCIDENTS_ACTIVE" ||
-      module === "সিস্টেম রানটাইম ইনসিডেন্ট লগ (Incident Management)";
 
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(issueId);
-
-    await resolveSystemRuntimeIssueAction({
+  const handleAcknowledgeIncident = async (issueId: string) => {
+    const orgId = data?.organization_id || "a0000000-0000-0000-0000-000000000001";
+    const res = await acknowledgeSystemIncidentAction({
+      incidentId: issueId,
       organizationId: orgId,
-      issueId: isUuid ? issueId : undefined,
-      module: isAggregateIncident ? undefined : module,
-      location: isAggregateIncident ? "public.system_health_issues_log" : undefined,
+      notes: "অপারেটর ইনসিডেন্ট সমাধানের জন্য গ্রহণ করেছেন।",
     });
-    const mod = module || "ইস্যু";
-    setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
+    if (res.success) {
+      setJustResolvedMessage("ইনসিডেন্ট গ্রহণ করা হয়েছে (ACKNOWLEDGED) — বাস্তব সমাধান না হওয়া পর্যন্ত স্বাস্থ্য স্কোর সংরক্ষিত থাকবে।");
+      setTimeout(() => setJustResolvedMessage(null), 12000);
+      fetchDiagnostics();
+    }
+  };
+
+  const handleVerifyIncident = async (issueId: string) => {
+    const orgId = data?.organization_id || "a0000000-0000-0000-0000-000000000001";
+    const res = await verifySystemIncidentResolutionAction({
+      incidentId: issueId,
+      organizationId: orgId,
+    });
+    if (res.verified) {
+      setJustResolvedMessage("ইনসিডেন্ট নির্ভরযোগ্যভাবে যাচাই সম্পন্ন (RESOLVED_VERIFIED) — ডেটাবেজ ইনভ্যারিয়েন্ট ক্লীন।");
+    } else {
+      setJustResolvedMessage("যাচাইকরণ ব্যর্থ: ডেটাবেজে এখনও অসঙ্গতি সক্রিয় রয়েছে (REMEDIATION_PENDING)।");
+    }
     setTimeout(() => setJustResolvedMessage(null), 12000);
     fetchDiagnostics();
   };
 
-  // Real-life test demonstration helper: simulates an operational warning and auto-resolves it
-  const handleTestSimulation = async () => {
-    if (!data?.organization_id || isSimulating) return;
-    setIsSimulating(true);
+  const handleRunAuthoritativeCycle = async () => {
+    const orgId = data?.organization_id || "a0000000-0000-0000-0000-000000000001";
+    setIsRunningCycle(true);
     try {
-      await reportSystemRuntimeIncident({
-        organizationId: data.organization_id,
-        module: "সিস্টেম ডায়াগনস্টিক সিমুলেটর (Live Verification)",
-        location: "app/system-health/page.tsx:handleTestSimulation",
-        severity: "WARNING",
-        errorCode: "DIAGNOSTIC_VERIFICATION_TEST",
-        title: "লাইভ ডায়াগনস্টিক টেস্ট অ্যালার্ট (Test Diagnostic Incident)",
-        reason: "স্বয়ংক্রিয় টেস্ট অ্যালার্ট সফলভাবে ট্রিগার হয়েছে। সিস্টেম রিয়েল-টাইমে অবস্থান ও কারণ প্রদর্শনে সক্ষম।",
-        recommendation: "নিচের 'সমাধান করুন' বাটনে ক্লিক করে 'Issue Solved' স্ট্যাটাস যাচাই করুন।",
-      });
+      const res = await runAuthoritativeHealthCycleAction(orgId);
+      if (res.success && res.snapshot) {
+        setJustResolvedMessage(
+          `অথরিটেটিভ হেলথ সাইকেল সম্পন্ন: স্কোর ${res.snapshot.health_score}/100 (${res.snapshot.status}) — হ্যাশ: ${res.snapshot.snapshot_hash.slice(0, 8)}...`
+        );
+      } else {
+        setJustResolvedMessage(`হেলথ সাইকেল ব্যর্থ: ${res.error || "অজ্ঞাত ত্রুটি"}`);
+      }
+      setTimeout(() => setJustResolvedMessage(null), 12000);
       fetchDiagnostics();
     } finally {
-      setIsSimulating(false);
+      setIsRunningCycle(false);
     }
   };
 
@@ -116,26 +123,28 @@ export default function SystemHealthPage() {
   );
 
   const hasIssues = activeOperationalIssues.length > 0;
-  const totalIssueCount = activeOperationalIssues.length;
   const rawScore = typeof data?.health_score === "number" ? data.health_score : 0;
-  const effectiveHealthScore = hasIssues
-    ? Math.max(0, Math.min(rawScore, Math.min(99, 100 - totalIssueCount * 20)))
-    : (isAnonymousSecurityShield ? 100 : (data ? rawScore : 100));
-
-  const effectiveCriticalCount = activeOperationalIssues.filter((i) => i.severity === "CRITICAL").length;
-  const effectiveWarningCount = activeOperationalIssues.filter((i) => i.severity === "WARNING").length;
-  const isEffectiveHealthy = !hasIssues;
+  const effectiveHealthScore = data ? rawScore : 0;
+  const effectiveStatus = data?.status || "UNKNOWN";
+  const effectiveCriticalCount = Number(data?.critical_count ?? activeOperationalIssues.filter((i) => i.severity === "CRITICAL").length);
+  const effectiveWarningCount = Number(data?.warning_count ?? activeOperationalIssues.filter((i) => i.severity === "WARNING").length);
+  const isEffectiveHealthy = Boolean(data?.is_healthy && effectiveStatus === "HEALTHY" && effectiveHealthScore === 100);
 
   const verificationCheckLabels: Record<string, string> = {
     GENERAL_LEDGER_DOUBLE_ENTRY_BALANCED: "সাধারণ লেজার ডাবল-এন্ট্রি ব্যালান্স (Debits = Credits)",
+    BED_OCCUPANCY_SYNCHRONIZED: "বেড অকুপেন্সি ও সক্রিয় রোগী অ্যাসাইনমেন্ট সমন্বয়",
     BED_OCCUPANCY_STATUS_SYNCHRONIZED: "বেড অকুপেন্সি ও সক্রিয় রোগী অ্যাসাইনমেন্ট সমন্বয়",
+    BED_WARD_INTEGRITY_VERIFIED: "বেড ও ওয়ার্ড স্কিমা ফরেন-কি অখণ্ডতা",
     BED_WARD_INVENTORY_INTEGRITY_VERIFIED: "বেড ও ওয়ার্ড স্কিমা ফরেন-কি অখণ্ডতা",
+    REFERRAL_COMMISSIONS_WITHIN_BOUNDS: "রেফারেল কমিশন ও পে-আউট লেজার সমন্বয়",
     REFERRAL_COMMISSION_LEDGER_BALANCED: "রেফারেল কমিশন ও পে-আউট লেজার সমন্বয়",
     EXPENSE_JOURNAL_LINKAGE_VERIFIED: "হাসপাতাল খরচ ও জার্নাল পোস্টিং লিংকেজ",
+    INVOICE_ARITHMETIC_VERIFIED: "বিলিং ইনভয়েস আর্থিক ইনভ্যারিয়েন্ট (নন-নেগেটিভ)",
     INVOICE_FINANCIAL_INVARIANTS_VERIFIED: "বিলিং ইনভয়েস আর্থিক ইনভ্যারিয়েন্ট (নন-নেগেটিভ)",
+    NOTIFICATION_OUTBOX_HEALTHY: "জরুরি নোটিফিকেশন আউটবক্স ডেলিভারি অখণ্ডতা",
+    ZERO_OPEN_INCIDENTS_VERIFIED: "সিস্টেম রানটাইম ইনসিডেন্ট মনিটর (জিরো ত্রুটি)",
     DOCTOR_DIRECTORY_CONFIGURED: "সক্রিয় চিকিৎসক চেম্বার ও ওপিডি প্রস্তুতি",
     TRIAL_BALANCE_PARITY_VERIFIED: "আর্থিক বিবরণী ও ট্রায়াল ব্যালান্স সমতা",
-    SYSTEM_RUNTIME_INCIDENTS_ZERO: "সিস্টেম রানটাইম ইনসিডেন্ট মনিটর (জিরো ত্রুটি)",
     PATIENT_INTAKE_ADMISSION_INTEGRITY_VERIFIED: "রোগী ভর্তি সিকোয়েন্স ও অ্যাডমিশন অখণ্ডতা",
     PUBLIC_PORTAL_SAFE_STANDBY: "পাবলিক পোর্টাল সুরক্ষিত স্ট্যান্ডবাই মোড",
     DEFAULT_HEALTHY: "স্ট্যান্ডার্ড স্বাস্থ্য নিরীক্ষা সক্রিয়",
@@ -174,13 +183,13 @@ export default function SystemHealthPage() {
 
           <button
             type="button"
-            onClick={handleTestSimulation}
-            disabled={isPending || isSimulating}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors min-h-[40px]"
-            title="একটি টেস্ট ইনসিডেন্ট তৈরি করে অটো-ডিটেকশন ও রিকভারি যাচাই করুন"
+            onClick={handleRunAuthoritativeCycle}
+            disabled={isPending || isRunningCycle}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors min-h-[40px] disabled:opacity-50"
+            title="অথরিটেটিভ স্বাস্থ্য চক্র চালিয়ে ক্রিপ্টোগ্রাফিক স্ন্যাপশট ও ডিটেক্টর রান সংরক্ষণ করুন"
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>লাইভ টেস্ট অ্যালার্ট</span>
+            <ShieldCheck className={`h-4 w-4 ${isRunningCycle ? "animate-spin text-emerald-600" : "text-emerald-600 dark:text-emerald-400"}`} />
+            <span>অথরিটেটিভ সাইকেল চালান</span>
           </button>
         </div>
       </div>
@@ -309,7 +318,7 @@ export default function SystemHealthPage() {
               <span>সমাধানের অপেক্ষায় থাকা সমস্যা ও অবস্থান (Active Issues & Locations)</span>
             </h2>
             <span className="text-xs text-slate-500">
-              মোট: {totalIssueCount} টি সমস্যা
+              মোট: {activeOperationalIssues.length} টি সমস্যা
             </span>
           </div>
 
@@ -385,15 +394,26 @@ export default function SystemHealthPage() {
                   </p>
                 </div>
 
-                <div className="flex justify-end pt-1">
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => handleResolveIssue(issue.id, issue.module)}
+                    onClick={() => handleAcknowledgeIncident(issue.id)}
                     disabled={isPending}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-2xs transition-colors disabled:opacity-50 min-h-[38px]"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800 transition-colors disabled:opacity-50 min-h-[38px]"
+                    title="অপারেটর সমাধান গ্রহণ করেছেন (স্কোর সংরক্ষিত থাকবে)"
                   >
-                    <Wrench className="h-3.5 w-3.5" />
-                    <span>সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা (Resolve & Verify)</span>
+                    <span>অ্যাকনলেজ করুন (Acknowledge)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyIncident(issue.id)}
+                    disabled={isPending}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-colors disabled:opacity-50 min-h-[38px]"
+                    title="ডেটাবেজ ও কোড ইনভ্যারিয়েন্ট পুনর্যাচাই করে ইনসিডেন্ট বন্ধ করুন"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>যাচাইকরণ ও ক্লোজার (Verify & Close)</span>
                   </button>
                 </div>
               </div>

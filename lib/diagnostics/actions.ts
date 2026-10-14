@@ -228,8 +228,120 @@ export async function resolveSystemRuntimeIssueAction(payload: {
 }
 
 /**
+ * Acknowledges a system incident for remediation. Keeps is_resolved = false.
+ */
+export async function acknowledgeSystemIncidentAction(payload: {
+  incidentId: string;
+  organizationId?: string;
+  notes?: string;
+}): Promise<{ success: boolean; incident_id?: string; lifecycle_status?: string; error?: string }> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("acknowledge_system_incident", {
+      p_incident_id: payload.incidentId,
+      p_org_id: payload.organizationId || null,
+      p_notes: payload.notes || "Operator acknowledged incident for remediation.",
+    });
+    if (error) {
+      console.error("[HealthDiagnostics] acknowledge_system_incident error:", error);
+      return { success: false, error: error.message };
+    }
+    return (data as { success: boolean; incident_id?: string; lifecycle_status?: string; error?: string }) || { success: false, error: "Empty response" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Executes authoritative domain reproducer to empirically verify incident resolution.
+ * Only marks RESOLVED_VERIFIED if underlying violation count is exactly 0.
+ */
+export async function verifySystemIncidentResolutionAction(payload: {
+  incidentId: string;
+  organizationId?: string;
+}): Promise<{ success: boolean; verified?: boolean; incident_id?: string; lifecycle_status?: string; error?: string }> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("verify_system_incident_resolution", {
+      p_incident_id: payload.incidentId,
+      p_org_id: payload.organizationId || null,
+    });
+    if (error) {
+      console.error("[HealthDiagnostics] verify_system_incident_resolution error:", error);
+      return { success: false, verified: false, error: error.message };
+    }
+    return (data as { success: boolean; verified?: boolean; incident_id?: string; lifecycle_status?: string; error?: string }) || { success: false, verified: false, error: "Empty response" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, verified: false, error: message };
+  }
+}
+
+/**
+ * Runs full authoritative health cycle on server across all required detectors.
+ */
+export async function runAuthoritativeHealthCycleAction(organizationId?: string) {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("run_authoritative_health_cycle", {
+      p_org_id: organizationId || "a0000000-0000-0000-0000-000000000001",
+      p_source_sha: "ui-dashboard-action",
+    });
+    if (error) {
+      console.error("[HealthDiagnostics] run_authoritative_health_cycle error:", error);
+      return { success: false, error: error.message };
+    }
+    return data;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Queries current authoritative health snapshot with stale expiration protection.
+ */
+export async function getAuthoritativeSystemHealthAction(organizationId?: string, maxAgeSeconds = 900) {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("get_authoritative_system_health", {
+      p_org_id: organizationId || "a0000000-0000-0000-0000-000000000001",
+      p_max_age_seconds: maxAgeSeconds,
+    });
+    if (error) {
+      console.error("[HealthDiagnostics] get_authoritative_system_health error:", error);
+      return null;
+    }
+    return data;
+  } catch (err: unknown) {
+    console.error("[HealthDiagnostics] get_authoritative_system_health exception:", err);
+    return null;
+  }
+}
+
+/**
+ * Retrieves versioned detector registry list.
+ */
+export async function getSystemHealthDetectorRegistryAction() {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("get_system_health_detector_registry");
+    if (error) {
+      console.error("[HealthDiagnostics] get_system_health_detector_registry error:", error);
+      return [];
+    }
+    return Array.isArray(data) ? data : [];
+  } catch (err: unknown) {
+    console.error("[HealthDiagnostics] get_system_health_detector_registry exception:", err);
+    return [];
+  }
+}
+
+/**
  * Verified recovery lifecycle: verifies the incident is resolved in database
  * and marks lifecycle_status = 'RESOLVED_VERIFIED' with evidence.
+ * Calls authoritative verify_system_incident_resolution (superseding verify_and_resolve_system_issue_atomic).
  */
 export async function verifyAndResolveSystemIssueAction(payload: {
   organizationId: string;
@@ -238,16 +350,25 @@ export async function verifyAndResolveSystemIssueAction(payload: {
 }): Promise<{ success: boolean; issue_id?: string; lifecycle_status?: string; error?: string }> {
   try {
     const supabase = createClient();
-    const { data, error } = await supabase.rpc("verify_and_resolve_system_issue_atomic", {
+    // Try authoritative Engine v2 verify_system_incident_resolution, fallback to verify_and_resolve_system_issue_atomic
+    const { data, error } = await supabase.rpc("verify_system_incident_resolution", {
+      p_incident_id: payload.issueId,
       p_org_id: payload.organizationId,
-      p_issue_id: payload.issueId,
-      p_verification_evidence: payload.verificationEvidence || {},
     });
-    if (error) {
-      console.error("[HealthDiagnostics] verifyAndResolveSystemIssue error:", error);
-      return { success: false, error: error.message };
+    if (error && error.message.includes("function verify_system_incident_resolution does not exist")) {
+      const fallback = await supabase.rpc("verify_and_resolve_system_issue_atomic", {
+        p_org_id: payload.organizationId,
+        p_issue_id: payload.issueId,
+        p_evidence: payload.verificationEvidence || {},
+      });
+      return { success: !fallback.error, issue_id: payload.issueId, error: fallback.error?.message };
     }
-    return (data as { success: boolean; issue_id?: string; lifecycle_status?: string; error?: string }) || { success: false, error: "Empty response" };
+    return {
+      success: Boolean(data?.verified),
+      issue_id: payload.issueId,
+      lifecycle_status: data?.status || (data?.verified ? "RESOLVED_VERIFIED" : "REMEDIATION_PENDING"),
+      error: error?.message,
+    };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return { success: false, error: message };

@@ -175,9 +175,7 @@ export default function SystemHealthAlertBanner({
   const hasIssues = activeOperationalIssues.length > 0;
   const totalIssueCount = activeOperationalIssues.length;
   const rawScore = typeof data?.health_score === "number" ? data.health_score : 0;
-  const effectiveHealthScore = hasIssues
-    ? Math.max(0, Math.min(rawScore, Math.min(99, 100 - totalIssueCount * 20)))
-    : (isAnonymousSecurityShield ? 100 : rawScore);
+  const effectiveHealthScore = data ? rawScore : 0;
 
 
   return (

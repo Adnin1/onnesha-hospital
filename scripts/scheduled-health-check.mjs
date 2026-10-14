@@ -10,7 +10,7 @@ import fs from "fs";
 import path from "path";
 
 const CANONICAL_URL = process.env.CANONICAL_URL || "https://onnesha-hospital.pages.dev";
-const ORG_ID = process.env.ORG_ID || "6b78e524-b1e3-4c43-8944-1a5a0248bff8";
+const ORG_ID = process.env.ORG_ID || "a0000000-0000-0000-0000-000000000001";
 
 console.log(`[24/7 Health Monitor] Starting heartbeat probe at ${new Date().toISOString()}`);
 
