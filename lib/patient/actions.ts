@@ -1492,6 +1492,7 @@ export async function getPatientsAction(params?: {
       .from("patients")
       .select("*")
       .eq("organization_id", session.organizationId)
+      .or("is_deleted.is.null,is_deleted.eq.false")
       .order("created_at", { ascending: false })
       .limit(params?.limit || 50);
 
@@ -2471,6 +2472,98 @@ export async function updatePatientAction(
     return {
       success: false,
       error: err instanceof Error ? err.message : "Failed to update patient record.",
+    };
+  }
+}
+
+/**
+ * 13B. Delete Patient Server Action
+ * Permanently deletes or safely soft-deletes a patient record with authorization verification
+ * and audit logging.
+ */
+export async function deletePatientAction(
+  patientId: string,
+  reason?: string
+): Promise<ActionResult<{ deletedId: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized: Valid hospital session required." };
+  }
+
+  const canDelete =
+    (await hasPermission("patients.delete")) ||
+    (await hasPermission("patients.manage")) ||
+    (await hasPermission("patients.edit"));
+  if (!canDelete) {
+    return { success: false, error: "403 Forbidden: Insufficient permission to delete patient records." };
+  }
+
+  if (!patientId) {
+    return { success: false, error: "Patient identifier is required." };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Verify patient exists and belongs to this organization
+    const { data: existingPatient, error: fetchErr } = await supabase
+      .from("patients")
+      .select("id, full_name, patient_code, phone")
+      .eq("id", patientId)
+      .eq("organization_id", session.organizationId)
+      .single();
+
+    if (fetchErr || !existingPatient) {
+      return { success: false, error: "Patient record not found in this hospital organization." };
+    }
+
+    // Try hard delete first
+    const { error: deleteErr } = await supabase
+      .from("patients")
+      .delete()
+      .eq("id", patientId)
+      .eq("organization_id", session.organizationId);
+
+    // If hard delete was blocked by foreign key (e.g. linked invoices/encounters), execute safe soft delete
+    if (deleteErr) {
+      const { error: softDeleteErr } = await supabase
+        .from("patients")
+        .update({
+          is_deleted: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", patientId)
+        .eq("organization_id", session.organizationId);
+
+      if (softDeleteErr) {
+        return { success: false, error: `Failed to delete patient: ${deleteErr.message}` };
+      }
+    }
+
+    // Record audit trail
+    await recordAuditLog({
+      userId: session.userId,
+      organizationId: session.organizationId,
+      action: "DELETE",
+      module: "PATIENT",
+      entityType: "patient",
+      entityId: patientId,
+      oldValues: {
+        full_name: existingPatient.full_name,
+        patient_code: existingPatient.patient_code,
+        phone: existingPatient.phone,
+        reason: reason || "User requested deletion from Patient Registry",
+      },
+    });
+
+    return {
+      success: true,
+      data: { deletedId: patientId },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to delete patient record.",
     };
   }
 }

@@ -13,6 +13,8 @@ import {
   Edit,
   FileSpreadsheet,
   Wallet,
+  Trash2,
+  X,
 } from "lucide-react";
 import { PatientMaster, TimelineEvent } from "@/types/clinical";
 import { InvoiceRecord } from "@/types/billing";
@@ -20,6 +22,7 @@ import { PrescriptionRecord, DiagnosticOrderRecord } from "@/types/clinical-emr"
 import {
   getPatientsAction,
   getPatient360Action,
+  deletePatientAction,
 } from "@/lib/patient/actions";
 import { getInvoicesAction } from "@/lib/billing/actions";
 import { getPrescriptionsAction } from "@/lib/prescriptions/actions";
@@ -47,6 +50,9 @@ export default function PatientsManagementPage() {
   const [registerInitialPatient, setRegisterInitialPatient] = useState<PatientMaster | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isIntakeDossierModalOpen, setIsIntakeDossierModalOpen] = useState(false);
+  const [deleteModalPatient, setDeleteModalPatient] = useState<PatientMaster | null>(null);
+  const [isDeletingPatient, setIsDeletingPatient] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
 
   const handlePatientUpdated = (updated: PatientMaster) => {
     setSelectedPatient(updated);
@@ -54,6 +60,34 @@ export default function PatientsManagementPage() {
       prev.map((item) => (item.id === updated.id ? updated : item))
     );
     showToast("রোগীর তথ্য সফলভাবে সংশোধন ও হালনাগাদ করা হয়েছে।", "success");
+  };
+
+  const confirmDeletePatient = async () => {
+    if (!deleteModalPatient) return;
+    setIsDeletingPatient(true);
+    try {
+      const res = await deletePatientAction(deleteModalPatient.id, deleteReason.trim() || undefined);
+      if (res.success) {
+        showToast(`রোগী (${deleteModalPatient.full_name}) সফলভাবে মুছে ফেলা হয়েছে।`, "success");
+        const remaining = patients.filter((p) => p.id !== deleteModalPatient.id);
+        setPatients(remaining);
+        if (selectedPatient?.id === deleteModalPatient.id) {
+          if (remaining.length > 0) {
+            void selectPatient(remaining[0]);
+          } else {
+            setSelectedPatient(null);
+          }
+        }
+        setDeleteModalPatient(null);
+        setDeleteReason("");
+      } else {
+        showToast(res.error || "রোগী মুছে ফেলা সম্ভব হয়নি।", "error");
+      }
+    } catch {
+      showToast("রোগী ডিলিট করার সময় ত্রুটি ঘটেছে।", "error");
+    } finally {
+      setIsDeletingPatient(false);
+    }
   };
 
   // Patient 360 sub-records
@@ -292,6 +326,17 @@ export default function PatientsManagementPage() {
                       >
                         <Wallet className="w-3.5 h-3.5" />
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteModalPatient(p);
+                          setDeleteReason("");
+                        }}
+                        className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer"
+                        title="রোগীর প্রোফাইল মুছুন (Delete Patient)"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                       <ChevronRight className="w-4 h-4 text-slate-400 ml-0.5" />
                     </div>
                   </div>
@@ -362,6 +407,17 @@ export default function PatientsManagementPage() {
                     <Wallet className="w-3.5 h-3.5 mr-1" />
                     সরাসরি বিলিং (Billing)
                   </Link>
+                  <button
+                    onClick={() => {
+                      setDeleteModalPatient(selectedPatient);
+                      setDeleteReason("");
+                    }}
+                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition flex items-center shadow-xs cursor-pointer"
+                    title="রোগীর প্রোফাইল মুছুন / Delete Patient Record"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    মুছে ফেলুন (Delete)
+                  </button>
                   <EpisodeBillingPanel patientId={selectedPatient.id} />
                 </div>
               </div>
@@ -579,6 +635,90 @@ export default function PatientsManagementPage() {
           patientId={selectedPatient.id}
           onPatientUpdated={handlePatientUpdated}
         />
+      )}
+
+      {/* PATIENT DELETE CONFIRMATION MODAL */}
+      {deleteModalPatient && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-rose-50/50">
+              <div className="flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+                <h3 className="text-sm font-black text-rose-950">
+                  রোগীর রেকর্ড মুছে ফেলার নিশ্চিতকরণ
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteModalPatient(null)}
+                disabled={isDeletingPatient}
+                className="p-1.5 hover:bg-rose-100 rounded-lg text-slate-400 hover:text-slate-600 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-rose-950">
+                    আপনি কি নিশ্চিতভাবে এই রোগীর প্রোফাইল মুছে ফেলতে চান?
+                  </p>
+                  <p className="text-[11px] text-rose-800">
+                    রোগী: <strong className="font-bold">{deleteModalPatient.full_name}</strong> (কোড: {deleteModalPatient.patient_code || "N/A"}, মোবাইল: {deleteModalPatient.phone})
+                  </p>
+                  <p className="text-[10px] text-rose-700">
+                    সতর্কতা: ডিলিট করার পর এই প্রোফাইলটি রোগী তালিকা ও ইনটেক রেজিস্ট্রি থেকে সম্পূর্ণ অপসারিত হবে।
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  মুছে ফেলার কারণ (ঐচ্ছিক):
+                </label>
+                <input
+                  type="text"
+                  placeholder="যেমন: ভুল এন্ট্রি, ডুপ্লিকেট রোগী, ইত্যাদি..."
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  disabled={isDeletingPatient}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setDeleteModalPatient(null)}
+                  disabled={isDeletingPatient}
+                  className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl font-bold transition cursor-pointer"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeletePatient}
+                  disabled={isDeletingPatient}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  {isDeletingPatient ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>মুছে ফেলা হচ্ছে...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>নিশ্চিতভাবে মুছুন</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {toast && (

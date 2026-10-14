@@ -18,7 +18,7 @@
  *    - Status: CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED (Canonical Address established per Owner Directive: 'সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।')
  *
  * 2. Hospital Brand Name & Transliteration:
- *    - DGHS Registry (Facility ID 10022715): 'ANNESHA HOSPITAL / অন্বেষা হাসপাতাল', Bogura
+ *    - DGHS Registry: 'ANNESHA HOSPITAL / অন্বেষা হাসপাতাল', Bogura
  *    - ERP & Database Default: 'Annesha Hospital and Diagnostic Center'
  *    - Web Portal & Digital Brand: 'Onnesha Hospital & Diagnostic Complex' (Short: 'Onnesha Hospital')
  *    - Canonical Bengali Name: 'অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার'
@@ -94,11 +94,11 @@ export const HOSPITAL_METADATA: HospitalMetadata = {
   // Physical address: Official Bogura address
   address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।",
   normalizedAddress: "সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।",
-  regNo: process.env.NEXT_PUBLIC_HOSPITAL_REG_NO || "10022715",
+  regNo: process.env.NEXT_PUBLIC_HOSPITAL_REG_NO || "",
   diagnosticLicense: "HSM4521681",
   clinicLicense: "HSM4312356",
-  // DGHS Registry data (Facility ID 10022715)
-  dghsFacilityId: "10022715",
+  // DGHS Registry data
+  dghsFacilityId: process.env.NEXT_PUBLIC_DGHS_FACILITY_ID || "",
   dghsRegisteredName: "ANNESHA HOSPITAL / অন্বেষা হাসপাতাল",
   dghsDivisionDistrict: "Rajshahi / Bogura",
   // External directory finding
@@ -120,7 +120,7 @@ export const HOSPITAL_METADATA: HospitalMetadata = {
     },
     englishBrandTransliteration: {
       status: "RESOLVED PER OWNER DIRECTIVE",
-      dghsFacilityId: "10022715",
+      dghsFacilityId: process.env.NEXT_PUBLIC_DGHS_FACILITY_ID || "",
       dghsRegisteredName: "ANNESHA HOSPITAL / অন্বেষা হাসপাতাল",
       erpDefaultName: "Annesha Hospital and Diagnostic Center",
       webPortalBranding: "ANNESHA HOSPITAL AND DIAGNOSTIC",

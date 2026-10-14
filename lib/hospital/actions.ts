@@ -47,7 +47,7 @@ export const APPROVED_HOSPITAL_DATA: HospitalMasterData = {
   ambulanceHotline: "01904210065",
   email: "aaih.apon@gmail.com",
   address: "সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।",
-  regNo: HOSPITAL_METADATA.regNo || "10022715",
+  regNo: HOSPITAL_METADATA.regNo || "",
   diagnosticLicense: "HSM4521681",
   clinicLicense: "HSM4312356",
 };
@@ -107,7 +107,7 @@ export async function getHospitalMasterDataAction(): Promise<{
         ambulanceHotline: settings?.ambulance_hotline || APPROVED_HOSPITAL_DATA.ambulanceHotline,
         email: org?.email || APPROVED_HOSPITAL_DATA.email,
         address: org?.address || APPROVED_HOSPITAL_DATA.address,
-        regNo: HOSPITAL_METADATA.regNo || "10022715",
+        regNo: HOSPITAL_METADATA.regNo || "",
         officePhone: APPROVED_HOSPITAL_DATA.officePhone,
         receptionPhone: org?.phone || APPROVED_HOSPITAL_DATA.receptionPhone,
         diagnosticLicense: APPROVED_HOSPITAL_DATA.diagnosticLicense,

@@ -157,12 +157,12 @@ describe("OHMS Phase 37: v1.1.57 Production Excellence, Tariff Authority & Websi
   });
 
   // Test 6: Content Truth Governance & DGHS Facility Identity
-  test("6. Content Truth Governance: Maintains DGHS Facility ID 10022715 and documented truth blockers", () => {
+  test("6. Content Truth Governance: Maintains DGHS Facility configuration and documented truth blockers", () => {
     const configPath = path.join(rootDir, "config", "hospital.ts");
     assert.ok(fs.existsSync(configPath), "config/hospital.ts must exist");
     const content = fs.readFileSync(configPath, "utf8");
 
-    assert.match(content, /dghsFacilityId:\s*"10022715"/);
+    assert.match(content, /dghsFacilityId:\s*process\.env\.NEXT_PUBLIC_DGHS_FACILITY_ID\s*\|\|\s*""/);
     assert.match(content, /dghsRegisteredName:\s*"ANNESHA HOSPITAL \/ অন্বেষা হাসপাতাল"/);
     assert.match(content, /CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED/);
   });

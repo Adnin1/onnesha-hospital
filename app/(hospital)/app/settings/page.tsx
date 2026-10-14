@@ -39,7 +39,7 @@ const DEFAULT_HOSPITAL_PROFILE = {
   address: process.env.NEXT_PUBLIC_HOSPITAL_ADDRESS || "সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।",
   diagnosticLicense: "HSM4521681",
   clinicLicense: "HSM4312356",
-  regNo: "10022715",
+  regNo: "",
 };
 
 export default function SettingsAndAuditPage() {
@@ -196,7 +196,7 @@ export default function SettingsAndAuditPage() {
     setHospitalAddress(APPROVED_HOSPITAL_DATA.address);
     setHospitalDiagnosticLicense(APPROVED_HOSPITAL_DATA.diagnosticLicense || "HSM4521681");
     setHospitalClinicLicense(APPROVED_HOSPITAL_DATA.clinicLicense || "HSM4312356");
-    setHospitalRegNo(APPROVED_HOSPITAL_DATA.regNo || "10022715");
+    setHospitalRegNo(APPROVED_HOSPITAL_DATA.regNo || "");
     setSavedToast("Reset form values to official approved hospital master data.");
     setTimeout(() => setSavedToast(""), 4000);
   };
@@ -872,7 +872,7 @@ export default function SettingsAndAuditPage() {
                 type="text"
                 value={hospitalRegNo}
                 onChange={(e) => setHospitalRegNo(e.target.value)}
-                placeholder="10022715"
+                placeholder="DGHS Registration / Facility ID"
                 className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 transition"
               />
             </div>

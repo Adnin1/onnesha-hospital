@@ -49,14 +49,12 @@ import { searchPatientsAction, updatePatientAction } from "@/lib/patient/actions
 import { getDoctorsAction } from "@/lib/appointments/actions";
 import { DoctorRecord } from "@/types/appointments";
 import { HalfLetterInvoicePrint } from "@/components/print/HalfLetterInvoicePrint";
-import { PaymentStampSeal } from "@/components/billing/PaymentStampSeal";
 import {
   getPatientReferralAttributionAction,
   searchReferralAgentsForBillingAction,
 } from "@/lib/referrals/actions";
 import { PatientMaster } from "@/types/clinical";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
-import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 import { Toast } from "@/components/ui/Toast";
 import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
 import {
@@ -783,6 +781,18 @@ function BillingManagementContent() {
     });
   }, [allServices, serviceFilterGroup, serviceSearchTerm]);
 
+  const instantSearchResults = useMemo(() => {
+    const term = serviceSearchTerm.trim().toLowerCase();
+    if (!term) return [];
+    return allServices.filter((s) => {
+      return (
+        s.name.toLowerCase().includes(term) ||
+        s.category.toLowerCase().includes(term) ||
+        (s.description ? s.description.toLowerCase().includes(term) : false)
+      );
+    });
+  }, [allServices, serviceSearchTerm]);
+
   const serviceGroupCounts = useMemo(() => {
     const counts: Record<string, number> = { ALL: allServices.length };
     for (const s of allServices) {
@@ -1482,120 +1492,41 @@ function BillingManagementContent() {
                 </div>
               </div>
 
-              {/* PRINTABLE SLIP CONTAINER */}
-              <div className="pt-4 space-y-3 text-xs relative">
-                <HospitalPrintHeader documentTitle="BILLING INVOICE & CASH RECEIPT" />
-
-                <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                  <div>
-                    <span className="text-[10px] text-slate-500 font-medium">Patient:</span>
-                    <p className="font-bold text-slate-900">{selectedInvoice.patient?.full_name}</p>
-                    <p className="text-[10px] text-slate-500 font-mono">
-                      ID: {selectedInvoice.patient?.patient_code} • Ph: {selectedInvoice.patient?.phone}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-500 font-medium">Issue Date:</span>
-                    <p className="font-mono text-slate-900">{formatDateBDT(selectedInvoice.created_at)}</p>
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ${
-                        selectedInvoice.status === "PAID"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : selectedInvoice.status === "PARTIAL"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-rose-100 text-rose-800"
-                      }`}
-                    >
-                      {selectedInvoice.status}
-                    </span>
-                  </div>
-                </div>
-
-                {/* LINE ITEMS */}
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Service Line Items</span>
-                  <table className="w-full text-left text-xs border border-slate-100 rounded-lg overflow-hidden">
-                    <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[9px]">
-                      <tr>
-                        <th className="py-1.5 px-2">Item</th>
-                        <th className="py-1.5 px-2 text-center">Qty</th>
-                        <th className="py-1.5 px-2 text-right">Price</th>
-                        <th className="py-1.5 px-2 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {selectedInvoice.items.map((it, idx) => (
-                        <tr key={idx}>
-                          <td className="py-1.5 px-2 font-medium">{it.item_name}</td>
-                          <td className="py-1.5 px-2 text-center font-mono">{it.quantity}</td>
-                          <td className="py-1.5 px-2 text-right font-mono">{formatCurrencyBDT(it.unit_price)}</td>
-                          <td className="py-1.5 px-2 text-right font-mono font-bold">
-                            {formatCurrencyBDT(it.total_price)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* TOTAL SUMMARY */}
-                <div className="relative p-3 bg-slate-50 rounded-xl space-y-1 font-mono text-xs border border-slate-100 overflow-hidden">
-                  {/* Official Compact Stamp Seal (Centrally placed in marked summary zone without obscuring text) */}
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-90 print:opacity-100 flex items-center justify-center">
-                    <PaymentStampSeal
-                      status={selectedInvoice.status}
-                      dueAmount={selectedInvoice.due_amount}
-                      paidAmount={selectedInvoice.paid_amount}
-                      totalAmount={selectedInvoice.grand_total}
-                      dateStr={selectedInvoice.created_at}
-                      receiptNumber={selectedInvoice.payments?.[0]?.receipt_number}
-                      size="compact"
-                    />
-                  </div>
-
-                  <div className="flex justify-between text-slate-600">
-                    <span>Subtotal:</span>
-                    <span>{formatCurrencyBDT(selectedInvoice.subtotal)}</span>
-                  </div>
-                  {selectedInvoice.discount_amount > 0 && (
-                    <div className="flex justify-between text-amber-700">
-                      <span>Discount:</span>
-                      <span>-{formatCurrencyBDT(selectedInvoice.discount_amount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm font-black text-slate-900 border-t border-slate-200 pt-1">
-                    <span>Grand Total:</span>
-                    <span>{formatCurrencyBDT(selectedInvoice.grand_total)}</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-700 font-bold">
-                    <span>Paid Amount:</span>
-                    <span>{formatCurrencyBDT(selectedInvoice.paid_amount)}</span>
-                  </div>
-                  <div className="flex justify-between text-rose-700 font-bold border-t border-slate-200 pt-1">
-                    <span>Remaining Due:</span>
-                    <span>{formatCurrencyBDT(selectedInvoice.due_amount)}</span>
-                  </div>
-                </div>
-
-                {/* PAYMENTS HISTORY */}
-                {selectedInvoice.payments.length > 0 && (
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">Payment Receipts</span>
-                    {selectedInvoice.payments.map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex justify-between items-center p-2 rounded-lg bg-emerald-50/50 border border-emerald-100 text-[11px]"
-                      >
-                        <span className="font-mono text-emerald-950 font-bold">
-                          {p.receipt_number} ({p.payment_method})
-                        </span>
-                        <span className="font-mono font-black text-emerald-700">{formatCurrencyBDT(p.amount)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <HospitalPrintFooter />
+              {/* ADVANCED COLORFUL HALF-LETTER INVOICE PREVIEW & PRINT SLIP */}
+              <div className="pt-2">
+                <HalfLetterInvoicePrint
+                  invoiceNumber={selectedInvoice.invoice_number}
+                  dateStr={formatDateBDT(selectedInvoice.created_at)}
+                  dueDateStr={formatDateBDT(selectedInvoice.created_at)}
+                  cashierName="Cashier"
+                  patient={{
+                    name: selectedInvoice.patient?.full_name || "Patient",
+                    patientCode: selectedInvoice.patient?.patient_code || "OH-P-WALKIN",
+                    phone: selectedInvoice.patient?.phone,
+                    address: selectedInvoice.patient?.address,
+                    age: selectedInvoice.patient?.age,
+                    bloodGroup: selectedInvoice.patient?.blood_group,
+                  }}
+                  items={(selectedInvoice.items || []).map((it) => ({
+                    description: it.item_name,
+                    serviceCategory: it.service_category || "General",
+                    unitPrice: it.unit_price,
+                    quantity: it.quantity,
+                    totalAmount: it.total_price,
+                  }))}
+                  payments={(selectedInvoice.payments || []).map((p) => ({
+                    receiptNumber: p.receipt_number,
+                    paymentMethod: p.payment_method,
+                    amount: p.amount,
+                    paidAt: formatDateBDT(p.created_at),
+                  }))}
+                  subtotal={selectedInvoice.subtotal}
+                  discount={selectedInvoice.discount_amount}
+                  tax={selectedInvoice.tax_amount}
+                  totalAmount={selectedInvoice.grand_total}
+                  paidAmount={selectedInvoice.paid_amount}
+                  dueAmount={selectedInvoice.due_amount}
+                />
               </div>
             </div>
           ) : (
@@ -1772,37 +1703,144 @@ function BillingManagementContent() {
               </div>
 
               {/* Preset quick buttons & Comprehensive Hospital Service Catalog */}
-              <div className="space-y-2 border-t border-slate-100 pt-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <span className="text-[11px] font-extrabold text-slate-800 uppercase flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                      হাসপাতাল সেবা ও প্যাথলজি টেস্ট ক্যাটালগ (Hospital Service & Diagnostic Catalog)
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      যেকোনো টেস্ট বা সার্ভিসে ক্লিক করলেই স্বয়ংক্রিয়ভাবে ইনভয়েসে যুক্ত হবে ({allServices.length}টি মোট সার্ভিস)
-                    </span>
+              <div className="space-y-3 border-t border-slate-100 pt-3">
+                {/* 🌟 389-Service Instant Search & Auto-Recommend Box */}
+                <div className="relative p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border-2 border-emerald-300 rounded-2xl shadow-sm space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 bg-emerald-600 text-white rounded-lg shadow-2xs">
+                        <Search className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <span className="text-xs font-black text-emerald-950 block">
+                          হাসপাতাল সেবা ও প্যাথলজি টেস্ট ক্যাটালগ — ইনস্ট্যান্ট সার্চ ({allServices.length}টি মোট সার্ভিস)
+                        </span>
+                        <span className="text-[10px] text-emerald-800">
+                          যেকোনো কি-ওয়ার্ড লিখুন — নিমেষেই টেস্ট খুঁজে পেয়ে ১-ক্লিকে বিলে যোগ করুন
+                        </span>
+                      </div>
+                    </div>
+                    {serviceSearchTerm && (
+                      <span className="text-[10px] font-bold text-emerald-900 bg-emerald-200/90 px-2 py-0.5 rounded-full">
+                        {instantSearchResults.length}টি টেস্ট পাওয়া গেছে
+                      </span>
+                    )}
                   </div>
-                  <div className="relative w-full sm:w-64">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-400" />
+
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-emerald-600" />
                     <input
                       type="text"
-                      placeholder="সার্ভিস বা টেস্ট খুঁজুন (CBC, USG, Cabin, OT)..."
+                      placeholder="সার্ভিস বা টেস্টের নাম লিখুন (যেমন: CBC, USG, X-Ray, Blood, ECG, Cabin, OT, Urea)..."
                       value={serviceSearchTerm}
                       onChange={(e) => setServiceSearchTerm(e.target.value)}
-                      className="w-full pl-8 pr-7 py-1 text-[11px] border border-slate-200/90 rounded-lg bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-2xs"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && instantSearchResults.length > 0) {
+                          e.preventDefault();
+                          const topMatch = instantSearchResults[0];
+                          addItemRow(topMatch.category, topMatch.name, topMatch.price);
+                          setToast({ message: `${topMatch.name} বিলে যুক্ত হয়েছে!`, type: "success" });
+                        }
+                      }}
+                      className="w-full pl-9 pr-9 py-2 text-xs font-bold border-2 border-emerald-400 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 shadow-xs"
                     />
                     {serviceSearchTerm && (
                       <button
                         type="button"
                         onClick={() => setServiceSearchTerm("")}
-                        className="absolute right-2 top-1.5 text-slate-400 hover:text-slate-600 transition"
+                        className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 transition"
                         title="সার্চ মুছুন"
                         aria-label="সার্চ মুছুন"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                       </button>
                     )}
+                  </div>
+
+                  {/* Live Recommendation Dropdown / Floating Results */}
+                  {serviceSearchTerm.trim().length > 0 && (
+                    <div className="max-h-56 overflow-y-auto border border-emerald-200 rounded-xl bg-white shadow-xl divide-y divide-slate-100 z-20">
+                      {instantSearchResults.length > 0 ? (
+                        instantSearchResults.slice(0, 15).map((srv) => {
+                          const badge = getCategoryBadgeStyle(srv.category, srv.group);
+                          const inBill = items.find(
+                            (it) => it.itemName.trim().toLowerCase() === srv.name.trim().toLowerCase()
+                          );
+                          return (
+                            <div
+                              key={srv.id}
+                              onClick={() => {
+                                addItemRow(srv.category, srv.name, srv.price);
+                                setToast({ message: `${srv.name} বিলে যুক্ত হয়েছে!`, type: "success" });
+                              }}
+                              className="p-2.5 hover:bg-emerald-50 cursor-pointer flex items-center justify-between transition gap-2 group"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded border ${badge.bg}`}>
+                                    {badge.label}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-900 group-hover:text-emerald-900 truncate">
+                                    {srv.name}
+                                  </span>
+                                  {inBill && (
+                                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                                      ✓ {inBill.quantity}x যুক্ত
+                                    </span>
+                                  )}
+                                </div>
+                                {srv.description && (
+                                  <p className="text-[9.5px] text-slate-500 truncate mt-0.5">{srv.description}</p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-xs font-mono font-black text-emerald-800">
+                                  {formatCurrencyBDT(srv.price)}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="px-2.5 py-1 bg-emerald-600 group-hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition flex items-center gap-1 shadow-2xs"
+                                >
+                                  <Plus className="w-3 h-3" /> যোগ করুন
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="p-3 text-center text-xs text-slate-500">
+                          &quot;{serviceSearchTerm}&quot; দিয়ে কোনো সার্ভিস বা টেস্ট পাওয়া যায়নি।
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Popular Service Quick Pills */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span className="text-[10px] font-bold text-slate-500 mr-1">জনপ্রিয় টেস্ট:</span>
+                    {[
+                      { name: "CBC (Complete Blood Count)", cat: "LAB" as ServiceCategory, price: 400, label: "CBC (৳৪০০)" },
+                      { name: "USG of Whole Abdomen", cat: "USG" as ServiceCategory, price: 1200, label: "USG Abdomen (৳১২০০)" },
+                      { name: "Chest X-Ray P/A View", cat: "XRAY" as ServiceCategory, price: 500, label: "X-Ray Chest (৳৫০০)" },
+                      { name: "Serum Creatinine", cat: "LAB" as ServiceCategory, price: 350, label: "Creatinine (৳৩৫০)" },
+                      { name: "Blood Sugar Fasting", cat: "LAB" as ServiceCategory, price: 150, label: "Blood Sugar (৳১৫০)" },
+                      { name: "ECG 12 Lead", cat: "LAB" as ServiceCategory, price: 300, label: "ECG (৳৩০০)" },
+                      { name: "General Bed (Non-AC)", cat: "BED" as ServiceCategory, price: 800, label: "Bed (৳৮০০)" },
+                      { name: "Single Cabin (AC)", cat: "CABIN" as ServiceCategory, price: 1500, label: "AC Cabin (৳১৫০০)" },
+                    ].map((pill, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          addItemRow(pill.cat, pill.name, pill.price);
+                          setToast({ message: `${pill.name} বিলে যুক্ত হয়েছে!`, type: "success" });
+                        }}
+                        className="px-2 py-0.5 rounded-lg bg-white hover:bg-emerald-100 border border-emerald-200 text-[10px] font-bold text-emerald-900 transition flex items-center gap-0.5 shadow-2xs cursor-pointer"
+                      >
+                        <Plus className="w-2.5 h-2.5 text-emerald-600" />
+                        {pill.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 

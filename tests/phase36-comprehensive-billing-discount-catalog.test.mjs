@@ -99,7 +99,6 @@ describe("OHMS Phase 36: Comprehensive Billing Catalog, Dynamic Test Adder, % Di
     assert.match(content, /window\.print\(\)/);
     assert.match(content, /setTimeout\(\(\) => \{\s*window\.print\(\);\s*\}, 350\)/);
     assert.match(content, /print:hidden/);
-    assert.match(content, /HospitalPrintHeader/);
-    assert.match(content, /HospitalPrintFooter/);
+    assert.match(content, /HalfLetterInvoicePrint/);
   });
 });

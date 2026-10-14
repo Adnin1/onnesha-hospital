@@ -120,29 +120,32 @@ export function HalfLetterInvoicePrint({
   const wordsStr = numberToWordsBDT(totalAmount);
 
   return (
-    <div className="half-letter-invoice-root mx-auto max-w-[5.5in] min-h-[8.5in] bg-white text-slate-900 font-sans p-4 border border-slate-200 print:border-none print:m-0 print:p-2 print:shadow-none print:w-[5.5in] print:max-w-[5.5in]">
+    <div className="half-letter-invoice-root mx-auto max-w-[5.5in] bg-white text-slate-900 font-sans p-4 border border-slate-200 print:border-none print:m-0 print:p-2 print:shadow-none print:w-full print:max-w-[5.5in]">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
             size: 5.5in 8.5in;
-            margin: 0.2in 0.25in;
+            margin: 3mm 4mm;
           }
           body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
           .half-letter-invoice-root {
-            width: 5.5in !important;
+            width: 100% !important;
             max-width: 5.5in !important;
-            min-height: 8.5in !important;
+            min-height: auto !important;
+            height: auto !important;
             padding: 0 !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
         }
       `}} />
 
       {/* 1. Header */}
-      <div className="border-b-2 border-sky-900 pb-2 mb-2 flex justify-between items-start">
+      <div className="border-b-2 border-indigo-900 pb-2 mb-2 flex justify-between items-start">
         <div className="space-y-0.5">
           <div className="flex items-center space-x-2">
             <img
@@ -151,7 +154,7 @@ export function HalfLetterInvoicePrint({
               className="w-8 h-8 rounded object-contain shrink-0"
             />
             <div>
-              <h1 className="text-base font-black uppercase tracking-tight text-sky-950 leading-tight">
+              <h1 className="text-base font-black uppercase tracking-tight text-indigo-950 leading-tight">
                 {HOSPITAL_METADATA.name}
               </h1>
               <p className="text-xs sm:text-sm font-black text-sky-950 leading-tight tracking-normal font-sans pt-0.5">
@@ -166,7 +169,7 @@ export function HalfLetterInvoicePrint({
             রিসিপশন: {HOSPITAL_METADATA.receptionPhone || "01895-665114"} | অফিস: {HOSPITAL_METADATA.officePhone || "01904210065"}
           </p>
           <p className="text-[8px] text-slate-500 leading-tight">
-            ডায়াগনস্টিক লাইসেন্স: {HOSPITAL_METADATA.diagnosticLicense || "HSM4521681"} | ক্লিনিক লাইসেন্স: {HOSPITAL_METADATA.clinicLicense || "HSM4312356"} | DGHS: {HOSPITAL_METADATA.regNo || "10022715"}
+            ডায়াগনস্টিক লাইসেন্স: {HOSPITAL_METADATA.diagnosticLicense || "HSM4521681"} | ক্লিনিক লাইসেন্স: {HOSPITAL_METADATA.clinicLicense || "HSM4312356"}
           </p>
         </div>
 
@@ -205,8 +208,8 @@ export function HalfLetterInvoicePrint({
           <div>
             <span className="text-slate-500 font-medium">Mobile: </span>
             <span className="font-mono text-slate-800">{patient.phone || "N/A"}</span>
-            {patient.bloodGroup && (
-              <span className="ml-1 text-rose-700 font-bold">[{patient.bloodGroup}]</span>
+            {patient.bloodGroup && !["UNKNOWN", "N/A", "UNDEFINED", "NONE"].includes(patient.bloodGroup.trim().toUpperCase()) && (
+              <span className="ml-1 text-slate-700 font-bold">[{patient.bloodGroup.trim()}]</span>
             )}
           </div>
           {patient.address && (
@@ -293,8 +296,8 @@ export function HalfLetterInvoicePrint({
 
       {/* 4. Financial Calculations & Settlement */}
       <div className="relative grid grid-cols-12 gap-2 mb-2 text-[10px]">
-        {/* Authentic Visual Rubber Stamp Seal */}
-        <div className="absolute right-2 top-0 z-10 pointer-events-none opacity-90 print:opacity-100">
+        {/* Authentic Visual Rubber Stamp Seal - Elegant Centered Placement */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-85 print:opacity-90 flex items-center justify-center">
           <PaymentStampSeal
             status={dueAmount <= 0 ? "PAID" : "DUE"}
             dueAmount={dueAmount}

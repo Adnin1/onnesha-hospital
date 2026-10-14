@@ -34,7 +34,7 @@ export function HospitalPrintHeader({
               {HOSPITAL_METADATA.address} | রিসিপশন: {HOSPITAL_METADATA.receptionPhone || "01895-665114"} | অফিস: {HOSPITAL_METADATA.officePhone || "01904210065"}
             </p>
             <p className="text-[10px] text-slate-500 mt-0.5">
-              ডায়াগনস্টিক লাইসেন্স: {HOSPITAL_METADATA.diagnosticLicense || "HSM4521681"} | ক্লিনিক লাইসেন্স: {HOSPITAL_METADATA.clinicLicense || "HSM4312356"} | DGHS Reg: {HOSPITAL_METADATA.regNo || "10022715"}
+              ডায়াগনস্টিক লাইসেন্স: {HOSPITAL_METADATA.diagnosticLicense || "HSM4521681"} | ক্লিনিক লাইসেন্স: {HOSPITAL_METADATA.clinicLicense || "HSM4312356"}
             </p>
           </div>
         </div>

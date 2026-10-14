@@ -78,12 +78,12 @@ describe("OHMS Phase 8 Billing & Invoicing Engine Suite (10 Scenarios)", () => {
     assert.match(migContent, /CREATE TABLE IF NOT EXISTS refunds/);
   });
 
-  // Scenario 9: Billing page integrates HospitalPrintHeader & HospitalPrintFooter for receipts
-  test("9. Billing page mounts HospitalPrintHeader and HospitalPrintFooter for printable receipts", () => {
+  // Scenario 9: Billing page integrates HalfLetterInvoicePrint for printable receipts
+  test("9. Billing page mounts HalfLetterInvoicePrint for printable receipts", () => {
     const pageContent = fs.readFileSync(path.join(rootDir, "app", "(hospital)", "app", "billing", "page.tsx"), "utf8");
-    assert.match(pageContent, /HospitalPrintHeader/);
-    assert.match(pageContent, /HospitalPrintFooter/);
-    assert.match(pageContent, /BILLING INVOICE & CASH RECEIPT/);
+    assert.match(pageContent, /HalfLetterInvoicePrint/);
+    const printContent = fs.readFileSync(path.join(rootDir, "components", "print", "HalfLetterInvoicePrint.tsx"), "utf8");
+    assert.match(printContent, /BILL & CASH RECEIPT/);
   });
 
   // Scenario 10: Billing status filter supports ALL, UNPAID, PARTIAL, PAID, VOID
@@ -104,10 +104,11 @@ describe("OHMS Phase 8 Billing & Invoicing Engine Suite (10 Scenarios)", () => {
     assert.match(sealContent, /ANNESHA HOSPITAL/);
   });
 
-  // Scenario 12: Billing console integrates PaymentStampSeal and Quick Pay Due action
+  // Scenario 12: Billing console integrates PaymentStampSeal via HalfLetterInvoicePrint and Quick Pay Due action
   test("12. Billing console integrates PaymentStampSeal and Quick Pay Due action", () => {
     const pageContent = fs.readFileSync(path.join(rootDir, "app", "(hospital)", "app", "billing", "page.tsx"), "utf8");
-    assert.match(pageContent, /PaymentStampSeal/);
+    const printContent = fs.readFileSync(path.join(rootDir, "components", "print", "HalfLetterInvoicePrint.tsx"), "utf8");
+    assert.match(printContent, /PaymentStampSeal/);
     assert.match(pageContent, /Pay Due/);
     assert.match(pageContent, /Due \(বকেয়া\)/);
   });

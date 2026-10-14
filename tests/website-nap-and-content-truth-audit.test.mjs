@@ -22,7 +22,7 @@ describe("Website NAP (Name, Address, Phone) & Content Truth Audit Matrix", () =
 
     assert.ok(content.includes("SINGLE AUTHORITATIVE SOURCE OF TRUTH"), "Must declare single source of truth");
     assert.ok(content.includes("export const HOSPITAL_METADATA"), "Must export HOSPITAL_METADATA");
-    assert.ok(content.includes("dghsFacilityId: \"10022715\""), "Must include DGHS Facility ID 10022715");
+    assert.ok(content.includes("dghsFacilityId"), "Must define dghsFacilityId in HOSPITAL_METADATA");
     assert.ok(content.includes("ANNESHA HOSPITAL / অন্বেষা হাসপাতাল"), "Must include DGHS registered facility name");
   });
 
@@ -68,7 +68,7 @@ describe("Website NAP (Name, Address, Phone) & Content Truth Audit Matrix", () =
 
     assert.ok(content.includes("Organization Identity & NAP (Name, Address, Phone) Content Truth"), "Section 1 required");
     assert.ok(content.includes("config/hospital.ts"), "Must cite config/hospital.ts as authoritative source");
-    assert.ok(content.includes("10022715"), "Must cite DGHS Facility ID 10022715");
+    assert.ok(content.includes("DGHS Facility Registry"), "Must cite DGHS Facility Registry");
     assert.ok(content.includes("01718835623"), "Must cite official phone");
     assert.ok(content.includes("01904210065"), "Must cite ambulance hotline");
     assert.ok(content.includes("CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED"), "Must tag blocker");
