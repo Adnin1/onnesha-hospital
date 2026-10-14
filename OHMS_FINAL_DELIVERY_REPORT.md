@@ -4,9 +4,9 @@
 **Document Version:** `1.1.90`  
 **Classification:** Authoritative Technical Baseline & Production Certification  
 **Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**  
-**Execution Timestamp:** `2026-10-15T04:40:00+06:00`  
+**Execution Timestamp:** `2026-10-15T05:10:00+06:00`  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
-**Cloudflare Deployment Preview:** `https://df3c7a66.onnesha-hospital.pages.dev`  
+**Cloudflare Deployment Preview:** `https://37d00836.onnesha-hospital.pages.dev`  
 **Live Supabase Database:** `https://iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, 203 migrations synchronized)  
 
 ---
@@ -15,13 +15,13 @@
 
 | Dimension | Measured Production Ground Truth | Verification Command / Evidence |
 |:---|:---|:---:|
-| **Synchronized Git HEAD** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | `git rev-parse HEAD` on `main` |
-| **Immediate Parent Commit** | `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` | `git log -1 --pretty=%P` |
-| **Deployed Code Commit** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | Wrangler Deployment Record (`--commit-dirty=false`) |
+| **Synchronized Git HEAD** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | `git rev-parse HEAD` on `main` |
+| **Immediate Parent Commit** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | `git log -1 --pretty=%P` |
+| **Deployed Code Commit** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Release Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml`, `latest.json` |
 | **Remote Parity** | `origin/main` & `ssh-origin/main` in 100% sync | `git push ssh-origin main` (clean) |
-| **Cloudflare Deployment ID**| `df3c7a66` | Wrangler Cloudflare Pages deployment API |
-| **Observed GitHub Actions** | Run ID `38645884376` (Run #639 - **SUCCESS**) | GitHub Actions REST API (`head_sha: 571efe5`) |
+| **Cloudflare Deployment ID**| `37d00836` | Wrangler Cloudflare Pages deployment API |
+| **Observed GitHub Actions** | Run ID `38649438609` (Run #640 - **SUCCESS**) | GitHub Actions REST API (`head_sha: 85368f9`) |
 | **CI Staging Gate Behavior** | Fail-Closed at Gate G10 (`OHMS_TEST_SUPABASE_URL` / Service Key missing) | Security Invariant Verified |
 
 ---
@@ -123,10 +123,10 @@ Executed against live production edge host [https://onnesha-hospital.pages.dev](
 
 ## 5. Desktop Client Delivery Chain & Tauri Parity
 
-- **Tauri Config Version:** `1.1.47` (`src-tauri/tauri.conf.json`)
-- **Cargo.toml Version:** `1.1.47` (`src-tauri/Cargo.toml`)
-- **Package.json Version:** `1.1.47` (`package.json`)
-- **Manifest:** `public/downloads/desktop/latest.json` synchronized with v1.1.47 release metadata.
+- **Tauri Config Version:** `1.1.90` (`src-tauri/tauri.conf.json`)
+- **Cargo.toml Version:** `1.1.90` (`src-tauri/Cargo.toml`)
+- **Package.json Version:** `1.1.90` (`package.json`)
+- **Manifest:** `public/downloads/desktop/latest.json` synchronized with v1.1.90 release metadata.
 - **Edge Installer Redirects:** Unbuilt release installers safely route to `/downloads/desktop` (302) without 404 dead ends.
 - **Code Signing:** Windows Authenticode EV Code Signing is unsigned locally; hardware token and commercial EV certificate are tracked under Gate G15.
 

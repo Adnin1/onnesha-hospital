@@ -4,9 +4,9 @@
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Linked & Active)  
-**Execution Timestamp:** `2026-10-15T04:40:00+06:00`  
-**Current HEAD SHA:** `571efe5d3eed7c4d788d9ab500a8034d51360318`  
-**Latest CI Run:** GitHub Actions Run #639 (SUCCESS on `571efe5`)  
+**Execution Timestamp:** `2026-10-15T05:10:00+06:00`  
+**Current HEAD SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (`85368f9`)  
+**Latest CI Run:** GitHub Actions Run #640 (SUCCESS on `85368f9`)  
 **Overall Delivery Status:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**  
 
 ---
@@ -25,8 +25,8 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 
 In adherence to strict zero-false-green Git governance:
 - **Active Release Version `1.1.90`:** Maintained across `package.json`, `tauri.conf.json`, `Cargo.toml`, and `latest.json`.
-- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `571efe5d3eed7c4d788d9ab500a8034d51360318`.
-- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `df3c7a66`).
+- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (`85368f9`).
+- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `37d00836`).
 - **Edge Manifest Parity:** Probed `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` returns `"version": "1.1.90"`.
 
 ---
@@ -52,7 +52,7 @@ In adherence to strict zero-false-green Git governance:
 | **Static Asset References** | Zero Broken Links/Assets | **0 broken references** (62 pages, 394 links, 1231 assets) | `npm run audit:assets` |
 | **Browser Runtime E2E** | Zero Regressions / Zero Flakes | **7 / 7 Chromium specs passed on live production** | Playwright test suite |
 | **Service Worker Cache** | Exact Version Match | **`CACHE_VERSION = 'ohms-static-v5-1.1.90'`** | `tests/sw-cache-*.test.mjs` |
-| **Cloudflare Edge Deployment**| Live Global Anycast CDN | **200 OK across all public routes (Deployment df3c7a66)** | `https://onnesha-hospital.pages.dev` |
+| **Cloudflare Edge Deployment**| Live Global Anycast CDN | **200 OK across all public routes (Deployment 37d00836)** | `https://onnesha-hospital.pages.dev` |
 | **Windows Desktop Config** | Release 1.1.90 Ready | **Verified v1.1.90 binaries (EXE 2.8 MB, MSI 3.3 MB)** | `public/downloads/desktop/latest.json` |
 
 ---
@@ -60,7 +60,7 @@ In adherence to strict zero-false-green Git governance:
 ## 4. Key Hardening Dimensions (Completed)
 
 ### 4.1 Service Worker Stale-Cache Hardening (`SW-01`)
-- **Release-Versioned Cache Key:** `CACHE_VERSION = 'ohms-static-v5-1.1.48'`, binding cache lifetimes to release versions while maintaining backward compatibility with legacy regex assertions.
+- **Release-Versioned Cache Key:** `CACHE_VERSION = 'ohms-static-v5-1.1.90'`, binding cache lifetimes to release versions while maintaining backward compatibility with legacy regex assertions.
 - **Old Cache Purging:** On `activate`, all non-matching cache keys are purged automatically via `caches.delete()`, followed by `clients.claim()`.
 - **Network-First with Cache Bypass:** For allowlisted public HTML routes (`/`, `/about`, `/services`, `/doctors`, `/appointment`, `/contact`, `/downloads/desktop`), requests are fetched with `{ cache: 'no-cache' }`, preventing browser disk caches from serving stale deployment shells.
 - **Sensitive Route Rejection:** Strictly enforces `NEVER_CACHE` rules for `/app/*`, `/api/*`, `/displays/*`, `/recovery/*`, and Supabase auth sessions.
@@ -72,12 +72,12 @@ In adherence to strict zero-false-green Git governance:
 - **LIS Analyzer Driver & Spooling (`lib/lab/lis/`):** ASTM E1381/E1394 and HL7 v2.x message parser/generator with durable local spooling (`durable-spool.ts`), Write-Before-ACK transactional guarantee, and fail-closed `NativeSerialTransport` architecture.
 
 ### 4.3 Desktop Client Distribution (`DESKTOP-01`)
-- **Manifest:** `public/downloads/desktop/latest.json` synchronized to version `1.1.48`.
+- **Manifest:** `public/downloads/desktop/latest.json` synchronized to version `1.1.90`.
 - **Internal Managed-PC Trust:** `scripts/Install-OHMS-TrustedCertificate.ps1` provisioned for local hospital workstation trust without SmartScreen interruptions.
 - **Public Authenticode Gate:** G15 formally isolated pending owner EV hardware token.
 
 ### 4.5 Enterprise Referral & Affiliate Partner Commission Subsystem
-- **Authoritative Database Migration:** `supabase/migrations/20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 109/109 local-to-remote parity and 0 fatal lint errors.
+- **Authoritative Database Migration:** `supabase/migrations/20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 203/203 local-to-remote parity and 0 fatal lint errors.
 - **Sequential Partner & Settlement Sequences:** `referral_agent_code_seq` (`REF-10001`+) and `referral_settlement_seq` (`SET-001001`+) eliminating brittle timestamp-based codes.
 - **1%–40% Commission Invariant:** Enforced at database schema level via CHECK constraint (`commission_rate_percent >= 1.00 AND commission_rate_percent <= 40.00`).
 - **Discount-Aware Net Base:** Commission calculated strictly on final net patient bill after hospital discounts (`commission_base = grand_total`, `commission_amount = ROUND(grand_total * rate / 100, 2)`).

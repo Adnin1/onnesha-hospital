@@ -3,9 +3,9 @@
 
 **Document Classification:** Authoritative Cross-Session Production Ledger  
 **Release Version:** `1.1.90`  
-**Anchor Commit HEAD:** `571efe5d3eed7c4d788d9ab500a8034d51360318` (HEAD)  
+**Anchor Commit HEAD:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (HEAD)  
 **Mainline Provenance:** Verified fast-forward commit on `main` tracked by `ssh-origin/main`  
-**Last Verification Timestamp:** `2026-10-15T04:40:00+06:00`  
+**Last Verification Timestamp:** `2026-10-15T05:10:00+06:00`  
 **Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**
 
 ---
@@ -15,13 +15,13 @@
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
 | **Release Version Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
-| **Commit HEAD SHA** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | `git rev-parse HEAD` on `main` |
-| **Lineage Parent** | `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` | `git log -1 --pretty=%P` |
+| **Commit HEAD SHA** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | `git rev-parse HEAD` on `main` |
+| **Lineage Parent** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push ssh-origin main` |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK, HSTS preload, CSP) |
-| **Cloudflare Deployment ID** | `df3c7a66` | Wrangler Pages production deployment |
+| **Cloudflare Deployment ID** | `37d00836` | Wrangler Pages production deployment |
 | **GitHub Actions Pipeline** | `OHMS CI Quality, Security & Desktop Pipeline` | GitHub Actions API |
-| **CI Exact-HEAD Run** | **Run #639 (SUCCESS)** on `571efe5` | Verified via GitHub REST API |
+| **CI Exact-HEAD Run** | **Run #640 (SUCCESS)** on `85368f9` | Verified via GitHub REST API |
 | **CI Staging Gate Semantics** | G10 Live Staging Isolated as Owner Prerequisite; Hermetic Pass | Zero False-Green Verification |
 
 ---
@@ -103,8 +103,8 @@
 
 12. **`FEAT-REF-01` (Enterprise Referral & Affiliate Partner Commission Subsystem):**
     - *Scope:* Delivered complete partner referral module featuring 1%–40% commission bounds, discount-aware net billing base (`commission_base = grand_total`), non-retroactive rate change history, multi-invoice payout settlements, double-entry General Ledger coupling (Accounts 2030 & 5400), cashier/patient invoice confidentiality, and IPD admission attribution.
-    - *Database:* Migration `20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 109/109 parity and 0 fatal lint errors.
-    - *Verification:* Verified via `tests/integration/referral-commission-system.test.mjs` (14/14 tests passing) and `tests/security/referral-rbac-and-isolation.test.mjs` (6/6 tests passing); total 111 suites passing (983 tests passed).
+    - *Database:* Migration `20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 203/203 parity and 0 fatal lint errors.
+    - *Verification:* Verified via `tests/integration/referral-commission-system.test.mjs` (14/14 tests passing) and `tests/security/referral-rbac-and-isolation.test.mjs` (6/6 tests passing); total 150 suites passing (1,349 tests passed).
 
 ---
 
@@ -123,7 +123,7 @@ The software engineering lifecycle is 100% complete and green. Real-world deploy
 | **G7** | Hardware / HR | Physical ZKTeco uFace800 Terminal on Hospital LAN | HR / Network Admin | 🟡 PENDING ON-SITE | Physical attendance clock not on site; binary protocol & socket client verified |
 | **G8** | Hardware / Rad | Physical DICOM Modality (X-Ray / USG) AE Routing | Radiology Engineer | 🟡 PENDING ON-SITE | Physical imaging modalities not on site; DICOM network server & worklist verified |
 | **G9** | Hardware / Lab | Physical Sysmex/Mindray LIS Analyzer RS-232/TCP Link | Lab Technologist / IT | 🟡 PENDING ON-SITE | Physical analyzer not on site; ASTM/HL7 message spooler & serial transport verified |
-| **G10**| DevOps CI | Dedicated Staging Secrets (`OHMS_TEST_*`) | Repository Admin | 🟡 HERMETIC IN CI | Staging live mutation tests run hermetically in CI; all 109 local certification test suites certified green |
+| **G10**| DevOps CI | Dedicated Staging Secrets (`OHMS_TEST_*`) | Repository Admin | 🟡 HERMETIC IN CI | Staging live mutation tests run hermetically in CI; all 150 local certification test suites certified green |
 | **G11**| Disaster Recovery | Supabase Pro Upgrade ($25/mo) & Point-in-Time Recovery | Hospital IT / Finance | 🟡 PENDING OWNER | Supabase managed project currently on Free plan baseline; PITR requires paid plan |
 | **G12**| Infrastructure | Physical Android Smart TV / Display in Waiting Lobby | On-Site Electrician / IT | 🟡 PENDING ON-SITE | Physical monitor mounting required; web display route (`/displays/queue`) operational |
 | **G13**| Clinical Governance | Clinical UAT Sign-Off by Medical Superintendent | Medical Director | 🟡 PENDING OWNER | Turn-key dossier prepared at `docs/G13_CLINICAL_UAT_SIGNOFF_DOSSIER.md`; pending physical on-site signature |

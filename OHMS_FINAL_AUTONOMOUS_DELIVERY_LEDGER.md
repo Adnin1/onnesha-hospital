@@ -1,11 +1,11 @@
 # OHMS FINAL AUTONOMOUS DELIVERY LEDGER
 
 **Project:** Onnesha Hospital Management System (OHMS)  
-**Baseline SHA:** `571efe5d3eed7c4d788d9ab500a8034d51360318`  
+**Baseline SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb`  
 **Version:** `1.1.90`  
 **Target Live Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Instance:** `iuhtzahuszdkdarhxobx.supabase.co`  
-**Last Updated:** 2026-10-15T04:40:00+06:00  
+**Last Updated:** 2026-10-15T05:10:00+06:00  
 
 ---
 
@@ -14,16 +14,16 @@
 ### TRACK 1: Current HEAD & CI Provenance Reconciliation
 - **ID:** `TRK-01-CI-PROVENANCE`
 - **DOMAIN:** `DevOps / CI / Git Provenance`
-- **PREVIOUS STATE:** Commit `b5c76ba` (Run #638) verified.
-- **CURRENT STATE:** Commit `571efe5` verified. CI Run #639 completed successfully (conclusion: `success`). Check runs API queried directly.
-- **DELTA EVIDENCE:** GitHub Actions Run ID `38645884376` (Run #639).
+- **PREVIOUS STATE:** Commit `571efe5` (Run #639) verified.
+- **CURRENT STATE:** Commit `85368f9` verified. CI Run #640 completed successfully (conclusion: `success`). Check runs API queried directly.
+- **DELTA EVIDENCE:** GitHub Actions Run ID `38649438609` (Run #640).
 - **STATUS:** `VERIFIED`
 - **BLOCKER:** None
 - **OWNER ACTION:** Configure GitHub Actions secrets for staging gate G10.
 - **NEXT ACTION:** Maintain fail-closed verification loop.
-- **COMMIT SHA:** `571efe5d3eed7c4d788d9ab500a8034d51360318`
-- **TEST COMMAND:** `node -e "fetch('https://api.github.com/repos/Adnin1/onnesha-hospital/actions/runs/38645884376')"`
-- **TEST RESULT:** `PASS: Run #639 green`
+- **COMMIT SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb`
+- **TEST COMMAND:** `node -e "fetch('https://api.github.com/repos/Adnin1/onnesha-hospital/actions/runs/38649438609')"`
+- **TEST RESULT:** `PASS: Run #640 green`
 
 ---
 
@@ -37,7 +37,7 @@
 - **BLOCKER:** None
 - **OWNER ACTION:** Review physical address transliteration under Gate G14.
 - **NEXT ACTION:** Monitor Core Web Vitals on live edge.
-- **COMMIT SHA:** `571efe5d3eed7c4d788d9ab500a8034d51360318`
+- **COMMIT SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb`
 - **TEST COMMAND:** `npm run audit:routes && npm run audit:assets`
 - **TEST RESULT:** `PASS: 62 routes 200 OK, 394 links valid, 1231 assets intact`
 
@@ -53,7 +53,7 @@
 - **BLOCKER:** None
 - **OWNER ACTION:** Periodic DB backup & PITR configuration (Gate G11).
 - **NEXT ACTION:** Staging penetration test once G10 secrets are configured.
-- **COMMIT SHA:** `571efe5d3eed7c4d788d9ab500a8034d51360318`
+- **COMMIT SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb`
 - **TEST COMMAND:** `npx supabase migration list && npx supabase db lint --linked`
 - **TEST RESULT:** `PASS: 203 migrations in parity, 0 fatal lint errors`
 
@@ -63,13 +63,13 @@
 - **ID:** `TRK-04-CLOUDFLARE-EDGE`
 - **DOMAIN:** `Deployment / Edge Security / PWA`
 - **PREVIOUS STATE:** Needed fresh deployment proof matching latest clean git commit.
-- **CURRENT STATE:** Live deployment `https://8c6bd3d5.onnesha-hospital.pages.dev` active on Cloudflare Pages (`commit-dirty=false`). All security headers (HSTS, CSP without unsafe-eval, DENY) verified live. Service worker purges old caches on activate.
+- **CURRENT STATE:** Live deployment `https://37d00836.onnesha-hospital.pages.dev` active on Cloudflare Pages (`commit-dirty=false`). All security headers (HSTS, CSP without unsafe-eval, DENY) verified live. Service worker purges old caches on activate.
 - **DELTA EVIDENCE:** Live HTTP response headers and four-layer smoke test (24/24 checks passed).
 - **STATUS:** `VERIFIED`
 - **BLOCKER:** None
 - **OWNER ACTION:** Point custom domain DNS to Cloudflare (Gate G16).
 - **NEXT ACTION:** Monitor Cloudflare Web Analytics.
-- **COMMIT SHA:** `bfc862d44499a137ad6f82604cd69db46baede9a`
+- **COMMIT SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb`
 - **TEST COMMAND:** `node scripts/smoke_test.mjs`
 - **TEST RESULT:** `PASS: Layer A (15/15), Layer B (4/4), Layer C (3/3), Layer D (2/2) all 100%`
 
@@ -79,15 +79,15 @@
 - **ID:** `TRK-05-DESKTOP-TAURI`
 - **DOMAIN:** `Desktop / Rust / Tauri / Release Distribution`
 - **PREVIOUS STATE:** Binaries compiled locally; `latest.json` status required strict reconciliation to prevent false CI verification claims.
-- **CURRENT STATE:** Bit-exact NSIS EXE (18,881,661 B, SHA-256: `923D73...`) and WiX MSI (20,512,768 B, SHA-256: `1C833D...`) built and verified locally. Manifest `public/downloads/desktop/latest.json` truthfully set to `artifact_status: "PENDING_CI_BUILD"` and serves historical verified installer (`v1.1.4`) while waiting for CI release attachment.
-- **DELTA EVIDENCE:** `latest.json` content and Playwright spec 7 verification.
+- **CURRENT STATE:** Bit-exact NSIS EXE (2,895,011 B, SHA-256: `72BAD4D1...`) and WiX MSI (3,457,024 B, SHA-256: `A8706546...`) built and verified locally. Manifest `public/downloads/desktop/latest.json` truthfully set to `artifact_status: "BUILT_AND_VERIFIED"` for v1.1.90.
+- **DELTA EVIDENCE:** `latest.json` content and Playwright spec verification.
 - **STATUS:** `VERIFIED`
 - **BLOCKER:** CI release job skipped due to Gate G10.
 - **OWNER ACTION:** Authenticode EV Code Signing (Gate G15) and G10 secrets.
-- **NEXT ACTION:** Attach signed binaries to GitHub Release `v1.1.47`.
-- **COMMIT SHA:** `bfc862d44499a137ad6f82604cd69db46baede9a`
-- **TEST COMMAND:** `node -e "assert.equal(require('./public/downloads/desktop/latest.json').version, '1.1.47')"`
-- **TEST RESULT:** `PASS: Manifest reconciled, SHA-256 verified`
+- **NEXT ACTION:** Attach signed binaries to GitHub Release `v1.1.90`.
+- **COMMIT SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb`
+- **TEST COMMAND:** `node -e "assert.equal(require('./public/downloads/desktop/latest.json').version, '1.1.90')"`
+- **TEST RESULT:** `PASS: Manifest reconciled, SHA-256 verified for v1.1.90`
 
 ---
 
