@@ -1,21 +1,21 @@
 # OHMS — Current Production State & Technical Verification Record
 
-**Document Version:** `1.1.48`  
+**Document Version:** `1.1.90`  
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
-**Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Free Plan Baseline)  
-**Execution Timestamp:** `2026-10-07T06:05:00+06:00`  
-**Immediate Parent SHA:** `c3fa5373020bb2c62bf4752d310ff832b70ee52f`  
-**Release Tag:** `v1.1.48` (Commit `d93ad2b`)  
-**Overall Delivery Status:** **B. SOFTWARE VERIFIED — OWNER / EXTERNAL GATES REMAIN**  
+**Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Linked & Active)  
+**Execution Timestamp:** `2026-10-15T04:10:00+06:00`  
+**Current HEAD SHA:** `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894`  
+**Latest CI Run:** GitHub Actions Run #638 (SUCCESS)  
+**Overall Delivery Status:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**  
 
 ---
 
 ## 1. Executive Summary
 
-The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, hardened hardware integration software layers (ZKTeco binary user provisioning and TCP socket protocol, DICOM PACS network server with association negotiation and durable disk storage, durable LIS analyzer bridge with fail-closed native transport, and ESC/POS Bangla raster typography), and the complete implementation of the **Enterprise Referral & Affiliate Partner Commission Subsystem** across database, server actions, accounting general ledger coupling, and management UI at **`1.1.48`**.
+The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, active health test engine v2 implementation, and the complete implementation of **Migration 200 (Fail-Closed Incident Reproducers & Flapping Governance)** across database, backend server actions, and management UI at **`1.1.90`**.
 
-Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 109 synchronized migrations, 111 passing automated test suites (983 active passed tests, 0 failures, 6 hermetic skips), 35 passing hardware test specs, 59 audited static physical routes, and zero broken assets across 1056 validated resources.
+Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 200 synchronized migrations, 150 passing automated test suites (1,349 active passed tests, 0 failures, 7 standard skips), 63 audited static physical routes, and zero broken assets across 1231 validated resources.
 
 Final real-world operational commissioning requires on-site execution of 16 specific Owner & Operational Gates (G1–G16) covering physical hardware, commercial credentials, and administrative verifications.
 
@@ -24,19 +24,10 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 ## 2. Git Provenance & Immutability Record
 
 In adherence to strict zero-false-green Git governance:
-- **Release Tag `v1.1.48`:** Anchored immutably to commit `d93ad2b7dd8f7ae08fe035196d6429cfcd50d670`. Under no circumstances is `git tag -a -f` invoked to mutate historical release tags.
-- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`).
-- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev`.
-- **Edge Manifest Parity:** Probed `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` returns `"version": "1.1.48"`.
-
-### Commit Lineage
-```
-* c3fa537 docs: synchronize CURRENT_STATE and CLOSURE_LEDGER with commit c20aae7 and Cloudflare deployment df2ddc26
-* c20aae7 chore(ci): guard production deployment and desktop release steps when secrets are missing
-* 4f74bbd fix(ci): enable hermetic staging mode and graceful pipeline notices when optional secrets are absent
-* d93ad2b (tag: v1.1.48) feat(release): reconcile version 1.1.48 across manifests, sw, docker, and operational dossiers
-* d295400 feat(operations): provide turnkey dossiers for G13 UAT, G14 DGHS compliance, G15 trusted cert, and hardware zero-config guide
-```
+- **Active Release Version `1.1.90`:** Maintained across `package.json`, `tauri.conf.json`, `Cargo.toml`, and `latest.json`.
+- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894`.
+- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `92d99f9c`).
+- **Edge Manifest Parity:** Probed `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` returns `"version": "1.1.90"`.
 
 ---
 

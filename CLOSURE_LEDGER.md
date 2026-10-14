@@ -2,11 +2,11 @@
 ## Master Engineering Closure Ledger
 
 **Document Classification:** Authoritative Cross-Session Production Ledger  
-**Release Version:** `1.1.53`  
-**Anchor Tag:** `v1.1.53` (HEAD)  
-**Mainline Provenance:** Verified fast-forward descendant of `v1.1.52^{commit}`  
-**Last Verification Timestamp:** `2026-10-08T05:00:00+06:00`  
-**Authoritative Verdict:** **B. SOFTWARE VERIFIED — OWNER / PHYSICAL HARDWARE / EXTERNAL GATES REMAIN**
+**Release Version:** `1.1.90`  
+**Anchor Commit HEAD:** `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` (HEAD)  
+**Mainline Provenance:** Verified fast-forward commit on `main` tracked by `ssh-origin/main`  
+**Last Verification Timestamp:** `2026-10-15T04:10:00+06:00`  
+**Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**
 
 ---
 
@@ -14,13 +14,14 @@
 
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
-| **Release Version Baseline** | `1.1.53` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
-| **Release Tag Anchor** | `v1.1.53` | Immutable Git Tag |
-| **Immediate Lineage Parent** | `fc88541194349624379f8b3a69f3162412381569` | `git log -1 --pretty=%P` |
-| **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push` |
-| **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK) |
+| **Release Version Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
+| **Commit HEAD SHA** | `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` | `git rev-parse HEAD` on `main` |
+| **Lineage Parent** | `a02e682cba69939480fab75a823d0544bc9be2cd` | `git log -1 --pretty=%P` |
+| **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push ssh-origin main` |
+| **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK, HSTS preload, CSP) |
+| **Cloudflare Deployment ID** | `92d99f9c` | Wrangler Pages production deployment |
 | **GitHub Actions Pipeline** | `OHMS CI Quality, Security & Desktop Pipeline` | GitHub Actions API |
-| **CI Mandatory Quality Gate** | Mandatory CI 100% PASS | Automated Pipeline Certification |
+| **CI Exact-HEAD Run** | **Run #638 (SUCCESS)** on `b5c76ba` | Verified via GitHub REST API |
 | **CI Staging Gate Semantics** | G10 Live Staging Isolated as Owner Prerequisite; Hermetic Pass | Zero False-Green Verification |
 
 ---
@@ -29,20 +30,18 @@
 
 | Metric | Target | Measured Ground Truth | Status |
 |:---|:---:|:---|:---:|
-| **Test Suites** | 100% | **115 / 115 suites passing** | ✅ PASS |
-| **Active Test Cases** | Zero Failures | **1031 passed**, 0 failed, 7 hermetic skips | ✅ PASS |
-| **Hardware Tests** | 100% | **35 / 35 tests passing** (8 ZKTeco, 9 DICOM, 6 LIS, 6 Scanner, 6 ESC/POS) | ✅ PASS |
-| **Strict Health Check Gates** | 16 / 16 | **16 / 16 gates passed** | ✅ PASS |
+| **Test Suites** | 100% | **150 / 150 suites passing** (`npm test`) | ✅ PASS |
+| **Active Test Cases** | Zero Failures | **1,349 passed**, 0 failed, 7 standard skips | ✅ PASS |
+| **Health Engine v2** | 100% | **8 / 8 tests passing** (`phase39-health-engine-v2`) | ✅ PASS |
+| **Security Tester v2** | 100% | **5 / 5 tests passing** (`phase40-security-tester-v2`) | ✅ PASS |
 | **TypeScript Strict Mode** | 0 Errors | **0 errors** (`tsc --noEmit`) | ✅ PASS |
-| **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint . --max-warnings 0`) | ✅ PASS |
-| **Supabase Remote Migrations** | 100% | **118 / 118 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
+| **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint .`) | ✅ PASS |
+| **Supabase Remote Migrations** | 100% | **200 / 200 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
 | **Database Linting** | 0 Fatal Errors | **0 fatal errors** | ✅ PASS |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ PASS |
-| **Playwright Chromium E2E** | 100% | **50 / 50 browser specs passed** | ✅ PASS |
-| **Playwright Multi-Browser** | 100% | **200 / 200 specs passed** across Chromium, Firefox, WebKit, Mobile-Chrome | ✅ PASS |
-| **Physical HTML Pages** | 100% | **59 physical HTML pages generated & audited** (`out/*.html`) | ✅ PASS |
-| **Static Link & Asset Crawl** | 100% | **380 internal links, 1077 assets, 0 broken** (`audit:assets`) | ✅ PASS |
-| **Turbopack Compiler Targets**| 100% | **61 compilation units** (59 HTML + 1 sitemap.xml + 1 404 alias) | ✅ PASS |
+| **Prerendered Website Routes** | 100% | **63 physical routes generated & audited** (`out/`) | ✅ PASS |
+| **Route Acceptance Audit** | 100% | **62 / 62 HTML routes PASS** (`node scripts/website-route-acceptance.mjs`) | ✅ PASS |
+| **Static Link & Asset Crawl** | 100% | **394 internal links, 1231 assets, 0 broken** (`scripts/website-link-asset-forensics.mjs`) | ✅ PASS |
 | **Live Route Smoke Probes** | 100% | **15 / 15 routes HTTP 200 OK**, zero PHI leak, RLS shielded | ✅ PASS |
 
 ---
