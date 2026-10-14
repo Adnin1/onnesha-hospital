@@ -784,13 +784,40 @@ function BillingManagementContent() {
   const instantSearchResults = useMemo(() => {
     const term = serviceSearchTerm.trim().toLowerCase();
     if (!term) return [];
-    return allServices.filter((s) => {
-      return (
-        s.name.toLowerCase().includes(term) ||
-        s.category.toLowerCase().includes(term) ||
-        (s.description ? s.description.toLowerCase().includes(term) : false)
-      );
-    });
+
+    const matches: Array<{ service: (typeof allServices)[0]; score: number }> = [];
+
+    for (const s of allServices) {
+      const name = s.name.toLowerCase();
+      const cat = s.category.toLowerCase();
+      const desc = (s.description || "").toLowerCase();
+
+      let score = -1;
+      if (name === term) {
+        score = 100; // Exact name match
+      } else if (name.startsWith(term)) {
+        score = 80; // Starts with term
+      } else if (new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(name)) {
+        score = 60; // Whole word match
+      } else if (name.includes(term)) {
+        score = 40; // Substring in name
+      } else if (cat === term) {
+        score = 35; // Exact category match
+      } else if (cat.startsWith(term)) {
+        score = 30; // Category starts with
+      } else if (cat.includes(term)) {
+        score = 20; // Category substring
+      } else if (desc.includes(term)) {
+        score = 10; // Description substring
+      }
+
+      if (score > 0) {
+        matches.push({ service: s, score });
+      }
+    }
+
+    matches.sort((a, b) => b.score - a.score || a.service.name.localeCompare(b.service.name));
+    return matches.map((m) => m.service);
   }, [allServices, serviceSearchTerm]);
 
   const serviceGroupCounts = useMemo(() => {

@@ -140,7 +140,7 @@
 | **G11** | Supabase Backup & PITR | Automated daily backup active; PITR is Pro add-on | Backup script `scripts/db_backup.sh` verified | `EXTERNAL DEPENDENCY` | Enable Point-in-Time Recovery (PITR) in Supabase Pro dashboard |
 | **G12** | Physical Queue TV Displays | Audio watchdog & fullscreen display verified | Web route `/displays/queue` 100% operational | `EXTERNAL DEPENDENCY` | Mount physical Android TVs in OPD waiting areas with Chromium browser |
 | **G13** | Clinical UAT Sign-Off | Software workflows verified end-to-end | Prescription, IPD admission, and discharge workflows green | `EXTERNAL DEPENDENCY` | Conduct clinical review with Hospital Superintendent & Head of OPD |
-| **G14** | DGHS / BMDC Statutory Compliance | License numbers configured in master config | Facility ID 10022715 referenced in master config | `EXTERNAL DEPENDENCY` | Submit formal digital HMS compliance filing to DGHS Bogura office |
+| **G14** | DGHS / BMDC Statutory Compliance | License numbers configured in master config | Statutory compliance referenced in master config | `EXTERNAL DEPENDENCY` | Submit formal digital HMS compliance filing to DGHS Bogura office |
 | **G15** | Authenticode EV Code Signing | Binaries built unsigned; cert requires HSM | Bit-exact NSIS & MSI installers generated | `EXTERNAL DEPENDENCY` | Obtain Sectigo/DigiCert EV Code Signing USB hardware token |
 | **G16** | Custom Domain DNS Cutover | Pages default URL active; DNS cutover pending | `onnesha-hospital.pages.dev` fully configured | `OWNER ACTION REQUIRED` | Configure CNAME for `onneshahospital.com` pointing to Cloudflare Pages |
 

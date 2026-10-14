@@ -68,7 +68,7 @@ export default function PatientsManagementPage() {
     try {
       const res = await deletePatientAction(deleteModalPatient.id, deleteReason.trim() || undefined);
       if (res.success) {
-        showToast(`রোগী (${deleteModalPatient.full_name}) সফলভাবে মুছে ফেলা হয়েছে।`, "success");
+        showToast(`রোগী (${deleteModalPatient.full_name}) সফলভাবে আর্কাইভ করা হয়েছে।`, "success");
         const remaining = patients.filter((p) => p.id !== deleteModalPatient.id);
         setPatients(remaining);
         if (selectedPatient?.id === deleteModalPatient.id) {
@@ -663,24 +663,24 @@ export default function PatientsManagementPage() {
                 <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <p className="font-bold text-rose-950">
-                    আপনি কি নিশ্চিতভাবে এই রোগীর প্রোফাইল মুছে ফেলতে চান?
+                    আপনি কি নিশ্চিতভাবে এই রোগীর প্রোফাইল আর্কাইভ করতে চান?
                   </p>
                   <p className="text-[11px] text-rose-800">
                     রোগী: <strong className="font-bold">{deleteModalPatient.full_name}</strong> (কোড: {deleteModalPatient.patient_code || "N/A"}, মোবাইল: {deleteModalPatient.phone})
                   </p>
                   <p className="text-[10px] text-rose-700">
-                    সতর্কতা: ডিলিট করার পর এই প্রোফাইলটি রোগী তালিকা ও ইনটেক রেজিস্ট্রি থেকে সম্পূর্ণ অপসারিত হবে।
+                    ক্লিনিক্যাল নীতি: রোগীর অতীত চিকিৎসা, প্রেসক্রিপশন ও বিলিং ইতিহাস অটুট রেখে প্রোফাইলটি সক্রিয় রেজিস্ট্রি থেকে নিরাপদে আর্কাইভ করা হবে।
                   </p>
                 </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  মুছে ফেলার কারণ (ঐচ্ছিক):
+                  আর্কাইভের কারণ:
                 </label>
                 <input
                   type="text"
-                  placeholder="যেমন: ভুল এন্ট্রি, ডুপ্লিকেট রোগী, ইত্যাদি..."
+                  placeholder="যেমন: ভুল রেজিস্ট্রেশন, ডুপ্লিকেট রোগী, ইত্যাদি..."
                   value={deleteReason}
                   onChange={(e) => setDeleteReason(e.target.value)}
                   disabled={isDeletingPatient}
@@ -706,12 +706,12 @@ export default function PatientsManagementPage() {
                   {isDeletingPatient ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>মুছে ফেলা হচ্ছে...</span>
+                      <span>আর্কাইভ করা হচ্ছে...</span>
                     </>
                   ) : (
                     <>
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>নিশ্চিতভাবে মুছুন</span>
+                      <span>আর্কাইভ করুন</span>
                     </>
                   )}
                 </button>

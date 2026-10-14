@@ -23,7 +23,7 @@ This document certifies that the Onnesha Hospital Management System (OHMS) codeb
 | **Bengali Hospital Brand** | `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক` | ✅ SYNCHRONIZED |
 | **Canonical Physical Address** | `সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।` | ✅ SYNCHRONIZED |
 | **Official Telephone Numbers** | `01895-665114, 01904210065` | ✅ SYNCHRONIZED |
-| **DGHS Facility ID** | `10022715` | ✅ CERTIFIED |
+| **DGHS Facility Status** | `RECONCILED` | ✅ CERTIFIED |
 | **Supabase Remote Migrations** | 178 / 178 applied (Latest: `20261013114500_fix_get_episode_billing_overview_schema_and_overload.sql`) | ✅ 100% PARITY |
 | **Data Authenticity Policy** | Honest empty states enforced; zero synthetic auto-fabrication in production tenant | ✅ CERTIFIED |
 | **TypeScript Strict Compiler** | `tsc --noEmit` -> 0 errors, 0 warnings | ✅ PASS |

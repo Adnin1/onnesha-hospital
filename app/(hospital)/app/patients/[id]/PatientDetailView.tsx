@@ -20,7 +20,7 @@ import {
   Edit,
   FileSpreadsheet,
 } from "lucide-react";
-import { getPatient360Action, getPatientsAction } from "@/lib/patient/actions";
+import { getPatient360Action } from "@/lib/patient/actions";
 import {
   PatientMaster,
   PatientAllergy,
@@ -105,34 +105,12 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
         return;
       }
 
-      // 2. Otherwise (generic preview mode with no target), fall back to first patient in directory
-      try {
-        const listRes = await getPatientsAction();
-        if (listRes.success && listRes.data?.patients && listRes.data.patients.length > 0) {
-          const realPatient = listRes.data.patients[0];
-          const p360 = await getPatient360Action(realPatient.id);
-          if (isMounted) {
-            if (p360.success && p360.data) {
-              setPatient(p360.data.patient);
-              setAllergies(p360.data.allergies);
-              setAlerts(p360.data.alerts);
-              setVisits(p360.data.visits);
-              setTimeline(p360.data.timeline);
-              setVitals(p360.data.vitals);
-              setDiagnoses(p360.data.diagnoses);
-              setNotes(p360.data.notes);
-            } else {
-              setError("Failed to load Patient 360 record.");
-            }
-          }
-        } else if (isMounted) {
-          setError("No registered patient found in this hospital organization. Please register a patient from the directory first.");
-        }
-      } catch (err: unknown) {
-        console.error("[PatientDetailView] loadPatient error:", err);
-        if (isMounted) setError("Failed to load patient record from clinical database.");
-      } finally {
-        if (isMounted) setLoading(false);
+      // 2. Otherwise (generic preview mode with no target):
+      // Strict Healthcare Privacy Standard: NEVER leak the first patient's record as a fallback.
+      if (isMounted) {
+        setPatient(null);
+        setError("কোনো নির্দিষ্ট রোগী নির্বাচিত হয়নি। অনুগ্রহ করে পেশেন্ট রেজিস্ট্রি থেকে রোগী নির্বাচন করুন।");
+        setLoading(false);
       }
     }
 

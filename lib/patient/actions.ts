@@ -2477,25 +2477,27 @@ export async function updatePatientAction(
 }
 
 /**
- * 13B. Delete Patient Server Action
- * Permanently deletes or safely soft-deletes a patient record with authorization verification
- * and audit logging.
+ * 13B. Safe Patient Record Archive & Deletion Server Actions
+ * Follows healthcare clinical-record governance:
+ * - Defaults strictly to logical ARCHIVE (soft delete) preserving clinical, financial, and audit history.
+ * - Explicitly requires 'patients.delete' or 'patients.manage' ('patients.edit' is denied).
+ * - Provides controlled restorePatientAction and strict zero-history purgePatientAction.
  */
 export async function deletePatientAction(
   patientId: string,
   reason?: string
-): Promise<ActionResult<{ deletedId: string }>> {
+): Promise<ActionResult<{ deletedId: string; archived: boolean }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "401 Unauthorized: Valid hospital session required." };
   }
 
+  // Strict Permission Check: Demographics edit permission MUST NOT permit record deletion/archival
   const canDelete =
     (await hasPermission("patients.delete")) ||
-    (await hasPermission("patients.manage")) ||
-    (await hasPermission("patients.edit"));
+    (await hasPermission("patients.manage"));
   if (!canDelete) {
-    return { success: false, error: "403 Forbidden: Insufficient permission to delete patient records." };
+    return { success: false, error: "403 Forbidden: Insufficient permission to archive or delete patient records." };
   }
 
   if (!patientId) {
@@ -2517,30 +2519,25 @@ export async function deletePatientAction(
       return { success: false, error: "Patient record not found in this hospital organization." };
     }
 
-    // Try hard delete first
-    const { error: deleteErr } = await supabase
+    // Clinical Standard: Always perform safe logical ARCHIVE (soft-delete) first
+    // Never physically delete patient clinical history on routine UI delete action
+    const { error: archiveErr } = await supabase
       .from("patients")
-      .delete()
+      .update({
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+        deleted_by: session.userId,
+        deletion_reason: reason || "Archived from Patient Registry",
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", patientId)
       .eq("organization_id", session.organizationId);
 
-    // If hard delete was blocked by foreign key (e.g. linked invoices/encounters), execute safe soft delete
-    if (deleteErr) {
-      const { error: softDeleteErr } = await supabase
-        .from("patients")
-        .update({
-          is_deleted: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", patientId)
-        .eq("organization_id", session.organizationId);
-
-      if (softDeleteErr) {
-        return { success: false, error: `Failed to delete patient: ${deleteErr.message}` };
-      }
+    if (archiveErr) {
+      return { success: false, error: `Failed to archive patient record: ${archiveErr.message}` };
     }
 
-    // Record audit trail
+    // Record immutable audit log
     await recordAuditLog({
       userId: session.userId,
       organizationId: session.organizationId,
@@ -2552,18 +2549,172 @@ export async function deletePatientAction(
         full_name: existingPatient.full_name,
         patient_code: existingPatient.patient_code,
         phone: existingPatient.phone,
-        reason: reason || "User requested deletion from Patient Registry",
+        reason: reason || "Archived from Patient Registry",
+        archived_at: new Date().toISOString(),
       },
     });
 
     return {
       success: true,
-      data: { deletedId: patientId },
+      data: { deletedId: patientId, archived: true },
     };
   } catch (err: unknown) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Failed to delete patient record.",
+      error: err instanceof Error ? err.message : "Failed to archive patient record.",
+    };
+  }
+}
+
+/**
+ * 13C. Restore Archived Patient Server Action
+ * Restores a logically archived patient back into the active registry.
+ */
+export async function restorePatientAction(
+  patientId: string
+): Promise<ActionResult<{ restoredId: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized: Valid hospital session required." };
+  }
+
+  const canRestore =
+    (await hasPermission("patients.delete")) ||
+    (await hasPermission("patients.manage"));
+  if (!canRestore) {
+    return { success: false, error: "403 Forbidden: Insufficient permission to restore patient records." };
+  }
+
+  if (!patientId) {
+    return { success: false, error: "Patient identifier is required." };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const { data: existingPatient, error: fetchErr } = await supabase
+      .from("patients")
+      .select("id, full_name, patient_code")
+      .eq("id", patientId)
+      .eq("organization_id", session.organizationId)
+      .single();
+
+    if (fetchErr || !existingPatient) {
+      return { success: false, error: "Patient record not found in this hospital organization." };
+    }
+
+    const { error: restoreErr } = await supabase
+      .from("patients")
+      .update({
+        is_deleted: false,
+        deleted_at: null,
+        deleted_by: null,
+        deletion_reason: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", patientId)
+      .eq("organization_id", session.organizationId);
+
+    if (restoreErr) {
+      return { success: false, error: `Failed to restore patient: ${restoreErr.message}` };
+    }
+
+    await recordAuditLog({
+      userId: session.userId,
+      organizationId: session.organizationId,
+      action: "UPDATE",
+      module: "PATIENT",
+      entityType: "patient",
+      entityId: patientId,
+      newValues: {
+        is_deleted: false,
+        restored_at: new Date().toISOString(),
+      },
+    });
+
+    return {
+      success: true,
+      data: { restoredId: patientId },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to restore patient record.",
+    };
+  }
+}
+
+/**
+ * 13D. Mistaken-Registration Narrow Purge Server Action
+ * Permanently deletes an accidental empty registration ONLY IF zero financial,
+ * clinical, or encounter history exists.
+ */
+export async function purgePatientAction(
+  patientId: string,
+  reason: string
+): Promise<ActionResult<{ purgedId: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized: Valid hospital session required." };
+  }
+
+  const isSuperadmin = (await hasPermission("superadmin")) || (await hasPermission("patients.manage"));
+  if (!isSuperadmin) {
+    return { success: false, error: "403 Forbidden: Permanent purge requires superadmin or executive hospital management privilege." };
+  }
+
+  if (!patientId) {
+    return { success: false, error: "Patient identifier is required." };
+  }
+  if (!reason || reason.trim().length < 5) {
+    return { success: false, error: "Explicit audit reason (minimum 5 characters) is required for permanent record purge." };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Verify patient has ZERO clinical or financial attachments
+    const [invCheck, admCheck, apptCheck] = await Promise.all([
+      supabase.from("invoices").select("id", { count: "exact", head: true }).eq("patient_id", patientId).eq("organization_id", session.organizationId),
+      supabase.from("admissions").select("id", { count: "exact", head: true }).eq("patient_id", patientId).eq("organization_id", session.organizationId),
+      supabase.from("appointments").select("id", { count: "exact", head: true }).eq("patient_id", patientId).eq("organization_id", session.organizationId),
+    ]);
+
+    if ((invCheck.count || 0) > 0 || (admCheck.count || 0) > 0 || (apptCheck.count || 0) > 0) {
+      return {
+        success: false,
+        error: "PURGE_BLOCKED: Patient has linked clinical or financial history (invoices, admissions, or appointments). Permanent purge is strictly forbidden. Use Archive Patient instead.",
+      };
+    }
+
+    const { error: purgeErr } = await supabase
+      .from("patients")
+      .delete()
+      .eq("id", patientId)
+      .eq("organization_id", session.organizationId);
+
+    if (purgeErr) {
+      return { success: false, error: `Failed to purge patient record: ${purgeErr.message}` };
+    }
+
+    await recordAuditLog({
+      userId: session.userId,
+      organizationId: session.organizationId,
+      action: "DELETE",
+      module: "PATIENT",
+      entityType: "patient",
+      entityId: patientId,
+      oldValues: { reason, purged_permanently: true },
+    });
+
+    return {
+      success: true,
+      data: { purgedId: patientId },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to purge patient record.",
     };
   }
 }

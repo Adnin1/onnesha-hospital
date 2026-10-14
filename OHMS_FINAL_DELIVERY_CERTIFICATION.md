@@ -81,7 +81,7 @@
 [ ] G11: Supabase Point-in-Time Recovery (PITR) & Automated Backups
 [ ] G12: Physical Queue TV Android Displays (Waiting area HDMI monitors)
 [ ] G13: Clinical UAT Sign-Off from Hospital Superintendent
-[ ] G14: DGHS (Facility ID 10022715) & BMDC Statutory Compliance Filing
+[ ] G14: DGHS & BMDC Statutory Compliance Filing
 [ ] G15: Authenticode EV Code Signing Certificate Token (HSM)
 [ ] G16: Custom Domain DNS Cutover (onneshahospital.com -> Cloudflare Pages)
 ```

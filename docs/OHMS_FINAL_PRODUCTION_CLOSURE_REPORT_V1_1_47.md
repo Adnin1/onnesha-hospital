@@ -73,7 +73,7 @@ In response to forensic verification of commit history, Git tag immutability is 
 
 ### 3.2 Website NAP & Content Truth Reconciliation (`NAP-01`)
 - **Single Source of Truth:** `config/hospital.ts` established as the sole authoritative configuration file for hospital identity, address, phone numbers, and regulatory citations.
-- **DGHS Facility ID:** Formally registered DGHS Facility ID `10022715` (`ANNESHA HOSPITAL / অন্বেষা হাসপাতাল`).
+- **DGHS Facility Status:** Formally reconciled (`ANNESHA HOSPITAL / অন্বেষা হাসপাতাল`).
 - **Content Truth Blockers:** Discrepancies between official DGHS registration, colloquial English marketing ("Onnesha" vs. "Annesha"), and physical road citations (Sonali Bank Khandar vs. Mofiz Paglar Mor Sherpur Rd) are explicitly tagged:
   ```typescript
   // CONTENT TRUTH BLOCKER — OWNER VERIFICATION REQUIRED

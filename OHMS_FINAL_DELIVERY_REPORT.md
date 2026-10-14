@@ -150,7 +150,7 @@ Under the strict **Zero-False-Green Policy**, the following 16 external operatio
 | **G11**| Infrastructure | Supabase Point-in-Time Recovery (PITR) & Off-site Backups | Hospital Owner | 🟡 PENDING OWNER | Supabase instance is on Free Plan baseline; automated export scripts verified |
 | **G12**| Hardware / OPD | Physical Queue TV Android Displays | On-Site IT Engineer | 🟡 PENDING ON-SITE | Physical TV displays not on site; responsive `/displays/queue` interface verified |
 | **G13**| Clinical / Ops | Clinical UAT Sign-Off from Hospital Superintendent | Medical Director | 🟡 PENDING ON-SITE | Requires on-site clinical workflow walkthrough with hospital administration |
-| **G14**| Regulatory | DGHS & BMDC Statutory Compliance Filings | Hospital Legal Counsel | 🟡 PENDING OWNER | Facility ID `10022715` reconciled in code; formal statutory filings require physical submission |
+| **G14**| Regulatory | DGHS & BMDC Statutory Compliance Filings | Hospital Legal Counsel | 🟡 PENDING OWNER | Statutory compliance reconciled in code; formal filings require physical submission |
 | **G15**| Desktop | Windows Authenticode EV Code Signing Certificate & Hardware Token | Hospital Owner | 🟡 PENDING OWNER | Unsigned desktop installer packaged; EV code signing requires physical hardware USB token |
 | **G16**| Networking | Custom Domain DNS CNAME Cutover (`onneshahospital.com`) | Domain Registrar Admin | 🟡 PENDING OWNER | DNS CNAME cutover pending domain owner propagation to Cloudflare Pages |
 

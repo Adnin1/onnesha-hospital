@@ -138,6 +138,27 @@ export function HalfLetterInvoicePrint({
             height: auto !important;
             padding: 0 !important;
             margin: 0 auto !important;
+          }
+          .print-header-block {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .print-patient-block {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .print-table thead {
+            display: table-header-group !important;
+          }
+          .print-table tbody tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .print-totals-block {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .print-footer-block {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
@@ -145,7 +166,7 @@ export function HalfLetterInvoicePrint({
       `}} />
 
       {/* 1. Header */}
-      <div className="border-b-2 border-indigo-900 pb-2 mb-2 flex justify-between items-start">
+      <div className="print-header-block border-b-2 border-indigo-900 pb-2 mb-2 flex justify-between items-start">
         <div className="space-y-0.5">
           <div className="flex items-center space-x-2">
             <img
@@ -192,7 +213,7 @@ export function HalfLetterInvoicePrint({
       </div>
 
       {/* 2. Patient Demographics Block */}
-      <div className="bg-slate-50 border border-slate-200 rounded p-2 text-[10px] mb-2 grid grid-cols-2 gap-2">
+      <div className="print-patient-block bg-slate-50 border border-slate-200 rounded p-2 text-[10px] mb-2 grid grid-cols-2 gap-2">
         <div className="space-y-0.5">
           <div>
             <span className="text-slate-500 font-medium">Patient: </span>
@@ -257,7 +278,7 @@ export function HalfLetterInvoicePrint({
 
       {/* 3. Itemized Bill Table */}
       <div className="mb-2">
-        <table className="w-full text-left text-[10px] border-collapse border border-slate-300">
+        <table className="print-table w-full text-left text-[10px] border-collapse border border-slate-300">
           <thead>
             <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-[9px] font-bold uppercase">
               <th className="p-1 border-r border-slate-300 w-6 text-center">#</th>
@@ -295,7 +316,7 @@ export function HalfLetterInvoicePrint({
       </div>
 
       {/* 4. Financial Calculations & Settlement */}
-      <div className="relative grid grid-cols-12 gap-2 mb-2 text-[10px]">
+      <div className="print-totals-block relative grid grid-cols-12 gap-2 mb-2 text-[10px]">
         {/* Authentic Visual Rubber Stamp Seal - Elegant Centered Placement */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-85 print:opacity-90 flex items-center justify-center">
           <PaymentStampSeal
@@ -370,29 +391,31 @@ export function HalfLetterInvoicePrint({
         </div>
       </div>
 
-      {/* 5. Barcode & Verification */}
-      <div className="flex items-center justify-between border-t border-slate-200 pt-1.5 mb-6">
-        <div className="flex items-center space-x-2">
-          <div dangerouslySetInnerHTML={{ __html: barcodeSvg }} />
-          <span className="text-[8px] text-slate-500 font-mono">
-            {invoiceNumber}
-          </span>
-        </div>
-        <p className="text-[8px] text-slate-400">
-          Computer-generated official receipt • অন্বেষা হাসপাতাল
-        </p>
-      </div>
-
-      {/* 6. Signatures */}
-      <div className="grid grid-cols-2 gap-8 text-[9px] text-center pt-2">
-        <div>
-          <div className="border-t border-dashed border-slate-400 w-32 mx-auto pt-0.5">
-            Patient / Guardian
+      {/* 5. Barcode, Verification & Signatures (Atomic Footer Block) */}
+      <div className="print-footer-block">
+        <div className="flex items-center justify-between border-t border-slate-200 pt-1.5 mb-6">
+          <div className="flex items-center space-x-2">
+            <div dangerouslySetInnerHTML={{ __html: barcodeSvg }} />
+            <span className="text-[8px] text-slate-500 font-mono">
+              {invoiceNumber}
+            </span>
           </div>
+          <p className="text-[8px] text-slate-400">
+            Computer-generated official receipt • অন্বেষা হাসপাতাল
+          </p>
         </div>
-        <div>
-          <div className="border-t border-dashed border-slate-400 w-32 mx-auto pt-0.5 font-bold">
-            Authorized Cashier
+
+        {/* 6. Signatures */}
+        <div className="grid grid-cols-2 gap-8 text-[9px] text-center pt-2">
+          <div>
+            <div className="border-t border-dashed border-slate-400 w-32 mx-auto pt-0.5">
+              Patient / Guardian
+            </div>
+          </div>
+          <div>
+            <div className="border-t border-dashed border-slate-400 w-32 mx-auto pt-0.5 font-bold">
+              Authorized Cashier
+            </div>
           </div>
         </div>
       </div>

@@ -102,7 +102,7 @@ The software organization recognizes a strict boundary between automatable softw
 - **G11: Supabase Backup & PITR** (Supabase Pro Point-in-Time Recovery infrastructure)
 - **G12: Physical Queue TV Displays** (Waiting room Android TV / HDMI display units)
 - **G13: Clinical UAT Sign-Off** (Hospital Superintendent and clinical director sign-off)
-- **G14: Statutory Compliance Sign-Off** (DGHS Facility 10022715 & BMDC regulatory filings)
+- **G14: Statutory Compliance Sign-Off** (DGHS Facility & BMDC regulatory filings)
 - **G15: Authenticode EV Code Signing** (Hardware token / HSM for Windows EXE/MSI signing)
 - **G16: Custom Domain DNS Cutover** (Owner DNS A/CNAME record cutover to Cloudflare)
 
