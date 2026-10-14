@@ -13,7 +13,7 @@ export function HospitalJsonLd() {
       HOSPITAL_METADATA.shortName,
       HOSPITAL_METADATA.dghsRegisteredName,
     ].filter(Boolean),
-    "identifier": HOSPITAL_METADATA.dghsFacilityId || "10022715",
+    ...(HOSPITAL_METADATA.dghsFacilityId ? { "identifier": HOSPITAL_METADATA.dghsFacilityId } : {}),
     "url": SITE_CONFIG.canonicalUrl,
     "logo": `${SITE_CONFIG.canonicalUrl}/logo.png`,
     "hasOfferCatalog": {

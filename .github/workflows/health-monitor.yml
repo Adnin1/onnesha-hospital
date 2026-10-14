@@ -26,12 +26,24 @@ jobs:
         run: npm ci
 
       - name: Execute 24/7 System Diagnostics & Invariant Probe
+        id: probe
         run: node scripts/scheduled-health-check.mjs
         env:
           CANONICAL_URL: "https://onnesha-hospital.pages.dev"
           ORG_ID: "6b78e524-b1e3-4c43-8944-1a5a0248bff8"
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://iuhtzahuszdkdarhxobx.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_OPiG-7uhoIlnysXKrpErsw_rdXEJ4rs' }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.OHMS_TEST_SERVICE_ROLE_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECRET_KEY || secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.OHMS_TEST_SERVICE_ROLE_KEY }}
           STRICT_HEARTBEAT: "true"
+
+      - name: Generate Diagnostic Summary
+        if: always()
+        run: |
+          echo "### 🏥 OHMS 24/7 Autonomous Health Monitor Telemetry" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Target Canonical Edge** | https://onnesha-hospital.pages.dev |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Probe Execution** | ${{ steps.probe.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Diagnostic Tier** | Dual-Tier (Edge Liveness + Invariant Watchdog) |" >> $GITHUB_STEP_SUMMARY
+

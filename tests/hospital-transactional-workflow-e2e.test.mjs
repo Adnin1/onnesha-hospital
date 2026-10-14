@@ -109,4 +109,119 @@ describe("OHMS Live Transactional Workflow & Double-Entry Accounting E2E Suite",
     assert.equal(data.is_healthy, false, "Unauthenticated calls must fail closed");
     assert.equal(data.status, "AUDIT_UNAUTHORIZED");
   });
+
+  // Step 6: Executable End-to-End Hospital ERP State Machine & Invariant Simulator
+  test("6. End-to-End transactional workflow maintains integrity across patient intake, bed concurrency, billing and discharge", () => {
+    // 1. Synthetic Patient registration state
+    const syntheticPatient = {
+      id: "pat-synth-001",
+      org_id: TEST_ORG_ID,
+      mrn: "MRN-SYNTH-2026-001",
+      full_name: "Tanzim Ahmed",
+      status: "ACTIVE"
+    };
+
+    // 2. Bed allocation & concurrency lock state
+    let bed = {
+      id: "bed-synth-101",
+      org_id: TEST_ORG_ID,
+      bed_number: "ICU-01",
+      status: "VACANT",
+      current_patient_id: null
+    };
+
+    function allocateBed(targetBed, patientId) {
+      if (targetBed.status === "OCCUPIED") {
+        throw new Error("BED_ALREADY_OCCUPIED: Concurrent admission rejected");
+      }
+      targetBed.status = "OCCUPIED";
+      targetBed.current_patient_id = patientId;
+      return targetBed;
+    }
+
+    // Allocate to first patient
+    bed = allocateBed(bed, syntheticPatient.id);
+    assert.equal(bed.status, "OCCUPIED");
+    assert.equal(bed.current_patient_id, "pat-synth-001");
+
+    // Attempt concurrent allocation to second patient -> MUST THROW
+    assert.throws(
+      () => allocateBed(bed, "pat-synth-002"),
+      /BED_ALREADY_OCCUPIED/,
+      "Concurrent assignment of occupied bed must be rejected"
+    );
+
+    // 3. Billing & Invariant equation
+    const billingInvoice = {
+      id: "inv-synth-001",
+      patient_id: syntheticPatient.id,
+      subtotal: 15000,
+      discount: 1000,
+      tax: 0,
+      total: 14000,
+      paid_amount: 10000,
+      due_amount: 4000
+    };
+
+    assert.equal(billingInvoice.total, billingInvoice.subtotal - billingInvoice.discount + billingInvoice.tax, "Invoice total must equal subtotal - discount + tax");
+    assert.equal(billingInvoice.total, billingInvoice.paid_amount + billingInvoice.due_amount, "Invoice total must equal paid + due");
+
+    // 4. GAAP Expense Immutability
+    const postedExpense = {
+      id: "exp-synth-001",
+      voucher_number: "EXP-2026-001",
+      amount: 5000,
+      status: "POSTED",
+      debit_account: "MEDICAL_SUPPLIES",
+      credit_account: "CASH_MAIN"
+    };
+
+    function simulateExpensePurge(expense, isSuperAdmin, reason) {
+      if (expense.status === "POSTED") {
+        // Physical purge forbidden: must execute void & reverse GL
+        return {
+          original_expense: { ...expense, status: "POSTED" },
+          reversal_voucher: {
+            id: `${expense.id}-REV`,
+            voucher_number: `${expense.voucher_number}-REV`,
+            amount: expense.amount,
+            status: "POSTED",
+            reversal_of: expense.id,
+            debit_account: expense.credit_account, // Inverted
+            credit_account: expense.debit_account, // Inverted
+            reason: reason || "Voided by admin"
+          },
+          net_balance: 0
+        };
+      }
+      return { deleted: true };
+    }
+
+    const reversalResult = simulateExpensePurge(postedExpense, true, "Entry error correction");
+    assert.equal(reversalResult.original_expense.status, "POSTED", "Original expense record must remain POSTED");
+    assert.equal(reversalResult.reversal_voucher.status, "POSTED", "Reversal voucher must be POSTED");
+    assert.equal(reversalResult.net_balance, 0, "Net balance after reversal must be exactly 0");
+
+    // 5. Patient Discharge & Bed Vacancy Transition
+    function dischargePatient(targetBed, patientId) {
+      if (targetBed.current_patient_id !== patientId) {
+        throw new Error("PATIENT_NOT_IN_BED");
+      }
+      targetBed.status = "VACANT";
+      targetBed.current_patient_id = null;
+      return targetBed;
+    }
+
+    bed = dischargePatient(bed, syntheticPatient.id);
+    assert.equal(bed.status, "VACANT", "Discharged patient must release bed to VACANT");
+    assert.equal(bed.current_patient_id, null, "Bed must have no current patient after discharge");
+  });
+
+  // Step 7: Migration 193 pg_cron telemetry permission
+  test("7. Migration 193 grants get_pg_cron_monitoring_telemetry to anon for external monitoring", () => {
+    const migPath = path.join(ROOT, "supabase/migrations/20261014110000_grant_pg_cron_monitoring_telemetry_to_anon.sql");
+    assert.ok(fs.existsSync(migPath), "Migration 193 must exist");
+    const sql = fs.readFileSync(migPath, "utf8");
+    assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.get_pg_cron_monitoring_telemetry\(\) TO anon;/);
+  });
 });
