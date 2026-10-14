@@ -5,7 +5,7 @@
 **Current Branch:** `main`  
 **Package Version:** `1.1.90`  
 **Immutable Release Tag:** `v1.1.90 @ db8b750b51685a73cbf320f51d5e8920fc6a7c8c`  
-**Current Production Closure HEAD:** `bc160244b76a084c8a5a40a852dc805a8dfd6b11` (Engineering HEAD — Migration 190 Parity)  
+**Current Production Closure HEAD:** `fb0606b` (Engineering HEAD — Migration 191 Parity)  
 **Canonical Hospital Branding:** `ANNESHA HOSPITAL AND DIAGNOSTIC` (Bengali: `অন্বেষা হাসপাতাল ও ডায়াগনস্টিক`)  
 **Historical Release Tags:** `v1.1.89`, `v1.1.88`, `v1.1.87`, `v1.1.86`, `v1.1.85`, `v1.1.84`, `v1.1.83`, `v1.1.82`, `v1.1.81`, `v1.1.80`  
 **Canonical Production URL:** `https://onnesha-hospital.pages.dev`  
@@ -26,20 +26,20 @@
 | **Playwright Multi-Browser E2E** | 208/208 real browser specs passed in CI Run 559 across Chromium (52), Firefox (52), Mobile-Chrome (52), WebKit (52) | `npx playwright test` | ✅ PASS |
 | **Next.js Static Build** | 63/63 static routes generated (including `/app/system-health`) | `npm run build` | ✅ PASS |
 | **Static Link & Asset Forensics** | 62 HTML pages, 394 internal links, 1230 assets, 0 broken references | `npm run audit:assets` | ✅ PASS |
-| **Supabase Remote Migrations** | 190/190 applied (100% parity, 0 drift, newest: `20261014080000_harden_multitenant_heartbeat_and_outbox_security.sql`) | `npx supabase migration list` | ✅ PASS |
+| **Supabase Remote Migrations** | 191/191 applied (100% parity, 0 drift, newest: `20261014090000_harden_expenses_purge_ipd_mistakes_bed_vacancy_and_financials.sql`) | `npx supabase migration list` | ✅ PASS |
 | **Supabase Database Schema Lint** | 0 fatal schema/security errors on linked DB (0 errors confirmed) | `npx supabase db lint --linked` | ✅ PASS |
-| **Doctor & Roster UX** | Doctor creation roomNumber fallback (`Chamber 1`) + validation feedback toast | `app/doctors/page.tsx` & `lib/appointments/actions.ts` | ✅ PASS |
-| **Bed & Cabin Matrix** | Fixed `ward_name` NOT NULL constraint via Migration 184/185; auto-population trigger `trg_beds_auto_populate_ward_name`; real-time occupancy sync trigger + row locking `FOR UPDATE` | `lib/ipd/bed-actions.ts` & Migrations 179, 184, 185 | ✅ PASS |
-| **IPD Admission & Auto-Billing** | Fixed 428C9 & 42883 errors; atomic stored procedures auto-book ৳300 admission fee + ৳500/day charge | Migrations 176–179 (`admit_patient_to_bed_atomic`, `get_episode_billing_overview`) | ✅ PASS |
+| **Doctor & Roster UX** | Doctor creation roomNumber fallback (`Chamber 1`) + auto-seeding of active doctors | `app/doctors/page.tsx` & `lib/appointments/actions.ts` | ✅ PASS |
+| **Bed & Cabin Matrix** | Drift reconciler RPC `reconcile_bed_vacancy_drift_atomic` + auto-ward fallback prevents empty dropdowns | `lib/ipd/bed-actions.ts` & Migration 191 | ✅ PASS |
+| **IPD Admission & Mistakes Purge** | Atomic stored procedure `cancel_or_delete_ipd_admission_atomic` frees beds & purges accidental admissions | Migration 191, `lib/patient/actions.ts`, `/app/ipd` | ✅ PASS |
+| **Hospital Expenses Void & Purge** | Permanent purge for VOIDED vouchers while preserving double-entry GL audit ledger | Migration 191, `lib/expenses/actions.ts`, `/app/expenses` | ✅ PASS |
+| **Financial Aggregates Precision** | Scaled collection/due rates to NUMERIC(10, 2) eliminating numeric overflow | Migration 191 (`get_financial_dashboard_aggregates`) | ✅ PASS |
+| **Accounting, GRN & HR Master Guides** | Top-level visual 4-step guide banners with 1-click quick-start demo templates | `/app/accounting`, `/app/procurement`, `/app/hr` | ✅ PASS |
 | **Super Admin Invoice Hard Purge** | In-transaction override `app.override_journal_immutability` safely purges invoices with posted journal entries | `lib/billing/actions.ts` & Migrations 179, 186 | ✅ PASS |
 | **Referrals & Per-Patient Payout** | Per-patient commission tracking (earned/paid/due/status) + atomic RPC `record_referral_commission_payout_atomic` + auto GL postings | `lib/referrals/actions.ts` & Migration 180 | ✅ PASS |
-| **Financial Reports & Accounting** | Resilient `get_trial_balance` and `get_general_ledger_report` eliminating 42501 mismatch; balanced GL ledger | Migrations 176–180 & `app/reports/page.tsx` | ✅ PASS |
-| **Autonomous System Health Diagnostics & Troubleshooter** | Hardened 12-domain PostgreSQL diagnostic engine `check_system_health_diagnostics` + tenant-scoped RLS `system_health_issues_log` + verified recovery lifecycle (`OPEN` -> `RESOLVED_VERIFIED`) + real-time DOM alert banner + dedicated `/app/system-health` control panel | Migrations 181–190, `lib/diagnostics/troubleshooter.ts`, `SystemHealthAlertBanner.tsx`, `app/system-health/page.tsx` | ✅ PASS |
-| **Hospital Expenses Deletion & GL Reversals** | Hardened stored procedure `delete_hospital_expense_super_admin_atomic` (Migrations 187–188) prohibiting permanent purge of posted vouchers, preserving both original and reversal journal entries as POSTED for zero-net GL balancing, and exact location-based incident resolution | Migrations 187–188, `lib/expenses/actions.ts`, `/app/expenses` | ✅ PASS |
-| **24/7 Background Scheduled Health Monitor & Heartbeats** | GitHub Actions cron probe (`*/5 * * * *`) + local/edge probe (`scripts/scheduled-health-check.mjs`) continuously verifying HTTP edge and DB invariants, recording persistent heartbeats (`system_monitoring_heartbeats`), and managing notification outbox (`system_notification_outbox`) without false greens | `.github/workflows/health-monitor.yml`, `scripts/scheduled-health-check.mjs`, Migration 189–190 | ✅ PASS |
-| **Multi-Tenant Heartbeat & Outbox Security** | Fail-closed multi-tenancy (`ORGANIZATION_CONTEXT_REQUIRED`); revoked direct outbox updates from authenticated clients; atomic delivery attempt RPC; Supabase `pg_cron` schedule registered | Migration 190, `lib/diagnostics/actions.ts` | ✅ PASS |
+| **Autonomous System Health Diagnostics & Troubleshooter** | Hardened 12-domain PostgreSQL diagnostic engine `check_system_health_diagnostics` + tenant-scoped RLS `system_health_issues_log` + verified recovery lifecycle (`OPEN` -> `RESOLVED_VERIFIED`) + real-time DOM alert banner + dedicated `/app/system-health` control panel | Migrations 181–191, `lib/diagnostics/troubleshooter.ts`, `SystemHealthAlertBanner.tsx`, `app/system-health/page.tsx` | ✅ PASS |
+| **24/7 Background Scheduled Health Monitor & Heartbeats** | GitHub Actions cron probe (`*/5 * * * *`) + local/edge probe (`scripts/scheduled-health-check.mjs`) continuously verifying HTTP edge and DB invariants, recording persistent heartbeats (`system_monitoring_heartbeats`), and managing notification outbox (`system_notification_outbox`) without false greens | `.github/workflows/health-monitor.yml`, `scripts/scheduled-health-check.mjs`, Migration 189–191 | ✅ PASS |
 | **Native Windows Desktop Installers (v1.1.90)** | Authentic native NSIS EXE & WiX MSI matching `latest.json` verified | `public/downloads/desktop/latest.json` (SHA-256 verified) | ✅ PASS |
-| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `75b15bf6`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
+| **Cloudflare Production Deployment** | `https://onnesha-hospital.pages.dev` (Deploy `0ee74855`, `WORKSTATION_DEPLOY_VERIFIED`) | `npx wrangler pages deploy out` | ✅ PASS |
 | **Remote Staging Security (G10)** | Requires `OHMS_TEST_SUPABASE_URL` in GitHub Secrets | CI Gate telemetry | ⚠️ **BLOCKED_EXTERNAL_OWNER** |
 
 ---
