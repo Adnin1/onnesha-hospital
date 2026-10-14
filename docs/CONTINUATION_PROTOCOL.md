@@ -17,6 +17,7 @@
    - [`CLOSURE_LEDGER.md`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/CLOSURE_LEDGER.md)
    - [`CURRENT_STATE.md`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/CURRENT_STATE.md)
    - [`OHMS_FINAL_DELIVERY_REPORT.md`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/OHMS_FINAL_DELIVERY_REPORT.md)
+   - [`docs/WEBSITE_DELIVERY_AND_GOVERNANCE.md`](file:///C:/Users/mahin%20khan/.gemini/antigravity/scratch/onnesha-hospital/docs/WEBSITE_DELIVERY_AND_GOVERNANCE.md)
 
 3. **Deterministic Verification Before Action:**
    Always verify the live repository baseline using local deterministic commands:

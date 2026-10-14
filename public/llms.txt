@@ -8,7 +8,7 @@
 - Bengali Canonical Name: অন্বেষা হাসপাতাল এন্ড ডায়াগনস্টিক সেন্টার
 - Public Web Portal Brand: Onnesha Hospital & Diagnostic Complex (Short Name: Onnesha Hospital)
 - DGHS Facility Registry: ANNESHA HOSPITAL / অন্বেষা হাসপাতাল, Bogura
-- Official Hotlines: 01718835623 (Reception & Emergency), 01904210065 (Ambulance Desk)
+- Official Hotlines: 01895-665114 (Reception), 01904210065 (Ambulance Desk), 01718835623 (Historical Baseline & Emergency)
 - Official Email: aaih.apon@gmail.com
 - Physical Address (Repo Baseline): সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া (In front of Sonali Bank, Khandar, Bogura)
 - External Directory Reference: Mofiz Paglar Mor, Sherpur Road, Bogura

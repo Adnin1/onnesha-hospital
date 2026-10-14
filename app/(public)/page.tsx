@@ -582,9 +582,15 @@ export default function HomePage() {
               <p className="text-xs text-slate-600 leading-relaxed mb-3">
                 {HOSPITAL_METADATA.address}
               </p>
-              <span className="text-[11px] text-slate-500 block">
-                DGHS Facility ID: <strong>{HOSPITAL_METADATA.dghsFacilityId}</strong>
-              </span>
+              {HOSPITAL_METADATA.dghsFacilityId ? (
+                <span className="text-[11px] text-slate-500 block">
+                  DGHS Facility ID: <strong>{HOSPITAL_METADATA.dghsFacilityId}</strong>
+                </span>
+              ) : (
+                <span className="text-[11px] text-slate-400 block">
+                  DGHS Registration: Verification Pending (Gate G14)
+                </span>
+              )}
             </div>
 
             <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">

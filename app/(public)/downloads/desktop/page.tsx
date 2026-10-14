@@ -80,15 +80,19 @@ export default function DesktopDownloadPage() {
           </div>
           <div className="flex justify-between items-center pb-2 border-b border-slate-200">
             <span className="font-semibold text-slate-700">NSIS Setup Executable:</span>
-            <span className="font-mono text-slate-900">{exeArtifactName} (1.0 MB)</span>
+            <span className="font-mono text-slate-900">{exeArtifactName} (~2.8 MB)</span>
           </div>
           <div className="flex justify-between items-center pb-2 border-b border-slate-200">
             <span className="font-semibold text-slate-700">WiX MSI Package:</span>
-            <span className="font-mono text-slate-900">{msiArtifactName} (1.4 MB)</span>
+            <span className="font-mono text-slate-900">{msiArtifactName} (~3.3 MB)</span>
+          </div>
+          <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+            <span className="font-semibold text-slate-700">Code Signing:</span>
+            <span className="font-mono text-amber-700 font-medium">EV Certificate Hardware Token Pending (Gate G15)</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="font-semibold text-slate-700">Artifact Verification:</span>
-            <span className="font-mono text-emerald-700 font-bold">SHA-256 Verified &amp; Signed in Manifest</span>
+            <span className="font-mono text-emerald-700 font-bold">SHA-256 Verified in latest.json</span>
           </div>
         </div>
 
@@ -101,7 +105,7 @@ export default function DesktopDownloadPage() {
                 data-installer={`Onnesha-Hospital-Setup-${coreVersion}.exe`}
                 className="w-full sm:w-auto px-6 py-3 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm"
               >
-                <span>📥</span> Setup Installer (.exe, 1.0 MB)
+                <span>📥</span> Setup Installer (.exe, ~2.8 MB)
               </a>
               <a
                 href={`/downloads/desktop/${msiArtifactName}`}
@@ -109,7 +113,7 @@ export default function DesktopDownloadPage() {
                 data-installer={`Onnesha-Hospital-${coreVersion}.msi`}
                 className="w-full sm:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-2 shadow-sm"
               >
-                <span>📦</span> MSI Package (.msi, 1.4 MB)
+                <span>📦</span> MSI Package (.msi, ~3.3 MB)
               </a>
             </>
           ) : (

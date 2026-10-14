@@ -141,9 +141,15 @@ export default function AboutPage() {
                 ক্লিনিক্যাল লোকেশন ও যোগাযোগ তথ্য
               </h2>
             </div>
-            <div className="text-xs bg-emerald-50 text-emerald-800 font-semibold px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
-              <span>DGHS Facility ID: {HOSPITAL_METADATA.dghsFacilityId}</span>
-            </div>
+            {HOSPITAL_METADATA.dghsFacilityId ? (
+              <div className="text-xs bg-emerald-50 text-emerald-800 font-semibold px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
+                <span>DGHS Facility ID: {HOSPITAL_METADATA.dghsFacilityId}</span>
+              </div>
+            ) : (
+              <div className="text-xs bg-slate-50 text-slate-600 font-medium px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1.5">
+                <span>DGHS Facility ID: Pending Owner Statutory Filing (Gate G14)</span>
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-600">
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
