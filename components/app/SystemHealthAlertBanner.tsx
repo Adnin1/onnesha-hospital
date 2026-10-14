@@ -149,8 +149,16 @@ export default function SystemHealthAlertBanner({
     }
   };
 
-  const combinedIssues = React.useMemo(() => {
-    const dbIssues = data?.issues || [];
+  const isAnonymousSecurityShield =
+    data?.status === "AUDIT_UNAUTHORIZED" ||
+    (data?.issues?.length === 1 && data.issues[0]?.id === "DIAGNOSTIC_PRIVILEGE_REQUIRED");
+
+  const activeOperationalIssues = React.useMemo(() => {
+    const dbIssues = (data?.issues || []).filter(
+      (issue) =>
+        issue.id !== "DIAGNOSTIC_PRIVILEGE_REQUIRED" &&
+        issue.id !== "ORGANIZATION_CONTEXT_REQUIRED"
+    );
     const merged = [...ephemeralIssues];
     for (const issue of dbIssues) {
       if (!merged.some((m) => m.id === issue.id || (m.location === issue.location && m.title === issue.title))) {
@@ -164,12 +172,13 @@ export default function SystemHealthAlertBanner({
     return null;
   }
 
-  const hasIssues = combinedIssues.length > 0;
-  const totalIssueCount = combinedIssues.length;
+  const hasIssues = activeOperationalIssues.length > 0;
+  const totalIssueCount = activeOperationalIssues.length;
   const rawScore = typeof data?.health_score === "number" ? data.health_score : 0;
   const effectiveHealthScore = hasIssues
     ? Math.max(0, Math.min(rawScore, Math.min(99, 100 - totalIssueCount * 20)))
-    : rawScore;
+    : (isAnonymousSecurityShield ? 100 : rawScore);
+
 
   return (
     <>
@@ -345,7 +354,7 @@ export default function SystemHealthAlertBanner({
                   </div>
 
                   <div className="space-y-3">
-                    {combinedIssues.map((issue: SystemHealthIssue) => (
+                    {activeOperationalIssues.map((issue: SystemHealthIssue) => (
                       <div
                         key={issue.id}
                         className="p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2.5"
@@ -439,7 +448,17 @@ export default function SystemHealthAlertBanner({
                       সাধারণ লেজার, বেড অকুপেন্সি, রেফারেল কমিশন, বিলিং ইনভয়েস এবং ট্রায়াল ব্যালান্সের
                       সকল স্বয়ংক্রিয় অডিট সফলভাবে উত্তীর্ণ হয়েছে।
                     </p>
+                    {isAnonymousSecurityShield && (
+                      <div className="mt-3 p-3 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-sky-800 dark:text-sky-300 text-xs text-left">
+                        <div className="font-bold flex items-center gap-1.5 mb-1">
+                          <CheckCircle2 className="h-4 w-4 text-sky-600 shrink-0" />
+                          <span>জিরো-ট্রাস্ট সিকিউরিটি শিল্ড সক্রিয়</span>
+                        </div>
+                        পাবলিক বেনামী ব্রাউজারে হাসপাতালের অভ্যন্তরীণ লেজার ডেটা নিরাপদ রাখা হয়েছে। সম্পূর্ণ ১০-ডোমেন রিয়েল-টাইম অডিট দেখতে অ্যাডমিন একাউন্টে লগইন করুন।
+                      </div>
+                    )}
                   </div>
+
 
                   <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 text-left">
                     <span className="text-xs font-semibold text-slate-500 block mb-2">

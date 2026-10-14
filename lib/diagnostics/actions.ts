@@ -24,6 +24,8 @@ export interface SystemHealthDiagnosticResult {
   organization_id: string | null;
   issues: SystemHealthIssue[];
   passed_checks: string[];
+  status?: string;
+  audit_scope?: string;
   error?: string | null;
 }
 
@@ -95,6 +97,7 @@ export async function getSystemHealthDiagnosticsAction(
       };
     }
 
+    const raw = data as Record<string, unknown>;
     const res = data as SystemHealthDiagnosticResult;
     return {
       is_healthy: Boolean(res.is_healthy),
@@ -107,6 +110,8 @@ export async function getSystemHealthDiagnosticsAction(
       organization_id: res.organization_id || null,
       issues: Array.isArray(res.issues) ? res.issues : [],
       passed_checks: Array.isArray(res.passed_checks) ? res.passed_checks : [],
+      status: typeof raw.status === "string" ? raw.status : (res.is_healthy ? "HEALTHY" : "DEGRADED"),
+      audit_scope: typeof raw.audit_scope === "string" ? raw.audit_scope : "FULL_SYSTEM",
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
