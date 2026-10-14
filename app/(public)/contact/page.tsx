@@ -57,7 +57,7 @@ export default function ContactPage() {
             Contact & Emergency Lines
           </h1>
           <p className="text-xs text-slate-600 mt-2">
-            Our hospital reception and emergency casualty desks are available to assist.
+            Our hospital reception and urgent care desks are available to assist.
           </p>
         </div>
 

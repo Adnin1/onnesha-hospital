@@ -132,3 +132,40 @@ export const HOSPITAL_METADATA: HospitalMetadata = {
   },
 };
 
+/**
+ * Authoritative Single Source of Truth for Verified Clinical & Diagnostic Services
+ * Used by HospitalJsonLd structured data, marketing pages, and service directories.
+ * Only services verified as commissioned and physically available are marked verified: true.
+ */
+export const VERIFIED_HOSPITAL_SERVICES = [
+  {
+    id: "opd",
+    name: "Outpatient Specialist Consultation (OPD)",
+    banglaName: "বহির্বিভাগ বিশেষজ্ঞ পরামর্শ",
+    description: "Multi-specialty outpatient consultations across general medicine, surgery, pediatrics, gynecology, and cardiology.",
+    verified: true,
+  },
+  {
+    id: "diagnostics",
+    name: "Diagnostic Pathology & Imaging Tests",
+    banglaName: "ডায়াগনস্টিক প্যাথলজি ও পরীক্ষা",
+    description: "Clinical pathology, biochemistry, hematology, digital X-ray, and USG diagnostics.",
+    verified: true,
+  },
+  {
+    id: "inpatient",
+    name: "Inpatient Medical Care & General Wards",
+    banglaName: "ইনপেশেন্ট চিকিৎসা ও সাধারণ ওয়ার্ড",
+    description: "Inpatient admission, nursing observation, post-operative care, and cabin accommodations.",
+    verified: true,
+  },
+  {
+    id: "urgent-care",
+    name: "Urgent Medical Care & Reception Desk",
+    banglaName: "জরুরি সেবা ও অভ্যর্থনা ডেস্ক",
+    description: "Hospital reception, vital triage, and first-response patient stabilization.",
+    verified: true,
+  },
+] as const;
+
+

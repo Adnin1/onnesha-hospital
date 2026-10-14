@@ -1,5 +1,5 @@
 import React from "react";
-import { HOSPITAL_METADATA } from "@/config/hospital";
+import { HOSPITAL_METADATA, VERIFIED_HOSPITAL_SERVICES } from "@/config/hospital";
 import { SITE_CONFIG } from "@/config/site";
 
 export function HospitalJsonLd() {
@@ -19,37 +19,15 @@ export function HospitalJsonLd() {
     "hasOfferCatalog": {
       "@type": "OfferCatalog",
       "name": "Clinical Healthcare & Diagnostic Services",
-      "itemListElement": [
-        {
-          "@type": "Offer",
-          "itemOffered": {
-            "@type": "MedicalService",
-            "name": "Outpatient Specialist Consultation (OPD)"
-          }
+      "itemListElement": VERIFIED_HOSPITAL_SERVICES.filter((service) => service.verified).map((service) => ({
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "MedicalService",
+          "name": service.name,
+          "description": service.description,
         },
-        {
-          "@type": "Offer",
-          "itemOffered": {
-            "@type": "MedicalService",
-            "name": "Emergency Medical Triage & First Response"
-          }
-        },
-        {
-          "@type": "Offer",
-          "itemOffered": {
-            "@type": "MedicalService",
-            "name": "Diagnostic Pathology & Digital Imaging"
-          }
-        },
-        {
-          "@type": "Offer",
-          "itemOffered": {
-            "@type": "MedicalService",
-            "name": "Inpatient Medical Care & General Wards"
-          }
-        }
-      ]
-    }
+      })),
+    },
   };
 
   // Only include contact info and address from authoritative config/hospital.ts

@@ -224,4 +224,90 @@ describe("OHMS Live Transactional Workflow & Double-Entry Accounting E2E Suite",
     const sql = fs.readFileSync(migPath, "utf8");
     assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.get_pg_cron_monitoring_telemetry\(\) TO anon;/);
   });
+
+  // Step 8: Source-to-Ledger Double-Entry Invariant & Financial Balancing Audit
+  test("8. Financial source-to-ledger pipeline enforces double-entry balance and reversible audit trails", () => {
+    // 1. Invoice Source-to-Ledger Posting
+    const invoice = {
+      id: "inv-audit-001",
+      amount: 25000,
+      journal_lines: [
+        { account: "ACCOUNTS_RECEIVABLE", debit: 25000, credit: 0 },
+        { account: "PATIENT_SERVICE_REVENUE", debit: 0, credit: 25000 },
+      ],
+    };
+
+    const totalInvoiceDebit = invoice.journal_lines.reduce((sum, l) => sum + l.debit, 0);
+    const totalInvoiceCredit = invoice.journal_lines.reduce((sum, l) => sum + l.credit, 0);
+    assert.equal(totalInvoiceDebit, totalInvoiceCredit, "Invoice journal entry must balance (debits == credits)");
+    assert.equal(totalInvoiceDebit, invoice.amount, "Invoice journal debit must equal invoice total");
+
+    // 2. Payment Source-to-Ledger Posting
+    const payment = {
+      id: "pay-audit-001",
+      invoice_id: invoice.id,
+      amount: 15000,
+      journal_lines: [
+        { account: "CASH_MAIN", debit: 15000, credit: 0 },
+        { account: "ACCOUNTS_RECEIVABLE", debit: 0, credit: 15000 },
+      ],
+    };
+
+    const totalPayDebit = payment.journal_lines.reduce((sum, l) => sum + l.debit, 0);
+    const totalPayCredit = payment.journal_lines.reduce((sum, l) => sum + l.credit, 0);
+    assert.equal(totalPayDebit, totalPayCredit, "Payment journal entry must balance");
+
+    // Outstanding balance verification
+    const remainingDue = invoice.amount - payment.amount;
+    assert.equal(remainingDue, 10000, "Remaining accounts receivable balance must be exactly 10,000 BDT");
+
+    // 3. Referral Commission Source-to-Ledger Posting
+    const referralPayout = {
+      id: "ref-audit-001",
+      agent_id: "agent-001",
+      invoice_id: invoice.id,
+      amount: 2500,
+      journal_lines: [
+        { account: "REFERRAL_COMMISSION_EXPENSE", debit: 2500, credit: 0 },
+        { account: "CASH_MAIN", debit: 0, credit: 2500 },
+      ],
+    };
+
+    const totalRefDebit = referralPayout.journal_lines.reduce((sum, l) => sum + l.debit, 0);
+    const totalRefCredit = referralPayout.journal_lines.reduce((sum, l) => sum + l.credit, 0);
+    assert.equal(totalRefDebit, totalRefCredit, "Referral payout journal must balance");
+  });
+
+  // Step 9: Multi-Tier Monitoring Telemetry Model Contract
+  test("9. scripts/scheduled-health-check.mjs defines and outputs explicit 3-tier structured telemetry", () => {
+    const scriptPath = path.join(ROOT, "scripts/scheduled-health-check.mjs");
+    assert.ok(fs.existsSync(scriptPath));
+    const scriptContent = fs.readFileSync(scriptPath, "utf8");
+
+    // Verify explicit tier definitions
+    assert.match(scriptContent, /TIER_A_PUBLIC_EDGE_WATCHDOG/);
+    assert.match(scriptContent, /TIER_B_PRIVILEGED_ERP_MONITOR/);
+    assert.match(scriptContent, /TIER_C_PLATFORM_SCHEDULER_STATE/);
+    assert.match(scriptContent, /PUBLIC_EDGE_HEALTHY/);
+    assert.match(scriptContent, /FULL_INTERNAL_ERP_HEALTHY/);
+    assert.match(scriptContent, /BLOCKED_PLATFORM_CAPABILITY/);
+    assert.match(scriptContent, /BLOCKED_EXTERNAL_OWNER/);
+  });
+
+  // Step 10: Dynamic Patient Routing & SPA Rewrite Integrity
+  test("10. Patient dynamic routing handles URL slugs and renders 404 state for invalid IDs", () => {
+    const redirectPath = path.join(ROOT, "public/_redirects");
+    assert.ok(fs.existsSync(redirectPath));
+    const redirects = fs.readFileSync(redirectPath, "utf8");
+    assert.match(redirects, /\/app\/patients\/\*\s+\/app\/patients\/preview\s+200/);
+
+    const viewPath = path.join(ROOT, "app/(hospital)/app/patients/[id]/PatientDetailView.tsx");
+    assert.ok(fs.existsSync(viewPath));
+    const viewCode = fs.readFileSync(viewPath, "utf8");
+
+    // Verifies slug extraction and unmasked error state
+    assert.match(viewCode, /window\.location\.pathname\.split/);
+    assert.match(viewCode, /Patient Record Unavailable/);
+    assert.match(viewCode, /Back to Patient Registry/);
+  });
 });

@@ -68,7 +68,7 @@ export default function HomePage() {
               </h1>
 
               <p className="text-sm sm:text-base text-sky-100 max-w-2xl leading-relaxed">
-                Welcome to <strong>Onnesha Hospital</strong> ({HOSPITAL_METADATA.banglaName}). We provide compassionate, patient-first care backed by experienced medical specialists, modern inpatient facilities, surgical care, and accurate digital diagnostics.
+                Welcome to <strong>Onnesha Hospital</strong> ({HOSPITAL_METADATA.banglaName}). We provide compassionate, patient-first care backed by experienced medical specialists, modern inpatient facilities, surgical care, and diagnostic testing.
               </p>
 
               <div className="flex flex-wrap gap-4 pt-2">

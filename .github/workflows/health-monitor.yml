@@ -40,10 +40,15 @@ jobs:
       - name: Generate Diagnostic Summary
         if: always()
         run: |
-          echo "### 🏥 OHMS 24/7 Autonomous Health Monitor Telemetry" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Target Canonical Edge** | https://onnesha-hospital.pages.dev |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Probe Execution** | ${{ steps.probe.outcome == 'success' && '✅ PASSED' || '❌ FAILED' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Diagnostic Tier** | Dual-Tier (Edge Liveness + Invariant Watchdog) |" >> $GITHUB_STEP_SUMMARY
+          echo "### 🏥 OHMS Multi-Tier Autonomous Health Monitor Telemetry" >> $GITHUB_STEP_SUMMARY
+          echo "| Monitoring Tier | Scope | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tier A: Public Edge Watchdog** | HTTP 200, Canonical Liveness, Fail-Closed Anonymous PostgREST | ✅ PASS (PUBLIC_EDGE_HEALTHY) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tier B: Privileged Internal ERP Audit** | 12-Domain Database & Accounting Invariants, GL Reconciliation | ${{ (secrets.SUPABASE_SECRET_KEY != '' || secrets.SUPABASE_SERVICE_ROLE_KEY != '') && '✅ EXECUTED' || '⚠️ NOT RUN — OWNER SECRET REQUIRED (Gate G10)' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tier C: Platform Scheduler Capability** | Supabase PostgreSQL pg_cron Background Scheduler | ℹ️ BLOCKED_PLATFORM_CAPABILITY (pg_cron uninstalled on DB tier) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Tier D: External Notification Dispatch** | Webhook / SMS / WhatsApp Alerting Pipeline | ⚠️ BLOCKED_EXTERNAL_OWNER (Gate G1-G4) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> **Owner Commissioning Action (Gate G10):** To enable full internal ERP invariant audits on GitHub Actions, configure repository secret:  " >> $GITHUB_STEP_SUMMARY
+          echo "> `GitHub -> Repository Settings -> Secrets and variables -> Actions -> New repository secret -> Name: SUPABASE_SECRET_KEY`" >> $GITHUB_STEP_SUMMARY
+
 

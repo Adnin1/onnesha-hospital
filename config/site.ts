@@ -15,7 +15,7 @@ export const SITE_CONFIG = {
   banglaName: HOSPITAL_METADATA.banglaName,
   shortName: HOSPITAL_METADATA.shortName,
   description:
-    "ANNESHA HOSPITAL AND DIAGNOSTIC (অন্বেষা হাসপাতাল ও ডায়াগনস্টিক) — Integrated Healthcare Services, Online OPD Specialist Appointments, Emergency Casualty Desk, and Digital Diagnostics in Bogura, Bangladesh.",
+    "ANNESHA HOSPITAL AND DIAGNOSTIC (অন্বেষা হাসপাতাল ও ডায়াগনস্টিক) — Integrated Healthcare Services, Online OPD Specialist Appointments, Urgent Care Assistance, and Diagnostic Testing in Bogura, Bangladesh.",
   canonicalUrl: (process.env.NEXT_PUBLIC_SITE_URL || "https://onnesha-hospital.pages.dev").replace(/\/$/, ""),
   deploymentUrl: "https://onnesha-hospital.pages.dev",
   futureCustomDomain: "https://onneshahospital.com",

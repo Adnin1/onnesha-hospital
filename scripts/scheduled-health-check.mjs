@@ -179,8 +179,76 @@ async function run() {
     ? "HEALTHY"
     : "DEFECT_DETECTED";
 
+  // Tier A: PUBLIC_EDGE_WATCHDOG
+  const tierA = {
+    tier: "TIER_A_PUBLIC_EDGE_WATCHDOG",
+    status: edgeOk ? "PASS" : "FAIL",
+    verdict: edgeOk ? "PUBLIC_EDGE_HEALTHY" : "EDGE_DOWN",
+    http_status: edgeOk ? 200 : 0,
+    target: CANONICAL_URL,
+    anonymous_rpc_fail_closed: dbResult.status === "AUDIT_UNAUTHORIZED",
+  };
+
+  // Tier B: PRIVILEGED_ERP_MONITOR
+  const tierB = {
+    tier: "TIER_B_PRIVILEGED_ERP_MONITOR",
+    privileged_credential_present: dbResult.is_privileged,
+    status: dbResult.is_privileged
+      ? (dbResult.is_healthy ? "FULL_INTERNAL_ERP_HEALTHY" : "DEFECT_DETECTED")
+      : "NOT_VERIFIED",
+    verdict: dbResult.is_privileged
+      ? (dbResult.is_healthy ? "PASS" : "FAIL")
+      : "BLOCKED_EXTERNAL_OWNER",
+    reason: dbResult.is_privileged
+      ? (dbResult.is_healthy ? "All 12 ERP diagnostic domains passed" : "Database invariants violated")
+      : "Owner Gate G10: SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY required in environment",
+    health_score: dbResult.is_privileged ? (dbResult.health_score ?? 100) : null,
+    active_issues: dbResult.is_privileged ? (dbResult.total_issues ?? 0) : null,
+  };
+
+  // Tier C: PLATFORM_SCHEDULER_STATE
+  const tierC = {
+    tier: "TIER_C_PLATFORM_SCHEDULER_STATE",
+    status: dbResult.cron_telemetry?.status || "BLOCKED_PLATFORM_CAPABILITY",
+    available: Boolean(dbResult.cron_telemetry?.available),
+    reason: dbResult.cron_telemetry?.reason || "pg_cron extension is not enabled on this PostgreSQL instance",
+  };
+
+  // Notifications Channel State
+  const notificationsState = {
+    status: "BLOCKED_EXTERNAL_OWNER",
+    channel: "WEBHOOK / SMS / EMAIL",
+    reason: "OHMS_ALERT_WEBHOOK_URL is not configured (Owner Gate G1-G4)",
+  };
+
+  const overallMonitoringVerdict = !edgeOk
+    ? "FAIL — PRODUCTION EDGE UNREACHABLE"
+    : dbResult.is_privileged
+    ? (dbResult.is_healthy ? "FULL_INTERNAL_ERP_HEALTHY" : "DEFECT_DETECTED")
+    : "PUBLIC_EDGE_HEALTHY (Internal ERP Invariants Gated by Owner Credential Gate G10)";
+
+  const structuredSummary = {
+    edge: tierA,
+    database_audit: {
+      scope: dbResult.audit_scope || "NONE",
+      status: dbResult.status,
+    },
+    internal_erp: tierB,
+    scheduler: tierC,
+    notifications: notificationsState,
+    overall_monitoring: {
+      status: dbResult.is_privileged && dbResult.is_healthy ? "COMPLETE" : "PARTIAL",
+      verdict: overallMonitoringVerdict,
+    },
+  };
+
+  console.log("==================================================");
+  console.log("📊 OHMS MULTI-TIER SYSTEM HEALTH TELEMETRY SUMMARY");
+  console.log("==================================================");
+  console.log(JSON.stringify(structuredSummary, null, 2));
   console.log("--------------------------------------------------");
   console.log(`Heartbeat Summary: Edge=${edgeOk ? "PASS (200)" : "FAIL"}, Database=${dbStatus} (Scope=${dbResult.audit_scope || "NONE"}), Privileged=${dbResult.is_privileged ? "YES" : "NO (Gate G10)"}`);
+  console.log(`Monitoring Verdict: ${overallMonitoringVerdict}`);
   console.log("--------------------------------------------------");
 
   if (!edgeOk) {
@@ -193,9 +261,9 @@ async function run() {
     if (dbResult.status === "AUDIT_UNAUTHORIZED") {
       console.log("ℹ️  Public Watchdog Tier: AUDIT_UNAUTHORIZED confirmed — fail-closed security active for anonymous caller.");
     }
-    console.log("ℹ️  Public Watchdog Tier: Edge liveness is 100% operational.");
+    console.log("ℹ️  Public Watchdog Tier: Edge liveness is operational.");
     console.log("ℹ️  Owner Gate G10 Notice: Full internal ERP accounting & clinical invariants audit is gated by SUPABASE_SERVICE_ROLE_KEY.");
-    console.log("✅ 24/7 Production Watchdog Heartbeat PASSED.");
+    console.log("✅ 24/7 Production Watchdog Heartbeat PASSED (Verdict: PUBLIC_EDGE_HEALTHY).");
     process.exit(0);
   }
 
@@ -206,7 +274,7 @@ async function run() {
     process.exit(1);
   }
 
-  console.log("✅ All production system invariants and health probes verified 100% operational.");
+  console.log("✅ Full internal ERP invariants and health probes verified operational (Verdict: FULL_INTERNAL_ERP_HEALTHY).");
   process.exit(0);
 }
 
