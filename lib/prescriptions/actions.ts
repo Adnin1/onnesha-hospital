@@ -55,16 +55,19 @@ export async function createPrescriptionAction(params: {
       .from("doctors")
       .select("id, full_name, degrees, designation, specialization, bmdc_reg_number, room_number")
       .eq("id", params.doctorId)
-      .single();
+      .maybeSingle();
 
     const { data: patient } = await supabase
       .from("patients")
       .select("id, patient_code, full_name, gender, phone")
       .eq("id", params.patientId)
-      .single();
+      .maybeSingle();
 
-    if (!doctor || !patient) {
-      return { success: false, error: "Invalid patient or doctor identifier." };
+    if (!doctor) {
+      return { success: false, error: "নির্বাচিত ডাক্তার পাওয়া যায়নি (Doctor not found). অনুগ্রহ করে ডাক্তার নির্বাচন করুন।" };
+    }
+    if (!patient) {
+      return { success: false, error: "নির্বাচিত রোগী পাওয়া যায়নি (Patient not found). অনুগ্রহ করে রোগী নির্বাচন করুন।" };
     }
 
     // Insert prescription master

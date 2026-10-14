@@ -719,7 +719,7 @@ function ExpensesManagementContent() {
                         onClick={() => {
                           setDeleteModalExpense(exp);
                           setDeleteReason("");
-                          setDeletePermanentPurge(false);
+                          setDeletePermanentPurge(exp.status === "VOIDED" || exp.status === "DRAFT");
                         }}
                         className="p-1.5 border border-rose-200 rounded-lg hover:bg-rose-50 text-rose-600 transition"
                         title="Delete / Purge Voucher"
@@ -1244,12 +1244,17 @@ function ExpensesManagementContent() {
               (পরিমাণ: <strong>{formatCurrencyBDT(deleteModalExpense.amount)}</strong>, স্ট্যাটাস:{" "}
               <span className="font-bold uppercase text-slate-800">{deleteModalExpense.status}</span>)
             </p>
-            {deleteModalExpense.status !== "DRAFT" && deleteModalExpense.status !== "PENDING_APPROVAL" && (
+            {deleteModalExpense.status === "VOIDED" ? (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl mb-3 text-[11px] text-rose-800">
+                <p className="font-bold mb-1">ভাউচারটি ইতিমধ্যে ভয়েড (VOIDED) করা হয়েছে:</p>
+                এর সংশ্লিষ্ট সাধারণ লেজারে রিভার্সাল এন্ট্রি পোস্ট হয়ে হিসাব সমতায় আছে (Net 0.00)। আপনি চাইলে এই ভয়েড রেকর্ডটি ডাটাবেজ থেকে স্থায়ীভাবে মুছে ফেলতে (Hard Purge) পারেন।
+              </div>
+            ) : deleteModalExpense.status !== "DRAFT" && deleteModalExpense.status !== "PENDING_APPROVAL" ? (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl mb-3 text-[11px] text-amber-800">
                 <p className="font-bold mb-1">হিসাবরক্ষণ অডিট ও ডাবল-এন্ট্রি ব্যালান্স নোট:</p>
                 পোস্ট করা ভাউচার ডিলিট করলে সাধারণ লেজারে স্বয়ংক্রিয় রিভার্সাল এন্ট্রি তৈরি হয়ে ভাউচারটি &apos;VOIDED&apos; হিসেবে সংরক্ষিত থাকবে।
               </div>
-            )}
+            ) : null}
             <form onSubmit={handleDeleteExpense}>
               <div className="mb-3">
                 <label className="block text-xs font-bold text-slate-700 mb-1">ডিলিট করার কারণ (Reason) *</label>
@@ -1263,7 +1268,7 @@ function ExpensesManagementContent() {
                 />
               </div>
 
-              {deleteModalExpense.status === "DRAFT" || deleteModalExpense.status === "PENDING_APPROVAL" ? (
+              {deleteModalExpense.status === "DRAFT" || deleteModalExpense.status === "PENDING_APPROVAL" || deleteModalExpense.status === "VOIDED" ? (
                 <div className="mb-4 flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                   <input
                     type="checkbox"
@@ -1273,12 +1278,12 @@ function ExpensesManagementContent() {
                     className="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
                   />
                   <label htmlFor="expensePermanentPurge" className="text-[11px] text-slate-700 select-none">
-                    <span className="font-bold text-rose-700">স্থায়ীভাবে মুছে ফেলুন (Super Admin Hard Purge)</span>: ড্রাফট ভাউচার ডাটাবেজ থেকে সম্পূর্ণ মুছে ফেলা হবে।
+                    <span className="font-bold text-rose-700">স্থায়ীভাবে মুছে ফেলুন (Super Admin Hard Purge)</span>: ভাউচার রেকর্ড ডাটাবেজ থেকে সম্পূর্ণ মুছে ফেলা হবে।
                   </label>
                 </div>
               ) : (
                 <div className="mb-4 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[11px] text-slate-600">
-                  <span className="font-bold text-slate-800">অডিট ট্রেইল সুরক্ষা:</span> পোস্ট করা ভাউচারের ক্ষেত্রে হিসাবরক্ষণ আইন অনুযায়ী হার্ড ডিলিট নিষিদ্ধ। লেজার ব্যালান্স অটুট রাখতে এটি রিভার্সাল এন্ট্রির মাধ্যমে ভয়েড করা হবে।
+                  <span className="font-bold text-slate-800">অডিট ট্রেইল সুরক্ষা:</span> সক্রিয় পোস্ট করা ভাউচারের ক্ষেত্রে হিসাবরক্ষণ আইন অনুযায়ী হার্ড ডিলিট নিষিদ্ধ। লেজার ব্যালান্স অটুট রাখতে এটি রিভার্সাল এন্ট্রির মাধ্যমে ভয়েড করা হবে।
                 </div>
               )}
 
@@ -1301,6 +1306,8 @@ function ExpensesManagementContent() {
                     ? "Confirm Permanent Purge"
                     : deleteModalExpense.status === "DRAFT" || deleteModalExpense.status === "PENDING_APPROVAL"
                     ? "Confirm Delete"
+                    : deleteModalExpense.status === "VOIDED"
+                    ? "Confirm Purge"
                     : "Confirm Void & Reverse GL"}
                 </button>
               </div>

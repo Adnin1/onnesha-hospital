@@ -13,6 +13,10 @@ import {
   FileSpreadsheet,
   Calendar,
   Undo2,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  ArrowRight,
 } from "lucide-react";
 import {
   AccountRecord,
@@ -77,6 +81,31 @@ export default function AccountingPage() {
   const [periodName, setPeriodName] = useState("");
   const [periodStartDate, setPeriodStartDate] = useState("");
   const [periodEndDate, setPeriodEndDate] = useState("");
+
+  // Guide Accordion State
+  const [showGuide, setShowGuide] = useState(true);
+
+  const handleOpenQuickTemplate = (templateType: "CASH_WITHDRAWAL" | "OFFICE_EXPENSE") => {
+    setEntryNumber(`JV-${Date.now().toString().slice(-6)}`);
+    const cashAcc = accounts.find((a) => a.account_code === "1010" || a.account_name.toLowerCase().includes("cash"));
+    const bankAcc = accounts.find((a) => a.account_code === "1020" || a.account_name.toLowerCase().includes("bank"));
+    const expAcc = accounts.find((a) => a.account_type === "EXPENSE");
+
+    if (templateType === "CASH_WITHDRAWAL") {
+      setEntryDesc("ব্যাংক থেকে নগদ ক্যাশ উত্তোলন (Cash Withdrawal from Bank)");
+      setLines([
+        { account_id: cashAcc?.id || "", debit: 5000, credit: 0, description: "ক্যাশ ইন হ্যান্ড বৃদ্ধি (Debit)" },
+        { account_id: bankAcc?.id || "", debit: 0, credit: 5000, description: "ব্যাংক ব্যালান্স হ্রাস (Credit)" },
+      ]);
+    } else {
+      setEntryDesc("অফিস ও অপারেশনাল ব্যয় পরিশোধ (Operational Office Expense)");
+      setLines([
+        { account_id: expAcc?.id || "", debit: 1200, credit: 0, description: "খরচের খাত (Debit)" },
+        { account_id: cashAcc?.id || "", debit: 0, credit: 1200, description: "ক্যাশ প্রদান (Credit)" },
+      ]);
+    }
+    setIsPostingModalOpen(true);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -375,6 +404,104 @@ export default function AccountingPage() {
           <span>{successMsg}</span>
         </div>
       )}
+
+      {/* 📖 Baby-Simple Admin Guide Banner for Accounting & Ledger */}
+      <div className="bg-gradient-to-r from-sky-50 via-indigo-50 to-blue-50 border border-sky-200 rounded-2xl p-5 shadow-xs transition-all">
+        <div className="flex justify-between items-start cursor-pointer" onClick={() => setShowGuide(!showGuide)}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-sky-600 text-white rounded-xl shadow-xs">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900">
+                  হিসাবরক্ষণ ও সাধারণ লেজার ব্যবহারের সহজ নির্দেশিকা (Easy Accounting Guide)
+                </h3>
+                <span className="text-[10px] bg-sky-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  Admin Master Guide
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5">
+                হাসপাতালের প্রতিটি টাকার সঠিক হিসাব ও ডাবল-এন্ট্রি বুককিপিং বোঝার সহজ ৩টি নিয়ম
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="p-1.5 hover:bg-sky-200/50 rounded-lg text-slate-600 transition"
+            aria-label="Toggle Guide"
+          >
+            {showGuide ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          </button>
+        </div>
+
+        {showGuide && (
+          <div className="mt-4 pt-4 border-t border-sky-200/70 space-y-4 text-xs">
+            {/* The Golden Rule */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="p-3 bg-white/80 rounded-xl border border-sky-100 shadow-2xs">
+                <span className="font-bold text-emerald-800 flex items-center gap-1.5 mb-1">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> ১. ডেবিট (Debit) কী?
+                </span>
+                <p className="text-slate-600 leading-relaxed">
+                  হাসপাতালে <strong>টাকা আসলে</strong> (যেমন: ব্যাংকে জমা, ক্যাশ কাউন্টারে নগদ গ্রহণ) অথবা কোনো <strong>খরচ বৃদ্ধি পেলে</strong> (যেমন: ডাক্তারকে বেতন, বিদ্যুৎ বিল, অক্সিজেন ক্রয়) সংশ্লিষ্ট খাতকে ডেবিট করতে হয়।
+                </p>
+              </div>
+              <div className="p-3 bg-white/80 rounded-xl border border-sky-100 shadow-2xs">
+                <span className="font-bold text-indigo-800 flex items-center gap-1.5 mb-1">
+                  <Scale className="w-4 h-4 text-indigo-600" /> ২. ক্রেডিট (Credit) কী?
+                </span>
+                <p className="text-slate-600 leading-relaxed">
+                  হাসপাতাল থেকে <strong>টাকা চলে গেলে</strong> (যেমন: ব্যাংক বা ক্যাশ থেকে টাকা দেওয়া) অথবা কোনো <strong>আয় তৈরি হলে</strong> (যেমন: রোগী ভর্তি ফি, ল্যাব টেস্টের বিল, ওষুধ বিক্রি) সংশ্লিষ্ট খাতকে ক্রেডিট করতে হয়।
+                </p>
+              </div>
+            </div>
+
+            {/* 3 Steps */}
+            <div className="p-3 bg-white/90 rounded-xl border border-sky-200 flex flex-col md:flex-row items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 font-bold text-slate-900">
+                  <Lightbulb className="w-4 h-4 text-amber-500" />
+                  <span>প্রতিদিনের কাজ যেভাবে করবেন (৩টি সহজ ধাপ):</span>
+                </div>
+                <div className="text-slate-600 space-y-0.5 text-[11px] pl-6">
+                  <p>• <strong>ধাপ ১:</strong> &quot;Post Journal Entry&quot; বাটনে ক্লিক করুন।</p>
+                  <p>• <strong>ধাপ ২:</strong> প্রথম লাইনে টাকা কোথায় গেল/খরচ হলো (Debit) এবং দ্বিতীয় লাইনে টাকা কোথা থেকে আসল (Credit) নির্বাচন করুন। মোট ডেবিট = মোট ক্রেডিট সমান হতে হবে।</p>
+                  <p>• <strong>ধাপ ৩:</strong> &quot;Trial Balance&quot; ট্যাবে যেয়ে নিশ্চিত করুন উভয় পাশ সমান (Balanced 100%) আছে।</p>
+                </div>
+              </div>
+
+              {/* Quick Template Buttons */}
+              <div className="flex flex-wrap gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleOpenQuickTemplate("CASH_WITHDRAWAL")}
+                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-bold text-[11px] transition shadow-2xs cursor-pointer flex items-center gap-1"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  ব্যাংক থেকে ক্যাশ উত্তোলন
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenQuickTemplate("OFFICE_EXPENSE")}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-[11px] transition shadow-2xs cursor-pointer flex items-center gap-1"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                  অফিস খরচ ভাউচার
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("TRIAL_BALANCE")}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] transition shadow-2xs cursor-pointer flex items-center gap-1"
+                >
+                  <Scale className="w-3.5 h-3.5" />
+                  ব্যালান্স অডিট
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 space-x-6">

@@ -30,8 +30,16 @@ export async function getBedsAndCabinsAction(): Promise<
   try {
     const supabase = await createClient();
 
-    // 1. Wards
-    const { data: dbWards, error: wardErr } = await supabase
+    // Reconcile ghost bed vacancy drift atomically before loading
+    try {
+      await supabase.rpc("reconcile_bed_vacancy_drift_atomic", {
+        p_org_id: orgId,
+      });
+    } catch {
+      // Non-blocking fallback
+    }
+
+    const { data: initialWards, error: wardErr } = await supabase
       .from("wards")
       .select("*")
       .eq("organization_id", orgId)
@@ -39,6 +47,27 @@ export async function getBedsAndCabinsAction(): Promise<
 
     if (wardErr) {
       return { success: false, error: wardErr.message };
+    }
+
+    let dbWards = initialWards;
+
+    if (!dbWards || dbWards.length === 0) {
+      // Auto-seed default hospital wards
+      const defaultWards = [
+        { organization_id: orgId, name: "General Male Ward (পুরুষ ওয়ার্ড)", floor: "2nd Floor", ward_type: "General Ward", total_beds: 10 },
+        { organization_id: orgId, name: "General Female Ward (মহিলা ওয়ার্ড)", floor: "2nd Floor", ward_type: "General Ward", total_beds: 10 },
+        { organization_id: orgId, name: "Post-Operative Ward (পোস্ট-অপারেটিভ)", floor: "3rd Floor", ward_type: "Post-Op Ward", total_beds: 6 },
+        { organization_id: orgId, name: "Cabin Ward (কেবিন ব্লক)", floor: "4th Floor", ward_type: "Cabin Ward", total_beds: 12 },
+      ];
+      await supabase.from("wards").insert(defaultWards);
+      const refetched = await supabase
+        .from("wards")
+        .select("*")
+        .eq("organization_id", orgId)
+        .order("name", { ascending: true });
+      if (refetched.data) {
+        dbWards = refetched.data;
+      }
     }
 
     // 2. Beds
@@ -798,7 +827,10 @@ export async function addBedAction(payload: {
     const insertErr = insertRes.error;
 
     if (insertErr || !inserted) {
-      const errText = insertErr?.message || "Failed to add bed";
+      let errText = insertErr?.message || "Failed to add bed";
+      if (insertErr?.code === "23505" || insertErr?.message?.includes("beds_organization_id_ward_id_bed_number_key") || insertErr?.message?.includes("duplicate key")) {
+        errText = `বেড নম্বর '${payload.bed_number}' (${resolvedWardName}) ইতোমধ্যে বিদ্যমান। অনুগ্রহ করে ভিন্ন বেড নম্বর প্রদান করুন (Bed number already exists in this ward).`;
+      }
       await reportSystemRuntimeIncident({
         organizationId: orgId,
         module: "আইপিডি ও বেড ব্যবস্থাপনা (Inpatient Beds & Cabins)",
@@ -806,7 +838,7 @@ export async function addBedAction(payload: {
         severity: "CRITICAL",
         errorCode: insertErr?.code || "BED_INSERT_ERROR",
         title: "নতুন বেড তৈরিতে ডাটাবেজ ত্রুটি",
-        reason: `বেড #${payload.bed_number} (${resolvedWardName}) তৈরিতে ডাটাবেজ ত্রুটি: ${errText}`,
+        reason: `বেড #${payload.bed_number} (${resolvedWardName}) তৈরিতে ত্রুটি: ${errText}`,
         recommendation: "ওয়ার্ড ও বেড নম্বর সঠিক আছে কিনা পরীক্ষা করুন।",
         details: { payload, error: insertErr },
       });

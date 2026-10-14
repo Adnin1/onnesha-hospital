@@ -11,6 +11,11 @@ import {
   Building2,
   AlertCircle,
   CheckCircle2,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Truck,
+  Sparkles,
 } from "lucide-react";
 import {
   PurchaseRequisitionRecord,
@@ -68,6 +73,52 @@ export default function ProcurementPage() {
   const [whLocation, setWhLocation] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
+
+  const applyQuickReqTemplate = (templateType: "SURGICAL" | "REAGENTS" | "ICU_SUPPLIES") => {
+    setActiveTab("REQUISITIONS");
+    setReqNumber(`PR-${Date.now().toString().slice(-6)}`);
+    if (templateType === "SURGICAL") {
+      setReqPriority("URGENT");
+      setReqNotes("OT Emergency Surgical Requisition - Sutures, Sterile Gloves, Blade 11");
+      setReqItems([
+        { item_name: "Surgical Sterile Gloves 7.0 (Pairs)", item_category: "CONSUMABLE", quantity: 50, estimated_unit_cost: 45 },
+        { item_name: "Vicryl 2-0 Suture with Needle", item_category: "SURGICAL", quantity: 20, estimated_unit_cost: 320 },
+        { item_name: "Disposable Surgical Blade No 11", item_category: "SURGICAL", quantity: 100, estimated_unit_cost: 15 },
+      ]);
+    } else if (templateType === "REAGENTS") {
+      setReqPriority("NORMAL");
+      setReqNotes("Monthly Clinical Pathology Diagnostic Reagent Restock");
+      setReqItems([
+        { item_name: "CBC Diluent & Lyse Reagent Pack (20L)", item_category: "LAB_REAGENT", quantity: 2, estimated_unit_cost: 8500 },
+        { item_name: "Serum Creatinine Kit (Jaffe Method)", item_category: "LAB_REAGENT", quantity: 3, estimated_unit_cost: 2400 },
+        { item_name: "Vacutainer EDTA Blood Collection Tubes (100 pcs)", item_category: "CONSUMABLE", quantity: 5, estimated_unit_cost: 650 },
+      ]);
+    } else {
+      setReqPriority("EMERGENCY");
+      setReqNotes("ICU / Emergency Life Support Consumables Restock");
+      setReqItems([
+        { item_name: "Endotracheal Tube Size 7.5 Cuffed", item_category: "MEDICAL_DEVICE", quantity: 10, estimated_unit_cost: 180 },
+        { item_name: "High Flow Oxygen Mask with Reservoir", item_category: "CONSUMABLE", quantity: 15, estimated_unit_cost: 220 },
+        { item_name: "Normal Saline 1000ml Infusion Bags", item_category: "MEDICINE", quantity: 40, estimated_unit_cost: 85 },
+      ]);
+    }
+    setIsReqModalOpen(true);
+  };
+
+  const applyQuickGrnTemplate = () => {
+    setActiveTab("GRN");
+    setGrnNumber(`GRN-${Date.now().toString().slice(-6)}`);
+    setGrnNotes("Standard Stock Delivery from Verified Pharmaceutical Supplier");
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 2);
+    const expDateStr = nextYear.toISOString().split("T")[0];
+    setGrnItems([
+      { item_name: "Inj. Ceftriaxone 1g IV/IM", quantity_received: 100, unit_cost: 125, batch_number: `BCH-${Date.now().toString().slice(-4)}A`, expiry_date: expDateStr },
+      { item_name: "Normal Saline 0.9% 1000ml", quantity_received: 50, unit_cost: 82, batch_number: `BCH-${Date.now().toString().slice(-4)}B`, expiry_date: expDateStr },
+    ]);
+    setIsGrnModalOpen(true);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -313,6 +364,122 @@ export default function ProcurementPage() {
           <span>{successMsg}</span>
         </div>
       )}
+
+      {/* 📦 Baby-Simple Admin Guide Banner for Procurement & GRN */}
+      <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border border-emerald-200 rounded-2xl p-5 shadow-xs transition-all">
+        <div className="flex justify-between items-start cursor-pointer" onClick={() => setShowGuide(!showGuide)}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-600 text-white rounded-xl shadow-xs">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900">
+                  হাসপাতাল প্রকিউরমেন্ট, রিকুইজিশন ও জিআরএন ব্যবহারের সহজ নির্দেশিকা (Easy Procurement & GRN Guide)
+                </h3>
+                <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  Admin Master Guide
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5">
+                হাসপাতালের প্রতিটি ডিপার্টমেন্টের মালামালের চাহিদা, অনুমোদন, চালান গ্রহণ (GRN) ও স্টক নিয়ন্ত্রণের ৪টি সহজ নিয়ম
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="p-1.5 hover:bg-emerald-200/50 rounded-lg text-slate-600 transition cursor-pointer"
+            aria-label="Toggle Guide"
+          >
+            {showGuide ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          </button>
+        </div>
+
+        {showGuide && (
+          <div className="mt-4 pt-4 border-t border-emerald-200/70 space-y-4 text-xs">
+            {/* 4 Steps Visual Flow */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="bg-white/80 p-3.5 rounded-xl border border-emerald-200">
+                <div className="flex items-center gap-2 text-emerald-800 font-bold mb-1">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">১</span>
+                  <span>চাহিদা তৈরি (Requisition)</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  যেকোনো বিভাগ (ওটি, আইসিইউ, ল্যাব) থেকে প্রয়োজনীয় সামগ্রীর তালিকা করে <strong>&quot;New Requisition&quot;</strong> তৈরি করুন।
+                </p>
+              </div>
+
+              <div className="bg-white/80 p-3.5 rounded-xl border border-teal-200">
+                <div className="flex items-center gap-2 text-teal-800 font-bold mb-1">
+                  <span className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center text-[10px]">২</span>
+                  <span>অ্যাডমিন অনুমোদন (Approve)</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  তালিকায় থাকা রিকুইজিশনটি যাচাই করে অ্যাডমিন <strong>&quot;Approve&quot;</strong> বাটনে ক্লিক করে অনুমোদন দেবেন।
+                </p>
+              </div>
+
+              <div className="bg-white/80 p-3.5 rounded-xl border border-sky-200">
+                <div className="flex items-center gap-2 text-sky-800 font-bold mb-1">
+                  <span className="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-[10px]">৩</span>
+                  <span>পণ্য গ্রহণ (Record GRN)</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  সাপ্লায়ার পণ্য ডেলিভারি দিলে চালান দেখে <strong>&quot;Record GRN&quot;</strong>-এ পণ্যের পরিমাণ, ব্যাচ নম্বর ও মেয়াদ এন্ট্রি করুন।
+                </p>
+              </div>
+
+              <div className="bg-white/80 p-3.5 rounded-xl border border-indigo-200">
+                <div className="flex items-center gap-2 text-indigo-800 font-bold mb-1">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">৪</span>
+                  <span>স্টক ও লেজার সিঙ্ক (Auto Sync)</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  জিআরএন সেভ হওয়ামাত্র স্বয়ংক্রিয়ভাবে মেইন ওয়্যারহাউসে স্টক জমা হবে এবং অ্যাকাউন্টিং লেজারে ইনভেন্টরি জার্নাল তৈরি হবে।
+                </p>
+              </div>
+            </div>
+
+            {/* 1-Click Quick Demo Actions */}
+            <div className="bg-white/90 p-3 rounded-xl border border-emerald-300 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="font-bold text-slate-800">১-ক্লিক দ্রুত রিকুইজিশন ও জিআরএন শুরু করুন (Quick Start Templates):</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => applyQuickReqTemplate("SURGICAL")}
+                  className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold rounded-lg border border-emerald-300 text-[11px] transition cursor-pointer"
+                >
+                  ✂️ জরুরি ওটি সার্জিক্যাল মালামাল (OT Supplies)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyQuickReqTemplate("REAGENTS")}
+                  className="px-2.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 font-semibold rounded-lg border border-teal-300 text-[11px] transition cursor-pointer"
+                >
+                  🧪 প্যাথলজি ল্যাব রিএজেন্ট (Lab Reagents)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyQuickReqTemplate("ICU_SUPPLIES")}
+                  className="px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 font-semibold rounded-lg border border-sky-300 text-[11px] transition cursor-pointer"
+                >
+                  🫁 আইসিইউ লাইফ সাপোর্ট সামগ্রী (ICU Consumables)
+                </button>
+                <button
+                  type="button"
+                  onClick={applyQuickGrnTemplate}
+                  className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold rounded-lg border border-indigo-300 text-[11px] transition cursor-pointer flex items-center gap-1"
+                >
+                  <Truck className="w-3.5 h-3.5" /> পণ্য চালান গ্রহণ (Demo GRN)
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 space-x-6">

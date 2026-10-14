@@ -10,6 +10,10 @@ import {
   Plus,
   Loader2,
   RefreshCw,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
 } from "lucide-react";
 import {
   EmployeeRecord,
@@ -42,6 +46,7 @@ export default function HRManagementPage() {
   } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [showGuide, setShowGuide] = useState(true);
 
   // New Employee Modal
   const [showNewEmpModal, setShowNewEmpModal] = useState(false);
@@ -231,6 +236,108 @@ export default function HRManagementPage() {
           {errorMsg}
         </div>
       )}
+
+      {/* 📖 Baby-Simple Admin Guide Banner for HR, Biometrics & Payroll */}
+      <div className="bg-gradient-to-r from-violet-50 via-purple-50 to-sky-50 border border-violet-200 rounded-2xl p-5 shadow-xs transition-all">
+        <div className="flex justify-between items-start cursor-pointer" onClick={() => setShowGuide(!showGuide)}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-violet-600 text-white rounded-xl shadow-xs">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900">
+                  এইচআর, বায়োমেট্রিক হাজিরা ও পেরোল ব্যবহারের সহজ নির্দেশিকা (Easy HR & Biometrics Guide)
+                </h3>
+                <span className="text-[10px] bg-violet-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  Admin Master Guide
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5">
+                হাসপাতালের ডাক্তার ও কর্মচারীদের হাজিরা, ফিঙ্গারপ্রিন্ট ডিভাইস ইন্টিগ্রেশন এবং স্বয়ংক্রিয় বেতন নির্ধারণের ৪টি সহজ ধাপ
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="p-1.5 hover:bg-violet-200/50 rounded-lg text-slate-600 transition cursor-pointer"
+            aria-label="Toggle Guide"
+          >
+            {showGuide ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          </button>
+        </div>
+
+        {showGuide && (
+          <div className="mt-4 pt-4 border-t border-violet-200/70 space-y-4 text-xs">
+            {/* 4 Steps Visual Flow */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="bg-white/80 p-3.5 rounded-xl border border-violet-200">
+                <div className="flex items-center gap-2 text-violet-800 font-bold mb-1">
+                  <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px]">১</span>
+                  <span>স্টাফ রেজিস্ট্রি (Staff Directory)</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  <strong>&quot;Add Staff&quot;</strong> বাটনে ক্লিক করে ডাক্তার, নার্স বা কর্মীর নাম, ফোন, পদবি ও মূল বেতন এন্ট্রি করুন।
+                </p>
+              </div>
+
+              <div className="bg-white/80 p-3.5 rounded-xl border border-purple-200">
+                <div className="flex items-center gap-2 text-purple-800 font-bold mb-1">
+                  <span className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px]">২</span>
+                  <span>ডিভাইস পিন (Biometric Pin)</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  কর্মীর একটি ইউনিক বায়োমেট্রিক পিন দিন যা হাসপাতালের ZKTeco ফিঙ্গারপ্রিন্ট ডিভাইসের আইডি হিসেবে কাজ করবে।
+                </p>
+              </div>
+
+              <div className="bg-white/80 p-3.5 rounded-xl border border-sky-200">
+                <div className="flex items-center gap-2 text-sky-800 font-bold mb-1">
+                  <span className="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-[10px]">৩</span>
+                  <span>স্বয়ংক্রিয় হাজিরা (Attendance)</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  ডিভাইসে আঙুল রাখামাত্র স্বয়ংক্রিয়ভাবে ইন-টাইম ও আউট-টাইম রেকর্ড হবে। দেরিতে আসলে Late মার্ক হবে।
+                </p>
+              </div>
+
+              <div className="bg-white/80 p-3.5 rounded-xl border border-indigo-200">
+                <div className="flex items-center gap-2 text-indigo-800 font-bold mb-1">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">৪</span>
+                  <span>স্বয়ংক্রিয় বেতন (Payroll Run)</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  মাসের শেষে বায়োমেট্রিক উপস্থিতির দিন ও ছুটির নীতি অনুযায়ী স্বয়ংক্রিয়ভাবে নেট বেতন ক্যালকুলেশন হবে।
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Demo Action */}
+            <div className="bg-white/90 p-3 rounded-xl border border-violet-300 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-600 shrink-0" />
+                <span className="font-bold text-slate-800">টেস্ট ও সিমুলেশন অপশন (Quick Actions):</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPunchModal(true)}
+                  className="px-3 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-800 font-bold rounded-lg border border-violet-300 text-[11px] transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <Fingerprint className="w-3.5 h-3.5 text-violet-600" /> টেস্ট বায়োমেট্রিক পাঞ্চ করুন (Simulate Punch)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewEmpModal(true)}
+                  className="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 font-bold rounded-lg border border-sky-300 text-[11px] transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5 text-sky-600" /> নতুন স্টাফ প্রোফাইল যুক্ত করুন
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* TABS HEADER */}
       <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit">

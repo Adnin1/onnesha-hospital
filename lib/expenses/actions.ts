@@ -617,6 +617,11 @@ export async function deleteExpenseAction(params: {
     // Auto-resolve any previous expense delete incidents upon success
     await resolveSystemRuntimeIncident({
       organizationId: session.organizationId,
+      location: "public.delete_hospital_expense_super_admin_atomic",
+      module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
+    });
+    await resolveSystemRuntimeIncident({
+      organizationId: session.organizationId,
       location: "lib/expenses/actions.ts:deleteExpenseAction",
       module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
     });

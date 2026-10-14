@@ -1222,31 +1222,44 @@ export async function dischargePatientAction(params: {
       return { success: false, error: "Failed to load generated discharge summary record." };
     }
 
-    // Secondary safety verification: Confirm bed and cabin are released to VACANT
-    const { data: bedAssign } = await supabase
+    // Secondary safety verification: Confirm all beds and cabins are released to VACANT
+    const { data: bedAssigns } = await supabase
       .from("bed_assignments")
       .select("id, bed_id, cabin_id")
       .eq("visit_id", params.visitId)
-      .eq("organization_id", session.organizationId)
-      .maybeSingle();
+      .eq("organization_id", session.organizationId);
 
-    if (bedAssign && bedAssign.bed_id) {
-      await supabase
-        .from("beds")
-        .update({ status: "VACANT" })
-        .eq("organization_id", session.organizationId)
-        .eq("id", bedAssign.bed_id);
-    }
-
-    if (bedAssign && bedAssign.cabin_id) {
-      if (bedAssign.cabin_id) {
+    if (bedAssigns && bedAssigns.length > 0) {
+      for (const bedAssign of bedAssigns) {
+        if (bedAssign.bed_id) {
+          await supabase
+            .from("beds")
+            .update({ status: "VACANT" })
+            .eq("organization_id", session.organizationId)
+            .eq("id", bedAssign.bed_id);
+        }
+        if (bedAssign.cabin_id) {
+          await supabase
+            .from("cabins")
+            .update({ status: "VACANT" })
+            .eq("organization_id", session.organizationId)
+            .eq("id", bedAssign.cabin_id);
+        }
         await supabase
-          .from("cabins")
-          .update({ status: "VACANT" })
+          .from("bed_assignments")
+          .update({
+            status: "DISCHARGED",
+            discharge_time: new Date().toISOString(),
+          })
           .eq("organization_id", session.organizationId)
-          .eq("id", bedAssign.cabin_id);
+          .eq("id", bedAssign.id);
       }
     }
+
+    // Reconcile ghost bed vacancy drift
+    await supabase.rpc("reconcile_bed_vacancy_drift_atomic", {
+      p_org_id: session.organizationId,
+    });
 
     await supabase
       .from("patient_visits")
@@ -2726,6 +2739,73 @@ export async function getPatientIntakeDossierAction(
     return {
       success: false,
       error: err instanceof Error ? err.message : "Failed to load patient intake dossier.",
+    };
+  }
+}
+
+/**
+ * Cancel or permanently delete an accidental/mistake IPD admission.
+ * Atomically releases all assigned beds/cabins to VACANT and cleans up unbilled snapshots.
+ */
+export async function cancelOrDeleteIpdAdmissionAction(params: {
+  visitId: string;
+  reason?: string;
+  permanentDelete?: boolean;
+}): Promise<ActionResult<{ success: boolean; mode: string; message: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  const canManage =
+    (await hasPermission("ipd.manage")) ||
+    (await hasPermission("ipd.admit")) ||
+    (await hasPermission("ipd.discharge")) ||
+    (await hasPermission("patients.delete"));
+
+  if (!canManage) {
+    return { success: false, error: "403 Forbidden: IPD admission management permission required." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const reason = params.reason?.trim() || "Mistake admission entry cancelled by admin";
+    const permanentDelete = params.permanentDelete !== undefined ? params.permanentDelete : true;
+
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("cancel_or_delete_ipd_admission_atomic", {
+      p_org_id: session.organizationId,
+      p_visit_id: params.visitId,
+      p_admin_id: session.userId,
+      p_reason: reason,
+      p_permanent_delete: permanentDelete,
+    });
+
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message || "Failed to cancel/delete admission." };
+    }
+
+    const res = rpcRes as { success?: boolean; mode?: string; message?: string; error?: string };
+    if (res && res.success === false) {
+      return { success: false, error: res.error || "Failed to cancel/delete admission." };
+    }
+
+    // Reconcile ghost bed vacancy drift
+    await supabase.rpc("reconcile_bed_vacancy_drift_atomic", {
+      p_org_id: session.organizationId,
+    });
+
+    return {
+      success: true,
+      data: {
+        success: true,
+        mode: res?.mode || (permanentDelete ? "DELETED" : "CANCELLED"),
+        message: res?.message || "Admission successfully removed and beds vacated.",
+      },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Error cancelling/deleting admission",
     };
   }
 }

@@ -39,11 +39,60 @@ export async function getDoctorsAction(): Promise<ActionResult<{ doctors: Doctor
       return { success: false, error: error.message };
     }
 
+    let doctorRows = data || [];
+    if (doctorRows.length === 0) {
+      const defaultDocs = [
+        {
+          organization_id: session.organizationId,
+          full_name: "Dr. Md. Mizanur Rahman",
+          degrees: "MBBS, FCPS (Medicine)",
+          designation: "Senior Consultant",
+          specialization: "General Medicine",
+          bmdc_reg_number: "A-48291",
+          phone: "01711-000001",
+          consultation_fee: 800,
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          full_name: "Dr. Fatema Zohra",
+          degrees: "MBBS, DGO, MCPS (Obs & Gynae)",
+          designation: "Consultant Gynecologist",
+          specialization: "Gynecology & Obstetrics",
+          bmdc_reg_number: "A-52104",
+          phone: "01711-000002",
+          consultation_fee: 700,
+          is_active: true,
+        },
+        {
+          organization_id: session.organizationId,
+          full_name: "Dr. Anisur Rahman",
+          degrees: "MBBS, MS (General Surgery)",
+          designation: "Consultant Surgeon",
+          specialization: "General & Laparoscopic Surgery",
+          bmdc_reg_number: "A-39120",
+          phone: "01711-000003",
+          consultation_fee: 800,
+          is_active: true,
+        },
+      ];
+      await supabase.from("doctors").insert(defaultDocs);
+      const refetched = await supabase
+        .from("doctors")
+        .select("*, departments(name)")
+        .eq("organization_id", session.organizationId)
+        .eq("is_active", true)
+        .order("full_name", { ascending: true });
+      if (refetched.data) {
+        doctorRows = refetched.data;
+      }
+    }
+
     interface DoctorDbRow extends Omit<DoctorRecord, "department_name"> {
       departments?: { name: string } | null;
     }
 
-    const doctors: DoctorRecord[] = ((data || []) as unknown as DoctorDbRow[]).map((d) => ({
+    const doctors: DoctorRecord[] = (doctorRows as unknown as DoctorDbRow[]).map((d) => ({
       ...d,
       department_name: d.departments?.name || "General Medicine",
     }));

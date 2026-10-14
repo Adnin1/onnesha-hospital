@@ -176,11 +176,15 @@ export function AddBedOrCabinModal({
                   onChange={(e) => setWardId(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none bg-white"
                 >
-                  {wards.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))}
+                  {wards.length === 0 ? (
+                    <option value="">General Ward (স্বয়ংক্রিয় তৈরি হবে)</option>
+                  ) : (
+                    wards.map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 

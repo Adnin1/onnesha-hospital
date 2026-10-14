@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { generateSvgBarcode } from "@/lib/print/barcode";
+import { HOSPITAL_METADATA } from "@/config/hospital";
 
 export interface DischargeSummaryPrintProps {
   admissionNumber: string;
@@ -141,10 +142,10 @@ function BottomGraphicRibbon() {
     <div className="w-full mt-4">
       <div className="h-4 bg-gradient-to-r from-sky-600 via-cyan-500 to-sky-700 rounded-xs flex items-center justify-between px-4">
         <span className="text-[8px] font-black tracking-widest text-white uppercase opacity-80">
-          ANNESHA HOSPITAL AND DIAGNOSTIC • 24/7 EMERGENCY & INDOOR CARE
+          {HOSPITAL_METADATA.name} • 24/7 EMERGENCY & INDOOR CARE
         </span>
         <span className="text-[8px] font-mono text-white opacity-80">
-          01620-003888 • 01718-835623
+          ☎ {HOSPITAL_METADATA.phone}
         </span>
       </div>
     </div>
@@ -333,7 +334,7 @@ export function DischargeSummaryPrint({
                 সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।
               </p>
               <p className="text-xs font-mono font-bold text-slate-800 mt-0.5">
-                ☎ ০১৬২০-০০৩৮৮৮, ০১৭১৮-৮৩৫৬২৩
+                ☎ {HOSPITAL_METADATA.phone}
               </p>
             </div>
 
@@ -1002,7 +1003,7 @@ export function DischargeSummaryPrint({
               <div className="text-right text-[11px] font-semibold text-slate-700">
                 <p>সোনালী ব্যাংকের সামনে, খান্দার, বগুড়া।</p>
                 <p className="font-mono font-bold text-slate-900">
-                  ☎ ০১৬২০-০০৩৮৮৮, ০১৭১৮-৮৩৫৬২৩
+                  ☎ {HOSPITAL_METADATA.phone}
                 </p>
               </div>
             </div>

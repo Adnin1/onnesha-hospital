@@ -24,6 +24,7 @@ import {
   dischargePatientAction,
   transferPatientAction,
   getDischargeSummaryAction,
+  cancelOrDeleteIpdAdmissionAction,
 } from "@/lib/patient/actions";
 import { searchReferralAgentsAction } from "@/lib/referrals/actions";
 import { getCurrentUserSession } from "@/lib/auth/session";
@@ -73,6 +74,10 @@ export default function IPDAdmissionsPage() {
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showDischargeModal, setShowDischargeModal] = useState(false);
+  const [showCancelAdmissionModal, setShowCancelAdmissionModal] = useState(false);
+  const [cancelAdmissionReason, setCancelAdmissionReason] = useState("");
+  const [cancelAdmissionPermanent, setCancelAdmissionPermanent] = useState(true);
+  const [cancellingAdmission, setCancellingAdmission] = useState(false);
 
   // Form states
   const [admissionForm, setAdmissionForm] = useState({
@@ -248,9 +253,11 @@ export default function IPDAdmissionsPage() {
           });
 
           setInpatients(mapped);
-          if (mapped.length > 0) {
-            setSelectedAdmission((prev) => prev || mapped[0]);
-          }
+          setSelectedAdmission((prev) => {
+            if (!prev) return mapped[0] || null;
+            const stillActive = mapped.find((m) => m.id === prev.id);
+            return stillActive || mapped[0] || null;
+          });
         }
 
         // 2. Fetch available beds
@@ -513,6 +520,35 @@ export default function IPDAdmissionsPage() {
     }
   };
 
+  // Handle Cancel / Delete Mistake Admission Submission
+  const handleCancelAdmissionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAdmission) return;
+    setCancellingAdmission(true);
+    setActionError(null);
+    try {
+      const res = await cancelOrDeleteIpdAdmissionAction({
+        visitId: selectedAdmission.id,
+        reason: cancelAdmissionReason.trim() || "Mistake admission entry cancelled by admin",
+        permanentDelete: cancelAdmissionPermanent,
+      });
+
+      if (!res.success) {
+        setActionError(res.error || "Failed to cancel admission.");
+      } else {
+        setActionSuccess(res.data?.message || "ভর্তি সফলভাবে বাতিল করা হয়েছে এবং বেড মুক্ত করা হয়েছে।");
+        setShowCancelAdmissionModal(false);
+        setSelectedAdmission(null);
+        setCancelAdmissionReason("");
+        setRefreshIndex((prev) => prev + 1);
+      }
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Error cancelling admission.");
+    } finally {
+      setCancellingAdmission(false);
+    }
+  };
+
   // Handle Discharge Submission
   const handleDischargeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -746,6 +782,19 @@ export default function IPDAdmissionsPage() {
                     >
                       <ArrowRightLeft className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
                       Bed Transfer
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActionError(null);
+                        setCancelAdmissionReason("ভুলবশত এন্ট্রি করা হয়েছিল (Mistake admission)");
+                        setCancelAdmissionPermanent(true);
+                        setShowCancelAdmissionModal(true);
+                      }}
+                      className="inline-flex items-center bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+                      title="ভুল ভর্তি বাতিল বা ডাটাবেজ থেকে মুছুন (Cancel / Delete Mistake Admission)"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1.5 text-rose-600" />
+                      ভর্তি বাতিল / মুছুন
                     </button>
                     <button
                       onClick={() => {
@@ -1576,6 +1625,89 @@ export default function IPDAdmissionsPage() {
                 >
                   <FileCheck className="w-4 h-4 mr-2" />
                   {submitting ? "Signing & Discharging..." : "Confirm Discharge & Generate 4-Part Certificate"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel / Delete Mistake Admission Modal */}
+      {showCancelAdmissionModal && selectedAdmission && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-rose-200">
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-rose-100 text-rose-700">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">ভুল ভর্তি বাতিল বা মুছে ফেলুন</h3>
+                  <p className="text-xs text-slate-500">Cancel or Delete Mistake IPD Admission</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCancelAdmissionModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCancelAdmissionSubmit} className="space-y-4 mt-4 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <p className="text-slate-700">
+                  রোগীর নাম: <strong className="text-slate-900">{selectedAdmission.patient_name}</strong> (UHID: {selectedAdmission.patient_code})
+                </p>
+                <p className="text-slate-700">
+                  ভর্তি নম্বর: <strong className="font-mono text-slate-900">{selectedAdmission.visit_number}</strong> • বেড: <strong>{selectedAdmission.bed_number}</strong>
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  নির্ধারিত বেড ও কেবিন তাৎক্ষণিকভাবে মুক্ত (VACANT) করা হবে এবং আনবিল্ড চার্জ বাতিল হবে।
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">বাতিল / মোছার কারণ (Reason) *</label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="যেমন: ভুলবশত এন্ট্রি করা হয়েছিল বা ট্রায়াল এন্ট্রি..."
+                  value={cancelAdmissionReason}
+                  onChange={(e) => setCancelAdmissionReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+
+              <div className="flex items-start gap-2 bg-rose-50/60 p-3 rounded-xl border border-rose-200">
+                <input
+                  type="checkbox"
+                  id="cancelPermanent"
+                  checked={cancelAdmissionPermanent}
+                  onChange={(e) => setCancelAdmissionPermanent(e.target.checked)}
+                  className="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                />
+                <label htmlFor="cancelPermanent" className="text-[11px] text-slate-700 select-none">
+                  <span className="font-bold text-rose-800">ডাটাবেজ থেকে স্থায়ীভাবে মুছে ফেলুন (Permanent Hard Delete)</span>: ভুল ভর্তির কোনো অবশিষ্টাংশ বা ফাঁকা ভিজিট থাকবে না।
+                </label>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelAdmissionModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={cancellingAdmission}
+                  className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition flex items-center shadow-xs disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                  {cancellingAdmission ? "Processing..." : "ভর্তি বাতিল ও বেড মুক্ত করুন"}
                 </button>
               </div>
             </form>
