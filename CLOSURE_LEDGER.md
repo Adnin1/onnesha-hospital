@@ -3,9 +3,9 @@
 
 **Document Classification:** Authoritative Cross-Session Production Ledger  
 **Release Version:** `1.1.90`  
-**Anchor Commit HEAD:** `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` (HEAD)  
+**Anchor Commit HEAD:** `571efe5d3eed7c4d788d9ab500a8034d51360318` (HEAD)  
 **Mainline Provenance:** Verified fast-forward commit on `main` tracked by `ssh-origin/main`  
-**Last Verification Timestamp:** `2026-10-15T04:10:00+06:00`  
+**Last Verification Timestamp:** `2026-10-15T04:40:00+06:00`  
 **Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**
 
 ---
@@ -15,13 +15,13 @@
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
 | **Release Version Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
-| **Commit HEAD SHA** | `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` | `git rev-parse HEAD` on `main` |
-| **Lineage Parent** | `a02e682cba69939480fab75a823d0544bc9be2cd` | `git log -1 --pretty=%P` |
+| **Commit HEAD SHA** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | `git rev-parse HEAD` on `main` |
+| **Lineage Parent** | `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push ssh-origin main` |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK, HSTS preload, CSP) |
-| **Cloudflare Deployment ID** | `92d99f9c` | Wrangler Pages production deployment |
+| **Cloudflare Deployment ID** | `df3c7a66` | Wrangler Pages production deployment |
 | **GitHub Actions Pipeline** | `OHMS CI Quality, Security & Desktop Pipeline` | GitHub Actions API |
-| **CI Exact-HEAD Run** | **Run #638 (SUCCESS)** on `b5c76ba` | Verified via GitHub REST API |
+| **CI Exact-HEAD Run** | **Run #639 (SUCCESS)** on `571efe5` | Verified via GitHub REST API |
 | **CI Staging Gate Semantics** | G10 Live Staging Isolated as Owner Prerequisite; Hermetic Pass | Zero False-Green Verification |
 
 ---
@@ -36,8 +36,8 @@
 | **Security Tester v2** | 100% | **5 / 5 tests passing** (`phase40-security-tester-v2`) | ✅ PASS |
 | **TypeScript Strict Mode** | 0 Errors | **0 errors** (`tsc --noEmit`) | ✅ PASS |
 | **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint .`) | ✅ PASS |
-| **Supabase Remote Migrations** | 100% | **200 / 200 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
-| **Database Linting** | 0 Fatal Errors | **0 fatal errors** | ✅ PASS |
+| **Supabase Remote Migrations** | 100% | **203 / 203 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
+| **Database Linting** | 0 Fatal Errors | **0 fatal errors across all schemas** (`npx supabase db lint --linked`) | ✅ PASS |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ PASS |
 | **Prerendered Website Routes** | 100% | **63 physical routes generated & audited** (`out/`) | ✅ PASS |
 | **Route Acceptance Audit** | 100% | **62 / 62 HTML routes PASS** (`node scripts/website-route-acceptance.mjs`) | ✅ PASS |

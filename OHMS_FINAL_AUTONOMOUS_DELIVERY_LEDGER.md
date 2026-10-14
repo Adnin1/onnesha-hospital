@@ -1,11 +1,11 @@
 # OHMS FINAL AUTONOMOUS DELIVERY LEDGER
 
 **Project:** Onnesha Hospital Management System (OHMS)  
-**Baseline SHA:** `bfc862d44499a137ad6f82604cd69db46baede9a`  
-**Version:** `1.1.47`  
+**Baseline SHA:** `571efe5d3eed7c4d788d9ab500a8034d51360318`  
+**Version:** `1.1.90`  
 **Target Live Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Instance:** `iuhtzahuszdkdarhxobx.supabase.co`  
-**Last Updated:** 2026-10-06T02:48:00+06:00  
+**Last Updated:** 2026-10-15T04:40:00+06:00  
 
 ---
 
@@ -14,48 +14,48 @@
 ### TRACK 1: Current HEAD & CI Provenance Reconciliation
 - **ID:** `TRK-01-CI-PROVENANCE`
 - **DOMAIN:** `DevOps / CI / Git Provenance`
-- **PREVIOUS STATE:** Commit `d9c884f` / `9739143` legacy status API returned 0 checks; CI Check Runs vs status mismatch unexplained.
-- **CURRENT STATE:** Check Runs API (`/check-runs`) queried directly. `Mandatory CI` passed all 13 steps; `Dedicated Staging Live Security Gate` failed-closed on missing secrets G10 by design.
-- **DELTA EVIDENCE:** GitHub API Check Runs telemetry for run 37367188220 and run 37370900597.
+- **PREVIOUS STATE:** Commit `b5c76ba` (Run #638) verified.
+- **CURRENT STATE:** Commit `571efe5` verified. CI Run #639 completed successfully (conclusion: `success`). Check runs API queried directly.
+- **DELTA EVIDENCE:** GitHub Actions Run ID `38645884376` (Run #639).
 - **STATUS:** `VERIFIED`
 - **BLOCKER:** None
 - **OWNER ACTION:** Configure GitHub Actions secrets for staging gate G10.
 - **NEXT ACTION:** Maintain fail-closed verification loop.
-- **COMMIT SHA:** `bfc862d44499a137ad6f82604cd69db46baede9a`
-- **TEST COMMAND:** `node -e "fetch('https://api.github.com/repos/Adnin1/onnesha-hospital/commits/bfc862d/check-runs')"`
-- **TEST RESULT:** `PASS: 4 check runs registered, Mandatory CI green`
+- **COMMIT SHA:** `571efe5d3eed7c4d788d9ab500a8034d51360318`
+- **TEST COMMAND:** `node -e "fetch('https://api.github.com/repos/Adnin1/onnesha-hospital/actions/runs/38645884376')"`
+- **TEST RESULT:** `PASS: Run #639 green`
 
 ---
 
 ### TRACK 2: Website Deep Audit, UI/UX, SEO & Accessibility
 - **ID:** `TRK-02-WEBSITE-AUDIT`
 - **DOMAIN:** `Frontend / UX / SEO / Accessibility`
-- **PREVIOUS STATE:** Website routes functional; needed fresh audit against WCAG 2.2 AA, responsive 320px viewport, and schema.org structured data.
-- **CURRENT STATE:** 59 routes audited, 0 broken asset references, semantic H1 and landmarks on all pages, 0 horizontal overflow at 320x640, schema.org JSON-LD for hospital and doctors pre-rendered at build time.
-- **DELTA EVIDENCE:** `node scripts/website-route-acceptance.mjs` (59/59 pass), `node scripts/website-link-asset-forensics.mjs` (0 broken links).
+- **PREVIOUS STATE:** 59 routes audited.
+- **CURRENT STATE:** 62 static HTML routes audited, 0 broken asset references, semantic landmarks, 0 horizontal overflow, Schema.org JSON-LD pre-rendered at build time.
+- **DELTA EVIDENCE:** `node scripts/website-route-acceptance.mjs` (62/62 pass), `node scripts/website-link-asset-forensics.mjs` (0 broken links).
 - **STATUS:** `PASS`
 - **BLOCKER:** None
 - **OWNER ACTION:** Review physical address transliteration under Gate G14.
 - **NEXT ACTION:** Monitor Core Web Vitals on live edge.
-- **COMMIT SHA:** `bfc862d44499a137ad6f82604cd69db46baede9a`
+- **COMMIT SHA:** `571efe5d3eed7c4d788d9ab500a8034d51360318`
 - **TEST COMMAND:** `npm run audit:routes && npm run audit:assets`
-- **TEST RESULT:** `PASS: 59 routes 200 OK, 380 links valid, 1056 assets intact`
+- **TEST RESULT:** `PASS: 62 routes 200 OK, 394 links valid, 1231 assets intact`
 
 ---
 
 ### TRACK 3: Supabase Database, RLS, Auth & Financial Integrity
 - **ID:** `TRK-03-SUPABASE-RLS`
 - **DOMAIN:** `Database / RLS / Auth / Accounting`
-- **PREVIOUS STATE:** 108 migrations applied; fresh linked db lint and RLS policy verification needed.
-- **CURRENT STATE:** 108/108 migrations in 100% parity (`local === remote`). DB lint 0 fatal errors. Anonymous table reads shielded on `patients`, `invoices`, and `integrations`. Stored procedures enforce tenant boundary and double-entry accounting.
-- **DELTA EVIDENCE:** `npx supabase migration list` output, `node scripts/smoke_test.mjs` Layer C & D passes.
+- **PREVIOUS STATE:** 200 migrations applied.
+- **CURRENT STATE:** 203/203 migrations in 100% parity (`local === remote`). DB lint 0 fatal errors. Anonymous table reads shielded. Stored procedures enforce tenant boundary and fail-closed reproducers.
+- **DELTA EVIDENCE:** `npx supabase migration list` output, `npx supabase db lint --linked` clean output.
 - **STATUS:** `VERIFIED`
 - **BLOCKER:** None
 - **OWNER ACTION:** Periodic DB backup & PITR configuration (Gate G11).
 - **NEXT ACTION:** Staging penetration test once G10 secrets are configured.
-- **COMMIT SHA:** `bfc862d44499a137ad6f82604cd69db46baede9a`
+- **COMMIT SHA:** `571efe5d3eed7c4d788d9ab500a8034d51360318`
 - **TEST COMMAND:** `npx supabase migration list && npx supabase db lint --linked`
-- **TEST RESULT:** `PASS: 108 migrations in parity, 0 fatal lint errors`
+- **TEST RESULT:** `PASS: 203 migrations in parity, 0 fatal lint errors`
 
 ---
 

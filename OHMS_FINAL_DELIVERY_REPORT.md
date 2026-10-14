@@ -4,10 +4,10 @@
 **Document Version:** `1.1.90`  
 **Classification:** Authoritative Technical Baseline & Production Certification  
 **Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**  
-**Execution Timestamp:** `2026-10-15T04:10:00+06:00`  
+**Execution Timestamp:** `2026-10-15T04:40:00+06:00`  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
-**Cloudflare Deployment Preview:** `https://92d99f9c.onnesha-hospital.pages.dev`  
-**Live Supabase Database:** `https://iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, 200 migrations synchronized)  
+**Cloudflare Deployment Preview:** `https://df3c7a66.onnesha-hospital.pages.dev`  
+**Live Supabase Database:** `https://iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, 203 migrations synchronized)  
 
 ---
 
@@ -15,13 +15,13 @@
 
 | Dimension | Measured Production Ground Truth | Verification Command / Evidence |
 |:---|:---|:---:|
-| **Synchronized Git HEAD** | `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` | `git rev-parse HEAD` on `main` |
-| **Immediate Parent Commit** | `a02e682cba69939480fab75a823d0544bc9be2cd` | `git log -1 --pretty=%P` |
-| **Deployed Code Commit** | `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` | Wrangler Deployment Record (`--commit-dirty=false`) |
+| **Synchronized Git HEAD** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | `git rev-parse HEAD` on `main` |
+| **Immediate Parent Commit** | `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` | `git log -1 --pretty=%P` |
+| **Deployed Code Commit** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Release Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml`, `latest.json` |
 | **Remote Parity** | `origin/main` & `ssh-origin/main` in 100% sync | `git push ssh-origin main` (clean) |
-| **Cloudflare Deployment ID**| `92d99f9c` | Wrangler Cloudflare Pages deployment API |
-| **Observed GitHub Actions** | Run ID `38644340282` (Run #638 - **SUCCESS**) | GitHub Actions REST API (`head_sha: b5c76ba`) |
+| **Cloudflare Deployment ID**| `df3c7a66` | Wrangler Cloudflare Pages deployment API |
+| **Observed GitHub Actions** | Run ID `38645884376` (Run #639 - **SUCCESS**) | GitHub Actions REST API (`head_sha: 571efe5`) |
 | **CI Staging Gate Behavior** | Fail-Closed at Gate G10 (`OHMS_TEST_SUPABASE_URL` / Service Key missing) | Security Invariant Verified |
 
 ---
@@ -36,12 +36,13 @@
 | **Security Tester v2 Tests** | 100% Passing | **5 / 5 tests passed** (`phase40-security-tester-v2`) | ✅ **PASS** |
 | **TypeScript Strict Compilation** | 0 Errors | **0 errors** (`npm run typecheck` / `tsc --noEmit`) | ✅ **PASS** |
 | **ESLint Static Analysis** | 0 Warnings | **0 errors, 0 warnings** (`npm run lint` / `eslint .`) | ✅ **PASS** |
-| **Database Migrations** | 100% Schema Parity | **200 / 200 migrations synchronized** (`npx supabase migration list`) | ✅ **PASS** |
-| **Database Linting** | 0 Fatal Errors | **0 fatal violations** across public, private, extensions schemas | ✅ **PASS** |
+| **Database Migrations** | 100% Schema Parity | **203 / 203 migrations synchronized** (`npx supabase migration list`) | ✅ **PASS** |
+| **Database Linting** | 0 Fatal Errors | **0 fatal violations across all schemas** (`npx supabase db lint --linked`) | ✅ **PASS** |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ **PASS** |
-| **Playwright Real Browser E2E**| 100% Specs | **50 / 50 browser specs passed** (Chromium, 58.0s) | ✅ **PASS** |
-| **Playwright Multi-Browser** | 100% Multi-Engine | **200 / 200 specs passed** across Chromium, Firefox, WebKit, Mobile-Chrome | ✅ **PASS** |
-| **Static Pre-rendered Routes** | 100% SSG Output | **61 static routes generated** (`next build`, `output: "export"`) | ✅ **PASS** |
+| **Playwright Real Browser E2E**| 100% Specs | **7 / 7 Chromium specs passed on live production** | ✅ **PASS** |
+| **Static Pre-rendered Routes** | 100% SSG Output | **63 static routes generated** (`next build`, `output: "export"`) | ✅ **PASS** |
+| **Route Acceptance Audit** | 100% HTML Routes | **62 / 62 static HTML routes PASS** (`scripts/website-route-acceptance.mjs`) | ✅ **PASS** |
+| **Static Link & Asset Forensics** | 100% Zero Broken | **394 internal links, 1231 assets, 0 broken** (`scripts/website-link-asset-forensics.mjs`) | ✅ **PASS** |
 | **Four-Layer Edge Smoke Probes**| 100% Layers | **Layer A (15/15), B (4/4), C (3/3), D (2/2) PASSED** | ✅ **PASS** |
 
 ---
