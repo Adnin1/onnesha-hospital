@@ -4,7 +4,7 @@
 **Document Version:** `1.1.90`  
 **Classification:** Authoritative Technical Baseline & Production Certification  
 **Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**  
-**Execution Timestamp:** `2026-10-15T05:30:00+06:00`  
+**Execution Timestamp:** `2026-10-15T06:00:00+06:00`  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Cloudflare Deployment Preview:** `https://653b5791.onnesha-hospital.pages.dev`  
 **Live Supabase Database:** `https://iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, 203 migrations synchronized)  
@@ -15,14 +15,14 @@
 
 | Dimension | Measured Production Ground Truth | Verification Command / Evidence |
 |:---|:---|:---:|
-| **Repository HEAD SHA** | `fe507831a23146bd5ec8be9b541de6358ff09c6f` | `git rev-parse HEAD` on `main` |
+| **Repository HEAD SHA (Snapshot)** | `9580a95e764f3a0b021f124b4b50f987fd319a1e` | `git rev-parse HEAD` on `main` |
 | **Application Source Release SHA** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | Core application code & migrations release |
 | **Immediate Parent Commit** | `85368f90e32428cf16ac7ff6734242d7d1cabdcb` | `git log -1 --pretty=%P` |
 | **Deployed Code Commit** | `fe507831a23146bd5ec8be9b541de6358ff09c6f` | Wrangler Deployment Record (`--commit-dirty=false`) |
 | **Release Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml`, `latest.json` |
 | **Remote Parity** | `origin/main` & `ssh-origin/main` in 100% sync | `git push ssh-origin main` (clean) |
 | **Cloudflare Deployment ID**| `653b5791` (prev: `37d00836`) | Wrangler Cloudflare Pages deployment API |
-| **Observed GitHub Actions** | Run ID `38652670713` (Run #641 - **SUCCESS**) | GitHub Actions REST API (`head_sha: fe50783`) |
+| **Observed GitHub Actions** | Run ID `38654634510` (Run #642 - **SUCCESS**) | GitHub Actions REST API (`head_sha: 9580a95`) |
 | **CI Staging Gate Behavior** | Fail-Closed at Gate G10 (`OHMS_TEST_SUPABASE_URL` / Service Key missing) | Security Invariant Verified |
 
 ---

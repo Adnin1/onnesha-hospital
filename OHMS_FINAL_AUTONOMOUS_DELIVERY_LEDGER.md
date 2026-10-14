@@ -1,12 +1,12 @@
 # OHMS FINAL AUTONOMOUS DELIVERY LEDGER
 
 **Project:** Onnesha Hospital Management System (OHMS)  
-**Repository HEAD SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (`fe50783`)  
+**Repository HEAD SHA (Snapshot):** `9580a95e764f3a0b021f124b4b50f987fd319a1e` (`9580a95`)  
 **Application Source SHA:** `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (`85368f9`)  
 **Version:** `1.1.90`  
 **Target Live Host:** `https://onnesha-hospital.pages.dev` (Deployment `653b5791`)  
 **Supabase Instance:** `iuhtzahuszdkdarhxobx.supabase.co`  
-**Last Updated:** 2026-10-15T05:30:00+06:00  
+**Last Updated:** 2026-10-15T06:00:00+06:00  
 
 ---
 
@@ -15,16 +15,16 @@
 ### TRACK 1: Current HEAD & CI Provenance Reconciliation
 - **ID:** `TRK-01-CI-PROVENANCE`
 - **DOMAIN:** `DevOps / CI / Git Provenance`
-- **PREVIOUS STATE:** Commit `85368f9` (Run #640) verified.
-- **CURRENT STATE:** Commit `fe50783` verified. CI Run #641 completed successfully (conclusion: `success`). Check runs API queried directly.
-- **DELTA EVIDENCE:** GitHub Actions Run ID `38652670713` (Run #641).
+- **PREVIOUS STATE:** Commit `fe50783` (Run #641) verified.
+- **CURRENT STATE:** Commit `9580a95` verified. CI Run #642 completed successfully (conclusion: `success`). Check runs API queried directly.
+- **DELTA EVIDENCE:** GitHub Actions Run ID `38654634510` (Run #642).
 - **STATUS:** `VERIFIED`
 - **BLOCKER:** None
 - **OWNER ACTION:** Configure GitHub Actions secrets for staging gate G10.
 - **NEXT ACTION:** Maintain fail-closed verification loop.
-- **COMMIT SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (docs) / `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (app)
-- **TEST COMMAND:** `node -e "fetch('https://api.github.com/repos/Adnin1/onnesha-hospital/actions/runs/38652670713')"`
-- **TEST RESULT:** `PASS: Run #641 green`
+- **COMMIT SHA:** `9580a95e764f3a0b021f124b4b50f987fd319a1e` (docs) / `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (app)
+- **TEST COMMAND:** `node -e "fetch('https://api.github.com/repos/Adnin1/onnesha-hospital/actions/runs/38654634510')"`
+- **TEST RESULT:** `PASS: Run #642 green`
 
 ---
 
@@ -70,7 +70,7 @@
 - **BLOCKER:** None
 - **OWNER ACTION:** Point custom domain DNS to Cloudflare (Gate G16).
 - **NEXT ACTION:** Monitor Cloudflare Web Analytics.
-- **COMMIT SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (docs) / `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (app)
+- **COMMIT SHA:** `9580a95e764f3a0b021f124b4b50f987fd319a1e` (docs) / `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (app)
 - **TEST COMMAND:** `node scripts/smoke_test.mjs`
 - **TEST RESULT:** `PASS: Layer A (15/15), Layer B (4/4), Layer C (3/3), Layer D (2/2) all 100%`
 
@@ -86,7 +86,7 @@
 - **BLOCKER:** CI release job skipped due to Gate G10.
 - **OWNER ACTION:** Authenticode EV Code Signing (Gate G15) and G10 secrets.
 - **NEXT ACTION:** Attach signed binaries to GitHub Release `v1.1.90`.
-- **COMMIT SHA:** `fe507831a23146bd5ec8be9b541de6358ff09c6f` (docs) / `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (app)
+- **COMMIT SHA:** `9580a95e764f3a0b021f124b4b50f987fd319a1e` (docs) / `85368f90e32428cf16ac7ff6734242d7d1cabdcb` (app)
 - **TEST COMMAND:** `node -e "assert.equal(require('./public/downloads/desktop/latest.json').version, '1.1.90')"`
 - **TEST RESULT:** `PASS: Manifest reconciled, SHA-256 verified for v1.1.90`
 
