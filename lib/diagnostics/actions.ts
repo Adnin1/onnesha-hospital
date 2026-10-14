@@ -193,11 +193,28 @@ export async function resolveSystemRuntimeIssueAction(payload: {
 }): Promise<number> {
   try {
     const supabase = createClient();
+    const isUuid = Boolean(
+      payload.issueId &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.issueId)
+    );
+    const cleanIssueId = isUuid ? payload.issueId : null;
+    let cleanLocation = payload.location || null;
+    let cleanModule = payload.module || null;
+
+    if (
+      payload.issueId === "OPEN_RUNTIME_INCIDENTS_ACTIVE" ||
+      payload.module === "সিস্টেম রানটাইম ইনসিডেন্ট লগ (Incident Management)" ||
+      payload.module === "ALL"
+    ) {
+      cleanLocation = "public.system_health_issues_log";
+      cleanModule = null;
+    }
+
     const { data, error } = await supabase.rpc("resolve_system_runtime_issue", {
       p_org_id: payload.organizationId || null,
-      p_module: payload.module || null,
-      p_issue_id: payload.issueId || null,
-      p_location: payload.location || null,
+      p_module: cleanModule,
+      p_issue_id: cleanIssueId,
+      p_location: cleanLocation,
     });
     if (error) {
       console.error("[HealthDiagnostics] Failed to resolve runtime issue:", error);

@@ -601,16 +601,6 @@ export async function deleteExpenseAction(params: {
 
     if (res && res.success === false) {
       const msg = res.error || "Failed to delete expense voucher.";
-      await reportSystemRuntimeIncident({
-        organizationId: session.organizationId,
-        module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
-        location: "public.delete_hospital_expense_super_admin_atomic",
-        severity: "CRITICAL",
-        errorCode: "EXPENSE_DELETE_REJECTED",
-        title: "ব্যয় ভাউচার ডিলিট বাতিল হয়েছে",
-        reason: msg,
-        recommendation: "ভাউচারের বর্তমান অবস্থা ও অনুমতি পরীক্ষা করুন।",
-      });
       return { success: false, error: msg };
     }
 

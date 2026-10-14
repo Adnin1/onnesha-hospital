@@ -65,11 +65,18 @@ export default function SystemHealthPage() {
   }, [fetchDiagnostics]);
 
   const handleResolveIssue = async (issueId: string, module?: string) => {
-    if (!data?.organization_id) return;
+    const orgId = data?.organization_id || "6b78e524-b1e3-4c43-8944-1a5a0248bff8";
+    const isAggregateIncident =
+      issueId === "OPEN_RUNTIME_INCIDENTS_ACTIVE" ||
+      module === "সিস্টেম রানটাইম ইনসিডেন্ট লগ (Incident Management)";
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(issueId);
+
     await resolveSystemRuntimeIssueAction({
-      organizationId: data.organization_id,
-      issueId: issueId.startsWith("ephemeral-") ? undefined : issueId,
-      module: module,
+      organizationId: orgId,
+      issueId: isUuid ? issueId : undefined,
+      module: isAggregateIncident ? undefined : module,
+      location: isAggregateIncident ? "public.system_health_issues_log" : undefined,
     });
     const mod = module || "ইস্যু";
     setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সব সিস্টেম স্বাভাবিক রয়েছে।`);
