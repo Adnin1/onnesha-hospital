@@ -38,7 +38,7 @@
 | **Security Tester v2** | 100% | **5 / 5 tests passing** (`phase40-security-tester-v2`) | ✅ PASS |
 | **TypeScript Strict Mode** | 0 Errors | **0 errors** (`tsc --noEmit`) | ✅ PASS |
 | **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint .`) | ✅ PASS |
-| **Supabase Remote Migrations** | 100% | **203 / 203 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
+| **Supabase Remote Migrations** | 100% | **204 / 204 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
 | **Database Linting** | 0 Fatal Errors | **0 fatal errors across all schemas** (`npx supabase db lint --linked`) | ✅ PASS |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ PASS |
 | **Prerendered Website Routes** | 100% | **63 physical routes generated & audited** (`out/`) | ✅ PASS |
@@ -105,8 +105,13 @@
 
 12. **`FEAT-REF-01` (Enterprise Referral & Affiliate Partner Commission Subsystem):**
     - *Scope:* Delivered complete partner referral module featuring 1%–40% commission bounds, discount-aware net billing base (`commission_base = grand_total`), non-retroactive rate change history, multi-invoice payout settlements, double-entry General Ledger coupling (Accounts 2030 & 5400), cashier/patient invoice confidentiality, and IPD admission attribution.
-    - *Database:* Migration `20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 203/203 parity and 0 fatal lint errors.
+    - *Database:* Migration `20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 204/204 parity and 0 fatal lint errors.
     - *Verification:* Verified via `tests/integration/referral-commission-system.test.mjs` (14/14 tests passing) and `tests/security/referral-rbac-and-isolation.test.mjs` (6/6 tests passing); total 150 suites passing (1,349 tests passed).
+
+13. **`FIX-BILL-01` (Super Admin Invoice & Expense Purge and Reversal Mechanics - Migration 204):**
+    - *Problem:* Deletion of invoices with settled payments failed with `"Cannot permanently purge active settled invoice with payments"`. Expense voucher reversals failed with `"Immutable Journal Line Error: Cannot insert lines into already posted/reversed entry"`.
+    - *Fix:* Delivered `supabase/migrations/20261015090000_harden_super_admin_invoice_and_expense_purge_reversal.sql`. Hardened `delete_invoice_super_admin_atomic` to enable true administrative purge with `override_journal_immutability = 'on'`, unlinking dependent FK records, purging invoice items, payments, and invoices atomically. Hardened `delete_hospital_expense_super_admin_atomic` to create reversal journals in `DRAFT` status before line insertion, then transitioning to `POSTED`. Auto-resolved pending incident records in `system_health_issues_log`.
+    - *Verification:* Verified via remote execution on Supabase (`OH-INV-100021` successfully purged, 0 orphaned rows), `npx supabase db lint --linked` (0 fatal errors), and `npm test` (150/150 suites passing).
 
 ---
 
