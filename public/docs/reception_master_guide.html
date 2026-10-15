@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onnesha Hospital - Reception Master Operating Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0D47A1;
+      --primary-light: #1E88E5;
+      --teal: #00897B;
+      --teal-light: #E0F2F1;
+      --accent: #FF6F00;
+      --success: #2E7D32;
+      --danger: #C62828;
+      --bg: #F4F7FB;
+      --surface: #FFFFFF;
+      --text-main: #1A202C;
+      --text-muted: #4A5568;
+      --border: #E2E8F0;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+      --shadow-md: 0 8px 24px rgba(13,71,161,0.08);
+      --shadow-lg: 0 16px 36px rgba(13,71,161,0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Hind Siliguri', 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, #1565C0 100%);
+      color: white;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(13,71,161,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-badge {
+      background: rgba(255,255,255,0.2);
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .header-title h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .header-title p {
+      font-size: 0.85rem;
+      color: #B3E5FC;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-download {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 2px 6px rgba(255,111,0,0.3);
+    }
+
+    .btn-download:hover {
+      background: #E65100;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.25);
+    }
+
+    .slide-progress {
+      background: rgba(255,255,255,0.1);
+      height: 4px;
+      width: 100%;
+    }
+
+    .slide-progress-bar {
+      height: 100%;
+      background: #00E676;
+      width: 8.33%;
+      transition: width 0.3s ease;
+    }
+
+    .main-container {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide-deck {
+      position: relative;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      min-height: 580px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide-content {
+      padding: 2.5rem;
+      flex: 1;
+      display: none;
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .slide-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide-tag {
+      align-self: flex-start;
+      background: var(--teal-light);
+      color: var(--teal);
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .slide-heading {
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      line-height: 1.25;
+    }
+
+    .slide-subheading {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .guide-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .guide-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-light);
+    }
+
+    .card-icon-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: white;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .card-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .card-list li {
+      font-size: 0.95rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      line-height: 1.45;
+    }
+
+    .card-list li::before {
+      content: "✔";
+      color: var(--teal);
+      font-weight: bold;
+      font-size: 0.9rem;
+      margin-top: 1px;
+    }
+
+    .simulator-box {
+      margin-top: 1.5rem;
+      background: white;
+      border: 2px dashed var(--teal);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .simulator-title {
+      font-weight: 700;
+      color: var(--teal);
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Thermal receipt preview */
+    .receipt-paper {
+      width: 290px;
+      background: #FFF;
+      border: 1px solid #CCC;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 1.2rem;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.82rem;
+      color: #111;
+      margin: 0 auto;
+      border-radius: 4px;
+      line-height: 1.3;
+    }
+
+    .receipt-header {
+      text-align: center;
+      border-bottom: 1px dashed #666;
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .receipt-header h3 {
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    .receipt-token {
+      font-size: 1.8rem;
+      font-weight: 900;
+      text-align: center;
+      margin: 0.4rem 0;
+      background: #E8F5E9;
+      padding: 0.2rem;
+      border-radius: 4px;
+    }
+
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.25rem;
+    }
+
+    .deck-footer {
+      background: white;
+      border-top: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .deck-nav-btn {
+      padding: 0.65rem 1.4rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-prev {
+      background: var(--bg);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+
+    .btn-prev:hover:not(:disabled) {
+      background: #E2E8F0;
+    }
+
+    .btn-next {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-next:hover {
+      background: #1565C0;
+    }
+
+    .deck-nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .slide-counter {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Bed Matrix Grid */
+    .bed-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .bed-cell {
+      padding: 1rem 0.5rem;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .bed-cell:hover {
+      transform: scale(1.05);
+    }
+
+    .bed-available {
+      background: #E8F5E9;
+      color: #2E7D32;
+      border: 2px solid #81C784;
+    }
+
+    .bed-occupied {
+      background: #FFEBEE;
+      color: #C62828;
+      border: 2px solid #E57373;
+    }
+
+    .bed-cleaning {
+      background: #FFF8E1;
+      color: #F57F17;
+      border: 2px solid #FFE082;
+    }
+
+    @media (max-width: 768px) {
+      .header-title h1 { font-size: 1rem; }
+      .header-actions .btn-text { display: none; }
+      .slide-content { padding: 1.5rem 1rem; }
+      .slide-heading { font-size: 1.4rem; }
+      .card-grid { grid-template-columns: 1fr; }
+      .bed-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-logo">
+      <div class="logo-badge">🏥</div>
+      <div class="header-title">
+        <h1>অন্বেষা হাসপাতাল ম্যানেজমেন্ট সিস্টেম (OHMS)</h1>
+        <p>রিসেপশন মাস্টার অপারেটিং গাইড • সংস্করণ ১.১.৯০</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="ONNESHA_HOSPITAL_RECEPTION_BABY_STEP_GUIDE.pptx" download class="btn btn-download">
+        <span>📥</span>
+        <span class="btn-text">পাওয়ারপয়েন্ট স্লাইড ডাউনলোড (.PPTX)</span>
+      </a>
+      <a href="RECEPTIONIST_A_TO_Z_OPERATING_MANUAL.md" target="_blank" class="btn btn-secondary">
+        <span>📖</span>
+        <span class="btn-text">সম্পূর্ণ SOP ম্যানুয়াল</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="slide-progress">
+    <div class="slide-progress-bar" id="progressBar"></div>
+  </div>
+
+  <main class="main-container">
+    <div class="slide-deck">
+      
+      <!-- SLIDE 1: INTRO -->
+      <div class="slide-content active" data-slide="1">
+        <div class="slide-tag">✨ পরিচিতি ও স্বাগত</div>
+        <h2 class="slide-heading">রিসেপশন এ-টু-জেড সম্পূর্ণ মাস্টার ট্রেনিং প্রেজেন্টেশন</h2>
+        <p class="slide-subheading">হাসপাতালের নতুন রিসেপশনিস্ট বা ছোট বাচ্চার মতো সহজ ধাপে সম্পূর্ণ সফটওয়্যার পরিচালনার নির্দেশিকা।</p>
+        
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">🚀</div>
+              <div class="card-title">কাউন্টারের জিরো-এরর গ্যারান্টি</div>
+            </div>
+            <ul class="card-list">
+              <li>রোগী আসার পর মাত্র ৩০ সেকেন্ডে টোকেন ও টিকিট প্রিন্ট।</li>
+              <li>ডাক্তারদের শিডিউল ও উপস্থিতির লাইভ তথ্য এক ক্লিকে।</li>
+              <li>ক্যাশ ও বিকাশ পেমেন্টের প্রতিটি পয়সার স্বয়ংক্রিয় হিসাব।</li>
+              <li>ভুল হলে কোন ভীতি ছাড়াই নিরাপদ সংশোধনের সুব্যবস্থা।</li>
+            </ul>
+          </div>
+
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">💻</div>
+              <div class="card-title">সিস্টেম পরিচিতি</div>
+            </div>
+            <ul class="card-list">
+              <li>ওয়েবসাইট: <strong>https://onnesha-hospital.pages.dev</strong></li>
+              <li>ক্লাউড নিরাপত্তা: ২৪/৭ লাইভ ও ডাটাবেস অটো-ব্যাকআপ।</li>
+              <li>৮০ মিমি থার্মাল প্রিন্টারে প্রেসক্রিপশন ও টোকেন স্লিপ।</li>
+              <li>টেলিগ্রাম অটোমেশন সাপোর্ট সার্বক্ষণিক সচল।</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="simulator-box" style="margin-top:2rem;">
+          <div class="simulator-title">💡 কীভাবে এই প্রেজেন্টেশন ব্যবহার করবেন?</div>
+          <p style="font-size:0.95rem; color:var(--text-muted);">
+            পরবর্তী ধাপে যেতে নিচের <strong>"পরবর্তী ধাপ ➡"</strong> বাটনে ক্লিক করুন অথবা কীবোর্ডের <strong>Right Arrow (➡)</strong> চাপুন। পেছনের ধাপে যেতে <strong>Left Arrow (⬅)</strong> চাপুন।
+          </p>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: LOGIN & CASH OPEN -->
+      <div class="slide-content" data-slide="2">
+        <div class="slide-tag">ধাপ ০১ • শুরু</div>
+        <h2 class="slide-heading">১. সকালের লগইন ও ক্যাশ ড্রয়ার ওপেন</h2>
+        <p class="slide-subheading">সকালে কাউন্টারে বসে ডিউটি শুরু করার ৩টি সহজ প্রাথমিক ধাপ।</p>
+
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">🔑</div>
+              <div class="card-title">লগইন প্রোটোকল</div>
+            </div>
+            <ul class="card-list">
+              <li>ব্রাউজারে <strong>onnesha-hospital.pages.dev</strong> লিঙ্ক খুলুন।</li>
+              <li>আপনার জন্য নির্ধারিত ইউজার আইডি ও পাসওয়ার্ড লিখুন।</li>
+              <li>কাউন্টার নম্বর সিলেক্ট করুন (কাউন্টার ১ বা ২)।</li>
+              <li>"Login" বাটনে ক্লিক করলেই মূল ড্যাশবোর্ড চলে আসবে।</li>
+            </ul>
+          </div>
+
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">💵</div>
+              <div class="card-title">ওপেনিং ক্যাশ ঘোষণা</div>
+            </div>
+            <ul class="card-list">
+              <li>দিনের শুরুতে ড্রয়ারে থাকা খুচরা টাকা গুণুন (যেমন ৳ ১,০০০)।</li>
+              <li>স্ক্রিনে <strong>"Open Shift"</strong> বাটনে চাপুন।</li>
+              <li>টাকার পরিমাণ লিখুন এবং "Start Shift" কনফার্ম করুন।</li>
+              <li>এই টাকা আপনার সারাদিনের হিসাবের প্রারম্ভিক মূলধন।</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="simulator-box">
+          <div class="simulator-title">🛡️ বেবি রুলস (সহজ সতর্কতা)</div>
+          <p style="font-size:0.92rem;">কখনোই নিজের পাসওয়ার্ড অন্য কারো সাথে শেয়ার করবেন না। কাউন্টার ছেড়ে কোথাও উঠলে কীবোর্ডে <strong>Windows + L</strong> দিয়ে কম্পিউটার লক করে যান।</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 3: PATIENT REGISTRATION -->
+      <div class="slide-content" data-slide="3">
+        <div class="slide-tag">ধাপ ০২ • রোগী এন্ট্রি</div>
+        <h2 class="slide-heading">২. নতুন রোগী নিবন্ধন (New Patient Registration)</h2>
+        <p class="slide-subheading">হাসপাতালে রোগী আসলে মাত্র ৩০ সেকেন্ডে সঠিক প্রোফাইল খোলার নিয়ম।</p>
+
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">👤</div>
+              <div class="card-title">ফর্ম ওপেন ও ইনপুট</div>
+            </div>
+            <ul class="card-list">
+              <li>কীবোর্ডে শর্টকাট চাপুন: <strong>Alt + N</strong> (বা + New Patient বাটন)।</li>
+              <li>রোগীর পুরো নাম লিখুন (বাংলা বা ইংরেজি)।</li>
+              <li>মোবাইল নম্বর (১১ ডিজিট বাধ্যতামূলক - এসএমএস যাবে)।</li>
+              <li>বয়স, জেন্ডার ও জেলা নির্বাচন করুন।</li>
+            </ul>
+          </div>
+
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">🏷️</div>
+              <div class="card-title">ইউনিক পেশেন্ট আইডি</div>
+            </div>
+            <ul class="card-list">
+              <li>"Save Patient" চাপলেই স্বয়ংক্রিয়ভাবে <strong>OH-P-XXXXX</strong> আইডি তৈরি হবে।</li>
+              <li>একই মোবাইল নম্বরে রোগী থাকলে সিস্টেম সাথে সাথে জানাবে।</li>
+              <li>রোগীর মোবাইলে সাথে সাথে কনফার্মেশন এসএমএস যাবে।</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="simulator-box">
+          <div class="simulator-title">🔍 দ্রুত সার্চ টিপস</div>
+          <p style="font-size:0.92rem;">রোগী যদি আগেও হাসপাতালে এসে থাকে, তবে নতুন আইডি বানাবেন না! কীবোর্ডে <strong>F2</strong> চেপে রোগীর মোবাইলের শেষ ৪ ডিজিট লিখলেই পূর্বের সমস্ত ফাইল চলে আসবে।</p>
+        </div>
+      </div>
+
+      <!-- SLIDE 4: OPD DOCTOR BOOKING -->
+      <div class="slide-content" data-slide="4">
+        <div class="slide-tag">ধাপ ০৩ • ওপিডি টিকিট</div>
+        <h2 class="slide-heading">৩. ডাক্তার অ্যাপয়েন্টমেন্ট ও টিকিট বুকিং</h2>
+        <p class="slide-subheading">রোগী কোন ডাক্তারের কাছে যাবে তা খুব সহজে সিলেক্ট ও বুকিং করার নিয়ম।</p>
+
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">🩺</div>
+              <div class="card-title">ডাক্তার ও শিডিউল বাছাই</div>
+            </div>
+            <ul class="card-list">
+              <li>বিভাগ সিলেক্ট করুন (মেডিসিন, হৃদরোগ, শিশু, গাইনি, অর্থোপেডিকস)।</li>
+              <li>আজকে কোন কোন ডাক্তার উপস্থিত আছেন তা স্ক্রিনে সবুজ রঙে দেখা যাবে।</li>
+              <li>রোগীর পছন্দের ডাক্তারের নামের উপর ক্লিক করুন।</li>
+              <li>শিফট ও সময় বেছে নিন (সকাল / বিকাল)।</li>
+            </ul>
+          </div>
+
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">🎫</div>
+              <div class="card-title">স্বয়ংক্রিয় সিরিয়াল ও ফি</div>
+            </div>
+            <ul class="card-list">
+              <li>সিস্টেম স্বয়ংক্রিয়ভাবে সিরিয়াল নম্বর দেবে (যেমনঃ সিরিয়াল # ০৮)।</li>
+              <li>ভিজিট ফি স্বয়ংক্রিয়ভাবে স্ক্রিনে আসবে (যেমনঃ ৳ ৮০০.০০)।</li>
+              <li>কোনো রেফারাল ডাক্তার থাকলে ড্রপডাউন থেকে নির্বাচন করুন।</li>
+              <li>"Confirm Appointment" চাপুন।</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 5: THERMAL RECEIPT PRINT -->
+      <div class="slide-content" data-slide="5">
+        <div class="slide-tag">ধাপ ০৪ • প্রিন্ট</div>
+        <h2 class="slide-heading">৪. ৮০ মিমি থার্মাল প্রিন্টারে টোকেন ও স্লিপ প্রিন্ট</h2>
+        <p class="slide-subheading">রোগীর হাতে প্রফেশনাল থার্মাল স্লিপ তুলে দিন মাত্র ১ ক্লিকে।</p>
+
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">🖨️</div>
+              <div class="card-title">১-ক্লিক প্রিন্ট পদ্ধতি</div>
+            </div>
+            <ul class="card-list">
+              <li>বুকিং শেষ হওয়ামাত্র থার্মাল প্রিন্ট উইন্ডো স্বয়ংক্রিয়ভাবে ভেসে উঠবে।</li>
+              <li>কীবোর্ডে চাপুন: <strong>Ctrl + P</strong> এবং <strong>Enter</strong>।</li>
+              <li>কাউন্টারের ৮০ মিমি থার্মাল প্রিন্টার থেকে ঝটপট স্লিপ বের হবে।</li>
+              <li>রোগীকে বলুন: <em>"আপনার সিরিয়াল ৫, ২য় তলার ২০৩ নম্বর রুমে যান।"</em></li>
+            </ul>
+          </div>
+
+          <div class="receipt-paper">
+            <div class="receipt-header">
+              <h3>ONNESHA HOSPITAL</h3>
+              <p>Hotline: 01700-000000</p>
+              <p>OPD Consultation Token</p>
+            </div>
+            <div class="receipt-token">TOKEN # 05</div>
+            <div class="receipt-row"><span>Date: 15-Oct-2026</span><span>Time: 10:15 AM</span></div>
+            <div class="receipt-row"><span>Patient: Md. Rafiqul</span><span>Age: 42Y (M)</span></div>
+            <div class="receipt-row"><span>ID: OH-P-10025</span><span>Room: 203</span></div>
+            <div style="border-top:1px dashed #666; margin:0.3rem 0;"></div>
+            <div class="receipt-row"><span>Doctor:</span><span>Dr. A. K. Azad</span></div>
+            <div class="receipt-row"><span>Dept:</span><span>Cardiology</span></div>
+            <div class="receipt-row"><span>Fee Paid:</span><span>৳ 800.00 (Cash)</span></div>
+            <div style="text-align:center; margin-top:0.4rem; font-size:0.75rem;">|||||||||||||||||||||||||||</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 6: BILLING & PAYMENT -->
+      <div class="slide-content" data-slide="6">
+        <div class="slide-tag">ধাপ ০৫ • পেমেন্ট</div>
+        <h2 class="slide-heading">৫. ক্যাশ, বিকাশ ও কার্ড পেমেন্ট কালেকশন</h2>
+        <p class="slide-subheading">টাকা গ্রহণ ও মানি রিসিট তৈরির নির্ভুল ডাবল-এন্ট্রি পদ্ধতি।</p>
+
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">💵</div>
+              <div class="card-title">ক্যাশ পেমেন্ট (Cash)</div>
+            </div>
+            <ul class="card-list">
+              <li>রোগী টাকা দিলে গুনে ক্যাশ ড্রয়ারে রাখুন।</li>
+              <li>"Received Amount" বক্সে প্রাপ্ত টাকা লিখুন।</li>
+              <li>সিস্টেম স্বয়ংক্রিয়ভাবে ফেরত (Change) কত দিতে হবে তা ক্যালকুলেট করে দেবে।</li>
+              <li>"Complete Payment" বাটনে চাপুন।</li>
+            </ul>
+          </div>
+
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">📱</div>
+              <div class="card-title">বিকাশ ও ডিজিটাল পেমেন্ট</div>
+            </div>
+            <ul class="card-list">
+              <li>কাউন্টারের সামনে থাকা অফিশিয়াল বিকাশ কিউআর কোড স্ক্যান করতে বলুন।</li>
+              <li>রোগীর মোবাইল থেকে পেমেন্টের TrxID দেখে সফটওয়্যারে লিখুন।</li>
+              <li>কার্ড পেমেন্ট হলে POS স্লিপের শেষ ৪ ডিজিট লিখুন।</li>
+              <li>সিস্টেমে কোন বাকি থাকলে রোগীর প্রোফাইলে লাল কালিতে দেখাবে।</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 7: EMERGENCY FAST-TRACK -->
+      <div class="slide-content" data-slide="7">
+        <div class="slide-tag" style="background:#FFEBEE; color:#C62828;">🚨 জরুরি প্রোটোকল</div>
+        <h2 class="slide-heading" style="color:#C62828;">৬. জরুরি রোগী: জিরো-ডিলে ফাস্ট-ট্র্যাক ট্রায়াজ</h2>
+        <p class="slide-subheading">জীবন বাঁচানোই প্রথম ধর্ম! মুমূর্ষু রোগীর ক্ষেত্রে রিসেপশনের দায়িত্ব।</p>
+
+        <div class="card-grid">
+          <div class="guide-card" style="border-left: 4px solid var(--danger);">
+            <div class="card-icon-title">
+              <div class="card-icon" style="color:var(--danger);">⚠️</div>
+              <div class="card-title" style="color:var(--danger);">জরুরি লক্ষণসমূহ</div>
+            </div>
+            <ul class="card-list">
+              <li>সড়ক দুর্ঘটনায় আহত বা অতিরিক্ত রক্তক্ষরণ হচ্ছে।</li>
+              <li>তীব্র বুকে ব্যথা / হার্ট অ্যাটাক বা স্ট্রোকের লক্ষণ।</li>
+              <li>তীব্র শ্বাসকষ্ট বা অচেতন রোগী।</li>
+              <li>বিষপান বা আগুনে পোড়া রোগী।</li>
+            </ul>
+          </div>
+
+          <div class="guide-card" style="border-left: 4px solid var(--success);">
+            <div class="card-icon-title">
+              <div class="card-icon" style="color:var(--success);">🚑</div>
+              <div class="card-title" style="color:var(--success);">জিরো-সেকেন্ড বিলম্ব নীতি</div>
+            </div>
+            <ul class="card-list">
+              <li>১ সেকেন্ডও রোগীকে টাকা বা রেজিস্ট্রেশনের জন্য দাঁড় করিয়ে রাখবেন না!</li>
+              <li>ট্রলিতে করে রোগীকে সরাসরি <strong>ইমার্জেন্সি রুমে</strong> পাঠান।</li>
+              <li>কীবোর্ডে শর্টকাট চাপুন: <strong>F4</strong> (Emergency Red Alert)।</li>
+              <li>রোগী স্ট্যাবল হলে আত্মীয়দের কাছ থেকে পরে তথ্য ও বিল নিন।</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 8: IPD BED ALLOCATION -->
+      <div class="slide-content" data-slide="8">
+        <div class="slide-tag">ধাপ ০৭ • ভর্তি ও সিট</div>
+        <h2 class="slide-heading">৭. ভর্তি রোগী ও কেবিন/ওয়ার্ড সিট বরাদ্দ (IPD Allocation)</h2>
+        <p class="slide-subheading">রোগী ভর্তি হলে কেবিন বা সিট বরাদ্দ দেওয়ার লাইভ কালার-ম্যাট্রিক্স।</p>
+
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">🛏️</div>
+              <div class="card-title">কালার কোডেড বেড ম্যাপ</div>
+            </div>
+            <ul class="card-list">
+              <li>🟢 <strong>সবুজ রঙ:</strong> খালি বেড (সম্পূর্ণ প্রস্তুত)।</li>
+              <li>🔴 <strong>লাল রঙ:</strong> রোগী ভর্তি আছে (Occupied)।</li>
+              <li>🟡 <strong>হলুদ রঙ:</strong> রিলিজ হয়েছে, পরিষ্কার ও স্যানিটাইজেশন চলছে।</li>
+            </ul>
+          </div>
+
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">💳</div>
+              <div class="card-title">অ্যাডভান্স ডিপোজিট সংগ্রহ</div>
+            </div>
+            <ul class="card-list">
+              <li>খালি বেডের উপর ক্লিক করলেই রোগীর নামে বুক হয়ে যাবে।</li>
+              <li>ভর্তি ডিপোজিট সংগ্রহ করুন (যেমন ৳ ৫,০০০ বা ৳ ১০,০০০)।</li>
+              <li>ডিপোজিট রিসিট প্রিন্ট করে রোগীর ফাইলে পিন করে দিন।</li>
+              <li>ওয়ার্ড বয়কে রোগীর ফাইল বুঝিয়ে দিয়ে নির্দিষ্ট কেবিনে পাঠান।</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem;">
+          <h4 style="color:var(--primary); margin-bottom:0.5rem;">লাইভ ইন্টারেক্টিভ বেড প্রিভিউ (ক্লিক করে দেখুন):</h4>
+          <div class="bed-grid">
+            <div class="bed-cell bed-available" onclick="alert('বেড ২০২ খালি আছে! ক্লিক করে বুকিং করা যাবে।')">Bed 201<br><small>🟢 Available</small></div>
+            <div class="bed-cell bed-occupied" onclick="alert('বেড ২০২-এ রোগী ভর্তি আছেন (মোঃ করিম)।')">Bed 202<br><small>🔴 Occupied</small></div>
+            <div class="bed-cell bed-available" onclick="alert('বেড ২০৩ খালি আছে!')">Bed 203<br><small>🟢 Available</small></div>
+            <div class="bed-cell bed-cleaning" onclick="alert('বেড ২০৪ পরিষ্কার হচ্ছে, ৫ মিনিটে তৈরি হবে।')">Bed 204<br><small>🟡 Cleaning</small></div>
+            <div class="bed-cell bed-available" onclick="alert('ভিআইপি কেবিন ৩০১ খালি আছে!')">Cabin 301<br><small>🟢 VIP Avail</small></div>
+            <div class="bed-cell bed-occupied" onclick="alert('আইসিইউ-১ অকুপাইড।')">ICU-01<br><small>🔴 Occupied</small></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 9: MISTAKE CORRECTION -->
+      <div class="slide-content" data-slide="9">
+        <div class="slide-tag">ধাপ ০৮ • সংশোধন</div>
+        <h2 class="slide-heading">৮. ভুল হলে কি করবেন? (Mistake Correction & Void)</h2>
+        <p class="slide-subheading">ভুল মানুষেরই হয়—ঘাবড়াবেন না! সফটওয়্যারে রয়েছে সুরক্ষিত রিভার্সাল ব্যবস্থা।</p>
+
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">✏️</div>
+              <div class="card-title">নাম বা মোবাইল ভুল হলে</div>
+            </div>
+            <ul class="card-list">
+              <li>রোগীর প্রোফাইল ওপেন করুন।</li>
+              <li>ডানপাশে থাকা <strong>Edit Patient</strong> পেনসিল বাটনে ক্লিক করুন।</li>
+              <li>সঠিক বানান বা মোবাইল লিখে <strong>Update</strong> চাপুন।</li>
+              <li>সাথে সাথে সব জায়গায় সংশোধন হয়ে যাবে।</li>
+            </ul>
+          </div>
+
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">↩️</div>
+              <div class="card-title">ভুল বিল বা ডাক্তার সিলেক্ট হলে</div>
+            </div>
+            <ul class="card-list">
+              <li>ইনভয়েসের পাশে থাকা <strong>"Void Service"</strong> বাটনে চাপুন।</li>
+              <li>কারণ লিখুন (যেমন: <em>"Wrong Doctor by mistake"</em>)।</li>
+              <li>সিস্টেম স্বয়ংক্রিয়ভাবে হিসাব এডজাস্ট করে সঠিক ব্যালেন্সে নিয়ে আসবে।</li>
+              <li>এরপর নতুন করে সঠিক ডাক্তারের টিকিট কেটে দিন।</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 10: SHIFT CLOSING -->
+      <div class="slide-content" data-slide="10">
+        <div class="slide-tag">ধাপ ০৯ • শিফট সমাপ্তি</div>
+        <h2 class="slide-heading">৯. শিফট সমাপ্তি ও ক্যাশ টাকা মেলানো (Reconciliation)</h2>
+        <p class="slide-subheading">ডিউটি শেষে নির্ভুলভাবে টাকা গুনে পরবর্তী শিফটে হ্যান্ডওভার করার নিয়ম।</p>
+
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">📊</div>
+              <div class="card-title">শিফট সামারি দেখা</div>
+            </div>
+            <ul class="card-list">
+              <li>স্ক্রিনের উপরে <strong>"End Shift / Cash Handover"</strong> চাপুন।</li>
+              <li>সিস্টেমে সারাদিনের মোট ক্যাশ, বিকাশ ও কার্ড কালেকশন দেখতে পাবেন।</li>
+              <li>ক্যাশ ড্রয়ারের মোট প্রত্যাশিত ব্যালেন্স স্ক্রিনে প্রদর্শিত হবে।</li>
+            </ul>
+          </div>
+
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">💰</div>
+              <div class="card-title">নোট গণনা ও মিলকরণ</div>
+            </div>
+            <ul class="card-list">
+              <li>১০০০, ৫০০, ২০০, ১০০ টাকার নোট গুনে সংখ্যা বক্সে বসান।</li>
+              <li>সিস্টেমে দেখাবে: <strong>Difference: ৳ 0.00 (Perfect Match!)</strong></li>
+              <li>"Print Shift Report" বাটনে ক্লিক করে স্লিপ প্রিন্ট করুন।</li>
+              <li>পরবর্তী সহকর্মীর কাছে টাকা ও রিপোর্ট বুঝিয়ে দিয়ে স্বাক্ষর নিন।</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 11: KEYBOARD SHORTCUTS -->
+      <div class="slide-content" data-slide="11">
+        <div class="slide-tag">⚡ শর্টকাট চিটশিট</div>
+        <h2 class="slide-heading">১০. দ্রুত কাজের জন্য জাদুকরী কীবোর্ড শর্টকাট</h2>
+        <p class="slide-subheading">মাউস ছাড়াই বিদ্যুতের গতিতে কাজ করার সেরা শর্টকাটগুলো মুখস্থ করে নিন।</p>
+
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">⌨️</div>
+              <div class="card-title">জরুরি শর্টকাট তালিকা</div>
+            </div>
+            <ul class="card-list">
+              <li><strong>Alt + N</strong> : নতুন রোগী নিবন্ধন (New Patient)</li>
+              <li><strong>Alt + B</strong> : নতুন বিলিং উইন্ডো (New Billing)</li>
+              <li><strong>Alt + D</strong> : ডাক্তারদের তালিকা ও রুম নম্বর</li>
+              <li><strong>Ctrl + P</strong> : সরাসরি থার্মাল প্রিন্ট</li>
+              <li><strong>F2</strong> : রোগী গ্লোবাল সার্চ (Search by Mobile/ID)</li>
+              <li><strong>F4</strong> : ইমার্জেন্সি রেড অ্যালার্ট (Emergency Triage)</li>
+              <li><strong>Esc</strong> : যেকোনো পপআপ বা উইন্ডো বন্ধ করা</li>
+            </ul>
+          </div>
+
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">⭐</div>
+              <div class="card-title">রিসেপশন এটিকেট (আচরণবিধি)</div>
+            </div>
+            <ul class="card-list">
+              <li>রোগী এলে প্রথমে হাসিমুখে সালাম বা নমস্কার দিন।</li>
+              <li>শান্ত ও আন্তরিক স্বরে কথা বলুন; বিপদে পড়া স্বজনদের সান্ত্বনা দিন।</li>
+              <li>ডাক্তারের রুম নম্বর ও ফ্লোর পরিষ্কারভাবে আঙুল দিয়ে দেখিয়ে দিন।</li>
+              <li>আপনার একটি সুন্দর আচরণে রোগীর অর্ধেক রোগ ভালো হয়ে যায়!</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 12: 24/7 SUPPORT & FINISH -->
+      <div class="slide-content" data-slide="12">
+        <div class="slide-tag" style="background:#E8F5E9; color:#2E7D32;">🎉 সমাপ্তি ও সাপোর্ট</div>
+        <h2 class="slide-heading" style="color:#2E7D32;">১১. ২৪/৭ আইটি সহায়তা ও শুভকামনা!</h2>
+        <p class="slide-subheading">আপনি এখন সম্পূর্ণ অন্বেষা হাসপাতাল সিস্টেম পরিচালনার জন্য ১০০% প্রস্তুত।</p>
+
+        <div class="card-grid">
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">🤖</div>
+              <div class="card-title">টেলিগ্রাম ক্লাউড অটোমেশন</div>
+            </div>
+            <ul class="card-list">
+              <li>হাসপাতালের অফিসিয়াল টেলিগ্রাম বট: <strong>@onnesha_hospital_bot</strong></li>
+              <li>পিসি বন্ধ থাকলেও ২৪/৭ ক্লাউড অটোমেশন সক্রিয় থাকে।</li>
+              <li>মোবাইল থেকেও জরুরি অ্যালার্ট ও রিপোর্ট পাওয়া যায়।</li>
+            </ul>
+          </div>
+
+          <div class="guide-card">
+            <div class="card-icon-title">
+              <div class="card-icon">📞</div>
+              <div class="card-title">জরুরি হেল্পলাইন নম্বর</div>
+            </div>
+            <ul class="card-list">
+              <li>হাসপাতাল এডমিন ও ম্যানেজার ফোন: <strong>০১৭১X-XXXXXX</strong></li>
+              <li>আইটি সাপোর্ট ইনচার্জ: <strong>০১৭XX-XXXXXX</strong></li>
+              <li>ইমার্জেন্সি ও অ্যাম্বুলেন্স হটলাইন: <strong>০১৯XX-XXXXXX</strong></li>
+              <li>সিস্টেম সংস্করণ: <strong>v1.1.90 (Latest Production)</strong></li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="text-align:center; margin-top:2.5rem;">
+          <a href="ONNESHA_HOSPITAL_RECEPTION_BABY_STEP_GUIDE.pptx" download class="btn btn-download" style="padding:0.9rem 1.8rem; font-size:1.1rem;">
+            <span>📥</span> পাওয়ারপয়েন্ট স্লাইড ডাউনলোড করুন (.PPTX)
+          </a>
+        </div>
+      </div>
+
+      <!-- FOOTER CONTROLS -->
+      <div class="deck-footer">
+        <button class="deck-nav-btn btn-prev" id="btnPrev" onclick="navigateSlide(-1)" disabled>
+          <span>⬅</span> পূর্ববর্তী ধাপ
+        </button>
+        <div class="slide-counter" id="slideCounter">ধাপ ১ / ১২</div>
+        <button class="deck-nav-btn btn-next" id="btnNext" onclick="navigateSlide(1)">
+          পরবর্তী ধাপ <span>➡</span>
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 12;
+
+    const audioCtx = (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
+    function playClick() {
+      if (!audioCtx) return;
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.06);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.06);
+      } catch (e) {}
+    }
+
+    function showSlide(index) {
+      if (index < 1 || index > totalSlides) return;
+      currentSlide = index;
+
+      document.querySelectorAll('.slide-content').forEach(slide => {
+        slide.classList.remove('active');
+        if (parseInt(slide.getAttribute('data-slide')) === currentSlide) {
+          slide.classList.add('active');
+        }
+      });
+
+      document.getElementById('slideCounter').textContent = `ধাপ ${currentSlide} / ${totalSlides}`;
+      document.getElementById('progressBar').style.width = `${(currentSlide / totalSlides) * 100}%`;
+
+      document.getElementById('btnPrev').disabled = (currentSlide === 1);
+      const nextBtn = document.getElementById('btnNext');
+      if (currentSlide === totalSlides) {
+        nextBtn.innerHTML = 'সম্পন্ন 🎉';
+        nextBtn.style.background = '#2E7D32';
+      } else {
+        nextBtn.innerHTML = 'পরবর্তী ধাপ <span>➡</span>';
+        nextBtn.style.background = 'var(--primary)';
+      }
+    }
+
+    function navigateSlide(direction) {
+      playClick();
+      showSlide(currentSlide + direction);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault();
+        navigateSlide(1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        navigateSlide(-1);
+      }
+    });
+  </script>
+</body>
+</html>
