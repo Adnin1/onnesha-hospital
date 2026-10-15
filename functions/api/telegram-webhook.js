@@ -3,6 +3,7 @@
 // Runs on Cloudflare's Global Edge Network (Zero dependency on local PC power)
 
 const BOT_TOKEN = "8435645496:AAHl0iZaJx8v1hVLeaJ9ifXZufJErS2VqBw";
+const DEFAULT_WEBHOOK_SECRET = "ohms_sec_tg_733dd993dbaf37df461c0fccfc63dec53921c22a";
 const ALLOWED_USER_ID = 1161469999; // Mahin Khan
 const ALLOWED_CHAT_ID = 1161469999; // Mahin Khan Chat ID
 const CANONICAL_URL = "https://onnesha-hospital.pages.dev";
@@ -10,7 +11,7 @@ const SUPABASE_URL = "https://iuhtzahuszdkdarhxobx.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_OPiG-7uhoIlnysXKrpErsw_rdXEJ4rs";
 const GITHUB_REPO = "Adnin1/onnesha-hospital";
 
-// Replay protection cache (tracks processed Telegram update_ids)
+// In-memory fallback defense-in-depth cache
 const PROCESSED_UPDATES = new Set();
 const MAX_TRACKED_UPDATES = 200;
 
@@ -40,6 +41,44 @@ async function sendMsg(chatId, text, extra = {}) {
   }
 }
 
+async function claimDurableUpdate(supabaseUrl, supabaseKey, updateId, command) {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_telegram_update_atomic`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`
+      },
+      body: JSON.stringify({
+        p_update_id: updateId,
+        p_command: command || null
+      })
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {}
+  return null;
+}
+
+async function completeDurableUpdate(supabaseUrl, supabaseKey, updateId, status = "completed") {
+  try {
+    await fetch(`${supabaseUrl}/rest/v1/rpc/complete_telegram_update_atomic`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`
+      },
+      body: JSON.stringify({
+        p_update_id: updateId,
+        p_status: status
+      })
+    });
+  } catch {}
+}
+
 const MAIN_KEYBOARD = {
   inline_keyboard: [
     [
@@ -61,7 +100,10 @@ export async function onRequest(context) {
   const method = context.request.method.toUpperCase();
   if (method === "GET") return onRequestGet(context);
   if (method === "POST") return onRequestPost(context);
-  return new Response("Method Not Allowed", { status: 405 });
+  return new Response("Method Not Allowed", {
+    status: 405,
+    headers: { "Allow": "GET, POST" }
+  });
 }
 
 export async function onRequestGet(_context) {
@@ -70,6 +112,7 @@ export async function onRequestGet(_context) {
       status: "ok",
       service: "OHMS Telegram Cloud Bridge",
       edge: "Cloudflare Pages Global Network",
+      durable_idempotency: true,
       pc_required: false,
       timestamp: new Date().toISOString()
     }),
@@ -83,47 +126,102 @@ export async function onRequestGet(_context) {
 }
 
 export async function onRequestPost(context) {
+  // Step 1: Content-Type Validation (Deterministic 415)
+  const contentType = context.request.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return new Response("Unsupported Media Type: Expected application/json", { status: 415 });
+  }
+
+  // Step 2: Payload Size Bounding (Deterministic 413, max 64KB)
+  const contentLength = parseInt(context.request.headers.get("content-length") || "0", 10);
+  if (contentLength > 65536) {
+    return new Response("Payload Too Large: Maximum allowed size is 64KB", { status: 413 });
+  }
+
+  // Step 3: Webhook Secret Token Verification — Fail Closed (Deterministic 403)
+  const configuredSecret = context.env?.TELEGRAM_WEBHOOK_SECRET || DEFAULT_WEBHOOK_SECRET;
+  const incomingSecret = context.request.headers.get("x-telegram-bot-api-secret-token");
+  if (!configuredSecret || !incomingSecret || incomingSecret !== configuredSecret) {
+    return new Response("Forbidden: Invalid or missing webhook secret token", { status: 403 });
+  }
+
+  // Step 4: JSON Parsing (Deterministic 400 for malformed payloads)
+  let update;
   try {
-    // 1. Webhook Secret Token Verification (if configured on edge)
-    const webhookSecret = context.env?.TELEGRAM_WEBHOOK_SECRET;
-    if (webhookSecret) {
-      const incomingSecret = context.request.headers.get("x-telegram-bot-api-secret-token");
-      if (incomingSecret !== webhookSecret) {
-        return new Response("Forbidden", { status: 403 });
-      }
+    update = await context.request.json();
+  } catch {
+    return new Response("Bad Request: Malformed JSON payload", { status: 400 });
+  }
+
+  // Step 5: Structural Validation (Deterministic 400 for missing/invalid update_id)
+  if (
+    !update ||
+    typeof update !== "object" ||
+    update.update_id === undefined ||
+    update.update_id === null ||
+    typeof update.update_id !== "number" ||
+    !Number.isInteger(update.update_id) ||
+    update.update_id <= 0
+  ) {
+    return new Response("Bad Request: Missing or invalid integer update_id", { status: 400 });
+  }
+
+  // Step 6: User & Chat Authorization (Deterministic 403)
+  const allowedUser = Number(context.env?.TELEGRAM_ALLOWED_USER_ID || ALLOWED_USER_ID);
+  const allowedChat = Number(context.env?.TELEGRAM_ALLOWED_CHAT_ID || ALLOWED_CHAT_ID);
+
+  let userId = null;
+  let chatId = null;
+  let commandTag = "UNKNOWN";
+
+  if (update.callback_query) {
+    userId = update.callback_query.from?.id;
+    chatId = update.callback_query.message?.chat?.id;
+    commandTag = `CB:${(update.callback_query.data || "").substring(0, 30)}`;
+  } else if (update.message) {
+    userId = update.message.from?.id;
+    chatId = update.message.chat?.id;
+    if (update.message.text) {
+      commandTag = (update.message.text.trim().split(/\s+/)[0] || "TEXT").substring(0, 30);
+    } else if (update.message.photo) {
+      commandTag = "PHOTO";
     }
+  }
 
-    // 2. Payload size bounding (max 64KB)
-    const cl = parseInt(context.request.headers.get("content-length") || "0", 10);
-    if (cl > 65536) {
-      return new Response("Payload Too Large", { status: 413 });
-    }
+  if (userId !== allowedUser || chatId !== allowedChat) {
+    return new Response("Forbidden: Unauthorized sender or chat", { status: 403 });
+  }
 
-    const update = await context.request.json();
+  // Step 7: Durable Update Idempotency Claim (Supabase RPC)
+  const sbUrl = context.env?.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL;
+  const sbKey = context.env?.SUPABASE_SERVICE_ROLE_KEY || context.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
 
-    // 3. Replay attack & duplicate update_id suppression
-    if (update && update.update_id) {
-      if (PROCESSED_UPDATES.has(update.update_id)) {
-        return new Response("OK", { status: 200 });
-      }
-      PROCESSED_UPDATES.add(update.update_id);
-      if (PROCESSED_UPDATES.size > MAX_TRACKED_UPDATES) {
-        const oldest = PROCESSED_UPDATES.values().next().value;
-        PROCESSED_UPDATES.delete(oldest);
-      }
-    }
+  const claim = await claimDurableUpdate(sbUrl, sbKey, update.update_id, commandTag);
+  if (claim && claim.is_duplicate === true) {
+    return new Response(
+      JSON.stringify({ status: "ok", duplicate: true, update_id: update.update_id }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
-    // 4. Handle Callback Queries (Button Clicks)
+  // In-memory fallback defense-in-depth suppression
+  if (PROCESSED_UPDATES.has(update.update_id)) {
+    return new Response(
+      JSON.stringify({ status: "ok", duplicate: true, update_id: update.update_id }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  PROCESSED_UPDATES.add(update.update_id);
+  if (PROCESSED_UPDATES.size > MAX_TRACKED_UPDATES) {
+    const oldest = PROCESSED_UPDATES.values().next().value;
+    PROCESSED_UPDATES.delete(oldest);
+  }
+
+  // Step 8: Command Execution
+  try {
     if (update.callback_query) {
       const cb = update.callback_query;
-      const chatId = cb.message && cb.message.chat ? cb.message.chat.id : null;
-      const userId = cb.from ? cb.from.id : null;
       const data = cb.data;
-
-      // Strict user & chat ID authentication
-      if (userId !== ALLOWED_USER_ID || chatId !== ALLOWED_CHAT_ID) {
-        return new Response("Forbidden", { status: 403 });
-      }
 
       if (cb.id) {
         await tgCall("answerCallbackQuery", { callback_query_id: cb.id });
@@ -136,21 +234,9 @@ export async function onRequestPost(context) {
       } else if (data === "DO_FULL_FIX" || data === "DO_DEPLOY" || data === "DO_TEST") {
         await handleCloudDispatch(chatId, data);
       }
-      return new Response("OK", { status: 200 });
-    }
-
-    // 5. Handle Messages
-    if (update.message) {
+    } else if (update.message) {
       const msg = update.message;
-      const chatId = msg.chat ? msg.chat.id : null;
-      const userId = msg.from ? msg.from.id : null;
 
-      // Strict whitelist authorization enforcement
-      if (userId !== ALLOWED_USER_ID || chatId !== ALLOWED_CHAT_ID) {
-        return new Response("Forbidden", { status: 403 });
-      }
-
-      // Handle Photos/Screenshots
       if (msg.photo && msg.photo.length > 0) {
         const caption = (msg.caption || "").substring(0, 500);
         await sendMsg(
@@ -163,17 +249,20 @@ export async function onRequestPost(context) {
         if (caption) {
           await handleTextCommand(chatId, caption);
         }
-        return new Response("OK", { status: 200 });
-      }
-
-      // Handle Text
-      if (msg.text) {
+      } else if (msg.text) {
         await handleTextCommand(chatId, msg.text.substring(0, 1000));
       }
     }
 
-    return new Response("OK", { status: 200 });
+    // Step 9: Mark Completed in Durable Store
+    await completeDurableUpdate(sbUrl, sbKey, update.update_id, "completed");
+
+    return new Response(
+      JSON.stringify({ status: "ok", processed: true, update_id: update.update_id }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch {
+    await completeDurableUpdate(sbUrl, sbKey, update.update_id, "failed");
     return new Response("Internal Server Error", { status: 500 });
   }
 }

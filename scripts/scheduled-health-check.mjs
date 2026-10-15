@@ -253,7 +253,7 @@ async function run() {
     repository_sha: repoSha,
     runtime_sha: process.env.PRODUCTION_RUNTIME_SHA || repoSha,
     deployment_id: process.env.CLOUDFLARE_DEPLOYMENT_ID || "LIVE_CANONICAL",
-    database_migration_head: "205",
+    database_migration_head: "206",
     checked_at: new Date().toISOString(),
     edge: tierA,
     database_audit: {
@@ -273,7 +273,7 @@ async function run() {
     repository_sha: repoSha,
     runtime_sha: process.env.PRODUCTION_RUNTIME_SHA || repoSha,
     deployment_id: process.env.CLOUDFLARE_DEPLOYMENT_ID || "LIVE_CANONICAL",
-    database_migration_head: "205",
+    database_migration_head: "206",
     checked_at: new Date().toISOString(),
     public_edge_status: edgeOk ? "PASS" : "FAIL",
     privileged_audit_executed: String(Boolean(dbResult.is_privileged)),
