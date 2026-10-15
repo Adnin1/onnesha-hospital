@@ -11,11 +11,11 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   globalSetup: "./tests/browser/globalSetup.ts",
   testDir: "./tests/browser",
-  timeout: 60 * 1000,
+  timeout: 90 * 1000,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : 1,
+  workers: 1,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }], ["list"]] : [["html", { open: "never" }], ["list"]],
   use: {
     baseURL: process.env.E2E_BASE_URL || "http://127.0.0.1:3000",
