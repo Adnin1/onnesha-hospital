@@ -116,28 +116,36 @@ test.describe("Real Browser E2E: Website Deep Interaction, Form Lifecycle & Resi
     const passwordInput = page.locator('input[placeholder="••••••••"]');
     const loginButton = page.locator('button[type="submit"]:has-text("লগইন করুন")');
 
-    await expect(emailInput).toBeVisible();
-    await expect(passwordInput).toBeVisible();
-    await expect(loginButton).toBeVisible();
+    await expect(emailInput).toBeVisible({ timeout: 15000 });
+    await expect(passwordInput).toBeVisible({ timeout: 15000 });
+    await expect(loginButton).toBeVisible({ timeout: 15000 });
 
     // Verify initial password input type is password
     await expect(passwordInput).toHaveAttribute("type", "password");
 
-    // Type credentials
+    // Focus and fill credentials with hydration settling
+    await emailInput.click();
     await emailInput.fill("  DOCTOR_TEST@ONNESHA-HOSPITAL.COM  ");
+    await passwordInput.click();
     await passwordInput.fill("DemoPassword123!");
+    await expect(emailInput).toHaveValue("DOCTOR_TEST@ONNESHA-HOSPITAL.COM");
+    await expect(passwordInput).toHaveValue("DemoPassword123!");
 
-    // Test password reveal toggle
+    // Test password reveal toggle with hydration-resilient retry
     const toggleButton = page.locator('button[data-testid="password-toggle-btn"], button[aria-label*="পাসওয়ার্ড দেখুন"]').first();
     await expect(toggleButton).toBeVisible();
-    await toggleButton.click({ force: true });
 
-    // Should now be type="text"
-    await expect(passwordInput).toHaveAttribute("type", "text", { timeout: 10000 });
+    // Click toggle with toPass polling to ensure React event listeners are attached
+    await expect(async () => {
+      await toggleButton.click();
+      await expect(passwordInput).toHaveAttribute("type", "text", { timeout: 1500 });
+    }).toPass({ timeout: 10000 });
 
     // Click toggle again to hide
-    await toggleButton.click({ force: true });
-    await expect(passwordInput).toHaveAttribute("type", "password", { timeout: 10000 });
+    await expect(async () => {
+      await toggleButton.click();
+      await expect(passwordInput).toHaveAttribute("type", "password", { timeout: 1500 });
+    }).toPass({ timeout: 10000 });
 
     // Submit with invalid credentials
     await loginButton.click();

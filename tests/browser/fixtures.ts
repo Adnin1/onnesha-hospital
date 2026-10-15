@@ -124,6 +124,48 @@ async function installMutationGuard(page: Page, baseURL: string): Promise<void> 
         return;
       }
 
+      // Safe synthetic fulfillment for public form testing on production:
+      // Prevents polluting the hospital's live database with test bookings/inquiries
+      // while enabling full multi-step UI/UX lifecycle and token slip verification.
+      if (url.includes("/rest/v1/rpc/book_online_appointment")) {
+        await route.fulfill({
+          status: 200,
+          headers: {
+            "access-control-allow-origin": "*",
+            "access-control-allow-credentials": "true",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            success: true,
+            appointment_id: "apt-mock-001",
+            token_number: 14,
+            patient_code: "P-2026-MOCK-001",
+            appointment_date: "2026-10-10",
+            doctor_name: "Prof. Dr. M. A. Rahman",
+            room_number: "301",
+            opd_fee: 1000,
+          }),
+        });
+        return;
+      }
+
+      if (url.includes("/rest/v1/rpc/submit_public_contact_inquiry")) {
+        await route.fulfill({
+          status: 200,
+          headers: {
+            "access-control-allow-origin": "*",
+            "access-control-allow-credentials": "true",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            success: true,
+            inquiry_id: "inq-mock-001",
+            reference_number: "INQ-2026-0001",
+          }),
+        });
+        return;
+      }
+
       // Block mutations targeting production or Supabase
       if (
         PRODUCTION_HOSTNAMES.has(targetHost) ||
