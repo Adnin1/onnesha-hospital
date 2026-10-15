@@ -500,7 +500,7 @@ export default function QueueDisplayPage() {
             : "Please proceed to your assigned consultation room when your token is called. Reception: 01895-665114"}
         </div>
         <div className="text-slate-500 font-mono text-[11px]">
-          OHMS v1.1.81
+          OHMS v1.1.90
         </div>
       </footer>
     </div>

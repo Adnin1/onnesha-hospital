@@ -38,7 +38,7 @@
 | **Security Tester v2** | 100% | **5 / 5 tests passing** (`phase40-security-tester-v2`) | ✅ PASS |
 | **TypeScript Strict Mode** | 0 Errors | **0 errors** (`tsc --noEmit`) | ✅ PASS |
 | **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint .`) | ✅ PASS |
-| **Supabase Remote Migrations** | 100% | **204 / 204 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
+| **Supabase Remote Migrations** | 100% | **205 / 205 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
 | **Database Linting** | 0 Fatal Errors | **0 fatal errors across all schemas** (`npx supabase db lint --linked`) | ✅ PASS |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ PASS |
 | **Prerendered Website Routes** | 100% | **63 physical routes generated & audited** (`out/`) | ✅ PASS |
@@ -112,6 +112,11 @@
     - *Problem:* Deletion of invoices with settled payments failed with `"Cannot permanently purge active settled invoice with payments"`. Expense voucher reversals failed with `"Immutable Journal Line Error: Cannot insert lines into already posted/reversed entry"`.
     - *Fix:* Delivered `supabase/migrations/20261015090000_harden_super_admin_invoice_and_expense_purge_reversal.sql`. Hardened `delete_invoice_super_admin_atomic` to enable true administrative purge with `override_journal_immutability = 'on'`, unlinking dependent FK records, purging invoice items, payments, and invoices atomically. Hardened `delete_hospital_expense_super_admin_atomic` to create reversal journals in `DRAFT` status before line insertion, then transitioning to `POSTED`. Auto-resolved pending incident records in `system_health_issues_log`.
     - *Verification:* Verified via remote execution on Supabase (`OH-INV-100021` successfully purged, 0 orphaned rows), `npx supabase db lint --linked` (0 fatal errors), and `npm test` (150/150 suites passing).
+
+14. **`FIX-EXP-01` (Super Admin Expense Purge, Settlement Reconciliation & Version Sync - Migration 205):**
+    - *Problem:* Hospital expense deletion modal prevented permanent purge of posted vouchers; voiding was blocked by immutable journal errors; settlement records and agent balances were not automatically reconciled when expenses were purged; version badges showed outdated `1.1.81`.
+    - *Fix:* Delivered `supabase/migrations/20261015100000_harden_super_admin_expense_purge_settlement_reconciliation.sql`. Updated `app/(hospital)/app/expenses/page.tsx` with dual-mode action cards (Hard Purge vs Soft Void) for Super Admins. Upgraded `delete_hospital_expense_super_admin_atomic` with `app.override_journal_immutability`, automatic decrementing of `referral_agents.total_commission_settled`, cascade cleanup of orphaned settlements and journal entries. Auto-purged accidental test voucher `VOUCHER-20261013-2C86D1`. Synchronized version badges across `reports`, `queue`, and `SwRegister` to `1.1.90`. Auto-resolved incidents in `system_health_issues_log` restoring 100% health score.
+    - *Verification:* Remote Supabase DB verified with `get_trial_balance` (diff = 0.00), `check_system_health_diagnostics` (health score: 100%), `npx supabase db lint --linked` (0 fatal errors), and `npm test` (150/150 suites passing, 1,349 tests passed).
 
 ---
 

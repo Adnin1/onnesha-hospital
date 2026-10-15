@@ -18,6 +18,7 @@ import {
   Archive,
   Check,
   Trash2,
+  Ban,
 } from "lucide-react";
 import {
   getExpensesAction,
@@ -1244,19 +1245,62 @@ function ExpensesManagementContent() {
               (পরিমাণ: <strong>{formatCurrencyBDT(deleteModalExpense.amount)}</strong>, স্ট্যাটাস:{" "}
               <span className="font-bold uppercase text-slate-800">{deleteModalExpense.status}</span>)
             </p>
-            {deleteModalExpense.status === "VOIDED" ? (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl mb-3 text-[11px] text-rose-800">
-                <p className="font-bold mb-1">ভাউচারটি ইতিমধ্যে ভয়েড (VOIDED) করা হয়েছে:</p>
-                এর সংশ্লিষ্ট সাধারণ লেজারে রিভার্সাল এন্ট্রি পোস্ট হয়ে হিসাব সমতায় আছে (Net 0.00)। আপনি চাইলে এই ভয়েড রেকর্ডটি ডাটাবেজ থেকে স্থায়ীভাবে মুছে ফেলতে (Hard Purge) পারেন।
-              </div>
-            ) : deleteModalExpense.status !== "DRAFT" && deleteModalExpense.status !== "PENDING_APPROVAL" ? (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl mb-3 text-[11px] text-amber-800">
-                <p className="font-bold mb-1">হিসাবরক্ষণ অডিট ও ডাবল-এন্ট্রি ব্যালান্স নোট:</p>
-                পোস্ট করা ভাউচার ডিলিট করলে সাধারণ লেজারে স্বয়ংক্রিয় রিভার্সাল এন্ট্রি তৈরি হয়ে ভাউচারটি &apos;VOIDED&apos; হিসেবে সংরক্ষিত থাকবে।
-              </div>
-            ) : null}
             <form onSubmit={handleDeleteExpense}>
-              <div className="mb-3">
+              {/* Mode Selection Cards */}
+              <div className="space-y-2 mb-3">
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  মুছে ফেলার মোড নির্বাচন করুন (Select Action Mode)
+                </label>
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDeletePermanentPurge(true)}
+                    className={`p-3 rounded-2xl border text-left transition flex items-start gap-3 cursor-pointer ${
+                      deletePermanentPurge
+                        ? "bg-rose-50/80 border-rose-300 ring-2 ring-rose-500/20 text-rose-950"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100/70"
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-xl shrink-0 mt-0.5 ${deletePermanentPurge ? "bg-rose-600 text-white" : "bg-slate-200 text-slate-500"}`}>
+                      <Trash2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black flex items-center gap-1.5">
+                        <span>স্থায়ীভাবে সম্পূর্ণ ডিলিট ও রেকর্ড রিমুভ</span>
+                        <span className="text-[9px] uppercase px-1.5 py-0.5 bg-rose-200/70 text-rose-800 rounded font-bold">Hard Purge</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                        ভাউচার #{deleteModalExpense.voucher_number || "VOUCHER"}, সংশ্লিষ্ট সমস্ত জার্নাল এন্ট্রি এবং সেটেলমেন্ট রেকর্ড ডাটাবেজ থেকে চিরতরে মুছে যাবে।
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDeletePermanentPurge(false)}
+                    className={`p-3 rounded-2xl border text-left transition flex items-start gap-3 cursor-pointer ${
+                      !deletePermanentPurge
+                        ? "bg-amber-50/80 border-amber-300 ring-2 ring-amber-500/20 text-amber-950"
+                        : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100/70"
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-xl shrink-0 mt-0.5 ${!deletePermanentPurge ? "bg-amber-600 text-white" : "bg-slate-200 text-slate-500"}`}>
+                      <Ban className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black flex items-center gap-1.5">
+                        <span>নিরাপদ বাতিল (Safe Void & Reverse GL)</span>
+                        <span className="text-[9px] uppercase px-1.5 py-0.5 bg-amber-200/70 text-amber-800 rounded font-bold">Soft Void</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                        <span className="font-bold text-slate-700">অডিট ট্রেইল সুরক্ষা:</span> ভাউচারটি VOIDED হিসেবে সংরক্ষিত থাকবে এবং সাধারণ লেজারে রিভার্সাল এন্ট্রি পোস্ট হয়ে হিসাব সমতায় থাকবে।
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-4">
                 <label className="block text-xs font-bold text-slate-700 mb-1">ডিলিট করার কারণ (Reason) *</label>
                 <textarea
                   rows={2}
@@ -1267,25 +1311,6 @@ function ExpensesManagementContent() {
                   className="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-rose-500"
                 />
               </div>
-
-              {deleteModalExpense.status === "DRAFT" || deleteModalExpense.status === "PENDING_APPROVAL" || deleteModalExpense.status === "VOIDED" ? (
-                <div className="mb-4 flex items-start gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                  <input
-                    type="checkbox"
-                    id="expensePermanentPurge"
-                    checked={deletePermanentPurge}
-                    onChange={(e) => setDeletePermanentPurge(e.target.checked)}
-                    className="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
-                  />
-                  <label htmlFor="expensePermanentPurge" className="text-[11px] text-slate-700 select-none">
-                    <span className="font-bold text-rose-700">স্থায়ীভাবে মুছে ফেলুন (Super Admin Hard Purge)</span>: ভাউচার রেকর্ড ডাটাবেজ থেকে সম্পূর্ণ মুছে ফেলা হবে।
-                  </label>
-                </div>
-              ) : (
-                <div className="mb-4 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[11px] text-slate-600">
-                  <span className="font-bold text-slate-800">অডিট ট্রেইল সুরক্ষা:</span> সক্রিয় পোস্ট করা ভাউচারের ক্ষেত্রে হিসাবরক্ষণ আইন অনুযায়ী হার্ড ডিলিট নিষিদ্ধ। লেজার ব্যালান্স অটুট রাখতে এটি রিভার্সাল এন্ট্রির মাধ্যমে ভয়েড করা হবে।
-                </div>
-              )}
 
               <div className="flex justify-end space-x-3">
                 <button

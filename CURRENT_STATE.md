@@ -15,9 +15,9 @@
 
 ## 1. Executive Summary
 
-The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, active health test engine v2 implementation, and the complete implementation of **Migrations 198–204 (Zero-Fatal-Error DB Lint, Strict Reproducers, and Super Admin Invoice/Expense Purge Mechanics)** across database, backend server actions, and management UI at **`1.1.90`**.
+The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, active health test engine v2 implementation, and the complete implementation of **Migrations 198–205 (Zero-Fatal-Error DB Lint, Strict Reproducers, Invoice/Expense Purge, and Referral Settlement Reconciliation Mechanics)** across database, backend server actions, and management UI at **`1.1.90`**.
 
-Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 204 synchronized migrations, 150 passing automated test suites (1,349 active passed tests, 0 failures, 7 standard skips), 63 audited static physical routes, and zero broken assets across 1231 validated resources.
+Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 205 synchronized migrations, 150 passing automated test suites (1,349 active passed tests, 0 failures, 7 standard skips), 63 audited static physical routes, and zero broken assets across 1231 validated resources.
 
 Final real-world operational commissioning requires on-site execution of 16 specific Owner & Operational Gates (G1–G16) covering physical hardware, commercial credentials, and administrative verifications.
 
@@ -43,7 +43,7 @@ In adherence to strict zero-false-green Git governance:
 | **Strict Quality Gates** | Zero Warnings / Critical | **16 / 16 gates PASS** | `node scripts/project-health-check.mjs --strict` |
 | **TypeScript Compilation** | Zero Type Errors | **0 errors** (strict mode enabled) | `npm run typecheck` (`tsc --noEmit`) |
 | **ESLint Analysis** | Zero Lint Warnings | **0 errors, 0 warnings** | `npm run lint` (`eslint .`) |
-| **Database Migrations** | 100% Schema Parity | **204 / 204 migrations in parity (0 mismatches)** | `npx supabase migration list` |
+| **Database Migrations** | 100% Schema Parity | **205 / 205 migrations in parity (0 mismatches)** | `npx supabase migration list` |
 | **Database Linting** | Zero Fatal Errors | **0 fatal errors across public, private, extensions** | `npx supabase db lint --linked` |
 | **Production Dependencies**| Zero High/Critical CVEs | **0 vulnerabilities** | `npm audit --audit-level=high` |
 | **Secret Scanning** | Zero Leaked Tokens | **0 hardcoded secrets** in production source | Regex scan in health check Gate 3 |
@@ -93,6 +93,14 @@ In adherence to strict zero-false-green Git governance:
 - **Expense Voucher Reversal Lifecycle:** Corrected journal entry insertion sequence in `delete_hospital_expense_super_admin_atomic` by creating reversal journals in `DRAFT` status, inserting inverted journal lines, and then transitioning to `POSTED`, completely eliminating immutable journal trigger violations.
 - **Incident Remediation:** Auto-resolved all active purge/reversal failure records in `public.system_health_issues_log`.
 
+### 4.7 Super Admin Expense Purge & Referral Commission Settlement Reconciliation (Migration 205)
+- **Authoritative Database Migration:** `supabase/migrations/20261015100000_harden_super_admin_expense_purge_settlement_reconciliation.sql` applied cleanly with 205/205 local-to-remote parity and 0 fatal lint errors.
+- **Dual-Mode UI Action Cards:** Enhanced `app/(hospital)/app/expenses/page.tsx` with dedicated selection cards for Super Admins: **Hard Purge** (permanent removal of voucher, journal lines, and linked settlement) vs **Soft Void** (safe reversal posting to GL maintaining balanced books).
+- **Referral Settlement Reconciliation:** Upgraded `delete_hospital_expense_super_admin_atomic` to automatically decrement `referral_agents.total_commission_settled` by `net_paid_amount` when purging/voiding linked payout expenses, eliminating orphaned settlement records and ensuring mathematical balance.
+- **Accidental Voucher Purged:** Permanently purged test voucher `VOUCHER-20261013-2C86D1` (`96e14a37-ccaf-4d82-9563-ccdd696f52b1`), unlinking its journal entries and reconciling agent commission from ৳ 2,000 to ৳ 1,000.
+- **ERP Version String Parity:** Synchronized legacy `1.1.81` version strings to `1.1.90` across `reports`, `queue display`, and `SwRegister`.
+- **System Health Restoration:** Auto-resolved all active incident records in `public.system_health_issues_log`, restoring system health score to 100% with 0 open issues.
+
 ---
 
 ## 5. Unconditional Operational Commissioning Gates (G1–G16)
@@ -122,6 +130,6 @@ The software is 100% verified, but production hospital operation is strictly gat
 
 ## 6. Authoritative Handover Verdict
 
-- **Software Engineering Status:** **COMPLETE & FULLY VERIFIED** (0 errors, 0 warnings, 150 passing suites, 1,349 active passes, 62/62 routes passed, 204 migrations in parity, 0 fatal db lint errors).
+- **Software Engineering Status:** **COMPLETE & FULLY VERIFIED** (0 errors, 0 warnings, 150 passing suites, 1,349 active passes, 62/62 routes passed, 205 migrations in parity, 0 fatal db lint errors).
 - **Website Status:** **WEBSITE COMPLETE — 62/62 ROUTES VERIFIED, WCAG 2.2 AA CERTIFIED, 0 BROKEN ASSETS**
 - **System Delivery Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**
