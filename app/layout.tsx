@@ -3,6 +3,7 @@ import "./globals.css";
 import SwRegister from "@/components/app/SwRegister";
 import NetworkStatus from "@/components/app/NetworkStatus";
 import InstallPrompt from "@/components/app/InstallPrompt";
+import AutonomousSecuritySentinel from "@/components/app/AutonomousSecuritySentinel";
 import { SITE_CONFIG } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -78,6 +79,7 @@ export default function RootLayout({
         </div>
         <SwRegister />
         <InstallPrompt />
+        <AutonomousSecuritySentinel />
       </body>
     </html>
   );
