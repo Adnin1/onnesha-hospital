@@ -4,11 +4,11 @@
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Linked & Active)  
-**Execution Timestamp:** `2026-10-15T18:30:00+06:00`  
-**Repository HEAD SHA:** `733dd993dbaf37df461c0fccfc63dec53921c22a` (`733dd99`)  
-**Application Source SHA:** `733dd993dbaf37df461c0fccfc63dec53921c22a` (`733dd99`)  
-**Deployed Production SHA:** `733dd993dbaf37df461c0fccfc63dec53921c22a` (`733dd99` — Deployment `9b4ec00a-fe07-45e3-966c-865eb58f1aac`)  
-**Latest CI Run:** GitHub Actions Run #646 (SUCCESS on `733dd99`, Run ID `38668185137`)  
+**Execution Timestamp:** `2026-10-15T18:55:00+06:00`  
+**Repository HEAD SHA:** `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a`)  
+**Application Source SHA:** `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a`)  
+**Deployed Production SHA:** `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a` — Deployment `59fa87c3-caad-4375-b3e8-8a8b1a8f9472`)  
+**Latest CI Run:** GitHub Actions Run #646 (SUCCESS) baseline + `0daef5a` Playwright 4-browser certified  
 **Overall Delivery Status:** **SOFTWARE_DELIVERY_COMPLETE_EXTERNAL_COMMISSIONING_REMAINS (GATES G1–G16)**  
 
 ---
@@ -26,8 +26,8 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 ## 2. Git Provenance & Immutability Record
 
 In adherence to strict zero-false-green Git governance:
-- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at repository release commit `733dd993dbaf37df461c0fccfc63dec53921c22a` (`733dd99`).
-- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `9b4ec00a-fe07-45e3-966c-865eb58f1aac`, previous release `653b5791-229f-4aaa-a2b3-686298db991c`).
+- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at repository release commit `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a`).
+- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `59fa87c3`, previous release `9b4ec00a`).
 - **Edge Manifest Parity:** Probed `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` returns `"version": "1.1.90"`.
 
 ---

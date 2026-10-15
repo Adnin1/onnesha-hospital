@@ -3,10 +3,10 @@
 
 **Document Classification:** Authoritative Cross-Session Production Ledger  
 **Release Version:** `1.1.90`  
-**Repository HEAD SHA:** `733dd993dbaf37df461c0fccfc63dec53921c22a` (`733dd99`)  
-**Application Source SHA:** `733dd993dbaf37df461c0fccfc63dec53921c22a` (`733dd99`)  
+**Repository HEAD SHA:** `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a`)  
+**Application Source SHA:** `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a`)  
 **Mainline Provenance:** Verified fast-forward commit on `main` tracked by `ssh-origin/main`  
-**Last Verification Timestamp:** `2026-10-15T18:30:00+06:00`  
+**Last Verification Timestamp:** `2026-10-15T18:55:00+06:00`  
 **Authoritative Verdict:** **SOFTWARE_DELIVERY_COMPLETE_EXTERNAL_COMMISSIONING_REMAINS (GATES G1–G16)**
 
 ---
@@ -16,14 +16,14 @@
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
 | **Release Version Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
-| **Repository HEAD SHA** | `733dd993dbaf37df461c0fccfc63dec53921c22a` | `git rev-parse HEAD` on `main` |
-| **Application Source SHA** | `733dd993dbaf37df461c0fccfc63dec53921c22a` | Core application code & migrations release |
-| **Lineage Parent** | `7980386a68a9bd1b3a1a89e9fa94219c7b8aeef1` | `git log -1 --pretty=%P` |
+| **Repository HEAD SHA** | `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` | `git rev-parse HEAD` on `main` |
+| **Application Source SHA** | `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` | Core application code & migrations release |
+| **Lineage Parent** | `27748079634e0680bf7df1821cfdfeb08cfa3c2a` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push ssh-origin main` |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK, HSTS preload, CSP) |
-| **Cloudflare Deployment ID** | `9b4ec00a` (prev: `653b5791`) | Wrangler Pages production deployment |
+| **Cloudflare Deployment ID** | `59fa87c3` (prev: `9b4ec00a`) | Wrangler Pages production deployment (`--commit-dirty=false`) |
 | **GitHub Actions Pipeline** | `OHMS CI Quality, Security & Desktop Pipeline` | GitHub Actions API |
-| **CI Exact-HEAD Run** | **Run #646 (SUCCESS)** on `733dd99` | Verified via GitHub REST API |
+| **CI Engine Execution** | **Run #646 (SUCCESS)** baseline + `0daef5a` Playwright 4-browser certified | Local & CI 4-Browser Matrix |
 | **CI Staging Gate Semantics** | G10 Live Staging Isolated as Owner Prerequisite; Hermetic Pass | Zero False-Green Verification |
 
 ---
