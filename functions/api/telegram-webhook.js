@@ -4,10 +4,15 @@
 
 const BOT_TOKEN = "8435645496:AAHl0iZaJx8v1hVLeaJ9ifXZufJErS2VqBw";
 const ALLOWED_USER_ID = 1161469999; // Mahin Khan
+const ALLOWED_CHAT_ID = 1161469999; // Mahin Khan Chat ID
 const CANONICAL_URL = "https://onnesha-hospital.pages.dev";
 const SUPABASE_URL = "https://iuhtzahuszdkdarhxobx.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_OPiG-7uhoIlnysXKrpErsw_rdXEJ4rs";
 const GITHUB_REPO = "Adnin1/onnesha-hospital";
+
+// Replay protection cache (tracks processed Telegram update_ids)
+const PROCESSED_UPDATES = new Set();
+const MAX_TRACKED_UPDATES = 200;
 
 async function tgCall(endpoint, payload) {
   try {
@@ -17,8 +22,8 @@ async function tgCall(endpoint, payload) {
       body: JSON.stringify(payload)
     });
     return await res.json();
-  } catch (err) {
-    return { ok: false, description: err.message };
+  } catch {
+    return { ok: false, description: "Call failed" };
   }
 }
 
@@ -52,6 +57,13 @@ const MAIN_KEYBOARD = {
   ]
 };
 
+export async function onRequest(context) {
+  const method = context.request.method.toUpperCase();
+  if (method === "GET") return onRequestGet(context);
+  if (method === "POST") return onRequestPost(context);
+  return new Response("Method Not Allowed", { status: 405 });
+}
+
 export async function onRequestGet(_context) {
   return new Response(
     JSON.stringify({
@@ -61,19 +73,57 @@ export async function onRequestGet(_context) {
       pc_required: false,
       timestamp: new Date().toISOString()
     }),
-    { headers: { "Content-Type": "application/json" } }
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      }
+    }
   );
 }
 
 export async function onRequestPost(context) {
   try {
+    // 1. Webhook Secret Token Verification (if configured on edge)
+    const webhookSecret = context.env?.TELEGRAM_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const incomingSecret = context.request.headers.get("x-telegram-bot-api-secret-token");
+      if (incomingSecret !== webhookSecret) {
+        return new Response("Forbidden", { status: 403 });
+      }
+    }
+
+    // 2. Payload size bounding (max 64KB)
+    const cl = parseInt(context.request.headers.get("content-length") || "0", 10);
+    if (cl > 65536) {
+      return new Response("Payload Too Large", { status: 413 });
+    }
+
     const update = await context.request.json();
 
-    // 1. Handle Callback Queries (Button Clicks)
+    // 3. Replay attack & duplicate update_id suppression
+    if (update && update.update_id) {
+      if (PROCESSED_UPDATES.has(update.update_id)) {
+        return new Response("OK", { status: 200 });
+      }
+      PROCESSED_UPDATES.add(update.update_id);
+      if (PROCESSED_UPDATES.size > MAX_TRACKED_UPDATES) {
+        const oldest = PROCESSED_UPDATES.values().next().value;
+        PROCESSED_UPDATES.delete(oldest);
+      }
+    }
+
+    // 4. Handle Callback Queries (Button Clicks)
     if (update.callback_query) {
       const cb = update.callback_query;
-      const chatId = cb.message.chat.id;
+      const chatId = cb.message && cb.message.chat ? cb.message.chat.id : null;
+      const userId = cb.from ? cb.from.id : null;
       const data = cb.data;
+
+      // Strict user & chat ID authentication
+      if (userId !== ALLOWED_USER_ID || chatId !== ALLOWED_CHAT_ID) {
+        return new Response("Forbidden", { status: 403 });
+      }
 
       if (cb.id) {
         await tgCall("answerCallbackQuery", { callback_query_id: cb.id });
@@ -89,21 +139,20 @@ export async function onRequestPost(context) {
       return new Response("OK", { status: 200 });
     }
 
-    // 2. Handle Messages
+    // 5. Handle Messages
     if (update.message) {
       const msg = update.message;
-      const chatId = msg.chat.id;
-      const userId = msg.from.id;
+      const chatId = msg.chat ? msg.chat.id : null;
+      const userId = msg.from ? msg.from.id : null;
 
-      // Whitelist security enforcement
-      if (userId !== ALLOWED_USER_ID) {
-        await sendMsg(chatId, "⛔ <b>Access Denied:</b> This bot is locked to its verified owner.");
-        return new Response("OK", { status: 200 });
+      // Strict whitelist authorization enforcement
+      if (userId !== ALLOWED_USER_ID || chatId !== ALLOWED_CHAT_ID) {
+        return new Response("Forbidden", { status: 403 });
       }
 
       // Handle Photos/Screenshots
       if (msg.photo && msg.photo.length > 0) {
-        const caption = msg.caption || "";
+        const caption = (msg.caption || "").substring(0, 500);
         await sendMsg(
           chatId,
           `📸 <b>স্ক্রিনশট ক্লাউডফ্লেয়ার এজে রিসিভ হয়েছে!</b>\n` +
@@ -119,13 +168,13 @@ export async function onRequestPost(context) {
 
       // Handle Text
       if (msg.text) {
-        await handleTextCommand(chatId, msg.text);
+        await handleTextCommand(chatId, msg.text.substring(0, 1000));
       }
     }
 
     return new Response("OK", { status: 200 });
-  } catch (err) {
-    return new Response(`Error: ${err.message}`, { status: 500 });
+  } catch {
+    return new Response("Internal Server Error", { status: 500 });
   }
 }
 
@@ -250,24 +299,28 @@ async function handleStatus(chatId) {
 }
 
 async function handlePresentation(chatId) {
-  const htmlUrl = `${CANONICAL_URL}/docs/presentation.html`;
+  const htmlUrl = `${CANONICAL_URL}/docs/reception_master_guide.html`;
+  const pptxUrl = `${CANONICAL_URL}/docs/ONNESHA_HOSPITAL_RECEPTION_BABY_STEP_GUIDE.pptx`;
 
   const msg =
-    `🏥 <b>হাসপাতাল স্টাফ মাস্টার ট্রেনিং ও প্রেজেন্টেশন গাইড</b>\n` +
+    `🏥 <b>হাসপাতাল রিসেপশন ও স্টাফ মাস্টার ট্রেনিং প্রেজেন্টেশন গাইড</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `👤 <b>গ্রাহক:</b> Niz Hum (@mahinkhan000)\n` +
-    `🌐 <b>লাইভ প্রেজেন্টেশন লিঙ্ক:</b>\n` +
-    `👉 <a href="${htmlUrl}">ইন্টারঅ্যাক্টিভ অ্যানিমেটেড প্রেজেন্টেশন ওপেন করুন</a>\n\n` +
-    `📌 <b>বৈশিষ্ট্যসমূহ:</b>\n` +
-    `• ৯টি অ্যানিমেটেড গ্লাস মরফিক স্লাইড (শব্দ ও ট্রানজিশন সহ)\n` +
-    `• মোবাইল ও কম্পিউটার যেকোনো ব্রাউজারে চলবে\n` +
-    `• রিসেপশন, ডক্টর, ল্যাব, ফার্মেসি ও বিলিং স্টাফদের সহজ SOP\n\n` +
-    `<i>আপনি যেকোনো ব্রাউজার থেকে উপরের লিঙ্কে ক্লিক করলেই লাইভ প্রেজেন্টেশন চালু হয়ে যাবে!</i>`;
+    `👤 <b>অনার:</b> Niz Hum (@mahinkhan000)\n` +
+    `🌐 <b>ইন্টারেক্টিভ ওয়েব গাইড:</b>\n` +
+    `👉 <a href="${htmlUrl}">রিসেপশন মাস্টার ওয়েব গাইড ওপেন করুন</a>\n\n` +
+    `📥 <b>পাওয়ারপয়েন্ট ফাইল:</b>\n` +
+    `👉 <a href="${pptxUrl}">সরাসরি .PPTX স্লাইড ডাউনলোড করুন</a>\n\n` +
+    `📌 <b>স্লাইডের প্রধান বিষয়বস্তু:</b>\n` +
+    `• ১২টি বেবি-স্টেপ স্লাইড (লগইন, রোগী নিবন্ধন, টিকিট বুকিং)\n` +
+    `• ৮০ মিমি থার্মাল প্রিন্ট, ক্যাশ ও বিকাশ পেমেন্ট কালেকশন\n` +
+    `• ইমার্জেন্সি ফাস্ট-ট্র্যাক, বেড এলোকেশন ও ক্যাশ রিকনসিলিয়েশন\n\n` +
+    `<i>যেকোনো ব্রাউজার বা মোবাইল থেকে সরাসরি ওপেন করতে পারবেন।</i>`;
 
   await sendMsg(chatId, msg, {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "📊 ওপেন লাইভ প্রেজেন্টেশন", url: htmlUrl }],
+        [{ text: "📊 ওপেন রিসেপশন মাস্টার গাইড", url: htmlUrl }],
+        [{ text: "📥 ডাউনলোড PPTX স্লাইড", url: pptxUrl }],
         [{ text: "🌐 ওপেন হাসপাতাল ওয়েবসাইট", url: CANONICAL_URL }]
       ]
     }

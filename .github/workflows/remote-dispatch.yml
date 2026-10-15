@@ -22,8 +22,7 @@ on:
         default: '1161469999'
 
 permissions:
-  contents: write
-  pages: write
+  contents: read
   actions: read
 
 jobs:
@@ -61,7 +60,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy out --project-name=onnesha-hospital --commit-dirty=true
+          command: pages deploy out --project-name=onnesha-hospital --commit-dirty=false
         continue-on-error: true
 
       - name: Notify Telegram of Cloud Completion
@@ -74,7 +73,9 @@ jobs:
           else
             MSG="⚠️ <b>24/7 Cloud Autonomous Run Alert</b>%0A%0A• <b>Execution Node:</b> GitHub Actions Cloud Runner%0A• <b>Status:</b> ❌ $STATUS%0A• <b>Commit:</b> <code>${{ github.sha }}</code>"
           fi
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN || '8435645496:AAHl0iZaJx8v1hVLeaJ9ifXZufJErS2VqBw' }}/sendMessage" \
-            -d "chat_id=$CHAT_ID" \
-            -d "text=$MSG" \
-            -d "parse_mode=HTML"
+          if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d "chat_id=$CHAT_ID" \
+              -d "text=$MSG" \
+              -d "parse_mode=HTML"
+          fi

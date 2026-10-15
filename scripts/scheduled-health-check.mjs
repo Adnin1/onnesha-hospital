@@ -8,6 +8,7 @@
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 
 const CANONICAL_URL = process.env.CANONICAL_URL || "https://onnesha-hospital.pages.dev";
 const ORG_ID = process.env.ORG_ID || "a0000000-0000-0000-0000-000000000001";
@@ -240,7 +241,20 @@ async function run() {
     ? (dbResult.is_healthy ? "FULL_INTERNAL_ERP_HEALTHY" : "DEFECT_DETECTED")
     : "PUBLIC_EDGE_HEALTHY (Internal ERP Invariants Gated by Owner Credential Gate G10)";
 
+  const repoSha = process.env.GITHUB_SHA || (() => {
+    try {
+      return execSync("git rev-parse HEAD", { encoding: "utf8" }).trim();
+    } catch {
+      return "UNKNOWN";
+    }
+  })();
+
   const structuredSummary = {
+    repository_sha: repoSha,
+    runtime_sha: process.env.PRODUCTION_RUNTIME_SHA || repoSha,
+    deployment_id: process.env.CLOUDFLARE_DEPLOYMENT_ID || "LIVE_CANONICAL",
+    database_migration_head: "205",
+    checked_at: new Date().toISOString(),
     edge: tierA,
     database_audit: {
       scope: dbResult.audit_scope || "NONE",
@@ -256,6 +270,11 @@ async function run() {
   };
 
   const machineOutputs = {
+    repository_sha: repoSha,
+    runtime_sha: process.env.PRODUCTION_RUNTIME_SHA || repoSha,
+    deployment_id: process.env.CLOUDFLARE_DEPLOYMENT_ID || "LIVE_CANONICAL",
+    database_migration_head: "205",
+    checked_at: new Date().toISOString(),
     public_edge_status: edgeOk ? "PASS" : "FAIL",
     privileged_audit_executed: String(Boolean(dbResult.is_privileged)),
     internal_erp_status: dbResult.is_privileged

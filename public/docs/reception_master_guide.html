@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Onnesha Hospital - Reception Master Operating Guide</title>
+  <link rel="canonical" href="https://onnesha-hospital.pages.dev/docs/reception_master_guide.html">
+  <meta name="description" content="অন্বেষা হাসপাতাল ম্যানেজমেন্ট সিস্টেম রিসেপশন মাস্টার অপারেটিং নির্দেশিকা ও প্রশিক্ষণ ম্যানুয়াল">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -774,13 +776,16 @@
 
         <div style="margin-top:1.5rem;">
           <h4 style="color:var(--primary); margin-bottom:0.5rem;">লাইভ ইন্টারেক্টিভ বেড প্রিভিউ (ক্লিক করে দেখুন):</h4>
+          <div id="bedInfo" style="padding:0.6rem 1rem; background:#E3F2FD; border-radius:8px; color:var(--primary); font-weight:600; margin-bottom:0.75rem; font-size:0.92rem;">
+            ℹ️ যেকোনো বেডের উপর ক্লিক করে লাইভ স্ট্যাটাস দেখুন
+          </div>
           <div class="bed-grid">
-            <div class="bed-cell bed-available" onclick="alert('বেড ২০২ খালি আছে! ক্লিক করে বুকিং করা যাবে।')">Bed 201<br><small>🟢 Available</small></div>
-            <div class="bed-cell bed-occupied" onclick="alert('বেড ২০২-এ রোগী ভর্তি আছেন (মোঃ করিম)।')">Bed 202<br><small>🔴 Occupied</small></div>
-            <div class="bed-cell bed-available" onclick="alert('বেড ২০৩ খালি আছে!')">Bed 203<br><small>🟢 Available</small></div>
-            <div class="bed-cell bed-cleaning" onclick="alert('বেড ২০৪ পরিষ্কার হচ্ছে, ৫ মিনিটে তৈরি হবে।')">Bed 204<br><small>🟡 Cleaning</small></div>
-            <div class="bed-cell bed-available" onclick="alert('ভিআইপি কেবিন ৩০১ খালি আছে!')">Cabin 301<br><small>🟢 VIP Avail</small></div>
-            <div class="bed-cell bed-occupied" onclick="alert('আইসিইউ-১ অকুপাইড।')">ICU-01<br><small>🔴 Occupied</small></div>
+            <div class="bed-cell bed-available" onclick="document.getElementById('bedInfo').textContent = '🟢 বেড ২০১ সম্পূর্ণ খালি আছে! ১-ক্লিকে রোগীর নামে বুকিং করা সম্ভব।'">Bed 201<br><small>🟢 Available</small></div>
+            <div class="bed-cell bed-occupied" onclick="document.getElementById('bedInfo').textContent = '🔴 বেড ২০২-এ রোগী ভর্তি আছেন (রোগী: মোঃ করিম, এডমিশন: ১৪-অক্টোবর)।'">Bed 202<br><small>🔴 Occupied</small></div>
+            <div class="bed-cell bed-available" onclick="document.getElementById('bedInfo').textContent = '🟢 বেড ২০৩ সম্পূর্ণ প্রস্তুত ও খালি আছে।'">Bed 203<br><small>🟢 Available</small></div>
+            <div class="bed-cell bed-cleaning" onclick="document.getElementById('bedInfo').textContent = '🟡 বেড ২০৪ স্যানিটাইজেশন চলছে, ৫ মিনিটে প্রস্তুত হবে।'">Bed 204<br><small>🟡 Cleaning</small></div>
+            <div class="bed-cell bed-available" onclick="document.getElementById('bedInfo').textContent = '🟢 ভিআইপি কেবিন ৩০১ সম্পূর্ণ প্রস্তুত।'">Cabin 301<br><small>🟢 VIP Avail</small></div>
+            <div class="bed-cell bed-occupied" onclick="document.getElementById('bedInfo').textContent = '🔴 আইসিইউ-০১ অকুপাইড (ক্রিটিক্যাল কেয়ার টিম পর্যবেক্ষণ করছে)।'">ICU-01<br><small>🔴 Occupied</small></div>
           </div>
         </div>
       </div>
