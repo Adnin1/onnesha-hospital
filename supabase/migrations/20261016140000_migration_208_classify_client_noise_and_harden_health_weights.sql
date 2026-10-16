@@ -13,6 +13,9 @@
 
 BEGIN;
 
+-- Ensure resolution_notes column exists on system_health_issues_log
+ALTER TABLE public.system_health_issues_log ADD COLUMN IF NOT EXISTS resolution_notes TEXT;
+
 -- -------------------------------------------------------------------------------------
 -- 1. RECONCILE BED AND CABIN OCCUPANCY DRIFT ACROSS ALL ORGANIZATIONS
 -- -------------------------------------------------------------------------------------

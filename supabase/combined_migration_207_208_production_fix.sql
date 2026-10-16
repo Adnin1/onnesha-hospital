@@ -263,6 +263,8 @@ REVOKE ALL ON FUNCTION public.reconcile_bed_vacancy_drift_atomic(UUID) FROM PUBL
 GRANT EXECUTE ON FUNCTION public.reconcile_bed_vacancy_drift_atomic(UUID) TO authenticated, service_role;
 
 -- 5. RETROACTIVELY RESOLVE EXTENSION NOISE AND BED DRIFT INCIDENT ROWS
+ALTER TABLE public.system_health_issues_log ADD COLUMN IF NOT EXISTS resolution_notes TEXT;
+
 UPDATE public.system_health_issues_log
 SET is_resolved = TRUE,
     resolved_at = NOW(),
