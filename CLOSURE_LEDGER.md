@@ -3,9 +3,9 @@
 
 **Document Classification:** Authoritative Cross-Session Production Ledger  
 **Release Version:** `1.1.90`  
-**Anchor Commit HEAD:** `27b307df8d362838430e9669472ef1aa6489647b` (HEAD)  
+**Anchor Commit HEAD:** `f8548460d4da69cb8373fb589d1ed31675a4fc0c` (HEAD)  
 **Mainline Provenance:** Verified fast-forward commit on `main` tracked by `ssh-origin/main`  
-**Last Verification Timestamp:** `2026-10-16T23:05:00+06:00`  
+**Last Verification Timestamp:** `2026-10-16T23:30:00+06:00`  
 **Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**
 
 ---
@@ -15,7 +15,7 @@
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
 | **Release Version Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
-| **Commit HEAD SHA** | `27b307df8d362838430e9669472ef1aa6489647b` | `git rev-parse HEAD` on `main` |
+| **Commit HEAD SHA** | `f8548460d4da69cb8373fb589d1ed31675a4fc0c` | `git rev-parse HEAD` on `main` |
 | **Lineage Parent** | `c6b1f5b1a43a0eecf9bb349d5926ec302c3848b3` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push ssh-origin main` |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK, HSTS preload, CSP) |
