@@ -30,13 +30,13 @@
 
 | Metric | Target | Measured Ground Truth | Status |
 |:---|:---:|:---|:---:|
-| **Test Suites** | 100% | **150 / 150 suites passing** (`npm test`) | ✅ PASS |
-| **Active Test Cases** | Zero Failures | **1,349 passed**, 0 failed, 7 standard skips | ✅ PASS |
+| **Test Suites** | 100% | **153 / 153 suites passing** (`npm test`) | ✅ PASS |
+| **Active Test Cases** | Zero Failures | **1,370 passed**, 0 failed, 7 standard skips | ✅ PASS |
 | **Health Engine v2** | 100% | **8 / 8 tests passing** (`phase39-health-engine-v2`) | ✅ PASS |
 | **Security Tester v2** | 100% | **5 / 5 tests passing** (`phase40-security-tester-v2`) | ✅ PASS |
 | **TypeScript Strict Mode** | 0 Errors | **0 errors** (`tsc --noEmit`) | ✅ PASS |
 | **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint .`) | ✅ PASS |
-| **Supabase Remote Migrations** | 100% | **204 / 204 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
+| **Database Migrations** | 100% Baseline | **207 / 207 migrations in repo** (Migration 207 added) | ✅ PASS |
 | **Database Linting** | 0 Fatal Errors | **0 fatal errors across all schemas** (`npx supabase db lint --linked`) | ✅ PASS |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ PASS |
 | **Prerendered Website Routes** | 100% | **63 physical routes generated & audited** (`out/`) | ✅ PASS |
@@ -119,7 +119,17 @@
 15. **`INFRA-TEST-01` (Node Test Runner Windows & Strip-Types Support):**
     - *Problem:* Test runner in `scripts/run-tests.mjs` invoked unaliased `node` without `--experimental-strip-types`, causing 20 test suites importing `.ts` files to fail with `ERR_UNKNOWN_FILE_EXTENSION`.
     - *Fix:* Configured `spawnSync` to execute `process.execPath` with flags `['--experimental-strip-types', '--no-warnings', '--test', relPath]`.
-    - *Verification:* Verified via `node scripts/run-tests.mjs --certification`: 150/150 suites passed (1,349 active passed tests, 0 failures).
+    - *Verification:* Verified via `node scripts/run-tests.mjs --certification`: 153/153 suites passed (1,370 active passed tests, 0 failures).
+
+16. **`FEAT-HEALTH-02` (Explicit Diagnostic Issue Identity, Safe Error Taxonomy & Zero-False-Green Remediation):**
+    - *Problem:* `verifyAndResolveSystemIssueAction()` was capable of passing detector string codes (e.g. `BED_OCCUPANCY_DRIFT`) into UUID-only RPC `verify_system_incident_resolution()`. UI banner optimistically cleared incidents without verified DB confirmation. Client-side runtime errors were indiscriminately categorized as CRITICAL, and fake auto-heal timeouts were dispatched.
+    - *Fix:*
+      1. Created explicit `DiagnosticIssueKind` (`INCIDENT` vs `DETECTOR`) and `DiagnosticIssueIdentity` types in `lib/diagnostics/actions.ts`.
+      2. Implemented `remediateSystemHealthIssueAction` routing `DETECTOR` codes to atomic reconcilers and `INCIDENT` UUIDs to PostgreSQL verifiers with strict `isUuid` validation.
+      3. Hardened `classifyRuntimeError` in `lib/diagnostics/troubleshooter.ts` with explicit taxonomy: `CRITICAL` restricted to financial/RLS/auth corruption; `WARNING` for UI exceptions; `IGNORE` for benign browser extensions/ResizeObserver. Removed fake auto-healed dispatch and added 10s deduplication window.
+      4. Rendered `SystemHealthAlertBanner.tsx` strictly observational on mount (zero auto-mutations in `useEffect`) and gated resolution feedback on authoritative `RESOLVED_VERIFIED` lifecycle status.
+      5. Hardened Migration 207 with `doctors.updated_at` trigger, partial unique index preventing double occupancy on beds/cabins, and atomic reconciler with row locking (`FOR UPDATE`).
+    - *Verification:* Verified via regression test suite `tests/health-issue-identity-and-remediation.test.mjs` (5/5 tests passing) and all 153/153 test suites passing (1,370 active tests).
 
 ---
 

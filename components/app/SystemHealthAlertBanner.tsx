@@ -153,7 +153,7 @@ export default function SystemHealthAlertBanner({
         setTimeout(() => setJustResolvedMessage(null), 10000);
         fetchDiagnostics();
       } else {
-        const errorMsg = res.error || "সমস্যা এখনও বিদ্যমান। ডেটাবেজে ত্রুটি রয়ে গেছে।";
+        const errorMsg = res.error || res.message || "সমস্যা এখনও বিদ্যমান। ডেটাবেজে ত্রুটি রয়ে গেছে।";
         setResolutionError(`সমাধান অসম্পূর্ণ: ${errorMsg}`);
         fetchDiagnostics();
       }
