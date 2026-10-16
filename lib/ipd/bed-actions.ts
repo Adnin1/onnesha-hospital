@@ -793,11 +793,11 @@ export async function addBedAction(payload: {
 
       if (insertRes.error.code === "PGRST204" || errMsg.includes("column")) {
         const missingMatch = insertRes.error.message.match(/'([^']+)' column/);
-        if (missingMatch && missingMatch[1] && missingMatch[1] in insertPayload && !["organization_id", "ward_id", "bed_number", "daily_rate", "ward_name"].includes(missingMatch[1])) {
+        if (missingMatch && missingMatch[1] && missingMatch[1] in insertPayload && !["organization_id", "ward_id", "bed_number"].includes(missingMatch[1])) {
           delete insertPayload[missingMatch[1]];
           modified = true;
         } else {
-          for (const col of ["bed_type", "bed_type_id"]) {
+          for (const col of ["ward_name", "daily_rate", "daily_charge", "bed_type", "bed_type_id"]) {
             if (errMsg.includes(`'${col}'`) && col in insertPayload) {
               delete insertPayload[col];
               modified = true;
@@ -1117,11 +1117,20 @@ export async function deleteBedAction(bedId: string): Promise<ActionResult<{ suc
 
     if (delErr) {
       // Historical references exist: soft-delete / deactivate
-      const { error: updateErr } = await supabase
+      let { error: updateErr } = await supabase
         .from("beds")
         .update({ is_active: false, status: "MAINTENANCE" })
         .eq("id", bedId)
         .eq("organization_id", orgId);
+
+      if (updateErr) {
+        const fallbackRes = await supabase
+          .from("beds")
+          .update({ is_active: false, status: "VACANT" })
+          .eq("id", bedId)
+          .eq("organization_id", orgId);
+        updateErr = fallbackRes.error;
+      }
 
       if (updateErr) {
         return { success: false, error: updateErr.message };

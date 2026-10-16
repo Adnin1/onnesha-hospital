@@ -721,20 +721,76 @@ export async function updateReferralAgentAction(params: {
 export async function deactivateReferralAgentAction(agentId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = createClient();
-    // Safe archival / deactivation to preserve financial invariants
-    const { error } = await supabase
+    const updatePayload: Record<string, unknown> = {
+      is_active: false,
+      archived_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    let { error } = await supabase
       .from("referral_agents")
-      .update({
-        is_active: false,
-        archived_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", agentId);
+
+    if (error && (error.code === "PGRST204" || error.message.toLowerCase().includes("column"))) {
+      delete updatePayload.updated_at;
+      delete updatePayload.archived_at;
+      const retry = await supabase
+        .from("referral_agents")
+        .update(updatePayload)
+        .eq("id", agentId);
+      error = retry.error;
+    }
 
     if (error) throw error;
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to deactivate agent";
+    return { success: false, error: msg };
+  }
+}
+
+export async function deleteReferralAgentAction(agentId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = createClient();
+
+    // 1. Check if agent has active commissions
+    const { data: comms } = await supabase
+      .from("referral_commissions")
+      .select("id")
+      .eq("referral_agent_id", agentId)
+      .limit(1);
+
+    if (comms && comms.length > 0) {
+      // Historical financial records exist: must archive instead of hard delete
+      return deactivateReferralAgentAction(agentId);
+    }
+
+    // 2. Check patient_referral_attributions
+    const { data: attributions } = await supabase
+      .from("patient_referral_attributions")
+      .select("id")
+      .eq("referral_agent_id", agentId)
+      .limit(1);
+
+    if (attributions && attributions.length > 0) {
+      return deactivateReferralAgentAction(agentId);
+    }
+
+    // 3. No financial or patient links: perform clean hard delete
+    const { error: delErr } = await supabase
+      .from("referral_agents")
+      .delete()
+      .eq("id", agentId);
+
+    if (delErr) {
+      // Fallback to deactivation if RLS or foreign key restricts delete
+      return deactivateReferralAgentAction(agentId);
+    }
+
+    return { success: true };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to delete referral agent";
     return { success: false, error: msg };
   }
 }

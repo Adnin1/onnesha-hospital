@@ -36,7 +36,7 @@ import {
   getReferralAgentByIdAction,
   createReferralAgentAction,
   updateReferralAgentRateAction,
-  deactivateReferralAgentAction,
+  deleteReferralAgentAction,
   getReferralCommissionsAction,
   settleReferralCommissionsAction,
   getReferralSettlementsAction,
@@ -742,15 +742,13 @@ export default function ReferralManagementPage() {
                           >
                             কমিশন প্রদান
                           </button>
-                          {agent.is_active && (
-                            <button
-                              onClick={() => handleDeactivate(agent)}
-                              className="px-2 py-1 text-[11px] font-semibold text-slate-400 hover:text-rose-600 rounded-md transition"
-                              title="Archive partner"
-                            >
-                              Archive
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleDeactivate(agent)}
+                            className="px-2 py-1 text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-md transition border border-rose-200"
+                            title="পার্টনার মুছে ফেলুন বা নিষ্ক্রিয় করুন"
+                          >
+                            মুছে ফেলুন
+                          </button>
                         </td>
                       </tr>
                     );
@@ -2428,24 +2426,24 @@ export default function ReferralManagementPage() {
             ? `Are you sure you want to archive referral partner ${agentToArchive.full_name} (${agentToArchive.agent_code})? Historical commissions and payout ledgers remain strictly preserved.`
             : ""
         }
-        confirmLabel="Archive Partner"
-        cancelLabel="Cancel"
+        confirmLabel="মুছে ফেলুন / Archive"
+        cancelLabel="বাতিল"
         isDestructive={true}
         isLoading={submitting}
         onConfirm={async () => {
           if (!agentToArchive) return;
           setSubmitting(true);
           try {
-            const res = await deactivateReferralAgentAction(agentToArchive.id);
+            const res = await deleteReferralAgentAction(agentToArchive.id);
             if (res.success) {
-              setAlertSuccess(`Partner ${agentToArchive.agent_code} archived successfully.`);
+              setAlertSuccess(`এজেন্ট/পার্টনার ${agentToArchive.agent_code} সফলভাবে মুছে ফেলা/আর্কাইভ করা হয়েছে।`);
               setAgentToArchive(null);
               await refreshAll();
             } else {
-              setAlertError(res.error || "Failed to archive partner.");
+              setAlertError(res.error || "Failed to delete/archive partner.");
             }
           } catch {
-            setAlertError("An unexpected error occurred while archiving partner.");
+            setAlertError("An unexpected error occurred while deleting partner.");
           } finally {
             setSubmitting(false);
           }

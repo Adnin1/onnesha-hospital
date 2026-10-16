@@ -176,11 +176,10 @@ export async function createInvoiceAction(params: {
     if (!patient.phone) {
       return { success: false, error: "Patient contact number is mandatory for billing." };
     }
+    // Address and Age are recommended; if missing, use graceful defaults so emergency/OPD billing is never blocked
     if (!patient.address || patient.address.trim().length < 2) {
-      return { success: false, error: "Patient address is mandatory for hospital billing. Please save address in patient details." };
-    }
-    if ((patient.age === null || patient.age === undefined) && !patient.dob) {
-      return { success: false, error: "Patient age is mandatory for hospital billing. Please specify patient age." };
+      // Non-blocking fallback for rapid counter billing
+      patient.address = "Hospital Counter / Walk-in";
     }
 
     // Invariant: Atomic single-transaction database RPC create_invoice_and_post_gl_atomic encapsulates
