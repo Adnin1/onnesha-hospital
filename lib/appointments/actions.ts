@@ -424,15 +424,37 @@ export async function updateDoctorAction(params: {
       .select("*, departments(name)")
       .single();
 
-    if (updateRes.error && (updateRes.error.message.includes("'phone'") || updateRes.error.code === "PGRST204")) {
-      delete updatePayload.phone;
-      updateRes = await supabase
-        .from("doctors")
-        .update(updatePayload)
-        .eq("id", params.doctorId)
-        .eq("organization_id", session.organizationId)
-        .select("*, departments(name)")
-        .single();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      if (!updateRes.error) break;
+      const errMsg = updateRes.error.message.toLowerCase();
+      let modified = false;
+
+      if (updateRes.error.code === "PGRST204" || errMsg.includes("column")) {
+        const missingMatch = updateRes.error.message.match(/'([^']+)' column/);
+        if (missingMatch && missingMatch[1] && missingMatch[1] in updatePayload) {
+          delete updatePayload[missingMatch[1]];
+          modified = true;
+        } else {
+          for (const col of ["updated_at", "phone", "degrees", "designation", "followup_fee", "report_fee"]) {
+            if (errMsg.includes(`'${col}'`) && col in updatePayload) {
+              delete updatePayload[col];
+              modified = true;
+            }
+          }
+        }
+      }
+
+      if (modified) {
+        updateRes = await supabase
+          .from("doctors")
+          .update(updatePayload)
+          .eq("id", params.doctorId)
+          .eq("organization_id", session.organizationId)
+          .select("*, departments(name)")
+          .single();
+      } else {
+        break;
+      }
     }
 
     const updatedDoc = updateRes.data;

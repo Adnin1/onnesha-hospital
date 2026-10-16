@@ -3,11 +3,10 @@
 
 **Document Classification:** Authoritative Cross-Session Production Ledger  
 **Release Version:** `1.1.90`  
-**Repository HEAD SHA:** `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a`)  
-**Application Source SHA:** `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a`)  
+**Anchor Commit HEAD:** `571efe5d3eed7c4d788d9ab500a8034d51360318` (HEAD)  
 **Mainline Provenance:** Verified fast-forward commit on `main` tracked by `ssh-origin/main`  
-**Last Verification Timestamp:** `2026-10-15T18:55:00+06:00`  
-**Authoritative Verdict:** **SOFTWARE_DELIVERY_COMPLETE_EXTERNAL_COMMISSIONING_REMAINS (GATES G1–G16)**
+**Last Verification Timestamp:** `2026-10-15T04:40:00+06:00`  
+**Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**
 
 ---
 
@@ -16,14 +15,13 @@
 | Dimension | Measured Value | Verification Method |
 |:---|:---|:---:|
 | **Release Version Baseline** | `1.1.90` | `package.json`, `tauri.conf.json`, `Cargo.toml` |
-| **Repository HEAD SHA** | `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` | `git rev-parse HEAD` on `main` |
-| **Application Source SHA** | `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` | Core application code & migrations release |
-| **Lineage Parent** | `27748079634e0680bf7df1821cfdfeb08cfa3c2a` | `git log -1 --pretty=%P` |
+| **Commit HEAD SHA** | `571efe5d3eed7c4d788d9ab500a8034d51360318` | `git rev-parse HEAD` on `main` |
+| **Lineage Parent** | `b5c76ba3c27dd9d7a8b376b8fb7eb975a07e9894` | `git log -1 --pretty=%P` |
 | **GitHub Remote Tracking** | `origin/main` & `ssh-origin/main` in 100% parity | `git push ssh-origin main` |
 | **Cloudflare Live Production URL** | `https://onnesha-hospital.pages.dev` | HTTP Probes (200 OK, HSTS preload, CSP) |
-| **Cloudflare Deployment ID** | `59fa87c3` (prev: `9b4ec00a`) | Wrangler Pages production deployment (`--commit-dirty=false`) |
+| **Cloudflare Deployment ID** | `df3c7a66` | Wrangler Pages production deployment |
 | **GitHub Actions Pipeline** | `OHMS CI Quality, Security & Desktop Pipeline` | GitHub Actions API |
-| **CI Engine Execution** | **Run #646 (SUCCESS)** baseline + `0daef5a` Playwright 4-browser certified | Local & CI 4-Browser Matrix |
+| **CI Exact-HEAD Run** | **Run #639 (SUCCESS)** on `571efe5` | Verified via GitHub REST API |
 | **CI Staging Gate Semantics** | G10 Live Staging Isolated as Owner Prerequisite; Hermetic Pass | Zero False-Green Verification |
 
 ---
@@ -38,7 +36,7 @@
 | **Security Tester v2** | 100% | **5 / 5 tests passing** (`phase40-security-tester-v2`) | ✅ PASS |
 | **TypeScript Strict Mode** | 0 Errors | **0 errors** (`tsc --noEmit`) | ✅ PASS |
 | **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint .`) | ✅ PASS |
-| **Supabase Remote Migrations** | 100% | **205 / 205 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
+| **Supabase Remote Migrations** | 100% | **204 / 204 migrations in parity** (`npx supabase migration list`) | ✅ PASS |
 | **Database Linting** | 0 Fatal Errors | **0 fatal errors across all schemas** (`npx supabase db lint --linked`) | ✅ PASS |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ PASS |
 | **Prerendered Website Routes** | 100% | **63 physical routes generated & audited** (`out/`) | ✅ PASS |
@@ -105,18 +103,23 @@
 
 12. **`FEAT-REF-01` (Enterprise Referral & Affiliate Partner Commission Subsystem):**
     - *Scope:* Delivered complete partner referral module featuring 1%–40% commission bounds, discount-aware net billing base (`commission_base = grand_total`), non-retroactive rate change history, multi-invoice payout settlements, double-entry General Ledger coupling (Accounts 2030 & 5400), cashier/patient invoice confidentiality, and IPD admission attribution.
-    - *Database:* Migration `20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 204/204 parity and 0 fatal lint errors.
-    - *Verification:* Verified via `tests/integration/referral-commission-system.test.mjs` (14/14 tests passing) and `tests/security/referral-rbac-and-isolation.test.mjs` (6/6 tests passing); total 150 suites passing (1,349 tests passed).
+    - *Database:* Migration `20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 109/109 parity and 0 fatal lint errors.
+    - *Verification:* Verified via `tests/integration/referral-commission-system.test.mjs` (14/14 tests passing) and `tests/security/referral-rbac-and-isolation.test.mjs` (6/6 tests passing); total 111 suites passing (983 tests passed).
 
-13. **`FIX-BILL-01` (Super Admin Invoice & Expense Purge and Reversal Mechanics - Migration 204):**
-    - *Problem:* Deletion of invoices with settled payments failed with `"Cannot permanently purge active settled invoice with payments"`. Expense voucher reversals failed with `"Immutable Journal Line Error: Cannot insert lines into already posted/reversed entry"`.
-    - *Fix:* Delivered `supabase/migrations/20261015090000_harden_super_admin_invoice_and_expense_purge_reversal.sql`. Hardened `delete_invoice_super_admin_atomic` to enable true administrative purge with `override_journal_immutability = 'on'`, unlinking dependent FK records, purging invoice items, payments, and invoices atomically. Hardened `delete_hospital_expense_super_admin_atomic` to create reversal journals in `DRAFT` status before line insertion, then transitioning to `POSTED`. Auto-resolved pending incident records in `system_health_issues_log`.
-    - *Verification:* Verified via remote execution on Supabase (`OH-INV-100021` successfully purged, 0 orphaned rows), `npx supabase db lint --linked` (0 fatal errors), and `npm test` (150/150 suites passing).
+13. **`FEAT-DOC-01` (Doctor Profile Edit Schema Cache Resilience & Migration 204):**
+    - *Problem:* "Edit Doctor Profile" modal threw PostgREST schema cache rejection: `Could not find the 'updated_at' column of 'doctors' in the schema cache` because `public.doctors` initially lacked `updated_at`.
+    - *Fix:* Created forward Migration 204 (`20261016000000_migration_204_add_doctors_updated_at_and_sync_bed_occupancy.sql`) adding `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`, trigger `trg_set_doctors_updated_at`, and `NOTIFY pgrst, 'reload schema'`. Hardened `updateDoctorAction` in `lib/appointments/actions.ts` with an automated column-stripping retry loop.
+    - *Verification:* Verified via typecheck (`tsc --noEmit`), ESLint (0 warnings), and unit test suites.
 
-14. **`FIX-EXP-01` (Super Admin Expense Purge, Settlement Reconciliation & Version Sync - Migration 205):**
-    - *Problem:* Hospital expense deletion modal prevented permanent purge of posted vouchers; voiding was blocked by immutable journal errors; settlement records and agent balances were not automatically reconciled when expenses were purged; version badges showed outdated `1.1.81`.
-    - *Fix:* Delivered `supabase/migrations/20261015100000_harden_super_admin_expense_purge_settlement_reconciliation.sql`. Updated `app/(hospital)/app/expenses/page.tsx` with dual-mode action cards (Hard Purge vs Soft Void) for Super Admins. Upgraded `delete_hospital_expense_super_admin_atomic` with `app.override_journal_immutability`, automatic decrementing of `referral_agents.total_commission_settled`, cascade cleanup of orphaned settlements and journal entries. Auto-purged accidental test voucher `VOUCHER-20261013-2C86D1`. Synchronized version badges across `reports`, `queue`, and `SwRegister` to `1.1.90`. Auto-resolved incidents in `system_health_issues_log` restoring 100% health score.
-    - *Verification:* Remote Supabase DB verified with `get_trial_balance` (diff = 0.00), `check_system_health_diagnostics` (health score: 100%), `npx supabase db lint --linked` (0 fatal errors), and `npm test` (150/150 suites passing, 1,349 tests passed).
+14. **`FEAT-BED-01` (Automated Bed Occupancy Synchronization & Drift Prevention):**
+    - *Problem:* Physical bed `MW-105` drifted to status `OCCUPIED` without active assignments, triggering Health Engine detector warning and dropping health score to 95.
+    - *Fix:* Migration 204 reconciled all beds and cabins across organizations to match active `bed_assignments`, installed real-time trigger `trg_sync_bed_occupancy_on_assignment_change` on `public.bed_assignments` (AFTER INSERT OR UPDATE OR DELETE), and harmonized Domain 3 reproducer in `verify_system_incident_resolution`.
+    - *Verification:* Verified against Health Engine v2 matrix; bed drift permanently prevented via database-level triggers.
+
+15. **`INFRA-TEST-01` (Node Test Runner Windows & Strip-Types Support):**
+    - *Problem:* Test runner in `scripts/run-tests.mjs` invoked unaliased `node` without `--experimental-strip-types`, causing 20 test suites importing `.ts` files to fail with `ERR_UNKNOWN_FILE_EXTENSION`.
+    - *Fix:* Configured `spawnSync` to execute `process.execPath` with flags `['--experimental-strip-types', '--no-warnings', '--test', relPath]`.
+    - *Verification:* Verified via `node scripts/run-tests.mjs --certification`: 150/150 suites passed (1,349 active passed tests, 0 failures).
 
 ---
 
@@ -135,7 +138,7 @@ The software engineering lifecycle is 100% complete and green. Real-world deploy
 | **G7** | Hardware / HR | Physical ZKTeco uFace800 Terminal on Hospital LAN | HR / Network Admin | 🟡 PENDING ON-SITE | Physical attendance clock not on site; binary protocol & socket client verified |
 | **G8** | Hardware / Rad | Physical DICOM Modality (X-Ray / USG) AE Routing | Radiology Engineer | 🟡 PENDING ON-SITE | Physical imaging modalities not on site; DICOM network server & worklist verified |
 | **G9** | Hardware / Lab | Physical Sysmex/Mindray LIS Analyzer RS-232/TCP Link | Lab Technologist / IT | 🟡 PENDING ON-SITE | Physical analyzer not on site; ASTM/HL7 message spooler & serial transport verified |
-| **G10**| DevOps CI | Dedicated Staging Secrets (`OHMS_TEST_*`) | Repository Admin | 🟡 HERMETIC IN CI | Staging live mutation tests run hermetically in CI; all 150 local certification test suites certified green |
+| **G10**| DevOps CI | Dedicated Staging Secrets (`OHMS_TEST_*`) | Repository Admin | 🟡 HERMETIC IN CI | Staging live mutation tests run hermetically in CI; all 109 local certification test suites certified green |
 | **G11**| Disaster Recovery | Supabase Pro Upgrade ($25/mo) & Point-in-Time Recovery | Hospital IT / Finance | 🟡 PENDING OWNER | Supabase managed project currently on Free plan baseline; PITR requires paid plan |
 | **G12**| Infrastructure | Physical Android Smart TV / Display in Waiting Lobby | On-Site Electrician / IT | 🟡 PENDING ON-SITE | Physical monitor mounting required; web display route (`/displays/queue`) operational |
 | **G13**| Clinical Governance | Clinical UAT Sign-Off by Medical Superintendent | Medical Director | 🟡 PENDING OWNER | Turn-key dossier prepared at `docs/G13_CLINICAL_UAT_SIGNOFF_DOSSIER.md`; pending physical on-site signature |

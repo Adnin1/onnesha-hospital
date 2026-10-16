@@ -40,7 +40,7 @@ let standardSkippedCount = 0;
 
 for (const file of testFiles) {
   const relPath = file.replace(/\\/g, '/');
-  const res = spawnSync('node', ['--test', relPath], {
+  const res = spawnSync(process.execPath, ['--experimental-strip-types', '--no-warnings', '--test', relPath], {
     encoding: 'utf8',
     env: { ...process.env }
   });

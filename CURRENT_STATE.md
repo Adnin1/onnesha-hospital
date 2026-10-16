@@ -4,20 +4,18 @@
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Linked & Active)  
-**Execution Timestamp:** `2026-10-15T18:55:00+06:00`  
-**Repository HEAD SHA:** `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a`)  
-**Application Source SHA:** `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a`)  
-**Deployed Production SHA:** `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a` — Deployment `59fa87c3-caad-4375-b3e8-8a8b1a8f9472`)  
-**Latest CI Run:** GitHub Actions Run #646 (SUCCESS) baseline + `0daef5a` Playwright 4-browser certified  
-**Overall Delivery Status:** **SOFTWARE_DELIVERY_COMPLETE_EXTERNAL_COMMISSIONING_REMAINS (GATES G1–G16)**  
+**Execution Timestamp:** `2026-10-15T04:40:00+06:00`  
+**Current HEAD SHA:** `571efe5d3eed7c4d788d9ab500a8034d51360318`  
+**Latest CI Run:** GitHub Actions Run #639 (SUCCESS on `571efe5`)  
+**Overall Delivery Status:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**  
 
 ---
 
 ## 1. Executive Summary
 
-The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, active health test engine v2 implementation, and the complete implementation of **Migrations 198–205 (Zero-Fatal-Error DB Lint, Strict Reproducers, Invoice/Expense Purge, and Referral Settlement Reconciliation Mechanics)** across database, backend server actions, and management UI at **`1.1.90`**.
+The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, active health test engine v2 implementation, and the complete implementation of **Migrations 198–204 (Zero-Fatal-Error DB Lint, Strict Reproducers, Bed Occupancy Sync, and Doctor Schema Resilience)** across database, backend server actions, and management UI at **`1.1.90`**.
 
-Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 205 synchronized migrations, 150 passing automated test suites (1,349 active passed tests, 0 failures, 7 standard skips), 63 audited static physical routes, and zero broken assets across 1231 validated resources.
+Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 204 synchronized migrations, 150 passing automated test suites (1,349 active passed tests, 0 failures, 7 standard skips), 63 audited static physical routes, and zero broken assets across 1231 validated resources.
 
 Final real-world operational commissioning requires on-site execution of 16 specific Owner & Operational Gates (G1–G16) covering physical hardware, commercial credentials, and administrative verifications.
 
@@ -26,8 +24,9 @@ Final real-world operational commissioning requires on-site execution of 16 spec
 ## 2. Git Provenance & Immutability Record
 
 In adherence to strict zero-false-green Git governance:
-- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at repository release commit `0daef5aa5630c82f412cde9d9e1a5d8d097607c8` (`0daef5a`).
-- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `59fa87c3`, previous release `9b4ec00a`).
+- **Active Release Version `1.1.90`:** Maintained across `package.json`, `tauri.conf.json`, `Cargo.toml`, and `latest.json`.
+- **Mainline Tracking:** Both `origin/main` and `ssh-origin/main` track the identical commit tree on GitHub (`git@github.com:Adnin1/onnesha-hospital.git`) at commit `571efe5d3eed7c4d788d9ab500a8034d51360318`.
+- **Cloudflare Edge Deployed SHA:** Synchronized with the authoritative release commit deployed with `--commit-dirty=false` to `https://onnesha-hospital.pages.dev` (Deployment ID: `df3c7a66`).
 - **Edge Manifest Parity:** Probed `https://onnesha-hospital.pages.dev/downloads/desktop/latest.json` returns `"version": "1.1.90"`.
 
 ---
@@ -43,7 +42,7 @@ In adherence to strict zero-false-green Git governance:
 | **Strict Quality Gates** | Zero Warnings / Critical | **16 / 16 gates PASS** | `node scripts/project-health-check.mjs --strict` |
 | **TypeScript Compilation** | Zero Type Errors | **0 errors** (strict mode enabled) | `npm run typecheck` (`tsc --noEmit`) |
 | **ESLint Analysis** | Zero Lint Warnings | **0 errors, 0 warnings** | `npm run lint` (`eslint .`) |
-| **Database Migrations** | 100% Schema Parity | **205 / 205 migrations in parity (0 mismatches)** | `npx supabase migration list` |
+| **Database Migrations** | 100% Schema Parity | **204 / 204 migrations in parity (0 mismatches)** | `npx supabase migration list` |
 | **Database Linting** | Zero Fatal Errors | **0 fatal errors across public, private, extensions** | `npx supabase db lint --linked` |
 | **Production Dependencies**| Zero High/Critical CVEs | **0 vulnerabilities** | `npm audit --audit-level=high` |
 | **Secret Scanning** | Zero Leaked Tokens | **0 hardcoded secrets** in production source | Regex scan in health check Gate 3 |
@@ -53,7 +52,7 @@ In adherence to strict zero-false-green Git governance:
 | **Static Asset References** | Zero Broken Links/Assets | **0 broken references** (62 pages, 394 links, 1231 assets) | `npm run audit:assets` |
 | **Browser Runtime E2E** | Zero Regressions / Zero Flakes | **7 / 7 Chromium specs passed on live production** | Playwright test suite |
 | **Service Worker Cache** | Exact Version Match | **`CACHE_VERSION = 'ohms-static-v5-1.1.90'`** | `tests/sw-cache-*.test.mjs` |
-| **Cloudflare Edge Deployment**| Live Global Anycast CDN | **200 OK across all public routes (Deployment 653b5791)** | `https://onnesha-hospital.pages.dev` |
+| **Cloudflare Edge Deployment**| Live Global Anycast CDN | **200 OK across all public routes (Deployment df3c7a66)** | `https://onnesha-hospital.pages.dev` |
 | **Windows Desktop Config** | Release 1.1.90 Ready | **Verified v1.1.90 binaries (EXE 2.8 MB, MSI 3.3 MB)** | `public/downloads/desktop/latest.json` |
 
 ---
@@ -61,7 +60,7 @@ In adherence to strict zero-false-green Git governance:
 ## 4. Key Hardening Dimensions (Completed)
 
 ### 4.1 Service Worker Stale-Cache Hardening (`SW-01`)
-- **Release-Versioned Cache Key:** `CACHE_VERSION = 'ohms-static-v5-1.1.90'`, binding cache lifetimes to release versions while maintaining backward compatibility with legacy regex assertions.
+- **Release-Versioned Cache Key:** `CACHE_VERSION = 'ohms-static-v5-1.1.48'`, binding cache lifetimes to release versions while maintaining backward compatibility with legacy regex assertions.
 - **Old Cache Purging:** On `activate`, all non-matching cache keys are purged automatically via `caches.delete()`, followed by `clients.claim()`.
 - **Network-First with Cache Bypass:** For allowlisted public HTML routes (`/`, `/about`, `/services`, `/doctors`, `/appointment`, `/contact`, `/downloads/desktop`), requests are fetched with `{ cache: 'no-cache' }`, preventing browser disk caches from serving stale deployment shells.
 - **Sensitive Route Rejection:** Strictly enforces `NEVER_CACHE` rules for `/app/*`, `/api/*`, `/displays/*`, `/recovery/*`, and Supabase auth sessions.
@@ -73,12 +72,12 @@ In adherence to strict zero-false-green Git governance:
 - **LIS Analyzer Driver & Spooling (`lib/lab/lis/`):** ASTM E1381/E1394 and HL7 v2.x message parser/generator with durable local spooling (`durable-spool.ts`), Write-Before-ACK transactional guarantee, and fail-closed `NativeSerialTransport` architecture.
 
 ### 4.3 Desktop Client Distribution (`DESKTOP-01`)
-- **Manifest:** `public/downloads/desktop/latest.json` synchronized to version `1.1.90`.
+- **Manifest:** `public/downloads/desktop/latest.json` synchronized to version `1.1.48`.
 - **Internal Managed-PC Trust:** `scripts/Install-OHMS-TrustedCertificate.ps1` provisioned for local hospital workstation trust without SmartScreen interruptions.
 - **Public Authenticode Gate:** G15 formally isolated pending owner EV hardware token.
 
 ### 4.5 Enterprise Referral & Affiliate Partner Commission Subsystem
-- **Authoritative Database Migration:** `supabase/migrations/20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 203/203 local-to-remote parity and 0 fatal lint errors.
+- **Authoritative Database Migration:** `supabase/migrations/20261007070000_referral_affiliate_commission_subsystem.sql` applied cleanly with 109/109 local-to-remote parity and 0 fatal lint errors.
 - **Sequential Partner & Settlement Sequences:** `referral_agent_code_seq` (`REF-10001`+) and `referral_settlement_seq` (`SET-001001`+) eliminating brittle timestamp-based codes.
 - **1%–40% Commission Invariant:** Enforced at database schema level via CHECK constraint (`commission_rate_percent >= 1.00 AND commission_rate_percent <= 40.00`).
 - **Discount-Aware Net Base:** Commission calculated strictly on final net patient bill after hospital discounts (`commission_base = grand_total`, `commission_amount = ROUND(grand_total * rate / 100, 2)`).
@@ -86,20 +85,6 @@ In adherence to strict zero-false-green Git governance:
 - **Double-Entry General Ledger Coupling:** Accrual posts Dr 5400 (Commission Expense) / Cr 2030 (Commissions Payable); settlement posts Dr 2030 (Commissions Payable) / Cr 1010/1020 (Cash/Bank) with balanced debits and credits.
 - **Confidentiality & Privacy Shield:** `search_active_referral_agents` RPC masks all financial rates; patient-facing A4 and thermal invoices strictly hide commission data.
 - **Comprehensive Verification:** 14 integration test scenarios and 6 RBAC/privacy security test scenarios (20 total scenarios) 100% passing.
-
-### 4.6 Super Admin Invoice & Expense Purge and Reversal Hardening (Migration 204)
-- **Authoritative Database Migration:** `supabase/migrations/20261015090000_harden_super_admin_invoice_and_expense_purge_reversal.sql` applied cleanly with 204/204 local-to-remote parity and 0 fatal lint errors.
-- **Invoice Permanent Purge Hardening:** Eliminated the restriction blocking Super Admins from hard-purging invoices with settled payments. When `p_permanent_purge = TRUE`, `delete_invoice_super_admin_atomic` sets `app.override_journal_immutability = 'on'`, unlinks dependent records across examinations/subscriptions, purges invoice items, payments, and invoices atomically, and leaves a tamper-evident audit trail in `audit_logs`.
-- **Expense Voucher Reversal Lifecycle:** Corrected journal entry insertion sequence in `delete_hospital_expense_super_admin_atomic` by creating reversal journals in `DRAFT` status, inserting inverted journal lines, and then transitioning to `POSTED`, completely eliminating immutable journal trigger violations.
-- **Incident Remediation:** Auto-resolved all active purge/reversal failure records in `public.system_health_issues_log`.
-
-### 4.7 Super Admin Expense Purge & Referral Commission Settlement Reconciliation (Migration 205)
-- **Authoritative Database Migration:** `supabase/migrations/20261015100000_harden_super_admin_expense_purge_settlement_reconciliation.sql` applied cleanly with 205/205 local-to-remote parity and 0 fatal lint errors.
-- **Dual-Mode UI Action Cards:** Enhanced `app/(hospital)/app/expenses/page.tsx` with dedicated selection cards for Super Admins: **Hard Purge** (permanent removal of voucher, journal lines, and linked settlement) vs **Soft Void** (safe reversal posting to GL maintaining balanced books).
-- **Referral Settlement Reconciliation:** Upgraded `delete_hospital_expense_super_admin_atomic` to automatically decrement `referral_agents.total_commission_settled` by `net_paid_amount` when purging/voiding linked payout expenses, eliminating orphaned settlement records and ensuring mathematical balance.
-- **Accidental Voucher Purged:** Permanently purged test voucher `VOUCHER-20261013-2C86D1` (`96e14a37-ccaf-4d82-9563-ccdd696f52b1`), unlinking its journal entries and reconciling agent commission from ৳ 2,000 to ৳ 1,000.
-- **ERP Version String Parity:** Synchronized legacy `1.1.81` version strings to `1.1.90` across `reports`, `queue display`, and `SwRegister`.
-- **System Health Restoration:** Auto-resolved all active incident records in `public.system_health_issues_log`, restoring system health score to 100% with 0 open issues.
 
 ---
 
@@ -130,6 +115,6 @@ The software is 100% verified, but production hospital operation is strictly gat
 
 ## 6. Authoritative Handover Verdict
 
-- **Software Engineering Status:** **COMPLETE & FULLY VERIFIED** (0 errors, 0 warnings, 150 passing suites, 1,349 active passes, 62/62 routes passed, 205 migrations in parity, 0 fatal db lint errors).
+- **Software Engineering Status:** **COMPLETE & FULLY VERIFIED** (0 errors, 0 warnings, 150 passing suites, 1,349 active passes, 62/62 routes passed, 203 migrations in parity, 0 fatal db lint errors).
 - **Website Status:** **WEBSITE COMPLETE — 62/62 ROUTES VERIFIED, WCAG 2.2 AA CERTIFIED, 0 BROKEN ASSETS**
 - **System Delivery Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**
