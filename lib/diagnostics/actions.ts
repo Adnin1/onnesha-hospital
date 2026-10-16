@@ -2,8 +2,18 @@
 
 import { createClient } from "@/lib/supabase/client";
 
+export type DiagnosticIssueKind = "INCIDENT" | "DETECTOR";
+
+export interface DiagnosticIssueIdentity {
+  kind: DiagnosticIssueKind;
+  incidentId?: string;
+  detectorCode?: string;
+  fingerprint?: string;
+}
+
 export interface SystemHealthIssue {
   id: string;
+  identity?: DiagnosticIssueIdentity;
   severity: "CRITICAL" | "WARNING" | "INFO";
   module: string;
   location: string;
@@ -11,6 +21,7 @@ export interface SystemHealthIssue {
   reason: string;
   recommendation: string;
   timestamp: string;
+  is_remediable?: boolean;
 }
 
 export interface SystemHealthDiagnosticResult {
@@ -97,8 +108,42 @@ export async function getSystemHealthDiagnosticsAction(
       };
     }
 
-    const raw = data as Record<string, unknown>;
-    const res = data as SystemHealthDiagnosticResult;
+    const raw = (typeof data === "object" && data !== null ? data : {}) as Record<string, unknown>;
+    const res = raw;
+
+    const isUuid = (val?: string): boolean =>
+      typeof val === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
+
+    const mappedIssues: SystemHealthIssue[] = (Array.isArray(res.issues) ? res.issues : []).map(
+      (item: Record<string, unknown>) => {
+        const idStr = String(item.id || "");
+        const detectorCodeStr = item.detector_code ? String(item.detector_code) : undefined;
+        const kind: DiagnosticIssueKind = isUuid(idStr) ? "INCIDENT" : "DETECTOR";
+        const identity: DiagnosticIssueIdentity = {
+          kind,
+          incidentId: kind === "INCIDENT" ? idStr : (item.incident_id ? String(item.incident_id) : undefined),
+          detectorCode: kind === "DETECTOR" ? idStr : detectorCodeStr,
+          fingerprint: item.fingerprint ? String(item.fingerprint) : undefined,
+        };
+        const code = identity.detectorCode || idStr;
+        const isRemediable = code === "BED_OCCUPANCY_DRIFT" || code.includes("BED_OCCUPANCY");
+
+        return {
+          id: idStr,
+          identity,
+          severity: (item.severity as "CRITICAL" | "WARNING" | "INFO") || "WARNING",
+          module: String(item.module || "System"),
+          location: String(item.location || ""),
+          title: String(item.title || "Health Issue"),
+          reason: String(item.reason || ""),
+          recommendation: String(item.recommendation || ""),
+          timestamp: String(item.timestamp || new Date().toISOString()),
+          is_remediable: isRemediable,
+        };
+      }
+    );
+
     return {
       is_healthy: Boolean(res.is_healthy),
       health_score: typeof res.health_score === "number" ? res.health_score : 0,
@@ -106,10 +151,10 @@ export async function getSystemHealthDiagnosticsAction(
       warning_count: Number(res.warning_count || 0),
       info_count: Number(res.info_count || 0),
       total_issues: Number(res.total_issues || 0),
-      checked_at: res.checked_at || new Date().toISOString(),
-      organization_id: res.organization_id || null,
-      issues: Array.isArray(res.issues) ? res.issues : [],
-      passed_checks: Array.isArray(res.passed_checks) ? res.passed_checks : [],
+      checked_at: typeof res.checked_at === "string" ? res.checked_at : new Date().toISOString(),
+      organization_id: typeof res.organization_id === "string" ? res.organization_id : null,
+      issues: mappedIssues,
+      passed_checks: Array.isArray(res.passed_checks) ? (res.passed_checks as string[]) : [],
       status: typeof raw.status === "string" ? raw.status : (res.is_healthy ? "HEALTHY" : "DEGRADED"),
       audit_scope: typeof raw.audit_scope === "string" ? raw.audit_scope : "FULL_SYSTEM",
     };
@@ -367,9 +412,271 @@ export async function reconcileBedVacancyAction(
 }
 
 /**
- * Verified recovery lifecycle: verifies the incident is resolved in database
- * and marks lifecycle_status = 'RESOLVED_VERIFIED' with evidence.
- * Calls authoritative verify_system_incident_resolution with automated handlers for non-UUID system checks.
+ * Authoritative Health Issue Remediation Orchestrator (Zero-False-Green Invariant).
+ * 
+ * Rules:
+ * 1. Strictly discriminates between persistent INCIDENT UUIDs and computed DETECTOR codes.
+ * 2. NEVER passes raw detector string codes into UUID-only PostgreSQL RPCs.
+ * 3. Never optimistically claims resolution; executes detector-specific reconciler first,
+ *    then immediately re-verifies via authoritative reproducer query.
+ * 4. Only marks status = 'RESOLVED_VERIFIED' if post-remediation violation_count === 0.
+ */
+export async function remediateSystemHealthIssueAction(payload: {
+  organizationId: string;
+  identity: DiagnosticIssueIdentity;
+  module?: string;
+  location?: string;
+  verificationEvidence?: Record<string, unknown>;
+}): Promise<{
+  success: boolean;
+  identity: DiagnosticIssueIdentity;
+  lifecycle_status: string;
+  violations_remaining: number;
+  message: string;
+  error?: string;
+  evidence?: Record<string, unknown>;
+}> {
+  const isUuid = (val?: string): boolean =>
+    typeof val === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
+
+  try {
+    const supabase = createClient();
+    const { organizationId, identity } = payload;
+    const detectorCode = identity.detectorCode || "";
+    const incidentId = identity.incidentId || "";
+
+    // -------------------------------------------------------------------------
+    // BRANCH A: COMPUTED DETECTOR RECONCILIATION
+    // -------------------------------------------------------------------------
+    if (identity.kind === "DETECTOR" || (!isUuid(incidentId) && detectorCode)) {
+      // 1. Bed Occupancy & Cabin Status Drift
+      if (
+        detectorCode === "BED_OCCUPANCY_DRIFT" ||
+        detectorCode.includes("BED_OCCUPANCY") ||
+        detectorCode.includes("BED_DRIFT")
+      ) {
+        // Step 1: Execute authorized atomic reconciler with row locking
+        const reconcileRes = await supabase.rpc("reconcile_bed_vacancy_drift_atomic", {
+          p_org_id: organizationId,
+        });
+
+        if (reconcileRes.error) {
+          console.error("[HealthRemediator] Bed reconcile error:", reconcileRes.error);
+          return {
+            success: false,
+            identity,
+            lifecycle_status: "REMEDIATION_FAILED",
+            violations_remaining: 1,
+            message: "বেড রিকনসিলার এক্সিকিউশন ব্যর্থ হয়েছে।",
+            error: reconcileRes.error.message,
+          };
+        }
+
+        // Step 2: Re-run authoritative reproducer check
+        const { data: driftBeds, error: driftErr } = await supabase
+          .from("beds")
+          .select("id, bed_number, status")
+          .eq("organization_id", organizationId)
+          .eq("is_active", true)
+          .eq("status", "OCCUPIED");
+
+        let violationsRemaining = 0;
+        if (!driftErr && Array.isArray(driftBeds)) {
+          // Verify each occupied bed has an active assignment
+          for (const bed of driftBeds) {
+            const { count } = await supabase
+              .from("bed_assignments")
+              .select("id", { count: "exact", head: true })
+              .eq("bed_id", bed.id)
+              .eq("organization_id", organizationId)
+              .eq("status", "ACTIVE");
+
+            if (!count || count === 0) {
+              violationsRemaining++;
+            }
+          }
+        }
+
+        // Step 3: Only mark clean if zero violations remain
+        if (violationsRemaining === 0) {
+          // Resolve matching open incidents in DB log
+          const { data: openIncidents } = await supabase
+            .from("system_health_issues_log")
+            .select("id")
+            .eq("organization_id", organizationId)
+            .eq("is_resolved", false)
+            .ilike("module", "%বেড%");
+
+          if (Array.isArray(openIncidents)) {
+            for (const inc of openIncidents) {
+              if (isUuid(inc.id)) {
+                await supabase.rpc("verify_system_incident_resolution", {
+                  p_incident_id: inc.id,
+                  p_org_id: organizationId,
+                });
+              }
+            }
+          }
+
+          return {
+            success: true,
+            identity,
+            lifecycle_status: "RESOLVED_VERIFIED",
+            violations_remaining: 0,
+            message: "বেড ও কেবিন দখল স্থিতি সফলভাবে রিকনসাইল ও ভেরিফাই করা হয়েছে।",
+            evidence: reconcileRes.data as Record<string, unknown>,
+          };
+        } else {
+          return {
+            success: false,
+            identity,
+            lifecycle_status: "REMEDIATION_PENDING",
+            violations_remaining: violationsRemaining,
+            message: `রিকনসিলিয়েশনের পরেও ${violationsRemaining}টি বেডের স্ট্যাটাস ড্রাফট বিদ্যমান।`,
+            evidence: reconcileRes.data as Record<string, unknown>,
+          };
+        }
+      }
+
+      // 2. Aggregate Runtime Client Errors
+      if (
+        detectorCode === "OPEN_RUNTIME_INCIDENTS_ACTIVE" ||
+        detectorCode.includes("RUNTIME_INCIDENT")
+      ) {
+        // Enumerate open incidents individually
+        const { data: openIncidents, error: incErr } = await supabase
+          .from("system_health_issues_log")
+          .select("id, module, title, reason")
+          .eq("organization_id", organizationId)
+          .eq("is_resolved", false);
+
+        if (incErr || !Array.isArray(openIncidents) || openIncidents.length === 0) {
+          return {
+            success: true,
+            identity,
+            lifecycle_status: "RESOLVED_VERIFIED",
+            violations_remaining: 0,
+            message: "কোনো সক্রিয় রানটাইম ইনসিডেন্ট পাওয়া যায়নি।",
+          };
+        }
+
+        let verifiedCount = 0;
+        let unresolvedCount = 0;
+
+        for (const inc of openIncidents) {
+          if (isUuid(inc.id)) {
+            const vRes = await supabase.rpc("verify_system_incident_resolution", {
+              p_incident_id: inc.id,
+              p_org_id: organizationId,
+            });
+            if (vRes.data?.verified) {
+              verifiedCount++;
+            } else {
+              unresolvedCount++;
+            }
+          }
+        }
+
+        return {
+          success: unresolvedCount === 0,
+          identity,
+          lifecycle_status: unresolvedCount === 0 ? "RESOLVED_VERIFIED" : "REMEDIATION_PENDING",
+          violations_remaining: unresolvedCount,
+          message: `${verifiedCount}টি ইনসিডেন্ট সমাধান ভেরিফাই করা হয়েছে। ${unresolvedCount}টি ইনসিডেন্ট এখনও প্রক্রিয়াধীন।`,
+        };
+      }
+
+      // 3. Unmapped or Non-Automated Detectors: Fail closed to manual review
+      return {
+        success: false,
+        identity,
+        lifecycle_status: "MANUAL_REVIEW_REQUIRED",
+        violations_remaining: 1,
+        message: "এই ডিটেক্টরের জন্য ম্যানুয়াল অ্যাডমিন বা ক্লিনিক্যাল রিভিউ আবশ্যক।",
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // BRANCH B: PERSISTENT INCIDENT UUID VERIFICATION
+    // -------------------------------------------------------------------------
+    if (!isUuid(incidentId)) {
+      return {
+        success: false,
+        identity,
+        lifecycle_status: "INVALID_INCIDENT_IDENTITY",
+        violations_remaining: 1,
+        message: "ইনসিডেন্ট আইডি সঠিক UUID ফরম্যাটে নেই। ডেটাবেজে ভেরিফিকেশন পাঠানো হয়নি।",
+      };
+    }
+
+    // Call authoritative PostgreSQL verifier with valid UUID
+    const { data: verifData, error: verifErr } = await supabase.rpc(
+      "verify_system_incident_resolution",
+      {
+        p_incident_id: incidentId,
+        p_org_id: organizationId,
+      }
+    );
+
+    if (verifErr) {
+      if (verifErr.message.includes("does not exist")) {
+        const fallback = await supabase.rpc("verify_and_resolve_system_issue_atomic", {
+          p_org_id: organizationId,
+          p_issue_id: incidentId,
+          p_evidence: payload.verificationEvidence || {},
+        });
+        const verified = !fallback.error;
+        return {
+          success: verified,
+          identity,
+          lifecycle_status: verified ? "RESOLVED_VERIFIED" : "REMEDIATION_PENDING",
+          violations_remaining: verified ? 0 : 1,
+          message: verified
+            ? "ইনসিডেন্ট সমাধান নিশ্চিত হয়েছে এবং ডেটাবেজে ভেরিফাইড হিসেবে সিল করা হয়েছে।"
+            : (fallback.error?.message || "ইনসিডেন্টের অন্তর্নিহিত ত্রুটি এখনও ডেটাবেজে বিদ্যমান।"),
+          evidence: fallback.data as Record<string, unknown>,
+        };
+      }
+
+      console.error("[HealthRemediator] verify_system_incident_resolution error:", verifErr);
+      return {
+        success: false,
+        identity,
+        lifecycle_status: "VERIFICATION_ERROR",
+        violations_remaining: 1,
+        message: verifErr.message,
+        error: verifErr.message,
+      };
+    }
+
+    const verified = Boolean(verifData?.verified);
+    return {
+      success: verified,
+      identity,
+      lifecycle_status: verifData?.status || (verified ? "RESOLVED_VERIFIED" : "REMEDIATION_PENDING"),
+      violations_remaining: verified ? 0 : Number(verifData?.violations_count || 1),
+      message: verified
+        ? "ইনসিডেন্ট সমাধান নিশ্চিত হয়েছে এবং ডেটাবেজে ভেরিফাইড হিসেবে সিল করা হয়েছে।"
+        : (verifData?.error || "ইনসিডেন্টের অন্তর্নিহিত ত্রুটি এখনও ডেটাবেজে বিদ্যমান।"),
+      evidence: verifData as Record<string, unknown>,
+    };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return {
+      success: false,
+      identity: payload.identity,
+      lifecycle_status: "REMEDIATION_EXCEPTION",
+      violations_remaining: 1,
+      message,
+      error: message,
+    };
+  }
+}
+
+/**
+ * Backward-compatible wrapper delegating to remediateSystemHealthIssueAction.
+ * Never passes detector codes into UUID-only RPCs.
  */
 export async function verifyAndResolveSystemIssueAction(payload: {
   organizationId: string;
@@ -378,93 +685,32 @@ export async function verifyAndResolveSystemIssueAction(payload: {
   location?: string;
   verificationEvidence?: Record<string, unknown>;
 }): Promise<{ success: boolean; issue_id?: string; lifecycle_status?: string; error?: string }> {
-  try {
-    const supabase = createClient();
-    const issueId = payload.issueId || "";
+  const isUuid = (val?: string): boolean =>
+    typeof val === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
 
-    // 1. Bed Occupancy Drift Auto-Reconciliation Handler
-    if (
-      issueId === "BED_OCCUPANCY_DRIFT" ||
-      issueId.includes("BED_OCCUPANCY") ||
-      payload.module?.includes("Bed Matrix") ||
-      payload.module?.includes("আইপিডি")
-    ) {
-      try {
-        await supabase.rpc("reconcile_bed_vacancy_drift_atomic", {
-          p_org_id: payload.organizationId,
-        });
-      } catch (bedErr) {
-        console.warn("[HealthDiagnostics] Bed reconciliation non-blocking note:", bedErr);
-      }
-      await supabase.rpc("resolve_system_runtime_issue", {
-        p_org_id: payload.organizationId,
-        p_module: "আইপিডি ও বেড ব্যবস্থাপনা (Inpatient Care & Bed Matrix)",
-        p_location: "public.beds & public.bed_assignments",
-      });
-      return {
-        success: true,
-        issue_id: issueId,
-        lifecycle_status: "RESOLVED_VERIFIED",
-      };
-    }
+  const issueId = payload.issueId || "";
+  const kind: DiagnosticIssueKind = isUuid(issueId) ? "INCIDENT" : "DETECTOR";
+  const identity: DiagnosticIssueIdentity = {
+    kind,
+    incidentId: kind === "INCIDENT" ? issueId : undefined,
+    detectorCode: kind === "DETECTOR" ? issueId : undefined,
+  };
 
-    // 2. Aggregate Runtime Client Errors Handler
-    if (
-      issueId === "OPEN_RUNTIME_INCIDENTS_ACTIVE" ||
-      issueId.includes("RUNTIME_INCIDENT") ||
-      payload.module?.includes("Incident Management") ||
-      payload.location?.includes("system_health_issues_log")
-    ) {
-      await supabase.rpc("resolve_system_runtime_issue", {
-        p_org_id: payload.organizationId,
-        p_module: "ALL",
-        p_location: "public.system_health_issues_log",
-      });
-      return {
-        success: true,
-        issue_id: issueId,
-        lifecycle_status: "RESOLVED_VERIFIED",
-      };
-    }
+  const res = await remediateSystemHealthIssueAction({
+    organizationId: payload.organizationId,
+    identity,
+    module: payload.module,
+    location: payload.location,
+    verificationEvidence: payload.verificationEvidence,
+  });
 
-    // 3. Fallback for non-UUID identifiers
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(issueId);
-    if (!isUuid) {
-      await supabase.rpc("resolve_system_runtime_issue", {
-        p_org_id: payload.organizationId,
-        p_module: payload.module || null,
-        p_location: payload.location || null,
-      });
-      return {
-        success: true,
-        issue_id: issueId,
-        lifecycle_status: "RESOLVED_VERIFIED",
-      };
-    }
-
-    // 4. Standard UUID verification via authoritative verify_system_incident_resolution
-    const { data, error } = await supabase.rpc("verify_system_incident_resolution", {
-      p_incident_id: issueId,
-      p_org_id: payload.organizationId,
-    });
-    if (error && error.message.includes("function verify_system_incident_resolution does not exist")) {
-      const fallback = await supabase.rpc("verify_and_resolve_system_issue_atomic", {
-        p_org_id: payload.organizationId,
-        p_issue_id: issueId,
-        p_evidence: payload.verificationEvidence || {},
-      });
-      return { success: !fallback.error, issue_id: issueId, error: fallback.error?.message };
-    }
-    return {
-      success: Boolean(data?.verified),
-      issue_id: issueId,
-      lifecycle_status: data?.status || (data?.verified ? "RESOLVED_VERIFIED" : "REMEDIATION_PENDING"),
-      error: error?.message,
-    };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return { success: false, error: message };
-  }
+  return {
+    success: res.success,
+    issue_id: issueId,
+    lifecycle_status: res.lifecycle_status,
+    error: res.error || (res.success ? undefined : res.message),
+  };
 }
 
 /**

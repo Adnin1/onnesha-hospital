@@ -132,6 +132,164 @@ FOR EACH ROW
 EXECUTE FUNCTION public.trg_fn_sync_bed_occupancy_on_assignment_change();
 
 -- -------------------------------------------------------------------------------------
+-- 3.1 DATABASE-LEVEL PREVENTION: PARTIAL UNIQUE INDEX (ONE ACTIVE ASSIGNMENT PER BED)
+-- -------------------------------------------------------------------------------------
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_bed_assignments_one_active_per_bed 
+ON public.bed_assignments (bed_id) 
+WHERE status = 'ACTIVE' AND bed_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_bed_assignments_one_active_per_cabin 
+ON public.bed_assignments (cabin_id) 
+WHERE status = 'ACTIVE' AND cabin_id IS NOT NULL;
+
+-- -------------------------------------------------------------------------------------
+-- 3.2 AUTHORITATIVE HARDENED BED VACANCY RECONCILER (CASE 1-4 COMPLIANT)
+-- -------------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.reconcile_bed_vacancy_drift_atomic(
+    p_org_id UUID
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_caller_id UUID := auth.uid();
+    v_caller_role TEXT := auth.role();
+    v_caller_org UUID;
+    v_reconciled_beds_vacant INT := 0;
+    v_reconciled_beds_occupied INT := 0;
+    v_reconciled_cabins_vacant INT := 0;
+    v_reconciled_cabins_occupied INT := 0;
+    v_ambiguous_beds INT := 0;
+    v_ambiguous_cabins INT := 0;
+    v_bed RECORD;
+    v_cabin RECORD;
+    v_active_assignment_count INT;
+    v_active_visit_count INT;
+BEGIN
+    IF p_org_id IS NULL THEN
+        RAISE EXCEPTION 'ORGANIZATION_CONTEXT_REQUIRED: Target hospital organization UUID is mandatory.';
+    END IF;
+
+    -- Authorization check (service_role or authenticated admin)
+    IF v_caller_role <> 'service_role' AND session_user NOT IN ('postgres', 'supabase_admin') THEN
+        IF v_caller_id IS NULL THEN
+            RAISE EXCEPTION 'UNAUTHENTICATED_ACCESS_DENIED: Bed reconciliation requires an authenticated operator session.';
+        END IF;
+
+        SELECT COALESCE(active_organization_id, organization_id)
+        INTO v_caller_org
+        FROM public.profiles
+        WHERE id = v_caller_id
+        LIMIT 1;
+
+        IF v_caller_org IS NULL OR v_caller_org <> p_org_id THEN
+            RAISE EXCEPTION 'TENANT_VIOLATION_DENIED: Cannot reconcile bed state across hospital organizational boundaries.';
+        END IF;
+    END IF;
+
+    -- Process beds with row-level locking
+    FOR v_bed IN 
+        SELECT id, bed_number, status, ward_id 
+        FROM public.beds 
+        WHERE organization_id = p_org_id AND is_active = TRUE
+        FOR UPDATE
+    LOOP
+        -- Count active assignments for this bed
+        SELECT COUNT(*) INTO v_active_assignment_count
+        FROM public.bed_assignments ba
+        WHERE ba.bed_id = v_bed.id 
+          AND ba.organization_id = p_org_id
+          AND ba.status = 'ACTIVE';
+
+        -- Case 3: Multiple active assignments -> Ambiguous clinical data, DO NOT auto-delete!
+        IF v_active_assignment_count > 1 THEN
+            v_ambiguous_beds := v_ambiguous_beds + 1;
+            CONTINUE;
+        END IF;
+
+        -- Case 1: Bed marked OCCUPIED but has NO active assignment
+        IF v_bed.status = 'OCCUPIED' AND v_active_assignment_count = 0 THEN
+            -- Verify there is no active inpatient relationship without assignment
+            SELECT COUNT(*) INTO v_active_visit_count
+            FROM public.patient_visits pv
+            WHERE pv.organization_id = p_org_id
+              AND pv.status = 'ACTIVE'
+              AND pv.bed_id = v_bed.id;
+
+            IF v_active_visit_count = 0 THEN
+                UPDATE public.beds 
+                SET status = 'VACANT', updated_at = NOW() 
+                WHERE id = v_bed.id;
+                v_reconciled_beds_vacant := v_reconciled_beds_vacant + 1;
+            ELSE
+                v_ambiguous_beds := v_ambiguous_beds + 1;
+            END IF;
+
+        -- Case 2: Bed marked VACANT but has 1 ACTIVE assignment
+        ELSIF v_bed.status = 'VACANT' AND v_active_assignment_count = 1 THEN
+            UPDATE public.beds 
+            SET status = 'OCCUPIED', updated_at = NOW() 
+            WHERE id = v_bed.id;
+            v_reconciled_beds_occupied := v_reconciled_beds_occupied + 1;
+        END IF;
+    END LOOP;
+
+    -- Process cabins with row-level locking
+    FOR v_cabin IN 
+        SELECT id, cabin_number, status 
+        FROM public.cabins 
+        WHERE organization_id = p_org_id AND is_active = TRUE
+        FOR UPDATE
+    LOOP
+        SELECT COUNT(*) INTO v_active_assignment_count
+        FROM public.bed_assignments ba
+        WHERE ba.cabin_id = v_cabin.id 
+          AND ba.organization_id = p_org_id
+          AND ba.status = 'ACTIVE';
+
+        IF v_active_assignment_count > 1 THEN
+            v_ambiguous_cabins := v_ambiguous_cabins + 1;
+            CONTINUE;
+        END IF;
+
+        IF v_cabin.status = 'OCCUPIED' AND v_active_assignment_count = 0 THEN
+            UPDATE public.cabins 
+            SET status = 'VACANT', updated_at = NOW() 
+            WHERE id = v_cabin.id;
+            v_reconciled_cabins_vacant := v_reconciled_cabins_vacant + 1;
+        ELSIF v_cabin.status = 'VACANT' AND v_active_assignment_count = 1 THEN
+            UPDATE public.cabins 
+            SET status = 'OCCUPIED', updated_at = NOW() 
+            WHERE id = v_cabin.id;
+            v_reconciled_cabins_occupied := v_reconciled_cabins_occupied + 1;
+        END IF;
+    END LOOP;
+
+    RETURN jsonb_build_object(
+        'success', (v_ambiguous_beds = 0 AND v_ambiguous_cabins = 0),
+        'reconciled_beds_vacant', v_reconciled_beds_vacant,
+        'reconciled_beds_occupied', v_reconciled_beds_occupied,
+        'reconciled_cabins_vacant', v_reconciled_cabins_vacant,
+        'reconciled_cabins_occupied', v_reconciled_cabins_occupied,
+        'ambiguous_beds', v_ambiguous_beds,
+        'ambiguous_cabins', v_ambiguous_cabins,
+        'status', CASE 
+            WHEN v_ambiguous_beds > 0 OR v_ambiguous_cabins > 0 THEN 'MANUAL_CLINICAL_REVIEW_REQUIRED'
+            ELSE 'RECONCILED_CLEAN'
+        END,
+        'organization_id', p_org_id
+    );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.reconcile_bed_vacancy_drift_atomic(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.reconcile_bed_vacancy_drift_atomic(UUID) TO authenticated, service_role;
+
+-- -------------------------------------------------------------------------------------
 -- 4. HARMONIZE DOMAIN 3 REPRODUCER IN verify_system_incident_resolution
 -- -------------------------------------------------------------------------------------
 
@@ -435,7 +593,7 @@ BEGIN
                     'verdict', 'PASS',
                     'detector', v_detector_mapped,
                     'violations_remaining', 0,
-                    'rule', 'MIGRATION_204_AUTHORITATIVE_POSITIVE_PROOF'
+                    'rule', 'MIGRATION_207_AUTHORITATIVE_POSITIVE_PROOF'
                 )
             )
         WHERE id = p_incident_id;
@@ -494,7 +652,7 @@ SET is_resolved = TRUE,
     verified_at = NOW(),
     verification_evidence = jsonb_build_object(
         'verified_at', NOW(),
-        'verifier', 'MIGRATION_204_AUTOMATED_RECONCILER',
+        'verifier', 'MIGRATION_207_AUTOMATED_RECONCILER',
         'verdict', 'PASS',
         'notes', 'Physical bed status reconciled with active bed assignments for MW-105 and all beds. Automated real-time synchronization trigger installed on bed_assignments.'
     )

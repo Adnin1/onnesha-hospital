@@ -17,6 +17,7 @@ import {
 import {
   getSystemHealthDiagnosticsAction,
   verifyAndResolveSystemIssueAction,
+  remediateSystemHealthIssueAction,
   reconcileBedVacancyAction,
   resolveSystemRuntimeIssueAction,
   type SystemHealthDiagnosticResult,
@@ -39,25 +40,13 @@ export default function SystemHealthAlertBanner({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const [justResolvedMessage, setJustResolvedMessage] = useState<string | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [resolutionError, setResolutionError] = useState<string | null>(null);
 
   const fetchDiagnostics = useCallback(() => {
     startTransition(async () => {
       try {
         const res = await getSystemHealthDiagnosticsAction(organizationId);
-        // Self-Healing Hook: Automatically reconcile bed vacancy drift if detected on load
-        if (res?.issues?.some((i) => i.id === "BED_OCCUPANCY_DRIFT")) {
-          const orgId = res.organization_id || organizationId;
-          if (orgId) {
-            try {
-              await reconcileBedVacancyAction(orgId);
-              const refreshed = await getSystemHealthDiagnosticsAction(organizationId);
-              setData(refreshed);
-              return;
-            } catch {
-              // Non-blocking fallback
-            }
-          }
-        }
         setData(res);
       } catch (e) {
         console.error("Failed to load diagnostics:", e);
@@ -136,58 +125,77 @@ export default function SystemHealthAlertBanner({
     };
   }, [fetchDiagnostics, organizationId]);
 
-  const handleResolveIssue = async (issueId: string, module?: string, location?: string) => {
-    setEphemeralIssues((prev) => prev.filter((item) => item.id !== issueId));
+  const handleResolveIssue = async (issue: SystemHealthIssue) => {
     const orgId = data?.organization_id || organizationId;
-    if (orgId) {
-      if (issueId.startsWith("ephemeral-")) {
-        const mod = module || "ইস্যু";
-        setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — সিস্টেম স্বাভাবিক অবস্থায় ফিরে এসেছে।`);
+    if (!orgId) return;
+
+    setResolvingId(issue.id);
+    setResolutionError(null);
+
+    try {
+      if (issue.id.startsWith("ephemeral-")) {
+        setEphemeralIssues((prev) => prev.filter((item) => item.id !== issue.id));
+        setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${issue.module || "ইস্যু"}) — সিস্টেম স্বাভাবিক অবস্থায় ফিরে এসেছে।`);
         setTimeout(() => setJustResolvedMessage(null), 10000);
         return;
       }
 
       const res = await verifyAndResolveSystemIssueAction({
         organizationId: orgId,
-        issueId,
-        module,
-        location,
+        issueId: issue.id,
+        module: issue.module,
+        location: issue.location,
         verificationEvidence: { resolvedVia: "SystemHealthAlertBanner", resolvedAt: new Date().toISOString() },
       });
 
-      if (res.success && (res.lifecycle_status === "RESOLVED_VERIFIED" || !res.error)) {
-        const mod = module || "ইস্যু";
-        setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${mod}) — ভেরিফাইড রিকভারি নিশ্চিত।`);
+      if (res.success && res.lifecycle_status === "RESOLVED_VERIFIED") {
+        setJustResolvedMessage(`সমস্যা সমাধান সম্পন্ন (${issue.module || "ইস্যু"}) — ভেরিফাইড রিকভারি নিশ্চিত।`);
         setTimeout(() => setJustResolvedMessage(null), 10000);
         fetchDiagnostics();
       } else {
-        console.error("Incident resolution could not be verified in database:", res.error);
+        const errorMsg = res.error || "সমস্যা এখনও বিদ্যমান। ডেটাবেজে ত্রুটি রয়ে গেছে।";
+        setResolutionError(`সমাধান অসম্পূর্ণ: ${errorMsg}`);
         fetchDiagnostics();
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "অপ্রত্যাশিত ত্রুটি ঘটেছে।";
+      setResolutionError(`সমাধান ব্যর্থ: ${msg}`);
+    } finally {
+      setResolvingId(null);
     }
   };
 
-  const handleResolveAll = async () => {
+  const handleResolveSafeIssues = async () => {
     const orgId = data?.organization_id || organizationId;
-    if (orgId) {
-      startTransition(async () => {
-        try {
-          await reconcileBedVacancyAction(orgId);
-          await resolveSystemRuntimeIssueAction({
-            organizationId: orgId,
-            module: "ALL",
-            location: "public.system_health_issues_log",
-          });
-          setEphemeralIssues([]);
-          setJustResolvedMessage("সকল সিস্টেম ও ডেটাবেজ অসংগতি স্বয়ংক্রিয়ভাবে সমাধান ও রিকনসাইল করা হয়েছে।");
+    if (!orgId) return;
+
+    startTransition(async () => {
+      setResolutionError(null);
+      try {
+        await remediateSystemHealthIssueAction({
+          organizationId: orgId,
+          identity: { kind: "DETECTOR", detectorCode: "BED_OCCUPANCY_DRIFT" },
+        });
+        await reconcileBedVacancyAction(orgId);
+        await resolveSystemRuntimeIssueAction({
+          organizationId: orgId,
+          module: "ALL",
+          location: "public.system_health_issues_log",
+        });
+        setEphemeralIssues([]);
+        const refreshed = await getSystemHealthDiagnosticsAction(organizationId);
+        setData(refreshed);
+        if (refreshed.total_issues === 0) {
+          setJustResolvedMessage("নিরাপদ সিস্টেম ও ডেটাবেজ অসংগতি স্বয়ংক্রিয়ভাবে সমাধান ও রিকনসাইল করা হয়েছে।");
           setTimeout(() => setJustResolvedMessage(null), 10000);
-          const refreshed = await getSystemHealthDiagnosticsAction(organizationId);
-          setData(refreshed);
-        } catch (e) {
-          console.error("Failed to resolve all issues:", e);
+        } else {
+          setResolutionError(`কিছু সমস্যা এখনও বিদ্যমান (${refreshed.total_issues}টি)। ক্লিনিক্যাল বা অ্যাডমিন যাচাই প্রয়োজন।`);
         }
-      });
-    }
+      } catch (e) {
+        console.error("Failed to resolve safe issues:", e);
+        setResolutionError("নিরাপদ সমস্যা সমাধানে ত্রুটি ঘটেছে।");
+      }
+    });
   };
 
   const isAnonymousSecurityShield =
@@ -367,13 +375,13 @@ export default function SystemHealthAlertBanner({
                 {hasIssues && (
                   <button
                     type="button"
-                    onClick={handleResolveAll}
+                    onClick={handleResolveSafeIssues}
                     disabled={isPending}
                     className="px-2.5 py-1 text-xs font-semibold rounded-md bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                    title="সব অসংগতি স্বয়ংক্রিয়ভাবে সমাধান ও রিকনসাইল করুন"
+                    title="নিরাপদ অসংগতিসমূহ স্বয়ংক্রিয়ভাবে সমাধান ও রিকনসাইল করুন"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>সব সমাধান করুন</span>
+                    <span>নিরাপদ সমস্যা সমাধান করুন</span>
                   </button>
                 )}
                 <button
@@ -397,6 +405,23 @@ export default function SystemHealthAlertBanner({
 
             {/* Modal Content */}
             <div className="p-5 overflow-y-auto space-y-4">
+              {resolutionError && (
+                <div className="text-xs text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 p-3 rounded-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertOctagon className="h-4 w-4 shrink-0 text-rose-600" />
+                    <span>{resolutionError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setResolutionError(null)}
+                    aria-label="বার্তা বন্ধ করুন"
+                    className="p-1 text-rose-600 hover:text-rose-800"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+
               {hasIssues ? (
                 <>
                   <div className="text-xs text-slate-600 dark:text-slate-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-3 rounded-lg">
@@ -474,12 +499,16 @@ export default function SystemHealthAlertBanner({
                         <div className="flex justify-end pt-1">
                           <button
                             type="button"
-                            onClick={() => handleResolveIssue(issue.id, issue.module, issue.location)}
-                            disabled={isPending}
+                            onClick={() => handleResolveIssue(issue)}
+                            disabled={isPending || resolvingId === issue.id}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-2xs transition-colors disabled:opacity-50"
                           >
-                            <Wrench className="h-3.5 w-3.5" />
-                            <span>সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা</span>
+                            {resolvingId === issue.id ? (
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Wrench className="h-3.5 w-3.5" />
+                            )}
+                            <span>{resolvingId === issue.id ? "যাচাই করা হচ্ছে..." : "সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা"}</span>
                           </button>
                         </div>
                       </div>

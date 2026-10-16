@@ -123,6 +123,60 @@ export async function verifyAndResolveSystemRuntimeIncident(params: {
  * Catches any unexpected client-side exception or failed asynchronous mutation,
  * immediately localizing the file/route and notifying the troubleshooter alert engine.
  */
+// Deduplication cache: fingerprint -> { count: number, lastSeen: number }
+const errorDeduplicationMap = new Map<string, { count: number; lastSeen: number }>();
+const DEDUP_WINDOW_MS = 10000;
+
+/**
+ * Classifies an incoming client-side runtime error into CRITICAL, WARNING, or IGNORE.
+ * CRITICAL is strictly reserved for financial invariants, RLS violations, and auth corruption.
+ */
+export function classifyRuntimeError(msg: string): {
+  severity: "CRITICAL" | "WARNING" | "IGNORE";
+  isFinancialOrSecurity: boolean;
+} {
+  const lower = (msg || "").toLowerCase();
+
+  // 1. IGNORE noisy or benign browser errors
+  if (
+    lower.includes("resizeobserver") ||
+    lower.includes("script error") ||
+    lower.includes("aborterror") ||
+    lower.includes("cancelled") ||
+    lower.includes("canceled") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("networkerror") ||
+    lower.includes("load failed") ||
+    lower.includes("chrome-extension://") ||
+    lower.includes("moz-extension://") ||
+    lower.includes("safari-extension://") ||
+    lower.includes("meta pixel") ||
+    lower.includes("gtag")
+  ) {
+    return { severity: "IGNORE", isFinancialOrSecurity: false };
+  }
+
+  // 2. CRITICAL: financial integrity, double-entry, RLS policies, auth corruption
+  if (
+    lower.includes("pgrst301") ||
+    lower.includes("pgrst116") ||
+    lower.includes("jwt expired") ||
+    lower.includes("token expired") ||
+    lower.includes("unauthorized") ||
+    lower.includes("financial_invariants") ||
+    lower.includes("trial_balance") ||
+    lower.includes("double_entry") ||
+    lower.includes("ledger_inbalance") ||
+    lower.includes("rls violation") ||
+    lower.includes("row-level security")
+  ) {
+    return { severity: "CRITICAL", isFinancialOrSecurity: true };
+  }
+
+  // 3. Default to WARNING for standard client-side exceptions
+  return { severity: "WARNING", isFinancialOrSecurity: false };
+}
+
 let globalMonitoringInstalled = false;
 
 export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
@@ -140,17 +194,26 @@ export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
     return "a0000000-0000-0000-0000-000000000001";
   };
 
-  const triggerAutonomousHealing = async (module: string, reason: string, errorCode: string, orgId: string) => {
-    let actionTaken = "স্বয়ংক্রিয় সেফটি ট্র্যাপ সক্রিয় করে স্টেট পুনরুদ্ধার করা হয়েছে";
+  /**
+   * Autonomous self-healing trigger.
+   * Note: Dispatches recovery attempt; verified RESOLVED_AUTO_HEALED transitions require authoritative backend proof.
+   */
+  const triggerAutonomousHealing = async (
+    module: string,
+    reason: string,
+    errorCode: string,
+    orgId: string
+  ) => {
+    let actionTaken = "স্বয়ংক্রিয় সেফটি ট্র্যাপ সক্রিয় করে স্টেট পুনরুদ্ধার প্রচেষ্টা চালানো হয়েছে";
 
     if (reason.includes("JWT") || reason.includes("token") || reason.includes("PGRST301") || reason.includes("401")) {
       try {
         const { createClient } = await import("@/lib/supabase/client");
         const client = createClient();
         await client.auth.refreshSession();
-        actionTaken = "সেশন টোকেন স্বয়ংক্রিয়ভাবে নবায়ন করা হয়েছে (Session Auto-Refreshed)";
+        actionTaken = "সেশন টোকেন নবায়ন প্রচেষ্টা সম্পন্ন হয়েছে (Session Refresh Attempted)";
       } catch {
-        actionTaken = "নিরাপদ অথ স্টেট পুনরায় সিঙ্ক করা হয়েছে";
+        actionTaken = "নিরাপদ অথ স্টেট পুনরায় সিঙ্ক করার চেষ্টা হয়েছে";
       }
     } else if (reason.includes("QuotaExceeded") || reason.includes("quota") || reason.includes("localStorage")) {
       try {
@@ -160,34 +223,33 @@ export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
             localStorage.removeItem(k);
           }
         }
-        actionTaken = "অপ্রয়োজনীয় ক্যাশ ক্লিয়ার করে স্টোরেজ মুক্ত করা হয়েছে (Cache Auto-Purged)";
+        actionTaken = "অপ্রয়োজনীয় ক্যাশ ক্লিয়ার করে স্টোরেজ মুক্ত করার চেষ্টা করা হয়েছে";
       } catch {
-        actionTaken = "লোকাল স্টোরেজ ক্যাশ নিরাপদ স্তরে রিসেট করা হয়েছে";
+        actionTaken = "লোকাল স্টোরেজ রিসেট করার চেষ্টা হয়েছে";
       }
     } else if (reason.includes("Failed to fetch") || reason.includes("NetworkError") || (typeof navigator !== "undefined" && !navigator.onLine)) {
       actionTaken = "অফলাইন রেজিলিয়েন্স বাফার সক্রিয় করা হয়েছে (Offline Resilience Active)";
     }
 
     if (typeof window !== "undefined") {
-      setTimeout(() => {
-        window.dispatchEvent(
-          new CustomEvent("system-health-incident-resolved", {
-            detail: {
-              organizationId: orgId,
-              module: module,
-              status: "RESOLVED_AUTO_HEALED",
-              action: actionTaken,
-              timestamp: new Date().toISOString(),
-            },
-          })
-        );
-      }, 1200);
+      // Dispatches RECOVERY_ATTEMPTED without asserting verified resolution
+      window.dispatchEvent(
+        new CustomEvent("system-health-recovery-attempted", {
+          detail: {
+            organizationId: orgId,
+            module: module,
+            status: "RECOVERY_ATTEMPTED",
+            action: actionTaken,
+            timestamp: new Date().toISOString(),
+          },
+        })
+      );
 
       fetch("/api/security-telemetry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          event: "AUTO_HEALED",
+          event: "RECOVERY_ATTEMPTED",
           route: window.location.pathname,
           module: module,
           error: reason,
@@ -200,66 +262,88 @@ export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
 
   const errorHandler = (event: ErrorEvent) => {
     const msg = event.message || "";
-    if (
-      msg.includes("ResizeObserver") ||
-      msg.includes("Script error") ||
-      msg.includes("AbortError") ||
-      msg.includes("Failed to fetch") ||
-      msg.includes("NetworkError") ||
-      msg.includes("cancelled") ||
-      msg.includes("chrome-extension://") ||
-      msg.includes("moz-extension://") ||
-      msg.includes("safari-extension://")
-    ) {
+    const classification = classifyRuntimeError(msg);
+    if (classification.severity === "IGNORE") {
       return;
     }
+
     const location = `${event.filename ? event.filename.split("/").slice(-2).join("/") : window.location.pathname}:${event.lineno || 0}`;
+    const fingerprint = `${location}:${msg.slice(0, 80)}`;
+    const now = Date.now();
+    const existing = errorDeduplicationMap.get(fingerprint);
+
+    if (existing && now - existing.lastSeen < DEDUP_WINDOW_MS) {
+      existing.count += 1;
+      existing.lastSeen = now;
+      return; // Deduplicated within debounce window
+    }
+    errorDeduplicationMap.set(fingerprint, { count: 1, lastSeen: now });
+
     const orgId = resolveOrgId();
-    const reason = event.message || "অপ্রত্যাশিত ক্লায়েন্ট সাইড ত্রুটি সনাক্ত হয়েছে।";
-    
+    const reason = msg || "অপ্রত্যাশিত ক্লায়েন্ট সাইড ত্রুটি সনাক্ত হয়েছে।";
+
     void reportSystemRuntimeIncident({
       organizationId: orgId,
       module: window.location.pathname || "Frontend UI",
       location: location,
-      severity: "WARNING",
+      severity: classification.severity,
       errorCode: "UNCAUGHT_BROWSER_ERROR",
-      title: "ব্রাউজার রানটাইম ত্রুটি (Uncaught Client Error)",
+      title: classification.severity === "CRITICAL"
+        ? "গুরুত্বপূর্ণ রানটাইম ত্রুটি (Critical Runtime Error)"
+        : "ব্রাউজার রানটাইম সতর্কতা (Client Runtime Warning)",
       reason: reason,
-      recommendation: "স্বয়ংক্রিয় সেলফ-হিলিং ইঞ্জিন সমস্যা সমাধান করছে।",
+      recommendation: "ত্রুটির উৎস পরীক্ষা করুন ও সমাধান নিশ্চিত করুন।",
       details: { stack: event.error?.stack?.slice(0, 300) },
     });
 
-    void triggerAutonomousHealing(window.location.pathname || "Frontend UI", reason, "UNCAUGHT_BROWSER_ERROR", orgId);
+    void triggerAutonomousHealing(
+      window.location.pathname || "Frontend UI",
+      reason,
+      "UNCAUGHT_BROWSER_ERROR",
+      orgId
+    );
   };
 
   const rejectionHandler = (event: PromiseRejectionEvent) => {
     const reasonText = event.reason instanceof Error ? event.reason.message : String(event.reason || "");
-    if (
-      !reasonText ||
-      reasonText.includes("ResizeObserver") ||
-      reasonText.includes("AbortError") ||
-      reasonText.includes("Failed to fetch") ||
-      reasonText.includes("NetworkError") ||
-      reasonText.includes("cancelled") ||
-      reasonText.includes("chrome-extension://") ||
-      reasonText.includes("moz-extension://")
-    ) {
+    const classification = classifyRuntimeError(reasonText);
+    if (classification.severity === "IGNORE") {
       return;
     }
+
+    const location = `Promise Rejection at ${window.location.pathname}`;
+    const fingerprint = `${location}:${reasonText.slice(0, 80)}`;
+    const now = Date.now();
+    const existing = errorDeduplicationMap.get(fingerprint);
+
+    if (existing && now - existing.lastSeen < DEDUP_WINDOW_MS) {
+      existing.count += 1;
+      existing.lastSeen = now;
+      return; // Deduplicated within debounce window
+    }
+    errorDeduplicationMap.set(fingerprint, { count: 1, lastSeen: now });
+
     const orgId = resolveOrgId();
 
     void reportSystemRuntimeIncident({
       organizationId: orgId,
       module: window.location.pathname || "Frontend UI",
-      location: `Promise Rejection at ${window.location.pathname}`,
-      severity: "WARNING",
+      location: location,
+      severity: classification.severity,
       errorCode: "UNHANDLED_PROMISE_REJECTION",
-      title: "অমীমাংসিত প্রমিজ ত্রুটি (Unhandled Promise Rejection)",
+      title: classification.severity === "CRITICAL"
+        ? "গুরুত্বপূর্ণ প্রমিজ ত্রুটি (Critical Promise Rejection)"
+        : "অমীমাংসিত প্রমিজ সতর্কতা (Unhandled Promise Rejection)",
       reason: reasonText,
-      recommendation: "স্বয়ংক্রিয় সেলফ-হিলিং ইঞ্জিন সমস্যা সমাধান করছে।",
+      recommendation: "অ্যাসিঙ্ক অপারেশনের রুটিনের ত্রুটি হ্যান্ডলার পরীক্ষা করুন।",
     });
 
-    void triggerAutonomousHealing(window.location.pathname || "Frontend UI", reasonText, "UNHANDLED_PROMISE_REJECTION", orgId);
+    void triggerAutonomousHealing(
+      window.location.pathname || "Frontend UI",
+      reasonText,
+      "UNHANDLED_PROMISE_REJECTION",
+      orgId
+    );
   };
 
   window.addEventListener("error", errorHandler);
