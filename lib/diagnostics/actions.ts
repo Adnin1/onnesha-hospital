@@ -684,7 +684,13 @@ export async function verifyAndResolveSystemIssueAction(payload: {
   module?: string;
   location?: string;
   verificationEvidence?: Record<string, unknown>;
-}): Promise<{ success: boolean; issue_id?: string; lifecycle_status?: string; error?: string }> {
+}): Promise<{
+  success: boolean;
+  issue_id?: string;
+  lifecycle_status?: string;
+  error?: string;
+  message?: string;
+}> {
   const isUuid = (val?: string): boolean =>
     typeof val === "string" &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
@@ -710,6 +716,7 @@ export async function verifyAndResolveSystemIssueAction(payload: {
     issue_id: issueId,
     lifecycle_status: res.lifecycle_status,
     error: res.error || (res.success ? undefined : res.message),
+    message: res.message,
   };
 }
 
