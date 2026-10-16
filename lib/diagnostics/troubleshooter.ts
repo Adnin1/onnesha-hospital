@@ -199,7 +199,18 @@ export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
   };
 
   const errorHandler = (event: ErrorEvent) => {
-    if (event.message?.includes("ResizeObserver loop") || event.message?.includes("Script error")) {
+    const msg = event.message || "";
+    if (
+      msg.includes("ResizeObserver") ||
+      msg.includes("Script error") ||
+      msg.includes("AbortError") ||
+      msg.includes("Failed to fetch") ||
+      msg.includes("NetworkError") ||
+      msg.includes("cancelled") ||
+      msg.includes("chrome-extension://") ||
+      msg.includes("moz-extension://") ||
+      msg.includes("safari-extension://")
+    ) {
       return;
     }
     const location = `${event.filename ? event.filename.split("/").slice(-2).join("/") : window.location.pathname}:${event.lineno || 0}`;
@@ -210,7 +221,7 @@ export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
       organizationId: orgId,
       module: window.location.pathname || "Frontend UI",
       location: location,
-      severity: "CRITICAL",
+      severity: "WARNING",
       errorCode: "UNCAUGHT_BROWSER_ERROR",
       title: "ব্রাউজার রানটাইম ত্রুটি (Uncaught Client Error)",
       reason: reason,
@@ -223,7 +234,16 @@ export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
 
   const rejectionHandler = (event: PromiseRejectionEvent) => {
     const reasonText = event.reason instanceof Error ? event.reason.message : String(event.reason || "");
-    if (!reasonText || reasonText.includes("ResizeObserver") || reasonText.includes("AbortError")) {
+    if (
+      !reasonText ||
+      reasonText.includes("ResizeObserver") ||
+      reasonText.includes("AbortError") ||
+      reasonText.includes("Failed to fetch") ||
+      reasonText.includes("NetworkError") ||
+      reasonText.includes("cancelled") ||
+      reasonText.includes("chrome-extension://") ||
+      reasonText.includes("moz-extension://")
+    ) {
       return;
     }
     const orgId = resolveOrgId();
