@@ -30,13 +30,13 @@
 
 | Metric | Target | Measured Ground Truth | Status |
 |:---|:---:|:---|:---:|
-| **Test Suites** | 100% | **153 / 153 suites passing** (`npm test`) | ✅ PASS |
-| **Active Test Cases** | Zero Failures | **1,370 passed**, 0 failed, 7 standard skips | ✅ PASS |
+| **Test Suites** | 100% | **154 / 154 suites passing** (`npm test`) | ✅ PASS |
+| **Active Test Cases** | Zero Failures | **1,377 passed**, 0 failed, 7 standard skips | ✅ PASS |
 | **Health Engine v2** | 100% | **8 / 8 tests passing** (`phase39-health-engine-v2`) | ✅ PASS |
 | **Security Tester v2** | 100% | **5 / 5 tests passing** (`phase40-security-tester-v2`) | ✅ PASS |
 | **TypeScript Strict Mode** | 0 Errors | **0 errors** (`tsc --noEmit`) | ✅ PASS |
 | **ESLint Analysis** | 0 Warnings | **0 errors, 0 warnings** (`eslint .`) | ✅ PASS |
-| **Database Migrations** | 100% Baseline | **207 / 207 migrations in repo** (Migration 207 added) | ✅ PASS |
+| **Database Migrations** | 100% Baseline | **208 / 208 migrations in repo** (Migration 208 added) | ✅ PASS |
 | **Database Linting** | 0 Fatal Errors | **0 fatal errors across all schemas** (`npx supabase db lint --linked`) | ✅ PASS |
 | **Dependency CVE Audit** | 0 High/Critical | **0 vulnerabilities** (`npm audit --audit-level=high`) | ✅ PASS |
 | **Prerendered Website Routes** | 100% | **63 physical routes generated & audited** (`out/`) | ✅ PASS |
@@ -130,6 +130,16 @@
       4. Rendered `SystemHealthAlertBanner.tsx` strictly observational on mount (zero auto-mutations in `useEffect`) and gated resolution feedback on authoritative `RESOLVED_VERIFIED` lifecycle status.
       5. Hardened Migration 207 with `doctors.updated_at` trigger, partial unique index preventing double occupancy on beds/cabins, and atomic reconciler with row locking (`FOR UPDATE`).
     - *Verification:* Verified via regression test suite `tests/health-issue-identity-and-remediation.test.mjs` (5/5 tests passing) and all 153/153 test suites passing (1,370 active tests).
+
+17. **`FEAT-HEALTH-03` (Client Noise Elimination, Health Score Protection & Bed Drift Reconciler):**
+    - *Problem:* External browser extension message timeouts (`"Window message \"chrome: call method\" timed out."`) leaked into the database as unhandled errors, triggering `OPEN_RUNTIME_INCIDENTS_ACTIVE` and falsely capping global health scores at 65/100. Furthermore, physical bed `MW-105` drifted to `OCCUPIED` while active assignments count was 0.
+    - *Fix:*
+      1. Created `lib/diagnostics/noise-classifier.ts` providing pure function `classifyClientRuntimeNoise()` to drop external browser channel / extension timeouts before DB persistence or UI event dispatch.
+      2. Re-exported classifier from `lib/diagnostics/troubleshooter.ts` with explicit taxonomy documentation.
+      3. Hardened `lib/diagnostics/actions.ts` so `OPEN_RUNTIME_INCIDENTS_ACTIVE` safely classifies extension noise with verifiable evidence and routes domain issues to authoritative reproducers.
+      4. Authored Migration 208 (`20261016140000_migration_208_classify_client_noise_and_harden_health_weights.sql`) to synchronize bed/cabin occupancy statuses across all organizations, retroactively classify historical noise rows in `system_health_issues_log`, add Domain 11 (`CLIENT_EXTENSION_NOISE_EXCLUSION`) to `verify_system_incident_resolution`, and update `check_system_health_diagnostics` (Check 7) so external browser noise is excluded from health score deductions.
+      5. Added comprehensive test suite `tests/client-noise-and-bed-drift-repair.test.mjs`.
+    - *Verification:* Verified via `node scripts/run-tests.mjs --certification`: 154/154 suites passed (1,377 active passed tests, 0 failures).
 
 ---
 

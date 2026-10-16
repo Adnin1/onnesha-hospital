@@ -508,7 +508,7 @@ export default function SystemHealthAlertBanner({
                             ) : (
                               <Wrench className="h-3.5 w-3.5" />
                             )}
-                            <span>{resolvingId === issue.id ? "যাচাই করা হচ্ছে..." : "সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা"}</span>
+                            <span>{resolvingId === issue.id ? "সমাধান যাচাই করা হচ্ছে..." : "সমাধান হিসেবে চিহ্নিত করুন ও পুনঃপরীক্ষা"}</span>
                           </button>
                         </div>
                       </div>
@@ -562,9 +562,14 @@ export default function SystemHealthAlertBanner({
 
             {/* Modal Footer */}
             <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/40">
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Database className="h-3.5 w-3.5" />
-                <span>স্বয়ংক্রিয় স্বাস্থ্য নিরীক্ষা ইঞ্জিন v1.0</span>
+                <span>স্বাস্থ্য নিরীক্ষা ইঞ্জিন v2</span>
+                {data?.checked_at && (
+                  <span className="text-[11px] text-slate-400">
+                    (সর্বশেষ স্ক্যান: {new Date(data.checked_at).toLocaleTimeString()})
+                  </span>
+                )}
               </div>
               <button
                 type="button"

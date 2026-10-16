@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { classifyClientRuntimeNoise } from "./noise-classifier";
 
 export type DiagnosticIssueKind = "INCIDENT" | "DETECTOR";
 
@@ -547,7 +548,7 @@ export async function remediateSystemHealthIssueAction(payload: {
         // Enumerate open incidents individually
         const { data: openIncidents, error: incErr } = await supabase
           .from("system_health_issues_log")
-          .select("id, module, title, reason")
+          .select("id, module, title, reason, details")
           .eq("organization_id", organizationId)
           .eq("is_resolved", false);
 
@@ -566,6 +567,37 @@ export async function remediateSystemHealthIssueAction(payload: {
 
         for (const inc of openIncidents) {
           if (isUuid(inc.id)) {
+            const noise = classifyClientRuntimeNoise({
+              message: `${inc.title || ""} ${inc.reason || ""}`,
+              stack: typeof (inc.details as Record<string, unknown> | null)?.stack === "string"
+                ? ((inc.details as Record<string, unknown>).stack as string)
+                : undefined,
+            });
+
+            if (noise.isNoise) {
+              await supabase
+                .from("system_health_issues_log")
+                .update({
+                  is_resolved: true,
+                  resolved_at: new Date().toISOString(),
+                  lifecycle_status: "RESOLVED_VERIFIED",
+                  verified_at: new Date().toISOString(),
+                  resolution_notes: `ব্রাউজার এক্সটেনশন বা নেটওয়ার্ক নয়েজ হিসেবে ক্লাসিফাই করা হয়েছে (${noise.classification || "CLIENT_EXTENSION_NOISE"})।`,
+                  verification_evidence: {
+                    noise_classification: {
+                      classification: noise.classification || "CLIENT_EXTENSION_NOISE",
+                      classified_at: new Date().toISOString(),
+                      reason: noise.reason,
+                    },
+                  },
+                })
+                .eq("id", inc.id)
+                .eq("organization_id", organizationId);
+
+              verifiedCount++;
+              continue;
+            }
+
             const vRes = await supabase.rpc("verify_system_incident_resolution", {
               p_incident_id: inc.id,
               p_org_id: organizationId,

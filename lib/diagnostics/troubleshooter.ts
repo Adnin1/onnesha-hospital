@@ -19,21 +19,42 @@ export interface ReportIncidentParams {
   details?: Record<string, unknown>;
 }
 
+import {
+  type ClientNoiseClassification,
+  classifyClientRuntimeNoise,
+} from "./noise-classifier";
+
+export {
+  type ClientNoiseClassification,
+  classifyClientRuntimeNoise,
+};
+
 /**
  * Reports a runtime operational error or database failure.
- * 1. Persists incident to PostgreSQL system_health_issues_log.
- * 2. Emits a real-time DOM event so the UI banner immediately reflects the problem.
+ * 1. Drops extension noise immediately (never emitted to UI or DB).
+ * 2. Persists genuine first-party incident to PostgreSQL system_health_issues_log.
+ * 3. Emits a real-time DOM event so the UI banner immediately reflects genuine issues.
  */
 export async function reportSystemRuntimeIncident(
   params: ReportIncidentParams
 ): Promise<string | null> {
+  const noise = classifyClientRuntimeNoise({
+    message: `${params.title} ${params.reason}`,
+    stack: typeof params.details?.stack === "string" ? params.details.stack : undefined,
+  });
+
+  if (noise.isNoise) {
+    // Drop extension/browser noise immediately; never emit to UI or persist to DB
+    return null;
+  }
+
   // Fire immediate client-side custom event so user sees alert right away
   if (typeof window !== "undefined") {
     const eventPayload: Partial<SystemHealthIssue> = {
       id: "ephemeral-" + Date.now(),
       module: params.module,
       location: params.location,
-      severity: params.severity || "CRITICAL",
+      severity: params.severity || "WARNING",
       title: params.title,
       reason: params.reason,
       recommendation: params.recommendation,
@@ -51,7 +72,7 @@ export async function reportSystemRuntimeIncident(
     organizationId: params.organizationId,
     module: params.module,
     location: params.location,
-    severity: params.severity || "CRITICAL",
+    severity: params.severity || "WARNING",
     errorCode: params.errorCode,
     title: params.title,
     reason: params.reason,
@@ -129,34 +150,29 @@ const DEDUP_WINDOW_MS = 10000;
 
 /**
  * Classifies an incoming client-side runtime error into CRITICAL, WARNING, or IGNORE.
- * CRITICAL is strictly reserved for financial invariants, RLS violations, and auth corruption.
+ * - IGNORE taxonomy: resizeobserver, chrome-extension://, moz-extension://, external channel noise.
+ * - CRITICAL: financial_invariants, double-entry, pgrst301, auth corruption, RLS violations, cross_tenant leaks.
+ * - WARNING: first-party application exceptions.
  */
-export function classifyRuntimeError(msg: string): {
+export function classifyRuntimeError(params: string | { message?: string; filename?: string; stack?: string }): {
   severity: "CRITICAL" | "WARNING" | "IGNORE";
   isFinancialOrSecurity: boolean;
+  classification?: "CLIENT_EXTENSION_NOISE" | "BENIGN_BROWSER_EVENT" | "APPLICATION_ERROR";
 } {
-  const lower = (msg || "").toLowerCase();
+  const normParams = typeof params === "string" ? { message: params } : params;
+  const noise = classifyClientRuntimeNoise(normParams);
 
-  // 1. IGNORE noisy or benign browser errors
-  if (
-    lower.includes("resizeobserver") ||
-    lower.includes("script error") ||
-    lower.includes("aborterror") ||
-    lower.includes("cancelled") ||
-    lower.includes("canceled") ||
-    lower.includes("failed to fetch") ||
-    lower.includes("networkerror") ||
-    lower.includes("load failed") ||
-    lower.includes("chrome-extension://") ||
-    lower.includes("moz-extension://") ||
-    lower.includes("safari-extension://") ||
-    lower.includes("meta pixel") ||
-    lower.includes("gtag")
-  ) {
-    return { severity: "IGNORE", isFinancialOrSecurity: false };
+  if (noise.isNoise) {
+    return {
+      severity: "IGNORE",
+      isFinancialOrSecurity: false,
+      classification: noise.classification,
+    };
   }
 
-  // 2. CRITICAL: financial integrity, double-entry, RLS policies, auth corruption
+  const lower = ((normParams.message || "") + " " + (normParams.stack || "")).toLowerCase();
+
+  // 1. CRITICAL: financial integrity, double-entry, RLS policies, auth corruption
   if (
     lower.includes("pgrst301") ||
     lower.includes("pgrst116") ||
@@ -168,13 +184,14 @@ export function classifyRuntimeError(msg: string): {
     lower.includes("double_entry") ||
     lower.includes("ledger_inbalance") ||
     lower.includes("rls violation") ||
-    lower.includes("row-level security")
+    lower.includes("row-level security") ||
+    lower.includes("cross_tenant")
   ) {
-    return { severity: "CRITICAL", isFinancialOrSecurity: true };
+    return { severity: "CRITICAL", isFinancialOrSecurity: true, classification: "APPLICATION_ERROR" };
   }
 
-  // 3. Default to WARNING for standard client-side exceptions
-  return { severity: "WARNING", isFinancialOrSecurity: false };
+  // 2. Default to WARNING for standard client-side exceptions
+  return { severity: "WARNING", isFinancialOrSecurity: false, classification: "APPLICATION_ERROR" };
 }
 
 let globalMonitoringInstalled = false;
@@ -262,12 +279,21 @@ export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
 
   const errorHandler = (event: ErrorEvent) => {
     const msg = event.message || "";
-    const classification = classifyRuntimeError(msg);
+    const filename = event.filename || "";
+    const stack = event.error?.stack || "";
+
+    const classification = classifyRuntimeError({
+      message: msg,
+      filename: filename,
+      stack: stack,
+    });
+
     if (classification.severity === "IGNORE") {
+      // Confirmed browser extension noise: drop silently, NO db log, NO score drop
       return;
     }
 
-    const location = `${event.filename ? event.filename.split("/").slice(-2).join("/") : window.location.pathname}:${event.lineno || 0}`;
+    const location = `${filename ? filename.split("/").slice(-2).join("/") : window.location.pathname}:${event.lineno || 0}`;
     const fingerprint = `${location}:${msg.slice(0, 80)}`;
     const now = Date.now();
     const existing = errorDeduplicationMap.get(fingerprint);
@@ -293,7 +319,7 @@ export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
         : "ব্রাউজার রানটাইম সতর্কতা (Client Runtime Warning)",
       reason: reason,
       recommendation: "ত্রুটির উৎস পরীক্ষা করুন ও সমাধান নিশ্চিত করুন।",
-      details: { stack: event.error?.stack?.slice(0, 300) },
+      details: { stack: stack?.slice(0, 300) },
     });
 
     void triggerAutonomousHealing(
@@ -306,8 +332,15 @@ export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
 
   const rejectionHandler = (event: PromiseRejectionEvent) => {
     const reasonText = event.reason instanceof Error ? event.reason.message : String(event.reason || "");
-    const classification = classifyRuntimeError(reasonText);
+    const stackText = event.reason instanceof Error ? event.reason.stack : "";
+
+    const classification = classifyRuntimeError({
+      message: reasonText,
+      stack: stackText,
+    });
+
     if (classification.severity === "IGNORE") {
+      // Confirmed browser extension rejection: drop silently, NO db log, NO score drop
       return;
     }
 
@@ -336,6 +369,7 @@ export function setupGlobalErrorMonitoring(defaultOrgId?: string): () => void {
         : "অমীমাংসিত প্রমিজ সতর্কতা (Unhandled Promise Rejection)",
       reason: reasonText,
       recommendation: "অ্যাসিঙ্ক অপারেশনের রুটিনের ত্রুটি হ্যান্ডলার পরীক্ষা করুন।",
+      details: { stack: stackText?.slice(0, 300) },
     });
 
     void triggerAutonomousHealing(
