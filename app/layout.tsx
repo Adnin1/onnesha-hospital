@@ -71,6 +71,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="bn" className="h-full antialiased">
+      <head>
+        <link rel="preconnect" href="https://iuhtzahuszdkdarhxobx.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://iuhtzahuszdkdarhxobx.supabase.co" />
+      </head>
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900">
         <a href="#main-content" className="skip-to-content" lang="bn">মূল বিষয়বস্তুতে যান</a>
         <NetworkStatus />
