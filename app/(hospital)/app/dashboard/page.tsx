@@ -30,6 +30,31 @@ import { formatCurrencyBDT } from "@/lib/utils";
 import { getDhakaDateString, getDhakaWeekday } from "@/lib/datetime";
 import { APP_VERSION } from "@/lib/version";
 
+interface DashboardCache {
+  metrics: {
+    todayIncome: number;
+    todayPatients: number;
+    totalDoctors: number;
+    scheduledDoctors: number;
+    offScheduleDoctors: number;
+    availableBeds: number;
+    totalBeds: number;
+    dueAmount: number;
+  };
+  metricErrors: {
+    income: boolean;
+    patients: boolean;
+    beds: boolean;
+    doctors: boolean;
+  };
+  waitingQueue: WaitingQueueItem[];
+  lastSyncTime: string;
+  cachedAt: number;
+}
+
+let memoryDashboardCache: DashboardCache | null = null;
+const CACHE_TTL_MS = 25000;
+
 export default function HospitalDashboardPage() {
   const [waitingQueue, setWaitingQueue] = useState<WaitingQueueItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,99 +83,74 @@ export default function HospitalDashboardPage() {
   useEffect(() => {
     let isMounted = true;
     async function executeLoad() {
+      if (memoryDashboardCache && refreshTrigger === 0) {
+        setMetrics(memoryDashboardCache.metrics);
+        setMetricErrors(memoryDashboardCache.metricErrors);
+        setWaitingQueue(memoryDashboardCache.waitingQueue);
+        setLastSyncTime(memoryDashboardCache.lastSyncTime);
+        setIsLoading(false);
+        if (Date.now() - memoryDashboardCache.cachedAt < CACHE_TTL_MS) {
+          return;
+        }
+      }
+
       try {
         const { createBrowserClientInstance } = await import("@/lib/supabase/browser");
         const supabase = createBrowserClientInstance();
 
-        // 1. Fetch real today's patients count with bounded Dhaka date boundaries
         const todayStr = getDhakaDateString();
         const startOfToday = `${todayStr}T00:00:00+06:00`;
         const tomorrowObj = new Date(`${todayStr}T00:00:00Z`);
         tomorrowObj.setUTCDate(tomorrowObj.getUTCDate() + 1);
         const endOfToday = `${tomorrowObj.toISOString().slice(0, 10)}T00:00:00+06:00`;
+        const dhakaDayName = getDhakaWeekday();
 
-        const { count: todayPatientsCount, error: patientErr } = await supabase
-          .from("patients")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", startOfToday)
-          .lt("created_at", endOfToday);
+        const { getLiveWaitingQueueAction } = await import("@/lib/appointments/actions");
 
-        // 2. Fetch real beds status using server-side index count queries (canonical status 'VACANT')
-        const [totalBedsRes, availableBedsRes] = await Promise.all([
+        // Concurrent execution across HTTP/2 multiplexed streams
+        const [
+          patientsRes,
+          totalBedsRes,
+          availableBedsRes,
+          doctorsRes,
+          schedulesRes,
+          finRes,
+          queueRes
+        ] = await Promise.all([
+          supabase.from("patients").select("*", { count: "exact", head: true }).gte("created_at", startOfToday).lt("created_at", endOfToday),
           supabase.from("beds").select("*", { count: "exact", head: true }),
-          supabase
-            .from("beds")
-            .select("*", { count: "exact", head: true })
-            .eq("status", "VACANT"),
+          supabase.from("beds").select("*", { count: "exact", head: true }).eq("status", "VACANT"),
+          supabase.from("doctors").select("*", { count: "exact", head: true }).eq("is_active", true),
+          supabase.from("doctor_schedules").select("doctor_id").eq("day_of_week", dhakaDayName).eq("is_active", true),
+          supabase.rpc("get_dashboard_today_financial_summary", { p_start_date: startOfToday, p_end_date: endOfToday }),
+          getLiveWaitingQueueAction()
         ]);
 
+        const todayPatientsCount = patientsRes.count ?? 0;
         const totalBedsCount = totalBedsRes.count ?? 0;
         const availableBedsCount = availableBedsRes.count ?? 0;
         const bedsHasError = Boolean(totalBedsRes.error || availableBedsRes.error);
-
-        // 3. Fetch real doctors and today's scheduled visiting hours
-        const dhakaDayName = getDhakaWeekday();
-        const [doctorsRes, schedulesRes] = await Promise.all([
-          supabase.from("doctors").select("*", { count: "exact", head: true }).eq("is_active", true),
-          supabase
-            .from("doctor_schedules")
-            .select("doctor_id")
-            .eq("day_of_week", dhakaDayName)
-            .eq("is_active", true),
-        ]);
-
         const totalDoctorsCount = doctorsRes.count ?? 0;
         const doctorsHasError = Boolean(doctorsRes.error);
+
         const scheduledDoctorIds = new Set(
           (schedulesRes.data || []).map((s: { doctor_id: string }) => s.doctor_id)
         );
         const scheduledDoctorsCount = scheduledDoctorIds.size;
         const offScheduleDoctorsCount = Math.max(0, totalDoctorsCount - scheduledDoctorsCount);
 
-        // 4. Fetch real invoices revenue aggregate directly via server-side database RPC
         let incomeSum = 0;
         let dueSum = 0;
         let invHasError = false;
 
-        try {
-          const { data: finData, error: finErr } = await supabase.rpc(
-            "get_dashboard_today_financial_summary",
-            {
-              p_start_date: startOfToday,
-              p_end_date: endOfToday,
-            }
-          );
-
-          if (!finErr && finData && typeof finData === "object" && "today_income" in finData) {
-            const summary = finData as { today_income?: number; today_due?: number };
-            incomeSum = Number(summary.today_income || 0);
-            dueSum = Number(summary.today_due || 0);
-          } else {
-            // High-throughput query fallback
-            const { data: invoicesData, error: qErr } = await supabase
-              .from("invoices")
-              .select("paid_amount, due_amount")
-              .gte("created_at", startOfToday)
-              .lt("created_at", endOfToday);
-
-            if (qErr) {
-              invHasError = true;
-            } else if (invoicesData) {
-              interface InvRow { paid_amount?: number; due_amount?: number }
-              (invoicesData as InvRow[]).forEach((inv) => {
-                incomeSum += Number(inv.paid_amount || 0);
-                dueSum += Number(inv.due_amount || 0);
-              });
-            }
-          }
-        } catch (err: unknown) {
-          console.error("[DashboardPage] financial aggregation error:", err);
-          invHasError = true;
+        if (!finRes.error && finRes.data && typeof finRes.data === "object" && "today_income" in finRes.data) {
+          const summary = finRes.data as { today_income?: number; today_due?: number };
+          incomeSum = Number(summary.today_income || 0);
+          dueSum = Number(summary.today_due || 0);
+        } else {
+          invHasError = Boolean(finRes.error);
         }
 
-        // 5. Fetch live waiting queue
-        const { getLiveWaitingQueueAction } = await import("@/lib/appointments/actions");
-        const queueRes = await getLiveWaitingQueueAction();
         let mappedQueue: WaitingQueueItem[] = [];
         if (queueRes.success && queueRes.data?.queue) {
           mappedQueue = queueRes.data.queue.map((q) => ({
@@ -167,31 +167,43 @@ export default function HospitalDashboardPage() {
           }));
         }
 
+        const newMetrics = {
+          todayIncome: incomeSum,
+          todayPatients: todayPatientsCount,
+          totalDoctors: totalDoctorsCount,
+          scheduledDoctors: scheduledDoctorsCount,
+          offScheduleDoctors: offScheduleDoctorsCount,
+          availableBeds: availableBedsCount,
+          totalBeds: totalBedsCount,
+          dueAmount: dueSum,
+        };
+
+        const newErrors = {
+          income: invHasError,
+          patients: Boolean(patientsRes.error),
+          beds: bedsHasError,
+          doctors: doctorsHasError,
+        };
+
+        const syncTime = new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+
+        memoryDashboardCache = {
+          metrics: newMetrics,
+          metricErrors: newErrors,
+          waitingQueue: mappedQueue,
+          lastSyncTime: syncTime,
+          cachedAt: Date.now(),
+        };
+
         if (isMounted) {
-          setMetrics({
-            todayIncome: incomeSum,
-            todayPatients: todayPatientsCount ?? 0,
-            totalDoctors: totalDoctorsCount,
-            scheduledDoctors: scheduledDoctorsCount,
-            offScheduleDoctors: offScheduleDoctorsCount,
-            availableBeds: availableBedsCount,
-            totalBeds: totalBedsCount,
-            dueAmount: dueSum,
-          });
-          setMetricErrors({
-            income: invHasError,
-            patients: Boolean(patientErr),
-            beds: bedsHasError,
-            doctors: doctorsHasError,
-          });
+          setMetrics(newMetrics);
+          setMetricErrors(newErrors);
           setWaitingQueue(mappedQueue);
-          setLastSyncTime(
-            new Date().toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            })
-          );
+          setLastSyncTime(syncTime);
           setIsLoading(false);
         }
       } catch (err: unknown) {

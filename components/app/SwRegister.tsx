@@ -78,7 +78,11 @@ export default function SwRegister() {
     }
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    void registerSW();
+    if (document.readyState === "complete") {
+      void registerSW();
+    } else {
+      window.addEventListener("load", () => void registerSW(), { once: true });
+    }
 
     return () => {
       isMounted = false;
