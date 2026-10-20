@@ -40,9 +40,22 @@ export function PaymentStampSeal({
   if (isVoid) {
     return (
       <div
-        className={`relative inline-block border-[1.5px] border-dashed border-slate-600 text-slate-700 bg-slate-50/50 rounded-xl transform -rotate-3 select-none shadow-2xs pointer-events-none print:opacity-100 ${sizeClasses} ${className}`}
+        className={`payment-stamp-seal-root relative inline-block border-[1.5px] border-dashed border-slate-600 text-slate-700 bg-slate-50/50 rounded-xl transform -rotate-3 select-none shadow-2xs pointer-events-none print:opacity-100 print:transform-none print:shadow-none ${sizeClasses} ${className}`}
         style={{ mixBlendMode: "multiply" }}
       >
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            .payment-stamp-seal-root {
+              mix-blend-mode: normal !important;
+              box-shadow: none !important;
+              transform: none !important;
+              filter: none !important;
+              opacity: 1 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          }
+        `}} />
         <div className="border border-slate-400/80 p-1 rounded-lg text-center leading-tight">
           <div className="flex items-center justify-center space-x-1 text-[6.5px] uppercase tracking-widest font-black text-slate-500">
             <Ban className="w-2 h-2" />
@@ -63,9 +76,22 @@ export function PaymentStampSeal({
   if (isPaid) {
     return (
       <div
-        className={`relative inline-block border-[1.5px] border-emerald-600 text-emerald-800 bg-emerald-50/80 rounded-xl transform -rotate-3 select-none shadow-2xs pointer-events-none print:opacity-100 ${sizeClasses} ${className}`}
+        className={`payment-stamp-seal-root relative inline-block border-[1.5px] border-emerald-600 text-emerald-800 bg-emerald-50/80 rounded-xl transform -rotate-3 select-none shadow-2xs pointer-events-none print:opacity-100 print:transform-none print:shadow-none ${sizeClasses} ${className}`}
         style={{ mixBlendMode: "multiply" }}
       >
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            .payment-stamp-seal-root {
+              mix-blend-mode: normal !important;
+              box-shadow: none !important;
+              transform: none !important;
+              filter: none !important;
+              opacity: 1 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          }
+        `}} />
         <div className="border border-dashed border-emerald-500/80 p-1 rounded-lg text-center leading-tight">
           {/* Header */}
           <div className="flex items-center justify-center space-x-1 text-[6.5px] uppercase tracking-widest font-black text-emerald-700 leading-none">
@@ -92,9 +118,22 @@ export function PaymentStampSeal({
   // DUE / UNPAID / PARTIAL Seal
   return (
     <div
-      className={`relative inline-block border-[1.5px] border-rose-600 text-rose-800 bg-rose-50/80 rounded-xl transform rotate-3 select-none shadow-2xs pointer-events-none print:opacity-100 ${sizeClasses} ${className}`}
+      className={`payment-stamp-seal-root relative inline-block border-[1.5px] border-rose-600 text-rose-800 bg-rose-50/80 rounded-xl transform rotate-3 select-none shadow-2xs pointer-events-none print:opacity-100 print:transform-none print:shadow-none ${sizeClasses} ${className}`}
       style={{ mixBlendMode: "multiply" }}
     >
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          .payment-stamp-seal-root {
+            mix-blend-mode: normal !important;
+            box-shadow: none !important;
+            transform: none !important;
+            filter: none !important;
+            opacity: 1 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}} />
       <div className="border border-dashed border-rose-500/80 p-1 rounded-lg text-center leading-tight">
         {/* Header */}
         <div className="flex items-center justify-center space-x-1 text-[6.5px] uppercase tracking-widest font-black text-rose-700 leading-none">

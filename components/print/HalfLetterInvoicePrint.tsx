@@ -8,6 +8,22 @@ import React from "react";
 import { HOSPITAL_METADATA } from "@/config/hospital";
 import { generateSvgBarcode } from "@/lib/print/barcode";
 import { PaymentStampSeal } from "@/components/billing/PaymentStampSeal";
+import { formatDateBDT, formatTimeBDT } from "@/lib/utils";
+
+function safeFormatPrintDate(dStr: string | undefined): string {
+  if (!dStr) return "—";
+  if (dStr.includes("T") || dStr.includes("+") || (dStr.includes("-") && dStr.length > 15)) {
+    try {
+      const d = new Date(dStr);
+      if (!isNaN(d.getTime())) {
+        return `${formatDateBDT(d)}, ${formatTimeBDT(d)}`;
+      }
+    } catch {
+      // fallback
+    }
+  }
+  return dStr;
+}
 
 export interface HalfLetterInvoicePrintProps {
   invoiceNumber: string;
@@ -118,29 +134,34 @@ export function HalfLetterInvoicePrint({
 }: HalfLetterInvoicePrintProps) {
   const barcodeSvg = generateSvgBarcode(invoiceNumber, 28);
   const wordsStr = numberToWordsBDT(totalAmount);
+  const cleanDate = safeFormatPrintDate(dateStr);
+  const cleanDueDate = safeFormatPrintDate(dueDateStr);
 
   return (
     <div className="half-letter-invoice-root mx-auto max-w-[5.5in] bg-white text-slate-900 font-sans p-4 border border-slate-200 print:border-none print:m-0 print:p-0 print:shadow-none print:w-full print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
-            size: 5.5in 8.5in;
-            margin: 3mm 4mm;
+            size: auto;
+            margin: 5mm 6mm;
           }
           html, body {
             background: #ffffff !important;
             background-color: #ffffff !important;
             margin: 0 !important;
             padding: 0 !important;
-            -webkit-print-color-adjust: economy !important;
-            print-color-adjust: economy !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            color: #000000 !important;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
           }
           .half-letter-invoice-root {
             width: 100% !important;
-            max-width: 100% !important;
+            max-width: 138mm !important;
             min-height: auto !important;
             height: auto !important;
-            padding: 0 !important;
+            padding: 1mm 2mm !important;
             margin: 0 auto !important;
             background: #ffffff !important;
             background-color: #ffffff !important;
@@ -148,6 +169,30 @@ export function HalfLetterInvoicePrint({
             box-shadow: none !important;
             page-break-after: avoid !important;
             break-after: avoid !important;
+            box-sizing: border-box !important;
+            color: #000000 !important;
+          }
+          .half-letter-invoice-root * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          .half-letter-invoice-root .text-slate-500,
+          .half-letter-invoice-root .text-slate-600,
+          .half-letter-invoice-root .text-slate-400 {
+            color: #1e293b !important;
+          }
+          .half-letter-invoice-root .text-slate-700,
+          .half-letter-invoice-root .text-slate-800,
+          .half-letter-invoice-root .text-slate-900,
+          .half-letter-invoice-root strong,
+          .half-letter-invoice-root b {
+            color: #000000 !important;
+          }
+          .half-letter-invoice-root table,
+          .half-letter-invoice-root th,
+          .half-letter-invoice-root td {
+            border-color: #475569 !important;
           }
           .print-header-block {
             page-break-inside: avoid !important;
@@ -176,16 +221,16 @@ export function HalfLetterInvoicePrint({
       `}} />
 
       {/* 1. Header */}
-      <div className="print-header-block border-b-2 border-indigo-900 pb-2 mb-2 flex justify-between items-start">
-        <div className="space-y-0.5">
+      <div className="print-header-block border-b-2 border-indigo-950 pb-2 mb-2 flex justify-between items-start gap-2">
+        <div className="space-y-0.5 flex-1 min-w-0">
           <div className="flex items-center space-x-2">
             <img
               src="/logo.png"
               alt="ANNESHA HOSPITAL Logo"
-              className="w-8 h-8 rounded object-contain shrink-0"
+              className="w-8 h-8 rounded object-contain shrink-0 print:w-9 print:h-9"
             />
-            <div>
-              <h1 className="text-base font-black uppercase tracking-tight text-indigo-950 leading-tight">
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-base font-black uppercase tracking-tight text-indigo-950 leading-tight">
                 {HOSPITAL_METADATA.name}
               </h1>
               <p className="text-xs sm:text-sm font-black text-sky-950 leading-tight tracking-normal font-sans pt-0.5">
@@ -193,47 +238,47 @@ export function HalfLetterInvoicePrint({
               </p>
             </div>
           </div>
-          <p className="text-[9px] text-slate-600 leading-tight pt-0.5">
+          <p className="text-[9px] text-slate-700 leading-tight pt-0.5">
             {HOSPITAL_METADATA.address}
           </p>
-          <p className="text-[9px] text-slate-600 leading-tight">
+          <p className="text-[9px] text-slate-700 leading-tight">
             রিসিপশন: {HOSPITAL_METADATA.receptionPhone || "01895-665114"} | অফিস: {HOSPITAL_METADATA.officePhone || "01904210065"}
           </p>
-          <p className="text-[8px] text-slate-500 leading-tight">
+          <p className="text-[8px] text-slate-600 leading-tight">
             ডায়াগনস্টিক লাইসেন্স: {HOSPITAL_METADATA.diagnosticLicense || "HSM4521681"} | ক্লিনিক লাইসেন্স: {HOSPITAL_METADATA.clinicLicense || "HSM4312356"}
           </p>
         </div>
 
-        <div className="text-right">
+        <div className="shrink-0 text-right pl-2">
           <div className="inline-block bg-sky-950 text-white px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
             BILL & CASH RECEIPT
           </div>
-          <p className="text-[10px] font-mono font-bold text-slate-900 mt-1">
+          <p className="text-[10px] font-mono font-bold text-slate-900 mt-1 whitespace-nowrap">
             Bill #: {invoiceNumber}
           </p>
-          <p className="text-[9px] text-slate-600">
-            Date: {dateStr}
+          <p className="text-[9px] text-slate-800 font-medium whitespace-nowrap">
+            Date: {cleanDate}
           </p>
-          {dueDateStr && dueDateStr !== dateStr && (
-            <p className="text-[9px] text-amber-700 font-medium">
-              Due Date: {dueDateStr}
+          {cleanDueDate && cleanDueDate !== cleanDate && (
+            <p className="text-[9px] text-amber-800 font-medium whitespace-nowrap">
+              Due Date: {cleanDueDate}
             </p>
           )}
         </div>
       </div>
 
       {/* 2. Patient Demographics Block */}
-      <div className="print-patient-block bg-slate-50 print:bg-white border border-slate-200 print:border-slate-300 rounded p-2 text-[10px] mb-2 grid grid-cols-2 gap-2">
-        <div className="space-y-0.5">
+      <div className="print-patient-block bg-slate-50 print:bg-white border border-slate-300 print:border-slate-400 rounded p-2 text-[10px] mb-2 grid grid-cols-2 gap-2">
+        <div className="space-y-0.5 min-w-0">
           <div>
-            <span className="text-slate-500 font-medium">Patient: </span>
-            <strong className="text-slate-900 uppercase">{patient.name}</strong>
+            <span className="text-slate-600 font-medium">Patient: </span>
+            <strong className="text-slate-900 uppercase font-black">{patient.name}</strong>
           </div>
           <div>
-            <span className="text-slate-500 font-medium">UHID / ID: </span>
-            <strong className="font-mono text-slate-900">{patient.patientCode}</strong>
+            <span className="text-slate-600 font-medium">UHID / ID: </span>
+            <strong className="font-mono text-slate-900 font-bold">{patient.patientCode}</strong>
             {patient.gender && (
-              <span className="text-slate-600 ml-1">
+              <span className="text-slate-700 ml-1">
                 ({patient.gender}
                 {patient.age
                   ? `, ${
@@ -248,47 +293,47 @@ export function HalfLetterInvoicePrint({
             )}
           </div>
           <div>
-            <span className="text-slate-500 font-medium">Mobile: </span>
-            <span className="font-mono text-slate-800">{patient.phone || "N/A"}</span>
+            <span className="text-slate-600 font-medium">Mobile: </span>
+            <span className="font-mono text-slate-900 font-medium">{patient.phone || "N/A"}</span>
             {patient.bloodGroup && !["UNKNOWN", "N/A", "UNDEFINED", "NONE"].includes(patient.bloodGroup.trim().toUpperCase()) && (
-              <span className="ml-1 text-slate-700 font-bold">[{patient.bloodGroup.trim()}]</span>
+              <span className="ml-1 text-slate-900 font-bold">[{patient.bloodGroup.trim()}]</span>
             )}
           </div>
           {patient.address && (
-            <div className="truncate">
-              <span className="text-slate-500 font-medium">Address: </span>
-              <span className="text-slate-700">{patient.address}</span>
+            <div className="break-words">
+              <span className="text-slate-600 font-medium">Address: </span>
+              <span className="text-slate-800">{patient.address}</span>
             </div>
           )}
         </div>
 
-        <div className="space-y-0.5 text-right">
+        <div className="space-y-0.5 text-right min-w-0">
           {consultantDoctorName && (
             <div>
-              <span className="text-slate-500 font-medium">Consultant: </span>
-              <strong className="text-slate-900">{consultantDoctorName}</strong>
+              <span className="text-slate-600 font-medium">Consultant: </span>
+              <strong className="text-slate-900 font-bold">{consultantDoctorName}</strong>
             </div>
           )}
           {departmentName && (
             <div>
-              <span className="text-slate-500 font-medium">Dept: </span>
-              <span className="text-slate-700">{departmentName}</span>
+              <span className="text-slate-600 font-medium">Dept: </span>
+              <span className="text-slate-800">{departmentName}</span>
             </div>
           )}
           {cashierName && (
             <div>
-              <span className="text-slate-500 font-medium">Cashier: </span>
-              <span className="text-slate-700">{cashierName}</span>
+              <span className="text-slate-600 font-medium">Cashier: </span>
+              <span className="text-slate-800 font-medium">{cashierName}</span>
             </div>
           )}
           <div className="pt-0.5">
             <span
               className={`inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase ${
                 dueAmount <= 0
-                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                  ? "bg-emerald-100 text-emerald-900 border border-emerald-400"
                   : paidAmount > 0
-                  ? "bg-amber-100 text-amber-900 border border-amber-300"
-                  : "bg-rose-100 text-rose-900 border border-rose-300"
+                  ? "bg-amber-100 text-amber-950 border border-amber-400"
+                  : "bg-rose-100 text-rose-950 border border-rose-400"
               }`}
             >
               {dueAmount <= 0 ? "PAID IN FULL" : paidAmount > 0 ? `DUE: ৳${dueAmount.toFixed(0)}` : "UNPAID"}
@@ -299,32 +344,32 @@ export function HalfLetterInvoicePrint({
 
       {/* 3. Itemized Bill Table */}
       <div className="mb-2">
-        <table className="print-table w-full text-left text-[10px] border-collapse border border-slate-300">
+        <table className="print-table w-full text-left text-[10px] border-collapse border border-slate-400 table-fixed">
           <thead>
-            <tr className="bg-slate-100 print:bg-white text-slate-700 border-b border-slate-300 text-[9px] font-bold uppercase">
-              <th className="p-1 border-r border-slate-300 w-6 text-center">#</th>
-              <th className="p-1 border-r border-slate-300">Service / Item Description</th>
-              <th className="p-1 border-r border-slate-300 text-center w-16">Category</th>
-              <th className="p-1 border-r border-slate-300 text-right w-14">Rate (৳)</th>
-              <th className="p-1 border-r border-slate-300 text-center w-10">Qty</th>
-              <th className="p-1 text-right w-16">Total (৳)</th>
+            <tr className="bg-slate-100 print:bg-slate-100 text-slate-900 border-b border-slate-400 text-[9px] font-bold uppercase">
+              <th className="p-1 border-r border-slate-400 w-[24px] text-center">#</th>
+              <th className="p-1 border-r border-slate-400 w-auto">Service / Item Description</th>
+              <th className="p-1 border-r border-slate-400 text-center w-[58px]">Category</th>
+              <th className="p-1 border-r border-slate-400 text-right w-[54px]">Rate (৳)</th>
+              <th className="p-1 border-r border-slate-400 text-center w-[34px]">Qty</th>
+              <th className="p-1 text-right w-[62px]">Total (৳)</th>
             </tr>
           </thead>
           <tbody>
             {items.map((it, idx) => (
-              <tr key={idx} className="border-b border-slate-200 hover:bg-slate-50">
-                <td className="p-1 border-r border-slate-200 text-center text-slate-500">{idx + 1}</td>
-                <td className="p-1 border-r border-slate-200 font-medium text-slate-900">
+              <tr key={idx} className="border-b border-slate-300 hover:bg-slate-50">
+                <td className="p-1 border-r border-slate-300 text-center text-slate-600 font-mono">{idx + 1}</td>
+                <td className="p-1 border-r border-slate-300 font-semibold text-slate-900 break-words">
                   {it.description}
-                  {it.unit ? <span className="text-[9px] text-slate-500 ml-1">({it.unit})</span> : null}
+                  {it.unit ? <span className="text-[9px] text-slate-600 ml-1 font-normal">({it.unit})</span> : null}
                 </td>
-                <td className="p-1 border-r border-slate-200 text-center text-[9px] text-slate-600">
+                <td className="p-1 border-r border-slate-300 text-center text-[9px] text-slate-700 truncate">
                   {it.serviceCategory}
                 </td>
-                <td className="p-1 border-r border-slate-200 text-right font-mono">
+                <td className="p-1 border-r border-slate-300 text-right font-mono font-medium">
                   {it.unitPrice.toFixed(2)}
                 </td>
-                <td className="p-1 border-r border-slate-200 text-center font-mono font-bold">
+                <td className="p-1 border-r border-slate-300 text-center font-mono font-bold">
                   {it.quantity}
                 </td>
                 <td className="p-1 text-right font-mono font-bold text-slate-900">
@@ -337,91 +382,101 @@ export function HalfLetterInvoicePrint({
       </div>
 
       {/* 4. Financial Calculations & Settlement */}
-      <div className="print-totals-block relative grid grid-cols-12 gap-2 mb-2 text-[10px]">
-        {/* Authentic Visual Rubber Stamp Seal - Elegant Centered Placement */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none opacity-85 print:opacity-90 flex items-center justify-center">
-          <PaymentStampSeal
-            status={dueAmount <= 0 ? "PAID" : "DUE"}
-            dueAmount={dueAmount}
-            paidAmount={paidAmount}
-            totalAmount={totalAmount}
-            dateStr={dateStr}
-            cashierName={cashierName}
-            receiptNumber={payments[0]?.receiptNumber}
-            size="compact"
-          />
-        </div>
-        {/* Left: Payments Ledger & Words */}
-        <div className="col-span-7 flex flex-col justify-between">
-          <div>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-600 block mb-0.5">
-              Settlement Receipts:
-            </span>
-            {payments.length === 0 ? (
-              <p className="text-[9px] text-slate-500 italic">No payment received yet.</p>
-            ) : (
-              <div className="space-y-0.5">
-                {payments.map((p, idx) => (
-                  <div key={idx} className="flex justify-between bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-[9px]">
-                    <span className="font-mono text-slate-700">Rec #{p.receiptNumber} ({p.paymentMethod})</span>
-                    <span className="font-bold font-mono text-emerald-800">৳{p.amount.toFixed(2)}</span>
-                  </div>
-                ))}
+      {(() => {
+        const cleanDiscountReason = discountReason
+          ? discountReason.replace(/^[\[(]+/, "").replace(/[\])]+$/, "").trim()
+          : "";
+        return (
+          <div className="print-totals-block grid grid-cols-12 gap-2 mb-2 text-[10px] items-start">
+            {/* Left: Payments Ledger, Rubber Stamp & In Words */}
+            <div className="col-span-7 flex flex-col justify-between space-y-1.5">
+              <div className="flex items-start justify-between gap-1.5">
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-700 block mb-0.5">
+                    Settlement Receipts:
+                  </span>
+                  {payments.length === 0 ? (
+                    <p className="text-[9px] text-slate-500 italic">No payment received yet.</p>
+                  ) : (
+                    <div className="space-y-0.5">
+                      {payments.map((p, idx) => (
+                        <div key={idx} className="flex justify-between bg-slate-50 border border-slate-300 rounded px-1.5 py-0.5 text-[9px]">
+                          <span className="font-mono text-slate-800">Rec #{p.receiptNumber} ({p.paymentMethod})</span>
+                          <span className="font-bold font-mono text-emerald-900">৳{p.amount.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Official Stamp Placement - Neatly in left block beside receipts without obscuring math */}
+                <div className="shrink-0 flex items-center justify-center pointer-events-none">
+                  <PaymentStampSeal
+                    status={dueAmount <= 0 ? "PAID" : "DUE"}
+                    dueAmount={dueAmount}
+                    paidAmount={paidAmount}
+                    totalAmount={totalAmount}
+                    dateStr={cleanDate}
+                    cashierName={cashierName}
+                    receiptNumber={payments[0]?.receiptNumber}
+                    size="compact"
+                  />
+                </div>
               </div>
-            )}
-          </div>
 
-          <div className="bg-sky-50 print:bg-white border border-sky-200 print:border-slate-300 rounded p-1.5 mt-1.5">
-            <span className="text-[9px] font-bold text-sky-900 block">In Words:</span>
-            <p className="text-[9px] font-medium text-sky-950 italic">{wordsStr}</p>
-          </div>
-        </div>
+              <div className="bg-sky-50 print:bg-white border border-sky-300 print:border-slate-400 rounded p-1.5">
+                <span className="text-[9px] font-bold text-slate-900 block">In Words:</span>
+                <p className="text-[9px] font-semibold text-slate-900 italic">{wordsStr}</p>
+              </div>
+            </div>
 
-        {/* Right: Calculations */}
-        <div className="col-span-5 bg-slate-50 print:bg-white border border-slate-200 print:border-slate-300 rounded p-1.5 space-y-1">
-          <div className="flex justify-between text-slate-600">
-            <span>Subtotal:</span>
-            <span className="font-mono font-medium">৳{subtotal.toFixed(2)}</span>
-          </div>
-          {discount > 0 && (
-            <div className="flex justify-between text-rose-700">
-              <span>Discount{discountReason ? ` (${discountReason})` : ""}:</span>
-              <span className="font-mono font-semibold">-৳{discount.toFixed(2)}</span>
+            {/* Right: Calculations */}
+            <div className="col-span-5 bg-slate-50 print:bg-white border border-slate-300 print:border-slate-400 rounded p-1.5 space-y-1">
+              <div className="flex justify-between text-slate-700">
+                <span>Subtotal:</span>
+                <span className="font-mono font-medium">৳{subtotal.toFixed(2)}</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-rose-800 font-medium">
+                  <span>Discount{cleanDiscountReason ? ` (${cleanDiscountReason})` : ""}:</span>
+                  <span className="font-mono font-semibold">-৳{discount.toFixed(2)}</span>
+                </div>
+              )}
+              {tax > 0 && (
+                <div className="flex justify-between text-slate-700">
+                  <span>Tax / VAT:</span>
+                  <span className="font-mono font-medium">৳{tax.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-slate-300 pt-1 font-bold text-slate-900 text-[11px]">
+                <span>Net Payable:</span>
+                <span className="font-mono font-black">৳{totalAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-emerald-800 font-bold">
+                <span>Paid Amount:</span>
+                <span className="font-mono font-black">৳{paidAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between border-t border-slate-300 pt-1 font-black text-[11px]">
+                <span>Balance Due:</span>
+                <span className={`font-mono font-black ${dueAmount > 0 ? "text-rose-800" : "text-emerald-800"}`}>
+                  ৳{dueAmount.toFixed(2)}
+                </span>
+              </div>
             </div>
-          )}
-          {tax > 0 && (
-            <div className="flex justify-between text-slate-600">
-              <span>Tax / VAT:</span>
-              <span className="font-mono font-medium">৳{tax.toFixed(2)}</span>
-            </div>
-          )}
-          <div className="flex justify-between border-t border-slate-300 pt-1 font-bold text-slate-900 text-[11px]">
-            <span>Net Payable:</span>
-            <span className="font-mono">৳{totalAmount.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-emerald-700 font-bold">
-            <span>Paid Amount:</span>
-            <span className="font-mono">৳{paidAmount.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between border-t border-slate-300 pt-1 font-black text-[11px]">
-            <span>Balance Due:</span>
-            <span className={`font-mono ${dueAmount > 0 ? "text-rose-700" : "text-emerald-700"}`}>
-              ৳{dueAmount.toFixed(2)}
-            </span>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* 5. Barcode, Verification & Signatures (Atomic Footer Block) */}
       <div className="print-footer-block">
-        <div className="flex items-center justify-between border-t border-slate-200 pt-1.5 mb-6">
+        <div className="flex items-center justify-between border-t border-slate-300 pt-1.5 mb-6">
           <div className="flex items-center space-x-2">
             <div dangerouslySetInnerHTML={{ __html: barcodeSvg }} />
-            <span className="text-[8px] text-slate-500 font-mono">
+            <span className="text-[8px] text-slate-700 font-mono font-bold">
               {invoiceNumber}
             </span>
           </div>
-          <p className="text-[8px] text-slate-400">
+          <p className="text-[8px] text-slate-600 font-medium">
             Computer-generated official receipt • অন্বেষা হাসপাতাল
           </p>
         </div>
@@ -429,12 +484,12 @@ export function HalfLetterInvoicePrint({
         {/* 6. Signatures */}
         <div className="grid grid-cols-2 gap-8 text-[9px] text-center pt-2">
           <div>
-            <div className="border-t border-dashed border-slate-400 w-32 mx-auto pt-0.5">
+            <div className="border-t border-dashed border-slate-500 w-32 mx-auto pt-0.5 text-slate-800">
               Patient / Guardian
             </div>
           </div>
           <div>
-            <div className="border-t border-dashed border-slate-400 w-32 mx-auto pt-0.5 font-bold">
+            <div className="border-t border-dashed border-slate-500 w-32 mx-auto pt-0.5 font-bold text-slate-900">
               Authorized Cashier
             </div>
           </div>

@@ -62,6 +62,7 @@ import { PatientMaster } from "@/types/clinical";
 import {
   formatCurrencyBDT,
   formatDateBDT,
+  formatTimeBDT,
   formatPatientAgeDisplay,
   calculateDetailedAgeFromDOB,
   calculateDOBFromYMD,
@@ -1741,7 +1742,7 @@ function BillingManagementContent() {
               <div className="pt-2">
                 <HalfLetterInvoicePrint
                   invoiceNumber={selectedInvoice.invoice_number}
-                  dateStr={formatDateBDT(selectedInvoice.created_at)}
+                  dateStr={`${formatDateBDT(selectedInvoice.created_at)}, ${formatTimeBDT(selectedInvoice.created_at)}`}
                   dueDateStr={formatDateBDT(selectedInvoice.created_at)}
                   cashierName="Cashier"
                   patient={{
@@ -3243,8 +3244,8 @@ function BillingManagementContent() {
             <div className="p-4 overflow-x-auto max-h-[80vh] print:max-h-none print:p-0">
               <HalfLetterInvoicePrint
                 invoiceNumber={halfLetterPrintInv.invoice_number}
-                dateStr={halfLetterPrintInv.created_at}
-                dueDateStr={halfLetterPrintInv.created_at}
+                dateStr={`${formatDateBDT(halfLetterPrintInv.created_at)}, ${formatTimeBDT(halfLetterPrintInv.created_at)}`}
+                dueDateStr={formatDateBDT(halfLetterPrintInv.created_at)}
                 cashierName="Cashier"
                 patient={{
                   name: halfLetterPrintInv.patient?.full_name || "Patient",
@@ -3270,7 +3271,7 @@ function BillingManagementContent() {
                   receiptNumber: p.receipt_number,
                   paymentMethod: p.payment_method,
                   amount: p.amount,
-                  paidAt: p.created_at || new Date().toISOString(),
+                  paidAt: formatDateBDT(p.created_at || new Date().toISOString()),
                 }))}
                 subtotal={halfLetterPrintInv.subtotal}
                 discount={halfLetterPrintInv.discount_amount}
