@@ -1500,23 +1500,37 @@ export async function editInvoiceAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
-  // Role and authorization validation
-  const userRoles = session.roles;
-  const isSuperAdmin = userRoles.includes("super_admin");
-  const isAdmin = userRoles.includes("admin") || userRoles.includes("hospital_administrator");
-  const isRegistrarOrReceptionist =
-    userRoles.includes("receptionist") ||
-    userRoles.includes("accountant") ||
-    userRoles.includes("finance_admin");
+  // Strict RBAC authorization validation: Super Admin bypasses, all other roles require billing.edit permission
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const hasEditPerm = session.permissions.includes("billing.edit");
 
-  if (!isSuperAdmin && !isAdmin && !isRegistrarOrReceptionist) {
-    // If user has cashier/other role, check if cashier is specifically authorized
+  if (!isSuperAdmin && !hasEditPerm) {
+    const errorMsg =
+      "403 Forbidden: ইনভয়েস বিল এডিট করার অনুমতি নেই (Missing billing.edit permission). শুধুমাত্র অনুমোদিত স্টাফ বা সুপার অ্যাডমিন বিল এডিট করতে পারেন।";
+    await reportSystemRuntimeIncident({
+      organizationId: session.organizationId,
+      module: "Patient Billing",
+      location: "lib/billing/actions.ts:editInvoiceAction",
+      severity: "WARNING",
+      errorCode: "INSUFFICIENT_PERMISSION",
+      title: "অননুমোদিত বিল এডিটের চেষ্টা (Unauthorized Bill Edit Attempt)",
+      reason: errorMsg,
+      recommendation: "সুপার অ্যাডমিন একাউন্ট থেকে সেটিংস RBAC ম্যাট্রিক্সে এই রোলের জন্য billing.edit পারমিশন সক্রিয় করুন।",
+    });
+    return {
+      success: false,
+      error: errorMsg,
+    };
+  }
+
+  // If role is specifically cashier, check cashier edit authorization switch
+  if ((session.roles as string[]).includes("cashier") && !isSuperAdmin) {
     const authStatus = await getCashierAuthorizationStatusAction();
     if (!authStatus.success || !authStatus.data?.cashierCanEditBills) {
       return {
         success: false,
         error:
-          "403 Forbidden: Cashier bill editing is not permitted. Please request authorization from Super Admin.",
+          "403 Forbidden: ক্যাশিয়ারদের বিল এডিট করার সাময়িক অনুমতি বন্ধ রয়েছে (Cashier bill editing is restricted).",
       };
     }
   }

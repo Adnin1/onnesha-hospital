@@ -94,6 +94,7 @@ function BillingManagementContent() {
 
   // User Roles & Cashier Authorization
   const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [cashierCanEditBills, setCashierCanEditBills] = useState<boolean>(false);
   const [togglingCashierAuth, setTogglingCashierAuth] = useState(false);
 
@@ -225,8 +226,9 @@ function BillingManagementContent() {
         getCashierAuthorizationStatusAction(),
       ]);
 
-      if (session?.roles) {
-        setUserRoles(session.roles);
+      if (session) {
+        if (session.roles) setUserRoles(session.roles);
+        if (session.permissions) setUserPermissions(session.permissions);
       }
       if (cashierStatus?.success && cashierStatus.data) {
         setCashierCanEditBills(cashierStatus.data.cashierCanEditBills);
@@ -269,8 +271,9 @@ function BillingManagementContent() {
         ]);
 
         if (isMounted) {
-          if (session?.roles) {
-            setUserRoles(session.roles);
+          if (session) {
+            if (session.roles) setUserRoles(session.roles);
+            if (session.permissions) setUserPermissions(session.permissions);
           }
           if (cashierStatus?.success && cashierStatus.data) {
             setCashierCanEditBills(cashierStatus.data.cashierCanEditBills);
@@ -1155,14 +1158,12 @@ function BillingManagementContent() {
   };
 
   const isSuperAdmin = userRoles.includes("super_admin");
+  const hasEditPerm = userPermissions.includes("billing.edit");
+  const isCashier = userRoles.includes("cashier");
+
   const canEditBills =
     isSuperAdmin ||
-    userRoles.includes("admin") ||
-    userRoles.includes("hospital_administrator") ||
-    userRoles.includes("receptionist") ||
-    userRoles.includes("accountant") ||
-    userRoles.includes("finance_admin") ||
-    (userRoles.includes("cashier") && cashierCanEditBills);
+    (hasEditPerm && (!isCashier || cashierCanEditBills));
 
   const handleToggleCashierAuth = async () => {
     setTogglingCashierAuth(true);
@@ -2956,7 +2957,7 @@ function BillingManagementContent() {
       )}
 
       {/* EDIT INVOICE MODAL */}
-      {editModalInv && (
+      {editModalInv && canEditBills && (
         <EditInvoiceModal
           isOpen={!!editModalInv}
           invoice={editModalInv}
