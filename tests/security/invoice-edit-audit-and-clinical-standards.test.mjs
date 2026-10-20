@@ -31,9 +31,18 @@ test("OHMS Clinical Standards & Security: Blood Bank, Registration Age, Invoice 
     assert.equal(fs.existsSync(intakeModalPath), true, "UnifiedPatientIntakeModal must exist");
     const content = fs.readFileSync(intakeModalPath, "utf8");
 
-    assert.ok(content.includes("handleAgeChange"), "Must implement direct age input handler");
-    assert.ok(content.includes("handleDobChange"), "Must implement bi-directional DOB sync");
-    assert.ok(content.includes("Patient Age (সরাসরি বয়স)"), "Must render Patient Age field in registration form");
+    assert.ok(
+      content.includes("PediatricAgeInputGroup") || content.includes("handleAgeChange"),
+      "Must implement direct age input handler"
+    );
+    assert.ok(
+      content.includes("onDobChange") || content.includes("handleDobChange"),
+      "Must implement bi-directional DOB sync"
+    );
+    assert.ok(
+      content.includes("PediatricAgeInputGroup") || content.includes("Patient Age (সরাসরি বয়স)"),
+      "Must render Patient Age field in registration form"
+    );
   });
 
   // 3. Invoice Edit History & Immutability

@@ -118,3 +118,100 @@ export function calculateAgeFromDOB(dob: string | Date | null | undefined): numb
   return Math.max(0, age);
 }
 
+export interface DetailedAge {
+  years: number;
+  months: number;
+  days: number;
+  formatted: string;
+}
+
+/**
+ * Calculates full pediatric breakdown of age (Years, Months, Days) from Date of Birth.
+ * Accurately supports babies/infants with 0 years, 1-12 months, and 1-30 days.
+ */
+export function calculateDetailedAgeFromDOB(dob: string | Date | null | undefined): DetailedAge {
+  if (!dob) {
+    return { years: 0, months: 0, days: 0, formatted: "০ দিন (0 Days)" };
+  }
+  const birthDate = typeof dob === "string" ? new Date(dob) : dob;
+  if (isNaN(birthDate.getTime())) {
+    return { years: 0, months: 0, days: 0, formatted: "০ দিন (0 Days)" };
+  }
+  const today = new Date();
+
+  let years = today.getFullYear() - birthDate.getFullYear();
+  let months = today.getMonth() - birthDate.getMonth();
+  let days = today.getDate() - birthDate.getDate();
+
+  if (days < 0) {
+    months--;
+    const prevMonthLastDay = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+    days += prevMonthLastDay;
+  }
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  if (years < 0) {
+    years = 0;
+    months = 0;
+    days = 0;
+  }
+
+  let formatted = "";
+  if (years === 0 && months === 0) {
+    formatted = `${days} দিন (${days} Days)`;
+  } else if (years === 0) {
+    formatted = `${months} মাস ${days > 0 ? days + " দিন" : ""} (${months}M ${days > 0 ? days + "D" : ""})`;
+  } else {
+    formatted = `${years} বছর ${months > 0 ? months + " মাস" : ""} (${years}Y ${months > 0 ? months + "M" : ""})`;
+  }
+
+  return { years, months, days, formatted };
+}
+
+/**
+ * Accurately computes Date of Birth (YYYY-MM-DD) from Years, Months, and Days.
+ */
+export function calculateDOBFromYMD(years: number, months: number, days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - (Number(days) || 0));
+  d.setMonth(d.getMonth() - (Number(months) || 0));
+  d.setFullYear(d.getFullYear() - (Number(years) || 0));
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
+ * Universal patient age formatter prioritizing pediatric age (Months & Days) when age < 1 year.
+ */
+export function formatPatientAgeDisplay(
+  ageYears?: number | string | null,
+  ageMonths?: number | string | null,
+  ageDays?: number | string | null,
+  dob?: string | null
+): string {
+  if (dob) {
+    const detailed = calculateDetailedAgeFromDOB(dob);
+    return detailed.formatted;
+  }
+  const y = Number(ageYears) || 0;
+  const m = Number(ageMonths) || 0;
+  const d = Number(ageDays) || 0;
+
+  if (y === 0 && m === 0 && d === 0) {
+    return "০ দিন";
+  }
+  if (y === 0 && m === 0) {
+    return `${d} দিন`;
+  }
+  if (y === 0) {
+    return `${m} মাস ${d > 0 ? d + " দিন" : ""}`;
+  }
+  return `${y} বছর ${m > 0 ? m + " মাস" : ""}`;
+}
+
+

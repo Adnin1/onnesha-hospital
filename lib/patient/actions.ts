@@ -1567,6 +1567,10 @@ export interface UnifiedPatientIntakePayload {
     email?: string;
     gender: "MALE" | "FEMALE" | "OTHER";
     dob?: string;
+    age?: number;
+    age_years?: number;
+    age_months?: number;
+    age_days?: number;
     bloodGroup?: string;
     maritalStatus?: string;
     occupation?: string;
@@ -2340,6 +2344,8 @@ export async function updatePatientAction(
         nid_or_birth_cert: input.nid?.trim() || null,
         address: input.address?.trim() || null,
         age: input.age !== undefined && input.age !== null ? input.age : (existingPatient.age ?? null),
+        age_months: input.age_months !== undefined ? input.age_months : (existingPatient.age_months ?? null),
+        age_days: input.age_days !== undefined ? input.age_days : (existingPatient.age_days ?? null),
         guardian_name: input.guardianName?.trim() || existingPatient.guardian_name || null,
         emergency_contact_name: input.emergencyName?.trim() || null,
         emergency_contact_phone: input.emergencyPhone ? normalizeBDPhone(input.emergencyPhone) : null,

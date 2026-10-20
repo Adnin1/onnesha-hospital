@@ -225,7 +225,18 @@ export function HalfLetterInvoicePrint({
             <span className="text-slate-500 font-medium">UHID / ID: </span>
             <strong className="font-mono text-slate-900">{patient.patientCode}</strong>
             {patient.gender && (
-              <span className="text-slate-600 ml-1">({patient.gender}{patient.age ? `, ${patient.age}Y` : ""})</span>
+              <span className="text-slate-600 ml-1">
+                ({patient.gender}
+                {patient.age
+                  ? `, ${
+                      typeof patient.age === "number"
+                        ? (patient.age > 0 ? `${patient.age}Y` : "0Y (Infant)")
+                        : (String(patient.age).match(/[YMDymdবছরমাসদিন]/)
+                            ? String(patient.age)
+                            : `${patient.age}Y`)
+                    }`
+                  : ""})
+              </span>
             )}
           </div>
           <div>

@@ -19,7 +19,7 @@ import {
 
 import { PatientMaster, PatientIntakeDossier } from "@/types/clinical";
 import { getPatientIntakeDossierAction } from "@/lib/patient/actions";
-import { formatCurrencyBDT } from "@/lib/utils";
+import { formatCurrencyBDT, formatPatientAgeDisplay } from "@/lib/utils";
 import { EditPatientModal } from "./EditPatientModal";
 
 
@@ -228,6 +228,13 @@ export function PatientIntakeDossierModal({
                       <span className="font-black text-rose-700 flex items-center gap-1">
                         <Heart className="w-3 h-3 text-rose-500" />
                         {p.blood_group || "অজানা (Unknown)"}
+                      </span>
+                    </div>
+
+                    <div className="p-2.5 bg-slate-50/80 rounded-xl">
+                      <span className="text-[10px] text-slate-500 font-semibold block">বয়স (Age)</span>
+                      <span className="font-bold text-slate-800">
+                        {formatPatientAgeDisplay(p.age, p.age_months, p.age_days, p.dob)}
                       </span>
                     </div>
 

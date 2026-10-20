@@ -32,7 +32,7 @@ import {
   ClinicalNote,
 } from "@/types/clinical";
 import { formatBDPhoneDisplay } from "@/lib/patient/phone";
-import { formatDateBDT } from "@/lib/utils";
+import { formatDateBDT, formatPatientAgeDisplay } from "@/lib/utils";
 import { HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
 import { UnifiedPatientIntakeModal } from "@/components/patient/UnifiedPatientIntakeModal";
@@ -230,6 +230,10 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
               </span>
               <span>•</span>
               <span>
+                <strong>Age:</strong> {formatPatientAgeDisplay(patient.age, patient.age_months, patient.age_days, patient.dob)}
+              </span>
+              <span>•</span>
+              <span>
                 <strong>Phone:</strong> {formatBDPhoneDisplay(patient.phone)}
               </span>
               {patient.dob && (
@@ -364,6 +368,12 @@ export default function PatientDetailView({ patientId }: { patientId: string }) 
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase">Gender</span>
                 <span className="font-bold text-slate-800">{patient.gender}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase">Age</span>
+                <span className="font-bold text-slate-800">
+                  {formatPatientAgeDisplay(patient.age, patient.age_months, patient.age_days, patient.dob)}
+                </span>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase">Date of Birth</span>

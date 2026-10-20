@@ -27,7 +27,7 @@ import {
 import { getInvoicesAction } from "@/lib/billing/actions";
 import { getPrescriptionsAction } from "@/lib/prescriptions/actions";
 import { getDiagnosticOrdersAction } from "@/lib/lab/actions";
-import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
+import { formatCurrencyBDT, formatDateBDT, formatPatientAgeDisplay } from "@/lib/utils";
 import { Toast } from "@/components/ui/Toast";
 import { UnifiedPatientIntakeModal } from "@/components/patient/UnifiedPatientIntakeModal";
 import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
@@ -293,7 +293,7 @@ export default function PatientsManagementPage() {
                         <span className="text-xs font-bold text-slate-900 truncate">{p.full_name || "Patient"}</span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-1 truncate">
-                        Ph: {p.phone || "N/A"} • {p.gender || "N/A"} • Blood: {p.blood_group || "N/A"}
+                        Ph: {p.phone || "N/A"} • {p.gender || "N/A"} • Age: {formatPatientAgeDisplay(p.age, p.age_months, p.age_days, p.dob)} • Blood: {p.blood_group || "N/A"}
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -360,7 +360,7 @@ export default function PatientsManagementPage() {
                     <h2 className="text-lg font-black text-slate-900">{selectedPatient.full_name}</h2>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
-                    Phone: {selectedPatient.phone} • Address: {selectedPatient.address || "N/A"}
+                    Age: {formatPatientAgeDisplay(selectedPatient.age, selectedPatient.age_months, selectedPatient.age_days, selectedPatient.dob)} • Phone: {selectedPatient.phone} • Address: {selectedPatient.address || "N/A"}
                   </p>
                 </div>
 

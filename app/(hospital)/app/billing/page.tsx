@@ -59,7 +59,14 @@ import {
   createReferralAgentAction,
 } from "@/lib/referrals/actions";
 import { PatientMaster } from "@/types/clinical";
-import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
+import {
+  formatCurrencyBDT,
+  formatDateBDT,
+  formatPatientAgeDisplay,
+  calculateDetailedAgeFromDOB,
+  calculateDOBFromYMD,
+} from "@/lib/utils";
+import { PediatricAgeInputGroup } from "@/components/patient/PediatricAgeInputGroup";
 import { Toast } from "@/components/ui/Toast";
 import { EpisodeBillingPanel } from "@/components/patient/EpisodeBillingPanel";
 import {
@@ -211,6 +218,9 @@ function BillingManagementContent() {
   // Patient Demographic Invariant State
   const [patientAddressInput, setPatientAddressInput] = useState("");
   const [patientAgeInput, setPatientAgeInput] = useState<number | "">("");
+  const [patientAgeMonthsInput, setPatientAgeMonthsInput] = useState<number | "">("");
+  const [patientAgeDaysInput, setPatientAgeDaysInput] = useState<number | "">("");
+  const [patientDobInput, setPatientDobInput] = useState("");
   const [savingPatientDemographics, setSavingPatientDemographics] = useState(false);
 
   // Medicine Itemization State
@@ -538,7 +548,17 @@ function BillingManagementContent() {
     setSelectedPatient(p);
     setPatientIdInput(p.id);
     setPatientAddressInput(p.address || "");
-    setPatientAgeInput(p.age !== undefined && p.age !== null ? p.age : "");
+    setPatientDobInput(p.dob || "");
+    if (p.dob) {
+      const d = calculateDetailedAgeFromDOB(p.dob);
+      setPatientAgeInput(d.years);
+      setPatientAgeMonthsInput(d.months);
+      setPatientAgeDaysInput(d.days);
+    } else {
+      setPatientAgeInput(p.age !== undefined && p.age !== null ? p.age : "");
+      setPatientAgeMonthsInput(p.age_months !== undefined && p.age_months !== null ? p.age_months : "");
+      setPatientAgeDaysInput(p.age_days !== undefined && p.age_days !== null ? p.age_days : "");
+    }
     setPatientSearchQuery(`${p.full_name} (${p.patient_code || p.registration_serial || ""})`);
     setSearchedPatients([]);
     setPatientSearchNotice(null);
@@ -803,25 +823,34 @@ function BillingManagementContent() {
       setToast({ message: "রোগীর ঠিকানা প্রদান করুন।", type: "error" });
       return;
     }
-    if (patientAgeInput === "" || Number(patientAgeInput) < 0) {
-      setToast({ message: "রোগীর বয়স প্রদান করুন।", type: "error" });
+    const hasAge = patientAgeInput !== "" || patientAgeMonthsInput !== "" || patientAgeDaysInput !== "" || !!patientDobInput;
+    if (!hasAge) {
+      setToast({ message: "রোগীর বয়স বা জন্ম তারিখ প্রদান করুন।", type: "error" });
       return;
     }
 
     setSavingPatientDemographics(true);
     try {
+      const y = typeof patientAgeInput === "number" ? patientAgeInput : 0;
+      const m = typeof patientAgeMonthsInput === "number" ? patientAgeMonthsInput : 0;
+      const d = typeof patientAgeDaysInput === "number" ? patientAgeDaysInput : 0;
+      const computedDob = patientDobInput || calculateDOBFromYMD(y, m, d);
+
       const res = await updatePatientAction({
         patientId: selectedPatient.id,
         fullName: selectedPatient.full_name,
         phone: selectedPatient.phone,
         gender: selectedPatient.gender,
         address: patientAddressInput.trim(),
-        age: Number(patientAgeInput),
+        dob: computedDob || undefined,
+        age: y,
+        age_months: m,
+        age_days: d,
       });
 
       if (res.success && res.data?.patient) {
         setSelectedPatient(res.data.patient);
-        setToast({ message: "রোগীর ঠিকানা ও বয়স সফলভাবে সংরক্ষিত হয়েছে!", type: "success" });
+        setToast({ message: "রোগীর ঠিকানা ও বিস্তারিত বয়স সফলভাবে সংরক্ষিত হয়েছে!", type: "success" });
       } else {
         setToast({ message: res.error || "সংরক্ষণ করা যায়নি।", type: "error" });
       }
@@ -1052,29 +1081,39 @@ function BillingManagementContent() {
     }
 
     const effectiveAddress = (selectedPatient.address || patientAddressInput).trim();
-    const effectiveAge = selectedPatient.age !== undefined && selectedPatient.age !== null
-      ? selectedPatient.age
-      : (patientAgeInput !== "" ? Number(patientAgeInput) : null);
+    const hasPatientAge = (selectedPatient.age !== undefined && selectedPatient.age !== null) ||
+      (selectedPatient.age_months !== undefined && selectedPatient.age_months !== null && selectedPatient.age_months > 0) ||
+      (selectedPatient.age_days !== undefined && selectedPatient.age_days !== null && selectedPatient.age_days > 0) ||
+      !!selectedPatient.dob;
+    const hasInputAge = patientAgeInput !== "" || patientAgeMonthsInput !== "" || patientAgeDaysInput !== "" || !!patientDobInput;
 
     if (!effectiveAddress || effectiveAddress.length < 2) {
       setToast({ message: "বিলিংয়ের জন্য রোগীর ঠিকানা প্রদান করা বাধ্যতামূলক (Patient address is mandatory).", type: "error" });
       return;
     }
-    if (effectiveAge === null || effectiveAge < 0) {
+    if (!hasPatientAge && !hasInputAge) {
       setToast({ message: "বিলিংয়ের জন্য রোগীর বয়স প্রদান করা বাধ্যতামূলক (Patient age is mandatory).", type: "error" });
       return;
     }
 
     // Auto-sync missing demographics to patient database record
-    if (!selectedPatient.address || selectedPatient.age === null || selectedPatient.age === undefined) {
+    if (!selectedPatient.address || (!hasPatientAge && hasInputAge)) {
       try {
+        const y = typeof patientAgeInput === "number" ? patientAgeInput : (selectedPatient.age ?? 0);
+        const m = typeof patientAgeMonthsInput === "number" ? patientAgeMonthsInput : (selectedPatient.age_months ?? 0);
+        const d = typeof patientAgeDaysInput === "number" ? patientAgeDaysInput : (selectedPatient.age_days ?? 0);
+        const computedDob = patientDobInput || selectedPatient.dob || calculateDOBFromYMD(y, m, d);
+
         await updatePatientAction({
           patientId: selectedPatient.id,
           fullName: selectedPatient.full_name,
           phone: selectedPatient.phone,
           gender: selectedPatient.gender,
           address: effectiveAddress,
-          age: effectiveAge,
+          dob: computedDob || undefined,
+          age: y,
+          age_months: m,
+          age_days: d,
         });
       } catch (err) {
         console.error("Auto-syncing demographics failed:", err);
@@ -1786,9 +1825,9 @@ function BillingManagementContent() {
                             ঠিকানা: {selectedPatient.address}
                           </p>
                         )}
-                        {(selectedPatient.age !== undefined && selectedPatient.age !== null) && (
+                        {((selectedPatient.age !== undefined && selectedPatient.age !== null) || selectedPatient.dob || selectedPatient.age_months || selectedPatient.age_days) && (
                           <p className="text-[11px] text-emerald-900">
-                            বয়স: {selectedPatient.age > 0 ? `${selectedPatient.age} বছর` : "০ বছর (নবজাতক/শিশু)"} {selectedPatient.blood_group ? `• রক্ত: [${selectedPatient.blood_group}]` : ""}
+                            বয়স: {formatPatientAgeDisplay(selectedPatient.age, selectedPatient.age_months, selectedPatient.age_days, selectedPatient.dob)} {selectedPatient.blood_group ? `• রক্ত: [${selectedPatient.blood_group}]` : ""}
                           </p>
                         )}
                       </div>
@@ -1797,14 +1836,14 @@ function BillingManagementContent() {
                       </span>
                     </div>
 
-                    {/* Mandatory Demographic Verification Block (Address & Age) */}
-                    {(!selectedPatient.address || selectedPatient.age === null || selectedPatient.age === undefined) && (
+                    {/* Mandatory Demographic Verification Block (Address & Pediatric/Adult Age) */}
+                    {(!selectedPatient.address || (selectedPatient.age === null && selectedPatient.age === undefined && !selectedPatient.dob && !selectedPatient.age_months && !selectedPatient.age_days)) && (
                       <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-2">
                         <div className="flex items-center gap-1.5 text-amber-900 font-bold text-[11px]">
                           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                          <span>বিলিংয়ের জন্য রোগীর পূর্ণাঙ্গ ঠিকানা ও বয়স আবশ্যক (Address & Age Required):</span>
+                          <span>বিলিংয়ের জন্য রোগীর পূর্ণাঙ্গ ঠিকানা ও বয়স আবশ্যক (Address & Detailed Age Required):</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
                           <div>
                             <label className="text-[10px] font-bold text-slate-700 block mb-0.5">ঠিকানা / গ্রাম / এলাকা *</label>
                             <input
@@ -1816,15 +1855,16 @@ function BillingManagementContent() {
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] font-bold text-slate-700 block mb-0.5">বয়স (বছর) *</label>
-                            <input
-                              type="number"
-                              min="0"
-                              max="125"
-                              placeholder="বয়স..."
-                              value={patientAgeInput}
-                              onChange={(e) => setPatientAgeInput(e.target.value === "" ? "" : Number(e.target.value))}
-                              className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-lg bg-white font-mono"
+                            <PediatricAgeInputGroup
+                              dob={patientDobInput}
+                              onDobChange={setPatientDobInput}
+                              ageYears={patientAgeInput}
+                              onAgeYearsChange={setPatientAgeInput}
+                              ageMonths={patientAgeMonthsInput}
+                              onAgeMonthsChange={setPatientAgeMonthsInput}
+                              ageDays={patientAgeDaysInput}
+                              onAgeDaysChange={setPatientAgeDaysInput}
+                              variant="compact"
                             />
                           </div>
                         </div>
@@ -3134,7 +3174,12 @@ function BillingManagementContent() {
                   patientCode: halfLetterPrintInv.patient?.patient_code || "OH-P-WALKIN",
                   phone: halfLetterPrintInv.patient?.phone,
                   address: halfLetterPrintInv.patient?.address,
-                  age: halfLetterPrintInv.patient?.age,
+                  age: formatPatientAgeDisplay(
+                    halfLetterPrintInv.patient?.age,
+                    halfLetterPrintInv.patient?.age_months,
+                    halfLetterPrintInv.patient?.age_days,
+                    halfLetterPrintInv.patient?.dob
+                  ),
                   bloodGroup: halfLetterPrintInv.patient?.blood_group,
                 }}
                 items={(halfLetterPrintInv.items || []).map((it) => ({

@@ -26,6 +26,9 @@ export interface PatientMaster {
   guardian_name?: string;
   relationship_with_guardian?: string;
   age?: number;
+  age_years?: number;
+  age_months?: number;
+  age_days?: number;
   nid?: string;
   address?: string;
   emergency_contact_name?: string;
@@ -291,6 +294,9 @@ export interface UpdatePatientInput {
   nid?: string;
   address?: string;
   age?: number;
+  age_years?: number;
+  age_months?: number;
+  age_days?: number;
   guardianName?: string;
   emergencyName?: string;
   emergencyPhone?: string;

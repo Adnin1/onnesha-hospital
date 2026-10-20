@@ -17,7 +17,8 @@ import {
   Pill,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { formatDateBDT } from "@/lib/utils";
+import { formatDateBDT, formatPatientAgeDisplay } from "@/lib/utils";
+import { UnifiedPatientIntakeModal } from "@/components/patient/UnifiedPatientIntakeModal";
 import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 import {
   createIpdAdmissionAction,
@@ -44,6 +45,9 @@ interface InpatientRecord {
   phone: string;
   gender: string;
   age?: number | string;
+  age_months?: number;
+  age_days?: number;
+  dob?: string;
   address?: string;
   guardian_name?: string;
   blood_group?: string;
@@ -72,6 +76,7 @@ export default function IPDAdmissionsPage() {
 
   // Modals
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
+  const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showDischargeModal, setShowDischargeModal] = useState(false);
   const [showCancelAdmissionModal, setShowCancelAdmissionModal] = useState(false);
@@ -175,6 +180,9 @@ export default function IPDAdmissionsPage() {
               phone,
               gender,
               age,
+              age_months,
+              age_days,
+              dob,
               address,
               guardian_name,
               blood_group
@@ -212,6 +220,9 @@ export default function IPDAdmissionsPage() {
               phone: string;
               gender: string;
               age?: number | string;
+              age_months?: number;
+              age_days?: number;
+              dob?: string;
               address?: string;
               guardian_name?: string;
               blood_group?: string;
@@ -239,6 +250,9 @@ export default function IPDAdmissionsPage() {
               phone: v.patients?.phone || "",
               gender: v.patients?.gender || "OTHER",
               age: v.patients?.age,
+              age_months: v.patients?.age_months,
+              age_days: v.patients?.age_days,
+              dob: v.patients?.dob,
               address: v.patients?.address,
               guardian_name: v.patients?.guardian_name,
               blood_group: v.patients?.blood_group,
@@ -332,7 +346,7 @@ export default function IPDAdmissionsPage() {
           patient: {
             name: record.patient_name,
             patientCode: record.patient_code,
-            age: record.age,
+            age: formatPatientAgeDisplay(record.age, record.age_months, record.age_days, record.dob),
             gender: record.gender,
             phone: record.phone,
             address: record.address,
@@ -393,7 +407,7 @@ export default function IPDAdmissionsPage() {
           patient: {
             name: record.patient_name,
             patientCode: record.patient_code,
-            age: record.age,
+            age: formatPatientAgeDisplay(record.age, record.age_months, record.age_days, record.dob),
             gender: record.gender,
             phone: record.phone,
             address: record.address,
@@ -747,7 +761,7 @@ export default function IPDAdmissionsPage() {
                       </div>
                       <p className="text-xs font-bold text-slate-900 mt-1">{b.patient_name}</p>
                       <p className="text-[10px] text-slate-500">
-                        {b.ward_name} • Code: {b.patient_code}
+                        {b.ward_name} • Code: {b.patient_code} • {formatPatientAgeDisplay(b.age, b.age_months, b.age_days, b.dob)}
                       </p>
                     </div>
                     <Bed className={`w-5 h-5 ${selectedAdmission?.id === b.id ? "text-sky-600" : "text-slate-400"}`} />
@@ -841,7 +855,7 @@ export default function IPDAdmissionsPage() {
                       <span className="text-slate-500 block text-[10px]">Patient Demographics</span>
                       <strong className="text-slate-900 text-sm">{selectedAdmission.patient_name}</strong>
                       <span className="block text-slate-600 font-mono text-[11px]">
-                        ID: {selectedAdmission.patient_code} | Gender: {selectedAdmission.gender}
+                        ID: {selectedAdmission.patient_code} | Gender: {selectedAdmission.gender} | Age: {formatPatientAgeDisplay(selectedAdmission.age, selectedAdmission.age_months, selectedAdmission.age_days, selectedAdmission.dob)}
                       </span>
                     </div>
                     <div className="text-right">
@@ -887,6 +901,19 @@ export default function IPDAdmissionsPage() {
         </div>
       </div>
 
+      {/* Unified Patient / Baby Intake Modal */}
+      {showIntakeModal && (
+        <UnifiedPatientIntakeModal
+          isOpen={showIntakeModal}
+          onClose={() => setShowIntakeModal(false)}
+          onSuccess={(res) => {
+            setShowIntakeModal(false);
+            setRefreshIndex((prev) => prev + 1);
+            setActionSuccess("রোগী / নবজাতক " + res.patient.full_name + " (" + res.patient.patient_code + ") সফলভাবে রেজিস্ট্রেশন সম্পন্ন হয়েছে।");
+          }}
+        />
+      )}
+
       {/* New IPD Admission Modal */}
       {showAdmissionModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -898,9 +925,21 @@ export default function IPDAdmissionsPage() {
 
             <form onSubmit={handleAdmissionSubmit} className="space-y-3.5 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Patient Code or ID <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-semibold text-slate-700">
+                    Patient Code or ID <span className="text-rose-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAdmissionModal(false);
+                      setShowIntakeModal(true);
+                    }}
+                    className="text-[11px] text-sky-600 hover:text-sky-800 font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" /> + নতুন রোগী / নবজাতক
+                  </button>
+                </div>
                 <input
                   type="text"
                   required

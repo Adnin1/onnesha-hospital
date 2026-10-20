@@ -379,7 +379,13 @@ export function DischargeSummaryPrint({
                 </span>
                 <span className="ml-2">Age</span>
                 <span className="border-b border-slate-700 px-2 font-mono font-bold text-slate-950 min-w-[60px] text-center">
-                  {patient.age || "—"} Y
+                  {typeof patient.age === "number"
+                    ? (patient.age > 0 ? `${patient.age} Y` : "0 Y (Infant)")
+                    : (patient.age
+                        ? (String(patient.age).match(/[YMDymdবছরমাসদিন]/)
+                            ? patient.age
+                            : `${patient.age} Y`)
+                        : "—")}
                 </span>
               </div>
 
