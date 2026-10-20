@@ -7,6 +7,7 @@ import {
   History,
   Building,
   Save,
+  Loader2,
   CheckCircle2,
   Smartphone,
   RefreshCw,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 import { RoleType } from "@/types";
+import { saveRolePermissionsAction, getOrganizationRolePermissionsAction } from "@/lib/staff/actions";
 import { getAuditLogsAction, AuditLogRecord } from "@/lib/audit/logger";
 import {
   getHospitalMasterDataAction,
@@ -48,6 +50,28 @@ export default function SettingsAndAuditPage() {
   const [selectedRoleForEdit, setSelectedRoleForEdit] = useState<RoleType>("accountant");
   const [rolePerms, setRolePerms] = useState<Record<RoleType, string[]>>(DEFAULT_ROLE_PERMISSIONS);
   const [savedToast, setSavedToast] = useState("");
+  const [savingPerms, setSavingPerms] = useState(false);
+  useEffect(() => {
+    let isMounted = true;
+    async function loadDynamicPermissions() {
+      try {
+        const res = await getOrganizationRolePermissionsAction();
+        if (isMounted && res.success && res.data && Object.keys(res.data).length > 0) {
+          setRolePerms((prev) => ({
+            ...prev,
+            ...(res.data as Record<RoleType, string[]>),
+          }));
+        }
+      } catch (err) {
+        console.warn("[Settings] Could not load dynamic permissions matrix:", err);
+      }
+    }
+    void loadDynamicPermissions();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
 
   // SMS & Gateway Settings
   const [smsEndpoint, setSmsEndpoint] = useState("");
@@ -215,9 +239,22 @@ export default function SettingsAndAuditPage() {
     });
   };
 
-  const handleSavePerms = () => {
-    setSavedToast("Permissions matrix successfully updated in PostgreSQL database!");
-    setTimeout(() => setSavedToast(""), 4000);
+  const handleSavePerms = async () => {
+    setSavingPerms(true);
+    try {
+      const permsToSave = rolePerms[selectedRoleForEdit] || [];
+      const res = await saveRolePermissionsAction(selectedRoleForEdit, permsToSave);
+      if (res.success) {
+        setSavedToast(`Permissions for role "${selectedRoleForEdit}" successfully updated and saved in PostgreSQL database (${res.count || permsToSave.length} permissions)!`);
+      } else {
+        setSavedToast(`Failed to save permissions: ${res.error || "Unknown error"}`);
+      }
+    } catch (err: unknown) {
+      setSavedToast(`Error saving permissions: ${err instanceof Error ? err.message : "Failed"}`);
+    } finally {
+      setSavingPerms(false);
+      setTimeout(() => setSavedToast(""), 5000);
+    }
   };
 
   const allAvailablePermissions = Object.entries(PERMISSIONS);
@@ -372,11 +409,21 @@ export default function SettingsAndAuditPage() {
 
           <div className="pt-4 border-t border-slate-100 flex justify-end">
             <button
-              onClick={handleSavePerms}
-              className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-sm transition"
+              onClick={() => void handleSavePerms()}
+              disabled={savingPerms}
+              className="inline-flex items-center bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-sm transition cursor-pointer"
             >
-              <Save className="w-3.5 h-3.5 mr-2" />
-              Save Permissions Matrix
+              {savingPerms ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                  Saving Permissions Matrix...
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5 mr-2" />
+                  Save Permissions Matrix
+                </>
+              )}
             </button>
           </div>
         </div>

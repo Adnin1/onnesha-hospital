@@ -36,6 +36,34 @@ export function EditPatientModal({
   const [alternatePhone, setAlternatePhone] = useState("");
   const [gender, setGender] = useState<GenderType>("MALE");
   const [dob, setDob] = useState("");
+  const [ageInput, setAgeInput] = useState("");
+
+  const handleAgeChange = (val: string) => {
+    setAgeInput(val);
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 125) {
+      const birthYear = new Date().getFullYear() - parsed;
+      const computedDob = `${birthYear}-01-01`;
+      setDob(computedDob);
+    } else if (val === "") {
+      setDob("");
+    }
+  };
+
+  const handleDobChange = (val: string) => {
+    setDob(val);
+    if (val) {
+      const parts = val.split("-");
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        if (!isNaN(y)) {
+          setAgeInput(String(new Date().getFullYear() - y));
+        }
+      }
+    } else {
+      setAgeInput("");
+    }
+  };
   const [bloodGroup, setBloodGroup] = useState<BloodGroupType>("UNKNOWN");
   const [maritalStatus, setMaritalStatus] = useState("SINGLE");
   const [occupation, setOccupation] = useState("");
@@ -57,6 +85,17 @@ export function EditPatientModal({
       setAlternatePhone(patient.alternate_phone || "");
       setGender(patient.gender || "MALE");
       setDob(patient.dob || "");
+      if (patient.dob) {
+        const parts = patient.dob.split("-");
+        if (parts.length === 3) {
+          const y = parseInt(parts[0], 10);
+          if (!isNaN(y)) {
+            setAgeInput(String(new Date().getFullYear() - y));
+          }
+        }
+      } else {
+        setAgeInput("");
+      }
       setBloodGroup((patient.blood_group as BloodGroupType) || "UNKNOWN");
       setMaritalStatus(patient.marital_status || "SINGLE");
       setOccupation(patient.occupation || "");
@@ -268,12 +307,25 @@ export function EditPatientModal({
               </div>
 
               <div>
+                <label className={labelCls}>সরাসরি বয়স (Age in Years)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={125}
+                  placeholder="যেমন: ৩৫"
+                  value={ageInput}
+                  onChange={(e) => handleAgeChange(e.target.value)}
+                  className={inputCls + " font-mono"}
+                />
+              </div>
+
+              <div>
                 <label className={labelCls}>জন্ম তারিখ (Date of Birth)</label>
                 <div className="relative">
                   <input
                     type="date"
                     value={dob}
-                    onChange={(e) => setDob(e.target.value)}
+                    onChange={(e) => handleDobChange(e.target.value)}
                     className={inputCls + " font-mono"}
                   />
                   <Calendar className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />

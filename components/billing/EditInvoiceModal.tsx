@@ -135,6 +135,11 @@ export function EditInvoiceModal({
       return;
     }
 
+    if (!editNotes.trim()) {
+      setErrorMsg("বিল পরিবর্তনের অডিট কারণ/নোট লেখা বাধ্যতামূলক (Audit reason is mandatory for fraud prevention)।");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg(null);
 

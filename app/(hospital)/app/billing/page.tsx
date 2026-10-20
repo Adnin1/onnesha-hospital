@@ -23,6 +23,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Bed,
+  History,
 } from "lucide-react";
 import {
   InvoiceRecord,
@@ -45,6 +46,7 @@ import {
 } from "@/lib/billing/actions";
 import { getCurrentUserSession } from "@/lib/auth/session";
 import { EditInvoiceModal } from "@/components/billing/EditInvoiceModal";
+import { InvoiceEditHistoryModal } from "@/components/billing/InvoiceEditHistoryModal";
 import { searchPatientsAction, updatePatientAction } from "@/lib/patient/actions";
 import { getDoctorsAction } from "@/lib/appointments/actions";
 import { DoctorRecord } from "@/types/appointments";
@@ -84,6 +86,7 @@ function BillingManagementContent() {
 
   // Edit & Delete Modal States
   const [editModalInv, setEditModalInv] = useState<InvoiceRecord | null>(null);
+  const [historyModalInv, setHistoryModalInv] = useState<InvoiceRecord | null>(null);
   const [deleteModalInv, setDeleteModalInv] = useState<InvoiceRecord | null>(null);
   const [deleteReasonInput, setDeleteReasonInput] = useState("");
   const [deletePermanentPurge, setDeletePermanentPurge] = useState<boolean>(true);
@@ -1481,6 +1484,17 @@ function BillingManagementContent() {
                             type="button"
                             onClick={() => {
                               setSelectedInvoice(inv);
+                              setHistoryModalInv(inv);
+                            }}
+                            className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition"
+                            title="ইনভয়েস অডিট ও সংশোধন ইতিহাস দেখুন"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedInvoice(inv);
                               setHalfLetterPrintInv(inv);
                             }}
                             className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition"
@@ -1548,6 +1562,14 @@ function BillingManagementContent() {
                       Edit Bill
                     </button>
                   )}
+                  <button
+                    onClick={() => setHistoryModalInv(selectedInvoice)}
+                    className="px-2.5 py-1.5 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold rounded-xl text-xs transition flex items-center shadow-2xs cursor-pointer"
+                    title="ইনভয়েস অডিট ও সংশোধন ইতিহাস"
+                  >
+                    <History className="w-3.5 h-3.5 mr-1" />
+                    অডিট ইতিহাস
+                  </button>
                   {selectedInvoice.due_amount > 0 && !selectedInvoice.is_voided && (
                     <button
                       onClick={() => {
@@ -2920,6 +2942,17 @@ function BillingManagementContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* INVOICE EDIT HISTORY MODAL */}
+      {historyModalInv && (
+        <InvoiceEditHistoryModal
+          isOpen={!!historyModalInv}
+          invoiceId={historyModalInv.id}
+          invoiceNumber={historyModalInv.invoice_number}
+          patientName={historyModalInv.patient?.full_name}
+          onClose={() => setHistoryModalInv(null)}
+        />
       )}
 
       {/* EDIT INVOICE MODAL */}

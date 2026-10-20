@@ -183,7 +183,15 @@ export default function BloodBankPage() {
                     <td className="px-4 py-3 uppercase text-xs font-semibold text-slate-700">
                       {bag.component_type.replace("_", " ")}
                     </td>
-                    <td className="px-4 py-3 text-xs">{bag.donor_name || "Screened Voluntary Donor"}</td>
+                    <td className="px-4 py-3 text-xs">
+                      <div className="font-bold text-slate-800">{bag.donor_name || "Screened Donor"}</div>
+                      <div className="text-[10px] text-slate-500">
+                        {bag.donor_age ? `Age: ${bag.donor_age} Yrs` : "Age: N/A"} • {bag.donor_phone || "Contact: N/A"}
+                      </div>
+                      <div className="text-[10px] text-red-700 font-medium truncate max-w-[180px]">
+                        {bag.sourcing_blood_bank || "Annesha Central Blood Bank"}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-xs text-slate-600">{bag.storage_location || "Central Blood Bank"}</td>
                     <td className="px-4 py-3 text-xs font-mono text-slate-700">{bag.expiry_date}</td>
                     <td className="px-4 py-3">

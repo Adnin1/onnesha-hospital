@@ -1,3 +1,4 @@
+import { recordAuditLog } from "@/lib/audit/logger";
 import { createClient } from "@/lib/supabase/client";
 import { getCurrentUserSession, requirePermission, invalidateCurrentUserSession } from "@/lib/auth/session";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -270,5 +271,87 @@ export async function changeStaffRoleAction(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to update staff role";
     return { success: false, error: msg };
+  }
+}
+
+
+/**
+ * Save Role Permissions into public.role_permissions dynamically in PostgreSQL.
+ */
+export async function saveRolePermissionsAction(
+  roleName: string,
+  permissions: string[]
+): Promise<{ success: boolean; error?: string; count?: number }> {
+  try {
+    await requirePermission(PERMISSIONS.SETTINGS_MANAGE_ROLES);
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("save_role_permissions_atomic", {
+      p_org_id: session.organizationId,
+      p_role_name: roleName,
+      p_permission_keys: permissions,
+    });
+
+    if (error) {
+      console.error("[saveRolePermissionsAction] RPC error:", error);
+      return { success: false, error: error.message };
+    }
+
+    const res = data as { success?: boolean; error?: string; permissions_count?: number };
+    if (res && res.success === false) {
+      return { success: false, error: res.error || "Failed to save permissions." };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "UPDATE",
+      module: "IAM",
+      entityType: "role_permissions",
+      entityId: roleName,
+      newValues: { role: roleName, permissionsCount: permissions.length },
+    });
+
+    invalidateCurrentUserSession();
+
+    return { success: true, count: res.permissions_count || permissions.length };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Failed to save role permissions";
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Retrieve current dynamic role permissions matrix from database.
+ */
+export async function getOrganizationRolePermissionsAction(): Promise<{
+  success: boolean;
+  data?: Record<string, string[]>;
+  error?: string;
+}> {
+  try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("get_organization_role_permissions_matrix", {
+      p_org_id: session.organizationId,
+    });
+
+    if (error) {
+      console.warn("[getOrganizationRolePermissionsAction] RPC error, returning empty matrix:", error.message);
+      return { success: true, data: {} };
+    }
+
+    const res = data as { success?: boolean; matrix?: Record<string, string[]> };
+    return { success: true, data: res?.matrix || {} };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to load permissions matrix" };
   }
 }

@@ -89,6 +89,32 @@ export function UnifiedPatientIntakeModal({
   const [alternatePhone, setAlternatePhone] = useState("");
   const [email, setEmail] = useState("");
   const [dob, setDob] = useState("");
+  const [ageInput, setAgeInput] = useState("");
+
+  const handleAgeChange = (val: string) => {
+    setAgeInput(val);
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 125) {
+      const birthYear = new Date().getFullYear() - parsed;
+      const computedDob = `${birthYear}-01-01`;
+      setDob(computedDob);
+    } else if (val === "") {
+      setDob("");
+    setAgeInput("");
+    }
+  };
+
+  const handleDobChange = (val: string) => {
+    setDob(val);
+    if (val) {
+      const computed = calculateAgeFromDOB(val);
+      if (computed !== null && computed !== undefined) {
+        setAgeInput(String(computed));
+      }
+    } else {
+      setAgeInput("");
+    }
+  };
   const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER">("MALE");
   const [bloodGroup, setBloodGroup] = useState("UNKNOWN");
   const [maritalStatus, setMaritalStatus] = useState("");
@@ -508,6 +534,7 @@ export function UnifiedPatientIntakeModal({
     setAlternatePhone("");
     setEmail("");
     setDob("");
+    setAgeInput("");
     setGender("MALE");
     setBloodGroup("UNKNOWN");
     setMaritalStatus("");
@@ -1163,9 +1190,20 @@ export function UnifiedPatientIntakeModal({
                     />
                   </Field>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                  <Field label="Patient Age (সরাসরি বয়স)">
+                    <input
+                      type="number"
+                      min={0}
+                      max={125}
+                      placeholder="যেমন: ২৫"
+                      value={ageInput}
+                      onChange={(e) => handleAgeChange(e.target.value)}
+                      className={inputCls + " font-mono"}
+                    />
+                  </Field>
                   <Field label={"Date of Birth" + (dob ? " (" + calculateAgeFromDOB(dob) + " Yrs)" : "")}>
-                    <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className={inputCls} />
+                    <input type="date" value={dob} onChange={(e) => handleDobChange(e.target.value)} className={inputCls} />
                   </Field>
                   <Field label="Gender (লিঙ্গ)">
                     <select value={gender} onChange={(e) => setGender(e.target.value as "MALE" | "FEMALE" | "OTHER")} className={inputCls}>

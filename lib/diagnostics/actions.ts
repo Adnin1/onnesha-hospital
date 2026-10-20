@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { getCurrentUserSession } from "@/lib/auth/session";
 import { classifyClientRuntimeNoise } from "./noise-classifier";
 
 export type DiagnosticIssueKind = "INCIDENT" | "DETECTOR";
@@ -51,8 +52,16 @@ export async function getSystemHealthDiagnosticsAction(
   try {
     const supabase = createClient();
 
+    let effectiveOrgId = organizationId || null;
+    if (!effectiveOrgId) {
+      try {
+        const session = await getCurrentUserSession();
+        effectiveOrgId = session.organizationId || null;
+      } catch {}
+    }
+
     const { data, error } = await supabase.rpc("check_system_health_diagnostics", {
-      p_org_id: organizationId || null,
+      p_org_id: effectiveOrgId,
     });
 
     if (error) {

@@ -1578,6 +1578,28 @@ export async function editInvoiceAction(params: {
       },
     });
 
+    // Anti-fraud notification for Super Admin
+    try {
+      const invNum = (res as { invoice_number?: string })?.invoice_number || params.invoiceId.slice(0, 8);
+      await reportSystemRuntimeIncident({
+        organizationId: session.organizationId,
+        module: "Patient Billing Audit",
+        location: `invoices/${params.invoiceId}`,
+        severity: "INFO",
+        errorCode: "INVOICE_MODIFIED",
+        title: `রিসিপশন কর্তৃক ইনভয়েস সংশোধন (Invoice #${invNum})`,
+        reason: `স্টাফ ${session.profile?.full_name || session.email} (${session.roles[0] || "staff"}) ইনভয়েস সংশোধন করেছেন। কারণ: ${params.discountReason || params.notes || "Bill modified"}`,
+        recommendation: "সুপার অ্যাডমিন অডিট হিস্টোরি থেকে পূর্বের ও বর্তমান আইটেম তালিকা যাচাই করতে পারেন।",
+        details: {
+          invoiceId: params.invoiceId,
+          editedBy: session.userId,
+          itemCount: params.items.length,
+          discountAmount: params.discountAmount,
+          notes: params.notes,
+        },
+      });
+    } catch {}
+
     return {
       success: true,
       data: {
@@ -1732,3 +1754,64 @@ export async function deleteInvoiceAction(params: {
 
 
 
+
+
+export interface InvoiceEditHistoryRecord {
+  id: string;
+  organization_id: string;
+  invoice_id: string;
+  invoice_number: string;
+  edited_by_user_id: string;
+  edited_by_name: string;
+  edited_by_role: string;
+  edit_reason: string;
+  previous_subtotal: number;
+  new_subtotal: number;
+  previous_discount: number;
+  new_discount: number;
+  previous_grand_total: number;
+  new_grand_total: number;
+  previous_items: Array<{
+    service_category: string;
+    item_name: string;
+    unit_price: number;
+    quantity: number;
+    total_price: number;
+  }>;
+  new_items: Array<{
+    service_category: string;
+    item_name: string;
+    unit_price: number;
+    quantity: number;
+    total_price: number;
+  }>;
+  changes_summary?: string;
+  created_at: string;
+}
+
+export async function getInvoiceEditHistoryAction(invoiceId: string): Promise<ActionResult<InvoiceEditHistoryRecord[]>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("invoice_edit_history")
+      .select("*")
+      .eq("invoice_id", invoiceId)
+      .eq("organization_id", session.organizationId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("[getInvoiceEditHistoryAction] query error:", error.message);
+      return { success: true, data: [] };
+    }
+
+    return { success: true, data: (data as unknown as InvoiceEditHistoryRecord[]) || [] };
+  } catch (err: unknown) {
+    console.error("[getInvoiceEditHistoryAction] error:", err);
+    return { success: false, error: err instanceof Error ? err.message : "Failed to load invoice edit history." };
+  }
+}
