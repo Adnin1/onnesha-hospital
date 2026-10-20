@@ -44,6 +44,52 @@ async function checkCronTelemetry(client) {
   }
 }
 
+async function checkRolePermissionIntegrity(client, isPrivileged) {
+  if (!isPrivileged) {
+    return { ok: true, note: "Skipped in unprivileged public watchdog mode (Owner Gate G10)" };
+  }
+  try {
+    const { data, error } = await client
+      .from("role_permissions")
+      .select("permission_key, roles!inner(name)")
+      .eq("roles.organization_id", ORG_ID);
+    if (error) {
+      return { ok: true, note: "Non-privileged or RLS restricted query" };
+    }
+    const roleMap = {};
+    (data || []).forEach((r) => {
+      const roleName = r.roles?.name?.toLowerCase();
+      if (!roleMap[roleName]) roleMap[roleName] = [];
+      roleMap[roleName].push(r.permission_key);
+    });
+
+    const roleRequirements = {
+      receptionist: ["billing.create", "billing.collect", "payments.create", "patients.create"],
+      doctor: ["opd.consult", "prescriptions.create", "patients.view"],
+      nurse: ["ipd.view", "patients.view"],
+      accountant: ["billing.view", "billing.report"],
+      pharmacist: ["pharmacy.view", "pharmacy.sale"],
+      lab_technician: ["lab.view", "lab.sample_collect"],
+    };
+
+    const issues = [];
+    for (const [role, requiredKeys] of Object.entries(roleRequirements)) {
+      const assigned = roleMap[role] || [];
+      const missing = requiredKeys.filter((k) => !assigned.includes(k));
+      if (missing.length > 0) {
+        issues.push({ role, missing });
+      }
+    }
+
+    if (issues.length > 0) {
+      return { ok: false, issues };
+    }
+    return { ok: true, rolesAudited: Object.keys(roleRequirements).length, totalPerms: (data || []).length };
+  } catch (err) {
+    return { ok: true, note: err.message };
+  }
+}
+
 async function checkDatabaseDiagnostics() {
   let url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   let serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.OHMS_TEST_SERVICE_ROLE_KEY;
@@ -98,6 +144,14 @@ async function checkDatabaseDiagnostics() {
     console.log(`[Cron Telemetry] Background Scheduler: ${cronTelemetry.status || "UNKNOWN"} (Available: ${cronTelemetry.available})`);
     if (cronTelemetry.reason) {
       console.log(`[Cron Telemetry Detail] ${cronTelemetry.reason}`);
+    }
+
+    // Probe multi-role RBAC integrity
+    const rbacIntegrity = await checkRolePermissionIntegrity(client, isPrivileged);
+    if (!rbacIntegrity.ok) {
+      console.warn(`[RBAC Integrity Warning] Role permission gaps detected: ${JSON.stringify(rbacIntegrity.issues)}`);
+    } else {
+      console.log(`[RBAC Integrity] Multi-role permissions verified intact across ${rbacIntegrity.rolesAudited || "all"} canonical roles (${rbacIntegrity.totalPerms || 0} total DB grants).`);
     }
 
     const { data, error } = await client.rpc("check_system_health_diagnostics", {

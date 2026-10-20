@@ -431,6 +431,50 @@ try {
   critical(`Admin authentication invariant check failed: ${e.message}`);
 }
 
+// ─── 17. Multi-Role RBAC & Front-Desk Workflow Invariants ───
+console.log('\n📋 17. Multi-Role RBAC & Front-Desk Workflow Invariants');
+try {
+  const mig220Path = path.join(ROOT, 'supabase', 'migrations', '20261020200000_migration_220_allow_cashier_receptionist_gl_billing_post.sql');
+  if (!fs.existsSync(mig220Path)) {
+    critical('Migration 220 missing: Receptionist/Cashier GL billing posting authorization');
+  } else {
+    const mig220 = fs.readFileSync(mig220Path, 'utf8');
+    if (
+      mig220.includes("LOWER(r.name) IN ('cashier', 'receptionist')") &&
+      mig220.includes("LOWER(r.name) IN ('super_admin', 'admin', 'hospital_administrator', 'finance_manager', 'accountant', 'cashier', 'receptionist')") &&
+      mig220.includes('billing.collect') &&
+      mig220.includes('payments.create')
+    ) {
+      pass('Migration 220 enforces Receptionist & Cashier operational GL posting and payment collection');
+    } else {
+      critical('Migration 220 RBAC filters or permission grants incomplete');
+    }
+  }
+
+  const permsFile = fs.readFileSync(path.join(ROOT, 'lib', 'permissions.ts'), 'utf8');
+  if (
+    permsFile.includes('BILLING_COLLECT: "billing.collect"') &&
+    permsFile.includes('PAYMENTS_CREATE: "payments.create"') &&
+    permsFile.includes('PERMISSIONS.BILLING_COLLECT')
+  ) {
+    pass('lib/permissions.ts exports BILLING_COLLECT and grants to receptionist and cashier roles');
+  } else {
+    critical('lib/permissions.ts missing BILLING_COLLECT or PAYMENTS_CREATE definition');
+  }
+
+  const billingActions = fs.readFileSync(path.join(ROOT, 'lib', 'billing', 'actions.ts'), 'utf8');
+  if (
+    billingActions.includes('hasPermission("billing.collect")') &&
+    billingActions.includes('hasPermission("billing.create")')
+  ) {
+    pass('lib/billing/actions.ts collectPaymentAction permits billing.create or billing.collect');
+  } else {
+    critical('lib/billing/actions.ts lacks multi-permission fallback for payment collection');
+  }
+} catch (e) {
+  critical(`Multi-Role RBAC invariant check failed: ${e.message}`);
+}
+
 // ─── Summary ───
 const isStrictMode = process.argv.includes('--strict') || process.argv.includes('--release');
 console.log('\n' + '='.repeat(50));
