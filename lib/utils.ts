@@ -174,11 +174,16 @@ export function calculateDetailedAgeFromDOB(dob: string | Date | null | undefine
  * Accurately computes Date of Birth (YYYY-MM-DD) from Years, Months, and Days.
  */
 export function calculateDOBFromYMD(years: number, months: number, days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - (Number(days) || 0));
-  d.setMonth(d.getMonth() - (Number(months) || 0));
-  d.setFullYear(d.getFullYear() - (Number(years) || 0));
+  const now = new Date();
+  const y = Number(years) || 0;
+  const m = Number(months) || 0;
+  const dVal = Number(days) || 0;
 
+  const targetYear = now.getFullYear() - y;
+  const targetMonth = now.getMonth() - m;
+  const targetDate = now.getDate() - dVal;
+
+  const d = new Date(targetYear, targetMonth, targetDate);
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");

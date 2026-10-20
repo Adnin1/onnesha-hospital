@@ -67,8 +67,25 @@ function dhakaDateTimeLocal() {
   return get("year") + "-" + get("month") + "-" + get("day") + "T" + get("hour") + ":" + get("minute");
 }
 
-function toDhakaIso(value: string) {
-  return new Date(value + ":00+06:00").toISOString();
+function toDhakaIso(value?: string | null) {
+  if (!value || typeof value !== "string" || !value.trim()) {
+    return new Date().toISOString();
+  }
+  const clean = value.trim();
+  if (clean.includes("Z") || /[+-]\d{2}:\d{2}$/.test(clean)) {
+    const d = new Date(clean);
+    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+  }
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(clean)) {
+    const d = new Date(clean + "+06:00");
+    return isNaN(d.getTime()) ? new Date(clean).toISOString() : d.toISOString();
+  }
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(clean)) {
+    const d = new Date(clean + ":00+06:00");
+    return isNaN(d.getTime()) ? new Date(clean).toISOString() : d.toISOString();
+  }
+  const d = new Date(clean);
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
 export function UnifiedPatientIntakeModal({
@@ -193,7 +210,9 @@ export function UnifiedPatientIntakeModal({
   // Load available options on modal open
   useEffect(() => {
     if (!isOpen) return;
-    setEncounterAt(dhakaDateTimeLocal());
+    const nowStr = dhakaDateTimeLocal();
+    setEncounterAt(nowStr);
+    setOtScheduledAt(nowStr);
     setErrorMsg(null);
     setDuplicateWarning(null);
     setDuplicateMatches(null);
@@ -762,20 +781,24 @@ export function UnifiedPatientIntakeModal({
     }
 
     // IPD Validation & Smart Fallback
+    let targetBedId = ipdBedId;
+    let targetCabinId = ipdCabinId;
     if (ipdEnabled) {
-      if (!ipdBedId && !ipdCabinId) {
+      if (!targetBedId && !targetCabinId) {
         // Auto-assign first available bed or cabin if exists
         if (availableBeds.length > 0) {
-          setIpdBedId(availableBeds[0].id);
+          targetBedId = availableBeds[0].id;
+          setIpdBedId(targetBedId);
         } else if (availableCabins.length > 0) {
-          setIpdCabinId(availableCabins[0].id);
+          targetCabinId = availableCabins[0].id;
+          setIpdCabinId(targetCabinId);
         } else {
           setErrorMsg("আইপিডি ভর্তির জন্য বর্তমানে কোনো বেড বা কেবিন খালি নেই। আইপিডি বাদ দিয়ে শুধু রোগী নিবন্ধন করতে নিচের বোতাম চাপুন।");
           scrollToField("field-ipd-bed");
           return;
         }
       }
-      if (ipdBedId && ipdCabinId) {
+      if (targetBedId && targetCabinId) {
         setErrorMsg("বেড অথবা কেবিনের যেকোনো একটি নির্বাচন করুন, উভয়টি নয় (Select either IPD bed OR cabin, not both).");
         scrollToField("field-ipd-bed");
         return;
@@ -783,12 +806,13 @@ export function UnifiedPatientIntakeModal({
     }
 
     // Critical Care Validation & Smart Fallback
+    let resolvedUnit = criticalUnitId;
+    let resolvedBed = criticalBedNumber;
     if (criticalEnabled) {
       if (loadingOptions) {
         setErrorMsg("ক্রিটিক্যাল কেয়ারের তথ্য লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন... (Loading Critical Care options, please wait...)");
         return;
       }
-      let resolvedUnit = criticalUnitId;
       if (!resolvedUnit && units.length > 0) {
         resolvedUnit = units[0].id;
         setCriticalUnitId(resolvedUnit);
@@ -800,7 +824,6 @@ export function UnifiedPatientIntakeModal({
       }
 
       const eligibleBeds = getEligibleCriticalBedsForUnit(resolvedUnit);
-      let resolvedBed = criticalBedNumber;
       if (!resolvedBed && eligibleBeds.length > 0) {
         resolvedBed = eligibleBeds[0].bed_number;
         setCriticalBedNumber(resolvedBed);
@@ -833,7 +856,53 @@ export function UnifiedPatientIntakeModal({
       return;
     }
 
-    void submit(false);
+    const resolvedServices: UnifiedPatientIntakePayload["services"] = {
+      opd: {
+        enabled: opdEnabled,
+        departmentId: opdDepartmentId || undefined,
+        doctorId: opdDoctorId || undefined,
+        opdFee: opdCustomFee !== "" ? Number(opdCustomFee) : undefined,
+        chiefComplaint: opdComplaint || undefined,
+        priority: opdPriority,
+      },
+      ipd: {
+        enabled: ipdEnabled,
+        departmentId: ipdDepartmentId || undefined,
+        doctorId: ipdDoctorId || undefined,
+        bedId: targetBedId || undefined,
+        cabinId: targetCabinId || undefined,
+        dailyRate: ipdCustomDailyRate !== "" ? Number(ipdCustomDailyRate) : undefined,
+        dailyServiceCharge: ipdCustomServiceCharge !== "" ? Number(ipdCustomServiceCharge) : 500,
+        admissionFee: ipdCustomAdmissionFee !== "" ? Number(ipdCustomAdmissionFee) : 300,
+        provisionalDiagnosis: ipdDiagnosis || undefined,
+        referralAgentId: referralAgentId || undefined,
+      },
+      criticalCare: {
+        enabled: criticalEnabled,
+        unitId: resolvedUnit || undefined,
+        bedNumber: resolvedBed || undefined,
+        dailyCharge: criticalCustomDailyCharge !== "" ? Number(criticalCustomDailyCharge) : undefined,
+        doctorId: criticalDoctorId || undefined,
+        initialDiagnosis: criticalDiagnosis || undefined,
+        ventilatorRequired,
+      },
+      ot: {
+        enabled: otEnabled,
+        roomId: otRoomId || undefined,
+        surgeonId: otDoctorId || undefined,
+        procedureName: otProcedure || undefined,
+        estimatedCharge: Number(otCharge || 6000),
+        anesthesiaType: otAnesthesia,
+        scheduledStart: toDhakaIso(otScheduledAt),
+      },
+      diagnostics: {
+        enabled: diagnosticsEnabled,
+        testIds: diagnosticsEnabled ? selectedTestIds : [],
+        notes: diagnosticNotes.trim() || undefined,
+      },
+    };
+
+    void submit(false, resolvedServices);
   }
 
   if (!isOpen) return null;

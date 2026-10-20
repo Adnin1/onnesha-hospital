@@ -1872,7 +1872,7 @@ export async function createUnifiedPatientIntakeAction(
         message.includes("CRITICAL_CARE_BED_OCCUPIED") || message.includes("CRITICAL_CARE_BED_NOT_FOUND") || message.includes("CRITICAL_CARE_BED_NOT_VACANT") || message.includes("CRITICAL_CARE_BED_UNAVAILABLE") || message.includes("CRITICAL_CARE_DOUBLE_ASSIGNMENT") ? "The selected Critical Care bed is already occupied or unavailable. Please select another bed." :
         message.includes("CRITICAL_CARE_UNIT_INACTIVE") ? "The selected Critical Care unit is currently inactive." :
         message.includes("CRITICAL_CARE_UNIT_AND_BED_REQUIRED") ? "Both Critical Care unit and bed number are required." :
-        message.includes("PERMISSION_DENIED_PATIENT_INTAKE") ? "You do not have permission to register or admit patients." :
+        message.includes("PERMISSION_DENIED_INTAKE") || message.includes("PERMISSION_DENIED_PATIENT_INTAKE") ? "You do not have permission to register or admit patients." :
         message.includes("MARITAL_STATUS") ? "Patient registration schema is not fully updated. Apply the latest forward migration and refresh the API schema." :
         message.includes("PATIENT_NOT_FOUND") ? "The selected patient no longer exists in this hospital organization." :
         message.includes("OPD_DOCTOR_NOT_FOUND") || message.includes("IPD_DOCTOR_NOT_FOUND") ? "Selected doctor is inactive or unavailable." :
