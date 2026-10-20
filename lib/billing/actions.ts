@@ -1737,6 +1737,20 @@ export async function deleteInvoiceAction(params: {
 
     if (res && res.success === false) {
       const msg = res.error || "Failed to delete invoice.";
+      if (res.mode === "ALREADY_PURGED" || msg.includes("already been permanently purged")) {
+        await resolveSystemRuntimeIncident({
+          organizationId: session.organizationId,
+          module: "Patient Billing",
+        });
+        return {
+          success: true,
+          data: {
+            success: true,
+            mode: "ALREADY_PURGED",
+            message: msg,
+          },
+        };
+      }
       await reportSystemRuntimeIncident({
         organizationId: session.organizationId,
         module: "Patient Billing",

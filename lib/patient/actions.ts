@@ -2680,18 +2680,23 @@ export async function purgePatientAction(
     const supabase = await createClient();
 
     // Verify patient has ZERO clinical or financial attachments
-    const [invCheck, admCheck, apptCheck] = await Promise.all([
+    const [invCheck, visitCheck, apptCheck] = await Promise.all([
       supabase.from("invoices").select("id", { count: "exact", head: true }).eq("patient_id", patientId).eq("organization_id", session.organizationId),
-      supabase.from("admissions").select("id", { count: "exact", head: true }).eq("patient_id", patientId).eq("organization_id", session.organizationId),
+      supabase.from("patient_visits").select("id", { count: "exact", head: true }).eq("patient_id", patientId).eq("organization_id", session.organizationId),
       supabase.from("appointments").select("id", { count: "exact", head: true }).eq("patient_id", patientId).eq("organization_id", session.organizationId),
     ]);
 
-    if ((invCheck.count || 0) > 0 || (admCheck.count || 0) > 0 || (apptCheck.count || 0) > 0) {
+    if ((invCheck.count || 0) > 0 || (visitCheck.count || 0) > 0 || (apptCheck.count || 0) > 0) {
       return {
         success: false,
         error: "PURGE_BLOCKED: Patient has linked clinical or financial history (invoices, admissions, or appointments). Permanent purge is strictly forbidden. Use Archive Patient instead.",
       };
     }
+
+    // Cascade remove non-financial intake and attribution attachments for accidental registrations
+    await supabase.from("patient_episodes").delete().eq("patient_id", patientId).eq("organization_id", session.organizationId);
+    await supabase.from("emergency_registrations").delete().eq("patient_id", patientId).eq("organization_id", session.organizationId);
+    await supabase.from("patient_referral_attributions").delete().eq("patient_id", patientId).eq("organization_id", session.organizationId);
 
     const { error: purgeErr } = await supabase
       .from("patients")

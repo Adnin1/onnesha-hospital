@@ -862,6 +862,7 @@ export async function deleteReferralAgentAction(agentId: string): Promise<{ succ
     try {
       const { data: rpcRes, error: rpcErr } = await supabase.rpc("delete_referral_partner_atomic", {
         p_agent_id: agentId,
+        p_organization_id: session.organizationId,
       });
 
       if (!rpcErr && rpcRes && typeof rpcRes === "object") {

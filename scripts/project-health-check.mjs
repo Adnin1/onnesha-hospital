@@ -475,6 +475,28 @@ try {
   critical(`Multi-Role RBAC invariant check failed: ${e.message}`);
 }
 
+console.log('\n📋 18. Least-Privilege Accounting & Permanent Purge Idempotency');
+try {
+  const mig221Path = path.join(ROOT, 'supabase', 'migrations', '20261021050000_migration_221_least_privilege_accounting_and_permanent_delete_idempotency.sql');
+  if (!fs.existsSync(mig221Path)) {
+    critical('Migration 221 missing: Least-privilege accounting and permanent purge idempotency');
+  } else {
+    const mig221 = fs.readFileSync(mig221Path, 'utf8');
+    if (
+      mig221.includes('app.internal_operational_gl_posting') &&
+      mig221.includes('ALREADY_PURGED') &&
+      mig221.includes('telegram_command_queue') &&
+      mig221.includes('enqueue_telegram_command_atomic')
+    ) {
+      pass('Migration 221 enforces Least-Privilege GL posting, purge idempotency, and Telegram command queue');
+    } else {
+      critical('Migration 221 missing core least-privilege or idempotency safeguards');
+    }
+  }
+} catch (e) {
+  critical(`Migration 221 invariant check failed: ${e.message}`);
+}
+
 // ─── Summary ───
 const isStrictMode = process.argv.includes('--strict') || process.argv.includes('--release');
 console.log('\n' + '='.repeat(50));

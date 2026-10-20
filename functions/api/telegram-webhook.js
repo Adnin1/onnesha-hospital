@@ -83,6 +83,26 @@ async function completeDurableUpdate(supabaseUrl, supabaseKey, updateId, status 
   } catch {}
 }
 
+async function enqueueTelegramCommand(supabaseUrl, supabaseKey, updateId, chatId, userId, commandText, payload = {}) {
+  try {
+    await fetch(`${supabaseUrl}/rest/v1/rpc/enqueue_telegram_command_atomic`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`
+      },
+      body: JSON.stringify({
+        p_update_id: updateId,
+        p_chat_id: chatId,
+        p_user_id: userId,
+        p_command_text: commandText,
+        p_payload: payload
+      })
+    });
+  } catch {}
+}
+
 const MAIN_KEYBOARD = {
   inline_keyboard: [
     [
@@ -256,6 +276,7 @@ export async function onRequestPost(context) {
           await handleTextCommand(botToken, chatId, caption);
         }
       } else if (msg.text) {
+        await enqueueTelegramCommand(sbUrl, sbKey, update.update_id, chatId, userId, msg.text, { source: "telegram_webhook" });
         await handleTextCommand(botToken, chatId, msg.text.substring(0, 1000));
       }
     }
@@ -386,9 +407,9 @@ async function handleStatus(botToken, chatId) {
     `• <b>পিসি স্ট্যাটাস:</b> সম্পূর্ণ স্বাধীন (পিসি অফ থাকলেও লাইভ)\n` +
     `• <b>ওয়েবসাইট লাইভ:</b> ${CANONICAL_URL}\n` +
     `• <b>এজ সিকিউরিটি:</b> ${edgeStatus}\n` +
-    `• <b>সুপাবেজ ডেটাবেজ:</b> ${dbStatus} (মাইগ্রেশন ২১৬/২১৬)\n` +
+    `• <b>সুপাবেজ ডেটাবেজ:</b> ${dbStatus} (মাইগ্রেশন ২২১/২২১)\n` +
     `• <b>জেনারেল লেজার:</b> ডেবিট ও ক্রেডিট সম্পূর্ণ ব্যালেন্সড\n` +
-    `• <b>টেস্ট সার্টিফিকেশন:</b> ১৫৯/১৫৯ টেস্ট স্যুট পাসড (১,৪০৬ টেস্ট কেস)\n` +
+    `• <b>টেস্ট সার্টিফিকেশন:</b> ১৬৪/১৬৪ টেস্ট স্যুট পাসড (১,৪৪০+ টেস্ট কেস)\n` +
     `• <b>সফটওয়্যার সংস্করণ:</b> v1.1.90\n\n` +
     `<i>সকল হাসপাতাল ডাটা ও এপিআই ক্লাউডে সার্বক্ষণিক সুরক্ষিত রয়েছে।</i>`;
 
