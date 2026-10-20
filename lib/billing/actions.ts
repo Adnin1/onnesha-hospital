@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
+import { requirePermission, hasPermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
 import { getDhakaDateString } from "@/lib/datetime";
 import { normalizeBDPhone } from "@/lib/patient/phone";
@@ -338,7 +338,13 @@ export async function collectPaymentAction(params: {
   }
 
   try {
-    await requirePermission("billing.collect");
+    const canCollect =
+      (await hasPermission("billing.collect")) ||
+      (await hasPermission("billing.create")) ||
+      (await hasPermission("billing.manage"));
+    if (!canCollect) {
+      await requirePermission("billing.collect");
+    }
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: billing.collect required" };
   }
