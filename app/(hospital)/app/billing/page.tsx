@@ -24,6 +24,8 @@ import {
   ChevronRight,
   Bed,
   History,
+  UserPlus,
+  ChevronDown,
 } from "lucide-react";
 import {
   InvoiceRecord,
@@ -54,6 +56,7 @@ import { HalfLetterInvoicePrint } from "@/components/print/HalfLetterInvoicePrin
 import {
   getPatientReferralAttributionAction,
   searchReferralAgentsForBillingAction,
+  createReferralAgentAction,
 } from "@/lib/referrals/actions";
 import { PatientMaster } from "@/types/clinical";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
@@ -188,6 +191,17 @@ function BillingManagementContent() {
   const [attributionAgentCode, setAttributionAgentCode] = useState<string>("");
   const [checkingAttribution, setCheckingAttribution] = useState(false);
   const [noReferral, setNoReferral] = useState(false);
+
+  // Referral Combobox & Quick-Add State
+  const [referralSearchQuery, setReferralSearchQuery] = useState("");
+  const [isReferralDropdownOpen, setIsReferralDropdownOpen] = useState(false);
+  const [showQuickAddReferralModal, setShowQuickAddReferralModal] = useState(false);
+  const [quickAddName, setQuickAddName] = useState("");
+  const [quickAddPhone, setQuickAddPhone] = useState("");
+  const [quickAddType, setQuickAddType] = useState<"DOCTOR" | "COMMUNITY_PC" | "ORGANIZATION" | "STAFF">("COMMUNITY_PC");
+  const [quickAddCommissionRate, setQuickAddCommissionRate] = useState<number>(10);
+  const [savingQuickAddAgent, setSavingQuickAddAgent] = useState(false);
+  const [quickAddError, setQuickAddError] = useState<string | null>(null);
 
   // Doctor & Service Tariffs State
   const [doctorsList, setDoctorsList] = useState<DoctorRecord[]>([]);
@@ -599,6 +613,7 @@ function BillingManagementContent() {
       setSelectedReferralAgentId("");
       setNoReferral(true);
       setIsAttributionSuggested(false);
+      setReferralSearchQuery("");
       return;
     }
     setSelectedReferralAgentId(agentId);
@@ -606,6 +621,79 @@ function BillingManagementContent() {
     const found = billingReferralAgents.find((a) => a.id === agentId);
     if (found) {
       setReferralCommissionRate(found.commission_rate_percent || 10);
+      setReferralSearchQuery("");
+    }
+  };
+
+  const selectedReferralAgent = useMemo(() => {
+    if (!selectedReferralAgentId) return null;
+    return billingReferralAgents.find((a) => a.id === selectedReferralAgentId) || null;
+  }, [selectedReferralAgentId, billingReferralAgents]);
+
+  const filteredReferralAgents = useMemo(() => {
+    if (!referralSearchQuery.trim()) return billingReferralAgents;
+    const q = referralSearchQuery.toLowerCase().trim();
+    return billingReferralAgents.filter(
+      (a) =>
+        a.full_name.toLowerCase().includes(q) ||
+        a.agent_code.toLowerCase().includes(q) ||
+        (a.phone && a.phone.includes(q)) ||
+        a.agent_type.toLowerCase().includes(q)
+    );
+  }, [billingReferralAgents, referralSearchQuery]);
+
+  const handleSaveQuickAddReferral = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!quickAddName.trim()) {
+      setQuickAddError("রেফারেন্স পার্টনারের নাম আবশ্যক");
+      return;
+    }
+    if (!quickAddPhone.trim()) {
+      setQuickAddError("মোবাইল নম্বর আবশ্যক");
+      return;
+    }
+    setSavingQuickAddAgent(true);
+    setQuickAddError(null);
+    try {
+      const res = await createReferralAgentAction({
+        full_name: quickAddName.trim(),
+        agent_type: quickAddType,
+        phone: quickAddPhone.trim(),
+        commission_rate_percent: quickAddCommissionRate,
+        is_commission_eligible: true,
+      });
+
+      if (!res.success || !res.data) {
+        setQuickAddError(res.error || "পার্টনার তৈরি করতে ব্যর্থ হয়েছে");
+        return;
+      }
+
+      const created = res.data;
+      const newAgent = {
+        id: created.id,
+        agent_code: created.agent_code,
+        full_name: created.full_name,
+        agent_type: created.agent_type,
+        phone: created.phone,
+        commission_rate_percent: created.commission_rate_percent ?? quickAddCommissionRate,
+        is_commission_eligible: created.is_commission_eligible ?? true,
+      };
+
+      setBillingReferralAgents((prev) => [newAgent, ...prev]);
+      handleReferralAgentChange(newAgent.id);
+      setShowQuickAddReferralModal(false);
+      setQuickAddName("");
+      setQuickAddPhone("");
+      setQuickAddType("COMMUNITY_PC");
+      setQuickAddCommissionRate(10);
+      setToast({
+        message: `রেফারেন্স পার্টনার "${newAgent.full_name}" সফলভাবে যুক্ত ও সিলেক্ট করা হয়েছে (${newAgent.agent_code})।`,
+        type: "success",
+      });
+    } catch (err: unknown) {
+      setQuickAddError(err instanceof Error ? err.message : "অপ্রত্যাশিত ত্রুটি ঘটেছে");
+    } finally {
+      setSavingQuickAddAgent(false);
     }
   };
 
@@ -2657,23 +2745,153 @@ function BillingManagementContent() {
                   ) : null}
                 </div>
 
-                {/* Reference Partner Selector */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                    রেফারেন্স পার্টনার / এজেন্ট (Referral Partner)
-                  </label>
-                  <select
-                    value={selectedReferralAgentId}
-                    onChange={(e) => handleReferralAgentChange(e.target.value)}
-                    className="w-full px-2.5 py-2 border border-slate-200 rounded-xl bg-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="">কোনো রেফারেন্স নেই (No Referral / Direct)</option>
-                    {billingReferralAgents.map((ag) => (
-                      <option key={ag.id} value={ag.id}>
-                        {ag.full_name} ({ag.agent_code})
-                      </option>
-                    ))}
-                  </select>
+                {/* Reference Partner Selector Combobox & Quick Add */}
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-bold text-slate-700 flex items-center gap-1">
+                      <span>রেফারেন্স পার্টনার / এজেন্ট (Referral Partner)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuickAddName(referralSearchQuery.trim());
+                        setQuickAddError(null);
+                        setShowQuickAddReferralModal(true);
+                      }}
+                      className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg transition cursor-pointer"
+                    >
+                      <UserPlus className="w-3 h-3" />
+                      <span>+ নতুন পার্টনার</span>
+                    </button>
+                  </div>
+
+                  {selectedReferralAgent ? (
+                    /* Selected Referral Partner Card */
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white font-bold flex items-center justify-center text-xs shrink-0">
+                          {selectedReferralAgent.full_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-extrabold text-emerald-950 truncate">
+                              {selectedReferralAgent.full_name}
+                            </span>
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-white text-emerald-800 border border-emerald-300">
+                              {selectedReferralAgent.agent_code}
+                            </span>
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-200 text-emerald-900">
+                              {selectedReferralAgent.agent_type}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-emerald-700 flex items-center gap-2 mt-0.5 font-medium">
+                            {selectedReferralAgent.phone && <span>📞 {selectedReferralAgent.phone}</span>}
+                            <span>কমিশন: {referralCommissionRate}%</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleReferralAgentChange("")}
+                        className="text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2 py-1 rounded-lg border border-transparent hover:border-rose-200 font-bold transition shrink-0 ml-2 cursor-pointer"
+                        title="রেফারেন্স বাদ দিন / পরিবর্তন করুন"
+                      >
+                        ✕ পরিবর্তন
+                      </button>
+                    </div>
+                  ) : (
+                    /* Searchable Suggestion Input */
+                    <div className="relative">
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={referralSearchQuery}
+                          onChange={(e) => {
+                            setReferralSearchQuery(e.target.value);
+                            setIsReferralDropdownOpen(true);
+                          }}
+                          onFocus={() => setIsReferralDropdownOpen(true)}
+                          placeholder="নাম, কোড বা ফোন দিয়ে খুঁজুন... (Search referral partner)"
+                          className="w-full pl-8 pr-8 py-2 border border-slate-200 rounded-xl bg-white text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setIsReferralDropdownOpen(!isReferralDropdownOpen)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Dropdown Suggestions List */}
+                      {isReferralDropdownOpen && (
+                        <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl divide-y divide-slate-100">
+                          {/* Option to clear / direct */}
+                          <div
+                            onClick={() => {
+                              handleReferralAgentChange("");
+                              setIsReferralDropdownOpen(false);
+                            }}
+                            className="p-2 hover:bg-slate-50 cursor-pointer flex items-center justify-between text-xs text-slate-600"
+                          >
+                            <span className="font-semibold text-slate-700">কোনো রেফারেন্স নেই (Direct / No Referral)</span>
+                            <span className="text-[10px] text-slate-400">০% কমিশন</span>
+                          </div>
+
+                          {filteredReferralAgents.map((ag) => (
+                            <div
+                              key={ag.id}
+                              onClick={() => {
+                                handleReferralAgentChange(ag.id);
+                                setIsReferralDropdownOpen(false);
+                              }}
+                              className="p-2.5 hover:bg-emerald-50/80 cursor-pointer transition flex items-center justify-between text-xs"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-bold text-slate-800">{ag.full_name}</span>
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                    {ag.agent_code}
+                                  </span>
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-100 text-emerald-800">
+                                    {ag.agent_type}
+                                  </span>
+                                </div>
+                                {ag.phone && (
+                                  <div className="text-[10px] text-slate-500 mt-0.5">📞 {ag.phone}</div>
+                                )}
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                  {ag.commission_rate_percent}%
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+
+                          {filteredReferralAgents.length === 0 && (
+                            <div className="p-3 text-center text-xs text-slate-500">
+                              <p className="mb-2">কোনো রেফারেন্স পার্টনার পাওয়া যায়নি</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQuickAddName(referralSearchQuery.trim());
+                                  setQuickAddError(null);
+                                  setShowQuickAddReferralModal(true);
+                                  setIsReferralDropdownOpen(false);
+                                }}
+                                className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-lg transition cursor-pointer"
+                              >
+                                <UserPlus className="w-3.5 h-3.5" />
+                                <span>&quot;{referralSearchQuery}&quot; দিয়ে নতুন পার্টনার যুক্ত করুন</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -3093,6 +3311,130 @@ function BillingManagementContent() {
                 >
                   {deleteLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {deletePermanentPurge ? "Confirm Permanent Delete & Wipe" : "Confirm Safe Void"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Add Referral Partner Modal */}
+      {showQuickAddReferralModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-5 border border-slate-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">নতুন রেফারেন্স পার্টনার নিবন্ধন</h3>
+                  <p className="text-[11px] text-slate-500">বিলিং সময় তাৎক্ষণিক পার্টনার যুক্ত ও সিলেক্ট করুন</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowQuickAddReferralModal(false);
+                  setQuickAddError(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {quickAddError && (
+              <div className="mb-3 p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{quickAddError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveQuickAddReferral} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  পার্টনারের পূর্ণ নাম <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={quickAddName}
+                  onChange={(e) => setQuickAddName(e.target.value)}
+                  placeholder="যেমন: ডাঃ রফিকুল ইসলাম / ব্রাদার করিম"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    পার্টনারের ধরন <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={quickAddType}
+                    onChange={(e) => setQuickAddType(e.target.value as "DOCTOR" | "COMMUNITY_PC" | "ORGANIZATION" | "STAFF")}
+                    className="w-full px-2.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500 bg-white"
+                  >
+                    <option value="COMMUNITY_PC">কমিউনিটি পিসি (Community PC)</option>
+                    <option value="DOCTOR">রেফারিং ডাক্তার (Doctor)</option>
+                    <option value="ORGANIZATION">প্রতিষ্ঠান (Organization)</option>
+                    <option value="STAFF">হসপিটাল স্টাফ (Staff)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    মোবাইল নম্বর <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={quickAddPhone}
+                    onChange={(e) => setQuickAddPhone(e.target.value)}
+                    placeholder="017xxxxxxxx"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  কমিশন হার % (Commission Rate)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="40"
+                    step="0.5"
+                    value={quickAddCommissionRate}
+                    onChange={(e) => setQuickAddCommissionRate(Number(e.target.value))}
+                    className="w-28 px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <span className="text-xs text-slate-500 font-bold">% (১% থেকে ৪০% এর মধ্যে)</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  disabled={savingQuickAddAgent}
+                  onClick={() => {
+                    setShowQuickAddReferralModal(false);
+                    setQuickAddError(null);
+                  }}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingQuickAddAgent}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  {savingQuickAddAgent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>সংরক্ষণ ও সিলেক্ট করুন</span>
                 </button>
               </div>
             </form>

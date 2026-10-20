@@ -559,9 +559,15 @@ export async function searchReferralAgentsAction(query?: string): Promise<{
       return { success: false, error: "401 Unauthorized" };
     }
     const isSuperAdmin = session.roles.includes("super_admin");
-    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
-    if (!canEdit) {
-      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    const canAccess =
+      isSuperAdmin ||
+      session.permissions.includes("referral.assign") ||
+      session.permissions.includes("referral.view") ||
+      session.permissions.includes("billing.create") ||
+      session.permissions.includes("billing.view") ||
+      session.permissions.includes("referral.manage");
+    if (!canAccess) {
+      return { success: false, error: "403 Forbidden: Missing referral.assign or view permission." };
     }
 
     const supabase = createClient();
@@ -610,7 +616,12 @@ export async function createReferralAgentAction(params: {
       return { success: false, error: "401 Unauthorized" };
     }
     const isSuperAdmin = session.roles.includes("super_admin");
-    const canCreate = isSuperAdmin || session.permissions.includes("referral.create") || session.permissions.includes("referral.manage");
+    const canCreate =
+      isSuperAdmin ||
+      session.permissions.includes("referral.create") ||
+      session.permissions.includes("referral.manage") ||
+      session.permissions.includes("referral.assign") ||
+      session.permissions.includes("billing.create");
     if (!canCreate) {
       return { success: false, error: "403 Forbidden: Missing referral.create permission." };
     }
@@ -1667,9 +1678,16 @@ export async function searchReferralAgentsForBillingAction(query?: string): Prom
       return { success: false, error: "401 Unauthorized" };
     }
     const isSuperAdmin = session.roles.includes("super_admin");
-    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
-    if (!canEdit) {
-      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    const canAccess =
+      isSuperAdmin ||
+      session.permissions.includes("referral.assign") ||
+      session.permissions.includes("referral.view") ||
+      session.permissions.includes("referral.create") ||
+      session.permissions.includes("referral.manage") ||
+      session.permissions.includes("billing.create") ||
+      session.permissions.includes("billing.view");
+    if (!canAccess) {
+      return { success: false, error: "403 Forbidden: Missing referral or billing permission." };
     }
 
     const supabase = createClient();
