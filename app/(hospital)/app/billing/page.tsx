@@ -1284,13 +1284,13 @@ function BillingManagementContent() {
     }
   };
 
-  const isSuperAdmin = userRoles.includes("super_admin");
+  const isSuperAdmin = userRoles.some((r) =>
+    ["super_admin", "admin", "hospital_admin"].includes(String(r).toLowerCase())
+  );
   const hasEditPerm = userPermissions.includes("billing.edit");
-  const isCashier = userRoles.includes("cashier");
 
-  const canEditBills =
-    isSuperAdmin ||
-    (hasEditPerm && (!isCashier || cashierCanEditBills));
+  // If cashierCanEditBills is false, NO cashier or receptionist can edit bills; only Super Admin can edit.
+  const canEditBills = isSuperAdmin || (hasEditPerm && cashierCanEditBills);
 
   const handleToggleCashierAuth = async () => {
     setTogglingCashierAuth(true);

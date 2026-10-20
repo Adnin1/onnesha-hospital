@@ -127,9 +127,13 @@ export function HalfLetterInvoicePrint({
             size: 5.5in 8.5in;
             margin: 3mm 4mm;
           }
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+          html, body {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            -webkit-print-color-adjust: economy !important;
+            print-color-adjust: economy !important;
           }
           .half-letter-invoice-root {
             width: 100% !important;
@@ -138,6 +142,10 @@ export function HalfLetterInvoicePrint({
             height: auto !important;
             padding: 0 !important;
             margin: 0 auto !important;
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            border: none !important;
+            box-shadow: none !important;
             page-break-after: avoid !important;
             break-after: avoid !important;
           }
@@ -215,7 +223,7 @@ export function HalfLetterInvoicePrint({
       </div>
 
       {/* 2. Patient Demographics Block */}
-      <div className="print-patient-block bg-slate-50 border border-slate-200 rounded p-2 text-[10px] mb-2 grid grid-cols-2 gap-2">
+      <div className="print-patient-block bg-slate-50 print:bg-white border border-slate-200 print:border-slate-300 rounded p-2 text-[10px] mb-2 grid grid-cols-2 gap-2">
         <div className="space-y-0.5">
           <div>
             <span className="text-slate-500 font-medium">Patient: </span>
@@ -293,7 +301,7 @@ export function HalfLetterInvoicePrint({
       <div className="mb-2">
         <table className="print-table w-full text-left text-[10px] border-collapse border border-slate-300">
           <thead>
-            <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-[9px] font-bold uppercase">
+            <tr className="bg-slate-100 print:bg-white text-slate-700 border-b border-slate-300 text-[9px] font-bold uppercase">
               <th className="p-1 border-r border-slate-300 w-6 text-center">#</th>
               <th className="p-1 border-r border-slate-300">Service / Item Description</th>
               <th className="p-1 border-r border-slate-300 text-center w-16">Category</th>
@@ -363,14 +371,14 @@ export function HalfLetterInvoicePrint({
             )}
           </div>
 
-          <div className="bg-sky-50 border border-sky-200 rounded p-1.5 mt-1.5">
+          <div className="bg-sky-50 print:bg-white border border-sky-200 print:border-slate-300 rounded p-1.5 mt-1.5">
             <span className="text-[9px] font-bold text-sky-900 block">In Words:</span>
             <p className="text-[9px] font-medium text-sky-950 italic">{wordsStr}</p>
           </div>
         </div>
 
         {/* Right: Calculations */}
-        <div className="col-span-5 bg-slate-50 border border-slate-200 rounded p-1.5 space-y-1">
+        <div className="col-span-5 bg-slate-50 print:bg-white border border-slate-200 print:border-slate-300 rounded p-1.5 space-y-1">
           <div className="flex justify-between text-slate-600">
             <span>Subtotal:</span>
             <span className="font-mono font-medium">৳{subtotal.toFixed(2)}</span>
