@@ -108,6 +108,20 @@ REVOKE ALL ON FUNCTION public.delete_referral_partner_atomic(UUID, UUID) FROM PU
 GRANT EXECUTE ON FUNCTION public.delete_referral_partner_atomic(UUID, UUID) TO authenticated, service_role;
 
 -- 3. Expand Receptionist and Hospital Staff Permissions in public.role_permissions
+INSERT INTO public.permissions (key, module, description)
+VALUES 
+  ('billing.view', 'billing', 'View billing and invoices'),
+  ('billing.create', 'billing', 'Create invoices and receipts'),
+  ('tariffs.view', 'billing', 'View hospital service tariffs and pricing'),
+  ('doctors.view', 'doctors', 'View active doctors and schedules'),
+  ('referral.view', 'referral', 'View referral partners and commissions'),
+  ('referral.assign', 'referral', 'Assign referral partners to patients and invoices'),
+  ('referral.manage', 'referral', 'Manage referral partners and commissions'),
+  ('lab.view', 'lab', 'View lab requests and test catalogs'),
+  ('prescriptions.view', 'pharmacy', 'View patient prescriptions'),
+  ('prescriptions.create', 'pharmacy', 'Create patient prescriptions')
+ON CONFLICT (key) DO NOTHING;
+
 INSERT INTO public.role_permissions (role_id, permission_key)
 SELECT r.id, p.perm
 FROM public.roles r

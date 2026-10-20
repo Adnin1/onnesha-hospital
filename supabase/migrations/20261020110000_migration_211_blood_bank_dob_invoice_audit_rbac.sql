@@ -353,8 +353,8 @@ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'permissions') THEN
     FOREACH v_perm_key IN ARRAY p_permission_keys
     LOOP
-      INSERT INTO public.permissions (key, name, module, description)
-      VALUES (v_perm_key, v_perm_key, split_part(v_perm_key, '.', 1), 'System permission ' || v_perm_key)
+      INSERT INTO public.permissions (key, module, description)
+      VALUES (v_perm_key, split_part(v_perm_key, '.', 1), 'System permission ' || v_perm_key)
       ON CONFLICT (key) DO NOTHING;
     END LOOP;
   END IF;
