@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
+import { getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
 import {
   reportSystemRuntimeIncident,
@@ -83,6 +83,12 @@ export async function getExpenseCategoriesAction(): Promise<
     return { success: false, error: "401 Unauthorized" };
   }
 
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const canView = isSuperAdmin || session.permissions.includes("expenses.view") || session.permissions.includes("expenses.manage");
+  if (!canView) {
+    return { success: false, error: "403 Forbidden: Missing expenses.view permission." };
+  }
+
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -119,12 +125,12 @@ export async function saveExpenseCategoryAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
-  try {
-    await requirePermission("accounting.manage");
-  } catch (err: unknown) {
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const canManage = isSuperAdmin || session.permissions.includes("expenses.manage") || session.permissions.includes("accounting.manage");
+  if (!canManage) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "403 Forbidden: accounting.manage required",
+      error: "403 Forbidden: Missing required expenses.manage permission.",
     };
   }
 
@@ -186,6 +192,12 @@ export async function getExpensesAction(params?: {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "401 Unauthorized" };
+  }
+
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const canView = isSuperAdmin || session.permissions.includes("expenses.view") || session.permissions.includes("expenses.manage");
+  if (!canView) {
+    return { success: false, error: "403 Forbidden: Missing expenses.view permission." };
   }
 
   try {
@@ -254,17 +266,13 @@ export async function createExpenseAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
-  try {
-    await requirePermission("accounting.post");
-  } catch {
-    try {
-      await requirePermission("billing.create");
-    } catch (err: unknown) {
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : "403 Forbidden: accounting.post or billing.create required",
-      };
-    }
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const canCreate = isSuperAdmin || session.permissions.includes("expenses.create") || session.permissions.includes("expenses.manage");
+  if (!canCreate) {
+    return {
+      success: false,
+      error: "403 Forbidden: Missing required expenses.create or expenses.manage permission.",
+    };
   }
 
   if (!params.title || params.title.trim().length < 2) {
@@ -368,6 +376,12 @@ export async function getExpenseAnalyticsAction(params?: {
     return { success: false, error: "401 Unauthorized" };
   }
 
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const canView = isSuperAdmin || session.permissions.includes("expenses.view") || session.permissions.includes("expenses.manage");
+  if (!canView) {
+    return { success: false, error: "403 Forbidden: Missing expenses.view permission." };
+  }
+
   try {
     const supabase = await createClient();
 
@@ -449,10 +463,10 @@ export async function voidExpenseAction(
     return { success: false, error: "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।" };
   }
 
-  try {
-    await requirePermission("accounting.manage");
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "403 Forbidden: accounting.manage required";
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const canVoid = isSuperAdmin || session.permissions.includes("expenses.delete") || session.permissions.includes("expenses.manage");
+  if (!canVoid) {
+    const errorMsg = "403 Forbidden: ব্যয় ভাউচার ভয়েড করতে expenses.delete অথবা expenses.manage অনুমতি প্রয়োজন।";
     await reportSystemRuntimeIncident({
       organizationId: session.organizationId,
       module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
@@ -461,7 +475,7 @@ export async function voidExpenseAction(
       errorCode: "INSUFFICIENT_PERMISSION",
       title: "ভাউচার ভয়েড করায় অননুমোদিত অ্যাক্সেস",
       reason: errorMsg,
-      recommendation: "হিসাবরক্ষণ বা অ্যাডমিন অনুমতি নিয়ে চেষ্টা করুন।",
+      recommendation: "সুপার অ্যাডমিন অনুমতি নিয়ে চেষ্টা করুন।",
     });
     return {
       success: false,
@@ -548,10 +562,10 @@ export async function deleteExpenseAction(params: {
     return { success: false, error: "401 Unauthorized: অনুগ্রহ করে প্রথমে হাসপাতালে লগইন করুন।" };
   }
 
-  try {
-    await requirePermission("accounting.manage");
-  } catch {
-    const errorMsg = "403 Forbidden: ব্যয় ভাউচার মুছতে বা ভয়েড করতে accounting.manage অনুমতি প্রয়োজন।";
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const canDelete = isSuperAdmin || session.permissions.includes("expenses.delete") || session.permissions.includes("expenses.manage");
+  if (!canDelete) {
+    const errorMsg = "403 Forbidden: ব্যয় ভাউচার মুছতে বা ভয়েড করতে expenses.delete অথবা expenses.manage অনুমতি প্রয়োজন।";
     await reportSystemRuntimeIncident({
       organizationId: session.organizationId,
       module: "হাসপাতাল ব্যয় ও ভাউচার (Hospital Expenses)",
@@ -560,7 +574,7 @@ export async function deleteExpenseAction(params: {
       errorCode: "INSUFFICIENT_PERMISSION",
       title: "ভাউচার মোছায় অননুমোদিত অ্যাক্সেস (403 Forbidden)",
       reason: errorMsg,
-      recommendation: "সুপার অ্যাডমিন বা হিসাবরক্ষণ অ্যাডমিন প্রিভিলেজ নিয়ে চেষ্টা করুন।",
+      recommendation: "সুপার অ্যাডমিন অনুমতি নিয়ে চেষ্টা করুন।",
     });
     return { success: false, error: errorMsg };
   }
@@ -657,12 +671,12 @@ export async function updateExpenseAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
-  try {
-    await requirePermission("accounting.manage");
-  } catch (err: unknown) {
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const canEdit = isSuperAdmin || session.permissions.includes("expenses.edit") || session.permissions.includes("expenses.manage");
+  if (!canEdit) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "403 Forbidden: accounting.manage required",
+      error: "403 Forbidden: Missing required expenses.edit permission.",
     };
   }
 
@@ -754,12 +768,12 @@ export async function archiveExpenseCategoryAction(
     return { success: false, error: "401 Unauthorized" };
   }
 
-  try {
-    await requirePermission("accounting.manage");
-  } catch (err: unknown) {
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const canManage = isSuperAdmin || session.permissions.includes("expenses.manage") || session.permissions.includes("accounting.manage");
+  if (!canManage) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "403 Forbidden: accounting.manage required",
+      error: "403 Forbidden: Missing required expenses.manage permission.",
     };
   }
 
@@ -806,12 +820,12 @@ export async function generateMonthlyRecurringExpensesAction(
     return { success: false, error: "401 Unauthorized" };
   }
 
-  try {
-    await requirePermission("accounting.manage");
-  } catch (err: unknown) {
+  const isSuperAdmin = session.roles.includes("super_admin");
+  const canManage = isSuperAdmin || session.permissions.includes("expenses.manage") || session.permissions.includes("accounting.manage");
+  if (!canManage) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "403 Forbidden: accounting.manage required",
+      error: "403 Forbidden: Missing required expenses.manage permission.",
     };
   }
 

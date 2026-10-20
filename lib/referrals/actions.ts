@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { getCurrentUserSession } from "@/lib/auth/session";
 import {
   reportSystemRuntimeIncident,
   resolveSystemRuntimeIncident,
@@ -191,6 +192,16 @@ export async function getReferralAgentsAction(): Promise<{
   error?: string;
 }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canView = isSuperAdmin || session.permissions.includes("referral.view") || session.permissions.includes("referral.manage");
+    if (!canView) {
+      return { success: false, error: "403 Forbidden: Missing referral.view permission." };
+    }
+
     const supabase = createClient();
     const [agentsRes, settlementsRes, expensesRes] = await Promise.all([
       supabase.from("referral_agents").select("*").is("archived_at", null).order("full_name", { ascending: true }),
@@ -252,6 +263,16 @@ export async function getReferralAgentByIdAction(agentId: string): Promise<{
   error?: string;
 }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     const { data: agent, error: aErr } = await supabase
       .from("referral_agents")
@@ -533,6 +554,16 @@ export async function searchReferralAgentsAction(query?: string): Promise<{
   error?: string;
 }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Authentication required");
@@ -574,6 +605,16 @@ export async function createReferralAgentAction(params: {
   agent_code?: string; // Kept for backward compatibility
 }): Promise<{ success: boolean; data?: ReferralAgent; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canCreate = isSuperAdmin || session.permissions.includes("referral.create") || session.permissions.includes("referral.manage");
+    if (!canCreate) {
+      return { success: false, error: "403 Forbidden: Missing referral.create permission." };
+    }
+
     if (!params.full_name?.trim()) return { success: false, error: "Full name required" };
     if (!params.phone?.trim()) return { success: false, error: "Phone number required" };
 
@@ -696,6 +737,16 @@ export async function updateReferralAgentAction(params: {
   notes?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     const updateData: Record<string, unknown> = {
       full_name: params.fullName.trim(),
@@ -742,6 +793,16 @@ export async function updateReferralAgentAction(params: {
 
 export async function deactivateReferralAgentAction(agentId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     const updatePayload: Record<string, unknown> = {
       is_active: false,
@@ -774,6 +835,16 @@ export async function deactivateReferralAgentAction(agentId: string): Promise<{ 
 
 export async function deleteReferralAgentAction(agentId: string): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canDelete = isSuperAdmin || session.permissions.includes("referral.delete") || session.permissions.includes("referral.manage");
+    if (!canDelete) {
+      return { success: false, error: "403 Forbidden: Missing referral.delete permission." };
+    }
+
     const supabase = createClient();
 
     // 1. Try atomic delete/archive RPC first
@@ -844,6 +915,16 @@ export async function getReferralCommissionsAction(filters?: {
   limit?: number;
 }): Promise<{ success: boolean; data?: ReferralCommission[]; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     let query = supabase
       .from("referral_commissions")
@@ -876,6 +957,16 @@ export async function settleReferralCommissionsAction(params: {
   notes?: string;
 }): Promise<{ success: boolean; settlementNumber?: string; netPaidAmount?: number; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canSettle = isSuperAdmin || session.permissions.includes("referral.commission.pay") || session.permissions.includes("referral.manage");
+    if (!canSettle) {
+      return { success: false, error: "403 Forbidden: Missing referral.commission.pay permission." };
+    }
+
     if (!params.commissionIds || params.commissionIds.length === 0) {
       return { success: false, error: "Please select at least one pending commission to settle." };
     }
@@ -1226,6 +1317,16 @@ export async function getReferralSettlementsAction(agentId?: string): Promise<{
   error?: string;
 }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     let query = supabase
       .from("referral_commission_settlements")
@@ -1252,6 +1353,16 @@ export async function getReferralSummaryMetricsAction(): Promise<{
   error?: string;
 }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     const [agentsRes, commsRes, attribsRes, settlementsRes, expensesRes] = await Promise.all([
       supabase.from("referral_agents").select("id, is_active, total_commission_settled").is("archived_at", null),
@@ -1312,6 +1423,16 @@ export async function approveCommissionAction(
   notes?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Authentication required");
@@ -1541,6 +1662,16 @@ export async function searchReferralAgentsForBillingAction(query?: string): Prom
   error?: string;
 }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Authentication required");
@@ -1708,6 +1839,16 @@ export async function getReferralPerformanceAnalyticsAction(params?: {
   error?: string;
 }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Authentication required");
@@ -1745,6 +1886,16 @@ export async function getReferralAgentsSafeDirectoryAction(query?: string): Prom
   error?: string;
 }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
+    if (!canEdit) {
+      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    }
+
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Authentication required");

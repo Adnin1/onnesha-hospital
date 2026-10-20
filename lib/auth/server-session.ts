@@ -138,12 +138,14 @@ export async function getServerUserSession(): Promise<ServerUserSessionState> {
       }
     }
 
-    // 4b. Default role permissions merge
-    for (const role of roles) {
-      const rolePerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[role];
-      if (rolePerms) {
-        for (const p of rolePerms) {
-          permissionSet.add(p);
+    // 4b. Fallback to default role permissions ONLY if no permissions were defined in database
+    if (permissionSet.size === 0) {
+      for (const role of roles) {
+        const rolePerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[role];
+        if (rolePerms) {
+          for (const p of rolePerms) {
+            permissionSet.add(p);
+          }
         }
       }
     }

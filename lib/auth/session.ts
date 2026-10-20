@@ -256,13 +256,6 @@ export async function hasPermission(permissionKey: string): Promise<boolean> {
     return true;
   }
 
-  // Admin and Hospital Administrator: automatic permission resolution for operational actions,
-  // while explicitly restricting high-risk root governance (e.g. settings.manage_roles) to super_admin.
-  const isAdmin = session.roles.includes("hospital_administrator") || session.roles.includes("admin");
-  if (isAdmin && permissionKey !== "settings.manage_roles") {
-    return true;
-  }
-
   // Explicit permission key or wildcard present in loaded organization permissions
   if (
     session.permissions.includes("*") ||
@@ -271,11 +264,26 @@ export async function hasPermission(permissionKey: string): Promise<boolean> {
     return true;
   }
 
-  // Explicit fallback check against canonical DEFAULT_ROLE_PERMISSIONS
-  for (const role of session.roles) {
-    const rolePerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[role];
-    if (rolePerms && rolePerms.includes(permissionKey)) {
-      return true;
+  // Hospital Expenses and Referral modules strictly require super_admin OR explicit permission in session.permissions
+  const isProtectedModule = permissionKey.startsWith("expenses.") || permissionKey.startsWith("referral.");
+  if (isProtectedModule) {
+    return false;
+  }
+
+  // Admin and Hospital Administrator: automatic permission resolution for other standard operational actions,
+  // while explicitly restricting root governance (settings.manage_roles) and protected modules to super_admin.
+  const isAdmin = session.roles.includes("hospital_administrator") || session.roles.includes("admin");
+  if (isAdmin && permissionKey !== "settings.manage_roles") {
+    return true;
+  }
+
+  // Fallback to DEFAULT_ROLE_PERMISSIONS ONLY if database has no permissions configured yet
+  if (session.permissions.length === 0) {
+    for (const role of session.roles) {
+      const rolePerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[role];
+      if (rolePerms && rolePerms.includes(permissionKey)) {
+        return true;
+      }
     }
   }
 

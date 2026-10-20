@@ -22,7 +22,11 @@ import {
   Calendar,
   RefreshCw,
   Edit2,
+  ShieldAlert,
 } from "lucide-react";
+import Link from "next/link";
+import { getCurrentUserSession } from "@/lib/auth/session";
+import { DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
 import {
   ReferralAgent,
   ReferralCommission,
@@ -70,6 +74,11 @@ export default function ReferralManagementPage() {
   const [settlements, setSettlements] = useState<ReferralSettlement[]>([]);
   const [metrics, setMetrics] = useState<ReferralSummaryMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // RBAC Permission State
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -205,6 +214,21 @@ export default function ReferralManagementPage() {
   const refreshAll = useCallback(async () => {
     setLoading(true);
     try {
+      const session = await getCurrentUserSession();
+      const superAdmin = session.roles.includes("super_admin");
+      const perms = session.permissions.length > 0
+        ? session.permissions
+        : (session.roles[0] ? (DEFAULT_ROLE_PERMISSIONS[session.roles[0]] || []) : []);
+      setIsSuperAdmin(superAdmin);
+      setUserPermissions(perms);
+
+      const canView = superAdmin || perms.includes("referral.view") || perms.includes("referral.manage");
+      if (!canView) {
+        setAccessDenied(true);
+        setLoading(false);
+        return;
+      }
+
       const [agentsRes, commsRes, settleRes, metricsRes] = await Promise.all([
         getReferralAgentsAction(),
         getReferralCommissionsAction(),
@@ -517,6 +541,39 @@ export default function ReferralManagementPage() {
         agents.reduce((sum, a) => sum + Number(a.total_commission_settled || 0), 0)
       );
 
+  const canCreate = isSuperAdmin || userPermissions.includes("referral.create") || userPermissions.includes("referral.manage");
+  const canEdit = isSuperAdmin || userPermissions.includes("referral.edit") || userPermissions.includes("referral.manage");
+  const canDelete = isSuperAdmin || userPermissions.includes("referral.delete") || userPermissions.includes("referral.manage");
+  const canSettle = isSuperAdmin || userPermissions.includes("referral.commission.pay") || userPermissions.includes("referral.manage");
+
+  if (accessDenied) {
+    return (
+      <div className="bg-white rounded-2xl border border-rose-200 p-8 sm:p-12 text-center max-w-xl mx-auto my-12 shadow-sm space-y-4">
+        <div className="w-16 h-16 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center mx-auto text-rose-600">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">সংরক্ষিত মডিউল (Access Restricted)</h2>
+        <p className="text-sm text-slate-600">
+          আপনার ব্যবহারকারী অ্যাকাউন্টে <strong>রেফারেল পার্টনার ও কমিশন (Referral & Commission)</strong> দেখার অনুমতি নেই।
+        </p>
+        <div className="text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-left space-y-1">
+          <p className="font-semibold text-slate-700">🔒 নিরাপত্তা নীতি:</p>
+          <p>
+            কেবল <strong>Super Admin</strong> সেটিংস (Settings &rarr; RBAC Matrix) থেকে আপনার রোলকে <code>referral.view</code> অথবা <code>referral.manage</code> অনুমতি দিলে এই মডিউলটি ব্যবহারের এক্সেস পাওয়া যাবে।
+          </p>
+        </div>
+        <div className="pt-2">
+          <Link
+            href="/app/dashboard"
+            className="inline-flex items-center text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 px-5 py-2.5 rounded-xl transition cursor-pointer"
+          >
+            ড্যাশবোর্ডে ফিরে যান
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Alert Banners */}
@@ -563,13 +620,15 @@ export default function ReferralManagementPage() {
             Authoritative tracking of referring doctors, community agents, discount-aware net invoice commissions (1%–40%), immutable financial snapshots, and balanced treasury payouts.
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-xs transition"
-        >
-          <Plus className="w-4 h-4 mr-1.5" />
-          Register Referral Partner
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-xs transition cursor-pointer"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Register Referral Partner
+          </button>
+        )}
       </div>
 
       {/* KPI Summary Cards */}
@@ -804,30 +863,36 @@ export default function ReferralManagementPage() {
                           >
                             প্রোফাইল
                           </button>
-                          <button
-                            onClick={() => handleOpenEditPartner(agent)}
-                            className="px-2.5 py-1 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition border border-amber-200"
-                            title="পার্টনার প্রোফাইল সংশোধন করুন"
-                          >
-                            এডিট
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleOpenAgentDetail(agent.id);
-                              setShowDiscretionaryPayoutModal(true);
-                            }}
-                            className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md transition border border-emerald-200"
-                            title="কর্তৃপক্ষ কমিশন প্রদান"
-                          >
-                            কমিশন প্রদান
-                          </button>
-                          <button
-                            onClick={() => handleDeactivate(agent)}
-                            className="px-2 py-1 text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-md transition border border-rose-200"
-                            title="পার্টনার মুছে ফেলুন বা নিষ্ক্রিয় করুন"
-                          >
-                            মুছে ফেলুন
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => handleOpenEditPartner(agent)}
+                              className="px-2.5 py-1 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition border border-amber-200 cursor-pointer"
+                              title="পার্টনার প্রোফাইল সংশোধন করুন"
+                            >
+                              এডিট
+                            </button>
+                          )}
+                          {canSettle && (
+                            <button
+                              onClick={() => {
+                                handleOpenAgentDetail(agent.id);
+                                setShowDiscretionaryPayoutModal(true);
+                              }}
+                              className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md transition border border-emerald-200 cursor-pointer"
+                              title="কর্তৃপক্ষ কমিশন প্রদান"
+                            >
+                              কমিশন প্রদান
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDeactivate(agent)}
+                              className="px-2 py-1 text-[11px] font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-md transition border border-rose-200 cursor-pointer"
+                              title="পার্টনার মুছে ফেলুন বা নিষ্ক্রিয় করুন"
+                            >
+                              মুছে ফেলুন
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
@@ -1880,29 +1945,35 @@ export default function ReferralManagementPage() {
                   Phone: {agentDetailData.agent.phone} {agentDetailData.agent.email && `| Email: ${agentDetailData.agent.email}`}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                  <button
-                    onClick={() => handleOpenEditPartner(agentDetailData.agent)}
-                    className="px-2.5 py-1 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-lg transition border border-amber-300 flex items-center gap-1 shadow-2xs"
-                    title="প্রোফাইল সংশোধন করুন"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    প্রোফাইল এডিট
-                  </button>
-                  <button
-                    onClick={() => setShowDiscretionaryPayoutModal(true)}
-                    className="px-2.5 py-1 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-300 flex items-center gap-1 shadow-2xs"
-                    title="কমিশন পরিশোধ করুন"
-                  >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    কমিশন প্রদান
-                  </button>
-                  <button
-                    onClick={() => handleDeactivate(agentDetailData.agent)}
-                    className="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition border border-rose-300 flex items-center gap-1 shadow-2xs"
-                    title="পার্টনার মুছে ফেলুন বা নিষ্ক্রিয় করুন"
-                  >
-                    মুছে ফেলুন / Archive
-                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => handleOpenEditPartner(agentDetailData.agent)}
+                      className="px-2.5 py-1 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-lg transition border border-amber-300 flex items-center gap-1 shadow-2xs cursor-pointer"
+                      title="প্রোফাইল সংশোধন করুন"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      প্রোফাইল এডিট
+                    </button>
+                  )}
+                  {canSettle && (
+                    <button
+                      onClick={() => setShowDiscretionaryPayoutModal(true)}
+                      className="px-2.5 py-1 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-300 flex items-center gap-1 shadow-2xs cursor-pointer"
+                      title="কমিশন পরিশোধ করুন"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      কমিশন প্রদান
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDeactivate(agentDetailData.agent)}
+                      className="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition border border-rose-300 flex items-center gap-1 shadow-2xs cursor-pointer"
+                      title="পার্টনার মুছে ফেলুন বা নিষ্ক্রিয় করুন"
+                    >
+                      মুছে ফেলুন / Archive
+                    </button>
+                  )}
                 </div>
               </div>
               <button

@@ -17,8 +17,25 @@ import {
   Cpu,
   Layers,
   Activity,
+  DollarSign,
+  Share2,
+  Receipt,
+  Bed,
+  Droplet,
+  Microscope,
+  Pill,
+  Stethoscope,
+  Settings,
+  RotateCcw,
+  CheckSquare,
+  Square,
+  Lock,
 } from "lucide-react";
-import { PERMISSIONS, DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  PERMISSION_MODULE_DEFINITIONS,
+  PermissionModuleGroup,
+} from "@/lib/permissions";
 import { RoleType } from "@/types";
 import { saveRolePermissionsAction, getOrganizationRolePermissionsAction } from "@/lib/staff/actions";
 import { getAuditLogsAction, AuditLogRecord } from "@/lib/audit/logger";
@@ -225,6 +242,9 @@ export default function SettingsAndAuditPage() {
     setTimeout(() => setSavedToast(""), 4000);
   };
 
+  const [rbacSearch, setRbacSearch] = useState("");
+  const [selectedModuleFilter, setSelectedModuleFilter] = useState("ALL");
+
   const togglePermission = (permCode: string) => {
     const currentList = rolePerms[selectedRoleForEdit] || [];
     const exists = currentList.includes(permCode);
@@ -239,25 +259,100 @@ export default function SettingsAndAuditPage() {
     });
   };
 
+  const toggleModulePermissions = (moduleGroup: PermissionModuleGroup, grant: boolean) => {
+    const currentList = rolePerms[selectedRoleForEdit] || [];
+    const moduleKeys = moduleGroup.permissions.map((p) => p.key);
+    let updated: string[];
+    if (grant) {
+      const set = new Set([...currentList, ...moduleKeys]);
+      updated = Array.from(set);
+    } else {
+      updated = currentList.filter((k) => !moduleKeys.includes(k));
+    }
+    setRolePerms({
+      ...rolePerms,
+      [selectedRoleForEdit]: updated,
+    });
+  };
+
+  const handleResetRoleToDefault = () => {
+    const defaultPerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[selectedRoleForEdit] || [];
+    setRolePerms({
+      ...rolePerms,
+      [selectedRoleForEdit]: defaultPerms,
+    });
+    setSavedToast(`রোল '${selectedRoleForEdit}'-এর পারমিশন অফিসিয়াল ডিফল্ট অবস্থায় রিসেট করা হয়েছে (ডাটাবেসে সেভ করতে সংরক্ষণ বাটনে চাপুন)।`);
+    setTimeout(() => setSavedToast(""), 4000);
+  };
+
+  const handleSelectAllRolePerms = () => {
+    const allKeys = PERMISSION_MODULE_DEFINITIONS.flatMap((m) => m.permissions.map((p) => p.key));
+    setRolePerms({
+      ...rolePerms,
+      [selectedRoleForEdit]: Array.from(new Set(allKeys)),
+    });
+  };
+
+  const handleDeselectAllRolePerms = () => {
+    setRolePerms({
+      ...rolePerms,
+      [selectedRoleForEdit]: [],
+    });
+  };
+
   const handleSavePerms = async () => {
     setSavingPerms(true);
     try {
       const permsToSave = rolePerms[selectedRoleForEdit] || [];
       const res = await saveRolePermissionsAction(selectedRoleForEdit, permsToSave);
       if (res.success) {
-        setSavedToast(`Permissions for role "${selectedRoleForEdit}" successfully updated and saved in PostgreSQL database (${res.count || permsToSave.length} permissions)!`);
+        setSavedToast(`রোল "${selectedRoleForEdit}"-এর ${res.count || permsToSave.length}টি পারমিশন সফলভাবে PostgreSQL ডাটাবেসে সংরক্ষিত ও কার্যকর হয়েছে!`);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("ohms:session-updated"));
+        }
       } else {
-        setSavedToast(`Failed to save permissions: ${res.error || "Unknown error"}`);
+        setSavedToast(`পারমিশন সংরক্ষণ ব্যর্থ হয়েছে: ${res.error || "Unknown error"}`);
       }
     } catch (err: unknown) {
-      setSavedToast(`Error saving permissions: ${err instanceof Error ? err.message : "Failed"}`);
+      setSavedToast(`ত্রুটি: ${err instanceof Error ? err.message : "সংরক্ষণ ব্যর্থ"}`);
     } finally {
       setSavingPerms(false);
       setTimeout(() => setSavedToast(""), 5000);
     }
   };
 
-  const allAvailablePermissions = Object.entries(PERMISSIONS);
+  const getModuleIcon = (iconName: string) => {
+    switch (iconName) {
+      case "DollarSign": return <DollarSign className="w-5 h-5 text-rose-600" />;
+      case "Share2": return <Share2 className="w-5 h-5 text-sky-600" />;
+      case "Receipt": return <Receipt className="w-5 h-5 text-emerald-600" />;
+      case "Users": return <Users className="w-5 h-5 text-blue-600" />;
+      case "Bed": return <Bed className="w-5 h-5 text-indigo-600" />;
+      case "Droplet": return <Droplet className="w-5 h-5 text-red-600" />;
+      case "Microscope": return <Microscope className="w-5 h-5 text-cyan-600" />;
+      case "Pill": return <Pill className="w-5 h-5 text-amber-600" />;
+      case "Stethoscope": return <Stethoscope className="w-5 h-5 text-teal-600" />;
+      case "Settings": return <Settings className="w-5 h-5 text-slate-700" />;
+      default: return <Layers className="w-5 h-5 text-sky-600" />;
+    }
+  };
+
+  const getActionBadge = (action: string) => {
+    switch (action) {
+      case "VIEW":
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-sky-50 text-sky-700 border border-sky-200">দেখা / View</span>;
+      case "CREATE":
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">নতুন / Add</span>;
+      case "EDIT":
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">এডিট / Modify</span>;
+      case "DELETE":
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">মুছে ফেলা / Delete</span>;
+      case "MANAGE":
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">নিয়ন্ত্রণ / Manage</span>;
+      default:
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">{action}</span>;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -345,83 +440,313 @@ export default function SettingsAndAuditPage() {
       {/* TAB 1: GRANULAR RBAC PERMISSIONS CONFIGURATOR */}
       {activeTab === "rbac" && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
+          {/* Header & Role Selector */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-6 border-b border-slate-200">
             <div>
-              <h2 className="text-base font-bold text-slate-900 flex items-center">
-                <ShieldCheck className="w-4 h-4 mr-2 text-sky-600" />
-                Granular Role-Based Access Control (RBAC Matrix)
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Grant or revoke permissions per role dynamically (e.g. Jewel Role = Accountant, Apon Role = Receptionist).
+              <div className="flex items-center space-x-2">
+                <ShieldCheck className="w-6 h-6 text-sky-600" />
+                <h2 className="text-lg font-black text-slate-900">
+                  Granular Role-Based Access Control (RBAC Matrix)
+                </h2>
+              </div>
+              <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
+                সিস্টেমের যেকোনো রোলের (যেমন: জুয়েল - একাউন্ট্যান্ট, আপন - রিসিপশনিস্ট) জন্য প্রতি মডিউলে দেখা (View), তৈরি (Create), এডিট (Edit), ডিলিট (Delete) বা পূর্ণ নিয়ন্ত্রণ (Manage) আলাদা আলাদাভাবে সিলেক্ট বা প্রত্যাহার করুন। পরিবর্তন সাথে সাথে PostgreSQL ডাটাবেসে সংরক্ষিত ও কার্যকর হবে।
               </p>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <span className="text-xs font-semibold text-slate-700">Select Role to Edit:</span>
+            {/* Role Picker Card */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200 w-full lg:w-auto">
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-bold text-slate-700 whitespace-nowrap">সম্পাদনা করার রোল:</span>
+              </div>
               <select
                 value={selectedRoleForEdit}
                 onChange={(e) => setSelectedRoleForEdit(e.target.value as RoleType)}
-                className="p-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 font-bold text-slate-800"
+                className="w-full sm:w-auto px-3 py-2 border border-sky-300 rounded-xl text-xs bg-white font-bold text-slate-900 shadow-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
               >
-                <option value="super_admin">Super Admin (Full System Access)</option>
-                <option value="hospital_administrator">Hospital Administrator</option>
-                <option value="accountant">Accountant / Cashier (e.g. Jewel)</option>
-                <option value="receptionist">Receptionist / Front Desk (e.g. Apon)</option>
-                <option value="doctor">Doctor / Consultant</option>
-                <option value="nurse">Nurse / In-Charge</option>
-                <option value="lab_technologist">Lab Technologist / Pathologist</option>
-                <option value="pharmacist">Pharmacist</option>
-                <option value="hr_payroll">HR & Payroll Manager</option>
+                <option value="super_admin">সুপার এডমিন (Super Admin - পূর্ণ সিস্টেম অ্যাক্সেস)</option>
+                <option value="hospital_administrator">হাসপাতাল প্রশাসক (Hospital Administrator)</option>
+                <option value="accountant">অ্যাকাউন্ট্যান্ট ও ক্যাশিয়ার (Accountant / Cashier - উদাঃ জুয়েল)</option>
+                <option value="receptionist">রিসিপশনিস্ট ও ফ্রন্ট ডেস্ক (Receptionist / Front Desk - উদাঃ আপন)</option>
+                <option value="doctor">ডাক্তার ও কনসালট্যান্ট (Doctor / Consultant)</option>
+                <option value="nurse">নার্স ও ইন-চার্জ (Nurse / In-Charge)</option>
+                <option value="lab_technologist">ল্যাব টেকনোলজিস্ট ও প্যাথলজিস্ট (Lab Technologist)</option>
+                <option value="pharmacist">ফার্মাসিস্ট (Pharmacist)</option>
+                <option value="hr_payroll">এইচআর ও পে-রোল ম্যানেজার (HR & Payroll)</option>
               </select>
             </div>
           </div>
 
-          {/* Permissions Checkbox Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {allAvailablePermissions.map(([, permCode]) => {
-              const isChecked = rolePerms[selectedRoleForEdit]?.includes(permCode);
+          {/* Super Admin Notice if selected */}
+          {selectedRoleForEdit === "super_admin" && (
+            <div className="p-4 bg-sky-50 border border-sky-200 text-sky-950 rounded-xl text-xs leading-relaxed flex items-start space-x-3">
+              <ShieldCheck className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">সুপার এডমিন সিকিউরিটি পলিসি:</p>
+                <p className="text-slate-600 mt-0.5">
+                  সুপার এডমিন (Super Admin) রোলটি ডাটাবেস লেভেল ও RLS পলিসিতে সর্বময় সুরক্ষাপ্রাপ্ত। সাধারণ স্টাফ ও ইউজারদের (রিসিপশন, ক্যাশিয়ার, ইত্যাদি) অ্যাক্সেস নিয়ন্ত্রণ করতে উপরের ড্রপডাউন থেকে নির্দিষ্ট রোলটি সিলেক্ট করে পারমিশন সংরক্ষণ করুন।
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Role Summary & Bulk Actions Toolbar */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div className="flex items-center space-x-3 text-xs">
+              <span className="font-bold text-slate-800">
+                নির্বাচিত রোল: <span className="text-sky-700 underline uppercase">{selectedRoleForEdit}</span>
+              </span>
+              <span className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg font-bold text-slate-700">
+                সক্রিয় পারমিশন: <span className="text-emerald-700 font-black">{rolePerms[selectedRoleForEdit]?.length || 0}</span> টি
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSelectAllRolePerms}
+                className="inline-flex items-center px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition cursor-pointer"
+              >
+                <CheckSquare className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                সব নির্বাচন (Select All)
+              </button>
+              <button
+                type="button"
+                onClick={handleDeselectAllRolePerms}
+                className="inline-flex items-center px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition cursor-pointer"
+              >
+                <Square className="w-3.5 h-3.5 mr-1 text-rose-500" />
+                সব বাতিল (Clear All)
+              </button>
+              <button
+                type="button"
+                onClick={handleResetRoleToDefault}
+                className="inline-flex items-center px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1 text-sky-600" />
+                ডিফল্টে রিসেট (Reset Default)
+              </button>
+            </div>
+          </div>
+
+          {/* Search and Module Filter Strip */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="পারমিশনের নাম, মডিউল বা বিবরণ দিয়ে খুঁজুন (Search permissions...)"
+                  value={rbacSearch}
+                  onChange={(e) => setRbacSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Module Filter Pills */}
+            <div className="flex flex-wrap gap-1.5 pb-2 border-b border-slate-100">
+              <button
+                type="button"
+                onClick={() => setSelectedModuleFilter("ALL")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  selectedModuleFilter === "ALL"
+                    ? "bg-sky-600 text-white shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                }`}
+              >
+                সব মডিউল ({PERMISSION_MODULE_DEFINITIONS.length})
+              </button>
+              {PERMISSION_MODULE_DEFINITIONS.map((mod) => {
+                const isSelected = selectedModuleFilter === mod.id;
+                const activeCount = mod.permissions.filter((p) =>
+                  rolePerms[selectedRoleForEdit]?.includes(p.key)
+                ).length;
+                return (
+                  <button
+                    key={mod.id}
+                    type="button"
+                    onClick={() => setSelectedModuleFilter(mod.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer ${
+                      isSelected
+                        ? "bg-slate-900 text-white shadow-xs font-bold"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    <span>{mod.banglaTitle}</span>
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                        activeCount > 0
+                          ? isSelected
+                            ? "bg-sky-500 text-white"
+                            : "bg-emerald-100 text-emerald-800"
+                          : "bg-slate-200 text-slate-600"
+                      }`}
+                    >
+                      {activeCount}/{mod.permissions.length}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Module-by-Module Granular Cards */}
+          <div className="space-y-6">
+            {PERMISSION_MODULE_DEFINITIONS.filter((mod) => {
+              if (selectedModuleFilter !== "ALL" && mod.id !== selectedModuleFilter) {
+                return false;
+              }
+              if (rbacSearch.trim()) {
+                const q = rbacSearch.toLowerCase();
+                const titleMatch =
+                  mod.title.toLowerCase().includes(q) ||
+                  mod.banglaTitle.toLowerCase().includes(q);
+                const permMatch = mod.permissions.some(
+                  (p) =>
+                    p.name.toLowerCase().includes(q) ||
+                    p.banglaLabel.toLowerCase().includes(q) ||
+                    p.key.toLowerCase().includes(q) ||
+                    p.description.toLowerCase().includes(q)
+                );
+                return titleMatch || permMatch;
+              }
+              return true;
+            }).map((mod) => {
+              const activeCount = mod.permissions.filter((p) =>
+                rolePerms[selectedRoleForEdit]?.includes(p.key)
+              ).length;
+              const allChecked = activeCount === mod.permissions.length;
 
               return (
-                <label
-                  key={permCode}
-                  className={`p-3 rounded-xl border text-xs cursor-pointer transition flex items-start space-x-2.5 ${
-                    isChecked
-                      ? "bg-sky-50/70 border-sky-300 text-sky-950 font-semibold"
-                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-white"
-                  }`}
+                <div
+                  key={mod.id}
+                  className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden transition hover:border-slate-300"
                 >
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => togglePermission(permCode)}
-                    className="mt-0.5 text-sky-600 focus:ring-sky-500 rounded"
-                  />
-                  <div>
-                    <span className="font-mono text-[11px] block">{permCode}</span>
-                    <span className="text-[10px] text-slate-500 font-normal">
-                      Permission flag for {permCode.split(".")[0]} module
-                    </span>
+                  {/* Module Card Header */}
+                  <div className="bg-slate-50/80 px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-white rounded-xl border border-slate-200 shadow-xs">
+                        {getModuleIcon(mod.iconName)}
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="text-sm font-black text-slate-900">{mod.banglaTitle}</h3>
+                          <span className="text-[11px] font-semibold text-slate-500">
+                            ({mod.title})
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{mod.description}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
+                          activeCount === mod.permissions.length
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                            : activeCount > 0
+                            ? "bg-sky-50 text-sky-800 border-sky-300"
+                            : "bg-slate-100 text-slate-500 border-slate-200"
+                        }`}
+                      >
+                        {activeCount} / {mod.permissions.length} সক্রিয়
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleModulePermissions(mod, !allChecked)}
+                        className={`text-xs font-bold px-3 py-1 rounded-lg border transition cursor-pointer ${
+                          allChecked
+                            ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200"
+                            : "bg-white hover:bg-slate-100 text-slate-700 border-slate-300"
+                        }`}
+                      >
+                        {allChecked ? "সব বাতিল" : "মডিউলের সব দিন"}
+                      </button>
+                    </div>
                   </div>
-                </label>
+
+                  {/* Permissions Action Grid inside Module */}
+                  <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-3.5 bg-slate-50/20">
+                    {mod.permissions.map((p) => {
+                      const isChecked = rolePerms[selectedRoleForEdit]?.includes(p.key);
+                      const isHighRisk = p.action === "DELETE" || p.action === "MANAGE";
+
+                      return (
+                        <label
+                          key={p.key}
+                          className={`p-3.5 rounded-xl border text-xs cursor-pointer transition flex items-start space-x-3 ${
+                            isChecked
+                              ? isHighRisk
+                                ? "bg-amber-50/70 border-amber-300 shadow-xs"
+                                : "bg-sky-50/70 border-sky-300 shadow-xs"
+                              : "bg-white border-slate-200 hover:border-slate-300 text-slate-600"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => togglePermission(p.key)}
+                            className="mt-1 h-4 w-4 text-sky-600 focus:ring-sky-500 rounded border-slate-300 cursor-pointer"
+                          />
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={`font-black text-xs ${
+                                  isChecked ? "text-slate-950" : "text-slate-800"
+                                }`}
+                              >
+                                {p.banglaLabel}
+                              </span>
+                              {getActionBadge(p.action)}
+                            </div>
+
+                            <p className="text-[11px] text-slate-600 font-normal leading-relaxed">
+                              {p.description}
+                            </p>
+
+                            <div className="pt-1 flex items-center justify-between text-[10px]">
+                              <span className="font-mono text-slate-400 font-semibold">{p.key}</span>
+                              {isHighRisk && (
+                                <span className="inline-flex items-center text-amber-700 font-bold">
+                                  <Lock className="w-3 h-3 mr-0.5" />
+                                  উচ্চ প্রিভিলেজ
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex justify-end">
+          {/* Sticky Save Matrix Footer */}
+          <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white sticky bottom-0 py-4 shadow-lg rounded-xl px-4 border">
+            <div className="text-xs text-slate-600">
+              <span className="font-bold text-slate-900">রোল: {selectedRoleForEdit}</span> — মোট{" "}
+              <span className="font-black text-sky-700">{rolePerms[selectedRoleForEdit]?.length || 0}</span> টি
+              পারমিশন কনফিগার করা হয়েছে। সংরক্ষণের সাথে সাথে স্টাফের পরবর্তী ক্লিকে নতুন পারমিশন কার্যকর হবে।
+            </div>
+
             <button
               onClick={() => void handleSavePerms()}
               disabled={savingPerms}
-              className="inline-flex items-center bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-sm transition cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-black text-xs px-8 py-3 rounded-xl shadow-md transition cursor-pointer"
             >
               {savingPerms ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                  Saving Permissions Matrix...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  সংরক্ষণ করা হচ্ছে...
                 </>
               ) : (
                 <>
-                  <Save className="w-3.5 h-3.5 mr-2" />
-                  Save Permissions Matrix
+                  <Save className="w-4 h-4 mr-2" />
+                  পারমিশন ম্যাট্রিক্স সংরক্ষণ করুন
                 </>
               )}
             </button>

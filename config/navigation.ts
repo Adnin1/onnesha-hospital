@@ -198,7 +198,7 @@ export const HOSPITAL_NAV_SECTIONS: NavSection[] = [
         href: "/app/expenses",
         label: "Hospital Expenses",
         icon: DollarSign,
-        perm: PERMISSIONS.BILLING_VIEW,
+        perm: PERMISSIONS.EXPENSES_VIEW,
       },
       {
         href: "/app/insurance",

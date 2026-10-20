@@ -40,6 +40,9 @@ import { DoctorRecord } from "@/types/appointments";
 import { formatCurrencyBDT, formatDateBDT } from "@/lib/utils";
 import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
 import { Toast } from "@/components/ui/Toast";
+import { getCurrentUserSession } from "@/lib/auth/session";
+import { DEFAULT_ROLE_PERMISSIONS } from "@/lib/permissions";
+import Link from "next/link";
 
 function ExpensesManagementContent() {
   const [loading, setLoading] = useState(true);
@@ -47,6 +50,11 @@ function ExpensesManagementContent() {
   const [categories, setCategories] = useState<ExpenseCategoryRecord[]>([]);
   const [doctors, setDoctors] = useState<DoctorRecord[]>([]);
   const [analytics, setAnalytics] = useState<ExpenseAnalyticsSummary | null>(null);
+
+  // RBAC Permission State
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -107,6 +115,21 @@ function ExpensesManagementContent() {
   const loadData = async () => {
     setLoading(true);
     try {
+      const session = await getCurrentUserSession();
+      const superAdmin = session.roles.includes("super_admin");
+      const perms = session.permissions.length > 0
+        ? session.permissions
+        : (session.roles[0] ? (DEFAULT_ROLE_PERMISSIONS[session.roles[0]] || []) : []);
+      setIsSuperAdmin(superAdmin);
+      setUserPermissions(perms);
+
+      const canView = superAdmin || perms.includes("expenses.view") || perms.includes("expenses.manage");
+      if (!canView) {
+        setAccessDenied(true);
+        setLoading(false);
+        return;
+      }
+
       const [expRes, catRes, docRes, analRes] = await Promise.all([
         getExpensesAction({
           categoryId: selectedCategory,
@@ -415,6 +438,39 @@ function ExpensesManagementContent() {
     }
   };
 
+  const canCreate = isSuperAdmin || userPermissions.includes("expenses.create") || userPermissions.includes("expenses.manage");
+  const canEdit = isSuperAdmin || userPermissions.includes("expenses.edit") || userPermissions.includes("expenses.manage");
+  const canDelete = isSuperAdmin || userPermissions.includes("expenses.delete") || userPermissions.includes("expenses.manage");
+  const canManageCategories = isSuperAdmin || userPermissions.includes("expenses.manage");
+
+  if (accessDenied) {
+    return (
+      <div className="bg-white rounded-2xl border border-rose-200 p-8 sm:p-12 text-center max-w-xl mx-auto my-12 shadow-sm space-y-4">
+        <div className="w-16 h-16 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center mx-auto text-rose-600">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">সংরক্ষিত মডিউল (Access Restricted)</h2>
+        <p className="text-sm text-slate-600">
+          আপনার ব্যবহারকারী অ্যাকাউন্টে <strong>হাসপাতাল খরচ ও ভাউচার (Hospital Expenses)</strong> দেখার অনুমতি নেই।
+        </p>
+        <div className="text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-left space-y-1">
+          <p className="font-semibold text-slate-700">🔒 নিরাপত্তা নীতি:</p>
+          <p>
+            কেবল <strong>Super Admin</strong> অথবা অনুমোদিত কর্মকর্তা সেটিংস (Settings &rarr; RBAC Matrix) থেকে আপনার রোলকে <code>expenses.view</code> অথবা <code>expenses.manage</code> অনুমতি দিলেই এই পেইজটি ব্যবহারের এক্সেস পাওয়া যাবে।
+          </p>
+        </div>
+        <div className="pt-2">
+          <Link
+            href="/app/dashboard"
+            className="inline-flex items-center text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 px-5 py-2.5 rounded-xl transition cursor-pointer"
+          >
+            ড্যাশবোর্ডে ফিরে যান
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
@@ -438,29 +494,35 @@ function ExpensesManagementContent() {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-3">
-          <button
-            onClick={() => setIsCategoryModalOpen(true)}
-            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            Categories
-          </button>
-          <button
-            onClick={handleRunMonthlyRecurring}
-            disabled={recurringLoading}
-            className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition flex items-center border border-indigo-200 disabled:opacity-50"
-            title="Auto-generate monthly retainer vouchers for active doctors"
-          >
-            <Calendar className="w-3.5 h-3.5 mr-1" />
-            {recurringLoading ? "Generating..." : "Monthly Retainers"}
-          </button>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition flex items-center shadow-xs"
-          >
-            <Plus className="w-4 h-4 mr-1.5" />
-            New Expense Voucher
-          </button>
+          {canManageCategories && (
+            <button
+              onClick={() => setIsCategoryModalOpen(true)}
+              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Categories
+            </button>
+          )}
+          {canManageCategories && (
+            <button
+              onClick={handleRunMonthlyRecurring}
+              disabled={recurringLoading}
+              className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition flex items-center border border-indigo-200 disabled:opacity-50 cursor-pointer"
+              title="Auto-generate monthly retainer vouchers for active doctors"
+            >
+              <Calendar className="w-3.5 h-3.5 mr-1" />
+              {recurringLoading ? "Generating..." : "Monthly Retainers"}
+            </button>
+          )}
+          {canCreate && (
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition flex items-center shadow-xs cursor-pointer"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              New Expense Voucher
+            </button>
+          )}
         </div>
       </div>
 
@@ -693,40 +755,46 @@ function ExpensesManagementContent() {
                     <td className="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
                       <button
                         onClick={() => setPrintVoucher(exp)}
-                        className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-100 text-slate-700 transition"
+                        className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-100 text-slate-700 transition cursor-pointer"
                         title="Print Expense Voucher"
                       >
                         <Printer className="w-3.5 h-3.5" />
                       </button>
                       {exp.status !== "VOID" && exp.status !== "VOIDED" && (
                         <>
-                          <button
-                            onClick={() => openEditModal(exp)}
-                            className="p-1.5 border border-amber-200 rounded-lg hover:bg-amber-50 text-amber-700 transition"
-                            title="Edit Expense Voucher"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setVoidModalExpense(exp)}
-                            className="p-1.5 border border-amber-200 rounded-lg hover:bg-amber-50 text-amber-600 transition"
-                            title="Void Voucher"
-                          >
-                            <XCircle className="w-3.5 h-3.5" />
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => openEditModal(exp)}
+                              className="p-1.5 border border-amber-200 rounded-lg hover:bg-amber-50 text-amber-700 transition cursor-pointer"
+                              title="Edit Expense Voucher"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => setVoidModalExpense(exp)}
+                              className="p-1.5 border border-amber-200 rounded-lg hover:bg-amber-50 text-amber-600 transition cursor-pointer"
+                              title="Void Voucher"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </>
                       )}
-                      <button
-                        onClick={() => {
-                          setDeleteModalExpense(exp);
-                          setDeleteReason("");
-                          setDeletePermanentPurge(exp.status === "VOIDED" || exp.status === "DRAFT");
-                        }}
-                        className="p-1.5 border border-rose-200 rounded-lg hover:bg-rose-50 text-rose-600 transition"
-                        title="Delete / Purge Voucher"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {canDelete && (
+                        <button
+                          onClick={() => {
+                            setDeleteModalExpense(exp);
+                            setDeleteReason("");
+                            setDeletePermanentPurge(exp.status === "VOIDED" || exp.status === "DRAFT");
+                          }}
+                          className="p-1.5 border border-rose-200 rounded-lg hover:bg-rose-50 text-rose-600 transition cursor-pointer"
+                          title="Delete / Purge Voucher"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
