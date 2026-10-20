@@ -10,6 +10,9 @@ export interface ThermalReceiptProps {
   dateStr: string;
   patientName: string;
   patientPhone?: string;
+  patientAge?: number | string;
+  patientGender?: string;
+  deliveryTimeStr?: string;
   cashierName?: string;
   items: Array<{
     name: string;
@@ -31,6 +34,9 @@ export function ThermalReceipt({
   dateStr,
   patientName,
   patientPhone,
+  patientAge,
+  patientGender,
+  deliveryTimeStr,
   cashierName,
   items,
   subtotal,
@@ -72,10 +78,22 @@ export function ThermalReceipt({
           <span>Patient:</span>
           <span className="font-semibold truncate max-w-[120px]">{patientName}</span>
         </div>
+        {(patientGender || patientAge) && (
+          <div className="flex justify-between">
+            <span>Age/Sex:</span>
+            <span>{[patientGender, patientAge ? `${patientAge}Y` : null].filter(Boolean).join(", ")}</span>
+          </div>
+        )}
         {patientPhone && (
           <div className="flex justify-between">
             <span>Phone:</span>
             <span>{patientPhone}</span>
+          </div>
+        )}
+        {deliveryTimeStr && (
+          <div className="flex justify-between text-indigo-950 font-bold">
+            <span>Report Delivery:</span>
+            <span>{deliveryTimeStr}</span>
           </div>
         )}
         {cashierName && (

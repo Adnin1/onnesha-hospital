@@ -43,7 +43,7 @@ export async function getInvoicesAction(params?: {
         invoice_items (*),
         payments (*),
         refunds (*),
-        patients (id, patient_code, full_name, phone, gender, address, age, blood_group)
+        patients (id, patient_code, full_name, phone, gender, address, age, age_months, age_days, dob, blood_group)
       `)
       .eq("organization_id", session.organizationId)
       .order("created_at", { ascending: false })
@@ -96,6 +96,9 @@ export async function getInvoicesAction(params?: {
         gender?: string;
         address?: string;
         age?: number;
+        age_months?: number;
+        age_days?: number;
+        dob?: string;
         blood_group?: string;
       } | null;
     }
@@ -158,7 +161,7 @@ export async function createInvoiceAction(params: {
     // Verify patient and enforce mandatory demographic invariants (Name, UHID, Phone, Address, Age)
     const { data: patient } = await supabase
       .from("patients")
-      .select("id, patient_code, full_name, phone, gender, address, age, dob, blood_group")
+      .select("id, patient_code, full_name, phone, gender, address, age, age_months, age_days, dob, blood_group")
       .eq("id", params.patientId)
       .eq("organization_id", session.organizationId)
       .single();

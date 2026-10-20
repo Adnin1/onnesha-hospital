@@ -1750,7 +1750,13 @@ function BillingManagementContent() {
                     patientCode: selectedInvoice.patient?.patient_code || "OH-P-WALKIN",
                     phone: selectedInvoice.patient?.phone,
                     address: selectedInvoice.patient?.address,
-                    age: selectedInvoice.patient?.age,
+                    gender: selectedInvoice.patient?.gender,
+                    age: formatPatientAgeDisplay(
+                      selectedInvoice.patient?.age,
+                      selectedInvoice.patient?.age_months,
+                      selectedInvoice.patient?.age_days,
+                      selectedInvoice.patient?.dob
+                    ) || selectedInvoice.patient?.age,
                     bloodGroup: selectedInvoice.patient?.blood_group,
                   }}
                   items={(selectedInvoice.items || []).map((it) => ({
@@ -3252,12 +3258,13 @@ function BillingManagementContent() {
                   patientCode: halfLetterPrintInv.patient?.patient_code || "OH-P-WALKIN",
                   phone: halfLetterPrintInv.patient?.phone,
                   address: halfLetterPrintInv.patient?.address,
+                  gender: halfLetterPrintInv.patient?.gender,
                   age: formatPatientAgeDisplay(
                     halfLetterPrintInv.patient?.age,
                     halfLetterPrintInv.patient?.age_months,
                     halfLetterPrintInv.patient?.age_days,
                     halfLetterPrintInv.patient?.dob
-                  ),
+                  ) || halfLetterPrintInv.patient?.age,
                   bloodGroup: halfLetterPrintInv.patient?.blood_group,
                 }}
                 items={(halfLetterPrintInv.items || []).map((it) => ({

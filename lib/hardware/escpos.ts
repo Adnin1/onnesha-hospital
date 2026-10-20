@@ -770,6 +770,9 @@ export interface BillingReceiptData {
   invoiceNumber: string;
   patientName: string;
   uhid: string;
+  patientAge?: number | string;
+  patientGender?: string;
+  deliveryTimeStr?: string;
   items: BillingReceiptItem[];
   subtotal: number;
   discount: number;
@@ -800,7 +803,17 @@ export function buildBillingReceiptEscPos(data: BillingReceiptData): EscPosBuild
     .twoColumns("Invoice #:", data.invoiceNumber)
     .twoColumns("Date:", new Date().toLocaleDateString("en-GB"))
     .twoColumns("Patient:", data.patientName.slice(0, 24))
-    .twoColumns("UHID:", data.uhid)
+    .twoColumns("UHID:", data.uhid);
+
+  if (data.patientGender || data.patientAge) {
+    const ageSex = [data.patientGender, data.patientAge ? `${data.patientAge}Y` : null].filter(Boolean).join(", ");
+    builder.twoColumns("Age/Sex:", ageSex);
+  }
+  if (data.deliveryTimeStr) {
+    builder.twoColumns("Report Delivery:", data.deliveryTimeStr);
+  }
+
+  builder
     .rule("-")
     .twoColumns("Item / Service", "Amount (BDT)")
     .rule("-");

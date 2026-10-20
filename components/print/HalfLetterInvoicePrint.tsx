@@ -29,6 +29,8 @@ export interface HalfLetterInvoicePrintProps {
   invoiceNumber: string;
   dateStr: string;
   dueDateStr?: string;
+  deliveryDateStr?: string;
+  testTimeStr?: string;
   cashierName?: string;
   patient: {
     name: string;
@@ -49,6 +51,8 @@ export interface HalfLetterInvoicePrintProps {
     quantity: number;
     totalAmount: number;
     unit?: string;
+    testTimeStr?: string;
+    deliveryTimeStr?: string;
   }>;
   payments: Array<{
     receiptNumber: string;
@@ -114,10 +118,68 @@ function numberToWordsBDT(amount: number): string {
   return words.trim() + " Taka Only";
 }
 
+function isDiagnosticItem(category?: string, description?: string): boolean {
+  const cat = (category || "").toUpperCase().trim();
+  const diagCats = [
+    "LAB", "DIAGNOSTIC", "PATHOLOGY", "BIOCHEMISTRY", "HAEMATOLOGY",
+    "HEMATOLOGY", "MICROBIOLOGY", "IMMUNOLOGY", "SEROLOGY", "USG",
+    "ULTRASONOGRAPHY", "XRAY", "X-RAY", "RADIOLOGY", "IMAGING",
+    "ECG", "CARDIOLOGY", "INVESTIGATION"
+  ];
+  if (diagCats.includes(cat)) return true;
+  const desc = (description || "").toLowerCase();
+  return /(usg|ultrasound|x-ray|xray|ecg|cbc|rbs|fbs|blood|urine|stool|lipid|creatinine|lft|sgpt|sgot|serum|culture|biopsy|histopath|hormone|tsh|echo|endoscopy|colonoscopy|ct[- ]scan|mri)/i.test(desc);
+}
+
+function getEstimatedDeliveryHours(category?: string, description?: string): number {
+  const desc = (description || "").toLowerCase();
+  const cat = (category || "").toUpperCase();
+
+  // Histopathology, Culture, Biopsy: 48-72 hours
+  if (/culture|histopath|biopsy|pap smear/i.test(desc)) {
+    return 72;
+  }
+  // USG, X-Ray, ECG: 1-2 hours
+  if (["USG", "ULTRASONOGRAPHY", "XRAY", "X-RAY", "ECG"].includes(cat) || /usg|ultrasound|x-ray|xray|ecg/i.test(desc)) {
+    return 2;
+  }
+  // Rapid blood tests (RBS, FBS, Blood grouping, Rh): 1-2 hours
+  if (/rbs|fbs|random blood|fasting blood|blood grouping|rh/i.test(desc)) {
+    return 2;
+  }
+  // Standard lab hematology / biochemistry (CBC, LFT, Lipid, Creatinine, Urine): 3 hours
+  return 3;
+}
+
+function calculateEstimatedDelivery(dateStr: string | undefined, hoursToAdd: number): string {
+  try {
+    let base = dateStr ? new Date(dateStr) : new Date();
+    if (isNaN(base.getTime())) {
+      base = new Date();
+    }
+    const target = new Date(base.getTime() + hoursToAdd * 60 * 60 * 1000);
+    const targetHour = target.getHours();
+
+    // If routine turnaround (<= 4h) lands after 8:30 PM (20:30) or before 8:00 AM, deliver next morning at 10:00 AM
+    if (hoursToAdd <= 4 && (targetHour >= 20 || targetHour < 8)) {
+      if (targetHour >= 20) {
+        target.setDate(target.getDate() + 1);
+      }
+      target.setHours(10, 0, 0, 0);
+    }
+
+    return `${formatDateBDT(target)}, ${formatTimeBDT(target)}`;
+  } catch {
+    return "Same Day (আজকের মধ্যে)";
+  }
+}
+
 export function HalfLetterInvoicePrint({
   invoiceNumber,
   dateStr,
   dueDateStr,
+  deliveryDateStr,
+  testTimeStr,
   cashierName,
   patient,
   departmentName,
@@ -136,6 +198,31 @@ export function HalfLetterInvoicePrint({
   const wordsStr = numberToWordsBDT(totalAmount);
   const cleanDate = safeFormatPrintDate(dateStr);
   const cleanDueDate = safeFormatPrintDate(dueDateStr);
+
+  const diagItems = items.filter((it) => isDiagnosticItem(it.serviceCategory, it.description));
+  const hasDiag = diagItems.length > 0;
+  const maxTurnaroundHours = hasDiag
+    ? Math.max(...diagItems.map((it) => getEstimatedDeliveryHours(it.serviceCategory, it.description)))
+    : 3;
+
+  const effectiveTestTime = testTimeStr || cleanDate;
+  const effectiveDeliveryTime = deliveryDateStr || (hasDiag ? calculateEstimatedDelivery(dateStr, maxTurnaroundHours) : "");
+
+  const formattedAgeStr = (() => {
+    if (patient.age === undefined || patient.age === null || patient.age === "") return "";
+    if (typeof patient.age === "number") {
+      return patient.age > 0 ? `${patient.age}Y` : "0Y (Infant)";
+    }
+    const str = String(patient.age).trim();
+    if (!str) return "";
+    return str.match(/[YMDymdবছরমাসদিন]/) ? str : `${str}Y`;
+  })();
+
+  const genderAgeParts = [
+    patient.gender ? patient.gender.trim() : null,
+    formattedAgeStr ? formattedAgeStr : null,
+  ].filter(Boolean);
+  const genderAgeDisplay = genderAgeParts.length > 0 ? `(${genderAgeParts.join(", ")})` : "";
 
   return (
     <div className="half-letter-invoice-root mx-auto max-w-[5.5in] bg-white text-slate-900 font-sans p-4 border border-slate-200 print:border-none print:m-0 print:p-0 print:shadow-none print:w-full print:max-w-none">
@@ -199,6 +286,10 @@ export function HalfLetterInvoicePrint({
             break-inside: avoid !important;
           }
           .print-patient-block {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .print-delivery-badge {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
@@ -277,18 +368,9 @@ export function HalfLetterInvoicePrint({
           <div>
             <span className="text-slate-600 font-medium">UHID / ID: </span>
             <strong className="font-mono text-slate-900 font-bold">{patient.patientCode}</strong>
-            {patient.gender && (
-              <span className="text-slate-700 ml-1">
-                ({patient.gender}
-                {patient.age
-                  ? `, ${
-                      typeof patient.age === "number"
-                        ? (patient.age > 0 ? `${patient.age}Y` : "0Y (Infant)")
-                        : (String(patient.age).match(/[YMDymdবছরমাসদিন]/)
-                            ? String(patient.age)
-                            : `${patient.age}Y`)
-                    }`
-                  : ""})
+            {genderAgeDisplay && (
+              <span className="text-slate-800 ml-1 font-semibold">
+                {genderAgeDisplay}
               </span>
             )}
           </div>
@@ -342,6 +424,29 @@ export function HalfLetterInvoicePrint({
         </div>
       </div>
 
+      {/* 2.5 Diagnostic Report Delivery Schedule Banner */}
+      {hasDiag && (
+        <div className="print-delivery-badge bg-sky-50 print:bg-slate-100 border border-sky-300 print:border-slate-500 rounded p-1.5 text-[9px] mb-2 flex items-center justify-between">
+          <div className="flex items-center space-x-1 min-w-0">
+            <span className="font-bold text-sky-950 print:text-black uppercase tracking-wider">
+              🧪 রিপোর্ট ডেলিভারি সময়সূচী (Delivery Schedule):
+            </span>
+          </div>
+          <div className="flex items-center space-x-3 text-right shrink-0">
+            <div>
+              <span className="text-slate-600 print:text-black">টেস্ট গ্রহণ: </span>
+              <strong className="text-slate-900 print:text-black font-mono font-bold">{effectiveTestTime}</strong>
+            </div>
+            <div className="border-l border-sky-300 print:border-slate-400 pl-2">
+              <span className="text-sky-900 print:text-black font-semibold">সম্ভাব্য ডেলিভারি: </span>
+              <strong className="text-sky-950 print:text-black font-mono font-black text-[10px] bg-white px-1.5 py-0.5 rounded border border-sky-400 print:border-slate-600">
+                {effectiveDeliveryTime}
+              </strong>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 3. Itemized Bill Table */}
       <div className="mb-2">
         <table className="print-table w-full text-left text-[10px] border-collapse border border-slate-400 table-fixed">
@@ -356,27 +461,43 @@ export function HalfLetterInvoicePrint({
             </tr>
           </thead>
           <tbody>
-            {items.map((it, idx) => (
-              <tr key={idx} className="border-b border-slate-300 hover:bg-slate-50">
-                <td className="p-1 border-r border-slate-300 text-center text-slate-600 font-mono">{idx + 1}</td>
-                <td className="p-1 border-r border-slate-300 font-semibold text-slate-900 break-words">
-                  {it.description}
-                  {it.unit ? <span className="text-[9px] text-slate-600 ml-1 font-normal">({it.unit})</span> : null}
-                </td>
-                <td className="p-1 border-r border-slate-300 text-center text-[9px] text-slate-700 truncate">
-                  {it.serviceCategory}
-                </td>
-                <td className="p-1 border-r border-slate-300 text-right font-mono font-medium">
-                  {it.unitPrice.toFixed(2)}
-                </td>
-                <td className="p-1 border-r border-slate-300 text-center font-mono font-bold">
-                  {it.quantity}
-                </td>
-                <td className="p-1 text-right font-mono font-bold text-slate-900">
-                  {it.totalAmount.toFixed(2)}
-                </td>
-              </tr>
-            ))}
+            {items.map((it, idx) => {
+              const isDiag = isDiagnosticItem(it.serviceCategory, it.description);
+              const itemTurnaround = getEstimatedDeliveryHours(it.serviceCategory, it.description);
+              const itemDelivery = it.deliveryTimeStr || calculateEstimatedDelivery(dateStr, itemTurnaround);
+              const itemTestTime = it.testTimeStr || effectiveTestTime;
+
+              return (
+                <tr key={idx} className="border-b border-slate-300 hover:bg-slate-50">
+                  <td className="p-1 border-r border-slate-300 text-center text-slate-600 font-mono">{idx + 1}</td>
+                  <td className="p-1 border-r border-slate-300 font-semibold text-slate-900 break-words">
+                    <div>
+                      <span>{it.description}</span>
+                      {it.unit ? <span className="text-[9px] text-slate-600 ml-1 font-normal">({it.unit})</span> : null}
+                    </div>
+                    {isDiag && (
+                      <div className="text-[8px] text-slate-700 print:text-black font-normal mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span className="font-medium text-slate-600 print:text-black">টেস্ট: <span className="font-mono text-slate-900 font-semibold">{itemTestTime}</span></span>
+                        <span className="text-slate-400 print:text-black">•</span>
+                        <span className="font-medium text-sky-950 print:text-black">ডেলিভারি: <span className="font-mono text-slate-900 font-bold">{itemDelivery}</span></span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-1 border-r border-slate-300 text-center text-[9px] text-slate-700 truncate">
+                    {it.serviceCategory}
+                  </td>
+                  <td className="p-1 border-r border-slate-300 text-right font-mono font-medium">
+                    {it.unitPrice.toFixed(2)}
+                  </td>
+                  <td className="p-1 border-r border-slate-300 text-center font-mono font-bold">
+                    {it.quantity}
+                  </td>
+                  <td className="p-1 text-right font-mono font-bold text-slate-900">
+                    {it.totalAmount.toFixed(2)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

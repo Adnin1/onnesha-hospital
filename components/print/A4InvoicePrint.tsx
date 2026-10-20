@@ -14,6 +14,8 @@ export interface A4InvoicePrintProps {
     patientCode: string;
     phone?: string;
     address?: string;
+    age?: number | string;
+    gender?: string;
   };
   departmentName?: string;
   admittingDoctorName?: string;
@@ -69,7 +71,15 @@ export function A4InvoicePrint({
       <div className="mb-6 grid grid-cols-2 gap-4 rounded border bg-zinc-50 p-4 text-xs">
         <div className="space-y-1">
           <div><span className="text-zinc-500">Patient Name: </span><strong>{patient.name}</strong></div>
-          <div><span className="text-zinc-500">Hospital ID: </span><strong className="font-mono">{patient.patientCode}</strong></div>
+          <div>
+            <span className="text-zinc-500">Hospital ID: </span>
+            <strong className="font-mono">{patient.patientCode}</strong>
+            {(patient.gender || patient.age) && (
+              <span className="ml-1 text-zinc-700 font-semibold">
+                ({[patient.gender, patient.age ? (typeof patient.age === "number" ? `${patient.age}Y` : patient.age) : null].filter(Boolean).join(", ")})
+              </span>
+            )}
+          </div>
           {patient.phone && <div><span className="text-zinc-500">Contact: </span><span>{patient.phone}</span></div>}
           {patient.address && <div><span className="text-zinc-500">Address: </span><span>{patient.address}</span></div>}
         </div>
