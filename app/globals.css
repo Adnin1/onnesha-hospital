@@ -61,8 +61,17 @@ body {
   header,
   footer,
   button,
-  .print-hide {
+  .print-hide,
+  [role="alert"],
+  .toast,
+  [aria-live="polite"],
+  [aria-live="assertive"],
+  .skip-to-content,
+  .pwa-only,
+  .install-prompt,
+  .network-status {
     display: none !important;
+    visibility: hidden !important;
   }
 
   .print-only {

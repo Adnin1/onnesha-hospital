@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
+import { getCurrentUserSession, requirePermission, invalidateCurrentUserSession } from "@/lib/auth/session";
 import { PERMISSIONS } from "@/lib/permissions";
 import { RoleType } from "@/types";
 
@@ -233,6 +233,7 @@ export async function setStaffStatusAction(
       return { success: false, error: error.message };
     }
 
+    invalidateCurrentUserSession();
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to update staff status";

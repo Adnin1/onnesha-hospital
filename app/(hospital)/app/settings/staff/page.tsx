@@ -219,6 +219,9 @@ export default function StaffManagementPage() {
         setShowRoleModal(null);
         fetchDirectory();
         triggerToast("স্টাফ রোল সফলভাবে পরিবর্তন করা হয়েছে!");
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("ohms:session-updated"));
+        }
       } else {
         setErrorMsg("রোল পরিবর্তন ব্যর্থ: " + (res.error || "Unknown error"));
       }

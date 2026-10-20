@@ -311,8 +311,10 @@ function BillingManagementContent() {
           if (active && agentRes.status === "fulfilled" && agentRes.value.success && agentRes.value.data) {
             setBillingReferralAgents(agentRes.value.data);
           }
+          let loadedDoctors: DoctorRecord[] = [];
           if (active && docRes.status === "fulfilled" && docRes.value.success && docRes.value.data?.doctors) {
-            setDoctorsList(docRes.value.data.doctors);
+            loadedDoctors = docRes.value.data.doctors;
+            setDoctorsList(loadedDoctors);
           }
           const dynamicTests = diagRes.status === "fulfilled" && diagRes.value.success ? diagRes.value.data?.tests : undefined;
           const tariffs = tariffRes.status === "fulfilled" && tariffRes.value.success ? tariffRes.value.data?.tariffs : undefined;
@@ -320,8 +322,16 @@ function BillingManagementContent() {
             setHospitalServiceTariffs(tariffs);
           }
           if (active) {
-            const unifiedServices = getAllHospitalServices(dynamicTests, tariffs);
-            setAllServices(unifiedServices);
+            const baseUnified = getAllHospitalServices(dynamicTests, tariffs);
+            const doctorServices: HospitalServiceItem[] = loadedDoctors.map((doc) => ({
+              id: `srv-doc-${doc.id}`,
+              category: "CONSULTATION" as ServiceCategory,
+              name: `Dr. ${doc.full_name} (${doc.designation || doc.specialization || "Consultant"}) - Consultation Fee`,
+              price: doc.opd_fee ?? doc.consultation_fee ?? 500,
+              group: "CONSULTATION" as const,
+              description: `${doc.specialization || "Specialist"} Consultation Doctor Fee OPD Chamber ${doc.room_number || ""}`,
+            }));
+            setAllServices([...baseUnified, ...doctorServices]);
           }
         } catch (err) {
           console.error("Failed loading billing catalog/agents:", err);
@@ -768,22 +778,65 @@ function BillingManagementContent() {
     setMedicineQtyInput(1);
   };
 
+  const BENGALI_SEARCH_SYNONYMS: Record<string, string[]> = {
+    "ফি": ["fee", "consultation", "doctor", "charge", "visit"],
+    "ডাক্তার": ["doctor", "consultation", "dr", "opd", "physician", "specialist"],
+    "ভিজিট": ["fee", "visit", "consultation", "doctor"],
+    "রোগী": ["patient", "admission", "bed", "cabin"],
+    "ভর্তি": ["admission", "bed", "cabin", "reg"],
+    "বেড": ["bed", "ward", "general"],
+    "কেবিন": ["cabin", "ac", "non-ac", "vip"],
+    "রক্ত": ["blood", "cbc", "serum", "hematology"],
+    "প্রস্রাব": ["urine", "routine"],
+    "এক্সরে": ["x-ray", "xray", "radiology"],
+    "আল্ট্রা": ["usg", "ultrasonography", "ultrasound", "abdomen"],
+    "ইসিজি": ["ecg", "cardiology"],
+    "ইকো": ["echo", "echocardiogram"],
+    "সার্জারি": ["surgery", "ot", "operation"],
+    "অপারেশন": ["ot", "surgery", "operation"],
+    "অ্যাম্বুলেন্স": ["ambulance", "transport"],
+  };
+
   const filteredServices = useMemo(() => {
     return allServices.filter((s) => {
       const matchesGroup = serviceFilterGroup === "ALL" || s.group === serviceFilterGroup;
-      const term = serviceSearchTerm.trim().toLowerCase();
-      if (!term) return matchesGroup;
-      return (
-        s.name.toLowerCase().includes(term) ||
-        s.category.toLowerCase().includes(term) ||
-        (s.description ? s.description.toLowerCase().includes(term) : false)
+      const rawTerm = serviceSearchTerm.trim().toLowerCase();
+      if (!rawTerm) return matchesGroup;
+
+      const expandedTerms = [rawTerm];
+      for (const [bnKey, engList] of Object.entries(BENGALI_SEARCH_SYNONYMS)) {
+        if (rawTerm.includes(bnKey) || bnKey.includes(rawTerm)) {
+          expandedTerms.push(...engList);
+        }
+      }
+
+      const nameLower = s.name.toLowerCase();
+      const catLower = s.category.toLowerCase();
+      const descLower = (s.description || "").toLowerCase();
+      const priceStr = String(s.price);
+
+      const matchesTerm = expandedTerms.some(
+        (t) =>
+          nameLower.includes(t) ||
+          catLower.includes(t) ||
+          descLower.includes(t) ||
+          priceStr.includes(t)
       );
+
+      return matchesGroup && matchesTerm;
     });
   }, [allServices, serviceFilterGroup, serviceSearchTerm]);
 
   const instantSearchResults = useMemo(() => {
-    const term = serviceSearchTerm.trim().toLowerCase();
-    if (!term) return [];
+    const rawTerm = serviceSearchTerm.trim().toLowerCase();
+    if (!rawTerm) return [];
+
+    const expandedTerms = [rawTerm];
+    for (const [bnKey, engList] of Object.entries(BENGALI_SEARCH_SYNONYMS)) {
+      if (rawTerm.includes(bnKey) || bnKey.includes(rawTerm)) {
+        expandedTerms.push(...engList);
+      }
+    }
 
     const matches: Array<{ service: (typeof allServices)[0]; score: number }> = [];
 
@@ -791,24 +844,38 @@ function BillingManagementContent() {
       const name = s.name.toLowerCase();
       const cat = s.category.toLowerCase();
       const desc = (s.description || "").toLowerCase();
+      const priceStr = String(s.price);
 
       let score = -1;
-      if (name === term) {
+
+      // Direct term matching (highest priority)
+      if (name === rawTerm) {
         score = 100; // Exact name match
-      } else if (name.startsWith(term)) {
+      } else if (name.startsWith(rawTerm)) {
         score = 80; // Starts with term
-      } else if (new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(name)) {
+      } else if (name.includes(rawTerm)) {
         score = 60; // Whole word match
-      } else if (name.includes(term)) {
-        score = 40; // Substring in name
-      } else if (cat === term) {
-        score = 35; // Exact category match
-      } else if (cat.startsWith(term)) {
-        score = 30; // Category starts with
-      } else if (cat.includes(term)) {
-        score = 20; // Category substring
-      } else if (desc.includes(term)) {
-        score = 10; // Description substring
+      } else if (priceStr === rawTerm) {
+        score = 55;
+      } else if (cat === rawTerm || cat.startsWith(rawTerm)) {
+        score = 30; // Category match
+      } else if (priceStr.includes(rawTerm)) {
+        score = 25;
+      } else if (desc.includes(rawTerm)) {
+        score = 20; // Description substring
+      }
+
+      // Synonym expansion matching
+      if (score < 0) {
+        for (const t of expandedTerms) {
+          if (name.includes(t)) {
+            score = Math.max(score, 35);
+          } else if (cat.includes(t)) {
+            score = Math.max(score, 30);
+          } else if (desc.includes(t)) {
+            score = Math.max(score, 25);
+          }
+        }
       }
 
       if (score > 0) {

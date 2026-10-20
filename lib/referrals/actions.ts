@@ -685,32 +685,54 @@ export async function updateReferralAgentRateAction(params: {
 export async function updateReferralAgentAction(params: {
   agentId: string;
   fullName: string;
+  agentType?: "DOCTOR" | "COMMUNITY_PC" | "ORGANIZATION" | "STAFF";
   phone: string;
   email?: string;
   address?: string;
   professionalRegistrationNo?: string;
+  commissionRatePercent?: number;
   isCommissionEligible?: boolean;
   complianceApproved?: boolean;
   notes?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = createClient();
+    const updateData: Record<string, unknown> = {
+      full_name: params.fullName.trim(),
+      phone: params.phone.trim(),
+      email: params.email?.trim() || null,
+      address: params.address?.trim() || null,
+      professional_registration_no: params.professionalRegistrationNo?.trim() || null,
+      is_commission_eligible: params.isCommissionEligible ?? true,
+      compliance_approved: params.complianceApproved ?? true,
+      notes: params.notes?.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (params.agentType) {
+      updateData.agent_type = params.agentType;
+    }
+
     const { error } = await supabase
       .from("referral_agents")
-      .update({
-        full_name: params.fullName.trim(),
-        phone: params.phone.trim(),
-        email: params.email?.trim() || null,
-        address: params.address?.trim() || null,
-        professional_registration_no: params.professionalRegistrationNo?.trim() || null,
-        is_commission_eligible: params.isCommissionEligible ?? true,
-        compliance_approved: params.complianceApproved ?? true,
-        notes: params.notes?.trim() || null,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", params.agentId);
 
     if (error) throw error;
+
+    // If commission rate was changed, also update commission rate history
+    if (
+      params.commissionRatePercent !== undefined &&
+      params.commissionRatePercent >= 1 &&
+      params.commissionRatePercent <= 40
+    ) {
+      await updateReferralAgentRateAction({
+        agentId: params.agentId,
+        newRatePercent: params.commissionRatePercent,
+        reason: "Updated via partner profile editor",
+      });
+    }
+
     return { success: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to update agent profile";
@@ -750,11 +772,29 @@ export async function deactivateReferralAgentAction(agentId: string): Promise<{ 
   }
 }
 
-export async function deleteReferralAgentAction(agentId: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteReferralAgentAction(agentId: string): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
     const supabase = createClient();
 
-    // 1. Check if agent has active commissions
+    // 1. Try atomic delete/archive RPC first
+    try {
+      const { data: rpcRes, error: rpcErr } = await supabase.rpc("delete_referral_partner_atomic", {
+        p_agent_id: agentId,
+      });
+
+      if (!rpcErr && rpcRes && typeof rpcRes === "object") {
+        const typedRes = rpcRes as { success?: boolean; error?: string; message?: string; action?: string };
+        if (typedRes.success) {
+          return { success: true, message: typedRes.message };
+        } else if (typedRes.error) {
+          return { success: false, error: typedRes.error };
+        }
+      }
+    } catch {
+      // Fall through to client-side checks
+    }
+
+    // 2. Fallback check: If agent has active commissions
     const { data: comms } = await supabase
       .from("referral_commissions")
       .select("id")
@@ -766,7 +806,7 @@ export async function deleteReferralAgentAction(agentId: string): Promise<{ succ
       return deactivateReferralAgentAction(agentId);
     }
 
-    // 2. Check patient_referral_attributions
+    // 3. Fallback check: patient_referral_attributions
     const { data: attributions } = await supabase
       .from("patient_referral_attributions")
       .select("id")
@@ -777,7 +817,10 @@ export async function deleteReferralAgentAction(agentId: string): Promise<{ succ
       return deactivateReferralAgentAction(agentId);
     }
 
-    // 3. No financial or patient links: perform clean hard delete
+    // 4. Delete rate history first
+    await supabase.from("referral_agent_rates_history").delete().eq("referral_agent_id", agentId);
+
+    // 5. No financial or patient links: perform clean hard delete
     const { error: delErr } = await supabase
       .from("referral_agents")
       .delete()

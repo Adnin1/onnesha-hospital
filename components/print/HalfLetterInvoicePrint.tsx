@@ -120,7 +120,7 @@ export function HalfLetterInvoicePrint({
   const wordsStr = numberToWordsBDT(totalAmount);
 
   return (
-    <div className="half-letter-invoice-root mx-auto max-w-[5.5in] bg-white text-slate-900 font-sans p-4 border border-slate-200 print:border-none print:m-0 print:p-2 print:shadow-none print:w-full print:max-w-[5.5in]">
+    <div className="half-letter-invoice-root mx-auto max-w-[5.5in] bg-white text-slate-900 font-sans p-4 border border-slate-200 print:border-none print:m-0 print:p-0 print:shadow-none print:w-full print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
@@ -133,11 +133,13 @@ export function HalfLetterInvoicePrint({
           }
           .half-letter-invoice-root {
             width: 100% !important;
-            max-width: 5.5in !important;
+            max-width: 100% !important;
             min-height: auto !important;
             height: auto !important;
             padding: 0 !important;
             margin: 0 auto !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
           }
           .print-header-block {
             page-break-inside: avoid !important;

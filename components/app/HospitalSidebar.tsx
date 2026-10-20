@@ -32,10 +32,10 @@ export function HospitalSidebar() {
 
   useEffect(() => {
     let isMounted = true;
-    async function initSession() {
+    async function initSession(forceRefresh = false) {
       try {
         setIsLoadingSession(true);
-        const session = await getCurrentUserSession();
+        const session = await getCurrentUserSession(forceRefresh);
         if (isMounted) {
           if (session.userId) {
             const rawRole = normalizeRole(session.roles[0]) as RoleType;
@@ -90,15 +90,25 @@ export function HospitalSidebar() {
     const handleOpen = () => setMobileOpen(true);
     const handleClose = () => setMobileOpen(false);
 
+    const handleSessionUpdate = () => {
+      void initSession(true);
+    };
+
     window.addEventListener("ohms:toggle-sidebar", handleToggle);
     window.addEventListener("ohms:open-sidebar", handleOpen);
     window.addEventListener("ohms:close-sidebar", handleClose);
+    window.addEventListener("ohms:session-updated", handleSessionUpdate);
+    window.addEventListener("visibilitychange", handleSessionUpdate);
+    window.addEventListener("focus", handleSessionUpdate);
 
     return () => {
       isMounted = false;
       window.removeEventListener("ohms:toggle-sidebar", handleToggle);
       window.removeEventListener("ohms:open-sidebar", handleOpen);
       window.removeEventListener("ohms:close-sidebar", handleClose);
+      window.removeEventListener("ohms:session-updated", handleSessionUpdate);
+      window.removeEventListener("visibilitychange", handleSessionUpdate);
+      window.removeEventListener("focus", handleSessionUpdate);
     };
   }, []);
 
@@ -165,7 +175,9 @@ export function HospitalSidebar() {
     }
   };
 
-  const isSuperAdmin = activeRole === "super_admin";
+  const isSuperAdmin =
+    activeRole === "super_admin" ||
+    (userPermissions && userPermissions.includes("*"));
 
   return (
     <>
@@ -264,7 +276,7 @@ export function HospitalSidebar() {
         <nav className="grow overflow-y-auto px-3 py-2 space-y-4" aria-label="Hospital ERP Navigation">
           {HOSPITAL_NAV_SECTIONS.map((section, idx) => {
             const visibleItems = section.items.filter((item) =>
-              isSuperAdmin || userPermissions.includes(item.perm)
+              isSuperAdmin || userPermissions.includes(item.perm) || userPermissions.includes("*")
             );
 
             if (visibleItems.length === 0) return null;

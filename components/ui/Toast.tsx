@@ -35,7 +35,7 @@ export function Toast({ message, type = "success", onClose, duration = 4000 }: T
   return (
     <div
       role="alert"
-      className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border ${bgStyles} transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 max-w-md`}
+      className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border ${bgStyles} transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 max-w-md print:hidden no-print`}
     >
       <Icon className="w-5 h-5 shrink-0" />
       <span className="text-xs font-semibold leading-relaxed flex-1">{message}</span>

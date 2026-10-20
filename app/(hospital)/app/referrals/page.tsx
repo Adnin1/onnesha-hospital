@@ -21,6 +21,7 @@ import {
   Award,
   Calendar,
   RefreshCw,
+  Edit2,
 } from "lucide-react";
 import {
   ReferralAgent,
@@ -35,6 +36,7 @@ import {
   getReferralAgentsAction,
   getReferralAgentByIdAction,
   createReferralAgentAction,
+  updateReferralAgentAction,
   updateReferralAgentRateAction,
   deleteReferralAgentAction,
   getReferralCommissionsAction,
@@ -82,6 +84,19 @@ export default function ReferralManagementPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
   const [agentToArchive, setAgentToArchive] = useState<ReferralAgent | null>(null);
+  const [partnerToEdit, setPartnerToEdit] = useState<ReferralAgent | null>(null);
+  const [editForm, setEditForm] = useState({
+    fullName: "",
+    agentType: "COMMUNITY_PC" as "DOCTOR" | "COMMUNITY_PC" | "ORGANIZATION" | "STAFF",
+    phone: "",
+    email: "",
+    address: "",
+    licenseNo: "",
+    commissionRate: 10,
+    isEligible: true,
+    notes: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
   const [agentPeriodFilter, setAgentPeriodFilter] = useState<"ALL" | "TODAY" | "WEEK" | "MONTH" | "YEAR">("ALL");
   const [showDiscretionaryPayoutModal, setShowDiscretionaryPayoutModal] = useState(false);
   const [payoutSelectedPatientId, setPayoutSelectedPatientId] = useState<string>("");
@@ -427,6 +442,63 @@ export default function ReferralManagementPage() {
     setAgentToArchive(agent);
   };
 
+  // Open Edit Partner Modal
+  const handleOpenEditPartner = (agent: ReferralAgent) => {
+    setPartnerToEdit(agent);
+    setEditForm({
+      fullName: agent.full_name,
+      agentType: agent.agent_type,
+      phone: agent.phone,
+      email: agent.email || "",
+      address: agent.address || "",
+      licenseNo: agent.professional_registration_no || "",
+      commissionRate: agent.commission_rate_percent || 10,
+      isEligible: agent.is_commission_eligible !== false,
+      notes: agent.notes || "",
+    });
+  };
+
+  // Save Edit Partner Form
+  const handleSaveEditPartner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!partnerToEdit) return;
+    if (!editForm.fullName.trim() || !editForm.phone.trim()) {
+      setAlertError("Full Name and Phone Number are required.");
+      return;
+    }
+    setSavingEdit(true);
+    setAlertError(null);
+    try {
+      const res = await updateReferralAgentAction({
+        agentId: partnerToEdit.id,
+        fullName: editForm.fullName.trim(),
+        agentType: editForm.agentType,
+        phone: editForm.phone.trim(),
+        email: editForm.email.trim() || undefined,
+        address: editForm.address.trim() || undefined,
+        professionalRegistrationNo: editForm.licenseNo.trim() || undefined,
+        commissionRatePercent: Number(editForm.commissionRate),
+        isCommissionEligible: editForm.isEligible,
+        notes: editForm.notes.trim() || undefined,
+      });
+
+      if (res.success) {
+        setAlertSuccess(`পার্টনার ${partnerToEdit.agent_code} এর তথ্য সফলভাবে আপডেট করা হয়েছে।`);
+        setPartnerToEdit(null);
+        await refreshAll();
+        if (selectedAgentId === partnerToEdit.id) {
+          await handleOpenAgentDetail(partnerToEdit.id);
+        }
+      } else {
+        setAlertError(res.error || "Failed to update partner profile.");
+      }
+    } catch {
+      setAlertError("Network error updating partner profile.");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   // Filtered Agents
   const filteredAgents = agents.filter((a) => {
     const matchesSearch =
@@ -731,6 +803,13 @@ export default function ReferralManagementPage() {
                             title="রোগীর সেবা হিস্ট্রি ও প্রোফাইল"
                           >
                             প্রোফাইল
+                          </button>
+                          <button
+                            onClick={() => handleOpenEditPartner(agent)}
+                            className="px-2.5 py-1 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition border border-amber-200"
+                            title="পার্টনার প্রোফাইল সংশোধন করুন"
+                          >
+                            এডিট
                           </button>
                           <button
                             onClick={() => {
@@ -1800,6 +1879,31 @@ export default function ReferralManagementPage() {
                 <p className="text-xs text-slate-500 font-mono mt-0.5">
                   Phone: {agentDetailData.agent.phone} {agentDetailData.agent.email && `| Email: ${agentDetailData.agent.email}`}
                 </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <button
+                    onClick={() => handleOpenEditPartner(agentDetailData.agent)}
+                    className="px-2.5 py-1 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-lg transition border border-amber-300 flex items-center gap-1 shadow-2xs"
+                    title="প্রোফাইল সংশোধন করুন"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    প্রোফাইল এডিট
+                  </button>
+                  <button
+                    onClick={() => setShowDiscretionaryPayoutModal(true)}
+                    className="px-2.5 py-1 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-300 flex items-center gap-1 shadow-2xs"
+                    title="কমিশন পরিশোধ করুন"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    কমিশন প্রদান
+                  </button>
+                  <button
+                    onClick={() => handleDeactivate(agentDetailData.agent)}
+                    className="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition border border-rose-300 flex items-center gap-1 shadow-2xs"
+                    title="পার্টনার মুছে ফেলুন বা নিষ্ক্রিয় করুন"
+                  >
+                    মুছে ফেলুন / Archive
+                  </button>
+                </div>
               </div>
               <button
                 onClick={() => {
@@ -2413,6 +2517,192 @@ export default function ReferralManagementPage() {
                 {discretionaryPayoutLoading ? "প্রক্রিয়াধীন..." : "কমিশন পরিশোধ করুন"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDIT REFERRAL PARTNER PROFILE */}
+      {partnerToEdit && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
+            <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold">
+                  <Edit2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    রেফারেল পার্টনার প্রোফাইল সংশোধন (Edit Partner)
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    ID: {partnerToEdit.agent_code}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPartnerToEdit(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditPartner} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    পূর্ণ নাম (Full Name) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.fullName}
+                    onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                    className="w-full px-3.5 py-2 text-xs font-bold border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    পার্টনার ক্যাটাগরি (Partner Type) *
+                  </label>
+                  <select
+                    value={editForm.agentType}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        agentType: e.target.value as "DOCTOR" | "COMMUNITY_PC" | "ORGANIZATION" | "STAFF",
+                      })
+                    }
+                    className="w-full px-3.5 py-2 text-xs font-bold border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
+                  >
+                    <option value="COMMUNITY_PC">Community PC Agent</option>
+                    <option value="DOCTOR">Doctor / Specialist</option>
+                    <option value="ORGANIZATION">Organization / Clinic</option>
+                    <option value="STAFF">Internal Hospital Staff</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    মোবাইল নম্বর (Phone) *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    className="w-full px-3.5 py-2 text-xs font-bold border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    ইমেইল (Email Address)
+                  </label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    BMDC / ট্রেড লাইসেন্স নং
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.licenseNo}
+                    onChange={(e) => setEditForm({ ...editForm, licenseNo: e.target.value })}
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    ঠিকানা / ক্লিনিক লোকেশন (Postal Address)
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.address}
+                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                    className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 bg-amber-50/70 border border-amber-200 rounded-2xl p-3.5 space-y-2">
+                  <div className="flex justify-between items-center text-xs font-bold text-amber-950">
+                    <span>কমিশন হার (Commission Rate):</span>
+                    <span className="font-mono text-sm font-black text-amber-800 bg-white px-2 py-0.5 rounded-lg border border-amber-300">
+                      {editForm.commissionRate}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="40"
+                    value={editForm.commissionRate}
+                    onChange={(e) => setEditForm({ ...editForm, commissionRate: Number(e.target.value) })}
+                    className="w-full accent-amber-600 cursor-pointer"
+                  />
+                  <p className="text-[10px] text-amber-800">
+                    * অনুমোদিত সীমা: ১% থেকে ৪০%। পরিবর্তন করলে অডিট হিস্ট্রিতে সংরক্ষিত হবে।
+                  </p>
+                </div>
+
+                <div className="sm:col-span-2 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit-partner-eligible"
+                    checked={editForm.isEligible}
+                    onChange={(e) => setEditForm({ ...editForm, isEligible: e.target.checked })}
+                    className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500"
+                  />
+                  <label htmlFor="edit-partner-eligible" className="text-xs font-bold text-slate-800 cursor-pointer">
+                    কমিশন পাওয়ার জন্য সক্রিয় এবং অনুমোদিত (Active & Approved)
+                  </label>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    নোট / মন্তব্য (Notes)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editForm.notes}
+                    onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setPartnerToEdit(null)}
+                  className="px-4 py-2 font-bold text-xs text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="px-5 py-2 font-bold text-xs text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-xl transition shadow-xs flex items-center gap-1.5"
+                >
+                  {savingEdit ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      সংরক্ষণ হচ্ছে...
+                    </>
+                  ) : (
+                    "পরিবর্তন সংরক্ষণ করুন"
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
