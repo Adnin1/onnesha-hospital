@@ -1,10 +1,14 @@
 import urllib.request
 import uuid
 import sys
+import os
 
 def send_to_telegram(file_path, caption_text):
-    bot_token = '8435645496:AAHl0iZaJx8v1hVLeaJ9ifXZufJErS2VqBw'
-    chat_id = '1161469999'
+    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
+    if not bot_token:
+        print("Error: TELEGRAM_BOT_TOKEN environment variable not set.")
+        return False
+    chat_id = os.environ.get('TELEGRAM_CHAT_ID', '1161469999')
 
     boundary = uuid.uuid4().hex
     headers = {'Content-Type': f'multipart/form-data; boundary={boundary}'}

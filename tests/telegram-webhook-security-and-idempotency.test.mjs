@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { onRequest, onRequestGet, onRequestPost } from "../functions/api/telegram-webhook.js";
 
-const VALID_SECRET = "ohms_sec_tg_733dd993dbaf37df461c0fccfc63dec53921c22a";
+const VALID_SECRET = "test_mock_webhook_secret_0123456789abcdef";
 const VALID_USER_ID = 1161469999;
 const VALID_CHAT_ID = 1161469999;
 
@@ -40,6 +40,7 @@ function createMockContext({
   return {
     request: req,
     env: {
+      TELEGRAM_BOT_TOKEN: "test_mock_bot_token",
       TELEGRAM_WEBHOOK_SECRET: VALID_SECRET,
       TELEGRAM_ALLOWED_USER_ID: String(VALID_USER_ID),
       TELEGRAM_ALLOWED_CHAT_ID: String(VALID_CHAT_ID),

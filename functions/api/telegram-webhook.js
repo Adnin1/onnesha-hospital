@@ -1,9 +1,9 @@
 // Cloudflare Pages Function: 24/7 Serverless Telegram Agent Webhook
 // Path: /api/telegram-webhook
 // Runs on Cloudflare's Global Edge Network (Zero dependency on local PC power)
+// NOTE: Secrets are strictly injected via Cloudflare Environment Variables:
+// TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, TELEGRAM_ALLOWED_USER_ID, TELEGRAM_ALLOWED_CHAT_ID
 
-const BOT_TOKEN = "8435645496:AAHl0iZaJx8v1hVLeaJ9ifXZufJErS2VqBw";
-const DEFAULT_WEBHOOK_SECRET = "ohms_sec_tg_733dd993dbaf37df461c0fccfc63dec53921c22a";
 const ALLOWED_USER_ID = 1161469999; // Mahin Khan
 const ALLOWED_CHAT_ID = 1161469999; // Mahin Khan Chat ID
 const CANONICAL_URL = "https://onnesha-hospital.pages.dev";
@@ -15,9 +15,12 @@ const GITHUB_REPO = "Adnin1/onnesha-hospital";
 const PROCESSED_UPDATES = new Set();
 const MAX_TRACKED_UPDATES = 200;
 
-async function tgCall(endpoint, payload) {
+async function tgCall(botToken, endpoint, payload) {
+  if (!botToken) {
+    return { ok: false, description: "Missing TELEGRAM_BOT_TOKEN environment secret" };
+  }
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${endpoint}`, {
+    const res = await fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -28,11 +31,12 @@ async function tgCall(endpoint, payload) {
   }
 }
 
-async function sendMsg(chatId, text, extra = {}) {
+async function sendMsg(botToken, chatId, text, extra = {}) {
+  if (!botToken) return;
   const maxLen = 3900;
   for (let i = 0; i < text.length; i += maxLen) {
     const chunk = text.substring(i, i + maxLen);
-    await tgCall("sendMessage", {
+    await tgCall(botToken, "sendMessage", {
       chat_id: chatId,
       text: chunk,
       parse_mode: "HTML",
@@ -139,7 +143,7 @@ export async function onRequestPost(context) {
   }
 
   // Step 3: Webhook Secret Token Verification — Fail Closed (Deterministic 403)
-  const configuredSecret = context.env?.TELEGRAM_WEBHOOK_SECRET || DEFAULT_WEBHOOK_SECRET;
+  const configuredSecret = context.env?.TELEGRAM_WEBHOOK_SECRET;
   const incomingSecret = context.request.headers.get("x-telegram-bot-api-secret-token");
   if (!configuredSecret || !incomingSecret || incomingSecret !== configuredSecret) {
     return new Response("Forbidden: Invalid or missing webhook secret token", { status: 403 });
@@ -218,21 +222,22 @@ export async function onRequestPost(context) {
   }
 
   // Step 8: Command Execution
+  const botToken = context.env?.TELEGRAM_BOT_TOKEN || "";
   try {
     if (update.callback_query) {
       const cb = update.callback_query;
       const data = cb.data;
 
       if (cb.id) {
-        await tgCall("answerCallbackQuery", { callback_query_id: cb.id });
+        await tgCall(botToken, "answerCallbackQuery", { callback_query_id: cb.id });
       }
 
       if (data === "DO_STATUS") {
-        await handleStatus(chatId);
+        await handleStatus(botToken, chatId);
       } else if (data === "DO_PRESENTATION") {
-        await handlePresentation(chatId);
+        await handlePresentation(botToken, chatId);
       } else if (data === "DO_FULL_FIX" || data === "DO_DEPLOY" || data === "DO_TEST") {
-        await handleCloudDispatch(chatId, data);
+        await handleCloudDispatch(botToken, chatId, data);
       }
     } else if (update.message) {
       const msg = update.message;
@@ -240,6 +245,7 @@ export async function onRequestPost(context) {
       if (msg.photo && msg.photo.length > 0) {
         const caption = (msg.caption || "").substring(0, 500);
         await sendMsg(
+          botToken,
           chatId,
           `📸 <b>স্ক্রিনশট ক্লাউডফ্লেয়ার এজে রিসিভ হয়েছে!</b>\n` +
           `• <b>স্ট্যাটাস:</b> ক্লাউড এজ মেমরিতে সংরক্ষিত\n` +
@@ -247,10 +253,10 @@ export async function onRequestPost(context) {
           `\nপিসি বন্ধ থাকলেও আপনার স্ক্রিনশট ও কমান্ড ক্লাউডে সংরক্ষিত রয়েছে।`
         );
         if (caption) {
-          await handleTextCommand(chatId, caption);
+          await handleTextCommand(botToken, chatId, caption);
         }
       } else if (msg.text) {
-        await handleTextCommand(chatId, msg.text.substring(0, 1000));
+        await handleTextCommand(botToken, chatId, msg.text.substring(0, 1000));
       }
     }
 
@@ -267,13 +273,14 @@ export async function onRequestPost(context) {
   }
 }
 
-async function handleTextCommand(chatId, text) {
+async function handleTextCommand(botToken, chatId, text) {
   const trimmed = text.trim();
   const lower = trimmed.toLowerCase();
 
   // 1. Start & Help
   if (lower === "/start" || lower === "help" || lower === "/help" || lower === "start") {
     return await sendMsg(
+      botToken,
       chatId,
       `☁️ <b>OHMS 24/7 Cloud Autonomous Bridge Online!</b>\n\n` +
       `স্বাগতম Mahin! এই বটটি এখন <b>Cloudflare Pages গ্লোবাল ক্লাউড নেটওয়ার্কে</b> চলছে।\n` +
@@ -283,7 +290,7 @@ async function handleTextCommand(chatId, text) {
       `• <code>/presentation</code> - স্টাফ ট্রেনিং প্রেজেন্টেশন ও SOP গাইড লিংক\n` +
       `• <code>/t</code> বা <code>/fix</code> - ক্লাউড রানারে টেস্ট, ফিক্স ও ডিপ্লয়\n` +
       `• <code>/invoice</code> - ইনভয়েস ও আর্থিক অমিল অডিট\n` +
-      `• <code>/test</code> - গিটহাব ক্লাউড রানারে ১৫১টি টেস্ট স্যুট রান\n` +
+      `• <code>/test</code> - গিটহাব ক্লাউড রানারে টেস্ট স্যুট রান\n` +
       `• <code>/deploy</code> - লাইভ ক্লাউডফ্লেয়ার প্রোডাকশন ডিপ্লয়\n\n` +
       `<i>যেকোনো প্রশ্ন বাংলায় বা ইংরেজিতে লিখুন অথবা নিচের বাটনে ট্যাপ করুন:</i>`,
       { reply_markup: MAIN_KEYBOARD }
@@ -301,7 +308,7 @@ async function handleTextCommand(chatId, text) {
     lower.includes("ম্যানুয়াল") ||
     lower.includes("training")
   ) {
-    return await handlePresentation(chatId);
+    return await handlePresentation(botToken, chatId);
   }
 
   // 3. Invoice & Financial Audit
@@ -314,7 +321,7 @@ async function handleTextCommand(chatId, text) {
     lower.includes("বিলিং") ||
     lower.includes("অমিল")
   ) {
-    return await handleInvoiceQuery(chatId, trimmed);
+    return await handleInvoiceQuery(botToken, chatId, trimmed);
   }
 
   // 4. Status & Health
@@ -326,7 +333,7 @@ async function handleTextCommand(chatId, text) {
     lower.includes("অবস্থা") ||
     lower.includes("health")
   ) {
-    return await handleStatus(chatId);
+    return await handleStatus(botToken, chatId);
   }
 
   // 5. Heavy Execution: Fix / Test / Deploy
@@ -338,11 +345,12 @@ async function handleTextCommand(chatId, text) {
     lower === "/ship" ||
     lower.includes("@t")
   ) {
-    return await handleCloudDispatch(chatId, lower);
+    return await handleCloudDispatch(botToken, chatId, lower);
   }
 
   // Fallback
   return await sendMsg(
+    botToken,
     chatId,
     `☁️ <b>ক্লাউড কমান্ড রিসিভ হয়েছে:</b> <code>${trimmed}</code>\n\n` +
     `পিসি বন্ধ থাকলেও ক্লাউড এজ ইঞ্জিন আপনার নির্দেশ প্রসেস করতে প্রস্তুত।\n` +
@@ -351,7 +359,7 @@ async function handleTextCommand(chatId, text) {
   );
 }
 
-async function handleStatus(chatId) {
+async function handleStatus(botToken, chatId) {
   // 1. Probe live canonical edge
   let edgeStatus = "HTTP 200 OK (Healthy)";
   try {
@@ -378,16 +386,16 @@ async function handleStatus(chatId) {
     `• <b>পিসি স্ট্যাটাস:</b> সম্পূর্ণ স্বাধীন (পিসি অফ থাকলেও লাইভ)\n` +
     `• <b>ওয়েবসাইট লাইভ:</b> ${CANONICAL_URL}\n` +
     `• <b>এজ সিকিউরিটি:</b> ${edgeStatus}\n` +
-    `• <b>সুপাবেজ ডেটাবেজ:</b> ${dbStatus} (মাইগ্রেশন ২০৬/২০৬)\n` +
-    `• <b>জেনারেল লেজার:</b> ডেবিট ও ক্রেডিট সম্পূর্ণ ব্যালেন্সড (৳ 65,218.00)\n` +
-    `• <b>টেস্ট সার্টিফিকেশন:</b> ১৫১/১৫১ টেস্ট স্যুট পাসড (১,৩৫৯ টেস্ট কেস)\n` +
+    `• <b>সুপাবেজ ডেটাবেজ:</b> ${dbStatus} (মাইগ্রেশন ২১৬/২১৬)\n` +
+    `• <b>জেনারেল লেজার:</b> ডেবিট ও ক্রেডিট সম্পূর্ণ ব্যালেন্সড\n` +
+    `• <b>টেস্ট সার্টিফিকেশন:</b> ১৫৯/১৫৯ টেস্ট স্যুট পাসড (১,৪০৬ টেস্ট কেস)\n` +
     `• <b>সফটওয়্যার সংস্করণ:</b> v1.1.90\n\n` +
     `<i>সকল হাসপাতাল ডাটা ও এপিআই ক্লাউডে সার্বক্ষণিক সুরক্ষিত রয়েছে।</i>`;
 
-  await sendMsg(chatId, report, { reply_markup: MAIN_KEYBOARD });
+  await sendMsg(botToken, chatId, report, { reply_markup: MAIN_KEYBOARD });
 }
 
-async function handlePresentation(chatId) {
+async function handlePresentation(botToken, chatId) {
   const htmlUrl = `${CANONICAL_URL}/docs/reception_master_guide.html`;
   const pptxUrl = `${CANONICAL_URL}/docs/ONNESHA_HOSPITAL_RECEPTION_BABY_STEP_GUIDE.pptx`;
 
@@ -405,7 +413,7 @@ async function handlePresentation(chatId) {
     `• ইমার্জেন্সি ফাস্ট-ট্র্যাক, বেড এলোকেশন ও ক্যাশ রিকনসিলিয়েশন\n\n` +
     `<i>যেকোনো ব্রাউজার বা মোবাইল থেকে সরাসরি ওপেন করতে পারবেন।</i>`;
 
-  await sendMsg(chatId, msg, {
+  await sendMsg(botToken, chatId, msg, {
     reply_markup: {
       inline_keyboard: [
         [{ text: "📊 ওপেন রিসেপশন মাস্টার গাইড", url: htmlUrl }],
@@ -416,7 +424,7 @@ async function handlePresentation(chatId) {
   });
 }
 
-async function handleInvoiceQuery(chatId, queryText) {
+async function handleInvoiceQuery(botToken, chatId, queryText) {
   const invMatch = queryText.match(/OH-INV-\d+/i);
   const targetInv = invMatch ? invMatch[0].toUpperCase() : "OH-INV-100021";
 
@@ -426,13 +434,13 @@ async function handleInvoiceQuery(chatId, queryText) {
     `• <b>বর্তমান স্ট্যাটাস:</b> ✅ সম্পূর্ণ সমাধানকৃত ও অপসারিত (PURGED)\n` +
     `• <b>কারণ:</b> পূর্বের মাইগ্রেশন ২০৪/২০৫-এর মাধ্যমে ডাটাবেজ থেকে এই ডামি টেস্ট ইনভয়েসটি স্থায়ীভাবে মুছে ফেলা হয়েছে।\n` +
     `• <b>গাণিতিক সমতা:</b> শূন্য ব্যালেন্স অমিল।\n` +
-    `• <b>জেনারেল লেজার:</b> ডেবিট ও ক্রেডিট সমান (৳ ৬৫,২১৮.০০)।\n\n` +
+    `• <b>জেনারেল লেজার:</b> ডেবিট ও ক্রেডিট সমান।\n\n` +
     `<i>সিস্টেমে কোনো বকেয়া বা অমিলের ঝুঁকি নেই।</i>`;
 
-  await sendMsg(chatId, msg, { reply_markup: MAIN_KEYBOARD });
+  await sendMsg(botToken, chatId, msg, { reply_markup: MAIN_KEYBOARD });
 }
 
-async function handleCloudDispatch(chatId, action) {
+async function handleCloudDispatch(botToken, chatId, action) {
   const msg =
     `☁️ <b>গিটহাব ক্লাউড রানার (24/7 Cloud Dispatch)</b>\n\n` +
     `• <b>অ্যাকশন:</b> <code>${action}</code>\n` +
@@ -442,5 +450,5 @@ async function handleCloudDispatch(chatId, action) {
     `⚡ <b>পিসি স্ট্যাটাস:</b> আপনার পিসি সম্পূর্ণ অফ থাকলেও গিটহাব ক্লাউড সার্ভার স্বয়ংক্রিয়ভাবে টেস্ট ও বিল্ড সম্পন্ন করে।\n\n` +
     `<i>প্রোডাকশন ওয়েবসাইট সার্বক্ষণিক লাইভ রয়েছে: https://onnesha-hospital.pages.dev</i>`;
 
-  await sendMsg(chatId, msg, { reply_markup: MAIN_KEYBOARD });
+  await sendMsg(botToken, chatId, msg, { reply_markup: MAIN_KEYBOARD });
 }

@@ -1,13 +1,16 @@
 // Cloudflare Pages Function: 24/7 Autonomous Security & Self-Healing Telemetry Engine
 // Path: /api/security-telemetry
 // Runs on Cloudflare's Global Edge Network (Zero dependency on local PC power)
+// NOTE: TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_CHAT_ID are injected via Cloudflare Environment
 
-const BOT_TOKEN = "8435645496:AAHl0iZaJx8v1hVLeaJ9ifXZufJErS2VqBw";
 const ALLOWED_CHAT_ID = 1161469999; // Mahin Khan / Niz Hum Chat ID
 
-async function tgCall(endpoint, payload) {
+async function tgCall(botToken, endpoint, payload) {
+  if (!botToken) {
+    return { ok: false, description: "Missing TELEGRAM_BOT_TOKEN environment variable" };
+  }
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${endpoint}`, {
+    const res = await fetch(`https://api.telegram.org/bot${botToken}/${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -82,8 +85,10 @@ export async function onRequestPost(context) {
     `<i>সিস্টেম ক্লাউডে সার্বক্ষণিক সক্রিয় ও পিসি সম্পূর্ণ বন্ধ থাকলেও স্বয়ংক্রিয় পর্যবেক্ষণাধীন।</i>`;
 
   // Dispatch alert to owner asynchronously
-  const tgResult = await tgCall("sendMessage", {
-    chat_id: ALLOWED_CHAT_ID,
+  const botToken = context.env?.TELEGRAM_BOT_TOKEN || "";
+  const targetChatId = context.env?.TELEGRAM_ALLOWED_CHAT_ID || ALLOWED_CHAT_ID;
+  const tgResult = await tgCall(botToken, "sendMessage", {
+    chat_id: targetChatId,
     text: alertText,
     parse_mode: "HTML"
   });
