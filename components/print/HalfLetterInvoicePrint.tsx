@@ -5,7 +5,7 @@
  * Compact hospital billing memo, cash receipt, and delivery challan printing standard.
  */
 import React from "react";
-import { HOSPITAL_METADATA } from "@/config/hospital";
+import { HOSPITAL_METADATA, HOSPITAL_LAB_POLICY } from "@/config/hospital";
 import { generateSvgBarcode } from "@/lib/print/barcode";
 import { PaymentStampSeal } from "@/components/billing/PaymentStampSeal";
 import { formatDateBDT, formatTimeBDT } from "@/lib/utils";
@@ -51,6 +51,7 @@ export interface HalfLetterInvoicePrintProps {
     quantity: number;
     totalAmount: number;
     unit?: string;
+    turnaroundHours?: number;
     testTimeStr?: string;
     deliveryTimeStr?: string;
   }>;
@@ -131,24 +132,30 @@ function isDiagnosticItem(category?: string, description?: string): boolean {
   return /(usg|ultrasound|x-ray|xray|ecg|cbc|rbs|fbs|blood|urine|stool|lipid|creatinine|lft|sgpt|sgot|serum|culture|biopsy|histopath|hormone|tsh|echo|endoscopy|colonoscopy|ct[- ]scan|mri)/i.test(desc);
 }
 
-function getEstimatedDeliveryHours(category?: string, description?: string): number {
+function getEstimatedDeliveryHours(category?: string, description?: string, configuredHours?: number): number {
+  if (typeof configuredHours === "number" && configuredHours > 0) {
+    return configuredHours;
+  }
+  const cat = (category || "").toUpperCase().trim();
+  if (cat && HOSPITAL_LAB_POLICY.categoryTurnaroundHours[cat]) {
+    return HOSPITAL_LAB_POLICY.categoryTurnaroundHours[cat];
+  }
   const desc = (description || "").toLowerCase();
-  const cat = (category || "").toUpperCase();
 
   // Histopathology, Culture, Biopsy: 48-72 hours
   if (/culture|histopath|biopsy|pap smear/i.test(desc)) {
-    return 72;
+    return HOSPITAL_LAB_POLICY.categoryTurnaroundHours.HISTOPATHOLOGY || 72;
   }
   // USG, X-Ray, ECG: 1-2 hours
   if (["USG", "ULTRASONOGRAPHY", "XRAY", "X-RAY", "ECG"].includes(cat) || /usg|ultrasound|x-ray|xray|ecg/i.test(desc)) {
-    return 2;
+    return HOSPITAL_LAB_POLICY.categoryTurnaroundHours.USG || 2;
   }
   // Rapid blood tests (RBS, FBS, Blood grouping, Rh): 1-2 hours
   if (/rbs|fbs|random blood|fasting blood|blood grouping|rh/i.test(desc)) {
     return 2;
   }
   // Standard lab hematology / biochemistry (CBC, LFT, Lipid, Creatinine, Urine): 3 hours
-  return 3;
+  return HOSPITAL_LAB_POLICY.defaultTurnaroundHours || 3;
 }
 
 function calculateEstimatedDelivery(dateStr: string | undefined, hoursToAdd: number): string {
@@ -160,12 +167,16 @@ function calculateEstimatedDelivery(dateStr: string | undefined, hoursToAdd: num
     const target = new Date(base.getTime() + hoursToAdd * 60 * 60 * 1000);
     const targetHour = target.getHours();
 
-    // If routine turnaround (<= 4h) lands after 8:30 PM (20:30) or before 8:00 AM, deliver next morning at 10:00 AM
-    if (hoursToAdd <= 4 && (targetHour >= 20 || targetHour < 8)) {
-      if (targetHour >= 20) {
+    // If routine turnaround lands after hospital evening cutoff, deliver next morning if enabled by hospital policy
+    if (
+      HOSPITAL_LAB_POLICY.enableAfterHoursNextDaySchedule &&
+      hoursToAdd <= 4 &&
+      (targetHour >= HOSPITAL_LAB_POLICY.eveningCutoffHour || targetHour < 8)
+    ) {
+      if (targetHour >= HOSPITAL_LAB_POLICY.eveningCutoffHour) {
         target.setDate(target.getDate() + 1);
       }
-      target.setHours(10, 0, 0, 0);
+      target.setHours(HOSPITAL_LAB_POLICY.nextMorningDeliveryHour || 10, 0, 0, 0);
     }
 
     return `${formatDateBDT(target)}, ${formatTimeBDT(target)}`;
@@ -202,7 +213,7 @@ export function HalfLetterInvoicePrint({
   const diagItems = items.filter((it) => isDiagnosticItem(it.serviceCategory, it.description));
   const hasDiag = diagItems.length > 0;
   const maxTurnaroundHours = hasDiag
-    ? Math.max(...diagItems.map((it) => getEstimatedDeliveryHours(it.serviceCategory, it.description)))
+    ? Math.max(...diagItems.map((it) => getEstimatedDeliveryHours(it.serviceCategory, it.description, it.turnaroundHours)))
     : 3;
 
   const effectiveTestTime = testTimeStr || cleanDate;
@@ -426,24 +437,29 @@ export function HalfLetterInvoicePrint({
 
       {/* 2.5 Diagnostic Report Delivery Schedule Banner */}
       {hasDiag && (
-        <div className="print-delivery-badge bg-sky-50 print:bg-slate-100 border border-sky-300 print:border-slate-500 rounded p-1.5 text-[9px] mb-2 flex items-center justify-between">
-          <div className="flex items-center space-x-1 min-w-0">
-            <span className="font-bold text-sky-950 print:text-black uppercase tracking-wider">
-              🧪 রিপোর্ট ডেলিভারি সময়সূচী (Delivery Schedule):
-            </span>
-          </div>
-          <div className="flex items-center space-x-3 text-right shrink-0">
-            <div>
-              <span className="text-slate-600 print:text-black">টেস্ট গ্রহণ: </span>
-              <strong className="text-slate-900 print:text-black font-mono font-bold">{effectiveTestTime}</strong>
+        <div className="print-delivery-badge bg-sky-50 print:bg-slate-100 border border-sky-300 print:border-slate-500 rounded p-1.5 text-[9px] mb-2 space-y-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1 min-w-0">
+              <span className="font-bold text-sky-950 print:text-black uppercase tracking-wider">
+                🧪 রিপোর্ট ডেলিভারি সময়সূচী (Delivery Schedule):
+              </span>
             </div>
-            <div className="border-l border-sky-300 print:border-slate-400 pl-2">
-              <span className="text-sky-900 print:text-black font-semibold">সম্ভাব্য ডেলিভারি: </span>
-              <strong className="text-sky-950 print:text-black font-mono font-black text-[10px] bg-white px-1.5 py-0.5 rounded border border-sky-400 print:border-slate-600">
-                {effectiveDeliveryTime}
-              </strong>
+            <div className="flex items-center space-x-3 text-right shrink-0">
+              <div>
+                <span className="text-slate-600 print:text-black">টেস্ট গ্রহণ: </span>
+                <strong className="text-slate-900 print:text-black font-mono font-bold">{effectiveTestTime}</strong>
+              </div>
+              <div className="border-l border-sky-300 print:border-slate-400 pl-2">
+                <span className="text-sky-900 print:text-black font-semibold">সম্ভাব্য ডেলিভারি: </span>
+                <strong className="text-sky-950 print:text-black font-mono font-black text-[10px] bg-white px-1.5 py-0.5 rounded border border-sky-400 print:border-slate-600">
+                  {effectiveDeliveryTime}
+                </strong>
+              </div>
             </div>
           </div>
+          <p className="text-[8px] text-slate-600 print:text-black italic border-t border-sky-200 print:border-slate-300 pt-0.5">
+            {HOSPITAL_LAB_POLICY.safeDisclaimerBn}
+          </p>
         </div>
       )}
 
@@ -463,7 +479,7 @@ export function HalfLetterInvoicePrint({
           <tbody>
             {items.map((it, idx) => {
               const isDiag = isDiagnosticItem(it.serviceCategory, it.description);
-              const itemTurnaround = getEstimatedDeliveryHours(it.serviceCategory, it.description);
+              const itemTurnaround = getEstimatedDeliveryHours(it.serviceCategory, it.description, it.turnaroundHours);
               const itemDelivery = it.deliveryTimeStr || calculateEstimatedDelivery(dateStr, itemTurnaround);
               const itemTestTime = it.testTimeStr || effectiveTestTime;
 

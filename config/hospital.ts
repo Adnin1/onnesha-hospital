@@ -169,3 +169,46 @@ export const VERIFIED_HOSPITAL_SERVICES = [
 ] as const;
 
 
+
+/**
+ * Authoritative Diagnostic Laboratory Delivery & Turnaround Policy
+ * Configurable turnaround hours, operational cutoffs, and patient-facing disclaimers.
+ */
+export interface LabDeliveryPolicy {
+  policyName: string;
+  isConfiguredPolicy: boolean;
+  defaultTurnaroundHours: number;
+  categoryTurnaroundHours: Record<string, number>;
+  eveningCutoffHour: number;
+  eveningCutoffMinute: number;
+  nextMorningDeliveryHour: number;
+  enableAfterHoursNextDaySchedule: boolean;
+  safeDisclaimerBn: string;
+  safeDisclaimerEn: string;
+}
+
+export const HOSPITAL_LAB_POLICY: LabDeliveryPolicy = {
+  policyName: "Onnesha Hospital Standard Diagnostic Turnaround Policy",
+  isConfiguredPolicy: true,
+  defaultTurnaroundHours: 3,
+  categoryTurnaroundHours: {
+    HISTOPATHOLOGY: 72,
+    BIOPSY: 72,
+    CULTURE: 72,
+    MICROBIOLOGY: 48,
+    USG: 2,
+    ULTRASONOGRAPHY: 2,
+    XRAY: 2,
+    "X-RAY": 2,
+    ECG: 1,
+    HAEMATOLOGY: 3,
+    HEMATOLOGY: 3,
+    BIOCHEMISTRY: 3,
+  },
+  eveningCutoffHour: 20,
+  eveningCutoffMinute: 30,
+  nextMorningDeliveryHour: 10,
+  enableAfterHoursNextDaySchedule: true,
+  safeDisclaimerBn: "সম্ভাব্য সময় • জরুরি বা বিশেষ পরীক্ষার সঠিক সময় ল্যাবে নিশ্চিত করুন",
+  safeDisclaimerEn: "Estimated delivery time • Please confirm with laboratory for emergency or specialized investigations",
+};

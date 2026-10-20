@@ -90,4 +90,24 @@ test("OHMS Absolute Final Closure: Least-Privilege Accounting, Permanent Purge I
     assert.match(content, /enqueueTelegramCommand/);
     assert.doesNotMatch(content, /getUpdates/);
   });
+
+  await t.test("11. Migration 222 enforces database lint parity on journal_entries and permanent delete cascades", () => {
+    const mig222Path = path.join(
+      ROOT,
+      "supabase/migrations/20261021060000_migration_222_db_lint_fixes_and_schema_parity.sql"
+    );
+    assert.ok(fs.existsSync(mig222Path), "Migration 222 file must exist");
+    const content = fs.readFileSync(mig222Path, "utf8");
+    assert.match(content, /total_debit,\s*total_credit,\s*posted_by/, "Must insert total_debit, total_credit, posted_by into journal_entries");
+    assert.doesNotMatch(content, /UPDATE public\.patient_referral_attributions SET invoice_id/, "Must not have invalid invoice_id update on patient_referral_attributions");
+    assert.match(content, /EXPENSE_REVERSAL/);
+  });
+
+  await t.test("12. config/hospital.ts exports configurable HOSPITAL_LAB_POLICY with safe patient disclaimer", () => {
+    const hospitalConfigPath = path.join(ROOT, "config/hospital.ts");
+    const content = fs.readFileSync(hospitalConfigPath, "utf8");
+    assert.match(content, /HOSPITAL_LAB_POLICY/);
+    assert.match(content, /categoryTurnaroundHours/);
+    assert.match(content, /safeDisclaimerBn/);
+  });
 });
