@@ -129,7 +129,7 @@ function BillingManagementContent() {
     unitPrice: number;
     quantity: number;
   }>>([]);
-  const [discountMode, setDiscountMode] = useState<"PERCENT" | "FIXED">("PERCENT");
+  const [discountMode, setDiscountMode] = useState<"PERCENT" | "FIXED">("FIXED");
   const [discountPercent, setDiscountPercent] = useState<number | "">("");
   const [discountFixed, setDiscountFixed] = useState<number | "">("");
   const [discountReason, setDiscountReason] = useState("");
@@ -718,10 +718,11 @@ function BillingManagementContent() {
   };
 
   // Calculations for new invoice with dual discount support
-  const subtotal = items.reduce((acc, it) => acc + it.unitPrice * it.quantity, 0);
+  const subtotal = items.reduce((acc, it) => acc + (Number(it.unitPrice) || 0) * (Number(it.quantity) || 0), 0);
+  const isPercentOverLimit = discountMode === "PERCENT" && discountPercent !== "" && Number(discountPercent) > 60;
   const calculatedDiscountAmount = discountMode === "PERCENT"
     ? (discountPercent !== "" && Number(discountPercent) > 0
-        ? Math.min(subtotal, Math.round((subtotal * Number(discountPercent)) / 100))
+        ? (isPercentOverLimit ? 0 : Math.min(subtotal, Math.round((subtotal * Number(discountPercent)) / 100)))
         : 0)
     : (discountFixed !== "" && Number(discountFixed) > 0
         ? Math.min(subtotal, Math.round(Number(discountFixed)))
@@ -732,7 +733,7 @@ function BillingManagementContent() {
   const recalcTotals = (updatedItems: typeof items) => {
     const newSub = updatedItems.reduce((acc, it) => acc + (Number(it.unitPrice) || 0) * (Number(it.quantity) || 0), 0);
     const newDisc = discountMode === "PERCENT"
-      ? (discountPercent !== "" && Number(discountPercent) > 0 ? Math.round((newSub * Number(discountPercent)) / 100) : 0)
+      ? (discountPercent !== "" && Number(discountPercent) > 0 && Number(discountPercent) <= 60 ? Math.round((newSub * Number(discountPercent)) / 100) : 0)
       : (discountFixed !== "" && Number(discountFixed) > 0 ? Math.min(newSub, Number(discountFixed)) : 0);
     setInitialPaymentAmount(Math.max(0, newSub - newDisc));
   };
@@ -1055,7 +1056,7 @@ function BillingManagementContent() {
     setUnbilledServicesCount(0);
     setUnbilledServicesTotal(0);
     setLoadingUnbilledServices(false);
-    setDiscountMode("PERCENT");
+    setDiscountMode("FIXED");
     setDiscountPercent("");
     setDiscountFixed("");
     setDiscountReason("");
@@ -2621,8 +2622,16 @@ function BillingManagementContent() {
                         type="button"
                         onClick={() => {
                           setDiscountMode("PERCENT");
-                          const disc = discountPercent !== "" && Number(discountPercent) > 0
-                            ? Math.round((subtotal * Number(discountPercent)) / 100)
+                          let targetVal: number | "" = discountPercent;
+                          if (targetVal === "" && discountFixed !== "") {
+                            const num = Number(discountFixed);
+                            if (num > 0 && num <= 60) {
+                              targetVal = num;
+                              setDiscountPercent(num);
+                            }
+                          }
+                          const disc = targetVal !== "" && Number(targetVal) > 0 && Number(targetVal) <= 60
+                            ? Math.round((subtotal * Number(targetVal)) / 100)
                             : 0;
                           setInitialPaymentAmount(Math.max(0, subtotal - disc));
                         }}
@@ -2638,8 +2647,13 @@ function BillingManagementContent() {
                         type="button"
                         onClick={() => {
                           setDiscountMode("FIXED");
-                          const disc = discountFixed !== "" && Number(discountFixed) > 0
-                            ? Number(discountFixed)
+                          let targetVal: number | "" = discountFixed;
+                          if (targetVal === "" && discountPercent !== "") {
+                            targetVal = Number(discountPercent);
+                            setDiscountFixed(targetVal);
+                          }
+                          const disc = targetVal !== "" && Number(targetVal) > 0
+                            ? Math.min(subtotal, Number(targetVal))
                             : 0;
                           setInitialPaymentAmount(Math.max(0, subtotal - disc));
                         }}
@@ -2664,10 +2678,11 @@ function BillingManagementContent() {
                             placeholder="৫% - ৬০%"
                             value={discountPercent}
                             onChange={(e) => {
-                              const val = e.target.value === "" ? "" : Number(e.target.value);
-                              setDiscountPercent(val);
-                              const disc = val !== "" && Number(val) > 0
-                                ? Math.round((subtotal * Number(val)) / 100)
+                              const rawVal = e.target.value === "" ? "" : Number(e.target.value);
+                              setDiscountPercent(rawVal);
+                              const num = Number(rawVal);
+                              const disc = rawVal !== "" && num > 0 && num <= 60
+                                ? Math.round((subtotal * num) / 100)
                                 : 0;
                               setInitialPaymentAmount(Math.max(0, subtotal - disc));
                             }}
@@ -2683,12 +2698,13 @@ function BillingManagementContent() {
                             type="number"
                             min="0"
                             step="10"
-                            placeholder="ছাড়ের নির্দিষ্ট পরিমাণ (৳)"
+                            placeholder="ছাড়ের নির্দিষ্ট পরিমাণ (৳) যেমন: ২০০ বা ৫০০"
                             value={discountFixed}
                             onChange={(e) => {
-                              const val = e.target.value === "" ? "" : Number(e.target.value);
-                              setDiscountFixed(val);
-                              const disc = val !== "" && Number(val) > 0 ? Number(val) : 0;
+                              const rawVal = e.target.value === "" ? "" : Number(e.target.value);
+                              setDiscountFixed(rawVal);
+                              const num = Number(rawVal);
+                              const disc = rawVal !== "" && num > 0 ? Math.min(subtotal, num) : 0;
                               setInitialPaymentAmount(Math.max(0, subtotal - disc));
                             }}
                             className="w-full px-3 py-1.5 border rounded-xl bg-white font-mono font-bold pr-8 text-xs"
@@ -2702,7 +2718,30 @@ function BillingManagementContent() {
 
                     {discountMode === "PERCENT" && discountPercent !== "" && Number(discountPercent) > 0 && (
                       <div className="mt-1 text-[11px]">
-                        {Number(discountPercent) < 5 || Number(discountPercent) > 60 ? (
+                        {Number(discountPercent) > 60 ? (
+                          <div className="p-2 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 space-y-1">
+                            <div className="font-bold text-amber-800">
+                              ⚠️ অনুমোদিত ডিসকাউন্ট শতকরা সীমা ৫% থেকে ৬০%। আপনি {discountPercent}% লিখেছেন।
+                            </div>
+                            <div className="text-[11px] text-amber-700">
+                              আপনি কি <strong>৳ {discountPercent} টাকা নির্দিষ্ট ছাড়</strong> দিতে চান?
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const val = Number(discountPercent);
+                                setDiscountMode("FIXED");
+                                setDiscountFixed(val);
+                                setDiscountPercent("");
+                                const disc = Math.min(subtotal, val);
+                                setInitialPaymentAmount(Math.max(0, subtotal - disc));
+                              }}
+                              className="mt-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-[11px] cursor-pointer inline-flex items-center gap-1 shadow-xs transition"
+                            >
+                              ৳ {discountPercent} নির্দিষ্ট টাকায় পরিবর্তন করুন
+                            </button>
+                          </div>
+                        ) : Number(discountPercent) < 5 ? (
                           <span className="text-amber-600 font-bold">
                             ⚠️ অনুমোদিত ডিসকাউন্ট শতকরা সীমা ৫% থেকে ৬০%
                           </span>
@@ -2714,11 +2753,17 @@ function BillingManagementContent() {
                       </div>
                     )}
 
-                    {discountMode === "FIXED" && calculatedDiscountAmount > 0 && (
+                    {discountMode === "FIXED" && discountFixed !== "" && Number(discountFixed) > 0 && (
                       <div className="mt-1 text-[11px]">
-                        <span className="text-emerald-700 font-bold">
-                          রোগীর ছাড়: {formatCurrencyBDT(calculatedDiscountAmount)} BDT (নির্দিষ্ট ছাড়)
-                        </span>
+                        {Number(discountFixed) > subtotal ? (
+                          <span className="text-rose-600 font-bold">
+                            ⚠️ নির্দিষ্ট ডিসকাউন্ট মোট বিল ({formatCurrencyBDT(subtotal)})-এর চেয়ে বেশি হতে পারবে না।
+                          </span>
+                        ) : (
+                          <span className="text-emerald-700 font-bold">
+                            রোগীর ছাড়: {formatCurrencyBDT(calculatedDiscountAmount)} BDT (নির্দিষ্ট ছাড়)
+                          </span>
+                        )}
                       </div>
                     )}
 
@@ -2738,7 +2783,27 @@ function BillingManagementContent() {
 
                 <div className="space-y-2">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Initial Payment (BDT)</label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block font-bold text-slate-700">Initial Payment (BDT)</label>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setInitialPaymentAmount(netTotal)}
+                          className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded cursor-pointer transition"
+                          title="সম্পূর্ণ টাকা পরিশোধ হিসেবে সেট করুন"
+                        >
+                          সম্পূর্ণ (Full)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setInitialPaymentAmount(0)}
+                          className="text-[10px] font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-1.5 py-0.5 rounded cursor-pointer transition"
+                          title="বকেয়া হিসেবে শূন্য টাকা সেট করুন"
+                        >
+                          বকেয়া (Due)
+                        </button>
+                      </div>
+                    </div>
                     <input
                       type="number"
                       min="0"
@@ -2936,9 +3001,21 @@ function BillingManagementContent() {
               </div>
 
 
-              <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs flex justify-between font-bold">
-                <span>Grand Total: {formatCurrencyBDT(netTotal)}</span>
-                <span className="text-rose-600">Remaining Due: {formatCurrencyBDT(dueAmount)}</span>
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs space-y-1.5">
+                <div className="flex justify-between text-slate-600">
+                  <span>মোট বিল (Subtotal):</span>
+                  <span className="font-bold text-slate-900">{formatCurrencyBDT(subtotal)}</span>
+                </div>
+                {calculatedDiscountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-700">
+                    <span>রোগীর ছাড় ({discountMode === "PERCENT" ? `${discountPercent}%` : "নির্দিষ্ট"} Discount):</span>
+                    <span className="font-bold">-{formatCurrencyBDT(calculatedDiscountAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center border-t border-slate-200 pt-1.5 font-bold">
+                  <span>Grand Total: {formatCurrencyBDT(netTotal)}</span>
+                  <span className="text-rose-600">Remaining Due: {formatCurrencyBDT(dueAmount)}</span>
+                </div>
               </div>
 
               <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
