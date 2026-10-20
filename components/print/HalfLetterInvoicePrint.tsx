@@ -142,7 +142,7 @@ export function HalfLetterInvoicePrint({
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page {
-            size: auto;
+            size: 5.5in 8.5in;
             margin: 5mm 6mm;
           }
           html, body {
