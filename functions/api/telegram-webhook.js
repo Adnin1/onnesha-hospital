@@ -46,6 +46,7 @@ async function sendMsg(botToken, chatId, text, extra = {}) {
 }
 
 async function claimDurableUpdate(supabaseUrl, supabaseKey, updateId, command) {
+  if (!supabaseKey || !supabaseUrl) return null;
   try {
     const res = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_telegram_update_atomic`, {
       method: "POST",
@@ -67,6 +68,7 @@ async function claimDurableUpdate(supabaseUrl, supabaseKey, updateId, command) {
 }
 
 async function completeDurableUpdate(supabaseUrl, supabaseKey, updateId, status = "completed") {
+  if (!supabaseKey || !supabaseUrl) return;
   try {
     await fetch(`${supabaseUrl}/rest/v1/rpc/complete_telegram_update_atomic`, {
       method: "POST",
@@ -84,6 +86,7 @@ async function completeDurableUpdate(supabaseUrl, supabaseKey, updateId, status 
 }
 
 async function enqueueTelegramCommand(supabaseUrl, supabaseKey, updateId, chatId, userId, commandText, payload = {}) {
+  if (!supabaseKey || !supabaseUrl) return;
   try {
     await fetch(`${supabaseUrl}/rest/v1/rpc/enqueue_telegram_command_atomic`, {
       method: "POST",
@@ -216,16 +219,18 @@ export async function onRequestPost(context) {
     return new Response("Forbidden: Unauthorized sender or chat", { status: 403 });
   }
 
-  // Step 7: Durable Update Idempotency Claim (Supabase RPC)
+  // Step 7: Durable Update Idempotency Claim (Supabase RPC - Service Role only)
   const sbUrl = context.env?.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL;
-  const sbKey = context.env?.SUPABASE_SERVICE_ROLE_KEY || context.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  const serviceRoleKey = context.env?.SUPABASE_SERVICE_ROLE_KEY || null;
 
-  const claim = await claimDurableUpdate(sbUrl, sbKey, update.update_id, commandTag);
-  if (claim && claim.is_duplicate === true) {
-    return new Response(
-      JSON.stringify({ status: "ok", duplicate: true, update_id: update.update_id }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+  if (serviceRoleKey) {
+    const claim = await claimDurableUpdate(sbUrl, serviceRoleKey, update.update_id, commandTag);
+    if (claim && claim.is_duplicate === true) {
+      return new Response(
+        JSON.stringify({ status: "ok", duplicate: true, update_id: update.update_id }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
   }
 
   // In-memory fallback defense-in-depth suppression
@@ -276,20 +281,26 @@ export async function onRequestPost(context) {
           await handleTextCommand(botToken, chatId, caption);
         }
       } else if (msg.text) {
-        await enqueueTelegramCommand(sbUrl, sbKey, update.update_id, chatId, userId, msg.text, { source: "telegram_webhook" });
+        if (serviceRoleKey) {
+          await enqueueTelegramCommand(sbUrl, serviceRoleKey, update.update_id, chatId, userId, msg.text, { source: "telegram_webhook" });
+        }
         await handleTextCommand(botToken, chatId, msg.text.substring(0, 1000));
       }
     }
 
-    // Step 9: Mark Completed in Durable Store
-    await completeDurableUpdate(sbUrl, sbKey, update.update_id, "completed");
+    // Step 9: Mark Completed in Durable Store (Service Role only)
+    if (serviceRoleKey) {
+      await completeDurableUpdate(sbUrl, serviceRoleKey, update.update_id, "completed");
+    }
 
     return new Response(
       JSON.stringify({ status: "ok", processed: true, update_id: update.update_id }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch {
-    await completeDurableUpdate(sbUrl, sbKey, update.update_id, "failed");
+    if (serviceRoleKey) {
+      await completeDurableUpdate(sbUrl, serviceRoleKey, update.update_id, "failed");
+    }
     return new Response("Internal Server Error", { status: 500 });
   }
 }
