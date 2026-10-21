@@ -16,6 +16,7 @@ import {
   Stethoscope,
   Pill,
   Edit3,
+  Save,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatDateBDT, formatPatientAgeDisplay } from "@/lib/utils";
@@ -28,6 +29,7 @@ import {
   getDischargeSummaryAction,
   cancelOrDeleteIpdAdmissionAction,
   updateIpdAdmissionAction,
+  updateIpdTreatmentPlanAction,
 } from "@/lib/patient/actions";
 import { searchReferralAgentsAction } from "@/lib/referrals/actions";
 import { getCurrentUserSession } from "@/lib/auth/session";
@@ -97,6 +99,7 @@ export default function IPDAdmissionsPage() {
     guardianName: "",
     guardianPhone: "",
     notes: "",
+    clinicalFindings: "",
   });
 
   // Form states
@@ -165,6 +168,16 @@ export default function IPDAdmissionsPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [refreshIndex, setRefreshIndex] = useState(0);
+  const [currentTreatmentPlan, setCurrentTreatmentPlan] = useState("");
+  const [savingTreatmentPlan, setSavingTreatmentPlan] = useState(false);
+
+  useEffect(() => {
+    if (selectedAdmission) {
+      setCurrentTreatmentPlan(selectedAdmission.clinical_findings || selectedAdmission.notes || "");
+    } else {
+      setCurrentTreatmentPlan("");
+    }
+  }, [selectedAdmission?.id, selectedAdmission?.clinical_findings, selectedAdmission?.notes]);
 
   useEffect(() => {
     async function loadData() {
@@ -206,6 +219,7 @@ export default function IPDAdmissionsPage() {
             bed_assignments (
               id,
               bed_id,
+              cabin_id,
               status,
               beds (
                 id,
@@ -213,6 +227,11 @@ export default function IPDAdmissionsPage() {
                 wards (
                   name
                 )
+              ),
+              cabins (
+                id,
+                cabin_number,
+                cabin_type
               )
             )
           `)
@@ -247,12 +266,18 @@ export default function IPDAdmissionsPage() {
             } | null;
             bed_assignments: Array<{
               id: string;
-              bed_id: string;
+              bed_id?: string | null;
+              cabin_id?: string | null;
               status: string;
-              beds: {
+              beds?: {
                 id: string;
                 bed_number: string;
                 wards: { name: string } | null;
+              } | null;
+              cabins?: {
+                id: string;
+                cabin_number: string;
+                cabin_type: string;
               } | null;
             }> | null;
           }
@@ -274,9 +299,13 @@ export default function IPDAdmissionsPage() {
               address: v.patients?.address,
               guardian_name: v.patients?.guardian_name,
               blood_group: v.patients?.blood_group,
-              bed_id: activeBedAssign?.beds?.id,
-              bed_number: activeBedAssign?.beds?.bed_number || "UNASSIGNED",
-              ward_name: activeBedAssign?.beds?.wards?.name || "General IPD",
+              bed_id: activeBedAssign?.beds?.id || activeBedAssign?.cabins?.id,
+              bed_number: activeBedAssign?.cabins?.cabin_number
+                ? `Cabin: ${activeBedAssign.cabins.cabin_number}`
+                : (activeBedAssign?.beds?.bed_number || "UNASSIGNED"),
+              ward_name: activeBedAssign?.cabins?.cabin_type
+                ? `Cabin (${activeBedAssign.cabins.cabin_type})`
+                : (activeBedAssign?.beds?.wards?.name || "General IPD"),
               admitted_at: v.admitted_at,
               doctor_id: v.doctor_id,
               doctor_name: "Attending Consultant",
@@ -615,6 +644,37 @@ export default function IPDAdmissionsPage() {
     }
   };
 
+  const handleSaveTreatmentPlan = async () => {
+    if (!selectedAdmission) return;
+    setSavingTreatmentPlan(true);
+    setActionError(null);
+    try {
+      const res = await updateIpdTreatmentPlanAction({
+        visitId: selectedAdmission.id,
+        treatmentPlan: currentTreatmentPlan,
+      });
+      if (res.success) {
+        setActionSuccess(res.data?.message || "চিকিৎসা ও পরামর্শ সফলভাবে সংরক্ষিত হয়েছে।");
+        setInpatients((prev) =>
+          prev.map((adm) =>
+            adm.id === selectedAdmission.id
+              ? { ...adm, clinical_findings: currentTreatmentPlan, notes: currentTreatmentPlan }
+              : adm
+          )
+        );
+        setSelectedAdmission((prev) =>
+          prev ? { ...prev, clinical_findings: currentTreatmentPlan, notes: currentTreatmentPlan } : prev
+        );
+      } else {
+        setActionError(res.error || "চিকিৎসা পরামর্শ সংরক্ষণ করতে ব্যর্থ হয়েছে।");
+      }
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Error saving treatment plan.");
+    } finally {
+      setSavingTreatmentPlan(false);
+    }
+  };
+
   // Handle Discharge Submission
   const handleDischargeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -857,7 +917,8 @@ export default function IPDAdmissionsPage() {
                           doctorId: selectedAdmission.doctor_id || "",
                           guardianName: selectedAdmission.guardian_name || "",
                           guardianPhone: selectedAdmission.guardian_phone || selectedAdmission.phone || "",
-                          notes: selectedAdmission.clinical_findings || "",
+                          notes: selectedAdmission.notes || "",
+                          clinicalFindings: selectedAdmission.clinical_findings || "",
                         });
                         setShowEditAdmissionModal(true);
                       }}
@@ -951,13 +1012,29 @@ export default function IPDAdmissionsPage() {
                       </p>
                     </div>
 
-                    <div>
-                      <span className="font-bold text-slate-900 uppercase tracking-wide block mb-1">
-                        Inpatient Care Plan & Ward Protocol:
-                      </span>
-                      <p className="text-slate-700 leading-relaxed bg-white p-3 rounded-xl border border-slate-100">
-                        Continuous vital signs monitoring every 4 hours. Daily medical officer rounds. Nursing intake/output chart maintenance. Medications administered as per consultant orders.
-                      </p>
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900 uppercase tracking-wide text-xs flex items-center gap-1.5">
+                          <Stethoscope className="w-3.5 h-3.5 text-sky-600" />
+                          ইনপেশেন্ট চিকিৎসা ও ডাক্তারের পরামর্শ (Treatment Plan & Clinical Advice):
+                        </span>
+                        <button
+                          type="button"
+                          disabled={savingTreatmentPlan}
+                          onClick={handleSaveTreatmentPlan}
+                          className="no-print inline-flex items-center gap-1 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-[11px] px-3 py-1 rounded-lg transition shadow-2xs cursor-pointer"
+                        >
+                          <Save className="w-3 h-3" />
+                          {savingTreatmentPlan ? "সংরক্ষণ হচ্ছে..." : "পরামর্শ সংরক্ষণ করুন"}
+                        </button>
+                      </div>
+                      <textarea
+                        rows={3}
+                        value={currentTreatmentPlan}
+                        onChange={(e) => setCurrentTreatmentPlan(e.target.value)}
+                        placeholder="রোগীর চিকিৎসা নির্দেশিকা, ঔষধের ডোজ ও ডাক্তারের পরামর্শ এখানে লিখুন..."
+                        className="w-full text-xs p-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 leading-relaxed"
+                      />
                     </div>
                   </div>
 
@@ -1234,6 +1311,12 @@ export default function IPDAdmissionsPage() {
             </div>
 
             <form onSubmit={handleDischargeSubmit} className="space-y-6 text-xs">
+              {actionError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-2 text-rose-600 shrink-0" />
+                  {actionError}
+                </div>
+              )}
               {/* Part 1: Consultant & Disposition */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-4">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200">

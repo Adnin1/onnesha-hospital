@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { requirePermission, getCurrentUserSession } from "@/lib/auth/session";
+import { getCurrentUserSession, hasPermission, requirePermission } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
 import { PrescriptionRecord, PrescriptionItemRecord } from "@/types/clinical-emr";
 
@@ -38,9 +38,22 @@ export async function createPrescriptionAction(params: {
 
   try {
     await requirePermission("prescriptions.create");
-  } catch (permErr: unknown) {
-    const msg = permErr instanceof Error ? permErr.message : "403 Forbidden";
-    return { success: false, error: msg };
+  } catch {
+    const canPrescribe =
+      (await hasPermission("prescriptions.manage")) ||
+      (await hasPermission("doctors.manage")) ||
+      (await hasPermission("opd.consult")) ||
+      (await hasPermission("ipd.manage")) ||
+      session.roles.includes("super_admin") ||
+      session.roles.includes("hospital_administrator") ||
+      session.roles.includes("admin") ||
+      session.roles.includes("doctor") ||
+      session.roles.includes("receptionist") ||
+      session.roles.includes("nurse");
+
+    if (!canPrescribe) {
+      return { success: false, error: "403 Forbidden: Insufficient permissions to issue prescription." };
+    }
   }
 
   if (!params.diagnosis.trim()) {
@@ -286,4 +299,73 @@ export async function getPrescriptionsAction(params?: {
     return { success: false, error: msg };
   }
 }
+
+/**
+ * 3. Delete / Void Mistake Prescription
+ */
+export async function deletePrescriptionAction(params: {
+  prescriptionId: string;
+}): Promise<ActionResult<{ success: boolean; message: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  const canDelete =
+    (await hasPermission("prescriptions.delete")) ||
+    (await hasPermission("prescriptions.manage")) ||
+    session.roles.includes("super_admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("doctor") ||
+    session.roles.includes("receptionist");
+
+  if (!canDelete) {
+    return { success: false, error: "403 Forbidden: Insufficient permissions to delete prescription." };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // 1. Delete line items first
+    await supabase
+      .from("prescription_items")
+      .delete()
+      .eq("prescription_id", params.prescriptionId);
+
+    // 2. Delete prescription
+    const { error } = await supabase
+      .from("prescriptions")
+      .delete()
+      .eq("id", params.prescriptionId)
+      .eq("organization_id", session.organizationId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    await recordAuditLog({
+      organizationId: session.organizationId,
+      userId: session.userId,
+      action: "DELETE",
+      module: "PATIENT",
+      entityType: "prescription",
+      entityId: params.prescriptionId,
+    });
+
+    return {
+      success: true,
+      data: {
+        success: true,
+        message: "ডিজিটাল প্রেসক্রিপশন সফলভাবে মুছে ফেলা হয়েছে।",
+      },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to delete prescription.",
+    };
+  }
+}
+
 

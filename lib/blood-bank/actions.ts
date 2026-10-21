@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUserSession, requirePermission } from "@/lib/auth/session";
+import { getCurrentUserSession, requirePermission, hasPermission } from "@/lib/auth/session";
 import { PERMISSIONS } from "@/lib/permissions";
 
 export interface BloodDonor {
@@ -101,10 +101,21 @@ export async function registerBloodBagAction(payload: {
     return { success: false, error: "401 Unauthorized" };
   }
 
-  try {
-    await requirePermission(PERMISSIONS.BLOOD_BANK_MANAGE);
-  } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: blood_bank.manage required" };
+  const canIssue =
+    (await hasPermission(PERMISSIONS.BLOOD_BANK_MANAGE)) ||
+    (await hasPermission(PERMISSIONS.BLOOD_BANK_ISSUE)) ||
+    (await hasPermission(PERMISSIONS.BLOOD_BANK_CROSSMATCH)) ||
+    (await hasPermission("lab.enter_result")) ||
+    session.roles.includes("super_admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("doctor") ||
+    session.roles.includes("lab_technician") ||
+    session.roles.includes("lab_technologist") ||
+    session.roles.includes("receptionist");
+
+  if (!canIssue) {
+    return { success: false, error: "403 Forbidden: Blood bank issue or cross-match permissions required." };
   }
 
   try {
@@ -162,10 +173,21 @@ export async function issueBloodBagAction(payload: {
     return { success: false, error: "401 Unauthorized" };
   }
 
-  try {
-    await requirePermission(PERMISSIONS.BLOOD_BANK_MANAGE);
-  } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: blood_bank.manage required" };
+  const canIssue =
+    (await hasPermission(PERMISSIONS.BLOOD_BANK_MANAGE)) ||
+    (await hasPermission(PERMISSIONS.BLOOD_BANK_ISSUE)) ||
+    (await hasPermission(PERMISSIONS.BLOOD_BANK_CROSSMATCH)) ||
+    (await hasPermission("lab.enter_result")) ||
+    session.roles.includes("super_admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("doctor") ||
+    session.roles.includes("lab_technician") ||
+    session.roles.includes("lab_technologist") ||
+    session.roles.includes("receptionist");
+
+  if (!canIssue) {
+    return { success: false, error: "403 Forbidden: Blood bank issue or cross-match permissions required." };
   }
 
   try {
@@ -264,10 +286,22 @@ export async function registerAndIssueBloodBagAction(payload: {
     return { success: false, error: "401 Unauthorized" };
   }
 
-  try {
-    await requirePermission(PERMISSIONS.BLOOD_BANK_MANAGE);
-  } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden: blood_bank.manage required" };
+  const canIssue =
+    (await hasPermission("blood_bank.manage")) ||
+    (await hasPermission("blood_bank.crossmatch")) ||
+    (await hasPermission("blood_bank.issue")) ||
+    (await hasPermission("lab.enter_result")) ||
+    session.roles.includes("super_admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("doctor") ||
+    session.roles.includes("nurse") ||
+    session.roles.includes("lab_technician") ||
+    session.roles.includes("lab_technologist") ||
+    session.roles.includes("receptionist");
+
+  if (!canIssue) {
+    return { success: false, error: "403 Forbidden: Insufficient blood bank permissions." };
   }
 
   if (payload.major_crossmatch !== "compatible" || payload.minor_crossmatch !== "compatible") {
@@ -398,7 +432,12 @@ export async function cancelOrVoidBloodTransfusionAction(params: {
     session.roles.includes("admin") ||
     session.roles.includes("hospital_administrator") ||
     session.roles.includes("lab_technician") ||
+    session.roles.includes("lab_technologist") ||
     session.roles.includes("doctor") ||
+    session.roles.includes("nurse") ||
+    session.roles.includes("receptionist") ||
+    (await hasPermission("blood_bank.manage")) ||
+    (await hasPermission("blood_bank.crossmatch")) ||
     session.permissions.includes(PERMISSIONS.BLOOD_BANK_MANAGE) ||
     session.permissions.includes(PERMISSIONS.BLOOD_BANK_CROSSMATCH);
 
@@ -440,6 +479,24 @@ export async function updateBloodTransfusionNotesAction(params: {
     return { success: false, error: "401 Unauthorized" };
   }
 
+  const isAllowed =
+    session.roles.includes("super_admin") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("lab_technician") ||
+    session.roles.includes("lab_technologist") ||
+    session.roles.includes("doctor") ||
+    session.roles.includes("nurse") ||
+    session.roles.includes("receptionist") ||
+    (await hasPermission("blood_bank.manage")) ||
+    (await hasPermission("blood_bank.crossmatch")) ||
+    session.permissions.includes(PERMISSIONS.BLOOD_BANK_MANAGE) ||
+    session.permissions.includes(PERMISSIONS.BLOOD_BANK_CROSSMATCH);
+
+  if (!isAllowed) {
+    return { success: false, error: "403 Forbidden: Insufficient blood bank permissions." };
+  }
+
   try {
     const supabase = createClient();
     const { error } = await supabase
@@ -476,6 +533,24 @@ export async function updateBloodTransfusionDossierAction(params: {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "401 Unauthorized" };
+  }
+
+  const isAllowed =
+    session.roles.includes("super_admin") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("lab_technician") ||
+    session.roles.includes("lab_technologist") ||
+    session.roles.includes("doctor") ||
+    session.roles.includes("nurse") ||
+    session.roles.includes("receptionist") ||
+    (await hasPermission("blood_bank.manage")) ||
+    (await hasPermission("blood_bank.crossmatch")) ||
+    session.permissions.includes(PERMISSIONS.BLOOD_BANK_MANAGE) ||
+    session.permissions.includes(PERMISSIONS.BLOOD_BANK_CROSSMATCH);
+
+  if (!isAllowed) {
+    return { success: false, error: "403 Forbidden: Insufficient blood bank permissions." };
   }
 
   try {

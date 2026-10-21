@@ -369,40 +369,46 @@ export function HalfLetterInvoicePrint({
         </div>
       </div>
 
-      {/* 2. Patient Demographics Block - Compact 1-Page Layout */}
-      <div className="print-patient-block bg-slate-50 print:bg-white border border-slate-300 print:border-slate-400 rounded px-2 py-0.5 text-[8.5px] mb-1 leading-snug">
-        <div className="grid grid-cols-12 gap-x-2 items-center">
-          <div className="col-span-7 min-w-0 truncate">
-            <span className="text-slate-600 font-semibold">Patient: </span>
-            <strong className="text-slate-900 uppercase font-black">{patient.name}</strong>
+      {/* 2. Patient Demographics & Delivery Schedule Block - Ultra-Compact Unified Header Strip */}
+      <div className="print-patient-block border border-slate-300 print:border-slate-400 bg-white rounded px-2 py-1 text-[8.5px] mb-1 leading-snug">
+        {/* Row 1: Patient Name, ID, Age/Sex, Blood Group, Phone */}
+        <div className="flex items-center justify-between gap-2 border-b border-slate-200 print:border-slate-300 pb-0.5 mb-0.5">
+          <div className="flex items-center gap-1.5 min-w-0 truncate">
+            <span className="text-slate-500 font-semibold">রোগীর নাম (Name):</span>
+            <strong className="text-slate-900 uppercase font-black tracking-wide">{patient.name}</strong>
             {genderAgeDisplay && (
-              <span className="text-slate-800 ml-1 font-semibold">({genderAgeDisplay})</span>
+              <span className="text-slate-700 font-semibold bg-slate-100 print:bg-transparent px-1 rounded text-[8px]">
+                {genderAgeDisplay}
+              </span>
             )}
             {patient.bloodGroup && !["UNKNOWN", "N/A", "UNDEFINED", "NONE"].includes(patient.bloodGroup.trim().toUpperCase()) && (
-              <span className="ml-1 text-slate-900 font-bold">[{patient.bloodGroup.trim()}]</span>
+              <span className="text-rose-700 print:text-black font-black text-[8px] bg-rose-50 print:bg-transparent px-1 rounded border border-rose-200 print:border-0">
+                {patient.bloodGroup.trim()}
+              </span>
             )}
           </div>
-          <div className="col-span-5 text-right min-w-0 truncate">
-            <span className="text-slate-600 font-semibold">ID: </span>
-            <strong className="font-mono text-slate-900 font-bold">{patient.patientCode}</strong>
-            <span className="text-slate-600 font-semibold ml-2">Phone: </span>
-            <span className="font-mono text-slate-900">{patient.phone || "N/A"}</span>
+          <div className="flex items-center gap-2 text-right shrink-0">
+            <span><span className="text-slate-500 font-semibold">ID:</span> <strong className="font-mono text-slate-900 font-bold">{patient.patientCode}</strong></span>
+            <span><span className="text-slate-500 font-semibold">মোবাইল:</span> <span className="font-mono text-slate-900">{patient.phone || "N/A"}</span></span>
           </div>
         </div>
 
-        <div className="grid grid-cols-12 gap-x-2 items-center border-t border-slate-200 print:border-slate-300 pt-0.5 mt-0.5">
-          <div className="col-span-6 min-w-0 truncate">
-            <span className="text-slate-600 font-semibold">Address: </span>
-            <span className="text-slate-800 font-medium">{patient.address || "N/A"}</span>
-          </div>
-          <div className="col-span-6 text-right min-w-0 flex items-center justify-end gap-1.5">
+        {/* Row 2: Address, Ref Doctor & Payment Status */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0 truncate">
+            <span className="text-slate-500 font-semibold">Address:</span>
+            <span className="text-slate-800 font-medium truncate max-w-[280px]">{patient.address || "N/A"}</span>
             {consultantDoctorName && (
-              <span className="truncate max-w-[140px] text-slate-700">
-                <span className="text-slate-500">Ref: </span>{consultantDoctorName}{departmentName ? ` (${departmentName})` : ""}
-              </span>
+              <>
+                <span className="text-slate-300">|</span>
+                <span className="text-slate-500 font-semibold">রেফার:</span>
+                <span className="text-slate-800 font-medium truncate max-w-[200px]">{consultantDoctorName}{departmentName ? ` (${departmentName})` : ""}</span>
+              </>
             )}
+          </div>
+          <div className="shrink-0 flex items-center gap-1.5">
             <span
-              className={`inline-block px-1 py-0.1 rounded text-[7.5px] font-black uppercase ${
+              className={`inline-block px-1.5 py-0.2 rounded text-[7.5px] font-black uppercase ${
                 dueAmount <= 0
                   ? "bg-emerald-100 text-emerald-900 border border-emerald-400"
                   : paidAmount > 0
@@ -418,16 +424,15 @@ export function HalfLetterInvoicePrint({
 
       {/* 2.5 Diagnostic Report Delivery Schedule Banner - Compact Single-Line Strip */}
       {hasDiag && (
-        <div className="print-delivery-badge bg-sky-50 print:bg-slate-100 border border-sky-300 print:border-slate-500 rounded px-2 py-0.5 text-[8px] mb-1 flex items-center justify-between text-slate-900 print:text-black leading-tight">
-          <div className="flex items-center gap-1 min-w-0 truncate">
-            <span className="font-bold text-sky-950 print:text-black uppercase tracking-wider">
-              Report Delivery Schedule (রিপোর্ট ডেলিভারি সময়সূচী) :
-            </span>
-            <span>test receive (টেস্ট গ্রহণ): <strong className="font-mono font-bold">{effectiveTestTime}</strong> ,</span>
-            <span>somvabbo delivery time (সম্ভাব্য ডেলিভারি): <strong className="font-mono font-black text-sky-950 print:text-black">{effectiveDeliveryTime}</strong></span>
+        <div className="print-delivery-badge border border-slate-300 print:border-slate-400 bg-slate-50 print:bg-white rounded px-2 py-0.5 text-[8px] mb-1 flex items-center justify-between text-slate-800 leading-tight">
+          <div className="flex items-center gap-1.5 min-w-0 truncate">
+            <span className="font-bold text-slate-900 uppercase">রিপোর্ট ডেলিভারি সময়সূচী (Report Delivery Schedule):</span>
+            <span>টেস্ট গ্রহণ (test receive): <strong className="font-mono font-bold text-slate-900">{effectiveTestTime}</strong></span>
+            <span className="text-slate-300">|</span>
+            <span>সম্ভাব্য ডেলিভারি (somvabbo delivery time): <strong className="font-mono font-black text-sky-950 print:text-black">{effectiveDeliveryTime}</strong></span>
           </div>
-          <span className="text-[7px] text-slate-500 print:text-black italic hidden sm:inline shrink-0 ml-1">
-            (নিয়মিত ৩-৫ ঘণ্টা, কালচার ২৪-৭২ ঘণ্টা)
+          <span className="text-[7.5px] text-slate-500 print:text-black italic hidden sm:inline shrink-0 ml-1">
+            (জরুরি প্রয়োজনে রিসিপশনে যোগাযোগ করুন)
           </span>
         </div>
       )}

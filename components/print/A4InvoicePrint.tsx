@@ -67,31 +67,44 @@ export function A4InvoicePrint({
         dateStr={dateStr}
       />
 
-      {/* 2. Patient & Admission Metadata */}
-      <div className="mb-6 grid grid-cols-2 gap-4 rounded border bg-zinc-50 p-4 text-xs">
-        <div className="space-y-1">
-          <div><span className="text-zinc-500">Patient Name: </span><strong>{patient.name}</strong></div>
-          <div>
-            <span className="text-zinc-500">Hospital ID: </span>
-            <strong className="font-mono">{patient.patientCode}</strong>
+      {/* 2. Patient & Admission Metadata - Compact Space-Saving Card */}
+      <div className="mb-4 rounded border border-zinc-300 bg-zinc-50 p-3 text-xs leading-snug">
+        <div className="flex items-center justify-between border-b border-zinc-200 pb-1.5 mb-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-500 font-semibold">রোগীর নাম (Patient):</span>
+            <strong className="text-zinc-900 font-bold uppercase">{patient.name}</strong>
             {(patient.gender || patient.age) && (
-              <span className="ml-1 text-zinc-700 font-semibold">
-                ({[patient.gender, patient.age ? (typeof patient.age === "number" ? `${patient.age}Y` : patient.age) : null].filter(Boolean).join(", ")})
+              <span className="ml-1 text-zinc-700 font-semibold bg-zinc-200/70 px-1.5 py-0.5 rounded text-[11px]">
+                {[patient.gender, patient.age ? (typeof patient.age === "number" ? `${patient.age}Y` : patient.age) : null].filter(Boolean).join(", ")}
               </span>
             )}
           </div>
-          {patient.phone && <div><span className="text-zinc-500">Contact: </span><span>{patient.phone}</span></div>}
-          {patient.address && <div><span className="text-zinc-500">Address: </span><span>{patient.address}</span></div>}
+          <div className="flex items-center gap-3">
+            <div><span className="text-zinc-500 font-semibold">ID:</span> <strong className="font-mono text-zinc-900">{patient.patientCode}</strong></div>
+            {patient.phone && <div><span className="text-zinc-500 font-semibold">Mobile:</span> <span className="font-mono text-zinc-900">{patient.phone}</span></div>}
+          </div>
         </div>
-        <div className="space-y-1 text-right">
-          {departmentName && <div><span className="text-zinc-500">Department: </span><strong>{departmentName}</strong></div>}
-          {admittingDoctorName && <div><span className="text-zinc-500">Attending Consultant: </span><strong>{admittingDoctorName}</strong></div>}
-          {dueDateStr && <div><span className="text-zinc-500">Settlement Due Date: </span><span>{dueDateStr}</span></div>}
-          <div className="pt-1">
-            <span className={`inline-block rounded px-2.5 py-0.5 font-bold uppercase text-[10px] ${
+
+        <div className="flex items-center justify-between text-[11.5px]">
+          <div className="flex items-center gap-2">
+            {patient.address && <div><span className="text-zinc-500 font-semibold">Address:</span> <span className="text-zinc-800">{patient.address}</span></div>}
+            {admittingDoctorName && (
+              <div className="ml-2 pl-2 border-l border-zinc-300">
+                <span className="text-zinc-500 font-semibold">Ref:</span> <strong className="text-zinc-800">{admittingDoctorName}</strong>
+                {departmentName && <span className="text-zinc-600"> ({departmentName})</span>}
+              </div>
+            )}
+            {dueDateStr && (
+              <div className="ml-2 pl-2 border-l border-zinc-300">
+                <span className="text-zinc-500 font-semibold">Due Date:</span> <span className="text-zinc-800">{dueDateStr}</span>
+              </div>
+            )}
+          </div>
+          <div>
+            <span className={`inline-block rounded px-2 py-0.5 font-bold uppercase text-[10px] ${
               dueAmount <= 0
-                ? "bg-emerald-100 text-emerald-800"
-                : "bg-rose-100 text-rose-800"
+                ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                : "bg-rose-100 text-rose-800 border border-rose-300"
             }`}>
               {dueAmount <= 0 ? "PAID IN FULL" : `DUE: BDT ${dueAmount.toLocaleString()}`}
             </span>

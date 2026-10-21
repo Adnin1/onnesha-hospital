@@ -13,7 +13,7 @@ import {
 import { PrescriptionRecord } from "@/types/clinical-emr";
 import { DoctorRecord } from "@/types/appointments";
 import { PatientMaster } from "@/types/clinical";
-import { getPrescriptionsAction, createPrescriptionAction } from "@/lib/prescriptions/actions";
+import { getPrescriptionsAction, createPrescriptionAction, deletePrescriptionAction } from "@/lib/prescriptions/actions";
 import { getDoctorsAction } from "@/lib/appointments/actions";
 import { searchPatientsAction } from "@/lib/patient/actions";
 import { HospitalPrintHeader, HospitalPrintFooter } from "@/components/print/HospitalPrintHeader";
@@ -27,6 +27,7 @@ export default function PrescriptionsPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingRx, setDeletingRx] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
@@ -177,6 +178,21 @@ export default function PrescriptionsPage() {
     window.print();
   };
 
+  const handleDeletePrescription = async () => {
+    if (!selectedRx) return;
+    setDeletingRx(true);
+    const res = await deletePrescriptionAction({ prescriptionId: selectedRx.id });
+    setDeletingRx(false);
+    if (res.success) {
+      showToast(res.data?.message || "প্রেসক্রিপশন মুছে ফেলা হয়েছে।", "success");
+      const remaining = prescriptions.filter((p) => p.id !== selectedRx.id);
+      setPrescriptions(remaining);
+      setSelectedRx(remaining.length > 0 ? remaining[0] : null);
+    } else {
+      showToast(res.error || "Failed to delete prescription", "error");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -208,6 +224,15 @@ export default function PrescriptionsPage() {
           >
             <Printer className="w-4 h-4 mr-1.5" />
             Print Rx Pad
+          </button>
+          <button
+            onClick={handleDeletePrescription}
+            disabled={!selectedRx || deletingRx}
+            className="inline-flex items-center bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 disabled:opacity-50 font-semibold text-xs px-3.5 py-2.5 rounded-xl transition cursor-pointer"
+            title="ভুল প্রেসক্রিপশন মুছুন (Delete Prescription)"
+          >
+            <Trash2 className="w-4 h-4 mr-1.5 text-rose-600" />
+            {deletingRx ? "মুছে ফেলা হচ্ছে..." : "Delete Rx"}
           </button>
         </div>
       </div>

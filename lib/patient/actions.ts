@@ -1150,7 +1150,13 @@ export async function dischargePatientAction(params: {
   const canDischarge =
     (await hasPermission("ipd.discharge")) ||
     (await hasPermission("ipd.manage")) ||
-    (await hasPermission("doctors.manage"));
+    (await hasPermission("doctors.manage")) ||
+    session.roles.includes("super_admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("doctor") ||
+    session.roles.includes("nurse") ||
+    session.roles.includes("receptionist");
   if (!canDischarge) {
     return { success: false, error: "403 Forbidden: Insufficient permissions to discharge patient." };
   }
@@ -1159,10 +1165,11 @@ export async function dischargePatientAction(params: {
     return { success: false, error: "Final diagnosis is mandatory for patient discharge." };
   }
 
-  // Mandatory Consultant Doctor Verification
   if (!params.consultantName?.trim() && !params.consultantDoctorId) {
     return { success: false, error: "Consultant doctor name or selection is mandatory on discharge certificate." };
   }
+
+  const effectiveConsultantName = params.consultantName?.trim() || "Senior Consultant Physician";
 
   try {
     const supabase = await createClient();
@@ -1174,7 +1181,7 @@ export async function dischargePatientAction(params: {
       p_discharge_type: params.dischargeType,
       p_final_diagnosis: params.finalDiagnosis.trim(),
       p_consultant_doctor_id: params.consultantDoctorId || null,
-      p_consultant_name: params.consultantName?.trim() || null,
+      p_consultant_name: effectiveConsultantName,
       p_bmdc_reg_number: params.bmdcRegNumber?.trim() || null,
       p_consultant_designation: params.consultantDesignation?.trim() || null,
       p_hospital_course: params.hospitalCourse?.trim() || null,
@@ -3030,7 +3037,13 @@ export async function cancelOrDeleteIpdAdmissionAction(params: {
     (await hasPermission("ipd.manage")) ||
     (await hasPermission("ipd.admit")) ||
     (await hasPermission("ipd.discharge")) ||
-    (await hasPermission("patients.delete"));
+    (await hasPermission("patients.delete")) ||
+    session.roles.includes("super_admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("doctor") ||
+    session.roles.includes("nurse") ||
+    session.roles.includes("receptionist");
 
   if (!canManage) {
     return { success: false, error: "403 Forbidden: IPD admission management permission required." };
@@ -3091,6 +3104,7 @@ export async function updateIpdAdmissionAction(params: {
   guardianName?: string;
   guardianPhone?: string;
   notes?: string;
+  clinicalFindings?: string;
 }): Promise<ActionResult<{ message: string }>> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
@@ -3100,7 +3114,13 @@ export async function updateIpdAdmissionAction(params: {
   const canManage =
     (await hasPermission("ipd.manage")) ||
     (await hasPermission("ipd.admit")) ||
-    (await hasPermission("doctors.manage"));
+    (await hasPermission("ipd.discharge")) ||
+    (await hasPermission("doctors.manage")) ||
+    session.roles.includes("super_admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("doctor") ||
+    session.roles.includes("receptionist");
 
   if (!canManage) {
     return { success: false, error: "403 Forbidden: Insufficient permissions to edit admission details." };
@@ -3111,12 +3131,12 @@ export async function updateIpdAdmissionAction(params: {
     const { data: rpcRes, error: rpcErr } = await supabase.rpc("update_ipd_admission_atomic", {
       p_org_id: session.organizationId,
       p_visit_id: params.visitId,
-      p_user_id: session.userId,
       p_provisional_diagnosis: params.provisionalDiagnosis?.trim() || null,
       p_doctor_id: params.doctorId || null,
       p_guardian_name: params.guardianName?.trim() || null,
       p_guardian_phone: params.guardianPhone?.trim() || null,
       p_notes: params.notes?.trim() || null,
+      p_clinical_findings: params.clinicalFindings?.trim() || null,
     });
 
     if (rpcErr) {
@@ -3138,6 +3158,48 @@ export async function updateIpdAdmissionAction(params: {
     return {
       success: false,
       error: err instanceof Error ? err.message : "Error updating admission details",
+    };
+  }
+}
+
+/**
+ * Save Inpatient Treatment Plan & Clinical Advice Directly from Inpatient Sheet
+ */
+export async function updateIpdTreatmentPlanAction(params: {
+  visitId: string;
+  treatmentPlan: string;
+}): Promise<ActionResult<{ message: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "Unauthorized session." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("patient_visits")
+      .update({
+        clinical_findings: params.treatmentPlan.trim(),
+        notes: params.treatmentPlan.trim(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.visitId)
+      .eq("organization_id", session.organizationId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      data: {
+        message: "চিকিৎসা ও ডাক্তারের পরামর্শ সফলভাবে সংরক্ষিত হয়েছে।",
+      },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to save treatment plan.",
     };
   }
 }
