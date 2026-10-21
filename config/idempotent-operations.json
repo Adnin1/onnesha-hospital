@@ -1,0 +1,96 @@
+{
+  "version": "1.0.0",
+  "authority": "OHMS Engineering Constitution & Idempotency Governance",
+  "operations": {
+    "collect_payment_atomic": {
+      "operation": "collect_payment_atomic",
+      "module": "billing",
+      "strategy": "TRANSACTION_REFERENCE_UNIQUE",
+      "key_field": "p_reference",
+      "scope": "ORGANIZATION_AND_INVOICE",
+      "deduplication_window_seconds": 86400,
+      "behavior_on_duplicate": "IDEMPOTENT_REPLAY_SUCCESS",
+      "description": "Prevents double cashier charge on button bounce or network timeout."
+    },
+    "online_payment_webhook": {
+      "operation": "online_payment_webhook",
+      "module": "billing",
+      "strategy": "GATEWAY_TRANSACTION_ID_DEDUP",
+      "key_field": "gateway_transaction_id",
+      "scope": "GLOBAL_GATEWAY",
+      "deduplication_window_seconds": 604800,
+      "behavior_on_duplicate": "RETURN_EXISTING_RECEIPT",
+      "description": "bKash/Nagad/SSLCommerz IPN webhook idempotent processing."
+    },
+    "book_staff_appointment_atomic": {
+      "operation": "book_staff_appointment_atomic",
+      "module": "appointments",
+      "strategy": "SLOT_TIME_DOCTOR_EXCLUSION",
+      "key_field": "(doctor_id, appointment_date, appointment_time)",
+      "scope": "DOCTOR_SCHEDULE",
+      "deduplication_window_seconds": 86400,
+      "behavior_on_duplicate": "REJECT_OVERLAPPING_SLOT",
+      "description": "Prevents concurrent double booking of same doctor slot."
+    },
+    "create_invoice_atomic": {
+      "operation": "create_invoice_atomic",
+      "module": "billing",
+      "strategy": "VISIT_SERVICE_BILLING_MUTEX",
+      "key_field": "(organization_id, invoice_number)",
+      "scope": "ORGANIZATION",
+      "deduplication_window_seconds": 3600,
+      "behavior_on_duplicate": "RETURN_EXISTING_INVOICE",
+      "description": "Guarantees exactly one active invoice per intake event."
+    },
+    "admit_patient_to_bed_atomic": {
+      "operation": "admit_patient_to_bed_atomic",
+      "module": "ipd",
+      "strategy": "BED_OCCUPANCY_EXCLUSION_LOCK",
+      "key_field": "bed_id",
+      "scope": "PHYSICAL_BED",
+      "deduplication_window_seconds": 0,
+      "behavior_on_duplicate": "REJECT_OCCUPIED_BED",
+      "description": "Row-level lock on beds prevents race conditions during simultaneous admissions."
+    },
+    "complete_ipd_discharge_atomic": {
+      "operation": "complete_ipd_discharge_atomic",
+      "module": "ipd",
+      "strategy": "VISIT_STATUS_TRANSITION_MUTEX",
+      "key_field": "visit_id",
+      "scope": "PATIENT_VISIT",
+      "deduplication_window_seconds": 86400,
+      "behavior_on_duplicate": "IDEMPOTENT_REPLAY_SUCCESS",
+      "description": "Idempotently returns existing discharge summary if already discharged."
+    },
+    "cancel_or_delete_ipd_admission_atomic": {
+      "operation": "cancel_or_delete_ipd_admission_atomic",
+      "module": "ipd",
+      "strategy": "PURGE_IDEMPOTENCY_TOMBSTONE",
+      "key_field": "visit_id",
+      "scope": "PATIENT_VISIT",
+      "deduplication_window_seconds": 86400,
+      "behavior_on_duplicate": "SAFE_NOOP_SUCCESS",
+      "description": "Idempotently vacates bed and cleans child records without failing on replay."
+    },
+    "record_hospital_expense_atomic": {
+      "operation": "record_hospital_expense_atomic",
+      "module": "expenses",
+      "strategy": "VOUCHER_REFERENCE_DEDUP",
+      "key_field": "voucher_number",
+      "scope": "ORGANIZATION",
+      "deduplication_window_seconds": 86400,
+      "behavior_on_duplicate": "REJECT_DUPLICATE_VOUCHER",
+      "description": "Ensures expense voucher numbers and GL debits cannot be accidentally posted twice."
+    },
+    "record_referral_commission_payout_atomic": {
+      "operation": "record_referral_commission_payout_atomic",
+      "module": "referrals",
+      "strategy": "IDEMPOTENCY_KEY_LOOKUP",
+      "key_field": "p_idempotency_key",
+      "scope": "AGENT_TRANSACTION",
+      "deduplication_window_seconds": 604800,
+      "behavior_on_duplicate": "IDEMPOTENT_REPLAY_SUCCESS",
+      "description": "Returns existing settlement and GL entry if transaction reference/key already settled."
+    }
+  }
+}

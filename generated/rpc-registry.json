@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-10-21T21:42:14.187Z",
+  "generated_at": "2026-10-21T21:51:10.133Z",
   "source": "chronological_migration_analysis",
-  "migration_count": 245,
-  "migration_head": "20261022100000_migration_245_add_discharge_reason_to_patient_visits.sql",
+  "migration_count": 246,
+  "migration_head": "20261022110000_migration_246_enable_rls_ot_referral_and_harden_search_path.sql",
   "total_functions": 182,
   "security_definer_count": 164,
   "anon_executable_count": 9,
