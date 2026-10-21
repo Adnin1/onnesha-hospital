@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-21T20:56:10.154Z",
+  "generated_at": "2026-10-21T21:33:05.922Z",
   "source": "chronological_migration_analysis",
-  "migration_count": 240,
-  "migration_head": "20261022070000_migration_240_revoke_anon_from_cron_monitoring_telemetry.sql",
-  "total_functions": 181,
-  "security_definer_count": 163,
+  "migration_count": 245,
+  "migration_head": "20261022100000_migration_245_add_discharge_reason_to_patient_visits.sql",
+  "total_functions": 182,
+  "security_definer_count": 164,
   "anon_executable_count": 9,
   "critical_rpc_overload_count": 0,
   "security_findings": [],
@@ -1428,6 +1428,18 @@
       "name": "post_journal_entry_atomic",
       "signature": "uuid, varchar, date, varchar, uuid, text, jsonb, uuid",
       "arguments": "p_org_id UUID,\n    p_entry_number VARCHAR,\n    p_entry_date DATE,\n    p_reference_type VARCHAR,\n    p_reference_id UUID,\n    p_description TEXT,\n    p_lines JSONB,\n    p_posted_by UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "post_journal_entry_atomic",
+      "signature": "uuid, varchar, date, varchar, uuid, text, jsonb",
+      "arguments": "p_org_id UUID,\n    p_entry_number VARCHAR,\n    p_entry_date DATE,\n    p_reference_type VARCHAR,\n    p_reference_id UUID,\n    p_description TEXT,\n    p_lines JSONB",
       "security_mode": "SECURITY_DEFINER",
       "granted_to": [
         "authenticated",

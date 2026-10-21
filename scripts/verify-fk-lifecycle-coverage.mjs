@@ -133,7 +133,9 @@ const FK_LIFECYCLE_REGISTRY = {
     patient_referral_attributions: { policy: 'PURGE_CHILD', rule: 'Referral tags cascade with visit on purge.' },
     patient_transfers: { policy: 'BLOCK_DELETE', rule: 'Transfer records require audit.' },
     patient_vitals_rounds: { policy: 'CASCADE_SAFE', rule: 'Vitals logs cascade with visit.' },
-    referral_commissions: { policy: 'BLOCK_DELETE', rule: 'Accrued commissions require reversal.' }
+    referral_commissions: { policy: 'BLOCK_DELETE', rule: 'Accrued commissions require reversal.' },
+    ot_schedules: { policy: 'SET_NULL_SAFE', rule: 'OT schedule links to visit_id set null on visit purge or reschedule.' },
+    referral_commission_claims: { policy: 'SET_NULL_SAFE', rule: 'Referral commission claims unlinks visit_id on admission purge.' }
   },
   invoices: {
     invoice_items: { policy: 'CASCADE_SAFE', rule: 'Line items cascade with parent invoice.' },
