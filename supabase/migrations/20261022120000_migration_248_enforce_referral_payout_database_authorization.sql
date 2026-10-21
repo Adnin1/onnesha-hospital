@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION public.enforce_referral_commission_settlement_authori
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = public, auth, pg_temp
 AS $function$
 DECLARE
   v_caller_id uuid := auth.uid();
