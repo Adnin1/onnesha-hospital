@@ -1268,10 +1268,14 @@ export async function dischargePatientAction(params: {
       }
     }
 
-    // Reconcile ghost bed vacancy drift
-    await supabase.rpc("reconcile_bed_vacancy_drift_atomic", {
-      p_org_id: session.organizationId,
-    });
+    // Reconcile ghost bed vacancy drift safely
+    try {
+      await supabase.rpc("reconcile_bed_vacancy_drift_atomic", {
+        p_org_id: session.organizationId,
+      });
+    } catch (driftErr) {
+      console.warn("[dischargePatientAction] Drift reconciliation notice:", driftErr);
+    }
 
     await supabase
       .from("patient_visits")
@@ -3054,10 +3058,14 @@ export async function cancelOrDeleteIpdAdmissionAction(params: {
       return { success: false, error: res.error || "Failed to cancel/delete admission." };
     }
 
-    // Reconcile ghost bed vacancy drift
-    await supabase.rpc("reconcile_bed_vacancy_drift_atomic", {
-      p_org_id: session.organizationId,
-    });
+    // Reconcile ghost bed vacancy drift safely
+    try {
+      await supabase.rpc("reconcile_bed_vacancy_drift_atomic", {
+        p_org_id: session.organizationId,
+      });
+    } catch (driftErr) {
+      console.warn("[cancelOrDeleteIpdAdmissionAction] Drift reconciliation notice:", driftErr);
+    }
 
     return {
       success: true,

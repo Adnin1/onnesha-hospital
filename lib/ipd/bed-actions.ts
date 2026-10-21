@@ -1229,9 +1229,9 @@ export async function updateCabinDetailsAction(payload: {
 
       if (updateRes.error.code === "23514" || errMsg.includes("check constraint") || errMsg.includes("status")) {
         if (updateFields.status === "VACANT") {
-          updateFields.status = "available";
+          updateFields.status = "AVAILABLE";
           modified = true;
-        } else if (updateFields.status === "available") {
+        } else if (updateFields.status === "AVAILABLE" || updateFields.status === "available") {
           updateFields.status = "VACANT";
           modified = true;
         }
