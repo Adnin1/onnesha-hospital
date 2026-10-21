@@ -3,6 +3,7 @@
   "version": "1.1.90",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/generate-version.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

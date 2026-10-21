@@ -104,4 +104,29 @@ describe("Change Safety: Database Compatibility & Schema Contracts Test Engine",
       "complete_ipd_discharge_atomic must execute atomic discharge and bed/cabin release"
     );
   });
+  test("9. Migration 237 drops legacy unhardened RPC overloads with exact signatures", () => {
+    assert.match(
+      combinedSql,
+      /DROP\s+FUNCTION\s+IF\s+EXISTS\s+public\.update_ipd_admission_atomic\s*\(\s*uuid\s*,\s*uuid\s*,\s*uuid\s*,\s*text\s*,\s*uuid\s*,\s*text\s*,\s*text\s*,\s*text\s*\)/i,
+      "Migration 237 must explicitly drop the 8-arg legacy update_ipd_admission_atomic overload"
+    );
+    assert.match(
+      combinedSql,
+      /DROP\s+FUNCTION\s+IF\s+EXISTS\s+public\.update_waiting_queue_status_atomic\s*\(\s*uuid\s*,\s*uuid\s*,\s*varchar\s*,\s*uuid\s*\)/i,
+      "Migration 237 must explicitly drop the varchar legacy update_waiting_queue_status_atomic overload"
+    );
+  });
+
+  test("10. Migration 237 enforces default-deny and revokes blanket privileges from PUBLIC and anon", () => {
+    assert.match(
+      combinedSql,
+      /ALTER\s+DEFAULT\s+PRIVILEGES\s+IN\s+SCHEMA\s+public\s+REVOKE\s+EXECUTE\s+ON\s+FUNCTIONS\s+FROM\s+PUBLIC\s*,\s*anon/i,
+      "Migration 237 must alter default privileges in schema public to revoke execute on functions from PUBLIC, anon"
+    );
+    assert.match(
+      combinedSql,
+      /REVOKE\s+ALL\s+ON\s+ALL\s+FUNCTIONS\s+IN\s+SCHEMA\s+public\s+FROM\s+PUBLIC\s*,\s*anon/i,
+      "Migration 237 must revoke blanket privileges on all functions in schema public from PUBLIC, anon"
+    );
+  });
 });
