@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-21T21:38:31.362Z",
+  "generated_at": "2026-10-21T21:42:14.187Z",
   "source": "chronological_migration_analysis",
   "migration_count": 245,
   "migration_head": "20261022100000_migration_245_add_discharge_reason_to_patient_visits.sql",
