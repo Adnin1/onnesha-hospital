@@ -109,7 +109,8 @@ async function checkRuntimeProvenance() {
   }
 
   try {
-    const versionUrl = `${CANONICAL_URL.replace(/\\/+$/, "")}/version.json`;
+    const baseUrl = CANONICAL_URL.endsWith("/") ? CANONICAL_URL.slice(0, -1) : CANONICAL_URL;
+    const versionUrl = `${baseUrl}/version.json`;
     const res = await fetch(versionUrl, {
       headers: { "Cache-Control": "no-cache", "User-Agent": "OHMS-Provenance-Probe/1.0" },
       signal: AbortSignal.timeout(5000),
@@ -395,8 +396,11 @@ async function run() {
 
   const machineOutputs = {
     repository_sha: repoSha,
-    runtime_sha: process.env.PRODUCTION_RUNTIME_SHA || repoSha,
-    deployment_id: process.env.CLOUDFLARE_DEPLOYMENT_ID || "LIVE_CANONICAL",
+    runtime_sha: runtimeProvenance.runtime_sha || "UNKNOWN",
+    build_id: runtimeProvenance.build_id || "UNKNOWN",
+    runtime_provenance_status: runtimeProvenance.status,
+    repository_migration_file_count: repositoryMigrationFileCount,
+    deployment_id: runtimeProvenance.build_id || process.env.CLOUDFLARE_DEPLOYMENT_ID || "UNKNOWN",
     database_migration_head: dbMigrationHead,
     checked_at: new Date().toISOString(),
     public_edge_status: edgeOk ? "PASS" : "FAIL",
