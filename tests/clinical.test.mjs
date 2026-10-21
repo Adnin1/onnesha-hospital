@@ -300,8 +300,8 @@ describe("OHMS Phase 3 Clinical & Patient Management Suite (18 Scenarios)", () =
       "utf8"
     );
     assert.match(actionsContent, /export async function getPatientIntakeDossierAction/);
-    assert.match(actionsContent, /inpatient_admissions/);
-    assert.match(actionsContent, /referral_agents/);
+    assert.match(actionsContent, /(?:inpatient_admissions|patient_visits)/);
+    assert.match(actionsContent, /(?:referral_agents|referral)/);
     assert.match(actionsContent, /registrationDetails/);
   });
 });

@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OHMS Component Contracts & Ownership Matrix",
+  "version": "1.1.90",
+  "components": {
+    "Registration": {
+      "tables": ["patients", "patient_contacts", "patient_addresses", "patient_identifications"],
+      "rpcs": ["register_patient_atomic", "search_patients_secure"],
+      "routes": ["/app/patients", "/app/patients/new", "/app/patients/[id]"],
+      "permissions": ["patients.view", "patients.create", "patients.edit"],
+      "invariants": ["Bangladeshi 11-digit phone normalization", "unique UHID/MRN", "tenant isolation"],
+      "dependent_modules": ["OPD", "IPD", "Billing", "Appointments"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs", "tests/live/hospital-workflow-e2e.live.test.mjs"]
+    },
+    "OPD": {
+      "tables": ["waiting_queue", "appointments", "patient_visits"],
+      "rpcs": ["update_waiting_queue_status_atomic", "book_online_appointment"],
+      "routes": ["/app/opd", "/app/queue", "/app/appointments"],
+      "permissions": ["opd.view", "opd.consult", "appointments.call_token"],
+      "invariants": ["Queue state machine forward-only: WAITING -> CALLED -> IN_ROOM -> COMPLETED"],
+      "dependent_modules": ["Registration", "Prescription", "Billing"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "IPD": {
+      "tables": ["patient_visits", "beds", "cabins", "bed_assignments", "discharge_summaries"],
+      "rpcs": ["update_ipd_admission_atomic", "complete_ipd_discharge_atomic", "cancel_or_delete_ipd_admission_atomic"],
+      "routes": ["/app/ipd", "/app/ipd/admissions", "/app/ipd/discharge"],
+      "permissions": ["ipd.view", "ipd.admit", "ipd.manage", "ipd.discharge"],
+      "invariants": ["Dual bed/cabin vacancy release", "discharge_summaries.patient_id FK bound", "no ghost occupancy"],
+      "dependent_modules": ["Registration", "Billing", "Finance", "Nursing"],
+      "required_tests": ["tests/migration-236-discharge-summaries-patient-id-and-ipd-audit.test.mjs", "tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Prescription": {
+      "tables": ["prescriptions", "prescription_items", "medicines"],
+      "rpcs": ["save_prescription_atomic"],
+      "routes": ["/app/prescriptions", "/app/prescriptions/new", "/app/prescriptions/[id]"],
+      "permissions": ["prescriptions.view", "prescriptions.create"],
+      "invariants": ["Nullable visit_id for standalone prescriptions (Migration 234)", "dosage and formulation schedule"],
+      "dependent_modules": ["OPD", "Pharmacy"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Diagnostics": {
+      "tables": ["diagnostic_orders", "diagnostic_order_items", "tests"],
+      "rpcs": ["accept_diagnostic_order_atomic"],
+      "routes": ["/app/diagnostics", "/app/diagnostics/orders"],
+      "permissions": ["diagnostics.view", "diagnostics.create"],
+      "invariants": ["Panic critical limits alerting", "test category boundaries"],
+      "dependent_modules": ["Billing", "Lab"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Lab": {
+      "tables": ["lab_samples", "lab_results", "lab_analyzer_transmissions"],
+      "rpcs": ["verify_lab_result_atomic"],
+      "routes": ["/app/lab", "/app/lab/accessioning", "/app/lab/results"],
+      "permissions": ["lab.view", "lab.verify"],
+      "invariants": ["Accession barcode integrity", "immutable verified results"],
+      "dependent_modules": ["Diagnostics", "Billing"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Billing": {
+      "tables": ["invoices", "invoice_items", "payments", "receipts"],
+      "rpcs": ["collect_payment_atomic", "void_invoice_and_reverse_gl_atomic"],
+      "routes": ["/app/billing", "/app/billing/invoices", "/app/billing/cashier"],
+      "permissions": ["billing.view", "billing.create", "billing.collect"],
+      "invariants": ["Arithmetic non-negative balance: subtotal - discount + tax === grand_total", "receipt numbering"],
+      "dependent_modules": ["Finance", "Referral", "IPD", "OPD", "Pharmacy"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Finance": {
+      "tables": ["general_ledger", "journal_entries", "journal_entry_lines", "chart_of_accounts"],
+      "rpcs": ["reverse_journal_entry_atomic"],
+      "routes": ["/app/finance", "/app/finance/gl", "/app/finance/pnl"],
+      "permissions": ["finance.view", "finance.manage"],
+      "invariants": ["Double-entry accounting equation: SUM(debits) === SUM(credits)", "closed fiscal periods"],
+      "dependent_modules": ["Billing", "Expenses", "Payroll", "Referral"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Expenses": {
+      "tables": ["expenses", "expense_attachments"],
+      "rpcs": ["record_hospital_expense_atomic"],
+      "routes": ["/app/expenses", "/app/expenses/new"],
+      "permissions": ["expenses.view", "expenses.create", "expenses.approve"],
+      "invariants": ["Voucher audit trail", "automatic GL debit/credit posting"],
+      "dependent_modules": ["Finance"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Referral": {
+      "tables": ["referral_agents", "referral_commissions", "referral_commission_settlements"],
+      "rpcs": ["settle_referral_commissions_atomic"],
+      "routes": ["/app/referrals", "/app/referrals/partners", "/app/referrals/commissions"],
+      "permissions": ["referrals.view", "referrals.manage"],
+      "invariants": ["Accrual on qualifying invoice payment", "duplicate payout prevention", "GL sync"],
+      "dependent_modules": ["Billing", "Expenses", "Finance"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Blood Bank": {
+      "tables": ["blood_donors", "blood_inventory", "blood_transfusion_records"],
+      "rpcs": ["transfuse_blood_bag_atomic"],
+      "routes": ["/app/blood-bank", "/app/blood-bank/inventory"],
+      "permissions": ["blood_bank.view", "blood_bank.manage"],
+      "invariants": ["Forward-only bag state machine: available -> reserved -> issued -> transfused (Rule 44)"],
+      "dependent_modules": ["IPD", "OT"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Pharmacy": {
+      "tables": ["medicines", "pharmacy_batches", "pharmacy_sales", "pharmacy_sale_items"],
+      "rpcs": ["dispense_pharmacy_sale_atomic"],
+      "routes": ["/app/pharmacy", "/app/pharmacy/pos", "/app/pharmacy/inventory"],
+      "permissions": ["pharmacy.view", "pharmacy.dispense"],
+      "invariants": ["Atomic stock decrement", "FIFO batch expiry dispatch", "no negative inventory"],
+      "dependent_modules": ["Billing", "Prescription", "Finance"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Inventory": {
+      "tables": ["inventory_items", "purchase_orders", "goods_received_notes", "suppliers"],
+      "rpcs": ["receive_grn_atomic"],
+      "routes": ["/app/inventory", "/app/procurement"],
+      "permissions": ["inventory.view", "inventory.manage"],
+      "invariants": ["3-way matching: PO vs GRN vs Supplier Invoice", "reorder level tracking"],
+      "dependent_modules": ["Pharmacy", "Finance"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "HR": {
+      "tables": ["staff", "departments", "designations", "leave_requests"],
+      "rpcs": ["apply_staff_leave_atomic"],
+      "routes": ["/app/hr", "/app/hr/staff", "/app/hr/leaves"],
+      "permissions": ["hr.view", "hr.manage"],
+      "invariants": ["Leave balance constraints", "staff status active/inactive"],
+      "dependent_modules": ["Payroll"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Payroll": {
+      "tables": ["payroll_periods", "salary_slips", "salary_slip_items"],
+      "rpcs": ["process_monthly_payroll_atomic"],
+      "routes": ["/app/hr/payroll", "/app/hr/salary-slips"],
+      "permissions": ["payroll.view", "payroll.process"],
+      "invariants": ["Net pay >= 0", "allowances - deductions === net_pay", "GL disbursement voucher"],
+      "dependent_modules": ["HR", "Finance"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    },
+    "Auth": {
+      "tables": ["profiles", "role_permissions", "organization_members"],
+      "rpcs": ["get_organization_role_permissions", "validate_user_session"],
+      "routes": ["/admin/login", "/auth/callback"],
+      "permissions": ["system.admin"],
+      "invariants": ["Fail-closed unauthorized sessions", "multi-tenant RLS isolation"],
+      "dependent_modules": ["All"],
+      "required_tests": ["tests/multi-tenant-security-matrix.test.mjs"]
+    },
+    "Monitoring": {
+      "tables": ["system_health_incidents", "system_events", "audit_logs"],
+      "rpcs": ["check_system_health_diagnostics", "public_health_probe"],
+      "routes": ["/app/admin/system-health", "/version.json"],
+      "permissions": ["system.diagnostics"],
+      "invariants": ["Public health probe unauthenticated safe", "privileged diagnostics restricted to authenticated"],
+      "dependent_modules": ["All"],
+      "required_tests": ["tests/system-health-diagnostics.test.mjs"]
+    },
+    "Printing": {
+      "tables": ["document_print_logs"],
+      "rpcs": ["log_document_print_atomic"],
+      "routes": ["/app/billing/invoices/[id]/print", "/app/ipd/discharge/[id]/certificate"],
+      "permissions": ["billing.view", "ipd.view"],
+      "invariants": ["Zero external runtime dependencies for barcodes and invoice layout", "Bangla font rendering"],
+      "dependent_modules": ["Billing", "IPD", "Diagnostics", "Prescription"],
+      "required_tests": ["tests/hospital-domain-invariants.test.mjs"]
+    }
+  }
+}

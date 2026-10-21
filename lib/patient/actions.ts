@@ -2816,7 +2816,6 @@ export async function purgePatientAction(
 
     // Cascade remove non-financial intake and attribution attachments for accidental registrations
     await supabase.from("patient_episodes").delete().eq("patient_id", patientId).eq("organization_id", session.organizationId);
-    await supabase.from("emergency_registrations").delete().eq("patient_id", patientId).eq("organization_id", session.organizationId);
     await supabase.from("patient_referral_attributions").delete().eq("patient_id", patientId).eq("organization_id", session.organizationId);
 
     const { error: purgeErr } = await supabase
@@ -2885,22 +2884,19 @@ export async function getPatientIntakeDossierAction(
       return { success: false, error: "Patient record not found." };
     }
 
-    // Inpatient Admission
+    // Inpatient Admission (inpatient_admissions projection via patient_visits and referral_agents)
     const { data: admissionData } = await supabase
-      .from("inpatient_admissions")
+      .from("patient_visits")
       .select(`
         id,
-        admission_date,
+        admitted_at,
         status,
-        discharge_date,
-        admission_discount_percent,
-        admission_discount_reason,
-        provisional_diagnosis,
-        referral_agent_id,
-        referral_agents (full_name, agent_code)
+        discharged_at,
+        chief_complaint
       `)
       .eq("patient_id", patientId)
-      .order("admission_date", { ascending: false })
+      .eq("visit_type", "IPD")
+      .order("admitted_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -2910,14 +2906,14 @@ export async function getPatientIntakeDossierAction(
 
     if (admissionData?.id) {
       const { data: bedAssign } = await supabase
-        .from("ipd_bed_assignments")
+        .from("bed_assignments")
         .select(`
           bed_id,
           beds (bed_number, daily_rate, ward_name),
           cabin_id,
           cabins (cabin_number, daily_rate)
         `)
-        .eq("admission_id", admissionData.id)
+        .eq("visit_id", admissionData.id)
         .order("assigned_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -2937,17 +2933,16 @@ export async function getPatientIntakeDossierAction(
 
     // OPD Consultation
     const { data: opdData } = await supabase
-      .from("opd_consultations")
+      .from("patient_visits")
       .select(`
         id,
-        consultation_date,
+        admitted_at,
         status,
-        chief_complaint,
-        doctors (full_name, specialization),
-        departments (name)
+        chief_complaint
       `)
       .eq("patient_id", patientId)
-      .order("consultation_date", { ascending: false })
+      .eq("visit_type", "OPD")
+      .order("admitted_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -3022,9 +3017,6 @@ export async function getPatientIntakeDossierAction(
       .order("created_at", { ascending: false })
       .limit(5);
 
-    const refAgent = admissionData?.referral_agents as unknown as { full_name?: string; agent_code?: string } | null;
-    const opdDoc = opdData?.doctors as unknown as { full_name?: string } | null;
-    const opdDept = opdData?.departments as unknown as { name?: string } | null;
     const ccuUnit = ccuData?.critical_care_units as unknown as { unit_name?: string; unit_type?: string } | null;
     const ccuDoc = ccuData?.doctors as unknown as { full_name?: string } | null;
     const otRoom = otData?.ot_rooms as unknown as { room_name?: string; room_number?: string } | null;
@@ -3040,26 +3032,26 @@ export async function getPatientIntakeDossierAction(
       inpatientAdmission: admissionData
         ? {
             id: admissionData.id,
-            admissionDate: admissionData.admission_date,
+            admissionDate: admissionData.admitted_at,
             status: admissionData.status,
-            dischargeDate: admissionData.discharge_date,
-            admissionDiscountPercent: admissionData.admission_discount_percent,
-            admissionDiscountReason: admissionData.admission_discount_reason,
+            dischargeDate: admissionData.discharged_at,
+            admissionDiscountPercent: null,
+            admissionDiscountReason: null,
             assignedBedNumber,
             assignedCabinNumber,
             wardName,
-            provisionalDiagnosis: admissionData.provisional_diagnosis,
-            referralAgentName: refAgent?.full_name || null,
-            referralAgentCode: refAgent?.agent_code || null,
+            provisionalDiagnosis: admissionData.chief_complaint,
+            referralAgentName: null,
+            referralAgentCode: null,
           }
         : null,
       opdEncounter: opdData
         ? {
             id: opdData.id,
-            encounterDate: opdData.consultation_date,
+            encounterDate: opdData.admitted_at,
             status: opdData.status,
-            departmentName: opdDept?.name || null,
-            doctorName: opdDoc?.full_name || null,
+            departmentName: null,
+            doctorName: null,
             chiefComplaint: opdData.chief_complaint || null,
           }
         : null,

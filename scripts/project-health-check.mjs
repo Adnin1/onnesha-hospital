@@ -497,6 +497,33 @@ try {
   critical(`Migration 221 invariant check failed: ${e.message}`);
 }
 
+console.log('\n📋 19. Application ↔ Database Schema Contracts');
+try {
+  const contractCompilerPath = path.join(ROOT, 'scripts', 'verify-app-db-contracts.mjs');
+  if (fs.existsSync(contractCompilerPath)) {
+    execSync(`node "${contractCompilerPath}"`, { cwd: ROOT, stdio: 'pipe' });
+    pass('All application queries, critical columns, and RPC signatures match database schema');
+  } else {
+    warn('scripts/verify-app-db-contracts.mjs not found');
+  }
+} catch (e) {
+  critical(`App↔DB contract compiler failed: ${e.message}`);
+}
+
+console.log('\n📋 20. Foreign Key Lifecycle Coverage & RBAC Matrix Governance');
+try {
+  const fkEnginePath = path.join(ROOT, 'scripts', 'verify-fk-lifecycle-coverage.mjs');
+  const rbacPath = path.join(ROOT, 'config', 'rbac-matrix.json');
+  if (fs.existsSync(fkEnginePath) && fs.existsSync(rbacPath)) {
+    execSync(`node "${fkEnginePath}"`, { cwd: ROOT, stdio: 'pipe' });
+    pass('100% of critical root foreign keys classified and RBAC matrix active');
+  } else {
+    warn('FK lifecycle coverage engine or RBAC matrix missing');
+  }
+} catch (e) {
+  critical(`FK lifecycle coverage check failed: ${e.message}`);
+}
+
 // ─── Summary ───
 const isStrictMode = process.argv.includes('--strict') || process.argv.includes('--release');
 console.log('\n' + '='.repeat(50));

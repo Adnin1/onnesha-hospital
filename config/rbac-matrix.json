@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OHMS Role-Based Access Control (RBAC) Matrix",
+  "version": "1.1.90",
+  "roles": [
+    "super_admin",
+    "admin",
+    "hospital_administrator",
+    "receptionist",
+    "doctor",
+    "nurse",
+    "cashier",
+    "accountant",
+    "lab_technician",
+    "pharmacist"
+  ],
+  "sensitive_operations": [
+    {
+      "operation": "invoice_edit",
+      "module": "BILLING",
+      "authorized_roles": ["super_admin", "admin", "hospital_administrator", "accountant"],
+      "denied_roles": ["receptionist", "doctor", "nurse", "cashier", "lab_technician", "pharmacist"],
+      "fail_closed_anon": true,
+      "cross_tenant_denied": true
+    },
+    {
+      "operation": "payment_collect",
+      "module": "BILLING",
+      "authorized_roles": ["super_admin", "admin", "hospital_administrator", "cashier", "receptionist", "accountant"],
+      "denied_roles": ["doctor", "nurse", "lab_technician", "pharmacist"],
+      "fail_closed_anon": true,
+      "cross_tenant_denied": true
+    },
+    {
+      "operation": "payment_refund",
+      "module": "BILLING",
+      "authorized_roles": ["super_admin", "admin", "accountant"],
+      "denied_roles": ["receptionist", "doctor", "nurse", "cashier", "lab_technician", "pharmacist"],
+      "fail_closed_anon": true,
+      "cross_tenant_denied": true
+    },
+    {
+      "operation": "expense_record",
+      "module": "FINANCE",
+      "authorized_roles": ["super_admin", "admin", "hospital_administrator", "accountant"],
+      "denied_roles": ["receptionist", "doctor", "nurse", "cashier", "lab_technician", "pharmacist"],
+      "fail_closed_anon": true,
+      "cross_tenant_denied": true
+    },
+    {
+      "operation": "gl_reversal",
+      "module": "FINANCE",
+      "authorized_roles": ["super_admin", "admin", "accountant"],
+      "denied_roles": ["receptionist", "doctor", "nurse", "cashier", "hospital_administrator", "lab_technician", "pharmacist"],
+      "fail_closed_anon": true,
+      "cross_tenant_denied": true
+    },
+    {
+      "operation": "referral_settle",
+      "module": "REFERRAL",
+      "authorized_roles": ["super_admin", "admin", "accountant"],
+      "denied_roles": ["receptionist", "doctor", "nurse", "cashier", "hospital_administrator", "lab_technician", "pharmacist"],
+      "fail_closed_anon": true,
+      "cross_tenant_denied": true
+    },
+    {
+      "operation": "blood_modification",
+      "module": "BLOOD_BANK",
+      "authorized_roles": ["super_admin", "admin", "lab_technician"],
+      "denied_roles": ["receptionist", "nurse", "cashier", "accountant", "pharmacist"],
+      "fail_closed_anon": true,
+      "cross_tenant_denied": true
+    },
+    {
+      "operation": "ipd_purge",
+      "module": "IPD",
+      "authorized_roles": ["super_admin"],
+      "denied_roles": ["admin", "hospital_administrator", "receptionist", "doctor", "nurse", "cashier", "accountant", "lab_technician", "pharmacist"],
+      "fail_closed_anon": true,
+      "cross_tenant_denied": true
+    },
+    {
+      "operation": "staff_administration",
+      "module": "IAM",
+      "authorized_roles": ["super_admin", "admin"],
+      "denied_roles": ["hospital_administrator", "receptionist", "doctor", "nurse", "cashier", "accountant", "lab_technician", "pharmacist"],
+      "fail_closed_anon": true,
+      "cross_tenant_denied": true
+    },
+    {
+      "operation": "role_modification",
+      "module": "IAM",
+      "authorized_roles": ["super_admin"],
+      "denied_roles": ["admin", "hospital_administrator", "receptionist", "doctor", "nurse", "cashier", "accountant", "lab_technician", "pharmacist"],
+      "fail_closed_anon": true,
+      "cross_tenant_denied": true
+    }
+  ]
+}

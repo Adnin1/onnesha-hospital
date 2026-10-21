@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OHMS RPC Access Policy",
+  "version": "1.1.90",
+  "description": "Authoritative RPC security classification matrix enforcing principle of least privilege.",
+  "access_tiers": [
+    "PUBLIC_READ",
+    "PUBLIC_WRITE_LIMITED",
+    "AUTHENTICATED",
+    "ROLE_RESTRICTED",
+    "ADMIN_ONLY",
+    "SUPER_ADMIN_ONLY",
+    "INTERNAL_ONLY",
+    "TRIGGER_ONLY"
+  ],
+  "public_exceptions": [
+    {
+      "name": "public_health_probe",
+      "tier": "PUBLIC_READ",
+      "reason": "Unauthenticated liveness probe for edge monitor and uptime check."
+    },
+    {
+      "name": "get_public_doctors_directory",
+      "tier": "PUBLIC_READ",
+      "reason": "Public doctor profile listing for patient website."
+    },
+    {
+      "name": "get_public_doctor_schedules",
+      "tier": "PUBLIC_READ",
+      "reason": "Public schedule availability for online appointment booking."
+    },
+    {
+      "name": "get_public_live_queue",
+      "tier": "PUBLIC_READ",
+      "reason": "Public waiting queue display for hospital lobby and OPD TV."
+    },
+    {
+      "name": "get_public_token_status",
+      "tier": "PUBLIC_READ",
+      "reason": "Token query for patient tracking."
+    },
+    {
+      "name": "book_online_appointment",
+      "tier": "PUBLIC_WRITE_LIMITED",
+      "reason": "Public appointment booking with rate limiting and phone validation."
+    },
+    {
+      "name": "submit_public_contact_inquiry",
+      "tier": "PUBLIC_WRITE_LIMITED",
+      "reason": "Public contact and grievance submission form."
+    }
+  ],
+  "critical_hospital_rpcs": [
+    {
+      "name": "update_ipd_admission_atomic",
+      "tier": "ROLE_RESTRICTED",
+      "roles": ["super_admin", "admin", "hospital_administrator", "receptionist", "nurse"],
+      "security_mode": "SECURITY_DEFINER"
+    },
+    {
+      "name": "update_waiting_queue_status_atomic",
+      "tier": "ROLE_RESTRICTED",
+      "roles": ["super_admin", "admin", "hospital_administrator", "receptionist", "doctor", "nurse"],
+      "security_mode": "SECURITY_DEFINER"
+    },
+    {
+      "name": "complete_ipd_discharge_atomic",
+      "tier": "ROLE_RESTRICTED",
+      "roles": ["super_admin", "admin", "hospital_administrator", "doctor"],
+      "security_mode": "SECURITY_DEFINER"
+    },
+    {
+      "name": "collect_payment_atomic",
+      "tier": "ROLE_RESTRICTED",
+      "roles": ["super_admin", "admin", "hospital_administrator", "cashier", "receptionist", "accountant"],
+      "security_mode": "SECURITY_DEFINER"
+    },
+    {
+      "name": "record_hospital_expense_atomic",
+      "tier": "ROLE_RESTRICTED",
+      "roles": ["super_admin", "admin", "hospital_administrator", "accountant"],
+      "security_mode": "SECURITY_DEFINER"
+    },
+    {
+      "name": "cancel_or_delete_ipd_admission_atomic",
+      "tier": "SUPER_ADMIN_ONLY",
+      "roles": ["super_admin"],
+      "security_mode": "SECURITY_DEFINER"
+    },
+    {
+      "name": "settle_referral_commissions_atomic",
+      "tier": "ADMIN_ONLY",
+      "roles": ["super_admin", "admin", "accountant"],
+      "security_mode": "SECURITY_DEFINER"
+    },
+    {
+      "name": "reverse_journal_entry_atomic",
+      "tier": "ADMIN_ONLY",
+      "roles": ["super_admin", "admin", "accountant"],
+      "security_mode": "SECURITY_DEFINER"
+    },
+    {
+      "name": "void_invoice_and_reverse_gl_atomic",
+      "tier": "ADMIN_ONLY",
+      "roles": ["super_admin", "admin", "accountant"],
+      "security_mode": "SECURITY_DEFINER"
+    }
+  ]
+}

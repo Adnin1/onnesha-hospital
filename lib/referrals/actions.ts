@@ -901,7 +901,7 @@ export async function deleteReferralAgentAction(agentId: string): Promise<{ succ
     }
 
     // 4. Delete rate history first
-    await supabase.from("referral_agent_rates_history").delete().eq("referral_agent_id", agentId);
+    await supabase.from("referral_rate_history").delete().eq("referral_agent_id", agentId);
 
     // 5. No financial or patient links: perform clean hard delete
     const { error: delErr } = await supabase
