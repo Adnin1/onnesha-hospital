@@ -1260,8 +1260,8 @@ export async function dischargePatientAction(params: {
         await supabase
           .from("bed_assignments")
           .update({
-            status: "DISCHARGED",
-            discharge_time: new Date().toISOString(),
+            status: "VACATED",
+            vacated_at: new Date().toISOString(),
           })
           .eq("organization_id", session.organizationId)
           .eq("id", bedAssign.id);
@@ -1432,9 +1432,7 @@ export async function transferPatientAction(params: {
 
       await supabase
         .from("beds")
-        .update({ status: "CLEANING_REQUIRED" })
-        .eq("organization_id", session.organizationId)
-        .eq("id", params.fromBedId);
+        .update({ status: "CLEANING_REQUIRED" }) .eq("organization_id", session.organizationId) .eq("id", params.fromBedId);
     }
 
     // Create new active bed assignment
