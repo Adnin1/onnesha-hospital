@@ -87,32 +87,32 @@ async function generateSecDefRegistry() {
   for (const file of migrationFiles) {
     const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
 
-    // Chronological statement regex
-    const stmtRegex = /(?:CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+(?:public\.)?(\w+)\s*\(([\s\S]*?)\)\s*RETURNS\s+([\s\S]*?)\s+AS\s+[\$']([\s\S]*?)[\$']|DROP\s+FUNCTION\s+IF\s+EXISTS\s+(?:public\.)?(\w+)\s*\(([^)]*)\))/gi;
+    // Parse dollar-quoted PostgreSQL function bodies using the matching tag.
+    // The previous single-character quote regex truncated bodies at the first '$',
+    // hiding auth.uid(), tenant and permission checks from the registry.
+    const stmtRegex = /(?:(?<create>CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+(?:public\.)?(?<createName>\w+)\s*\((?<createArgs>[\s\S]*?)\)\s*(?<header>[\s\S]*?)\bAS\s+(?<dollarTag>\$[A-Za-z_0-9]*\$)(?<body>[\s\S]*?)\k<dollarTag>)|(?<drop>DROP\s+FUNCTION\s+IF\s+EXISTS\s+(?:public\.)?(?<dropName>\w+)\s*\((?<dropArgs>[^)]*)\)))/gi;
     let m;
     while ((m = stmtRegex.exec(sql)) !== null) {
-      if (m[1]) {
-        // CREATE FUNCTION
-        const name = m[1];
-        const rawArgs = m[2].trim();
+      const g = m.groups || {};
+      if (g.createName) {
+        const name = g.createName;
+        const rawArgs = (g.createArgs || '').trim();
         const sig = normalizeSignature(rawArgs);
-        const key = `${name}(${sig})`;
-        const headerAndBody = m[3] + '\n' + (m[4] || '');
-        const isSecDef = /SECURITY\s+DEFINER/i.test(m[3]);
+        const key = name + '(' + sig + ')';
+        const header = g.header || '';
+        const body = g.body || '';
+        const isSecDef = /\bSECURITY\s+DEFINER\b/i.test(header);
 
         if (isSecDef) {
-          // Extract search path
-          const spMatch = m[3].match(/SET\s+search_path\s*=\s*([^;\n]+)/i);
+          const spMatch = header.match(/\bSET\s+search_path\s*(?:=|TO)\s*([^;\n]+)/i);
           let searchPath = spMatch ? spMatch[1].trim() : 'MUTABLE';
           if (searchPath === "''" || searchPath === '""' || searchPath === '') searchPath = "'' (EMPTY_SAFE)";
 
-          // Detect guards inside body
-          const body = m[4] || '';
-          const hasAuthUid = /auth\.uid\(\)/i.test(body);
+          const hasAuthUid = /auth\.uid\s*\(\s*\)/i.test(body);
           const hasTenantGuard = /organization_id|active_organization_id|get_current_org_id/i.test(body);
           const hasRoleGuard = /is_super_admin|has_role|user_roles|profiles\.role/i.test(body);
-          const hasPermGuard = /has_permission|role_permissions/i.test(body);
-          const isTrigger = /RETURNS\s+TRIGGER/i.test(m[3]);
+          const hasPermGuard = /has_permission|role_permissions|permission_key/i.test(body);
+          const isTrigger = /\bRETURNS\s+TRIGGER\b/i.test(header);
 
           secDefFunctions.set(key, {
             name,
@@ -120,6 +120,7 @@ async function generateSecDefRegistry() {
             arguments: rawArgs,
             defined_in: file,
             search_path: searchPath,
+            search_path_last_altered_in: spMatch ? file : null,
             is_trigger: isTrigger,
             has_auth_uid: hasAuthUid,
             has_tenant_guard: hasTenantGuard,
@@ -130,12 +131,32 @@ async function generateSecDefRegistry() {
         } else {
           secDefFunctions.delete(key);
         }
-      } else if (m[5]) {
-        // DROP FUNCTION
-        const name = m[5];
-        const sig = normalizeSignature(m[6] || '');
-        secDefFunctions.delete(`${name}(${sig})`);
+      } else if (g.dropName) {
+        const name = g.dropName;
+        const sig = normalizeSignature(g.dropArgs || '');
+        secDefFunctions.delete(name + '(' + sig + ')');
       }
+    }
+
+    // ALTER FUNCTION settings are part of the effective migration state too.
+    // In particular, Migration 249 overrides Migration 246's earlier empty path.
+    const alterSearchPathRegex = /ALTER\s+FUNCTION\s+(?:public\.)?(\w+)\s*\(([^)]*)\)\s+(SET\s+search_path\s*(?:=|TO)\s*([^;]+)|RESET\s+search_path)\s*;/gi;
+    let alter;
+    while ((alter = alterSearchPathRegex.exec(sql)) !== null) {
+      const name = alter[1];
+      const sig = normalizeSignature(alter[2] || '');
+      const func = secDefFunctions.get(name + '(' + sig + ')');
+      if (!func) continue;
+      if (/^RESET\s+search_path/i.test(alter[3])) {
+        func.search_path = 'MUTABLE';
+      } else {
+        let effectivePath = (alter[4] || '').trim();
+        if (effectivePath === "''" || effectivePath === '""' || effectivePath === '') {
+          effectivePath = "'' (EMPTY_SAFE)";
+        }
+        func.search_path = effectivePath || 'MUTABLE';
+      }
+      func.search_path_last_altered_in = file;
     }
 
     // Process grants/revokes
@@ -212,7 +233,16 @@ async function generateSecDefRegistry() {
       permission_guard: func.has_permission_guard,
       caller_files: callers,
       classification,
-      review_result: func.search_path.includes('EMPTY_SAFE') ? 'HARDENED_SAFE' : (func.search_path === 'MUTABLE' ? 'NEEDS_SEARCH_PATH_PIN' : 'APPROVED')
+      authorization_evidence: {
+        auth_uid_token_found: func.has_auth_uid,
+        tenant_guard_token_found: func.has_tenant_guard,
+        role_guard_token_found: func.has_role_guard,
+        permission_guard_token_found: func.has_permission_guard,
+        note: 'Lexical evidence only; token presence does not prove correct authorization.'
+      },
+      live_acl_status: 'NOT_QUERIED',
+      authorization_review_status: 'NOT_CERTIFIED',
+      review_result: 'MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF'
     });
   }
 
@@ -221,9 +251,23 @@ async function generateSecDefRegistry() {
 
   const payload = {
     generated_at: new Date().toISOString(),
+    source_scope: 'REPOSITORY_MIGRATION_STATIC_SCAN_ONLY',
+    live_catalog_status: 'NOT_QUERIED',
+    authorization_review_status: 'NOT_CERTIFIED',
     total_secdef_functions: registryRecords.length,
-    anon_executable_count: anonSecDefCount,
-    mutable_search_path_count: mutableSearchPathCount,
+    // Legacy fields are null to prevent migration-source estimates being mistaken for live ACL truth.
+    anon_executable_count: null,
+    mutable_search_path_count: null,
+    migration_source_estimates: {
+      anon_executable_functions: anonSecDefCount,
+      mutable_search_path_functions: mutableSearchPathCount
+    },
+    static_scan_limitations: [
+      'This generator does not connect to Supabase or query pg_proc, proacl, pg_default_acl, role inheritance, or effective privileges.',
+      'Grant/revoke parsing from migration text is an estimate and is not a live ACL proof.',
+      'Lexical auth, tenant, role, and permission tokens are not proof that authorization is correct.',
+      'Every function requires independent live signature, effective ACL, tenant, role/permission, and negative-test review before it can be certified.'
+    ],
     classifications: {
       TRIGGER_ONLY: registryRecords.filter(r => r.classification === 'TRIGGER_ONLY').length,
       INTERNAL_ONLY: registryRecords.filter(r => r.classification === 'INTERNAL_ONLY').length,
@@ -240,9 +284,10 @@ async function generateSecDefRegistry() {
 
   console.log(`✅ [SECURITY DEFINER REGISTRY] Written to: ${outPath}`);
   console.log(`   Total Functions:            ${payload.total_secdef_functions}`);
-  console.log(`   Anon-Executable:            ${payload.anon_executable_count}`);
-  console.log(`   Mutable Search Path Count:  ${payload.mutable_search_path_count}`);
-  console.log(`   Hardened / Reviewed:        ${registryRecords.filter(r => r.review_result === 'HARDENED_SAFE' || r.review_result === 'APPROVED').length}`);
+  console.log(`   Live ACLs:                  ${payload.live_catalog_status}`);
+  console.log(`   Source Anon Estimate:       ${payload.migration_source_estimates.anon_executable_functions}`);
+  console.log(`   Source Mutable-Path Estimate: ${payload.migration_source_estimates.mutable_search_path_functions}`);
+  console.log('   Authorization Certification: NOT_CERTIFIED — static text scan is not a security sign-off.');
 }
 
 generateSecDefRegistry().catch(err => {
