@@ -1011,13 +1011,34 @@ export async function createIpdAdmissionAction(params: {
       console.warn("[createIpdAdmissionAction] Episode snapshot sync notice:", epErr);
     }
 
-    // Assign Bed if bedId provided
+    // Assign Bed or Cabin if bedId provided
     if (params.bedId) {
+      // Check whether this ID belongs to public.beds or public.cabins
+      const { data: bedCheck } = await supabase
+        .from("beds")
+        .select("id, status")
+        .eq("id", params.bedId)
+        .eq("organization_id", session.organizationId)
+        .maybeSingle();
+
+      const isBed = !!bedCheck;
+      let isCabin = false;
+      if (!isBed) {
+        const { data: cabinCheck } = await supabase
+          .from("cabins")
+          .select("id, status")
+          .eq("id", params.bedId)
+          .eq("organization_id", session.organizationId)
+          .maybeSingle();
+        isCabin = !!cabinCheck;
+      }
+
       const bedAsgPayload: Record<string, unknown> = {
         organization_id: session.organizationId,
         visit_id: newVisit.id,
         patient_id: params.patientId,
-        bed_id: params.bedId,
+        bed_id: isBed ? params.bedId : null,
+        cabin_id: isCabin ? params.bedId : null,
         assigned_at: new Date().toISOString(),
         status: "ACTIVE",
       };
@@ -1037,17 +1058,25 @@ export async function createIpdAdmissionAction(params: {
         return {
           success: false,
           error: isConflict
-            ? "নির্বাচিত বেডটি ইতোমধ্যে অন্য রোগীকে বরাদ্দ করা হয়েছে। অনুগ্রহ করে অন্য বেড নির্বাচন করুন (Selected bed is already occupied)."
+            ? "নির্বাচিত বেড বা কেবিনে ইতিমধ্যে অন্য রোগী ভর্তি আছেন। অনুগ্রহ করে অন্য বেড নির্বাচন করুন (Selected bed/cabin is already occupied)."
             : bAsgRes.error.message,
         };
       }
 
-      // Mark bed occupied
-      await supabase
-        .from("beds")
-        .update({ status: "OCCUPIED" })
-        .eq("organization_id", session.organizationId)
-        .eq("id", params.bedId);
+      // Mark bed or cabin occupied
+      if (isBed) {
+        await supabase
+          .from("beds")
+          .update({ status: "OCCUPIED" })
+          .eq("organization_id", session.organizationId)
+          .eq("id", params.bedId);
+      } else if (isCabin) {
+        await supabase
+          .from("cabins")
+          .update({ status: "OCCUPIED" })
+          .eq("organization_id", session.organizationId)
+          .eq("id", params.bedId);
+      }
     }
 
     // Record initial provisional diagnosis
@@ -1414,20 +1443,40 @@ export async function transferPatientAction(params: {
       return { success: false, error: "Active visit not found in your organization." };
     }
 
-    // Verify Destination Bed Availability (no two active patients can occupy one bed)
-    const { data: targetBed, error: tbErr } = await supabase
+    // Verify Destination Bed or Cabin Availability
+    const { data: targetBed } = await supabase
       .from("beds")
       .select("id, status, bed_number")
       .eq("id", params.toBedId)
       .eq("organization_id", session.organizationId)
-      .single();
+      .maybeSingle();
 
-    if (tbErr || !targetBed) {
-      return { success: false, error: "Destination bed not found." };
+    const isTargetBed = !!targetBed;
+    let isTargetCabin = false;
+    let targetNumber = targetBed?.bed_number || "";
+    let targetStatus = targetBed?.status || "";
+
+    if (!isTargetBed) {
+      const { data: targetCabin } = await supabase
+        .from("cabins")
+        .select("id, status, cabin_number")
+        .eq("id", params.toBedId)
+        .eq("organization_id", session.organizationId)
+        .maybeSingle();
+
+      if (targetCabin) {
+        isTargetCabin = true;
+        targetNumber = targetCabin.cabin_number;
+        targetStatus = targetCabin.status;
+      }
     }
 
-    if (targetBed.status === "OCCUPIED") {
-      return { success: false, error: `Destination bed ${targetBed.bed_number} is already occupied.` };
+    if (!isTargetBed && !isTargetCabin) {
+      return { success: false, error: "Destination bed or cabin not found." };
+    }
+
+    if (targetStatus === "OCCUPIED") {
+      return { success: false, error: `Destination ${isTargetCabin ? "cabin" : "bed"} ${targetNumber} is already occupied.` };
     }
 
     // Insert immutable transfer record
@@ -1439,8 +1488,8 @@ export async function transferPatientAction(params: {
         patient_id: params.patientId,
         from_ward_id: params.fromWardId || null,
         to_ward_id: params.toWardId || null,
-        from_bed_id: params.fromBedId || null,
-        to_bed_id: params.toBedId,
+        from_bed_id: isTargetBed ? (params.fromBedId || null) : null,
+        to_bed_id: isTargetBed ? params.toBedId : null,
         reason: params.reason.trim(),
         transfer_time: new Date().toISOString(),
         authorized_by: session.userId,
@@ -1452,19 +1501,40 @@ export async function transferPatientAction(params: {
       return { success: false, error: trErr?.message || "Failed to log patient transfer." };
     }
 
-    // Release old bed assignment if present
-    if (params.fromBedId) {
-      await supabase
-        .from("bed_assignments")
-        .update({ status: "TRANSFERRED", discharged_at: new Date().toISOString() })
-        .eq("organization_id", session.organizationId)
-        .eq("visit_id", params.visitId)
-        .eq("bed_id", params.fromBedId)
-        .eq("status", "ACTIVE");
+    // Release all previous active bed and cabin assignments for this visit
+    const { data: activeAssignments } = await supabase
+      .from("bed_assignments")
+      .select("id, bed_id, cabin_id")
+      .eq("organization_id", session.organizationId)
+      .eq("visit_id", params.visitId)
+      .eq("status", "ACTIVE");
 
-      await supabase
-        .from("beds")
-        .update({ status: "CLEANING_REQUIRED" }) .eq("organization_id", session.organizationId) .eq("id", params.fromBedId);
+    if (activeAssignments && activeAssignments.length > 0) {
+      for (const asg of activeAssignments) {
+        await supabase
+          .from("bed_assignments")
+          .update({
+            status: "TRANSFERRED",
+            discharged_at: new Date().toISOString(),
+            vacated_at: new Date().toISOString(),
+          })
+          .eq("id", asg.id);
+
+        if (asg.bed_id) {
+          await supabase
+            .from("beds")
+            .update({ status: "CLEANING_REQUIRED" })
+            .eq("organization_id", session.organizationId)
+            .eq("id", asg.bed_id);
+        }
+        if (asg.cabin_id) {
+          await supabase
+            .from("cabins")
+            .update({ status: "VACANT" })
+            .eq("organization_id", session.organizationId)
+            .eq("id", asg.cabin_id);
+        }
+      }
     }
 
     // Create new active bed assignment
@@ -1472,17 +1542,26 @@ export async function transferPatientAction(params: {
       organization_id: session.organizationId,
       visit_id: params.visitId,
       patient_id: params.patientId,
-      bed_id: params.toBedId,
+      bed_id: isTargetBed ? params.toBedId : null,
+      cabin_id: isTargetCabin ? params.toBedId : null,
       assigned_at: new Date().toISOString(),
       status: "ACTIVE",
     });
 
-    // Mark new bed as occupied
-    await supabase
-      .from("beds")
-      .update({ status: "OCCUPIED" })
-      .eq("organization_id", session.organizationId)
-      .eq("id", params.toBedId);
+    // Mark destination occupied
+    if (isTargetBed) {
+      await supabase
+        .from("beds")
+        .update({ status: "OCCUPIED" })
+        .eq("organization_id", session.organizationId)
+        .eq("id", params.toBedId);
+    } else if (isTargetCabin) {
+      await supabase
+        .from("cabins")
+        .update({ status: "OCCUPIED" })
+        .eq("organization_id", session.organizationId)
+        .eq("id", params.toBedId);
+    }
 
     // Audit Log
     await recordAuditLog({

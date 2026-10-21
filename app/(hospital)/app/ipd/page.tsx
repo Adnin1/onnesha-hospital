@@ -325,35 +325,55 @@ export default function IPDAdmissionsPage() {
           });
         }
 
-        // 2. Fetch available beds
-        const { data: bedsData } = await supabase
-          .from("beds")
-          .select(`
-            id,
-            bed_number,
-            status,
-            wards (
-              name
-            )
-          `)
-          .eq("organization_id", orgId)
-          .order("bed_number");
+        // 2. Fetch available beds and cabins
+        const [bedsRes, cabinsRes] = await Promise.all([
+          supabase
+            .from("beds")
+            .select(`
+              id,
+              bed_number,
+              status,
+              wards (
+                name
+              )
+            `)
+            .eq("organization_id", orgId)
+            .order("bed_number"),
+          supabase
+            .from("cabins")
+            .select("id, cabin_number, cabin_type, status")
+            .eq("organization_id", orgId)
+            .order("cabin_number"),
+        ]);
 
-        if (bedsData) {
+        const mappedList: AvailableBed[] = [];
+        if (bedsRes.data) {
           interface BedItem {
             id: string;
             bed_number: string;
             status: string;
             wards: { name: string } | null;
           }
-          const mappedBeds: AvailableBed[] = (bedsData as unknown as BedItem[]).map((b) => ({
-            id: b.id,
-            bed_number: b.bed_number,
-            ward_name: b.wards?.name || "General Ward",
-            status: b.status,
-          }));
-          setAvailableBeds(mappedBeds);
+          for (const b of (bedsRes.data as unknown as BedItem[])) {
+            mappedList.push({
+              id: b.id,
+              bed_number: b.bed_number,
+              ward_name: b.wards?.name || "General Ward",
+              status: b.status,
+            });
+          }
         }
+        if (cabinsRes.data) {
+          for (const c of cabinsRes.data) {
+            mappedList.push({
+              id: c.id,
+              bed_number: `Cabin: ${c.cabin_number}`,
+              ward_name: `Cabin (${c.cabin_type || "Standard"})`,
+              status: c.status,
+            });
+          }
+        }
+        setAvailableBeds(mappedList);
 
         // Fetch active referral partners
         try {
@@ -494,6 +514,7 @@ export default function IPDAdmissionsPage() {
       }
     } catch (err) {
       console.error("[handleOpenCertificatePrint] error:", err);
+      setActionError("Failed to open discharge certificate preview: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -505,18 +526,24 @@ export default function IPDAdmissionsPage() {
 
     try {
       const supabase = createClient();
+      const session = await getCurrentUserSession();
+      const orgId = session?.organizationId;
       const trimmedInput = admissionForm.patientCodeOrId.trim();
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmedInput);
       let pQuery = supabase.from("patients").select("id");
+      if (orgId) {
+        pQuery = pQuery.eq("organization_id", orgId);
+      }
       if (isUuid) {
         pQuery = pQuery.eq("id", trimmedInput);
       } else {
-        pQuery = pQuery.eq("patient_code", trimmedInput.replace(/[^a-zA-Z0-9_-]/g, ""));
+        const sanitized = trimmedInput.replace(/[^a-zA-Z0-9_-]/g, "");
+        pQuery = pQuery.or(`patient_code.eq.${sanitized},phone.eq.${trimmedInput},national_id.eq.${trimmedInput}`);
       }
       const { data: patient } = await pQuery.maybeSingle();
 
       if (!patient) {
-        setActionError("Patient not found. Please provide a valid Patient Code or ID.");
+        setActionError("Patient not found. Please provide a valid Patient Code, Mobile Number, or ID.");
         setSubmitting(false);
         return;
       }

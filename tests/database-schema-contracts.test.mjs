@@ -82,4 +82,26 @@ describe("Change Safety: Database Compatibility & Schema Contracts Test Engine",
       "Must not reference fake columns"
     );
   });
+
+  test("7. discharge_summaries contract defines patient_id, visit_id, and unique index on visit_id", () => {
+    assert.match(
+      combinedSql,
+      /ALTER\s+TABLE\s+(IF\s+EXISTS\s+)?(public\.)?discharge_summaries\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+patient_id/i,
+      "Migration 236 must add patient_id to discharge_summaries"
+    );
+    assert.match(
+      combinedSql,
+      /CREATE\s+UNIQUE\s+INDEX\s+IF\s+NOT\s+EXISTS\s+idx_discharge_summaries_visit_id_unique\s+ON\s+(public\.)?discharge_summaries\s*\(\s*visit_id\s*\)/i,
+      "Migration 236 must create unique index on discharge_summaries(visit_id)"
+    );
+  });
+
+  test("8. complete_ipd_discharge_atomic binds patient_id, consultant doctor, and vacates beds & cabins", () => {
+    assert.ok(
+      combinedSql.includes("complete_ipd_discharge_atomic") &&
+      combinedSql.includes("idx_discharge_summaries_visit_id_unique") &&
+      combinedSql.includes("reconcile_bed_vacancy_drift_atomic"),
+      "complete_ipd_discharge_atomic must execute atomic discharge and bed/cabin release"
+    );
+  });
 });
