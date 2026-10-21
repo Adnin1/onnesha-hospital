@@ -56,25 +56,35 @@ async function runComponentTruth() {
   let ciConclusion = null;
   let ciHeadSha = null;
   try {
-    const res = await fetch('https://api.github.com/repos/Adnin1/onnesha-hospital/actions/runs?per_page=5', {
+    const res = await fetch('https://api.github.com/repos/Adnin1/onnesha-hospital/actions/runs?branch=main&per_page=100', {
       headers: { 'User-Agent': 'OHMS-Truth-Monitor' },
       signal: AbortSignal.timeout(6000),
     });
     if (res.ok) {
       const data = await res.json();
-      if (data.workflow_runs && data.workflow_runs.length > 0) {
-        const latest = data.workflow_runs[0];
-        ciRunNumber = latest.run_number;
-        ciStatus = latest.status;
-        ciConclusion = latest.conclusion;
-        ciHeadSha = latest.head_sha;
+      const ciRuns = (data.workflow_runs || []).filter(
+        (run) => run.name === 'OHMS CI Quality, Security & Desktop Pipeline',
+      );
+      // Only CI for the exact checked-out SHA can certify this checkout.
+      const exactShaRun = ciRuns.find((run) => run.head_sha === gitHead);
+      if (exactShaRun) {
+        ciRunNumber = exactShaRun.run_number;
+        ciStatus = exactShaRun.status;
+        ciConclusion = exactShaRun.conclusion;
+        ciHeadSha = exactShaRun.head_sha;
+      } else {
+        const previous = ciRuns[0];
+        ciRunNumber = previous?.run_number ?? null;
+        ciStatus = 'NO_CURRENT_SHA_RUN';
+        ciConclusion = previous?.conclusion ?? null;
+        ciHeadSha = previous?.head_sha ?? null;
       }
     }
   } catch {
     ciStatus = 'FETCH_TIMEOUT';
   }
 
-  let ciEvaluation = 'FAIL';
+  let ciEvaluation = 'PENDING_NEW_COMMIT';
   if (ciHeadSha === gitHead) {
     if (ciConclusion === 'success') {
       ciEvaluation = 'PASS';
@@ -83,10 +93,6 @@ async function runComponentTruth() {
     } else {
       ciEvaluation = 'FAIL';
     }
-  } else if (ciConclusion === 'success') {
-    ciEvaluation = 'PREVIOUS_HEAD_PASS';
-  } else {
-    ciEvaluation = 'PENDING_NEW_COMMIT';
   }
 
   // 3. Database Migration Catalog Verification
@@ -95,11 +101,13 @@ async function runComponentTruth() {
     ? fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'))
     : [];
   const migrationCount = migrationFiles.length;
-  const databaseEvaluation = migrationCount >= 240 ? 'PASS' : 'FAIL';
+  // Local migration filenames are not evidence of the live database catalog.
+  const databaseEvaluation = 'NOT_VERIFIED_REMOTE_CATALOG';
 
   // 4. Live Edge Check (https://onnesha-hospital.pages.dev)
   let edgeEvaluation = 'FAIL';
   let edgeDetails = '';
+  let runtimeProvenanceEvaluation = 'NOT_VERIFIED';
   try {
     const versionRes = await fetch('https://onnesha-hospital.pages.dev/version.json', {
       signal: AbortSignal.timeout(5000),
@@ -107,19 +115,19 @@ async function runComponentTruth() {
     });
     if (versionRes.ok) {
       const verData = await versionRes.json();
+      edgeEvaluation = 'PASS';
       edgeDetails = `v${verData.version} (${verData.short_sha})`;
-      if (verData.short_sha === gitHead.slice(0, 8) || verData.git_sha === gitHead) {
-        edgeEvaluation = 'PASS';
-      } else {
-        edgeEvaluation = 'PASS_PREVIOUS_RELEASE';
-      }
+      runtimeProvenanceEvaluation =
+        (verData.short_sha === gitHead.slice(0, 8) || verData.git_sha === gitHead)
+          ? 'PASS'
+          : 'MISMATCH';
     } else {
       const rootRes = await fetch('https://onnesha-hospital.pages.dev', {
         signal: AbortSignal.timeout(5000),
       });
       if (rootRes.status === 200) {
-        edgeEvaluation = 'PASS_PREVIOUS_RELEASE';
-        edgeDetails = 'HTTP 200';
+        edgeEvaluation = 'PASS';
+        edgeDetails = 'HTTP 200; version.json unavailable';
       }
     }
   } catch {
@@ -205,7 +213,8 @@ async function runComponentTruth() {
   // Component Matrix with Explicit Testing Levels
   const components = [
     { name: 'EDGE', status: edgeEvaluation, level: 'L5_PRODUCTION_READ_ONLY', note: edgeDetails },
-    { name: 'DATABASE', status: databaseEvaluation, level: 'L2_STATIC_CONTRACT', note: `${migrationCount} migrations` },
+    { name: 'RUNTIME_PROVENANCE', status: runtimeProvenanceEvaluation, level: 'L5_PRODUCTION_READ_ONLY', note: 'Full deployed SHA compared with current checkout' },
+    { name: 'DATABASE', status: databaseEvaluation, level: 'L3_REMOTE_DATABASE_CATALOG', note: `Local migration files: ${migrationCount}; remote catalog was not queried` },
     { name: 'SCHEMA', status: schemaPass, level: 'L2_STATIC_CONTRACT', note: 'Column & signature contracts' },
     { name: 'RPC_REGISTRY', status: rpcRegistryEvaluation, level: 'L2_STATIC_CONTRACT', note: '0 critical overloads' },
     { name: 'AUTH', status: authPass, level: 'L3_REAL_DATABASE_INTEGRATION', note: 'Fail-closed session' },
@@ -237,7 +246,8 @@ async function runComponentTruth() {
   console.log('              OHMS DYNAMIC COMPONENT TRUTH LEDGER (CLASSIFIED BY TEST LEVEL)           ');
   console.log('========================================================================================');
   console.log(`Git HEAD SHA:          ${gitHead.substring(0, 8)} (${gitHead})`);
-  console.log(`Migration Count:       ${migrationCount} (Head: ${migrationFiles[migrationCount - 1] || 'none'})`);
+  console.log(`Repository Migrations: ${migrationCount} local SQL files (not proof of remote DB state)`);
+  console.log(`Remote DB Catalog:     ${databaseEvaluation}`);
   console.log(`Live Edge Health:      ${edgeEvaluation} ${edgeDetails ? `[${edgeDetails}]` : ''}`);
   console.log(`GitHub Actions CI:     #${ciRunNumber || 'N/A'} (State: ${ciStatus}${ciConclusion ? ', Conclusion: ' + ciConclusion : ''})`);
   console.log('----------------------------------------------------------------------------------------');
@@ -250,7 +260,7 @@ async function runComponentTruth() {
 
   for (const c of components) {
     let icon = '❌';
-    if (c.status === 'PASS' || c.status === 'PREVIOUS_HEAD_PASS' || c.status === 'PASS_PREVIOUS_RELEASE') {
+    if (c.status === 'PASS') {
       icon = '✅';
       passCount++;
     } else if (c.status === 'BLOCKED_EXTERNAL') {
