@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-21T21:51:52.901Z",
-  "total_secdef_functions": 164,
+  "generated_at": "2026-10-21T22:07:46.938Z",
+  "total_secdef_functions": 165,
   "anon_executable_count": 0,
   "mutable_search_path_count": 0,
   "classifications": {
     "TRIGGER_ONLY": 0,
-    "INTERNAL_ONLY": 149,
+    "INTERNAL_ONLY": 150,
     "PUBLIC_SAFE": 0,
     "AUTHENTICATED_OPERATIONAL": 14,
     "ADMIN_PRIVILEGED": 1,
@@ -194,6 +194,7 @@
         "lib/ipd/bed-actions.ts",
         "tests/hospital-transactional-workflow-e2e.test.mjs",
         "tests/integration/referral-database-live-verification.test.mjs",
+        "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/regression-beds-and-critical-care.test.mjs",
         "tests/reports-pnl-and-ipd-auto-charges.test.mjs"
       ],
@@ -333,6 +334,7 @@
         "tests/catalog-driven-purge-invariants.test.mjs",
         "tests/database-schema-contracts.test.mjs",
         "tests/hospital-transactional-workflow-e2e.test.mjs",
+        "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/migration-232-comprehensive-clinical-defects-remediation.test.mjs",
         "tests/migration-233-harden-cabins-beds-constraints-and-ipd-discharge.test.mjs",
         "tests/migration-236-discharge-summaries-patient-id-and-ipd-lifecycle.test.mjs",
@@ -551,6 +553,7 @@
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/doctor-billing-acceptance.test.mjs",
+        "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/master-golden-lifecycle.test.mjs",
         "tests/phase32-billing-atomicity-payment-contracts.test.mjs",
         "tests/phase34-billing-atomicity-regression.test.mjs",
@@ -639,6 +642,7 @@
         "tests/catalog-driven-purge-invariants.test.mjs",
         "tests/database-schema-contracts.test.mjs",
         "tests/features-billing-expenses-discharge-audit.test.mjs",
+        "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/migration-233-harden-cabins-beds-constraints-and-ipd-discharge.test.mjs",
         "tests/migration-236-discharge-summaries-patient-id-and-ipd-lifecycle.test.mjs",
         "scripts/generate-rpc-registry.mjs",
@@ -854,6 +858,7 @@
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/integration/admission-referral-billing-flow.test.mjs",
+        "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/phase32-billing-atomicity-payment-contracts.test.mjs",
         "tests/phase34-billing-atomicity-regression.test.mjs",
         "tests/security/cashier-role-receptionist-and-billing-referral.test.mjs"
@@ -878,6 +883,7 @@
         "lib/patient/actions.ts",
         "tests/bed-assignment-conflict-and-invoice-hard-purge.test.mjs",
         "tests/billing-waiver-and-rpc-auth.test.mjs",
+        "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/master-golden-lifecycle.test.mjs",
         "tests/patient-intake-atomic-resilience.test.mjs",
         "tests/security/receptionist-patient-intake-hardening.test.mjs",
@@ -1075,6 +1081,25 @@
       ],
       "classification": "INTERNAL_ONLY",
       "review_result": "HARDENED_SAFE"
+    },
+    {
+      "name": "enforce_referral_commission_settlement_authorization",
+      "signature": "",
+      "arguments": "",
+      "owner": "postgres",
+      "search_path": "public, auth, pg_temp",
+      "anon_executable": false,
+      "authenticated_executable": false,
+      "service_role_executable": false,
+      "auth_uid_guard": false,
+      "tenant_guard": false,
+      "role_guard": false,
+      "permission_guard": false,
+      "caller_files": [
+        "tests/migration-248-referral-payout-authorization.test.mjs"
+      ],
+      "classification": "INTERNAL_ONLY",
+      "review_result": "APPROVED"
     },
     {
       "name": "enqueue_telegram_command_atomic",
@@ -2363,7 +2388,8 @@
       "permission_guard": false,
       "caller_files": [
         "lib/referrals/actions.ts",
-        "tests/post-uat-acceptance-hardening.test.mjs"
+        "tests/post-uat-acceptance-hardening.test.mjs",
+        "tests/referral-payout-fail-closed.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
       "review_result": "HARDENED_SAFE"
@@ -2385,6 +2411,7 @@
         "lib/expenses/actions.ts",
         "lib/referrals/actions.ts",
         "tests/critical-hospital-workflow-e2e.test.mjs",
+        "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/migration-231-cabins-status-and-ipd-discharge.test.mjs",
         "scripts/generate-rpc-registry.mjs",
         "scripts/verify-app-db-contracts.mjs"
@@ -2470,6 +2497,9 @@
       "permission_guard": false,
       "caller_files": [
         "lib/referrals/actions.ts",
+        "tests/live/hospital-application-workflow.live.test.mjs",
+        "tests/migration-246-compatibility-table-security.test.mjs",
+        "tests/referral-payout-fail-closed.test.mjs",
         "tests/referral-per-patient-commission-and-financial-reports.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
@@ -2490,6 +2520,9 @@
       "permission_guard": false,
       "caller_files": [
         "lib/referrals/actions.ts",
+        "tests/live/hospital-application-workflow.live.test.mjs",
+        "tests/migration-246-compatibility-table-security.test.mjs",
+        "tests/referral-payout-fail-closed.test.mjs",
         "tests/referral-per-patient-commission-and-financial-reports.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
@@ -2530,7 +2563,8 @@
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
-        "lib/blood-bank/actions.ts"
+        "lib/blood-bank/actions.ts",
+        "tests/live/hospital-application-workflow.live.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
       "review_result": "APPROVED"
@@ -2971,6 +3005,7 @@
       "permission_guard": false,
       "caller_files": [
         "lib/ipd/bed-actions.ts",
+        "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/regression-beds-and-critical-care.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
@@ -3254,6 +3289,7 @@
         "lib/appointments/actions.ts",
         "tests/catalog-driven-purge-invariants.test.mjs",
         "tests/database-schema-contracts.test.mjs",
+        "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/migration-232-comprehensive-clinical-defects-remediation.test.mjs",
         "scripts/generate-rpc-registry.mjs",
         "scripts/verify-app-db-contracts.mjs"

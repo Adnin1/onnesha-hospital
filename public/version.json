@@ -1,10 +1,10 @@
 {
   "name": "onnesha-hospital",
   "version": "1.1.90",
-  "git_sha": "2499c71140ae0431f50f8346cd3fda6bcf9257b1",
-  "short_sha": "2499c711",
-  "build_id": "ohms-1.1.90-2499c711-1792618884324",
-  "migration_count": 245,
-  "migration_head_file": "20261022100000_migration_245_add_discharge_reason_to_patient_visits.sql",
-  "generated_at": "2026-10-21T21:41:24.323Z"
+  "git_sha": "71eac336c2b178e529ba43c4552e96f4e0f12291",
+  "short_sha": "71eac336",
+  "build_id": "ohms-1.1.90-71eac336-1792620932988",
+  "migration_count": 249,
+  "migration_head_file": "20261022123000_migration_249_fix_referral_fixed_search_path_auth_schema.sql",
+  "generated_at": "2026-10-21T22:15:32.988Z"
 }

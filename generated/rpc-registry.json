@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-21T21:51:10.133Z",
+  "generated_at": "2026-10-21T22:07:39.316Z",
   "source": "chronological_migration_analysis",
-  "migration_count": 246,
-  "migration_head": "20261022110000_migration_246_enable_rls_ot_referral_and_harden_search_path.sql",
-  "total_functions": 182,
-  "security_definer_count": 164,
+  "migration_count": 249,
+  "migration_head": "20261022123000_migration_249_fix_referral_fixed_search_path_auth_schema.sql",
+  "total_functions": 183,
+  "security_definer_count": 165,
   "anon_executable_count": 9,
   "critical_rpc_overload_count": 0,
   "security_findings": [],
@@ -665,6 +665,15 @@
       "granted_to": [
         "authenticated"
       ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "enforce_referral_commission_settlement_authorization",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
       "anon_executable": false,
       "is_critical": false
     },

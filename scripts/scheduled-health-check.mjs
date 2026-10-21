@@ -54,7 +54,11 @@ async function checkRolePermissionIntegrity(client, isPrivileged) {
       .select("permission_key, roles!inner(name)")
       .eq("roles.organization_id", ORG_ID);
     if (error) {
-      return { ok: true, note: "Non-privileged or RLS restricted query" };
+      return {
+        ok: false,
+        error: `ROLE_PERMISSION_QUERY_FAILED: ${error.message}`,
+        issues: [{ role: "role_permissions", missing: ["authoritative query failed"] }],
+      };
     }
     const roleMap = {};
     (data || []).forEach((r) => {
@@ -86,7 +90,48 @@ async function checkRolePermissionIntegrity(client, isPrivileged) {
     }
     return { ok: true, rolesAudited: Object.keys(roleRequirements).length, totalPerms: (data || []).length };
   } catch (err) {
-    return { ok: true, note: err.message };
+    return {
+      ok: false,
+      error: `ROLE_PERMISSION_QUERY_EXCEPTION: ${err.message}`,
+      issues: [{ role: "role_permissions", missing: ["authoritative query threw"] }],
+    };
+  }
+}
+
+async function checkRuntimeProvenance() {
+  let expectedSha = process.env.GITHUB_SHA;
+  if (!expectedSha) {
+    try {
+      expectedSha = execSync("git rev-parse HEAD", { encoding: "utf8" }).trim();
+    } catch {
+      expectedSha = "";
+    }
+  }
+
+  try {
+    const baseUrl = CANONICAL_URL.endsWith("/") ? CANONICAL_URL.slice(0, -1) : CANONICAL_URL;
+    const versionUrl = `${baseUrl}/version.json`;
+    const res = await fetch(versionUrl, {
+      headers: { "Cache-Control": "no-cache", "User-Agent": "OHMS-Provenance-Probe/1.0" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) {
+      return { status: "NOT_VERIFIED", runtime_sha: null, build_id: null, reason: `version.json HTTP ${res.status}` };
+    }
+    const version = await res.json();
+    const runtimeSha = typeof version.git_sha === "string" ? version.git_sha : null;
+    if (!runtimeSha || !expectedSha) {
+      return { status: "NOT_VERIFIED", runtime_sha: runtimeSha, build_id: version.build_id || null, reason: "full Git SHA missing" };
+    }
+    return {
+      status: runtimeSha === expectedSha ? "MATCH" : "MISMATCH",
+      runtime_sha: runtimeSha,
+      build_id: version.build_id || null,
+      expected_sha: expectedSha,
+      reason: runtimeSha === expectedSha ? "exact runtime SHA match" : "deployed runtime SHA differs from checked-out SHA",
+    };
+  } catch (err) {
+    return { status: "NOT_VERIFIED", runtime_sha: null, build_id: null, reason: err.message };
   }
 }
 
@@ -149,10 +194,18 @@ async function checkDatabaseDiagnostics() {
     // Probe multi-role RBAC integrity
     const rbacIntegrity = await checkRolePermissionIntegrity(client, isPrivileged);
     if (!rbacIntegrity.ok) {
-      console.warn(`[RBAC Integrity Warning] Role permission gaps detected: ${JSON.stringify(rbacIntegrity.issues)}`);
-    } else {
-      console.log(`[RBAC Integrity] Multi-role permissions verified intact across ${rbacIntegrity.rolesAudited || "all"} canonical roles (${rbacIntegrity.totalPerms || 0} total DB grants).`);
+      console.error(`[RBAC Integrity Failure] ${rbacIntegrity.error || JSON.stringify(rbacIntegrity.issues)}`);
+      return {
+        skipped: false,
+        is_healthy: false,
+        status: "RBAC_INTEGRITY_FAILED",
+        error: rbacIntegrity.error || JSON.stringify(rbacIntegrity.issues),
+        audit_scope: auditScope,
+        is_privileged: true,
+        cron_telemetry: cronTelemetry,
+      };
     }
+    console.log(`[RBAC Integrity] Multi-role permissions verified intact across ${rbacIntegrity.rolesAudited || "all"} canonical roles (${rbacIntegrity.totalPerms || 0} total DB grants).`);
 
     const { data, error } = await client.rpc("check_system_health_diagnostics", {
       p_org_id: ORG_ID,
@@ -239,6 +292,7 @@ async function checkDatabaseDiagnostics() {
 
 async function run() {
   const edgeOk = await checkEdgeLiveness();
+  const runtimeProvenance = await checkRuntimeProvenance();
   const dbResult = await checkDatabaseDiagnostics();
 
   const dbStatus = dbResult.skipped
@@ -291,6 +345,8 @@ async function run() {
 
   const overallMonitoringVerdict = !edgeOk
     ? "FAIL — PRODUCTION EDGE UNREACHABLE"
+    : runtimeProvenance.status !== "MATCH"
+    ? `DEPLOYMENT_PROVENANCE_${runtimeProvenance.status}`
     : dbResult.is_privileged
     ? (dbResult.is_healthy ? "FULL_INTERNAL_ERP_HEALTHY" : "DEFECT_DETECTED")
     : "PUBLIC_EDGE_HEALTHY (Internal ERP Invariants Gated by Owner Credential Gate G10)";
@@ -303,21 +359,25 @@ async function run() {
     }
   })();
 
-  const dbMigrationHead = (() => {
+  const repositoryMigrationFileCount = (() => {
     try {
       const migrationDir = path.join(process.cwd(), "supabase", "migrations");
       if (fs.existsSync(migrationDir)) {
-        const files = fs.readdirSync(migrationDir).filter(f => f.endsWith(".sql"));
-        return String(files.length);
+        return String(fs.readdirSync(migrationDir).filter(f => f.endsWith(".sql")).length);
       }
     } catch {}
-    return "227";
+    return "UNKNOWN";
   })();
+  // This watchdog does not query the live Supabase migration catalog.
+  const dbMigrationHead = "NOT_VERIFIED_BY_THIS_PROBE";
 
   const structuredSummary = {
     repository_sha: repoSha,
-    runtime_sha: process.env.PRODUCTION_RUNTIME_SHA || repoSha,
-    deployment_id: process.env.CLOUDFLARE_DEPLOYMENT_ID || "LIVE_CANONICAL",
+    runtime_sha: runtimeProvenance.runtime_sha || "UNKNOWN",
+    build_id: runtimeProvenance.build_id || "UNKNOWN",
+    runtime_provenance_status: runtimeProvenance.status,
+    repository_migration_file_count: repositoryMigrationFileCount,
+    deployment_id: runtimeProvenance.build_id || process.env.CLOUDFLARE_DEPLOYMENT_ID || "UNKNOWN",
     database_migration_head: dbMigrationHead,
     checked_at: new Date().toISOString(),
     edge: tierA,
@@ -336,8 +396,11 @@ async function run() {
 
   const machineOutputs = {
     repository_sha: repoSha,
-    runtime_sha: process.env.PRODUCTION_RUNTIME_SHA || repoSha,
-    deployment_id: process.env.CLOUDFLARE_DEPLOYMENT_ID || "LIVE_CANONICAL",
+    runtime_sha: runtimeProvenance.runtime_sha || "UNKNOWN",
+    build_id: runtimeProvenance.build_id || "UNKNOWN",
+    runtime_provenance_status: runtimeProvenance.status,
+    repository_migration_file_count: repositoryMigrationFileCount,
+    deployment_id: runtimeProvenance.build_id || process.env.CLOUDFLARE_DEPLOYMENT_ID || "UNKNOWN",
     database_migration_head: dbMigrationHead,
     checked_at: new Date().toISOString(),
     public_edge_status: edgeOk ? "PASS" : "FAIL",
@@ -356,6 +419,8 @@ async function run() {
     notification_status: "BLOCKED_EXTERNAL_OWNER",
     overall_status: !edgeOk
       ? "CRITICAL"
+      : runtimeProvenance.status !== "MATCH"
+      ? `DEPLOYMENT_PROVENANCE_${runtimeProvenance.status}`
       : !dbResult.is_privileged
       ? "NOT_FULLY_VERIFIED"
       : (dbResult.is_healthy ? "HEALTHY" : (dbResult.status || "DEGRADED")),
@@ -397,6 +462,11 @@ async function run() {
 
   if (!edgeOk) {
     console.error("❌ System Heartbeat Check: Production Edge failed liveness check!");
+    process.exit(1);
+  }
+
+  if (runtimeProvenance.status !== "MATCH") {
+    console.error(`❌ Runtime provenance gate failed: ${runtimeProvenance.status} (${runtimeProvenance.reason || "no reason supplied"}).`);
     process.exit(1);
   }
 
