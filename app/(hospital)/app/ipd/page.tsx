@@ -15,6 +15,7 @@ import {
   Calendar,
   Stethoscope,
   Pill,
+  Edit3,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatDateBDT, formatPatientAgeDisplay } from "@/lib/utils";
@@ -26,6 +27,7 @@ import {
   transferPatientAction,
   getDischargeSummaryAction,
   cancelOrDeleteIpdAdmissionAction,
+  updateIpdAdmissionAction,
 } from "@/lib/patient/actions";
 import { searchReferralAgentsAction } from "@/lib/referrals/actions";
 import { getCurrentUserSession } from "@/lib/auth/session";
@@ -50,12 +52,16 @@ interface InpatientRecord {
   dob?: string;
   address?: string;
   guardian_name?: string;
+  guardian_phone?: string;
   blood_group?: string;
   bed_id?: string;
   bed_number?: string;
   ward_name?: string;
   admitted_at: string;
+  doctor_id?: string;
   doctor_name: string;
+  notes?: string;
+  clinical_findings?: string;
   provisional_diagnosis: string;
   status: string;
 }
@@ -83,6 +89,15 @@ export default function IPDAdmissionsPage() {
   const [cancelAdmissionReason, setCancelAdmissionReason] = useState("");
   const [cancelAdmissionPermanent, setCancelAdmissionPermanent] = useState(true);
   const [cancellingAdmission, setCancellingAdmission] = useState(false);
+  const [showEditAdmissionModal, setShowEditAdmissionModal] = useState(false);
+  const [editingAdmission, setEditingAdmission] = useState(false);
+  const [editAdmissionForm, setEditAdmissionForm] = useState({
+    provisionalDiagnosis: "",
+    doctorId: "",
+    guardianName: "",
+    guardianPhone: "",
+    notes: "",
+  });
 
   // Form states
   const [admissionForm, setAdmissionForm] = useState({
@@ -170,6 +185,7 @@ export default function IPDAdmissionsPage() {
             id,
             visit_number,
             patient_id,
+            doctor_id,
             chief_complaint,
             admitted_at,
             status,
@@ -210,6 +226,7 @@ export default function IPDAdmissionsPage() {
             id: string;
             visit_number: string;
             patient_id: string;
+            doctor_id?: string;
             chief_complaint: string | null;
             admitted_at: string;
             status: string;
@@ -225,6 +242,7 @@ export default function IPDAdmissionsPage() {
               dob?: string;
               address?: string;
               guardian_name?: string;
+  guardian_phone?: string;
               blood_group?: string;
             } | null;
             bed_assignments: Array<{
@@ -260,7 +278,11 @@ export default function IPDAdmissionsPage() {
               bed_number: activeBedAssign?.beds?.bed_number || "UNASSIGNED",
               ward_name: activeBedAssign?.beds?.wards?.name || "General IPD",
               admitted_at: v.admitted_at,
+              doctor_id: v.doctor_id,
               doctor_name: "Attending Consultant",
+              guardian_phone: v.patients?.phone,
+              notes: v.chief_complaint || undefined,
+              clinical_findings: v.chief_complaint || undefined,
               provisional_diagnosis: v.chief_complaint || "Acute Condition Requiring Inpatient Care",
               status: "ADMITTED",
             };
@@ -563,6 +585,36 @@ export default function IPDAdmissionsPage() {
     }
   };
 
+  // Handle Edit / Update IPD Admission Submission
+  const handleUpdateAdmissionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAdmission) return;
+    setEditingAdmission(true);
+    setActionError(null);
+    try {
+      const res = await updateIpdAdmissionAction({
+        visitId: selectedAdmission.id,
+        provisionalDiagnosis: editAdmissionForm.provisionalDiagnosis,
+        doctorId: editAdmissionForm.doctorId || undefined,
+        guardianName: editAdmissionForm.guardianName || undefined,
+        guardianPhone: editAdmissionForm.guardianPhone || undefined,
+        notes: editAdmissionForm.notes || undefined,
+      });
+
+      if (!res.success) {
+        setActionError(res.error || "Failed to update admission details.");
+      } else {
+        setActionSuccess(res.data?.message || "ভর্তি তথ্য সফলভাবে সংশোধন করা হয়েছে।");
+        setShowEditAdmissionModal(false);
+        setRefreshIndex((prev) => prev + 1);
+      }
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Error updating admission.");
+    } finally {
+      setEditingAdmission(false);
+    }
+  };
+
   // Handle Discharge Submission
   const handleDischargeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -800,6 +852,24 @@ export default function IPDAdmissionsPage() {
                     <button
                       onClick={() => {
                         setActionError(null);
+                        setEditAdmissionForm({
+                          provisionalDiagnosis: selectedAdmission.provisional_diagnosis || "",
+                          doctorId: selectedAdmission.doctor_id || "",
+                          guardianName: selectedAdmission.guardian_name || "",
+                          guardianPhone: selectedAdmission.guardian_phone || selectedAdmission.phone || "",
+                          notes: selectedAdmission.clinical_findings || "",
+                        });
+                        setShowEditAdmissionModal(true);
+                      }}
+                      className="inline-flex items-center bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-300 text-xs font-semibold px-3 py-1.5 rounded-lg transition"
+                      title="ভর্তি তথ্য সংশোধন করুন (Edit Provisional Diagnosis, Doctor, Guardian)"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
+                      ভর্তি তথ্য সংশোধন
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActionError(null);
                         setCancelAdmissionReason("ভুলবশত এন্ট্রি করা হয়েছিল (Mistake admission)");
                         setCancelAdmissionPermanent(true);
                         setShowCancelAdmissionModal(true);
@@ -816,6 +886,8 @@ export default function IPDAdmissionsPage() {
                         setDischargeForm((prev) => ({
                           ...prev,
                           finalDiagnosis: selectedAdmission.provisional_diagnosis || "",
+                          consultantDoctorId: selectedAdmission.doctor_id || "",
+                          consultantName: selectedAdmission.doctor_name || "",
                         }));
                         setShowDischargeModal(true);
                       }}
@@ -1275,33 +1347,33 @@ export default function IPDAdmissionsPage() {
                   <div>
                     <label className="font-bold text-slate-700 block mb-1">Presenting Complaints & History</label>
                     <textarea
-                      rows={2}
+                      rows={4}
                       placeholder="e.g. Lower abdominal pain for 3 days, vomiting, high-grade fever..."
                       value={dischargeForm.presentingFeatures}
                       onChange={(e) => setDischargeForm({ ...dischargeForm, presentingFeatures: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white min-h-[90px]"
                     />
                   </div>
 
                   <div>
                     <label className="font-bold text-slate-700 block mb-1">Investigations & Lab Findings</label>
                     <textarea
-                      rows={2}
+                      rows={4}
                       placeholder="e.g. CBC: Hb 11.2, TLC 12,400. USG of Whole Abdomen: Acute Appendicitis..."
                       value={dischargeForm.investigationsSummary}
                       onChange={(e) => setDischargeForm({ ...dischargeForm, investigationsSummary: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white min-h-[90px]"
                     />
                   </div>
 
                   <div className="md:col-span-2">
                     <label className="font-bold text-slate-700 block mb-1">Hospital Course & Clinical Treatment</label>
                     <textarea
-                      rows={2}
+                      rows={4}
                       placeholder="Treatment received, clinical response during inpatient hospital stay..."
                       value={dischargeForm.hospitalCourse}
                       onChange={(e) => setDischargeForm({ ...dischargeForm, hospitalCourse: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white min-h-[100px]"
                     />
                   </div>
                 </div>
@@ -1639,10 +1711,10 @@ export default function IPDAdmissionsPage() {
                       Discharge Advice & Special Precautions (ছাড়পত্রের বিশেষ উপদেশ)
                     </label>
                     <textarea
-                      rows={2}
+                      rows={4}
                       value={dischargeForm.dischargeAdvice}
                       onChange={(e) => setDischargeForm({ ...dischargeForm, dischargeAdvice: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white min-h-[90px]"
                     />
                   </div>
                 </div>
@@ -1755,6 +1827,124 @@ export default function IPDAdmissionsPage() {
       )}
 
       </div>
+
+      {/* Edit IPD Admission Details Modal */}
+      {showEditAdmissionModal && selectedAdmission && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-sky-600" />
+                <div>
+                  <h3 className="text-base font-black text-slate-900">ভর্তি তথ্য সংশোধন করুন</h3>
+                  <p className="text-xs text-slate-500">Edit IPD Admission Details & Corrections</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditAdmissionModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateAdmissionSubmit} className="space-y-4 mt-4 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <p className="text-slate-700">
+                  রোগী: <strong className="text-slate-900">{selectedAdmission.patient_name}</strong> (UHID: {selectedAdmission.patient_code})
+                </p>
+                <p className="text-slate-700">
+                  ভর্তি নম্বর: <strong className="font-mono text-slate-900">{selectedAdmission.visit_number}</strong> • বেড: <strong>{selectedAdmission.bed_number}</strong>
+                </p>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  প্রাথমিক রোগ নির্ণয় (Provisional Diagnosis)
+                </label>
+                <input
+                  type="text"
+                  value={editAdmissionForm.provisionalDiagnosis}
+                  onChange={(e) => setEditAdmissionForm({ ...editAdmissionForm, provisionalDiagnosis: e.target.value })}
+                  placeholder="e.g. Acute Appendicitis, Enteric Fever..."
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">
+                  দায়িত্বপ্রাপ্ত ডাক্তার (Attending Doctor)
+                </label>
+                <select
+                  value={editAdmissionForm.doctorId}
+                  onChange={(e) => setEditAdmissionForm({ ...editAdmissionForm, doctorId: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-medium"
+                >
+                  <option value="">-- অপরিবর্তিত রাখুন --</option>
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.full_name} ({d.designation})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">অভিভাবকের নাম (Guardian Name)</label>
+                  <input
+                    type="text"
+                    value={editAdmissionForm.guardianName}
+                    onChange={(e) => setEditAdmissionForm({ ...editAdmissionForm, guardianName: e.target.value })}
+                    placeholder="Guardian Name"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">অভিভাবকের ফোন (Phone)</label>
+                  <input
+                    type="text"
+                    value={editAdmissionForm.guardianPhone}
+                    onChange={(e) => setEditAdmissionForm({ ...editAdmissionForm, guardianPhone: e.target.value })}
+                    placeholder="01XXXXXXXXX"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">ক্লিনিক্যাল নোট বা মন্তব্য (Clinical Notes)</label>
+                <textarea
+                  rows={3}
+                  value={editAdmissionForm.notes}
+                  onChange={(e) => setEditAdmissionForm({ ...editAdmissionForm, notes: e.target.value })}
+                  placeholder="যেকোনো অতিরিক্ত নোট বা নির্দেশনা..."
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowEditAdmissionModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editingAdmission}
+                  className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition flex items-center shadow-xs disabled:opacity-50 cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5 mr-1.5" />
+                  {editingAdmission ? "সংরক্ষণ হচ্ছে..." : "তথ্য সংরক্ষণ করুন"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Authentic 4-Part Discharge Certificate Print Modal */}
       {certificatePrintProps && (

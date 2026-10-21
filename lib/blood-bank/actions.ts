@@ -314,3 +314,145 @@ export async function registerAndIssueBloodBagAction(payload: {
     return { success: false, error: err instanceof Error ? err.message : "Failed to register and issue blood bag." };
   }
 }
+
+export interface BloodTransfusionRecord {
+  id: string;
+  organization_id: string;
+  bag_id: string;
+  patient_id: string;
+  donor_name?: string;
+  donor_age?: number;
+  donor_phone?: string;
+  donor_blood_group?: string;
+  sourcing_blood_bank?: string;
+  donor_type?: string;
+  crossmatch_result: "compatible" | "incompatible";
+  major_crossmatch?: "compatible" | "incompatible";
+  minor_crossmatch?: "compatible" | "incompatible";
+  technologist_name?: string;
+  verified_by: string;
+  transfusion_start_time: string;
+  adverse_reaction_notes?: string;
+  status: "ACTIVE" | "VOIDED";
+  created_at: string;
+  patients?: {
+    id: string;
+    patient_code: string;
+    full_name: string;
+    phone?: string;
+    gender?: string;
+    blood_group?: string;
+  };
+  blood_inventory?: {
+    bag_number: string;
+    blood_group: string;
+    component_type: string;
+  };
+}
+
+export async function getBloodTransfusionRecordsAction(): Promise<{
+  success: boolean;
+  data?: BloodTransfusionRecord[];
+  error?: string;
+}> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.BLOOD_BANK_VIEW);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
+  }
+
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("blood_transfusion_records")
+      .select("*, patients(id, patient_code, full_name, phone, gender, blood_group), blood_inventory(bag_number, blood_group, component_type)")
+      .eq("organization_id", session.organizationId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data: (data as unknown as BloodTransfusionRecord[]) || [] };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Failed to load transfusion records." };
+  }
+}
+
+export async function cancelOrVoidBloodTransfusionAction(params: {
+  transfusionId: string;
+  reason?: string;
+}): Promise<{ success: boolean; message?: string; error?: string }> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.BLOOD_BANK_MANAGE);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
+  }
+
+  try {
+    const supabase = createClient();
+    const { data: res, error } = await supabase.rpc("cancel_or_void_blood_transfusion_atomic", {
+      p_org_id: session.organizationId,
+      p_transfusion_id: params.transfusionId,
+      p_user_id: session.userId,
+      p_reason: params.reason || "Mistake entry cancelled by user",
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const resObj = res as { success?: boolean; message?: string; error?: string };
+    if (resObj && resObj.success === false) {
+      return { success: false, error: resObj.error || "Failed to void transfusion record." };
+    }
+
+    return { success: true, message: resObj?.message || "Transfusion record voided and blood bag returned to inventory." };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Error voiding transfusion record." };
+  }
+}
+
+export async function updateBloodTransfusionNotesAction(params: {
+  transfusionId: string;
+  notes: string;
+}): Promise<{ success: boolean; message?: string; error?: string }> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    await requirePermission(PERMISSIONS.BLOOD_BANK_MANAGE);
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
+  }
+
+  try {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("blood_transfusion_records")
+      .update({
+        adverse_reaction_notes: params.notes.trim(),
+      })
+      .eq("id", params.transfusionId)
+      .eq("organization_id", session.organizationId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, message: "Transfusion notes updated successfully." };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Error updating notes." };
+  }
+}

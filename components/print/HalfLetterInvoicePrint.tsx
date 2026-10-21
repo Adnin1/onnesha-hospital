@@ -369,97 +369,66 @@ export function HalfLetterInvoicePrint({
         </div>
       </div>
 
-      {/* 2. Patient Demographics Block */}
-      <div className="print-patient-block bg-slate-50 print:bg-white border border-slate-300 print:border-slate-400 rounded p-2 text-[10px] mb-2 grid grid-cols-2 gap-2">
-        <div className="space-y-0.5 min-w-0">
-          <div>
-            <span className="text-slate-600 font-medium">Patient: </span>
-            <strong className="text-slate-900 uppercase font-black">{patient.name}</strong>
-          </div>
-          <div>
-            <span className="text-slate-600 font-medium">UHID / ID: </span>
-            <strong className="font-mono text-slate-900 font-bold">{patient.patientCode}</strong>
-            {genderAgeDisplay && (
-              <span className="text-slate-800 ml-1 font-semibold">
-                {genderAgeDisplay}
-              </span>
-            )}
-          </div>
-          <div>
-            <span className="text-slate-600 font-medium">Mobile: </span>
-            <span className="font-mono text-slate-900 font-medium">{patient.phone || "N/A"}</span>
-            {patient.bloodGroup && !["UNKNOWN", "N/A", "UNDEFINED", "NONE"].includes(patient.bloodGroup.trim().toUpperCase()) && (
-              <span className="ml-1 text-slate-900 font-bold">[{patient.bloodGroup.trim()}]</span>
-            )}
-          </div>
-          {patient.address && (
-            <div className="break-words">
-              <span className="text-slate-600 font-medium">Address: </span>
-              <span className="text-slate-800">{patient.address}</span>
-            </div>
+      {/* 2. Patient Demographics Block - Compact 1-Page Layout */}
+      <div className="print-patient-block bg-slate-50 print:bg-white border border-slate-300 print:border-slate-400 rounded px-2 py-1 text-[9px] mb-1.5 grid grid-cols-2 gap-x-2 gap-y-0.5 leading-snug">
+        <div className="min-w-0">
+          <span className="text-slate-600 font-medium">Patient: </span>
+          <strong className="text-slate-900 uppercase font-black">{patient.name}</strong>
+          {genderAgeDisplay && (
+            <span className="text-slate-800 ml-1 font-semibold">({genderAgeDisplay})</span>
+          )}
+          {patient.bloodGroup && !["UNKNOWN", "N/A", "UNDEFINED", "NONE"].includes(patient.bloodGroup.trim().toUpperCase()) && (
+            <span className="ml-1 text-slate-900 font-bold">[{patient.bloodGroup.trim()}]</span>
           )}
         </div>
-
-        <div className="space-y-0.5 text-right min-w-0">
+        <div className="text-right min-w-0">
+          <span className="text-slate-600 font-medium">UHID: </span>
+          <strong className="font-mono text-slate-900 font-bold">{patient.patientCode}</strong>
+          <span className="text-slate-600 font-medium ml-2">Mobile: </span>
+          <span className="font-mono text-slate-900">{patient.phone || "N/A"}</span>
+        </div>
+        <div className="min-w-0 truncate">
           {consultantDoctorName && (
-            <div>
+            <>
               <span className="text-slate-600 font-medium">Consultant: </span>
               <strong className="text-slate-900 font-bold">{consultantDoctorName}</strong>
-            </div>
+            </>
           )}
           {departmentName && (
-            <div>
-              <span className="text-slate-600 font-medium">Dept: </span>
-              <span className="text-slate-800">{departmentName}</span>
-            </div>
+            <span className="text-slate-700 ml-1">({departmentName})</span>
           )}
+        </div>
+        <div className="text-right min-w-0 flex items-center justify-end gap-2">
           {cashierName && (
-            <div>
-              <span className="text-slate-600 font-medium">Cashier: </span>
-              <span className="text-slate-800 font-medium">{cashierName}</span>
-            </div>
+            <span className="text-[8px] text-slate-600">Cashier: {cashierName}</span>
           )}
-          <div className="pt-0.5">
-            <span
-              className={`inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                dueAmount <= 0
-                  ? "bg-emerald-100 text-emerald-900 border border-emerald-400"
-                  : paidAmount > 0
-                  ? "bg-amber-100 text-amber-950 border border-amber-400"
-                  : "bg-rose-100 text-rose-950 border border-rose-400"
-              }`}
-            >
-              {dueAmount <= 0 ? "PAID IN FULL" : paidAmount > 0 ? `DUE: ৳${dueAmount.toFixed(0)}` : "UNPAID"}
-            </span>
-          </div>
+          <span
+            className={`inline-block px-1.5 py-0.2 rounded text-[8px] font-black uppercase ${
+              dueAmount <= 0
+                ? "bg-emerald-100 text-emerald-900 border border-emerald-400"
+                : paidAmount > 0
+                ? "bg-amber-100 text-amber-950 border border-amber-400"
+                : "bg-rose-100 text-rose-950 border border-rose-400"
+            }`}
+          >
+            {dueAmount <= 0 ? "PAID IN FULL" : paidAmount > 0 ? `DUE: ৳${dueAmount.toFixed(0)}` : "UNPAID"}
+          </span>
         </div>
       </div>
 
-      {/* 2.5 Diagnostic Report Delivery Schedule Banner */}
+      {/* 2.5 Diagnostic Report Delivery Schedule Banner - Compact Single-Line Strip */}
       {hasDiag && (
-        <div className="print-delivery-badge bg-sky-50 print:bg-slate-100 border border-sky-300 print:border-slate-500 rounded p-1.5 text-[9px] mb-2 space-y-1">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1 min-w-0">
-              <span className="font-bold text-sky-950 print:text-black uppercase tracking-wider">
-                🧪 রিপোর্ট ডেলিভারি সময়সূচী (Delivery Schedule):
-              </span>
-            </div>
-            <div className="flex items-center space-x-3 text-right shrink-0">
-              <div>
-                <span className="text-slate-600 print:text-black">টেস্ট গ্রহণ: </span>
-                <strong className="text-slate-900 print:text-black font-mono font-bold">{effectiveTestTime}</strong>
-              </div>
-              <div className="border-l border-sky-300 print:border-slate-400 pl-2">
-                <span className="text-sky-900 print:text-black font-semibold">সম্ভাব্য ডেলিভারি: </span>
-                <strong className="text-sky-950 print:text-black font-mono font-black text-[10px] bg-white px-1.5 py-0.5 rounded border border-sky-400 print:border-slate-600">
-                  {effectiveDeliveryTime}
-                </strong>
-              </div>
-            </div>
+        <div className="print-delivery-badge bg-sky-50 print:bg-slate-100 border border-sky-300 print:border-slate-500 rounded px-2 py-0.5 text-[8.5px] mb-1.5 flex items-center justify-between text-slate-900 print:text-black leading-tight">
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-sky-950 print:text-black uppercase tracking-wider">
+              Report Delivery Schedule (রিপোর্ট ডেলিভারি সময়সূচী) :
+            </span>
+            <span>test receive (টেস্ট গ্রহণ): <strong className="font-mono font-bold">{effectiveTestTime}</strong>,</span>
+            <span>somvabbo delivery time (সম্ভাব্য ডেলিভারি): <strong className="font-mono font-black text-sky-950 print:text-black">{effectiveDeliveryTime}</strong></span>
           </div>
-          <p className="text-[8px] text-slate-600 print:text-black italic border-t border-sky-200 print:border-slate-300 pt-0.5">
-            {HOSPITAL_LAB_POLICY.safeDisclaimerBn}
-          </p>
+          <span className="text-[7.5px] text-slate-500 print:text-black italic hidden sm:inline">
+            (নিয়মিত ৩-৫ ঘণ্টা, কালচার ২৪-৭২ ঘণ্টা)
+          </span>
         </div>
       )}
 

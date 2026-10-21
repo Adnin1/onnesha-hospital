@@ -1181,7 +1181,19 @@ export async function dischargePatientAction(params: {
       p_condition_at_discharge: params.conditionAtDischarge?.trim() || null,
       p_discharge_advice: params.dischargeAdvice?.trim() || null,
       p_followup_instructions: params.followupInstructions?.trim() || null,
-      p_presenting_features: params.presentingFeatures ? (typeof params.presentingFeatures === "string" ? JSON.parse(params.presentingFeatures) : params.presentingFeatures) : [],
+      p_presenting_features: params.presentingFeatures
+        ? (typeof params.presentingFeatures === "string"
+            ? (() => {
+                try {
+                  const parsed = JSON.parse(params.presentingFeatures);
+                  return Array.isArray(parsed) ? parsed : [String(parsed)];
+                } catch {
+                  const lines = params.presentingFeatures.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+                  return lines.length > 0 ? lines : [params.presentingFeatures.trim()];
+                }
+              })()
+            : params.presentingFeatures)
+        : [],
       p_investigations_summary: params.investigationsSummary?.trim() || null,
       p_operation_name: params.operationName?.trim() || null,
       p_operation_date: params.operationDate || null,
@@ -3065,3 +3077,61 @@ export async function cancelOrDeleteIpdAdmissionAction(params: {
   }
 }
 
+
+export async function updateIpdAdmissionAction(params: {
+  visitId: string;
+  provisionalDiagnosis?: string;
+  doctorId?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  notes?: string;
+}): Promise<ActionResult<{ message: string }>> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "Unauthorized session." };
+  }
+
+  const canManage =
+    (await hasPermission("ipd.manage")) ||
+    (await hasPermission("ipd.admit")) ||
+    (await hasPermission("doctors.manage"));
+
+  if (!canManage) {
+    return { success: false, error: "403 Forbidden: Insufficient permissions to edit admission details." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("update_ipd_admission_atomic", {
+      p_org_id: session.organizationId,
+      p_visit_id: params.visitId,
+      p_user_id: session.userId,
+      p_provisional_diagnosis: params.provisionalDiagnosis?.trim() || null,
+      p_doctor_id: params.doctorId || null,
+      p_guardian_name: params.guardianName?.trim() || null,
+      p_guardian_phone: params.guardianPhone?.trim() || null,
+      p_notes: params.notes?.trim() || null,
+    });
+
+    if (rpcErr) {
+      return { success: false, error: rpcErr.message || "Failed to update admission details." };
+    }
+
+    const res = rpcRes as { success?: boolean; message?: string; error?: string };
+    if (res && res.success === false) {
+      return { success: false, error: res.error || "Failed to update admission details." };
+    }
+
+    return {
+      success: true,
+      data: {
+        message: res?.message || "Admission details updated successfully.",
+      },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Error updating admission details",
+    };
+  }
+}

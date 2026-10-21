@@ -70,6 +70,23 @@ export async function createPrescriptionAction(params: {
       return { success: false, error: "নির্বাচিত রোগী পাওয়া যায়নি (Patient not found). অনুগ্রহ করে রোগী নির্বাচন করুন।" };
     }
 
+    // Resolve visit ID: if not explicitly supplied, attempt to link active visit
+    let visitId = params.visitId || null;
+    if (!visitId) {
+      const { data: activeVisit } = await supabase
+        .from("patient_visits")
+        .select("id")
+        .eq("organization_id", session.organizationId)
+        .eq("patient_id", params.patientId)
+        .in("status", ["admitted", "in_progress", "registered"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (activeVisit?.id) {
+        visitId = activeVisit.id;
+      }
+    }
+
     // Insert prescription master
     const { data: rx, error: rxErr } = await supabase
       .from("prescriptions")
@@ -77,7 +94,7 @@ export async function createPrescriptionAction(params: {
         organization_id: session.organizationId,
         patient_id: params.patientId,
         doctor_id: params.doctorId,
-        visit_id: params.visitId || null,
+        visit_id: visitId,
         chief_complaints: params.chiefComplaints || null,
         clinical_findings: params.clinicalFindings || null,
         diagnosis: params.diagnosis,
