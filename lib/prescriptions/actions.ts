@@ -70,7 +70,55 @@ export async function createPrescriptionAction(params: {
       return { success: false, error: "নির্বাচিত রোগী পাওয়া যায়নি (Patient not found). অনুগ্রহ করে রোগী নির্বাচন করুন।" };
     }
 
-    // Resolve visit ID: if not explicitly supplied, attempt to link active visit
+    // 1. Try master atomic database RPC first
+    const itemsJson = (params.items || []).map((item) => ({
+      medicine_name: item.medicineName,
+      generic_name: item.genericName || null,
+      dosage_pattern: item.dosagePattern,
+      duration: item.duration,
+      meal_instruction: item.mealInstruction || "After meal",
+      special_notes: item.specialNotes || null,
+    }));
+
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("create_digital_prescription_atomic", {
+      p_org_id: session.organizationId,
+      p_doctor_id: params.doctorId,
+      p_patient_id: params.patientId,
+      p_diagnosis: params.diagnosis.trim(),
+      p_chief_complaints: params.chiefComplaints || null,
+      p_clinical_findings: params.clinicalFindings || null,
+      p_investigation_advice: params.investigationAdvice || null,
+      p_general_advice: params.generalAdvice || null,
+      p_followup_date: params.followupDate || null,
+      p_visit_id: params.visitId || null,
+      p_items: itemsJson,
+      p_user_id: session.userId,
+    });
+
+    if (!rpcErr && rpcRes && (rpcRes as { success?: boolean }).success) {
+      const rxId = (rpcRes as { prescription_id: string }).prescription_id;
+      const { data: fullRxRow } = await supabase
+        .from("prescriptions")
+        .select("*, prescription_items(*)")
+        .eq("id", rxId)
+        .single();
+
+      if (fullRxRow) {
+        return {
+          success: true,
+          data: {
+            prescription: {
+              ...fullRxRow,
+              items: (fullRxRow.prescription_items as unknown as PrescriptionItemRecord[]) || [],
+              patient,
+              doctor,
+            },
+          },
+        };
+      }
+    }
+
+    // 2. Direct fallback if RPC is not present
     let visitId = params.visitId || null;
     if (!visitId) {
       const { data: activeVisit } = await supabase
@@ -78,7 +126,7 @@ export async function createPrescriptionAction(params: {
         .select("id")
         .eq("organization_id", session.organizationId)
         .eq("patient_id", params.patientId)
-        .in("status", ["admitted", "in_progress", "registered"])
+        .in("status", ["admitted", "in_progress", "registered", "ADMITTED", "IN_PROGRESS", "REGISTERED", "ACTIVE"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();

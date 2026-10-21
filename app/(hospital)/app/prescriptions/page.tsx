@@ -7,6 +7,8 @@ import {
   Trash2,
   X,
   FileText,
+  Search,
+  Loader2,
 } from "lucide-react";
 import { PrescriptionRecord } from "@/types/clinical-emr";
 import { DoctorRecord } from "@/types/appointments";
@@ -33,6 +35,8 @@ export default function PrescriptionsPage() {
   // New Rx form state
   const [doctorId, setDoctorId] = useState("");
   const [patientId, setPatientId] = useState("");
+  const [patientSearchQuery, setPatientSearchQuery] = useState("");
+  const [searchingPatients, setSearchingPatients] = useState(false);
   const [complaints, setComplaints] = useState("");
   const [findings, setFindings] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
@@ -41,6 +45,20 @@ export default function PrescriptionsPage() {
   const [meds, setMeds] = useState<Array<{ name: string; dosage: string; duration: string; instruction: string }>>([
     { name: "", dosage: "1+0+1", duration: "7 days", instruction: "After meal" },
   ]);
+
+  const handleSearchPatient = async (q: string) => {
+    setPatientSearchQuery(q);
+    if (!q.trim()) return;
+    setSearchingPatients(true);
+    const res = await searchPatientsAction({ query: q.trim(), pageSize: 30 });
+    setSearchingPatients(false);
+    if (res.success && res.data?.patients) {
+      setPatients(res.data.patients);
+      if (res.data.patients.length > 0) {
+        setPatientId(res.data.patients[0].id);
+      }
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -371,21 +389,45 @@ export default function PrescriptionsPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Patient *
-                  </label>
-                  <select
-                    value={patientId}
-                    onChange={(e) => setPatientId(e.target.value)}
-                    className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-medium"
-                    required
-                  >
-                    {patients.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.patient_code} - {p.full_name} ({p.phone})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-semibold text-slate-700">
+                      Patient *
+                    </label>
+                    <span className="text-[10px] text-sky-600 font-bold">
+                      {patients.length} patient(s) found
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search patient by name, code or phone..."
+                        value={patientSearchQuery}
+                        onChange={(e) => void handleSearchPatient(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:ring-2 focus:ring-sky-500"
+                      />
+                      {searchingPatients && (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin absolute right-2.5 top-2.5 text-sky-600" />
+                      )}
+                    </div>
+                    <select
+                      value={patientId}
+                      onChange={(e) => setPatientId(e.target.value)}
+                      className="w-full p-2 border border-slate-200 rounded-lg bg-slate-50 font-medium"
+                      required
+                    >
+                      {patients.length === 0 ? (
+                        <option value="">No patients found. Try another search.</option>
+                      ) : (
+                        patients.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.patient_code} - {p.full_name} ({p.phone})
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
                 </div>
               </div>
 

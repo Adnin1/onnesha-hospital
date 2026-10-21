@@ -576,11 +576,11 @@ export async function searchReferralAgentsAction(query?: string): Promise<{
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
-    const orgId = profile?.organization_id;
+    const orgId = profile?.active_organization_id || profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
     const { data, error } = await supabase.rpc("search_active_referral_agents", {
@@ -640,11 +640,11 @@ export async function createReferralAgentAction(params: {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
-    const orgId = profile?.organization_id;
+    const orgId = profile?.active_organization_id || profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
     // Call authoritative RPC
@@ -709,11 +709,11 @@ export async function updateReferralAgentRateAction(params: {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
-    const orgId = profile?.organization_id;
+    const orgId = profile?.active_organization_id || profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
     const { data: res, error } = await supabase.rpc("update_referral_agent_rate_atomic", {
@@ -989,11 +989,11 @@ export async function settleReferralCommissionsAction(params: {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
-    const orgId = profile?.organization_id;
+    const orgId = profile?.active_organization_id || profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
     const { data: res, error } = await supabase.rpc("settle_referral_commissions_atomic", {
@@ -1064,11 +1064,11 @@ export async function recordReferralCommissionPayoutAction(params: RecordReferra
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
-    const orgId = profile?.organization_id;
+    const orgId = profile?.active_organization_id || profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
     // 1. Execute Atomic PostgreSQL Master RPC (Migration 180: record_referral_commission_payout_atomic / record_discretionary_referral_payout_atomic)
@@ -1451,11 +1451,11 @@ export async function approveCommissionAction(
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
-    const orgId = profile?.organization_id;
+    const orgId = profile?.active_organization_id || profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
     const { data: res, error } = await supabase.rpc("approve_referral_commission_atomic", {
@@ -1492,11 +1492,11 @@ export async function rejectCommissionAction(
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
-    const orgId = profile?.organization_id;
+    const orgId = profile?.active_organization_id || profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
     const { data: res, error } = await supabase.rpc("reject_referral_commission_atomic", {
@@ -1697,11 +1697,11 @@ export async function searchReferralAgentsForBillingAction(query?: string): Prom
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
-    const orgId = profile?.organization_id;
+    const orgId = profile?.active_organization_id || profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
     // 1. Try search_referral_agents_for_billing RPC
@@ -1874,11 +1874,11 @@ export async function getReferralPerformanceAnalyticsAction(params?: {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
-    const orgId = profile?.organization_id;
+    const orgId = profile?.active_organization_id || profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
     const { data, error } = await supabase.rpc("get_referral_performance_analytics", {
@@ -1921,11 +1921,11 @@ export async function getReferralAgentsSafeDirectoryAction(query?: string): Prom
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
-    const orgId = profile?.organization_id;
+    const orgId = profile?.active_organization_id || profile?.organization_id;
     if (!orgId) throw new Error("Organization profile not resolved");
 
     const { data, error } = await supabase.rpc("get_referral_agents_safe_directory", {

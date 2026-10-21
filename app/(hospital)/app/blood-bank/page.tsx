@@ -19,7 +19,7 @@ import {
   BloodBagItem,
   getBloodTransfusionRecordsAction,
   cancelOrVoidBloodTransfusionAction,
-  updateBloodTransfusionNotesAction,
+  updateBloodTransfusionDossierAction,
   BloodTransfusionRecord,
 } from "@/lib/blood-bank/actions";
 import { DonorRegistrationModal } from "@/components/blood-bank/DonorRegistrationModal";
@@ -41,13 +41,21 @@ export default function BloodBankPage() {
   const [isCrossMatchModalOpen, setIsCrossMatchModalOpen] = useState(false);
   const [preselectedBag, setPreselectedBag] = useState<BloodBagItem | null>(null);
 
-  // Void Modal State
+  // Void / Delete Modal State
   const [voidRecord, setVoidRecord] = useState<BloodTransfusionRecord | null>(null);
   const [voidReason, setVoidReason] = useState("");
+  const [voidPermanent, setVoidPermanent] = useState(false);
   const [voidSubmitting, setVoidSubmitting] = useState(false);
 
-  // Edit Notes Modal State
+  // Edit Dossier Modal State
   const [editRecord, setEditRecord] = useState<BloodTransfusionRecord | null>(null);
+  const [editDonorName, setEditDonorName] = useState("");
+  const [editDonorPhone, setEditDonorPhone] = useState("");
+  const [editDonorAge, setEditDonorAge] = useState(25);
+  const [editDonorBloodGroup, setEditDonorBloodGroup] = useState("O+");
+  const [editMajorMatch, setEditMajorMatch] = useState<"compatible" | "incompatible">("compatible");
+  const [editMinorMatch, setEditMinorMatch] = useState<"compatible" | "incompatible">("compatible");
+  const [editTechnologist, setEditTechnologist] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [editSubmitting, setEditSubmitting] = useState(false);
 
@@ -96,7 +104,7 @@ export default function BloodBankPage() {
     setTimeout(() => setSuccessToast(null), 4000);
   }
 
-  // Handle Void Transfusion
+  // Handle Void or Delete Transfusion
   async function handleVoidTransfusion(e: React.FormEvent) {
     e.preventDefault();
     if (!voidRecord) return;
@@ -104,35 +112,44 @@ export default function BloodBankPage() {
     const res = await cancelOrVoidBloodTransfusionAction({
       transfusionId: voidRecord.id,
       reason: voidReason.trim() || "Mistake cross-match cancelled by user",
+      permanentDelete: voidPermanent,
     });
     setVoidSubmitting(false);
     if (res.success) {
-      showSuccess(res.message || "ক্রস-ম্যাচ রেকর্ড বাতিল ও রক্তের ব্যাগ ইনভেন্টরিতে ফেরত দেওয়া হয়েছে।");
+      showSuccess(res.message || "ক্রস-ম্যাচ সফলভাবে সম্পন্ন হয়েছে।");
       setVoidRecord(null);
       setVoidReason("");
+      setVoidPermanent(false);
       setRefreshKey((k) => k + 1);
     } else {
-      setErrorMsg(res.error || "ক্রস-ম্যাচ বাতিল করতে সমস্যা হয়েছে।");
+      setErrorMsg(res.error || "ক্রস-ম্যাচ বাতিল/মুছতে সমস্যা হয়েছে।");
     }
   }
 
-  // Handle Edit Transfusion Notes
-  async function handleUpdateNotes(e: React.FormEvent) {
+  // Handle Edit Transfusion Dossier & Notes
+  async function handleUpdateDossier(e: React.FormEvent) {
     e.preventDefault();
     if (!editRecord) return;
     setEditSubmitting(true);
-    const res = await updateBloodTransfusionNotesAction({
+    const res = await updateBloodTransfusionDossierAction({
       transfusionId: editRecord.id,
-      notes: editNotes,
+      donorName: editDonorName.trim() || "Screened Donor",
+      donorPhone: editDonorPhone.trim() || "N/A",
+      donorAge: Number(editDonorAge) || 25,
+      donorBloodGroup: editDonorBloodGroup,
+      majorCrossmatch: editMajorMatch,
+      minorCrossmatch: editMinorMatch,
+      crossmatchResult: editMajorMatch === "compatible" && editMinorMatch === "compatible" ? "compatible" : "incompatible",
+      technologistName: editTechnologist.trim() || "Lab Technologist",
+      notes: editNotes.trim(),
     });
     setEditSubmitting(false);
     if (res.success) {
-      showSuccess("নোট সফলভাবে আপডেট করা হয়েছে।");
+      showSuccess("ক্রস-ম্যাচ তথ্য সফলভাবে সংশোধন করা হয়েছে।");
       setEditRecord(null);
-      setEditNotes("");
       setRefreshKey((k) => k + 1);
     } else {
-      setErrorMsg(res.error || "নোট আপডেট করতে ব্যর্থ হয়েছে।");
+      setErrorMsg(res.error || "তথ্য সংশোধন করতে ব্যর্থ হয়েছে।");
     }
   }
 
@@ -439,26 +456,32 @@ export default function BloodBankPage() {
                             type="button"
                             onClick={() => {
                               setEditRecord(t);
+                              setEditDonorName(t.donor_name || "");
+                              setEditDonorPhone(t.donor_phone || "");
+                              setEditDonorAge(t.donor_age || 25);
+                              setEditDonorBloodGroup(t.donor_blood_group || "O+");
+                              setEditMajorMatch((t.major_crossmatch as "compatible" | "incompatible") || "compatible");
+                              setEditMinorMatch((t.minor_crossmatch as "compatible" | "incompatible") || "compatible");
+                              setEditTechnologist(t.technologist_name || "");
                               setEditNotes(t.adverse_reaction_notes || "");
                             }}
                             className="p-1.5 text-sky-600 hover:bg-sky-50 rounded-lg transition cursor-pointer"
-                            title="Edit Notes / প্রতিক্রিয়া সংশোধন"
+                            title="ক্রস-ম্যাচ ও ডোনার তথ্য সংশোধন (Edit Dossier)"
                           >
                             <Edit3 className="h-3.5 w-3.5" />
                           </button>
-                          {t.status !== "VOIDED" && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setVoidRecord(t);
-                                setVoidReason("ভুল এন্ট্রি বাতিল (Mistake entry cancelled)");
-                              }}
-                              className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                              title="Void Transfusion & Restore Bag to Inventory (বাতিল ও ইনভেন্টরিতে ফেরত)"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setVoidRecord(t);
+                              setVoidReason("ভুল এন্ট্রি বাতিল/মুছুন (Mistake entry)");
+                              setVoidPermanent(true);
+                            }}
+                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                            title="বাতিল বা স্থায়ীভাবে মুছুন (Void or Delete Transfusion)"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -508,7 +531,7 @@ export default function BloodBankPage() {
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  বাতিলের কারণ (Void Reason) <span className="text-rose-500">*</span>
+                  বাতিলের কারণ (Void / Delete Reason) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -518,6 +541,19 @@ export default function BloodBankPage() {
                   placeholder="e.g. ভুল রোগীতে সিলেক্ট হয়েছিল, রক্ত প্রদান প্রয়োজন হয়নি..."
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white font-medium"
                 />
+              </div>
+
+              <div className="flex items-center gap-2 p-2.5 bg-rose-50 rounded-xl border border-rose-200">
+                <input
+                  type="checkbox"
+                  id="voidPermanentCheckbox"
+                  checked={voidPermanent}
+                  onChange={(e) => setVoidPermanent(e.target.checked)}
+                  className="rounded border-rose-300 text-rose-600 focus:ring-rose-500 h-4 w-4"
+                />
+                <label htmlFor="voidPermanentCheckbox" className="text-slate-800 font-bold cursor-pointer">
+                  রেকর্ডটি ডাটাবেজ থেকে স্থায়ীভাবে মুছে ফেলুন (Permanently Delete)
+                </label>
               </div>
 
               <div className="flex justify-end space-x-3 pt-3 border-t border-slate-100">
@@ -534,7 +570,7 @@ export default function BloodBankPage() {
                   className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition flex items-center shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                  {voidSubmitting ? "বাতিল হচ্ছে..." : "বাতিল ও ইনভেন্টরিতে ফেরত নিন"}
+                  {voidSubmitting ? "প্রসেসিং হচ্ছে..." : voidPermanent ? "স্থায়ীভাবে মুছে ফেলুন" : "বাতিল ও ইনভেন্টরিতে ফেরত নিন"}
                 </button>
               </div>
             </form>
@@ -542,16 +578,16 @@ export default function BloodBankPage() {
         </div>
       )}
 
-      {/* Edit Notes Modal */}
+      {/* Edit Dossier Modal */}
       {editRecord && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Edit3 className="w-5 h-5 text-sky-600" />
                 <div>
-                  <h3 className="text-base font-black text-slate-900">ট্রান্সফিউশন নোট ও প্রতিক্রিয়া সংশোধন</h3>
-                  <p className="text-xs text-slate-500">Edit Adverse Reactions & Notes</p>
+                  <h3 className="text-base font-black text-slate-900">ক্রস-ম্যাচ ও ডোনার তথ্য সংশোধন</h3>
+                  <p className="text-xs text-slate-500">Edit Cross-Match Dossier & Reactions</p>
                 </div>
               </div>
               <button
@@ -563,13 +599,96 @@ export default function BloodBankPage() {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateNotes} className="space-y-4 mt-4 text-xs">
+            <form onSubmit={handleUpdateDossier} className="space-y-3 mt-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">রক্তদাতার নাম (Donor Name)</label>
+                  <input
+                    type="text"
+                    required
+                    value={editDonorName}
+                    onChange={(e) => setEditDonorName(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">রক্তদাতার মোবাইল (Phone)</label>
+                  <input
+                    type="text"
+                    value={editDonorPhone}
+                    onChange={(e) => setEditDonorPhone(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg bg-white font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">রক্তের গ্রুপ (Blood Group)</label>
+                  <select
+                    value={editDonorBloodGroup}
+                    onChange={(e) => setEditDonorBloodGroup(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg bg-white font-bold"
+                  >
+                    {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">বয়স (Age)</label>
+                  <input
+                    type="number"
+                    min="18"
+                    max="65"
+                    value={editDonorAge}
+                    onChange={(e) => setEditDonorAge(Number(e.target.value))}
+                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Major Crossmatch</label>
+                  <select
+                    value={editMajorMatch}
+                    onChange={(e) => setEditMajorMatch(e.target.value as "compatible" | "incompatible")}
+                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg bg-white font-bold"
+                  >
+                    <option value="compatible">Compatible (সামঞ্জস্যপূর্ণ)</option>
+                    <option value="incompatible">Incompatible (অসামঞ্জস্যপূর্ণ)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Minor Crossmatch</label>
+                  <select
+                    value={editMinorMatch}
+                    onChange={(e) => setEditMinorMatch(e.target.value as "compatible" | "incompatible")}
+                    className="w-full px-3 py-1.5 border border-slate-200 rounded-lg bg-white font-bold"
+                  >
+                    <option value="compatible">Compatible (সামঞ্জস্যপূর্ণ)</option>
+                    <option value="incompatible">Incompatible (অসামঞ্জস্যপূর্ণ)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">ভেরিফাইং টেকনোলজিস্ট (Technologist Name)</label>
+                <input
+                  type="text"
+                  value={editTechnologist}
+                  onChange={(e) => setEditTechnologist(e.target.value)}
+                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg bg-white"
+                />
+              </div>
+
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
                   নোট / বিরূপ প্রতিক্রিয়া পর্যবেক্ষণ (Adverse Reaction Notes)
                 </label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
                   placeholder="নোট বা প্রতিক্রিয়া লিখুন..."
@@ -591,7 +710,7 @@ export default function BloodBankPage() {
                   className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition flex items-center shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   <Edit3 className="w-3.5 h-3.5 mr-1.5" />
-                  {editSubmitting ? "সংরক্ষণ হচ্ছে..." : "নোট সংরক্ষণ করুন"}
+                  {editSubmitting ? "সংরক্ষণ হচ্ছে..." : "তথ্য সংরক্ষণ করুন"}
                 </button>
               </div>
             </form>

@@ -386,16 +386,24 @@ export async function getBloodTransfusionRecordsAction(): Promise<{
 export async function cancelOrVoidBloodTransfusionAction(params: {
   transfusionId: string;
   reason?: string;
+  permanentDelete?: boolean;
 }): Promise<{ success: boolean; message?: string; error?: string }> {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "401 Unauthorized" };
   }
 
-  try {
-    await requirePermission(PERMISSIONS.BLOOD_BANK_MANAGE);
-  } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
+  const isAllowed =
+    session.roles.includes("super_admin") ||
+    session.roles.includes("admin") ||
+    session.roles.includes("hospital_administrator") ||
+    session.roles.includes("lab_technician") ||
+    session.roles.includes("doctor") ||
+    session.permissions.includes(PERMISSIONS.BLOOD_BANK_MANAGE) ||
+    session.permissions.includes(PERMISSIONS.BLOOD_BANK_CROSSMATCH);
+
+  if (!isAllowed) {
+    return { success: false, error: "403 Forbidden: Insufficient blood bank permissions." };
   }
 
   try {
@@ -405,6 +413,7 @@ export async function cancelOrVoidBloodTransfusionAction(params: {
       p_transfusion_id: params.transfusionId,
       p_user_id: session.userId,
       p_reason: params.reason || "Mistake entry cancelled by user",
+      p_permanent_delete: params.permanentDelete || false,
     });
 
     if (error) {
@@ -413,12 +422,12 @@ export async function cancelOrVoidBloodTransfusionAction(params: {
 
     const resObj = res as { success?: boolean; message?: string; error?: string };
     if (resObj && resObj.success === false) {
-      return { success: false, error: resObj.error || "Failed to void transfusion record." };
+      return { success: false, error: resObj.error || "Failed to cancel/delete transfusion record." };
     }
 
-    return { success: true, message: resObj?.message || "Transfusion record voided and blood bag returned to inventory." };
+    return { success: true, message: resObj?.message || "Transfusion record processed successfully and blood bag restored to inventory." };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Error voiding transfusion record." };
+    return { success: false, error: err instanceof Error ? err.message : "Error cancelling/deleting transfusion record." };
   }
 }
 
@@ -429,12 +438,6 @@ export async function updateBloodTransfusionNotesAction(params: {
   const session = await getCurrentUserSession();
   if (!session.userId || !session.organizationId) {
     return { success: false, error: "401 Unauthorized" };
-  }
-
-  try {
-    await requirePermission(PERMISSIONS.BLOOD_BANK_MANAGE);
-  } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "403 Forbidden" };
   }
 
   try {
@@ -454,5 +457,56 @@ export async function updateBloodTransfusionNotesAction(params: {
     return { success: true, message: "Transfusion notes updated successfully." };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "Error updating notes." };
+  }
+}
+
+export async function updateBloodTransfusionDossierAction(params: {
+  transfusionId: string;
+  donorName: string;
+  donorPhone: string;
+  donorAge: number;
+  donorBloodGroup: string;
+  majorCrossmatch: "compatible" | "incompatible";
+  minorCrossmatch: "compatible" | "incompatible";
+  crossmatchResult: "compatible" | "incompatible";
+  technologistName: string;
+  notes: string;
+  sourcingBloodBank?: string;
+}): Promise<{ success: boolean; message?: string; error?: string }> {
+  const session = await getCurrentUserSession();
+  if (!session.userId || !session.organizationId) {
+    return { success: false, error: "401 Unauthorized" };
+  }
+
+  try {
+    const supabase = createClient();
+    const { data: res, error } = await supabase.rpc("update_blood_transfusion_dossier_atomic", {
+      p_org_id: session.organizationId,
+      p_transfusion_id: params.transfusionId,
+      p_user_id: session.userId,
+      p_donor_name: params.donorName.trim(),
+      p_donor_phone: params.donorPhone.trim(),
+      p_donor_age: params.donorAge,
+      p_donor_blood_group: params.donorBloodGroup,
+      p_major_crossmatch: params.majorCrossmatch,
+      p_minor_crossmatch: params.minorCrossmatch,
+      p_crossmatch_result: params.crossmatchResult,
+      p_technologist_name: params.technologistName.trim(),
+      p_adverse_reaction_notes: params.notes.trim(),
+      p_sourcing_blood_bank: params.sourcingBloodBank || null,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const resObj = res as { success?: boolean; message?: string; error?: string };
+    if (resObj && resObj.success === false) {
+      return { success: false, error: resObj.error || "Failed to update transfusion dossier." };
+    }
+
+    return { success: true, message: resObj?.message || "Transfusion dossier updated successfully." };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : "Error updating dossier." };
   }
 }

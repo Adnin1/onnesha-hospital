@@ -974,6 +974,19 @@ export async function updateQueueStatusAction(params: {
 
   try {
     const supabase = await createClient();
+
+    // 1. Master atomic database RPC (bypasses PostgREST schema cache)
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("update_waiting_queue_status_atomic", {
+      p_org_id: session.organizationId,
+      p_queue_id: params.queueId,
+      p_status: params.status,
+      p_user_id: session.userId,
+    });
+
+    if (!rpcErr && rpcRes && (rpcRes as { success?: boolean }).success) {
+      return { success: true };
+    }
+
     const updatePayload: Record<string, unknown> = {
       queue_status: params.status,
     };
