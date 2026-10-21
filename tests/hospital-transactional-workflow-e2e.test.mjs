@@ -104,10 +104,9 @@ describe("OHMS Live Transactional Workflow & Double-Entry Accounting E2E Suite",
       p_org_id: TEST_ORG_ID
     });
 
-    assert.ifError(error);
-    assert.ok(data, "Diagnostic response must be returned");
-    assert.equal(data.is_healthy, false, "Unauthenticated calls must fail closed");
-    assert.equal(data.status, "AUDIT_UNAUTHORIZED");
+    const isPermissionDenied = error && (error.code === '42501' || /permission denied/i.test(error.message));
+    const isFailClosed = !error && data && data.is_healthy === false && data.status === "AUDIT_UNAUTHORIZED";
+    assert.ok(isPermissionDenied || isFailClosed, "Unauthenticated calls must fail closed or be denied execute");
   });
 
   // Step 6: Executable End-to-End Hospital ERP State Machine & Invariant Simulator

@@ -15,7 +15,7 @@ function isValidNormalizedBDPhone(normalized) {
   return /^01[3-9]\d{8}$/.test(normalized);
 }
 
-describe("Change Safety: A-Z Hospital Real Transactional & Invariant Canaries (13 Core Domains)", () => {
+describe("L1 Unit Invariants: Hospital Domain Business Logic (13 Core Domains — No Database)", () => {
   // Canary 1: Registration — Real Data Validation, Normalization & Demographic Invariants
   test("Canary 1: REGISTRATION — Real Phone Normalization, Validation & Demographic Invariants", () => {
     // Normalization & Validation Execution

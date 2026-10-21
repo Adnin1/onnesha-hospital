@@ -129,4 +129,29 @@ describe("Change Safety: Database Compatibility & Schema Contracts Test Engine",
       "Migration 237 must revoke blanket privileges on all functions in schema public from PUBLIC, anon"
     );
   });
+  test("11. Migration 238 creates minimal public_health_probe with SECURITY INVOKER and revokes anon health diagnostics", () => {
+    assert.match(
+      combinedSql,
+      /REVOKE\s+EXECUTE\s+ON\s+FUNCTION\s+public\.check_system_health_diagnostics\s+FROM\s+anon/i,
+      "Migration 238 must revoke anon execute from check_system_health_diagnostics"
+    );
+    assert.match(
+      combinedSql,
+      /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.public_health_probe\(\)\s*RETURNS\s+JSONB[\s\S]*?SECURITY\s+INVOKER/i,
+      "Migration 238 must create public_health_probe as SECURITY INVOKER"
+    );
+  });
+
+  test("12. Migration 239 and 240 purge legacy cancel admission overload and cron telemetry anon grant", () => {
+    assert.match(
+      combinedSql,
+      /DROP\s+FUNCTION\s+IF\s+EXISTS\s+public\.cancel_or_delete_ipd_admission_atomic\s*\(\s*uuid\s*,\s*uuid\s*,\s*uuid\s*,\s*text\s*\)/i,
+      "Migration 239 must drop legacy 4-arg cancel_or_delete_ipd_admission_atomic overload"
+    );
+    assert.match(
+      combinedSql,
+      /REVOKE\s+EXECUTE\s+ON\s+FUNCTION\s+public\.get_pg_cron_monitoring_telemetry\(\)\s+FROM\s+anon/i,
+      "Migration 240 must revoke execute on get_pg_cron_monitoring_telemetry from anon"
+    );
+  });
 });

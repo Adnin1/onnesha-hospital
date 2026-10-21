@@ -94,8 +94,8 @@ describe("OHMS Multi-Tenant Security & Direct Outbox Mutation Prevention Matrix"
     assert.equal(error.code, "42501", "PostgreSQL error code must be 42501 (permission denied)");
   });
 
-  // Check 5: Remote Supabase Fail-Closed Anonymous Diagnostic Probe
-  test("5. Remote database check_system_health_diagnostics fails closed for anonymous calls", async () => {
+  // Check 5: Remote Supabase Fail-Closed Anonymous Diagnostic Probe (Migration 238)
+  test("5. Remote database check_system_health_diagnostics fails closed for anonymous calls (Migration 238 default-deny)", async () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -107,13 +107,20 @@ describe("OHMS Multi-Tenant Security & Direct Outbox Mutation Prevention Matrix"
     const client = createClient(supabaseUrl, anonKey);
     const { data, error } = await client.rpc("check_system_health_diagnostics");
 
-    assert.ifError(error);
-    assert.ok(data, "Diagnostic data must be returned");
-    assert.equal(data.is_healthy, false, "Anon check must never claim healthy");
-    assert.equal(data.status, "AUDIT_UNAUTHORIZED");
-    assert.equal(data.audit_scope, "PUBLIC_PORTAL_ONLY");
-    assert.equal(data.health_score, 0);
-    assert.ok(data.issues.some((i) => i.id === "DIAGNOSTIC_PRIVILEGE_REQUIRED"));
+    // Under Migration 238 default-deny, anon execution is rejected with 42501 permission denied
+    // If executed internally, it returns fail-closed UNAUTHORIZED payload
+    const isPermissionDenied = error && (error.code === '42501' || /permission denied/i.test(error.message));
+    const isFailClosedPayload = !error && data && data.is_healthy === false && data.status === 'AUDIT_UNAUTHORIZED';
+
+    assert.ok(
+      isPermissionDenied || isFailClosedPayload,
+      `Anonymous call must be rejected by Postgres permission denied (42501) or return AUDIT_UNAUTHORIZED. Got: ${JSON.stringify(error || data)}`
+    );
+
+    // Verify minimal public health probe is accessible
+    const { data: probeData, error: probeErr } = await client.rpc("public_health_probe");
+    assert.equal(probeErr, null, "public_health_probe must be callable by anon");
+    assert.equal(probeData?.status, "UP");
   });
 
   // Check 6: Remote Supabase Cross-Tenant Diagnostic Tampering Block
@@ -131,8 +138,12 @@ describe("OHMS Multi-Tenant Security & Direct Outbox Mutation Prevention Matrix"
       p_org_id: TENANT_B
     });
 
-    assert.ifError(error);
-    assert.equal(data.is_healthy, false);
-    assert.equal(data.status, "AUDIT_UNAUTHORIZED");
+    const isPermissionDenied = error && (error.code === '42501' || /permission denied/i.test(error.message));
+    const isFailClosedPayload = !error && data && data.is_healthy === false && data.status === 'AUDIT_UNAUTHORIZED';
+
+    assert.ok(
+      isPermissionDenied || isFailClosedPayload,
+      "Cross-tenant diagnostic probe must be blocked by permission denied or fail-closed"
+    );
   });
 });

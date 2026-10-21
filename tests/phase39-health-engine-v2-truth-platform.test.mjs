@@ -331,16 +331,14 @@ test("Phase 39: OHMS Active Health Test Engine v2 — Bulletproof Truth Platform
     const supabaseAnon = createClient(defaultUrl, defaultAnon);
     const orgId = "a0000000-0000-0000-0000-000000000001";
 
-    // 1. Verify Anonymous Caller receives AUDIT_UNAUTHORIZED (Rule H-004 fail-closed shield)
+    // 1. Verify Anonymous Caller receives permission denied or AUDIT_UNAUTHORIZED (Migration 238 default-deny)
     const { data: anonDiag, error: anonErr } = await supabaseAnon.rpc("check_system_health_diagnostics", {
       p_org_id: orgId,
     });
 
-    assert.equal(anonErr, null, `RPC call error: ${anonErr?.message}`);
-    assert.ok(anonDiag, "Diagnostics response must be returned");
-    assert.equal(anonDiag.status, "AUDIT_UNAUTHORIZED", "Anonymous caller must receive AUDIT_UNAUTHORIZED");
-    assert.equal(anonDiag.health_score, 0, "Anonymous caller health score must be fail-closed 0");
-    assert.equal(anonDiag.is_healthy, false, "Anonymous caller is_healthy must be false");
+    const isPermissionDenied = anonErr && (anonErr.code === '42501' || /permission denied/i.test(anonErr.message));
+    const isFailClosed = !anonErr && anonDiag && anonDiag.status === "AUDIT_UNAUTHORIZED";
+    assert.ok(isPermissionDenied || isFailClosed, `Anonymous caller must receive permission denied or AUDIT_UNAUTHORIZED. Got: ${JSON.stringify(anonErr || anonDiag)}`);
 
     // 2. Anonymous attempt to execute writer cycle should be rejected or not authorized
     const { error: runErr } = await supabaseAnon.rpc("run_authoritative_health_cycle", {

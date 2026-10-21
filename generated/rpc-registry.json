@@ -1,0 +1,2175 @@
+{
+  "generated_at": "2026-10-21T20:56:10.154Z",
+  "source": "chronological_migration_analysis",
+  "migration_count": 240,
+  "migration_head": "20261022070000_migration_240_revoke_anon_from_cron_monitoring_telemetry.sql",
+  "total_functions": 181,
+  "security_definer_count": 163,
+  "anon_executable_count": 9,
+  "critical_rpc_overload_count": 0,
+  "security_findings": [],
+  "overload_findings": [],
+  "critical_rpcs_status": [
+    {
+      "name": "update_ipd_admission_atomic",
+      "count": 1,
+      "status": "CANONICAL",
+      "signature": "uuid, uuid, text, uuid, text, text, text, text"
+    },
+    {
+      "name": "update_waiting_queue_status_atomic",
+      "count": 1,
+      "status": "CANONICAL",
+      "signature": "uuid, uuid, text, uuid"
+    },
+    {
+      "name": "complete_ipd_discharge_atomic",
+      "count": 1,
+      "status": "CANONICAL",
+      "signature": "uuid, uuid, varchar, text, uuid, varchar, varchar, varchar, text, varchar, text, text, jsonb, text, varchar, date, varchar, varchar, varchar, varchar, varchar, text, varchar, numeric, varchar, text, jsonb, date, date, uuid"
+    },
+    {
+      "name": "collect_payment_atomic",
+      "count": 1,
+      "status": "CANONICAL",
+      "signature": "uuid, uuid, numeric, varchar, varchar, uuid, text"
+    },
+    {
+      "name": "record_hospital_expense_atomic",
+      "count": 1,
+      "status": "CANONICAL",
+      "signature": "uuid, uuid, varchar, numeric, varchar, varchar, varchar, date, varchar, uuid, varchar, varchar, text, uuid"
+    },
+    {
+      "name": "cancel_or_delete_ipd_admission_atomic",
+      "count": 1,
+      "status": "CANONICAL",
+      "signature": "uuid, uuid, uuid, text, boolean"
+    },
+    {
+      "name": "settle_referral_commissions_atomic",
+      "count": 1,
+      "status": "CANONICAL",
+      "signature": "uuid, uuid, uuid[], varchar, text, text"
+    },
+    {
+      "name": "reverse_journal_entry_atomic",
+      "count": 1,
+      "status": "CANONICAL",
+      "signature": "uuid, uuid, text, date"
+    },
+    {
+      "name": "void_invoice_and_reverse_gl_atomic",
+      "count": 1,
+      "status": "CANONICAL",
+      "signature": "uuid, uuid, text"
+    }
+  ],
+  "registry": [
+    {
+      "name": "accept_diagnostic_order_atomic",
+      "signature": "uuid, uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_order_id UUID,\n    p_user_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "acknowledge_system_incident",
+      "signature": "uuid, uuid, text",
+      "arguments": "p_incident_id UUID,\n    p_org_id UUID DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "add_episode_service_charge_atomic",
+      "signature": "uuid, uuid, uuid, varchar, varchar, numeric, numeric, text",
+      "arguments": "p_org_id UUID,\n    p_episode_id UUID,\n    p_patient_id UUID,\n    p_category VARCHAR,\n    p_item_name VARCHAR,\n    p_quantity NUMERIC,\n    p_unit_price NUMERIC,\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "admin_change_staff_role",
+      "signature": "uuid, uuid, text",
+      "arguments": "p_org_id          UUID,\n    p_target_user_id  UUID,\n    p_new_role_name   TEXT",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "admin_create_staff_account",
+      "signature": "uuid, text, text, text, text, uuid, text",
+      "arguments": "p_org_id          UUID,\n    p_full_name       TEXT,\n    p_email           TEXT,\n    p_phone           TEXT,\n    p_role_name       TEXT,\n    p_department_id   UUID DEFAULT NULL,\n    p_temp_password   TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "admin_reset_staff_password",
+      "signature": "uuid, uuid, text",
+      "arguments": "p_org_id UUID,\n    p_target_user_id UUID,\n    p_temp_password TEXT",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "admin_set_staff_status",
+      "signature": "uuid, uuid, text",
+      "arguments": "p_org_id          UUID,\n    p_target_user_id  UUID,\n    p_status          TEXT",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "admit_critical_care_atomic",
+      "signature": "uuid, uuid, uuid, text, boolean, uuid, text, text",
+      "arguments": "p_organization_id UUID,\n    p_patient_id UUID,\n    p_unit_id UUID,\n    p_bed_number TEXT,\n    p_ventilator_required BOOLEAN DEFAULT FALSE,\n    p_admitting_doctor_id UUID DEFAULT NULL,\n    p_initial_diagnosis TEXT DEFAULT 'Critical Care Observation Required',\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "admit_patient_to_bed_atomic",
+      "signature": "uuid, uuid, uuid, uuid, uuid, text, text, varchar, numeric, uuid, uuid",
+      "arguments": "p_organization_id UUID,\n    p_patient_id UUID,\n    p_bed_id UUID DEFAULT NULL,\n    p_cabin_id UUID DEFAULT NULL,\n    p_doctor_id UUID DEFAULT NULL,\n    p_doctor_name TEXT DEFAULT NULL,\n    p_chief_complaint TEXT DEFAULT NULL,\n    p_admission_type VARCHAR DEFAULT 'IPD',\n    p_daily_charge NUMERIC DEFAULT 0,\n    p_assigned_by UUID DEFAULT NULL,\n    p_referral_agent_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "approve_referral_commission_atomic",
+      "signature": "uuid, uuid, text",
+      "arguments": "p_org_id UUID,\n    p_commission_id UUID,\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "assign_patient_referral_atomic",
+      "signature": "uuid, uuid, uuid, uuid, text",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_visit_id UUID DEFAULT NULL,\n    p_agent_id UUID DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "book_online_appointment",
+      "signature": "uuid, uuid, date, varchar, varchar, varchar, uuid, int, text",
+      "arguments": "p_org_id UUID,\n    p_doctor_id UUID,\n    p_appointment_date DATE,\n    p_patient_name VARCHAR,\n    p_patient_phone VARCHAR,\n    p_patient_gender VARCHAR,\n    p_schedule_id UUID,\n    p_patient_age INT DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": true,
+      "is_critical": false
+    },
+    {
+      "name": "book_online_appointment",
+      "signature": "uuid, uuid, uuid, date, text, text, int, text, text",
+      "arguments": "p_org_id            UUID,\n    p_doctor_id         UUID,\n    p_schedule_id       UUID,\n    p_appointment_date  DATE,\n    p_patient_name      TEXT,\n    p_patient_phone     TEXT,\n    p_patient_age       INT DEFAULT NULL,\n    p_patient_gender    TEXT DEFAULT 'OTHER',\n    p_patient_notes     TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": true,
+      "is_critical": false
+    },
+    {
+      "name": "book_staff_appointment_atomic",
+      "signature": "uuid, uuid, uuid, uuid, date, varchar, text",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_doctor_id UUID,\n    p_schedule_id UUID,\n    p_appointment_date DATE DEFAULT CURRENT_DATE,\n    p_source VARCHAR DEFAULT 'WALKIN',\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "cancel_or_delete_ipd_admission_atomic",
+      "signature": "uuid, uuid, uuid, text, boolean",
+      "arguments": "p_org_id UUID,\n    p_visit_id UUID,\n    p_admin_id UUID,\n    p_reason TEXT DEFAULT 'Mistake admission cancelled',\n    p_permanent_delete BOOLEAN DEFAULT FALSE",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": true
+    },
+    {
+      "name": "cancel_or_void_blood_transfusion_atomic",
+      "signature": "uuid, uuid, uuid, text",
+      "arguments": "p_org_id UUID,\n    p_transfusion_id UUID,\n    p_user_id UUID,\n    p_reason TEXT DEFAULT 'Mistake entry cancelled'",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "cancel_or_void_blood_transfusion_atomic",
+      "signature": "uuid, uuid, uuid, text, boolean",
+      "arguments": "p_org_id UUID,\n    p_transfusion_id UUID,\n    p_user_id UUID,\n    p_reason TEXT DEFAULT 'Mistake entry cancelled',\n    p_permanent_delete BOOLEAN DEFAULT FALSE",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "check_is_admin_caller",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "check_is_super_admin_caller",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "check_system_health_diagnostics",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "claim_next_telegram_command_atomic",
+      "signature": "text",
+      "arguments": "p_worker_id TEXT DEFAULT 'local-agent'",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "claim_telegram_update_atomic",
+      "signature": "bigint, text",
+      "arguments": "p_update_id BIGINT,\n    p_command TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "close_fiscal_period",
+      "signature": "uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_period_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "close_opd_visits_when_episode_closes",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "collect_payment_atomic",
+      "signature": "uuid, uuid, numeric, varchar, varchar, uuid, text",
+      "arguments": "p_org_id UUID,\n    p_invoice_id UUID,\n    p_amount NUMERIC,\n    p_payment_method VARCHAR DEFAULT 'CASH',\n    p_gateway_transaction_id VARCHAR DEFAULT NULL,\n    p_cashier_id UUID DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": true
+    },
+    {
+      "name": "complete_current_user_password_change",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "complete_episode_discharge_atomic",
+      "signature": "uuid, uuid, varchar, text, text, text, text, uuid",
+      "arguments": "p_org_id UUID,\r\n    p_episode_id UUID,\r\n    p_discharge_type VARCHAR,\r\n    p_final_diagnosis TEXT,\r\n    p_hospital_course TEXT DEFAULT NULL,\r\n    p_discharge_advice TEXT DEFAULT NULL,\r\n    p_followup_instructions TEXT DEFAULT NULL,\r\n    p_actor UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "complete_episode_discharge_atomic_v2",
+      "signature": "uuid, uuid, varchar, text, text, text, text, uuid",
+      "arguments": "p_org_id UUID,\r\n    p_episode_id UUID,\r\n    p_discharge_type VARCHAR,\r\n    p_final_diagnosis TEXT,\r\n    p_hospital_course TEXT DEFAULT NULL,\r\n    p_discharge_advice TEXT DEFAULT NULL,\r\n    p_followup_instructions TEXT DEFAULT NULL,\r\n    p_actor UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "complete_ipd_discharge_atomic",
+      "signature": "uuid, uuid, varchar, text, uuid, varchar, varchar, varchar, text, varchar, text, text, jsonb, text, varchar, date, varchar, varchar, varchar, varchar, varchar, text, varchar, numeric, varchar, text, jsonb, date, date, uuid",
+      "arguments": "p_org_id UUID,\n    p_visit_id UUID,\n    p_discharge_type VARCHAR DEFAULT 'NORMAL',\n    p_final_diagnosis TEXT DEFAULT 'Clinical recovery verified on discharge',\n    p_consultant_doctor_id UUID DEFAULT NULL,\n    p_consultant_name VARCHAR DEFAULT NULL,\n    p_bmdc_reg_number VARCHAR DEFAULT NULL,\n    p_consultant_designation VARCHAR DEFAULT NULL,\n    p_hospital_course TEXT DEFAULT NULL,\n    p_condition_at_discharge VARCHAR DEFAULT 'STABLE',\n    p_discharge_advice TEXT DEFAULT NULL,\n    p_followup_instructions TEXT DEFAULT NULL,\n    p_presenting_features JSONB DEFAULT '[]'::jsonb,\n    p_investigations_summary TEXT DEFAULT NULL,\n    p_operation_name VARCHAR DEFAULT NULL,\n    p_operation_date DATE DEFAULT NULL,\n    p_operation_time VARCHAR DEFAULT NULL,\n    p_surgeon_name VARCHAR DEFAULT NULL,\n    p_assistant_surgeons VARCHAR DEFAULT NULL,\n    p_anaesthetist_name VARCHAR DEFAULT NULL,\n    p_anaesthesia_type VARCHAR DEFAULT NULL,\n    p_operative_findings TEXT DEFAULT NULL,\n    p_baby_sex VARCHAR DEFAULT NULL,\n    p_baby_weight_kg NUMERIC DEFAULT NULL,\n    p_baby_apgar_score VARCHAR DEFAULT NULL,\n    p_baby_notes TEXT DEFAULT NULL,\n    p_medications_schedule JSONB DEFAULT '[]'::jsonb,\n    p_stitch_removal_date DATE DEFAULT NULL,\n    p_followup_date DATE DEFAULT NULL,\n    p_prepared_by UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": true
+    },
+    {
+      "name": "complete_telegram_update_atomic",
+      "signature": "bigint, text",
+      "arguments": "p_update_id BIGINT,\n    p_status TEXT DEFAULT 'completed'",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_diagnostic_order_atomic",
+      "signature": "uuid, uuid, uuid[], uuid, uuid, text",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_test_ids UUID[],\n    p_doctor_id UUID DEFAULT NULL,\n    p_visit_id UUID DEFAULT NULL,\n    p_clinical_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_digital_prescription_atomic",
+      "signature": "uuid, uuid, uuid, text, text, text, text, text, date, uuid, jsonb, uuid",
+      "arguments": "p_org_id UUID,\n    p_doctor_id UUID,\n    p_patient_id UUID,\n    p_diagnosis TEXT,\n    p_chief_complaints TEXT DEFAULT NULL,\n    p_clinical_findings TEXT DEFAULT NULL,\n    p_investigation_advice TEXT DEFAULT NULL,\n    p_general_advice TEXT DEFAULT NULL,\n    p_followup_date DATE DEFAULT NULL,\n    p_visit_id UUID DEFAULT NULL,\n    p_items JSONB DEFAULT '[]'::jsonb,\n    p_user_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_episode_settlement_invoice_atomic",
+      "signature": "uuid, uuid, uuid, uuid",
+      "arguments": "p_org_id UUID,\r\n    p_patient_id UUID,\r\n    p_episode_id UUID,\r\n    p_cashier_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_episode_settlement_invoice_atomic",
+      "signature": "uuid, uuid, uuid, uuid, numeric, text, numeric, varchar, uuid, text",
+      "arguments": "p_org_id UUID,\r\n    p_patient_id UUID,\r\n    p_episode_id UUID,\r\n    p_cashier_id UUID,\r\n    p_discount_amount NUMERIC DEFAULT 0.00,\r\n    p_discount_reason TEXT DEFAULT NULL,\r\n    p_initial_payment_amount NUMERIC DEFAULT 0.00,\r\n    p_payment_method VARCHAR DEFAULT 'CASH',\r\n    p_referral_agent_id UUID DEFAULT NULL,\r\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_episode_settlement_invoice_atomic_v2",
+      "signature": "uuid, uuid, uuid, uuid",
+      "arguments": "p_org_id UUID,\r\n    p_patient_id UUID,\r\n    p_episode_id UUID,\r\n    p_cashier_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_episode_settlement_invoice_atomic_v2",
+      "signature": "uuid, uuid, uuid, uuid, numeric, text, numeric, varchar, uuid, text, jsonb",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID,\n    p_cashier_id UUID,\n    p_discount_amount NUMERIC DEFAULT 0,\n    p_discount_reason TEXT DEFAULT NULL,\n    p_initial_payment_amount NUMERIC DEFAULT 0,\n    p_payment_method VARCHAR DEFAULT 'CASH',\n    p_referral_agent_id UUID DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL,\n    p_excluded_reference_ids JSONB DEFAULT '[]'::JSONB",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_episode_settlement_invoice_atomic_v2",
+      "signature": "uuid, uuid, uuid, uuid, numeric, numeric, text, varchar, uuid, text, jsonb",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID,\n    p_cashier_id UUID,\n    p_paid_amount NUMERIC DEFAULT 0,\n    p_discount_amount NUMERIC DEFAULT 0,\n    p_discount_reason TEXT DEFAULT NULL,\n    p_payment_method VARCHAR DEFAULT 'CASH',\n    p_referral_agent_id UUID DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL,\n    p_excluded_reference_ids JSONB DEFAULT '[]'::JSONB",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_invoice_and_post_gl_atomic",
+      "signature": "uuid, uuid, uuid, jsonb, numeric, text, numeric, varchar, varchar, uuid, text, uuid, numeric",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_visit_id UUID DEFAULT NULL,\n    p_items JSONB DEFAULT '[]'::jsonb,\n    p_discount_amount NUMERIC DEFAULT 0.00,\n    p_discount_reason TEXT DEFAULT NULL,\n    p_initial_payment_amount NUMERIC DEFAULT 0.00,\n    p_payment_method VARCHAR DEFAULT 'CASH',\n    p_gateway_transaction_id VARCHAR DEFAULT NULL,\n    p_cashier_id UUID DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL,\n    p_referral_agent_id UUID DEFAULT NULL,\n    p_referral_commission_rate NUMERIC DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_invoice_atomic",
+      "signature": "uuid, uuid, uuid, jsonb, numeric, text, numeric, varchar, varchar, uuid, text, uuid, numeric",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_visit_id UUID DEFAULT NULL,\n    p_items JSONB DEFAULT '[]'::jsonb,\n    p_discount_amount NUMERIC DEFAULT 0.00,\n    p_discount_reason TEXT DEFAULT NULL,\n    p_initial_payment_amount NUMERIC DEFAULT 0.00,\n    p_payment_method VARCHAR DEFAULT 'CASH',\n    p_gateway_transaction_id VARCHAR DEFAULT NULL,\n    p_cashier_id UUID DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL,\n    p_referral_agent_id UUID DEFAULT NULL,\n    p_referral_commission_rate NUMERIC DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_patient_intake_atomic",
+      "signature": "jsonb",
+      "arguments": "p_request JSONB",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "create_referral_agent_atomic",
+      "signature": "uuid, varchar, varchar, varchar, numeric, varchar, text, varchar, boolean, text",
+      "arguments": "p_org_id UUID,\n    p_full_name VARCHAR,\n    p_agent_type VARCHAR,\n    p_phone VARCHAR,\n    p_commission_rate NUMERIC DEFAULT 10.00,\n    p_email VARCHAR DEFAULT NULL,\n    p_address TEXT DEFAULT NULL,\n    p_license_no VARCHAR DEFAULT NULL,\n    p_is_eligible BOOLEAN DEFAULT TRUE,\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "current_org_id",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "current_user_role",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "delete_episode_service_charge_atomic",
+      "signature": "uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_charge_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "delete_hospital_expense_super_admin_atomic",
+      "signature": "uuid, uuid, uuid, text, boolean",
+      "arguments": "p_org_id UUID,\n    p_expense_id UUID,\n    p_admin_id UUID,\n    p_reason TEXT DEFAULT NULL,\n    p_permanent_purge BOOLEAN DEFAULT FALSE",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "delete_invoice_super_admin_atomic",
+      "signature": "uuid, uuid, uuid, text, boolean",
+      "arguments": "p_org_id UUID,\n    p_invoice_id UUID,\n    p_admin_id UUID,\n    p_reason TEXT DEFAULT NULL,\n    p_permanent_purge BOOLEAN DEFAULT FALSE",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "delete_invoice_super_admin_atomic",
+      "signature": "uuid, uuid, uuid, text",
+      "arguments": "p_org_id UUID,\n  p_invoice_id UUID,\n  p_admin_id UUID,\n  p_reason TEXT",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "delete_referral_partner_atomic",
+      "signature": "uuid, uuid",
+      "arguments": "p_agent_id UUID,\n    p_organization_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "disburse_payroll_to_gl_atomic",
+      "signature": "uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_payroll_run_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "discharge_critical_care_atomic",
+      "signature": "uuid, text, text, text, uuid",
+      "arguments": "p_admission_id UUID,\n    p_final_diagnosis TEXT,\n    p_destination TEXT,\n    p_clinical_notes TEXT DEFAULT NULL,\n    p_discharged_by UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "edit_episode_service_charge_atomic",
+      "signature": "uuid, uuid, varchar, numeric, numeric, text",
+      "arguments": "p_org_id UUID,\r\n    p_charge_id UUID,\r\n    p_item_name VARCHAR,\r\n    p_quantity NUMERIC,\r\n    p_unit_price NUMERIC,\r\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "enqueue_telegram_command_atomic",
+      "signature": "bigint, bigint, bigint, text, jsonb",
+      "arguments": "p_update_id BIGINT,\n    p_chat_id BIGINT,\n    p_user_id BIGINT,\n    p_command_text TEXT,\n    p_payload JSONB DEFAULT '{}'::jsonb",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "fn_audit_detector_registry_changes",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "fn_prevent_detector_runs_modification",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "fn_prevent_snapshot_modification",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_asset_code",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_complaint_number",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_diagnostic_order_number",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_emergency_temp_id",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_employee_code",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_episode_number",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_expense_voucher_number",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_grn_number",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_invoice_number",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_journal_voucher_number",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_next_po_number",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_patient_code",
+      "signature": "uuid",
+      "arguments": "p_organization_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_patient_code",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_patient_registration_serial",
+      "signature": "uuid, timestamptz",
+      "arguments": "p_org_id UUID,\n    p_encounter_at TIMESTAMPTZ DEFAULT NOW()",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_pharmacy_sale_number",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_pr_number",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_receipt_number",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_referral_agent_code",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_referral_code",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_referral_settlement_number",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_settlement_number",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "generate_visit_number",
+      "signature": "uuid, varchar",
+      "arguments": "p_organization_id uuid, p_type character varying",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_accounts_receivable_aging",
+      "signature": "uuid, timestamptz",
+      "arguments": "p_org_id UUID,\n    p_as_of_date TIMESTAMPTZ DEFAULT NOW()",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_audit_trail_logs",
+      "signature": "uuid, varchar, varchar, int, int",
+      "arguments": "p_org_id UUID,\r\n  p_module VARCHAR DEFAULT NULL,\r\n  p_action VARCHAR DEFAULT NULL,\r\n  p_limit INT DEFAULT 50,\r\n  p_offset INT DEFAULT 0",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_authoritative_system_health",
+      "signature": "uuid, int",
+      "arguments": "p_org_id UUID,\n    p_max_age_seconds INT DEFAULT 900",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_current_org_id",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "service_role'"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_dashboard_today_financial_summary",
+      "signature": "timestamptz, timestamptz, uuid",
+      "arguments": "p_start_date TIMESTAMPTZ,\n    p_end_date TIMESTAMPTZ,\n    p_org_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_department_revenue_breakdown",
+      "signature": "uuid, timestamptz, timestamptz",
+      "arguments": "p_org_id UUID,\n    p_start_date TIMESTAMPTZ,\n    p_end_date TIMESTAMPTZ",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_episode_billing_overview",
+      "signature": "uuid, uuid, uuid, timestamptz",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID DEFAULT NULL,\n    p_as_of TIMESTAMPTZ DEFAULT NOW()",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_episode_billing_preview",
+      "signature": "uuid, uuid, uuid, timestamptz",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID DEFAULT NULL,\n    p_as_of TIMESTAMPTZ DEFAULT NOW()",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_expense_analytics_summary",
+      "signature": "uuid, date, date",
+      "arguments": "p_org_id UUID,\n    p_start_date DATE DEFAULT NULL,\n    p_end_date DATE DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_financial_dashboard_aggregates",
+      "signature": "uuid, timestamptz, timestamptz",
+      "arguments": "p_org_id UUID,\n    p_start_date TIMESTAMPTZ,\n    p_end_date TIMESTAMPTZ",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_general_ledger_report",
+      "signature": "uuid, uuid, date, date",
+      "arguments": "p_org_id UUID,\n    p_account_id UUID,\n    p_start_date DATE DEFAULT NULL::DATE,\n    p_end_date DATE DEFAULT NULL::DATE",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_next_token",
+      "signature": "uuid, uuid, date",
+      "arguments": "p_org_id uuid, p_doctor_id uuid, p_date date",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_organization_role_permissions_matrix",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_patient_referral_attribution_for_billing",
+      "signature": "uuid, uuid",
+      "arguments": "p_patient_id UUID,\n    p_visit_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_payment_channel_breakdown",
+      "signature": "uuid, timestamptz, timestamptz",
+      "arguments": "p_org_id UUID,\n    p_start_date TIMESTAMPTZ,\n    p_end_date TIMESTAMPTZ",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_pg_cron_monitoring_telemetry",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_profit_and_loss_summary",
+      "signature": "uuid, timestamptz, timestamptz",
+      "arguments": "p_org_id UUID,\n    p_start_date TIMESTAMPTZ,\n    p_end_date TIMESTAMPTZ",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_public_doctor_schedules",
+      "signature": "uuid, uuid",
+      "arguments": "p_org_id UUID, p_doctor_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": true,
+      "is_critical": false
+    },
+    {
+      "name": "get_public_doctors_directory",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": true,
+      "is_critical": false
+    },
+    {
+      "name": "get_public_live_queue",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": true,
+      "is_critical": false
+    },
+    {
+      "name": "get_public_live_queue",
+      "signature": "uuid, uuid, date",
+      "arguments": "p_org_id UUID,\n    p_doctor_id UUID,\n    p_date DATE DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": true,
+      "is_critical": false
+    },
+    {
+      "name": "get_public_token_status",
+      "signature": "uuid, text, date",
+      "arguments": "p_org_id UUID,\n    p_token_query TEXT,\n    p_date DATE DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": true,
+      "is_critical": false
+    },
+    {
+      "name": "get_referral_agents_safe_directory",
+      "signature": "uuid, text",
+      "arguments": "p_org_id UUID,\n    p_query TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_referral_performance_analytics",
+      "signature": "uuid, uuid, timestamptz, timestamptz",
+      "arguments": "p_org_id UUID,\n    p_agent_id UUID DEFAULT NULL,\n    p_start_date TIMESTAMPTZ DEFAULT NULL,\n    p_end_date TIMESTAMPTZ DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_staff_directory_admin",
+      "signature": "uuid, text, text, text",
+      "arguments": "p_org_id          UUID,\n    p_search          TEXT DEFAULT NULL,\n    p_role            TEXT DEFAULT NULL,\n    p_status          TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_system_health_detector_registry",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_system_monitoring_status",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "get_trial_balance",
+      "signature": "uuid, date",
+      "arguments": "p_org_id UUID,\n    p_as_of_date DATE DEFAULT CURRENT_DATE",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "has_permission",
+      "signature": "text",
+      "arguments": "perm_code TEXT",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "ingest_analyzer_transmission_atomic",
+      "signature": "uuid, uuid, varchar, text, varchar, varchar, jsonb, varchar, boolean, uuid, uuid, uuid, jsonb, array of { parameter_id: uuid, text, boolean } p_panic_alerts jsonb -- array of { analyte_code: text, text, text }",
+      "arguments": "p_organization_id UUID,\n    p_analyzer_id UUID,\n    p_sample_barcode VARCHAR,\n    p_raw_message TEXT,\n    p_protocol VARCHAR,\n    p_message_type VARCHAR,\n    p_parsed_results JSONB,\n    p_payload_fingerprint VARCHAR,\n    p_is_simulation BOOLEAN,\n    p_order_id UUID,\n    p_order_item_id UUID,\n    p_technician_id UUID,\n    p_result_values JSONB, -- Array of { parameter_id: UUID, observed_value: TEXT, is_abnormal: BOOLEAN }\n    p_panic_alerts JSONB   -- Array of { analyte_code: TEXT, observed_value: TEXT, abnormal_flag: TEXT }",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "ingest_analyzer_transmission_atomic",
+      "signature": "uuid, uuid, varchar, text, varchar, varchar, jsonb, varchar, boolean, uuid, uuid, uuid, jsonb, jsonb",
+      "arguments": "p_organization_id UUID,\n    p_analyzer_id UUID,\n    p_sample_barcode VARCHAR,\n    p_raw_message TEXT,\n    p_protocol VARCHAR,\n    p_message_type VARCHAR,\n    p_parsed_results JSONB,\n    p_payload_fingerprint VARCHAR,\n    p_is_simulation BOOLEAN,\n    p_order_id UUID,\n    p_order_item_id UUID,\n    p_technician_id UUID,\n    p_result_values JSONB,\n    p_panic_alerts JSONB",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "is_org_admin_or_has_permission",
+      "signature": "uuid, text",
+      "arguments": "p_org_id UUID, p_perm_key TEXT",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "log_system_runtime_issue",
+      "signature": "uuid, text, text, text, text, text, text, text, jsonb",
+      "arguments": "p_org_id UUID,\n    p_module TEXT,\n    p_location TEXT,\n    p_severity TEXT DEFAULT 'CRITICAL',\n    p_error_code TEXT DEFAULT 'RUNTIME_ERROR',\n    p_title TEXT DEFAULT 'সিস্টেম অপারেশন ত্রুটি',\n    p_reason TEXT DEFAULT 'অপারেশন ব্যর্থ হয়েছে।',\n    p_recommendation TEXT DEFAULT 'মডিউলটি পুনরায় পরীক্ষা করুন।',\n    p_details JSONB DEFAULT '{}'::jsonb",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "maintain_invoice_arithmetic_invariants",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "ohms_billable_days",
+      "signature": "timestamptz, timestamptz",
+      "arguments": "p_started_at TIMESTAMPTZ,\r\n    p_ended_at TIMESTAMPTZ",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "post_billing_to_gl_atomic",
+      "signature": "uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_invoice_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "post_billing_to_gl_atomic",
+      "signature": "uuid, uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_invoice_id UUID,\n    p_created_by UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "post_grn_to_inventory_and_gl_atomic",
+      "signature": "uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_grn_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "post_journal_entry_atomic",
+      "signature": "uuid, varchar, date, varchar, uuid, text, jsonb, uuid",
+      "arguments": "p_org_id UUID,\n    p_entry_number VARCHAR,\n    p_entry_date DATE,\n    p_reference_type VARCHAR,\n    p_reference_id UUID,\n    p_description TEXT,\n    p_lines JSONB,\n    p_posted_by UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "post_payment_receipt_to_gl_atomic",
+      "signature": "uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_payment_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "post_payroll_accrual_to_gl_atomic",
+      "signature": "uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_payroll_run_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "post_supplier_invoice_to_gl_atomic",
+      "signature": "uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_supplier_invoice_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "public_health_probe",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": true,
+      "is_critical": false
+    },
+    {
+      "name": "queue_system_notification_atomic",
+      "signature": "uuid, uuid, text, text, text, text, text, jsonb",
+      "arguments": "p_org_id UUID,\n    p_incident_id UUID DEFAULT NULL,\n    p_channel TEXT DEFAULT 'SYSTEM',\n    p_destination TEXT DEFAULT 'admin@hospital.org',\n    p_title TEXT DEFAULT 'সিস্টেম সতর্কতা নোটিফিকেশন',\n    p_message TEXT DEFAULT 'সিস্টেমে একটি অস্বাভাবিক ঘটনা রেকর্ড হয়েছে।',\n    p_priority TEXT DEFAULT 'HIGH',\n    p_metadata JSONB DEFAULT '{}'::jsonb",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "reconcile_bed_vacancy_drift_atomic",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "record_asset_depreciation_to_gl_atomic",
+      "signature": "uuid, uuid, numeric(12, 2), text",
+      "arguments": "p_org_id UUID,\n    p_asset_id UUID,\n    p_depreciation_amount NUMERIC(12, 2),\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "record_asset_maintenance_to_gl_atomic",
+      "signature": "uuid, uuid, boolean, varchar",
+      "arguments": "p_org_id UUID,\n    p_maintenance_log_id UUID,\n    p_is_capitalized BOOLEAN DEFAULT FALSE,\n    p_payment_account_code VARCHAR DEFAULT '1020'",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "record_discretionary_referral_payout_atomic",
+      "signature": "uuid, uuid, numeric, varchar, varchar, varchar, varchar",
+      "arguments": "p_org_id UUID,\n    p_agent_id UUID,\n    p_amount NUMERIC,\n    p_payment_method VARCHAR,\n    p_transaction_reference VARCHAR DEFAULT NULL,\n    p_notes VARCHAR DEFAULT NULL,\n    p_idempotency_key VARCHAR DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "record_hospital_expense_atomic",
+      "signature": "uuid, uuid, varchar, numeric, varchar, varchar, varchar, date, varchar, uuid, varchar, varchar, text, uuid",
+      "arguments": "p_org_id UUID,\n    p_category_id UUID,\n    p_title VARCHAR,\n    p_amount NUMERIC,\n    p_payment_method VARCHAR DEFAULT 'CASH',\n    p_payment_reference VARCHAR DEFAULT NULL,\n    p_paid_to VARCHAR DEFAULT NULL,\n    p_expense_date DATE DEFAULT CURRENT_DATE,\n    p_expense_type VARCHAR DEFAULT 'GENERAL',\n    p_doctor_id UUID DEFAULT NULL,\n    p_duty_shift VARCHAR DEFAULT NULL,\n    p_department VARCHAR DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL,\n    p_created_by UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": true
+    },
+    {
+      "name": "record_monitoring_heartbeat",
+      "signature": "uuid, text, text, int, int, text, int, jsonb",
+      "arguments": "p_org_id UUID DEFAULT NULL,\n    p_source TEXT DEFAULT 'SCHEDULED_PROBE',\n    p_status TEXT DEFAULT 'UNKNOWN',\n    p_health_score INT DEFAULT 0,\n    p_active_issues INT DEFAULT 0,\n    p_audit_scope TEXT DEFAULT 'FULL_INTERNAL_ERP',\n    p_duration_ms INT DEFAULT NULL,\n    p_details JSONB DEFAULT '{}'::jsonb",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "record_outbox_delivery_attempt_atomic",
+      "signature": "uuid, text, text, text",
+      "arguments": "p_outbox_id UUID,\n    p_status TEXT,\n    p_error TEXT DEFAULT NULL,\n    p_destination TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "record_pharmacy_sale_erp_atomic",
+      "signature": "uuid, uuid, jsonb, array of { batch_id, quantity, } p_payment_method varchar, text",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_items JSONB, -- array of { batch_id, quantity, unit_price }\n    p_payment_method VARCHAR DEFAULT 'CASH',\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "record_referral_commission_payout_atomic",
+      "signature": "uuid, uuid, numeric, varchar, uuid, numeric, numeric, varchar, varchar, varchar",
+      "arguments": "p_org_id UUID,\n    p_agent_id UUID,\n    p_amount NUMERIC,\n    p_payment_method VARCHAR,\n    p_patient_id UUID DEFAULT NULL,\n    p_patient_total_bill NUMERIC DEFAULT NULL,\n    p_commission_rate_percent NUMERIC DEFAULT NULL,\n    p_transaction_reference VARCHAR DEFAULT NULL,\n    p_notes VARCHAR DEFAULT NULL,\n    p_idempotency_key VARCHAR DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "record_referral_commission_payout_atomic",
+      "signature": "uuid, uuid, numeric, varchar, uuid, varchar, varchar, varchar",
+      "arguments": "p_org_id UUID,\n    p_agent_id UUID,\n    p_amount NUMERIC,\n    p_payment_method VARCHAR,\n    p_patient_id UUID,\n    p_transaction_reference VARCHAR,\n    p_notes VARCHAR,\n    p_idempotency_key VARCHAR",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "record_supplier_payment_to_gl_atomic",
+      "signature": "uuid, uuid, numeric(14, 2), varchar, varchar, text",
+      "arguments": "p_org_id UUID,\n    p_supplier_invoice_id UUID,\n    p_payment_amount NUMERIC(14, 2),\n    p_payment_method VARCHAR DEFAULT 'BANK',\n    p_bank_acc_code VARCHAR DEFAULT '1020',\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "register_and_issue_blood_bag_atomic",
+      "signature": "uuid, uuid, text, text, int, text, text, text, text, text, text, uuid, text, text, boolean, text",
+      "arguments": "p_org_id UUID,\n  p_user_id UUID,\n  p_bag_number TEXT,\n  p_donor_name TEXT,\n  p_donor_age INTEGER,\n  p_donor_phone TEXT,\n  p_donor_blood_group TEXT,\n  p_donor_type TEXT,\n  p_sourcing_blood_bank TEXT,\n  p_donor_details TEXT,\n  p_component_type TEXT,\n  p_patient_id UUID,\n  p_major_crossmatch TEXT,\n  p_minor_crossmatch TEXT,\n  p_technologist_verified BOOLEAN,\n  p_notes TEXT",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "reject_referral_commission_atomic",
+      "signature": "uuid, uuid, text",
+      "arguments": "p_org_id UUID,\n    p_commission_id UUID,\n    p_reason TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "reopen_fiscal_period",
+      "signature": "uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_period_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "resolve_system_runtime_issue",
+      "signature": "uuid, text, uuid, text",
+      "arguments": "p_org_id UUID DEFAULT NULL,\n    p_module TEXT DEFAULT NULL,\n    p_issue_id UUID DEFAULT NULL,\n    p_location TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "restore_episode_service_waiver_atomic",
+      "signature": "uuid, uuid, text",
+      "arguments": "p_org_id UUID,\n    p_waiver_id UUID,\n    p_restoration_reason TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "reverse_journal_entry_atomic",
+      "signature": "uuid, uuid, text, date",
+      "arguments": "p_org_id UUID,\n    p_original_entry_id UUID,\n    p_reversal_reason TEXT,\n    p_reversal_date DATE DEFAULT CURRENT_DATE",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": true
+    },
+    {
+      "name": "run_authoritative_health_cycle",
+      "signature": "uuid, text",
+      "arguments": "p_org_id UUID,\n    p_source_sha TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "run_authoritative_system_health_check",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "run_scheduled_system_health_check",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "save_hospital_service_tariff_atomic",
+      "signature": "uuid, uuid, varchar, varchar, varchar, numeric, varchar, text, boolean",
+      "arguments": "p_org_id UUID,\n    p_id UUID DEFAULT NULL,\n    p_service_code VARCHAR DEFAULT NULL,\n    p_service_name VARCHAR DEFAULT NULL,\n    p_category VARCHAR DEFAULT 'CONSULTATION',\n    p_price NUMERIC DEFAULT 0.00,\n    p_unit VARCHAR DEFAULT 'Per Service',\n    p_description TEXT DEFAULT NULL,\n    p_is_active BOOLEAN DEFAULT TRUE",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "save_role_permissions_atomic",
+      "signature": "uuid, text, text[]",
+      "arguments": "p_org_id UUID,\n  p_role_name TEXT,\n  p_permission_keys TEXT[]",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "search_active_referral_agents",
+      "signature": "uuid, text",
+      "arguments": "p_org_id UUID,\n    p_query TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "search_referral_agents_for_billing",
+      "signature": "uuid, text",
+      "arguments": "p_org_id UUID,\n    p_query TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "seed_default_chart_of_accounts",
+      "signature": "uuid",
+      "arguments": "p_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "seed_organization_diagnostic_catalog",
+      "signature": "uuid",
+      "arguments": "p_target_org_id UUID",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "set_doctors_updated_at",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "set_patient_code",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "set_updated_at",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "settle_referral_commissions_atomic",
+      "signature": "uuid, uuid, uuid[], varchar, text, text",
+      "arguments": "p_org_id UUID,\n    p_agent_id UUID,\n    p_commission_ids UUID[],\n    p_payment_method VARCHAR,\n    p_transaction_reference TEXT DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": true
+    },
+    {
+      "name": "snapshot_opd_fee_before_visit",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "submit_public_contact_inquiry",
+      "signature": "uuid, text, text, text, text, text",
+      "arguments": "p_org_id UUID,\n    p_name TEXT,\n    p_phone TEXT,\n    p_email TEXT DEFAULT NULL,\n    p_subject TEXT DEFAULT 'General Hospital Enquiry',\n    p_message TEXT DEFAULT ''",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": true,
+      "is_critical": false
+    },
+    {
+      "name": "sync_doctor_fees",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "sync_patient_nid_columns",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "sync_patients_dob_columns",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "transfer_bed_or_critical_care_atomic",
+      "signature": "uuid, uuid, uuid, uuid, uuid, text, uuid, text, uuid",
+      "arguments": "p_organization_id UUID,\n    p_source_bed_id UUID DEFAULT NULL,\n    p_source_cabin_id UUID DEFAULT NULL,\n    p_destination_bed_id UUID DEFAULT NULL,\n    p_destination_cabin_id UUID DEFAULT NULL,\n    p_reason TEXT DEFAULT 'Clinical step-down or bed transfer',\n    p_doctor_id UUID DEFAULT NULL,\n    p_doctor_name TEXT DEFAULT NULL,\n    p_transferred_by UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "trg_beds_auto_populate_ward_name",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "trg_fn_enforce_journal_entry_immutability",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "trg_fn_enforce_journal_line_immutability",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "trg_fn_sync_bed_occupancy_on_assignment_change",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "trg_fn_sync_bed_occupancy_status",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "postgres",
+        "supabase_admin"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "trg_patient_episodes_insert",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "trg_patient_episodes_update",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "trg_sync_episode_service_charges",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "update_bed_operational_status_atomic",
+      "signature": "uuid, uuid, varchar, uuid",
+      "arguments": "p_bed_id UUID DEFAULT NULL,\n    p_cabin_id UUID DEFAULT NULL,\n    p_new_status VARCHAR DEFAULT 'VACANT',\n    p_user_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "update_blood_transfusion_dossier_atomic",
+      "signature": "uuid, uuid, uuid, text, text, int, text, text, text, text, text, text, text",
+      "arguments": "p_org_id UUID,\n    p_transfusion_id UUID,\n    p_user_id UUID,\n    p_donor_name TEXT,\n    p_donor_phone TEXT,\n    p_donor_age INT,\n    p_donor_blood_group TEXT,\n    p_major_crossmatch TEXT,\n    p_minor_crossmatch TEXT,\n    p_crossmatch_result TEXT,\n    p_technologist_name TEXT,\n    p_adverse_reaction_notes TEXT,\n    p_sourcing_blood_bank TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "update_hospital_master_profile",
+      "signature": "text, text, text, text, text, text",
+      "arguments": "p_name TEXT,\n    p_address TEXT,\n    p_phone TEXT,\n    p_emergency_hotline TEXT,\n    p_ambulance_hotline TEXT,\n    p_email TEXT",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "update_invoice_atomic",
+      "signature": "uuid, uuid, uuid, jsonb, numeric, text, numeric",
+      "arguments": "p_org_id UUID,\n  p_invoice_id UUID,\n  p_user_id UUID,\n  p_items JSONB,\n  p_discount_amount NUMERIC,\n  p_discount_reason TEXT,\n  p_tax_amount NUMERIC",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "update_ipd_admission_atomic",
+      "signature": "uuid, uuid, text, uuid, text, text, text, text",
+      "arguments": "p_org_id UUID,\n    p_visit_id UUID,\n    p_provisional_diagnosis TEXT DEFAULT NULL,\n    p_doctor_id UUID DEFAULT NULL,\n    p_guardian_name TEXT DEFAULT NULL,\n    p_guardian_phone TEXT DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL,\n    p_clinical_findings TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": true
+    },
+    {
+      "name": "update_referral_agent_rate_atomic",
+      "signature": "uuid, uuid, numeric, text",
+      "arguments": "p_org_id UUID,\n    p_agent_id UUID,\n    p_new_rate NUMERIC,\n    p_reason TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "update_timestamp",
+      "signature": "",
+      "arguments": "",
+      "security_mode": "SECURITY_INVOKER",
+      "granted_to": [],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "update_waiting_queue_status_atomic",
+      "signature": "uuid, uuid, text, uuid",
+      "arguments": "p_org_id UUID,\n    p_queue_id UUID,\n    p_status TEXT,\n    p_user_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": true
+    },
+    {
+      "name": "vacate_or_discharge_bed_atomic",
+      "signature": "uuid, uuid, uuid, uuid, text",
+      "arguments": "p_organization_id UUID,\n    p_bed_id UUID DEFAULT NULL,\n    p_cabin_id UUID DEFAULT NULL,\n    p_vacated_by UUID DEFAULT NULL,\n    p_discharge_notes TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "verify_and_record_online_payment",
+      "signature": "uuid, uuid, varchar, numeric, varchar, uuid, uuid",
+      "arguments": "p_org_id UUID,\n    p_intent_id UUID,\n    p_provider_trx_id VARCHAR,\n    p_paid_amount NUMERIC,\n    p_gateway_method VARCHAR,\n    p_cashier_id UUID DEFAULT NULL,\n    p_webhook_event_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "verify_and_resolve_system_issue_atomic",
+      "signature": "uuid, uuid, jsonb",
+      "arguments": "p_org_id UUID,\n    p_issue_id UUID,\n    p_verification_evidence JSONB DEFAULT '{}'::jsonb",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "verify_diagnostic_order_atomic",
+      "signature": "uuid, uuid, uuid, text, text",
+      "arguments": "p_org_id UUID,\n    p_order_id UUID,\n    p_verifier_id UUID,\n    p_signature_hash TEXT,\n    p_remarks TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "verify_system_incident_resolution",
+      "signature": "uuid, uuid",
+      "arguments": "p_incident_id UUID,\n    p_org_id UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "void_hospital_expense_atomic",
+      "signature": "uuid, uuid, text, uuid",
+      "arguments": "p_org_id UUID,\n    p_expense_id UUID,\n    p_void_reason TEXT,\n    p_voided_by UUID DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "void_invoice_and_reverse_gl_atomic",
+      "signature": "uuid, uuid, text",
+      "arguments": "p_org_id UUID,\n    p_invoice_id UUID,\n    p_reason TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": true
+    },
+    {
+      "name": "waive_episode_service_atomic",
+      "signature": "uuid, uuid, uuid, uuid, varchar, text, numeric, text",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID,\n    p_reference_id UUID,\n    p_service_category VARCHAR DEFAULT NULL,\n    p_item_name TEXT DEFAULT NULL,\n    p_waived_amount NUMERIC DEFAULT NULL,\n    p_waiver_reason TEXT DEFAULT NULL",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    }
+  ]
+}

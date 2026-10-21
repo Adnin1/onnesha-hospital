@@ -1,10 +1,10 @@
 {
   "name": "onnesha-hospital",
   "version": "1.1.90",
-  "git_sha": "b019eddc8023339fb17f83efcca89cfb6ec187db",
-  "short_sha": "b019eddc",
-  "build_id": "ohms-1.1.90-b019eddc-1792613417111",
+  "git_sha": "8545b979cea891b8e80c74b934d0c128da23aefb",
+  "short_sha": "8545b979",
+  "build_id": "ohms-1.1.90-8545b979-1792613494692",
   "migration_count": 237,
   "migration_head_file": "20261022040000_migration_237_purge_legacy_rpc_overloads_and_default_deny.sql",
-  "generated_at": "2026-10-21T20:10:17.111Z"
+  "generated_at": "2026-10-21T20:11:34.691Z"
 }
