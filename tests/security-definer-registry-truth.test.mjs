@@ -21,7 +21,7 @@ test('Static SECURITY DEFINER inventory never claims live ACL verification or au
   assert.match(generator, /anon_executable_count: null/);
   assert.match(generator, /mutable_search_path_count: null/);
   assert.match(generator, /MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF/);
-  assert.doesNotMatch(generator, /review_result: func\\.search_path\\.includes\\('EMPTY_SAFE'\\) \\? 'HARDENED_SAFE'/);
+  assert.equal(generator.includes("review_result: func.search_path.includes('EMPTY_SAFE') ? 'HARDENED_SAFE'"), false);
 });
 
 test('Generated source inventory reflects Migration 249 and labels live grants as unverified', () => {
