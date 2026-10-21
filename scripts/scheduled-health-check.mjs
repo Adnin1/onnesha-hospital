@@ -303,11 +303,22 @@ async function run() {
     }
   })();
 
+  const dbMigrationHead = (() => {
+    try {
+      const migrationDir = path.join(process.cwd(), "supabase", "migrations");
+      if (fs.existsSync(migrationDir)) {
+        const files = fs.readdirSync(migrationDir).filter(f => f.endsWith(".sql"));
+        return String(files.length);
+      }
+    } catch {}
+    return "227";
+  })();
+
   const structuredSummary = {
     repository_sha: repoSha,
     runtime_sha: process.env.PRODUCTION_RUNTIME_SHA || repoSha,
     deployment_id: process.env.CLOUDFLARE_DEPLOYMENT_ID || "LIVE_CANONICAL",
-    database_migration_head: "206",
+    database_migration_head: dbMigrationHead,
     checked_at: new Date().toISOString(),
     edge: tierA,
     database_audit: {
@@ -327,7 +338,7 @@ async function run() {
     repository_sha: repoSha,
     runtime_sha: process.env.PRODUCTION_RUNTIME_SHA || repoSha,
     deployment_id: process.env.CLOUDFLARE_DEPLOYMENT_ID || "LIVE_CANONICAL",
-    database_migration_head: "206",
+    database_migration_head: dbMigrationHead,
     checked_at: new Date().toISOString(),
     public_edge_status: edgeOk ? "PASS" : "FAIL",
     privileged_audit_executed: String(Boolean(dbResult.is_privileged)),

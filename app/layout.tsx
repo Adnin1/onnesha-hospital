@@ -1,10 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import SwRegister from "@/components/app/SwRegister";
 import NetworkStatus from "@/components/app/NetworkStatus";
 import InstallPrompt from "@/components/app/InstallPrompt";
 import AutonomousSecuritySentinel from "@/components/app/AutonomousSecuritySentinel";
 import { SITE_CONFIG } from "@/config/site";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#0284c7",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_CONFIG.canonicalUrl),
