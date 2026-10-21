@@ -78,7 +78,7 @@ async function runComponentTruth() {
   if (ciHeadSha === gitHead) {
     if (ciConclusion === 'success') {
       ciEvaluation = 'PASS';
-    } else if (ciStatus === 'in_progress') {
+    } else if (ciStatus === 'in_progress' || ciStatus === 'queued' || ciStatus === 'pending') {
       ciEvaluation = 'IN_PROGRESS';
     } else {
       ciEvaluation = 'FAIL';
