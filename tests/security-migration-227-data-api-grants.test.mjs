@@ -6,7 +6,14 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://iuhtzahusz
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key';
 
 describe('Migration 227: Data API Grants & Future-Proofing Verification', () => {
-  const isLiveEnv = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const isLiveEnv = Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder') &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('ci-hermetic') &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('127.0.0.1') &&
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('placeholder')
+  );
   const client = createClient(SUPABASE_URL, ANON_KEY);
 
   test('Public portal tables allow anonymous SELECT queries via Data API', async (t) => {

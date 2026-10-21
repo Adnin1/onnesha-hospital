@@ -78,8 +78,16 @@ test("Migration 230: Diagnostics Column Resolution & Robust Error Handling", asy
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (!url || !anonKey || !url.startsWith("https://")) {
-      st.skip("Live Supabase credentials unavailable");
+    if (
+      !url ||
+      !anonKey ||
+      !url.startsWith("https://") ||
+      url.includes("placeholder") ||
+      url.includes("ci-hermetic") ||
+      url.includes("127.0.0.1") ||
+      anonKey.includes("placeholder")
+    ) {
+      st.skip("Live Supabase credentials unavailable or running in hermetic CI");
       return;
     }
 

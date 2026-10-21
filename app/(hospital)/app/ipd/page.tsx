@@ -89,7 +89,7 @@ export default function IPDAdmissionsPage() {
   const [showDischargeModal, setShowDischargeModal] = useState(false);
   const [showCancelAdmissionModal, setShowCancelAdmissionModal] = useState(false);
   const [cancelAdmissionReason, setCancelAdmissionReason] = useState("");
-  const [cancelAdmissionPermanent, setCancelAdmissionPermanent] = useState(true);
+  const [cancelAdmissionPermanent, setCancelAdmissionPermanent] = useState(false);
   const [cancellingAdmission, setCancellingAdmission] = useState(false);
   const [showEditAdmissionModal, setShowEditAdmissionModal] = useState(false);
   const [editingAdmission, setEditingAdmission] = useState(false);
@@ -1883,7 +1883,7 @@ export default function IPDAdmissionsPage() {
                   className="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
                 />
                 <label htmlFor="cancelPermanent" className="text-[11px] text-slate-700 select-none">
-                  <span className="font-bold text-rose-800">ডাটাবেজ থেকে স্থায়ীভাবে মুছে ফেলুন (Permanent Hard Delete)</span>: ভুল ভর্তির কোনো অবশিষ্টাংশ বা ফাঁকা ভিজিট থাকবে না।
+                  <span className="font-bold text-rose-800">অ্যাডমিন পার্মানেন্ট ডিলিট (Hard Delete)</span>: শুধুমাত্র অনুমোদিত অ্যাডমিনের জন্য — ডাটাবেজ থেকে সম্পূর্ণ মুছে যাবে। আনচেক থাকলে নিরাপদ ক্যানসলেশন হবে এবং বেড মুক্ত হবে।
                 </label>
               </div>
 

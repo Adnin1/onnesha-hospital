@@ -1169,10 +1169,31 @@ export async function dischargePatientAction(params: {
     return { success: false, error: "Consultant doctor name or selection is mandatory on discharge certificate." };
   }
 
-  const effectiveConsultantName = params.consultantName?.trim() || "Senior Consultant Physician";
+  let effectiveConsultantName = params.consultantName?.trim() || "";
+  let effectiveBmdc = params.bmdcRegNumber?.trim() || null;
+  let effectiveDesignation = params.consultantDesignation?.trim() || null;
 
   try {
     const supabase = await createClient();
+
+    if (!effectiveConsultantName && params.consultantDoctorId) {
+      const { data: doc } = await supabase
+        .from("doctors")
+        .select("full_name, bmdc_reg_number, designation, specialization")
+        .eq("id", params.consultantDoctorId)
+        .eq("organization_id", session.organizationId)
+        .maybeSingle();
+
+      if (doc?.full_name) {
+        effectiveConsultantName = doc.full_name;
+        if (!effectiveBmdc && doc.bmdc_reg_number) effectiveBmdc = doc.bmdc_reg_number;
+        if (!effectiveDesignation) effectiveDesignation = doc.designation || doc.specialization;
+      }
+    }
+
+    if (!effectiveConsultantName) {
+      return { success: false, error: "A valid licensed consultant doctor must be selected or specified for patient discharge." };
+    }
 
     // Execute atomic IPD discharge database RPC
     const { data: rpcRes, error: rpcErr } = await supabase.rpc("complete_ipd_discharge_atomic", {
@@ -1182,8 +1203,8 @@ export async function dischargePatientAction(params: {
       p_final_diagnosis: params.finalDiagnosis.trim(),
       p_consultant_doctor_id: params.consultantDoctorId || null,
       p_consultant_name: effectiveConsultantName,
-      p_bmdc_reg_number: params.bmdcRegNumber?.trim() || null,
-      p_consultant_designation: params.consultantDesignation?.trim() || null,
+      p_bmdc_reg_number: effectiveBmdc,
+      p_consultant_designation: effectiveDesignation,
       p_hospital_course: params.hospitalCourse?.trim() || null,
       p_condition_at_discharge: params.conditionAtDischarge?.trim() || null,
       p_discharge_advice: params.dischargeAdvice?.trim() || null,
@@ -3052,7 +3073,17 @@ export async function cancelOrDeleteIpdAdmissionAction(params: {
   try {
     const supabase = await createClient();
     const reason = params.reason?.trim() || "Mistake admission entry cancelled by admin";
-    const permanentDelete = params.permanentDelete !== undefined ? params.permanentDelete : true;
+    const canPurge =
+      session.roles.includes("super_admin") ||
+      session.roles.includes("hospital_administrator") ||
+      session.roles.includes("admin") ||
+      (await hasPermission("patients.delete"));
+
+    // Safe by default: permanent delete strictly requires administrative purge authority
+    let permanentDelete = false;
+    if (params.permanentDelete === true && canPurge) {
+      permanentDelete = true;
+    }
 
     const { data: rpcRes, error: rpcErr } = await supabase.rpc("cancel_or_delete_ipd_admission_atomic", {
       p_org_id: session.organizationId,
