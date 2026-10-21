@@ -1050,29 +1050,49 @@ export async function recordReferralCommissionPayoutAction(params: RecordReferra
   patientId?: string;
   error?: string;
 }> {
+  let incidentOrganizationId: string | null = null;
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId) {
+      return { success: false, error: "401 Unauthorized" };
+    }
+    const isSuperAdmin = session.roles.includes("super_admin");
+    const canPay = isSuperAdmin
+      || session.permissions.includes("referral.commission.pay")
+      || session.permissions.includes("referral.manage");
+    if (!canPay) {
+      return { success: false, error: "403 Forbidden: Missing referral.commission.pay permission." };
+    }
+
     if (!params.agentId) {
       return { success: false, error: "Referral partner ID is required." };
     }
-    if (!params.amount || params.amount <= 0) {
+    if (!Number.isFinite(params.amount) || params.amount <= 0) {
       return { success: false, error: "Payout amount must be greater than zero." };
     }
 
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Authentication required");
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user || user.id !== session.userId) {
+      return { success: false, error: "401 Unauthorized: Refresh your session and try again." };
+    }
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("organization_id, active_organization_id")
       .eq("id", user.id)
       .single();
 
+    if (profileError) throw new Error("Organization profile could not be verified.");
     const orgId = profile?.active_organization_id || profile?.organization_id;
-    if (!orgId) throw new Error("Organization profile not resolved");
+    if (!orgId || orgId !== session.organizationId) {
+      return { success: false, error: "403 Forbidden: Active organization changed. Refresh and retry." };
+    }
+    incidentOrganizationId = orgId;
 
-    // 1. Execute Atomic PostgreSQL Master RPC (Migration 180: record_referral_commission_payout_atomic / record_discretionary_referral_payout_atomic)
-    let { data: rpcRes, error: rpcErr } = await supabase.rpc("record_referral_commission_payout_atomic", {
+    // Only the canonical atomic RPC may post a payout. Permission/network/schema errors
+    // must never fall through to direct multi-table writes that can partially succeed.
+    const { data: rpcRes, error: rpcErr } = await supabase.rpc("record_referral_commission_payout_atomic", {
       p_org_id: orgId,
       p_agent_id: params.agentId,
       p_amount: params.amount,
@@ -1085,197 +1105,29 @@ export async function recordReferralCommissionPayoutAction(params: RecordReferra
       p_idempotency_key: params.transactionReference?.trim() || null,
     });
 
-    if (rpcErr && !params.patientId) {
-      const legacyRes = await supabase.rpc("record_discretionary_referral_payout_atomic", {
-        p_org_id: orgId,
-        p_agent_id: params.agentId,
-        p_amount: params.amount,
-        p_payment_method: params.paymentMethod,
-        p_transaction_reference: params.transactionReference?.trim() || null,
-        p_notes: params.notes?.trim() || "Referral partner commission payout",
-        p_idempotency_key: params.transactionReference?.trim() || null,
-      });
-      if (!legacyRes.error && legacyRes.data) {
-        rpcRes = legacyRes.data;
-        rpcErr = null;
+    if (rpcErr) {
+      if (rpcErr.code === "42501") {
+        return { success: false, error: "403 Forbidden: Referral commission payout permission denied." };
       }
+      throw new Error(`Referral payout failed safely; no direct-write fallback was attempted. ${rpcErr.message}`);
     }
 
-    if (!rpcErr && rpcRes && typeof rpcRes === "object" && (rpcRes as { success?: boolean }).success) {
-      const res = rpcRes as {
-        settlement_number: string;
-        voucher_number?: string;
-        settlement_id?: string;
-        expense_id?: string;
-        journal_entry_id?: string;
-        settlement_status?: string;
-        patient_id?: string;
-      };
+    const payload = rpcRes as {
+      success?: boolean;
+      error?: string;
+      settlement_number?: string;
+      voucher_number?: string;
+      settlement_id?: string;
+      expense_id?: string;
+      journal_entry_id?: string;
+      settlement_status?: string;
+      patient_id?: string;
+    } | null;
+    if (!payload?.success) {
       return {
-        success: true,
-        settlementNumber: res.settlement_number,
-        expenseVoucher: res.voucher_number,
-        settlementId: res.settlement_id,
-        expenseId: res.expense_id,
-        journalEntryId: res.journal_entry_id,
-        settlementStatus: res.settlement_status,
-        patientId: res.patient_id,
+        success: false,
+        error: payload?.error || "Referral payout was not confirmed by the database.",
       };
-    }
-
-    // 2. Direct transactional fallback if RPC is not present
-    const { data: agent, error: agentErr } = await supabase
-      .from("referral_agents")
-      .select("id, agent_code, full_name, total_commission_settled, total_commission_earned")
-      .eq("id", params.agentId)
-      .eq("organization_id", orgId)
-      .single();
-
-    if (agentErr || !agent) {
-      return { success: false, error: "Referral agent not found" };
-    }
-
-    let patientName: string | null = null;
-    let patientCode: string | null = null;
-    if (params.patientId) {
-      const { data: pData } = await supabase.from("patients").select("full_name, patient_code").eq("id", params.patientId).maybeSingle();
-      patientName = pData?.full_name || null;
-      patientCode = pData?.patient_code || null;
-    }
-
-    const settlementNumber = `SETTLE-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const { error: setErr } = await supabase
-      .from("referral_commission_settlements")
-      .insert({
-        organization_id: orgId,
-        settlement_number: settlementNumber,
-        referral_agent_id: params.agentId,
-        patient_id: params.patientId || null,
-        patient_name: patientName,
-        patient_code: patientCode,
-        patient_total_bill: params.patientTotalBill ?? null,
-        commission_rate_percent: params.commissionRatePercent ?? null,
-        settlement_date: new Date().toISOString(),
-        gross_commission_selected: params.amount,
-        adjustment_amount: 0,
-        net_paid_amount: params.amount,
-        payment_method: params.paymentMethod,
-        transaction_reference: params.transactionReference?.trim() || null,
-        paid_by: user.id,
-        notes: params.notes?.trim() || (patientName ? `Commission payout for patient: ${patientName}` : "Discretionary partner payout"),
-      });
-
-    if (setErr) {
-      console.warn("[recordReferralCommissionPayoutAction] settlement table:", setErr.message);
-    }
-
-    const newSettled = Number(agent.total_commission_settled || 0) + Number(params.amount);
-    await supabase
-      .from("referral_agents")
-      .update({
-        total_commission_settled: newSettled,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", params.agentId)
-      .eq("organization_id", orgId);
-
-    // Update referral_commissions row if patientId provided
-    if (params.patientId) {
-      const { data: commRow } = await supabase
-        .from("referral_commissions")
-        .select("id, commission_amount, amount_paid")
-        .eq("organization_id", orgId)
-        .eq("referral_agent_id", params.agentId)
-        .eq("patient_id", params.patientId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (commRow) {
-        const curPaid = Number(commRow.amount_paid || 0) + Number(params.amount);
-        const commAmt = Number(commRow.commission_amount || 0);
-        const newStatus = curPaid >= commAmt && commAmt > 0 ? "PAID" : "PARTIAL";
-        await supabase
-          .from("referral_commissions")
-          .update({
-            amount_paid: curPaid,
-            amount_pending: Math.max(0, commAmt - curPaid),
-            settlement_status: newStatus,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", commRow.id);
-      }
-    }
-
-    let categoryId: string | null = null;
-    const { data: expCat } = await supabase
-      .from("expense_categories")
-      .select("id")
-      .eq("organization_id", orgId)
-      .or("category_code.eq.EXP-MARKETING,name.ilike.%Marketing%,name.ilike.%Referral%")
-      .limit(1)
-      .maybeSingle();
-
-    if (expCat?.id) {
-      categoryId = expCat.id;
-    } else {
-      const { data: newCat } = await supabase
-        .from("expense_categories")
-        .insert({
-          organization_id: orgId,
-          name: "Marketing & Referral Commission (মার্কেটিং ও রেফারেল কমিশন)",
-          category_code: "EXP-MARKETING",
-          is_active: true,
-        })
-        .select("id")
-        .single();
-      categoryId = newCat?.id || null;
-    }
-
-    let voucherNumber = `VOUCH-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const expenseTitle = patientName
-      ? `Referral Commission (${patientName} - Bill ৳${params.patientTotalBill || 0}): ${agent.full_name} (${agent.agent_code})`
-      : `Referral Commission Payout - ${agent.full_name} (${agent.agent_code})`;
-
-    if (categoryId) {
-      const { data: expRes, error: expErr } = await supabase.rpc("record_hospital_expense_atomic", {
-        p_org_id: orgId,
-        p_category_id: categoryId,
-        p_title: expenseTitle,
-        p_amount: params.amount,
-        p_payment_method: params.paymentMethod,
-        p_payment_reference: params.transactionReference?.trim() || settlementNumber,
-        p_paid_to: agent.full_name,
-        p_expense_date: new Date().toISOString().split("T")[0],
-        p_expense_type: "MARKETING",
-        p_doctor_id: null,
-        p_duty_shift: null,
-        p_department: "Marketing",
-        p_notes: `Settlement #${settlementNumber}: ${params.notes || "Referral partner commission payout"}`,
-        p_created_by: user.id,
-      });
-
-      if (!expErr && expRes && typeof expRes === "object" && "voucher_number" in expRes) {
-        voucherNumber = (expRes as { voucher_number: string }).voucher_number;
-      } else {
-        await supabase.from("expenses").insert({
-          organization_id: orgId,
-          voucher_number: voucherNumber,
-          category_id: categoryId,
-          title: expenseTitle,
-          amount: params.amount,
-          payment_method: params.paymentMethod,
-          payment_reference: params.transactionReference?.trim() || settlementNumber,
-          paid_to: agent.full_name,
-          expense_date: new Date().toISOString().split("T")[0],
-          expense_type: "MARKETING",
-          department: "Marketing",
-          notes: `Settlement #${settlementNumber}: ${params.notes || "Referral partner commission payout"}`,
-          status: "POSTED",
-          approved_by: user.id,
-        });
-      }
     }
 
     await resolveSystemRuntimeIncident({
@@ -1285,8 +1137,13 @@ export async function recordReferralCommissionPayoutAction(params: RecordReferra
 
     return {
       success: true,
-      settlementNumber,
-      expenseVoucher: voucherNumber,
+      settlementNumber: payload.settlement_number,
+      expenseVoucher: payload.voucher_number,
+      settlementId: payload.settlement_id,
+      expenseId: payload.expense_id,
+      journalEntryId: payload.journal_entry_id,
+      settlementStatus: payload.settlement_status,
+      patientId: payload.patient_id,
     };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to record referral commission payout";
@@ -1294,17 +1151,22 @@ export async function recordReferralCommissionPayoutAction(params: RecordReferra
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase.from("profiles").select("organization_id").eq("id", user.id).maybeSingle();
-        if (profile?.organization_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("organization_id")
+          .eq("id", user.id)
+          .maybeSingle();
+        const orgId = incidentOrganizationId || profile?.organization_id;
+        if (orgId) {
           await reportSystemRuntimeIncident({
-            organizationId: profile.organization_id,
+            organizationId: orgId,
             module: "Referral Commission & Payouts",
             location: "lib/referrals/actions.ts:recordReferralCommissionPayoutAction",
             severity: "CRITICAL",
             errorCode: "PAYOUT_EXCEPTION",
             title: "কমিশন পে-আউট প্রক্রিয়াকরণে ত্রুটি",
             reason: msg,
-            recommendation: "এজেন্টের ব্যালান্স ও পেমেন্ট রেকর্ড পুনরায় যাচাই করুন।",
+            recommendation: "এজেন্টের ব্যালান্স, পেমেন্ট রেকর্ড ও জার্নাল যাচাই করুন; ব্যর্থ অনুরোধ সরাসরি পুনরাবৃত্তি না করে idempotency reference ব্যবহার করুন।",
           });
         }
       }
