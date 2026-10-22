@@ -423,25 +423,30 @@ export default function SystemHealthPage() {
           </div>
         </div>
       ) : (
-        <div className="p-8 rounded-xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/40 dark:bg-emerald-950/20 text-center space-y-3">
+        <div className={`p-8 rounded-xl border text-center space-y-3 ${isAuditUnavailable
+          ? "border-amber-200 dark:border-amber-800/50 bg-amber-50/40 dark:bg-amber-950/20"
+          : "border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/40 dark:bg-emerald-950/20"}`}>
           <div className="inline-flex p-3 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400">
             <ShieldCheck className="h-10 w-10" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              সব সিস্টেম স্বাভাবিক ও সুরক্ষিত রয়েছে (All Systems Operational)
+              {isAuditUnavailable
+                ? "লাইভ সিস্টেম অডিট যাচাই করা যায়নি (Verification Unavailable)"
+                : "সব সিস্টেম স্বাভাবিক ও সুরক্ষিত রয়েছে (All Systems Operational)"}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-lg mx-auto mt-1">
-              সাধারণ লেজার, বেড অকুপেন্সি, রোগী রেজিস্ট্রেশন, রেফারেল কমিশন, বিলিং ইনভয়েস এবং ট্রায়াল
-              ব্যালান্সের সকল স্বয়ংক্রিয় অডিট সফলভাবে উত্তীর্ণ হয়েছে। কোনো সক্রিয় অসামঞ্জস্যতা নেই।
+              {isAuditUnavailable
+                ? "অথেনটিকেটেড সেশন/সংস্থা context ছাড়া privileged database audit চালানো হয়নি। এই অবস্থাকে healthy বা passed হিসেবে গণ্য করা হচ্ছে না।"
+                : "সাধারণ লেজার, বেড অকুপেন্সি, রোগী রেজিস্ট্রেশন, রেফারেল কমিশন, বিলিং ইনভয়েস এবং ট্রায়াল ব্যালান্সের সকল স্বয়ংক্রিয় অডিট সফলভাবে উত্তীর্ণ হয়েছে। কোনো সক্রিয় অসামঞ্জস্যতা নেই।"}
             </p>
             {isAuditUnavailable && (
               <div className="mt-4 p-3 rounded-lg bg-sky-50 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-800 text-sky-800 dark:text-sky-300 text-xs max-w-xl mx-auto text-left">
                 <div className="font-bold flex items-center gap-1.5 mb-1">
                   <ShieldCheck className="h-4 w-4 text-sky-600 shrink-0" />
-                  <span>জিরো-ট্রাস্ট নিরাপত্তা শিল্ড সক্রিয় (Zero-Trust Shield Active)</span>
+                  <span>ডায়াগনস্টিক অ্যাক্সেস সীমাবদ্ধ (Diagnostic Access Restricted)</span>
                 </div>
-                পাবলিক বা বেনামী সেশনে হাসপাতালের সংবেদনশীল লেজার ও ক্লিনিক্যাল ডেটা সুরক্ষিত রাখা হয়েছে। অভ্যন্তরীণ ১০-ডোমেন বিস্তারিত লাইভ অডিট দেখতে অ্যাডমিন একাউন্টে লগইন করুন।
+                সংবেদনশীল লেজার ও ক্লিনিক্যাল ডেটা বেনামী সেশনে উন্মুক্ত নয়। অথেনটিকেটেড অ্যাডমিন সেশন ছাড়া স্বাস্থ্য ফলাফল অনুমান বা green হিসেবে দেখানো হবে না।
               </div>
             )}
           </div>
@@ -458,13 +463,13 @@ export default function SystemHealthPage() {
             </h2>
           </div>
           <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            {isAuditUnavailable && (data?.passed_checks.length || 0) < 10 ? 10 : (data?.passed_checks.length || 0)} / 10 উত্তীর্ণ
+            {data?.passed_checks.length || 0} / 10 উত্তীর্ণ
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {Object.entries(verificationCheckLabels).map(([key, label]) => {
-            const isPassed = isAuditUnavailable ? true : Boolean(data?.passed_checks.includes(key));
+            const isPassed = Boolean(data?.passed_checks.includes(key));
             return (
               <div
                 key={key}
