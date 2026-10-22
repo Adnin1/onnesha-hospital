@@ -199,8 +199,6 @@ export async function getReferralAgentsAction(): Promise<{
     const isSuperAdmin = session.roles.includes("super_admin");
     const canView =
       isSuperAdmin ||
-      session.roles.includes("receptionist") ||
-      session.roles.includes("accountant") ||
       session.permissions.includes("referral.view") ||
       session.permissions.includes("referral.manage") ||
       session.permissions.includes("referral.create") ||
@@ -279,7 +277,6 @@ export async function getReferralAgentByIdAction(agentId: string): Promise<{
     const isSuperAdmin = session.roles.includes("super_admin");
     const canAccess =
       isSuperAdmin ||
-      session.roles.includes("receptionist") ||
       session.permissions.includes("referral.view") ||
       session.permissions.includes("referral.manage") ||
       session.permissions.includes("referral.edit") ||
@@ -636,8 +633,6 @@ export async function createReferralAgentAction(params: {
     const isSuperAdmin = session.roles.includes("super_admin");
     const canCreate =
       isSuperAdmin ||
-      session.roles.includes("receptionist") ||
-      session.roles.includes("accountant") ||
       session.permissions.includes("referral.create") ||
       session.permissions.includes("referral.manage") ||
       session.permissions.includes("referral.assign") ||

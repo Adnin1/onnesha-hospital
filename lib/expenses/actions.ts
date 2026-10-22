@@ -86,8 +86,6 @@ export async function getExpenseCategoriesAction(): Promise<
   const isSuperAdmin = session.roles.includes("super_admin");
   const canView =
     isSuperAdmin ||
-    session.roles.includes("receptionist") ||
-    session.roles.includes("accountant") ||
     session.permissions.includes("expenses.view") ||
     session.permissions.includes("expenses.manage") ||
     session.permissions.includes("expenses.create");
@@ -203,8 +201,6 @@ export async function getExpensesAction(params?: {
   const isSuperAdmin = session.roles.includes("super_admin");
   const canView =
     isSuperAdmin ||
-    session.roles.includes("receptionist") ||
-    session.roles.includes("accountant") ||
     session.permissions.includes("expenses.view") ||
     session.permissions.includes("expenses.manage") ||
     session.permissions.includes("expenses.create");
@@ -281,8 +277,6 @@ export async function createExpenseAction(params: {
   const isSuperAdmin = session.roles.includes("super_admin");
   const canCreate =
     isSuperAdmin ||
-    session.roles.includes("receptionist") ||
-    session.roles.includes("accountant") ||
     session.permissions.includes("expenses.create") ||
     session.permissions.includes("expenses.manage");
   if (!canCreate) {

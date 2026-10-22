@@ -15,7 +15,7 @@ test("version generator keeps timestamp filename ordering as a fallback", () => 
   assert.match(source, /let latestFile = files\[files\.length - 1\] \|\| null/);
 });
 
-test("current repository migration head resolves to Migration 256 rather than older migrations", () => {
+test("current repository migration head resolves to Migration 258 rather than older migrations", () => {
   const files = fs
     .readdirSync("supabase/migrations")
     .filter((file) => file.endsWith(".sql"))
@@ -32,9 +32,9 @@ test("current repository migration head resolves to Migration 256 rather than ol
   assert.ok(numbered.length > 0);
   const head = numbered[numbered.length - 1];
 
-  assert.equal(head.ordinal, 256);
+  assert.equal(head.ordinal, 258);
   assert.equal(
     head.file,
-    "20261023031000_migration_256_fix_search_referral_agents_ambiguous_column.sql"
+    "20261022202320_migration_258_permission_authoritative_rpc_and_anon_grant_hardening.sql"
   );
 });
