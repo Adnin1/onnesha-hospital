@@ -112,9 +112,11 @@ export default function SystemHealthPage() {
     }
   };
 
-  const isAnonymousSecurityShield =
+  const isAuditUnavailable =
     data?.status === "AUDIT_UNAUTHORIZED" ||
-    (data?.issues?.length === 1 && data.issues[0]?.id === "DIAGNOSTIC_PRIVILEGE_REQUIRED");
+    data?.status === "ORGANIZATION_CONTEXT_REQUIRED" ||
+    (data?.issues?.length === 1 &&
+      ["DIAGNOSTIC_PRIVILEGE_REQUIRED", "ORGANIZATION_CONTEXT_REQUIRED"].includes(data.issues[0]?.id || ""));
 
   const activeOperationalIssues = (data?.issues || []).filter(
     (issue) =>
@@ -232,8 +234,8 @@ export default function SystemHealthPage() {
                 ? (effectiveCriticalCount > 0
                     ? "গুরুতর ত্রুটি সনাক্ত — দ্রুত সমাধান আবশ্যক (CRITICAL)"
                     : "সতর্কতা সক্রিয় — পারফরম্যান্স হ্রাসপ্রাপ্ত (DEGRADED)")
-                : isAnonymousSecurityShield
-                ? "সব সাব-সিস্টেম সক্রিয় ও জিরো-ট্রাস্ট সুরক্ষিত (100% HEALTHY)"
+                : isAuditUnavailable
+                ? "লাইভ ডায়াগনস্টিক যাচাই সম্পন্ন হয়নি — লগইন/সংস্থা context প্রয়োজন"
                 : (data?.is_healthy
                     ? "সব সাব-সিস্টেম সক্রিয় ও ত্রুটিমুক্ত (100% HEALTHY)"
                     : "স্ট্যান্ডবাই মোড")}
@@ -297,10 +299,10 @@ export default function SystemHealthPage() {
               উত্তীর্ণ অডিট পরীক্ষা
             </div>
             <div className="text-2xl font-black mt-1 text-emerald-600 dark:text-emerald-400">
-              {isAnonymousSecurityShield && (data?.passed_checks.length || 0) < 10 ? 10 : (data ? data.passed_checks.length : 0)}
+              {data ? data.passed_checks.length : 0}
             </div>
             <div className="text-[11px] text-slate-500 mt-1">
-              {isAnonymousSecurityShield ? "জিরো-ট্রাস্ট সুরক্ষিত" : "স্বয়ংক্রিয় অডিট পাস"}
+              {isAuditUnavailable ? "যাচাই সম্পন্ন হয়নি" : "স্বয়ংক্রিয় অডিট পাস"}
             </div>
           </div>
           <div className="p-3 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
