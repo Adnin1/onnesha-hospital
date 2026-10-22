@@ -23,3 +23,26 @@ test("system health UI never converts unaudited state into a fake healthy score"
   assert.match(page, /healthy বা passed হিসেবে গণ্য করা হচ্ছে না/);
   assert.match(page, /\{data\?\.passed_checks\.length \|\| 0\} \/ 10 উত্তীর্ণ/);
 });
+
+
+test("all privileged health paths fail closed without hard-coded tenant fallback", () => {
+  const source = fs.readFileSync("lib/diagnostics/actions.ts", "utf8");
+  assert.equal(source.includes("a0000000-0000-0000-0000-000000000001"), false);
+
+  for (const fnName of [
+    "logSystemRuntimeIssueAction",
+    "resolveSystemRuntimeIssueAction",
+    "getAuthoritativeSystemHealthAction",
+    "getSystemHealthDetectorRegistryAction",
+    "reconcileBedVacancyAction",
+  ]) {
+    const fnStart = source.indexOf(`export async function ${fnName}`);
+    assert.ok(fnStart >= 0, `missing ${fnName}`);
+    const nextFn = source.indexOf("\nexport async function ", fnStart + 10);
+    const body = source.slice(fnStart, nextFn >= 0 ? nextFn : source.length);
+    const session = body.indexOf("await getCurrentUserSession()");
+    const client = body.indexOf("createClient()");
+    assert.ok(session >= 0, `${fnName} must resolve authenticated session`);
+    assert.ok(client < 0 || session < client, `${fnName} must resolve auth before creating Supabase client`);
+  }
+});
