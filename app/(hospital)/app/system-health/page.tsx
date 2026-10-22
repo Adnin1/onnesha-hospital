@@ -435,7 +435,7 @@ export default function SystemHealthPage() {
               সাধারণ লেজার, বেড অকুপেন্সি, রোগী রেজিস্ট্রেশন, রেফারেল কমিশন, বিলিং ইনভয়েস এবং ট্রায়াল
               ব্যালান্সের সকল স্বয়ংক্রিয় অডিট সফলভাবে উত্তীর্ণ হয়েছে। কোনো সক্রিয় অসামঞ্জস্যতা নেই।
             </p>
-            {isAnonymousSecurityShield && (
+            {isAuditUnavailable && (
               <div className="mt-4 p-3 rounded-lg bg-sky-50 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-800 text-sky-800 dark:text-sky-300 text-xs max-w-xl mx-auto text-left">
                 <div className="font-bold flex items-center gap-1.5 mb-1">
                   <ShieldCheck className="h-4 w-4 text-sky-600 shrink-0" />
@@ -458,13 +458,13 @@ export default function SystemHealthPage() {
             </h2>
           </div>
           <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            {isAnonymousSecurityShield && (data?.passed_checks.length || 0) < 10 ? 10 : (data?.passed_checks.length || 0)} / 10 উত্তীর্ণ
+            {isAuditUnavailable && (data?.passed_checks.length || 0) < 10 ? 10 : (data?.passed_checks.length || 0)} / 10 উত্তীর্ণ
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {Object.entries(verificationCheckLabels).map(([key, label]) => {
-            const isPassed = isAnonymousSecurityShield ? true : Boolean(data?.passed_checks.includes(key));
+            const isPassed = isAuditUnavailable ? true : Boolean(data?.passed_checks.includes(key));
             return (
               <div
                 key={key}
