@@ -9,9 +9,10 @@ const migration = fs.readFileSync(
 const intake = fs.readFileSync("components/patient/UnifiedPatientIntakeModal.tsx", "utf8");
 
 test("referral payout does not dereference an unassigned patient RECORD", () => {
-  assert.doesNotMatch(migration, /v_patient\s+RECORD/i);
-  assert.doesNotMatch(migration, /v_patient\.full_name/i);
-  assert.doesNotMatch(migration, /v_patient\.patient_code/i);
+  const codeWithoutComments = migration.replace(/--.*$/gm, "");
+  assert.doesNotMatch(codeWithoutComments, /v_patient\s+RECORD/i);
+  assert.doesNotMatch(codeWithoutComments, /v_patient\.full_name/i);
+  assert.doesNotMatch(codeWithoutComments, /v_patient\.patient_code/i);
   assert.match(migration, /v_patient_name\s+TEXT\s*:=\s*NULL/i);
   assert.match(migration, /v_patient_code\s+VARCHAR\s*:=\s*NULL/i);
 });

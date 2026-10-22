@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T20:09:54.817Z",
+  "generated_at": "2026-10-22T21:21:58.990Z",
   "source_scope": "REPOSITORY_MIGRATION_STATIC_SCAN_ONLY",
   "live_catalog_status": "NOT_QUERIED",
   "authorization_review_status": "NOT_CERTIFIED",
@@ -3581,9 +3581,9 @@
     {
       "name": "record_referral_commission_payout_atomic",
       "signature": "uuid, uuid, numeric, varchar, uuid, numeric, numeric, varchar, varchar, varchar",
-      "arguments": "p_org_id UUID,\n    p_agent_id UUID,\n    p_amount NUMERIC,\n    p_payment_method VARCHAR,\n    p_patient_id UUID DEFAULT NULL,\n    p_patient_total_bill NUMERIC DEFAULT NULL,\n    p_commission_rate_percent NUMERIC DEFAULT NULL,\n    p_transaction_reference VARCHAR DEFAULT NULL,\n    p_notes VARCHAR DEFAULT NULL,\n    p_idempotency_key VARCHAR DEFAULT NULL",
+      "arguments": "p_org_id uuid, p_agent_id uuid, p_amount numeric, p_payment_method character varying, p_patient_id uuid DEFAULT NULL::uuid, p_patient_total_bill numeric DEFAULT NULL::numeric, p_commission_rate_percent numeric DEFAULT NULL::numeric, p_transaction_reference character varying DEFAULT NULL::character varying, p_notes character varying DEFAULT NULL::character varying, p_idempotency_key character varying DEFAULT NULL::character varying",
       "owner": "postgres",
-      "search_path": "public, auth, pg_temp",
+      "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,

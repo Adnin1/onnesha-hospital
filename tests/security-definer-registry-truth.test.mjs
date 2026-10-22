@@ -45,7 +45,11 @@ test('Generated source inventory reflects Migration 249 and labels live grants a
   const payoutOverloads = registry.functions.filter((fn) => fn.name === 'record_referral_commission_payout_atomic');
   assert.equal(payoutOverloads.length, 2, 'Both compatibility and canonical overloads must be inventoried');
   for (const fn of payoutOverloads) {
-    assert.equal(fn.search_path, 'public, auth, pg_temp', 'Incorrect effective migration search_path for ' + fn.signature);
+    if (fn.signature.includes('numeric, numeric')) {
+      assert.equal(fn.search_path, "'' (EMPTY_SAFE)", 'Canonical 10-param overload must be EMPTY_SAFE from Migration 260');
+    } else {
+      assert.equal(fn.search_path, 'public, auth, pg_temp', 'Compatibility overload retains search_path from Migration 249');
+    }
   }
 
   const payoutGuard = registry.functions.find((fn) => fn.name === 'enforce_referral_commission_settlement_authorization');
