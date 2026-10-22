@@ -1291,8 +1291,8 @@ function BillingManagementContent() {
   );
   const hasEditPerm = userPermissions.includes("billing.edit");
 
-  // If cashierCanEditBills is false, NO cashier or receptionist can edit bills; only Super Admin can edit.
-  const canEditBills = isSuperAdmin || (hasEditPerm && cashierCanEditBills);
+  // If user has explicit billing.edit permission, or Super Admin, or cashierCanEditBills is enabled, bill edit is allowed.
+  const canEditBills = isSuperAdmin || hasEditPerm || cashierCanEditBills;
 
   const handleToggleCashierAuth = async () => {
     setTogglingCashierAuth(true);

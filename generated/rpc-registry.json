@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-22T05:36:26.138Z",
+  "generated_at": "2026-10-22T19:39:21.840Z",
   "source": "chronological_migration_analysis",
-  "migration_count": 250,
-  "migration_head": "20261022130000_migration_250_restore_public_rpc_grants_and_tenant_guards.sql",
-  "total_functions": 182,
-  "security_definer_count": 164,
+  "migration_count": 254,
+  "migration_head": "20261023020000_migration_254_receptionist_rbac_case_normalization_and_atomic_sync.sql",
+  "total_functions": 183,
+  "security_definer_count": 165,
   "anon_executable_count": 8,
   "critical_rpc_overload_count": 0,
   "security_findings": [],
@@ -200,7 +200,7 @@
     {
       "name": "book_online_appointment",
       "signature": "uuid, uuid, uuid, date, text, text, int, text, text, text",
-      "arguments": "p_org_id            UUID,\n    p_doctor_id         UUID,\n    p_schedule_id       UUID,\n    p_appointment_date  DATE,\n    p_patient_name      TEXT,\n    p_patient_phone     TEXT,\n    p_patient_age       INT DEFAULT NULL,\n    p_patient_gender    TEXT DEFAULT 'OTHER',\n    p_patient_notes     TEXT DEFAULT NULL,\n    p_notes             TEXT DEFAULT NULL",
+      "arguments": "p_org_id            UUID,\r\n    p_doctor_id         UUID,\r\n    p_schedule_id       UUID,\r\n    p_appointment_date  DATE,\r\n    p_patient_name      TEXT,\r\n    p_patient_phone     TEXT,\r\n    p_patient_age       INT DEFAULT NULL,\r\n    p_patient_gender    TEXT DEFAULT 'OTHER',\r\n    p_patient_notes     TEXT DEFAULT NULL,\r\n    p_notes             TEXT DEFAULT NULL",
       "security_mode": "SECURITY_DEFINER",
       "granted_to": [
         "anon",
@@ -1210,7 +1210,7 @@
     {
       "name": "get_public_live_queue",
       "signature": "uuid, uuid, date",
-      "arguments": "p_org_id UUID,\n    p_doctor_id UUID,\n    p_date DATE DEFAULT NULL",
+      "arguments": "p_org_id UUID,\r\n    p_doctor_id UUID,\r\n    p_date DATE DEFAULT NULL",
       "security_mode": "SECURITY_DEFINER",
       "granted_to": [
         "anon",
@@ -1223,7 +1223,7 @@
     {
       "name": "get_public_token_status",
       "signature": "uuid, text, date, text",
-      "arguments": "p_org_id UUID,\n    p_token_query TEXT DEFAULT NULL,\n    p_date DATE DEFAULT NULL,\n    p_token_number TEXT DEFAULT NULL",
+      "arguments": "p_org_id UUID,\r\n    p_token_query TEXT DEFAULT NULL,\r\n    p_date DATE DEFAULT NULL,\r\n    p_token_number TEXT DEFAULT NULL",
       "security_mode": "SECURITY_DEFINER",
       "granted_to": [
         "anon",
@@ -1871,7 +1871,7 @@
     {
       "name": "submit_public_contact_inquiry",
       "signature": "uuid, text, text, text, text, text",
-      "arguments": "p_org_id UUID,\n    p_name TEXT,\n    p_phone TEXT,\n    p_email TEXT DEFAULT NULL,\n    p_subject TEXT DEFAULT 'General Hospital Enquiry',\n    p_message TEXT DEFAULT ''",
+      "arguments": "p_org_id UUID,\r\n    p_name TEXT,\r\n    p_phone TEXT,\r\n    p_email TEXT DEFAULT NULL,\r\n    p_subject TEXT DEFAULT 'General Hospital Enquiry',\r\n    p_message TEXT DEFAULT ''",
       "security_mode": "SECURITY_DEFINER",
       "granted_to": [
         "anon",
@@ -2032,6 +2032,18 @@
       "name": "update_invoice_atomic",
       "signature": "uuid, uuid, uuid, jsonb, numeric, text, numeric",
       "arguments": "p_org_id UUID,\n  p_invoice_id UUID,\n  p_user_id UUID,\n  p_items JSONB,\n  p_discount_amount NUMERIC,\n  p_discount_reason TEXT,\n  p_tax_amount NUMERIC",
+      "security_mode": "SECURITY_DEFINER",
+      "granted_to": [
+        "authenticated",
+        "service_role"
+      ],
+      "anon_executable": false,
+      "is_critical": false
+    },
+    {
+      "name": "update_invoice_atomic",
+      "signature": "uuid, uuid, uuid, jsonb, numeric, text, numeric, uuid",
+      "arguments": "p_org_id UUID,\n  p_invoice_id UUID,\n  p_user_id UUID,\n  p_items JSONB,\n  p_discount_amount NUMERIC,\n  p_discount_reason TEXT,\n  p_tax_amount NUMERIC,\n  p_referral_agent_id UUID",
       "security_mode": "SECURITY_DEFINER",
       "granted_to": [
         "authenticated",

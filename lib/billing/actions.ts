@@ -1567,7 +1567,8 @@ export async function editInvoiceAction(params: {
     }
 
     const authStatus = await getCashierAuthorizationStatusAction();
-    if (!authStatus.success || !authStatus.data?.cashierCanEditBills) {
+    const cashierAllowed = !!(authStatus.success && authStatus.data?.cashierCanEditBills);
+    if (!hasEditPerm && !cashierAllowed) {
       return {
         success: false,
         error:

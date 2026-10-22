@@ -197,11 +197,32 @@ export async function getCurrentUserSession(forceRefresh = false): Promise<UserS
       .map((record) => record.role_id)
       .filter(Boolean);
 
-    if (roleIds.length > 0) {
+    const targetRoleIds = new Set<string>(roleIds);
+
+    // Also include role IDs for any matching normalized roles in the active organization
+    // so case differences (e.g. 'Receptionist' vs 'receptionist') or dual records resolve seamlessly
+    if (roles.length > 0 && organizationId) {
+      const { data: orgRoles } = await supabase
+        .from("roles")
+        .select("id, name")
+        .eq("organization_id", organizationId);
+
+      if (orgRoles) {
+        for (const r of orgRoles) {
+          const norm = normalizeRole(r.name);
+          if (norm && roles.includes(norm as RoleType)) {
+            targetRoleIds.add(r.id);
+          }
+        }
+      }
+    }
+
+    const finalRoleIds = Array.from(targetRoleIds);
+    if (finalRoleIds.length > 0) {
       const { data: permRecords, error: permError } = await supabase
         .from("role_permissions")
         .select("permission_key")
-        .in("role_id", roleIds);
+        .in("role_id", finalRoleIds);
 
       if (!permError && permRecords) {
         for (const record of permRecords as unknown as RolePermissionRecord[]) {

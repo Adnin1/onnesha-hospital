@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getCurrentUserSession, requirePermission, invalidateCurrentUserSession } from "@/lib/auth/session";
 import { PERMISSIONS } from "@/lib/permissions";
 import { RoleType } from "@/types";
+import { normalizeRole } from "@/lib/utils";
 
 export interface StaffMemberRecord {
   id: string;
@@ -289,10 +290,12 @@ export async function saveRolePermissionsAction(
       return { success: false, error: "401 Unauthorized" };
     }
 
+    const canonicalRole = normalizeRole(roleName) || roleName.toLowerCase().trim();
+
     const supabase = createClient();
     const { data, error } = await supabase.rpc("save_role_permissions_atomic", {
       p_org_id: session.organizationId,
-      p_role_name: roleName,
+      p_role_name: canonicalRole,
       p_permission_keys: permissions,
     });
 
@@ -312,8 +315,8 @@ export async function saveRolePermissionsAction(
       action: "UPDATE",
       module: "IAM",
       entityType: "role_permissions",
-      entityId: roleName,
-      newValues: { role: roleName, permissionsCount: permissions.length },
+      entityId: canonicalRole,
+      newValues: { role: canonicalRole, permissionsCount: permissions.length },
     });
 
     invalidateCurrentUserSession();
@@ -350,7 +353,27 @@ export async function getOrganizationRolePermissionsAction(): Promise<{
     }
 
     const res = data as { success?: boolean; matrix?: Record<string, string[]> };
-    return { success: true, data: res?.matrix || {} };
+    const rawMatrix = (res?.matrix || {}) as Record<string, string[]>;
+    const normalizedMatrix: Record<string, string[]> = {};
+
+    for (const [key, perms] of Object.entries(rawMatrix)) {
+      const canonicalKey = normalizeRole(key) || key.toLowerCase().trim();
+      if (!Array.isArray(perms)) continue;
+      if (!normalizedMatrix[canonicalKey]) {
+        normalizedMatrix[canonicalKey] = [];
+      }
+      for (const p of perms) {
+        if (!normalizedMatrix[canonicalKey].includes(p)) {
+          normalizedMatrix[canonicalKey].push(p);
+        }
+      }
+      // Also retain the exact raw key in case callers reference it
+      if (key !== canonicalKey) {
+        normalizedMatrix[key] = perms;
+      }
+    }
+
+    return { success: true, data: normalizedMatrix };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "Failed to load permissions matrix" };
   }

@@ -1,10 +1,10 @@
 {
   "name": "onnesha-hospital",
   "version": "1.1.90",
-  "git_sha": "71ff20d9e49dab99e0a378bde7498308700bbdeb",
-  "short_sha": "71ff20d9",
-  "build_id": "ohms-1.1.90-71ff20d9-1792659691052",
-  "migration_count": 252,
-  "migration_head_file": "20261022150000_migration_252_allow_bill_edit_referral_agent_and_recalculate_commissions.sql",
-  "generated_at": "2026-10-22T09:01:31.052Z"
+  "git_sha": "779591284a2417d48adf7276cda4829b6da304c9",
+  "short_sha": "77959128",
+  "build_id": "ohms-1.1.90-77959128-1792698203762",
+  "migration_count": 254,
+  "migration_head_file": "20261023020000_migration_254_receptionist_rbac_case_normalization_and_atomic_sync.sql",
+  "generated_at": "2026-10-22T19:43:23.761Z"
 }

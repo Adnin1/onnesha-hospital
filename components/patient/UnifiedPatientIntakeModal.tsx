@@ -187,6 +187,8 @@ export function UnifiedPatientIntakeModal({
   const [diagnosticTests, setDiagnosticTests] = useState<Array<{ id: string; test_name: string; test_code: string; price: number }>>([]);
   const [selectedTestIds, setSelectedTestIds] = useState<string[]>([]);
   const [diagnosticNotes, setDiagnosticNotes] = useState("");
+  const [diagnosticSearchQuery, setDiagnosticSearchQuery] = useState("");
+  const [diagnosticCategoryFilter, setDiagnosticCategoryFilter] = useState<"ALL" | "PATHOLOGY" | "IMAGING" | "OTHER">("ALL");
 
   // UI Flow States
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
@@ -508,6 +510,68 @@ export function UnifiedPatientIntakeModal({
       return sum + (t ? Number(t.price || 0) : 0);
     }, 0);
   }, [selectedTestIds, diagnosticTests]);
+
+  const filteredDiagnosticTests = useMemo(() => {
+    const q = diagnosticSearchQuery.trim().toLowerCase();
+    return diagnosticTests.filter((t) => {
+      const matchesQuery =
+        !q ||
+        t.test_name.toLowerCase().includes(q) ||
+        t.test_code.toLowerCase().includes(q);
+      if (!matchesQuery) return false;
+
+      if (diagnosticCategoryFilter === "ALL") return true;
+      const lowerName = t.test_name.toLowerCase();
+      const lowerCode = t.test_code.toLowerCase();
+      if (diagnosticCategoryFilter === "PATHOLOGY") {
+        return (
+          lowerName.includes("blood") ||
+          lowerName.includes("cbc") ||
+          lowerName.includes("sugar") ||
+          lowerName.includes("creatinine") ||
+          lowerName.includes("serum") ||
+          lowerName.includes("hemoglobin") ||
+          lowerName.includes("lipid") ||
+          lowerName.includes("thyroid") ||
+          lowerName.includes("tsh") ||
+          lowerName.includes("bilirubin") ||
+          lowerName.includes("sgpt") ||
+          lowerName.includes("urea") ||
+          lowerCode.startsWith("lab") ||
+          lowerCode.startsWith("cbc")
+        );
+      }
+      if (diagnosticCategoryFilter === "IMAGING") {
+        return (
+          lowerName.includes("usg") ||
+          lowerName.includes("ultrasound") ||
+          lowerName.includes("x-ray") ||
+          lowerName.includes("cxr") ||
+          lowerName.includes("ecg") ||
+          lowerName.includes("echo") ||
+          lowerName.includes("scan") ||
+          lowerCode.startsWith("usg") ||
+          lowerCode.startsWith("xr") ||
+          lowerCode.startsWith("ecg")
+        );
+      }
+      if (diagnosticCategoryFilter === "OTHER") {
+        return (
+          lowerName.includes("urine") ||
+          lowerName.includes("stool") ||
+          lowerName.includes("swab") ||
+          lowerName.includes("biopsy") ||
+          lowerName.includes("pap") ||
+          lowerName.includes("culture")
+        );
+      }
+      return true;
+    });
+  }, [diagnosticTests, diagnosticSearchQuery, diagnosticCategoryFilter]);
+
+  const selectedDiagnosticTests = useMemo(() => {
+    return diagnosticTests.filter((t) => selectedTestIds.includes(t.id));
+  }, [diagnosticTests, selectedTestIds]);
 
   const estimate = useMemo(() => {
     let total = 0;
@@ -1842,60 +1906,184 @@ export function UnifiedPatientIntakeModal({
 
               {/* Lab & Diagnostic Investigations Sub-Panel */}
               {diagnosticsEnabled && (
-                <div className="rounded-2xl border border-teal-200 bg-teal-50/40 p-4 space-y-3">
+                <div className="rounded-2xl border border-teal-200 bg-teal-50/40 p-4 space-y-3.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <FlaskConical className="w-4 h-4 text-teal-700" />
-                      <h4 className="font-bold text-slate-900 text-sm">ল্যাব ও ডায়াগনস্টিক টেস্ট (Lab & Diagnostic Investigations)</h4>
+                      <div className="w-7 h-7 rounded-lg bg-teal-600/10 flex items-center justify-center text-teal-700">
+                        <FlaskConical className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm">
+                          ল্যাব ও ডায়াগনস্টিক টেস্ট (Lab & Diagnostic Investigations)
+                        </h4>
+                        <p className="text-[11px] text-slate-600">
+                          রেজিস্ট্রেশনের সময় টেস্ট নির্বাচন করলে তা স্বয়ংক্রিয়ভাবে বিলিং ইনভয়েসে এবং ল্যাব অর্ডারে যুক্ত হবে।
+                        </p>
+                      </div>
                     </div>
                     <button
                       type="button"
-                      onClick={() => { setDiagnosticsEnabled(false); setErrorMsg(null); }}
-                      className="text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-100/60 hover:bg-rose-100 px-2.5 py-1 rounded-lg transition"
+                      onClick={() => {
+                        setDiagnosticsEnabled(false);
+                        setSelectedTestIds([]);
+                        setDiagnosticSearchQuery("");
+                        setErrorMsg(null);
+                      }}
+                      className="text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-100/60 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg transition shrink-0"
                     >
                       ✕ বাদ দিন (Remove Lab Tests)
                     </button>
                   </div>
 
-                  <p className="text-[11px] text-slate-600">
-                    রেজিস্ট্রেশনের সময় টেস্ট নির্বাচন করলে তা স্বয়ংক্রিয়ভাবে বিলিং ইনভয়েসে এবং ল্যাব অর্ডারে যুক্ত হবে।
-                  </p>
-
-                  {/* Test Selection Chips */}
-                  <div className="space-y-1.5">
-                    <label className="block text-[11px] font-bold text-slate-700">টেস্ট নির্বাচন করুন (Click to Select / Deselect):</label>
-                    <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1 bg-white/70 rounded-xl border border-teal-100">
-                      {diagnosticTests.map((t) => {
-                        const isSelected = selectedTestIds.includes(t.id);
-                        return (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => {
-                              if (isSelected) {
-                                setSelectedTestIds(selectedTestIds.filter((id) => id !== t.id));
-                              } else {
-                                setSelectedTestIds([...selectedTestIds, t.id]);
-                              }
-                            }}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition ${
-                              isSelected
-                                ? "bg-teal-700 text-white shadow-xs border border-teal-800"
-                                : "bg-white text-slate-700 border border-slate-200 hover:border-teal-400 hover:bg-teal-50/50"
-                            }`}
+                  {/* Pinned Selected Tests Section (if any tests selected) */}
+                  {selectedDiagnosticTests.length > 0 && (
+                    <div className="bg-teal-100/60 border border-teal-300 rounded-xl p-2.5 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-teal-900 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-teal-700" />
+                          নির্বাচিত টেস্ট ({selectedDiagnosticTests.length} টি — মোট: ৳{diagnosticEstimate.toLocaleString("en-BD")}):
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTestIds([])}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-800 hover:underline cursor-pointer"
+                        >
+                          সব মুছুন (Clear All)
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedDiagnosticTests.map((t) => (
+                          <span
+                            key={`selected-${t.id}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-teal-700 text-white rounded-lg text-xs font-semibold shadow-xs"
                           >
-                            <span>{isSelected ? "✓" : "+"}</span>
                             <span>{t.test_name}</span>
-                            <span className={isSelected ? "text-teal-200 font-mono text-[10px]" : "text-slate-400 font-mono text-[10px]"}>
-                              (৳{t.price})
-                            </span>
-                          </button>
-                        );
-                      })}
+                            <span className="text-teal-200 text-[10px] font-mono">(৳{t.price})</span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTestIds(selectedTestIds.filter((id) => id !== t.id))}
+                              className="ml-1 hover:text-rose-200 rounded p-0.5 cursor-pointer"
+                              title="বাদ দিন"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Search and Category Filter Toolbar */}
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={diagnosticSearchQuery}
+                        onChange={(e) => setDiagnosticSearchQuery(e.target.value)}
+                        placeholder="টেস্ট সার্চ করুন (যেমন: CBC, RBS, USG, X-Ray, Creatinine, ECG, Urine...)"
+                        className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-teal-300 rounded-xl font-medium text-slate-900 placeholder:text-slate-400 shadow-xs focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
+                      />
+                      {diagnosticSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setDiagnosticSearchQuery("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 rounded-full cursor-pointer"
+                          title="সার্চ মুছুন"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Quick Category Filter Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px]">
+                      <span className="text-slate-500 font-bold shrink-0">ফিল্টার:</span>
+                      {[
+                        { id: "ALL", label: "সব টেস্ট" },
+                        { id: "PATHOLOGY", label: "রক্ত ও ল্যাব (Blood/CBC)" },
+                        { id: "IMAGING", label: "আলট্রাসনোগ্রাম ও এক্স-রে (USG/X-Ray/ECG)" },
+                        { id: "OTHER", label: "ইউরিন ও অন্যান্য" },
+                      ].map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setDiagnosticCategoryFilter(cat.id as typeof diagnosticCategoryFilter)}
+                          className={`px-2.5 py-1 rounded-lg font-bold transition whitespace-nowrap cursor-pointer ${
+                            diagnosticCategoryFilter === cat.id
+                              ? "bg-teal-700 text-white shadow-xs"
+                              : "bg-white text-slate-600 border border-slate-200 hover:bg-teal-50 hover:border-teal-300"
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="pt-2">
+                  {/* Filtered Diagnostic Tests Selection Chips */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <label className="font-bold text-slate-700">
+                        উপলব্ধ টেস্টসমূহ ({filteredDiagnosticTests.length} টি পাওয়া গেছে):
+                      </label>
+                      {filteredDiagnosticTests.length > 0 && (
+                        <span className="text-slate-500 text-[10px]">
+                          টেস্টের ওপর ক্লিক করে সিলেক্ট / আনসিলেক্ট করুন
+                        </span>
+                      )}
+                    </div>
+
+                    {filteredDiagnosticTests.length === 0 ? (
+                      <div className="p-4 bg-white/80 rounded-xl border border-dashed border-teal-200 text-center space-y-1">
+                        <p className="text-xs text-slate-600 font-medium">
+                          &quot;{diagnosticSearchQuery}&quot; দিয়ে কোনো টেস্ট পাওয়া যায়নি।
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDiagnosticSearchQuery("");
+                            setDiagnosticCategoryFilter("ALL");
+                          }}
+                          className="text-[11px] font-bold text-teal-700 hover:underline cursor-pointer"
+                        >
+                          সব ফিল্টার রিসেট করুন
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2 max-h-56 overflow-y-auto p-2 bg-white/80 rounded-xl border border-teal-100">
+                        {filteredDiagnosticTests.map((t) => {
+                          const isSelected = selectedTestIds.includes(t.id);
+                          return (
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedTestIds(selectedTestIds.filter((id) => id !== t.id));
+                                } else {
+                                  setSelectedTestIds([...selectedTestIds, t.id]);
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                                isSelected
+                                  ? "bg-teal-700 text-white shadow-xs border border-teal-800"
+                                  : "bg-white text-slate-700 border border-slate-200 hover:border-teal-400 hover:bg-teal-50/50"
+                              }`}
+                            >
+                              <span>{isSelected ? "✓" : "+"}</span>
+                              <span>{t.test_name}</span>
+                              <span className={isSelected ? "text-teal-200 font-mono text-[10px]" : "text-slate-400 font-mono text-[10px]"}>
+                                (৳{t.price})
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-1">
                     <Field label="ক্লিনিক্যাল নোট বা নির্দেশিকা (Optional Clinical Notes)">
                       <input
                         value={diagnosticNotes}
