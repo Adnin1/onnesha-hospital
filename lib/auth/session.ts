@@ -195,6 +195,7 @@ export async function getCurrentUserSession(forceRefresh = false): Promise<UserS
     }
 
     const permissions = new Set<string>();
+    let authoritativePermissionsLoaded = false;
 
     // 1. Authoritative In-Database RPC: Fetch real-time roles and permissions directly
     if (organizationId) {
@@ -204,7 +205,10 @@ export async function getCurrentUserSession(forceRefresh = false): Promise<UserS
         });
 
         if (!rpcError && rpcData && typeof rpcData === "object") {
-          const res = rpcData as { roles?: string[]; permissions?: string[]; is_super_admin?: boolean };
+          const res = rpcData as { success?: boolean; authoritative?: boolean; roles?: string[]; permissions?: string[]; is_super_admin?: boolean };
+          if (res.success === true && res.authoritative === true) {
+            authoritativePermissionsLoaded = true;
+          }
           if (Array.isArray(res.roles)) {
             for (const r of res.roles) {
               const norm = normalizeRole(r);
@@ -267,8 +271,9 @@ export async function getCurrentUserSession(forceRefresh = false): Promise<UserS
       }
     }
 
-    // Fallback to DEFAULT_ROLE_PERMISSIONS ONLY if no permissions were defined in database
-    if (permissions.size === 0) {
+    // Legacy fallback is allowed only when the authoritative RPC did not load.
+    // An authoritative empty permission set means Settings intentionally revoked everything.
+    if (permissions.size === 0 && !authoritativePermissionsLoaded) {
       for (const role of roles) {
         const rolePerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[role];
         if (rolePerms) {
@@ -344,16 +349,7 @@ export async function hasPermission(permissionKey: string): Promise<boolean> {
     return true;
   }
 
-  // Fallback to DEFAULT_ROLE_PERMISSIONS ONLY if database has no permissions configured yet
-  if (session.permissions.length === 0) {
-    for (const role of session.roles) {
-      const rolePerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[role];
-      if (rolePerms && rolePerms.includes(permissionKey)) {
-        return true;
-      }
-    }
-  }
-
+  // Session permissions are authoritative. An empty list is an intentional deny-all state.
   return false;
 }
 
