@@ -339,6 +339,7 @@ export async function bookOnlineAppointmentAction(params: {
       p_patient_phone: normalizedPhone,
       p_patient_gender: patientGender || "OTHER",
       p_patient_age: patientAge ?? null,
+      p_patient_notes: notes || null,
       p_notes: notes || null,
     });
 
