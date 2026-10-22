@@ -155,6 +155,8 @@ export function UnifiedPatientIntakeModal({
   const [ipdCustomServiceCharge, setIpdCustomServiceCharge] = useState<number | "">(500);
   const [ipdCustomAdmissionFee, setIpdCustomAdmissionFee] = useState<number | "">(300);
   const [referralAgentId, setReferralAgentId] = useState("");
+  const [referralSearchQuery, setReferralSearchQuery] = useState("");
+  const [isReferralSearchOpen, setIsReferralSearchOpen] = useState(false);
   const [admissionDiscountMode, setAdmissionDiscountMode] = useState<"PERCENT" | "FIXED">("PERCENT");
   const [admissionDiscountPercent, setAdmissionDiscountPercent] = useState<number | "">("");
   const [admissionDiscountFixed, setAdmissionDiscountFixed] = useState<number | "">("");
@@ -573,6 +575,22 @@ export function UnifiedPatientIntakeModal({
     return diagnosticTests.filter((t) => selectedTestIds.includes(t.id));
   }, [diagnosticTests, selectedTestIds]);
 
+  const filteredReferralAgents = useMemo(() => {
+    const q = referralSearchQuery.trim().toLowerCase();
+    if (!q) return referrals.slice(0, 50);
+    return referrals
+      .filter((r) =>
+        r.full_name.toLowerCase().includes(q) ||
+        r.agent_code.toLowerCase().includes(q)
+      )
+      .slice(0, 50);
+  }, [referrals, referralSearchQuery]);
+
+  const selectedReferralAgent = useMemo(
+    () => referrals.find((r) => r.id === referralAgentId) || null,
+    [referrals, referralAgentId]
+  );
+
   const estimate = useMemo(() => {
     let total = 0;
     if (opdEnabled && selectedOpdDoctor) total += Number(selectedOpdDoctor.opd_fee || 0);
@@ -612,6 +630,8 @@ export function UnifiedPatientIntakeModal({
     setAdmissionDiscountFixed("");
     setAdmissionDiscountReason("");
     setReferralAgentId("");
+    setReferralSearchQuery("");
+    setIsReferralSearchOpen(false);
     setHighlightField(null);
     setRegisteredSuccessPatient(null);
     setIsIntakeDossierOpen(false);
@@ -1643,10 +1663,107 @@ export function UnifiedPatientIntakeModal({
                       </select>
                     </Field>
                     <Field label="Referral Agent">
-                      <select value={referralAgentId} onChange={(e) => setReferralAgentId(e.target.value)} className={inputCls}>
-                        <option value="">{loadingOptions ? "Loading referral agents..." : "None"}</option>
-                        {referrals.map((r) => <option key={r.id} value={r.id}>{r.agent_code} — {r.full_name}</option>)}
-                      </select>
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={referralSearchQuery}
+                          onFocus={() => setIsReferralSearchOpen(true)}
+                          onChange={(e) => {
+                            setReferralSearchQuery(e.target.value);
+                            setReferralAgentId("");
+                            setIsReferralSearchOpen(true);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") setIsReferralSearchOpen(false);
+                            if (e.key === "Enter" && filteredReferralAgents.length === 1) {
+                              e.preventDefault();
+                              const agent = filteredReferralAgents[0];
+                              setReferralAgentId(agent.id);
+                              setReferralSearchQuery(agent.agent_code + " — " + agent.full_name);
+                              setIsReferralSearchOpen(false);
+                            }
+                          }}
+                          placeholder={loadingOptions ? "Loading referral agents..." : "নাম বা কোড দিয়ে রেফারেল এজেন্ট খুঁজুন..."}
+                          className={inputCls + " pl-9 pr-9"}
+                          autoComplete="off"
+                          role="combobox"
+                          aria-expanded={isReferralSearchOpen}
+                          aria-controls="patient-intake-referral-options"
+                        />
+                        {(referralSearchQuery || referralAgentId) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReferralSearchQuery("");
+                              setReferralAgentId("");
+                              setIsReferralSearchOpen(true);
+                            }}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 rounded-full"
+                            title="রেফারেল নির্বাচন মুছুন"
+                            aria-label="Clear referral agent"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        {isReferralSearchOpen && !loadingOptions && (
+                          <div
+                            id="patient-intake-referral-options"
+                            role="listbox"
+                            className="absolute z-40 mt-1 w-full max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl"
+                          >
+                            <button
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                setReferralAgentId("");
+                                setReferralSearchQuery("");
+                                setIsReferralSearchOpen(false);
+                              }}
+                              className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-600 hover:bg-slate-50 border-b border-slate-100"
+                            >
+                              কোনো রেফারেল নেই (Direct Patient)
+                            </button>
+
+                            {filteredReferralAgents.length === 0 ? (
+                              <div className="px-3 py-3 text-xs text-slate-500">
+                                এই নাম বা কোডে কোনো সক্রিয় রেফারেল এজেন্ট পাওয়া যায়নি।
+                              </div>
+                            ) : (
+                              filteredReferralAgents.map((r) => (
+                                <button
+                                  key={r.id}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={referralAgentId === r.id}
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => {
+                                    setReferralAgentId(r.id);
+                                    setReferralSearchQuery(r.agent_code + " — " + r.full_name);
+                                    setIsReferralSearchOpen(false);
+                                  }}
+                                  className={
+                                    "w-full px-3 py-2 text-left text-xs transition border-b border-slate-50 last:border-0 " +
+                                    (referralAgentId === r.id
+                                      ? "bg-sky-50 text-sky-800 font-bold"
+                                      : "text-slate-700 hover:bg-sky-50")
+                                  }
+                                >
+                                  <div className="font-bold">{r.full_name}</div>
+                                  <div className="text-[10px] text-slate-500 font-mono">{r.agent_code}</div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+
+                        {selectedReferralAgent && (
+                          <div className="mt-1 text-[10px] text-emerald-700 font-semibold">
+                            নির্বাচিত: {selectedReferralAgent.full_name} ({selectedReferralAgent.agent_code})
+                          </div>
+                        )}
+                      </div>
                     </Field>
                   </div>
                   {availableBeds.length === 0 && availableCabins.length === 0 && (
