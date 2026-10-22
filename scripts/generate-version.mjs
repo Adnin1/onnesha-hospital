@@ -22,11 +22,33 @@ function getGitSha() {
 
 function getMigrationHead() {
   const migrationsDir = path.join(ROOT, 'supabase', 'migrations');
-  if (!fs.existsSync(migrationsDir)) return 0;
+  if (!fs.existsSync(migrationsDir)) {
+    return { count: 0, latestFile: null };
+  }
+
   const files = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort();
+
+  // Migration timestamps are normally monotonic, but an applied migration can
+  // legitimately receive an earlier timestamp than an already-committed file
+  // (for example when a remote migration tool allocates the applied version).
+  // Prefer the highest explicit migration ordinal when filenames carry
+  // "_migration_NNN_", then fall back to timestamp/filename ordering.
+  const numbered = files
+    .map((file) => {
+      const match = file.match(/(?:^|_)migration_(\d+)(?:_|\.sql$)/i);
+      return match ? { file, ordinal: Number.parseInt(match[1], 10) } : null;
+    })
+    .filter(Boolean);
+
+  let latestFile = files[files.length - 1] || null;
+  if (numbered.length > 0) {
+    numbered.sort((a, b) => a.ordinal - b.ordinal || a.file.localeCompare(b.file));
+    latestFile = numbered[numbered.length - 1].file;
+  }
+
   return {
     count: files.length,
-    latestFile: files[files.length - 1] || null,
+    latestFile,
   };
 }
 
