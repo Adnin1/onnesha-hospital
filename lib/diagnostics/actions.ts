@@ -269,6 +269,11 @@ export async function logSystemRuntimeIssueAction(payload: {
   details?: Record<string, unknown>;
 }): Promise<string | null> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId || session.organizationId !== payload.organizationId) {
+      console.error("[HealthDiagnostics] log_system_runtime_issue blocked: authenticated organization context required");
+      return null;
+    }
     const supabase = createClient();
     const { data, error } = await supabase.rpc("log_system_runtime_issue", {
       p_org_id: payload.organizationId,
@@ -302,6 +307,11 @@ export async function resolveSystemRuntimeIssueAction(payload: {
   location?: string;
 }): Promise<number> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId || !session.organizationId || session.organizationId !== payload.organizationId) {
+      console.error("[HealthDiagnostics] resolve_system_runtime_issue blocked: authenticated organization context required");
+      return 0;
+    }
     const supabase = createClient();
     const isUuid = Boolean(
       payload.issueId &&
@@ -430,9 +440,19 @@ export async function runAuthoritativeHealthCycleAction(organizationId?: string)
  */
 export async function getAuthoritativeSystemHealthAction(organizationId?: string, maxAgeSeconds = 900) {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId) {
+      console.error("[HealthDiagnostics] get_authoritative_system_health blocked: authentication required");
+      return null;
+    }
+    const effectiveOrgId = organizationId || session.organizationId;
+    if (!effectiveOrgId || (organizationId && session.organizationId && organizationId !== session.organizationId)) {
+      console.error("[HealthDiagnostics] get_authoritative_system_health blocked: valid organization context required");
+      return null;
+    }
     const supabase = createClient();
     const { data, error } = await supabase.rpc("get_authoritative_system_health", {
-      p_org_id: organizationId || "a0000000-0000-0000-0000-000000000001",
+      p_org_id: effectiveOrgId,
       p_max_age_seconds: maxAgeSeconds,
     });
     if (error) {
@@ -451,6 +471,11 @@ export async function getAuthoritativeSystemHealthAction(organizationId?: string
  */
 export async function getSystemHealthDetectorRegistryAction() {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId) {
+      console.error("[HealthDiagnostics] get_system_health_detector_registry blocked: authentication required");
+      return [];
+    }
     const supabase = createClient();
     const { data, error } = await supabase.rpc("get_system_health_detector_registry");
     if (error) {
@@ -471,8 +496,15 @@ export async function reconcileBedVacancyAction(
   organizationId?: string
 ): Promise<{ success: boolean; reconciled_beds?: number; reconciled_cabins?: number; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId) {
+      return { success: false, error: "AUTHENTICATION_REQUIRED" };
+    }
+    const orgId = organizationId || session.organizationId;
+    if (!orgId || (organizationId && session.organizationId && organizationId !== session.organizationId)) {
+      return { success: false, error: "ORGANIZATION_CONTEXT_REQUIRED" };
+    }
     const supabase = createClient();
-    const orgId = organizationId || "a0000000-0000-0000-0000-000000000001";
     const { data, error } = await supabase.rpc("reconcile_bed_vacancy_drift_atomic", {
       p_org_id: orgId,
     });
