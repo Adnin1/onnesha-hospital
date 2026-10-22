@@ -280,7 +280,20 @@ async function generateSecDefRegistry() {
   };
 
   const outPath = path.join(ROOT, 'generated', 'security-definer-registry.json');
-  fs.writeFileSync(outPath, JSON.stringify(payload, null, 2) + '\n', 'utf8');
+  if (fs.existsSync(outPath)) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+      const existingWithoutDate = JSON.stringify({ ...existing, generated_at: '' });
+      const currentWithoutDate = JSON.stringify({ ...payload, generated_at: '' });
+      if (existingWithoutDate === currentWithoutDate) {
+        payload.generated_at = existing.generated_at;
+      }
+    } catch {}
+  }
+  const nextContent = JSON.stringify(payload, null, 2) + '\n';
+  if (!fs.existsSync(outPath) || fs.readFileSync(outPath, 'utf8') !== nextContent) {
+    fs.writeFileSync(outPath, nextContent, 'utf8');
+  }
 
   console.log(`✅ [SECURITY DEFINER REGISTRY] Written to: ${outPath}`);
   console.log(`   Total Functions:            ${payload.total_secdef_functions}`);
