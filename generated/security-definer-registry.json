@@ -1,14 +1,27 @@
 {
-  "generated_at": "2026-10-21T22:07:46.938Z",
+  "generated_at": "2026-10-22T01:50:24.515Z",
+  "source_scope": "REPOSITORY_MIGRATION_STATIC_SCAN_ONLY",
+  "live_catalog_status": "NOT_QUERIED",
+  "authorization_review_status": "NOT_CERTIFIED",
   "total_secdef_functions": 165,
-  "anon_executable_count": 0,
-  "mutable_search_path_count": 0,
+  "anon_executable_count": null,
+  "mutable_search_path_count": null,
+  "migration_source_estimates": {
+    "anon_executable_functions": 0,
+    "mutable_search_path_functions": 0
+  },
+  "static_scan_limitations": [
+    "This generator does not connect to Supabase or query pg_proc, proacl, pg_default_acl, role inheritance, or effective privileges.",
+    "Grant/revoke parsing from migration text is an estimate and is not a live ACL proof.",
+    "Lexical auth, tenant, role, and permission tokens are not proof that authorization is correct.",
+    "Every function requires independent live signature, effective ACL, tenant, role/permission, and negative-test review before it can be certified."
+  ],
   "classifications": {
-    "TRIGGER_ONLY": 0,
-    "INTERNAL_ONLY": 150,
+    "TRIGGER_ONLY": 15,
+    "INTERNAL_ONLY": 135,
     "PUBLIC_SAFE": 0,
-    "AUTHENTICATED_OPERATIONAL": 14,
-    "ADMIN_PRIVILEGED": 1,
+    "AUTHENTICATED_OPERATIONAL": 9,
+    "ADMIN_PRIVILEGED": 6,
     "SUPER_ADMIN_PRIVILEGED": 0
   },
   "functions": [
@@ -21,9 +34,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/lab/actions.ts",
@@ -31,7 +44,16 @@
         "tests/security-definer-rpc-hardening-and-reports-triad.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "acknowledge_system_incident",
@@ -42,17 +64,26 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/diagnostics/actions.ts",
         "tests/phase38-migration-198-incident-security-and-patient-archive.test.mjs",
         "tests/phase39-health-engine-v2-truth-platform.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "add_episode_service_charge_atomic",
@@ -63,16 +94,25 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
-      "permission_guard": false,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "admin_change_staff_role",
@@ -83,9 +123,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/staff/actions.ts",
@@ -93,7 +133,16 @@
         "tests/security/iam-privilege-escalation.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "admin_create_staff_account",
@@ -104,9 +153,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/staff/actions.ts",
@@ -114,7 +163,16 @@
         "tests/security/iam-privilege-escalation.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "admin_reset_staff_password",
@@ -125,9 +183,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/staff/actions.ts",
@@ -135,7 +193,16 @@
         "tests/security/iam-privilege-escalation.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "admin_set_staff_status",
@@ -146,8 +213,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -156,7 +223,16 @@
         "tests/security/iam-privilege-escalation.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "admit_critical_care_atomic",
@@ -168,14 +244,23 @@
       "authenticated_executable": false,
       "service_role_executable": false,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
         "lib/critical-care/actions.ts"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "admit_patient_to_bed_atomic",
@@ -186,10 +271,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/ipd/bed-actions.ts",
         "tests/hospital-transactional-workflow-e2e.test.mjs",
@@ -199,7 +284,16 @@
         "tests/reports-pnl-and-ipd-auto-charges.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "approve_referral_commission_atomic",
@@ -210,17 +304,26 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts",
         "tests/integration/referral-database-live-verification.test.mjs",
         "tests/referral-analytics-math-and-bmdc-ethics.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "assign_patient_referral_atomic",
@@ -231,13 +334,22 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "book_online_appointment",
@@ -249,7 +361,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -264,7 +376,16 @@
         "scripts/generate-rpc-registry.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "book_online_appointment",
@@ -276,7 +397,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -291,7 +412,16 @@
         "scripts/generate-rpc-registry.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "book_staff_appointment_atomic",
@@ -302,10 +432,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/appointments/actions.ts",
         "tests/appointments.test.mjs",
@@ -314,7 +444,16 @@
         "tests/phase22-concurrency-rbac-slot.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "cancel_or_delete_ipd_admission_atomic",
@@ -325,10 +464,10 @@
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/patient/actions.ts",
         "tests/catalog-driven-purge-invariants.test.mjs",
@@ -343,7 +482,16 @@
         "scripts/verify-app-db-contracts.mjs"
       ],
       "classification": "ADMIN_PRIVILEGED",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "cancel_or_void_blood_transfusion_atomic",
@@ -355,14 +503,23 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
         "lib/blood-bank/actions.ts"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "cancel_or_void_blood_transfusion_atomic",
@@ -374,14 +531,23 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
         "lib/blood-bank/actions.ts"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "check_is_admin_caller",
@@ -392,15 +558,24 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "tests/security/iam-privilege-escalation.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "check_is_super_admin_caller",
@@ -411,13 +586,22 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "check_system_health_diagnostics",
@@ -428,8 +612,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -450,7 +634,16 @@
         "scripts/scheduled-health-check.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "claim_next_telegram_command_atomic",
@@ -473,7 +666,16 @@
         "tests/security-p0-rbac-and-telegram-queue-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "claim_telegram_update_atomic",
@@ -496,7 +698,16 @@
         "tests/telegram-webhook-security-and-idempotency.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "close_fiscal_period",
@@ -507,10 +718,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/accounting/actions.ts",
         "tests/phase50-accounting-period-immutability-and-3way-match.test.mjs",
@@ -518,7 +729,16 @@
         "tests/security-p0-rbac-and-telegram-queue-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "close_opd_visits_when_episode_closes",
@@ -530,12 +750,21 @@
       "authenticated_executable": false,
       "service_role_executable": false,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "collect_payment_atomic",
@@ -546,10 +775,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/doctor-billing-acceptance.test.mjs",
@@ -562,7 +791,16 @@
         "scripts/verify-app-db-contracts.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "complete_current_user_password_change",
@@ -573,8 +811,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": false,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -582,7 +820,16 @@
         "tests/auth/admin-login.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "complete_episode_discharge_atomic",
@@ -593,8 +840,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": false,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -602,7 +849,16 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "complete_episode_discharge_atomic_v2",
@@ -613,8 +869,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": false,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -622,7 +878,16 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "complete_ipd_discharge_atomic",
@@ -633,8 +898,8 @@
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -649,7 +914,16 @@
         "scripts/verify-app-db-contracts.mjs"
       ],
       "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "complete_telegram_update_atomic",
@@ -672,7 +946,16 @@
         "tests/telegram-webhook-security-and-idempotency.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_diagnostic_order_atomic",
@@ -684,7 +967,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -693,7 +976,16 @@
         "tests/phase45-clinical-erp-real-life-workflow-certification.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_digital_prescription_atomic",
@@ -704,8 +996,8 @@
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -713,7 +1005,16 @@
         "tests/migration-232-comprehensive-clinical-defects-remediation.test.mjs"
       ],
       "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_episode_settlement_invoice_atomic",
@@ -724,8 +1025,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": false,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -733,7 +1034,16 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_episode_settlement_invoice_atomic",
@@ -744,8 +1054,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": false,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -753,7 +1063,16 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_episode_settlement_invoice_atomic_v2",
@@ -764,8 +1083,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": false,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -775,7 +1094,16 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_episode_settlement_invoice_atomic_v2",
@@ -786,10 +1114,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
-      "permission_guard": false,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/billing-waiver-and-rpc-auth.test.mjs",
@@ -797,7 +1125,16 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_episode_settlement_invoice_atomic_v2",
@@ -808,10 +1145,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
-      "permission_guard": false,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/billing-waiver-and-rpc-auth.test.mjs",
@@ -819,7 +1156,16 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_invoice_and_post_gl_atomic",
@@ -840,7 +1186,16 @@
         "tests/integration/admission-referral-billing-flow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_invoice_atomic",
@@ -851,10 +1206,10 @@
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/integration/admission-referral-billing-flow.test.mjs",
@@ -863,8 +1218,17 @@
         "tests/phase34-billing-atomicity-regression.test.mjs",
         "tests/security/cashier-role-receptionist-and-billing-referral.test.mjs"
       ],
-      "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "HARDENED_SAFE"
+      "classification": "ADMIN_PRIVILEGED",
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_patient_intake_atomic",
@@ -875,10 +1239,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
-      "permission_guard": false,
+      "permission_guard": true,
       "caller_files": [
         "lib/patient/actions.ts",
         "tests/bed-assignment-conflict-and-invoice-hard-purge.test.mjs",
@@ -890,7 +1254,16 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "create_referral_agent_atomic",
@@ -901,17 +1274,26 @@
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts",
         "tests/integration/referral-database-live-verification.test.mjs",
         "tests/security/cashier-role-receptionist-and-billing-referral.test.mjs"
       ],
-      "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "HARDENED_SAFE"
+      "classification": "ADMIN_PRIVILEGED",
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "delete_episode_service_charge_atomic",
@@ -922,16 +1304,25 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
-      "permission_guard": false,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "delete_hospital_expense_super_admin_atomic",
@@ -942,10 +1333,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/expenses/actions.ts",
         "tests/final-closure-least-privilege-and-permanent-purge.test.mjs",
@@ -953,7 +1344,16 @@
         "tests/hospital-transactional-workflow-e2e.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "delete_invoice_super_admin_atomic",
@@ -964,10 +1364,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/bed-assignment-conflict-and-invoice-hard-purge.test.mjs",
@@ -977,7 +1377,16 @@
         "tests/system-health-diagnostics.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "delete_invoice_super_admin_atomic",
@@ -1001,7 +1410,16 @@
         "tests/system-health-diagnostics.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "delete_referral_partner_atomic",
@@ -1012,15 +1430,24 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "disburse_payroll_to_gl_atomic",
@@ -1031,8 +1458,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1041,7 +1468,16 @@
         "tests/security-p0-rbac-and-telegram-queue-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "discharge_critical_care_atomic",
@@ -1053,14 +1489,23 @@
       "authenticated_executable": false,
       "service_role_executable": false,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
         "lib/critical-care/actions.ts"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "edit_episode_service_charge_atomic",
@@ -1071,8 +1516,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": false,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1080,7 +1525,16 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "enforce_referral_commission_settlement_authorization",
@@ -1091,15 +1545,25 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": false,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
-        "tests/migration-248-referral-payout-authorization.test.mjs"
+        "tests/migration-248-referral-payout-authorization.test.mjs",
+        "tests/security-definer-registry-truth.test.mjs"
       ],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "enqueue_telegram_command_atomic",
@@ -1110,9 +1574,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
+      "auth_uid_guard": true,
       "tenant_guard": false,
-      "role_guard": false,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "tests/final-closure-least-privilege-and-permanent-purge.test.mjs",
@@ -1122,7 +1586,16 @@
         "scripts/project-health-check.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_asset_code",
@@ -1139,7 +1612,16 @@
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_complaint_number",
@@ -1158,7 +1640,16 @@
         "lib/feedback/actions.ts"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_episode_number",
@@ -1177,7 +1668,16 @@
         "tests/patient-intake-atomic-resilience.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_expense_voucher_number",
@@ -1194,7 +1694,16 @@
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_grn_number",
@@ -1211,7 +1720,16 @@
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_invoice_number",
@@ -1223,7 +1741,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1231,7 +1749,16 @@
         "tests/audit-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_journal_voucher_number",
@@ -1248,7 +1775,16 @@
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_next_po_number",
@@ -1268,7 +1804,16 @@
         "tests/phase59-public-data-shielding-and-db-integrity.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_patient_code",
@@ -1280,7 +1825,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1290,26 +1835,44 @@
         "tests/security-rls-anonymous-write-attacks.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_patient_registration_serial",
       "signature": "uuid, timestamptz",
-      "arguments": "p_org_id UUID,\n    p_encounter_at TIMESTAMPTZ DEFAULT NOW()",
+      "arguments": "p_org_id UUID,\n    p_encounter_at TIMESTAMPTZ DEFAULT NOW(",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
         "tests/phase35-settlement-security-and-concurrency.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_pr_number",
@@ -1326,7 +1889,16 @@
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_receipt_number",
@@ -1346,7 +1918,16 @@
         "tests/audit-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_referral_agent_code",
@@ -1363,7 +1944,16 @@
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_referral_code",
@@ -1380,7 +1970,16 @@
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_referral_settlement_number",
@@ -1397,7 +1996,16 @@
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_settlement_number",
@@ -1414,7 +2022,16 @@
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "generate_visit_number",
@@ -1434,19 +2051,28 @@
         "tests/clinical.test.mjs"
       ],
       "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_accounts_receivable_aging",
       "signature": "uuid, timestamptz",
-      "arguments": "p_org_id UUID,\n    p_as_of_date TIMESTAMPTZ DEFAULT NOW()",
+      "arguments": "p_org_id UUID,\n    p_as_of_date TIMESTAMPTZ DEFAULT NOW(",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1454,7 +2080,16 @@
         "tests/financial-accounting-invariants.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_audit_trail_logs",
@@ -1465,15 +2100,24 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "tests/phase16-security-financial-clinical-audit.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_authoritative_system_health",
@@ -1484,9 +2128,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/diagnostics/actions.ts",
@@ -1494,7 +2138,16 @@
         "tests/phase39-health-engine-v2-truth-platform.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_dashboard_today_financial_summary",
@@ -1506,14 +2159,23 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
         "app/(hospital)/app/dashboard/page.tsx"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_department_revenue_breakdown",
@@ -1525,7 +2187,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1533,20 +2195,29 @@
         "tests/financial-accounting-invariants.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_episode_billing_overview",
       "signature": "uuid, uuid, uuid, timestamptz",
-      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID DEFAULT NULL,\n    p_as_of TIMESTAMPTZ DEFAULT NOW()",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID DEFAULT NULL,\n    p_as_of TIMESTAMPTZ DEFAULT NOW(",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/billing/actions.ts",
@@ -1557,12 +2228,21 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_episode_billing_preview",
       "signature": "uuid, uuid, uuid, timestamptz",
-      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID DEFAULT NULL,\n    p_as_of TIMESTAMPTZ DEFAULT NOW()",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID DEFAULT NULL,\n    p_as_of TIMESTAMPTZ DEFAULT NOW(",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -1578,7 +2258,16 @@
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_expense_analytics_summary",
@@ -1589,15 +2278,24 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
         "tests/ipd-charges-expense-reconciliation-acceptance.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_financial_dashboard_aggregates",
@@ -1609,7 +2307,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1617,7 +2315,16 @@
         "tests/financial-accounting-invariants.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_general_ledger_report",
@@ -1628,9 +2335,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/accounting/actions.ts",
@@ -1638,7 +2345,16 @@
         "tests/referral-per-patient-commission-and-financial-reports.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_next_token",
@@ -1650,7 +2366,7 @@
       "authenticated_executable": true,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1659,7 +2375,16 @@
         "tests/security-rls-anonymous-write-attacks.test.mjs"
       ],
       "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_organization_role_permissions_matrix",
@@ -1670,10 +2395,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/staff/actions.ts",
         "tests/security-p0-definer-bypass-and-synthetic-eval.test.mjs",
@@ -1681,7 +2406,16 @@
         "tests/security-p0-rbac-and-telegram-queue-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_patient_referral_attribution_for_billing",
@@ -1692,16 +2426,25 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts",
         "tests/integration/admission-referral-billing-flow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_payment_channel_breakdown",
@@ -1713,7 +2456,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1721,7 +2464,16 @@
         "tests/financial-accounting-invariants.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_pg_cron_monitoring_telemetry",
@@ -1742,7 +2494,16 @@
         "scripts/scheduled-health-check.mjs"
       ],
       "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_profit_and_loss_summary",
@@ -1753,9 +2514,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/reports/actions.ts",
@@ -1764,7 +2525,16 @@
         "tests/reports-pnl-and-ipd-auto-charges.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_public_doctor_schedules",
@@ -1776,7 +2546,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1787,7 +2557,16 @@
         "scripts/generate-rpc-registry.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_public_doctors_directory",
@@ -1812,7 +2591,16 @@
         "scripts/generate-rpc-registry.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_public_live_queue",
@@ -1824,7 +2612,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1834,7 +2622,16 @@
         "scripts/generate-rpc-registry.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_public_live_queue",
@@ -1846,7 +2643,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1856,7 +2653,16 @@
         "scripts/generate-rpc-registry.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_public_token_status",
@@ -1868,7 +2674,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -1878,7 +2684,16 @@
         "scripts/generate-rpc-registry.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_referral_agents_safe_directory",
@@ -1889,17 +2704,26 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts",
         "tests/referral-analytics-math-and-bmdc-ethics.test.mjs",
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_referral_performance_analytics",
@@ -1910,17 +2734,26 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts",
         "tests/referral-analytics-math-and-bmdc-ethics.test.mjs",
         "tests/unified-patient-workflow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_staff_directory_admin",
@@ -1932,15 +2765,24 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/staff/actions.ts",
         "tests/auth/staff-iam.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_system_health_detector_registry",
@@ -1959,7 +2801,16 @@
         "lib/diagnostics/actions.ts"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_system_monitoring_status",
@@ -1970,9 +2821,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/diagnostics/actions.ts",
@@ -1980,7 +2831,16 @@
         "scripts/scheduled-health-check.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "get_trial_balance",
@@ -1991,9 +2851,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/accounting/actions.ts",
@@ -2002,7 +2862,16 @@
         "tests/referral-per-patient-commission-and-financial-reports.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "ingest_analyzer_transmission_atomic",
@@ -2014,7 +2883,7 @@
       "authenticated_executable": true,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2023,7 +2892,16 @@
         "tests/v1124-security-definer-and-integration-consolidation.test.mjs"
       ],
       "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "ingest_analyzer_transmission_atomic",
@@ -2035,7 +2913,7 @@
       "authenticated_executable": false,
       "service_role_executable": false,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2044,7 +2922,16 @@
         "tests/v1124-security-definer-and-integration-consolidation.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "is_org_admin_or_has_permission",
@@ -2055,17 +2942,26 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "tests/billing-waiver-and-rpc-auth.test.mjs",
         "tests/phase32-billing-atomicity-payment-contracts.test.mjs",
         "tests/security/receptionist-patient-intake-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "log_system_runtime_issue",
@@ -2076,15 +2972,24 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
         "lib/diagnostics/actions.ts"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "maintain_invoice_arithmetic_invariants",
@@ -2100,8 +3005,17 @@
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "post_billing_to_gl_atomic",
@@ -2112,10 +3026,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/accounting/actions.ts",
         "lib/billing/actions.ts",
@@ -2124,7 +3038,16 @@
         "tests/security/cashier-receptionist-gl-billing-post.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "post_billing_to_gl_atomic",
@@ -2135,10 +3058,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/accounting/actions.ts",
         "lib/billing/actions.ts",
@@ -2147,7 +3070,16 @@
         "tests/security/cashier-receptionist-gl-billing-post.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "post_grn_to_inventory_and_gl_atomic",
@@ -2158,8 +3090,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2169,7 +3101,16 @@
         "tests/security-p0-rbac-and-telegram-queue-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "post_journal_entry_atomic",
@@ -2180,10 +3121,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/accounting/actions.ts",
         "tests/final-closure-least-privilege-and-permanent-purge.test.mjs",
@@ -2195,7 +3136,16 @@
         "tests/security/cashier-receptionist-gl-billing-post.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "post_journal_entry_atomic",
@@ -2221,7 +3171,16 @@
         "tests/security/cashier-receptionist-gl-billing-post.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "post_payment_receipt_to_gl_atomic",
@@ -2232,8 +3191,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2242,7 +3201,16 @@
         "tests/website-public-security-and-data-integrity.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "post_payroll_accrual_to_gl_atomic",
@@ -2253,8 +3221,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2263,7 +3231,16 @@
         "tests/security-p0-rbac-and-telegram-queue-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "post_supplier_invoice_to_gl_atomic",
@@ -2274,8 +3251,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2286,7 +3263,16 @@
         "tests/website-public-security-and-data-integrity.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "queue_system_notification_atomic",
@@ -2297,15 +3283,24 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "tests/multi-tenant-security-matrix.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "reconcile_bed_vacancy_drift_atomic",
@@ -2317,7 +3312,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2330,19 +3325,28 @@
         "tests/migration-233-harden-cabins-beds-constraints-and-ipd-discharge.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "record_asset_depreciation_to_gl_atomic",
-      "signature": "uuid, uuid, numeric(12, 2), text",
-      "arguments": "p_org_id UUID,\n    p_asset_id UUID,\n    p_depreciation_amount NUMERIC(12, 2),\n    p_notes TEXT DEFAULT NULL",
+      "signature": "uuid, uuid, numeric(12, 2",
+      "arguments": "p_org_id UUID,\n    p_asset_id UUID,\n    p_depreciation_amount NUMERIC(12, 2",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2351,7 +3355,16 @@
         "tests/phase48-erp-transaction-integration-and-accounting-integrity.test.mjs"
       ],
       "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "record_asset_maintenance_to_gl_atomic",
@@ -2362,8 +3375,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2371,7 +3384,16 @@
         "tests/phase50-accounting-period-immutability-and-3way-match.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "record_discretionary_referral_payout_atomic",
@@ -2392,7 +3414,16 @@
         "tests/referral-payout-fail-closed.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "record_hospital_expense_atomic",
@@ -2403,21 +3434,29 @@
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/expenses/actions.ts",
-        "lib/referrals/actions.ts",
         "tests/critical-hospital-workflow-e2e.test.mjs",
         "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/migration-231-cabins-status-and-ipd-discharge.test.mjs",
         "scripts/generate-rpc-registry.mjs",
         "scripts/verify-app-db-contracts.mjs"
       ],
-      "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "APPROVED"
+      "classification": "ADMIN_PRIVILEGED",
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "record_monitoring_heartbeat",
@@ -2428,16 +3467,25 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "tests/expenses-reversal-and-ledger-invariants.test.mjs",
         "scripts/scheduled-health-check.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "record_outbox_delivery_attempt_atomic",
@@ -2448,10 +3496,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/diagnostics/actions.ts",
         "tests/critical-hospital-workflow-e2e.test.mjs",
@@ -2459,7 +3507,16 @@
         "tests/multi-tenant-security-matrix.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "record_pharmacy_sale_erp_atomic",
@@ -2470,8 +3527,8 @@
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2480,37 +3537,56 @@
         "tests/security-p0-rbac-and-telegram-queue-hardening.test.mjs"
       ],
       "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "record_referral_commission_payout_atomic",
       "signature": "uuid, uuid, numeric, varchar, uuid, numeric, numeric, varchar, varchar, varchar",
       "arguments": "p_org_id UUID,\n    p_agent_id UUID,\n    p_amount NUMERIC,\n    p_payment_method VARCHAR,\n    p_patient_id UUID DEFAULT NULL,\n    p_patient_total_bill NUMERIC DEFAULT NULL,\n    p_commission_rate_percent NUMERIC DEFAULT NULL,\n    p_transaction_reference VARCHAR DEFAULT NULL,\n    p_notes VARCHAR DEFAULT NULL,\n    p_idempotency_key VARCHAR DEFAULT NULL",
       "owner": "postgres",
-      "search_path": "'' (EMPTY_SAFE)",
+      "search_path": "public, auth, pg_temp",
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/referrals/actions.ts",
         "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/migration-246-compatibility-table-security.test.mjs",
         "tests/referral-payout-fail-closed.test.mjs",
-        "tests/referral-per-patient-commission-and-financial-reports.test.mjs"
+        "tests/referral-per-patient-commission-and-financial-reports.test.mjs",
+        "tests/security-definer-registry-truth.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "record_referral_commission_payout_atomic",
       "signature": "uuid, uuid, numeric, varchar, uuid, varchar, varchar, varchar",
       "arguments": "p_org_id UUID,\n    p_agent_id UUID,\n    p_amount NUMERIC,\n    p_payment_method VARCHAR,\n    p_patient_id UUID,\n    p_transaction_reference VARCHAR,\n    p_notes VARCHAR,\n    p_idempotency_key VARCHAR",
       "owner": "postgres",
-      "search_path": "'' (EMPTY_SAFE)",
+      "search_path": "public, auth, pg_temp",
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
@@ -2523,22 +3599,32 @@
         "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/migration-246-compatibility-table-security.test.mjs",
         "tests/referral-payout-fail-closed.test.mjs",
-        "tests/referral-per-patient-commission-and-financial-reports.test.mjs"
+        "tests/referral-per-patient-commission-and-financial-reports.test.mjs",
+        "tests/security-definer-registry-truth.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "record_supplier_payment_to_gl_atomic",
-      "signature": "uuid, uuid, numeric(14, 2), varchar, varchar, text",
-      "arguments": "p_org_id UUID,\n    p_supplier_invoice_id UUID,\n    p_payment_amount NUMERIC(14, 2),\n    p_payment_method VARCHAR DEFAULT 'BANK',\n    p_bank_acc_code VARCHAR DEFAULT '1020',\n    p_notes TEXT DEFAULT NULL",
+      "signature": "uuid, uuid, numeric(14, 2",
+      "arguments": "p_org_id UUID,\n    p_supplier_invoice_id UUID,\n    p_payment_amount NUMERIC(14, 2",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2547,7 +3633,16 @@
         "tests/security-p0-rbac-and-telegram-queue-hardening.test.mjs"
       ],
       "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "register_and_issue_blood_bag_atomic",
@@ -2559,7 +3654,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2567,7 +3662,16 @@
         "tests/live/hospital-application-workflow.live.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "reject_referral_commission_atomic",
@@ -2578,16 +3682,25 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts",
         "tests/integration/referral-database-live-verification.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "reopen_fiscal_period",
@@ -2598,9 +3711,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/accounting/actions.ts",
@@ -2609,7 +3722,16 @@
         "tests/security-p0-rbac-and-telegram-queue-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "resolve_system_runtime_issue",
@@ -2620,17 +3742,26 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/diagnostics/actions.ts",
         "tests/hospital-expenses-deletion-and-diagnostics.test.mjs",
         "tests/phase38-migration-198-incident-security-and-patient-archive.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "restore_episode_service_waiver_atomic",
@@ -2641,16 +3772,25 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
-      "permission_guard": false,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/billing-waiver-and-rpc-auth.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "reverse_journal_entry_atomic",
@@ -2661,9 +3801,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/accounting/actions.ts",
@@ -2675,7 +3815,16 @@
         "scripts/verify-app-db-contracts.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "run_authoritative_health_cycle",
@@ -2686,16 +3835,25 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/diagnostics/actions.ts",
         "tests/phase39-health-engine-v2-truth-platform.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "run_authoritative_system_health_check",
@@ -2714,7 +3872,16 @@
         "tests/authoritative-health-engine-invariants.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "run_scheduled_system_health_check",
@@ -2726,14 +3893,23 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
         "tests/hospital-transactional-workflow-e2e.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "save_hospital_service_tariff_atomic",
@@ -2744,16 +3920,25 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
-      "permission_guard": false,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/features-billing-expenses-discharge-audit.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "save_role_permissions_atomic",
@@ -2764,10 +3949,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/staff/actions.ts",
         "tests/security/invoice-edit-audit-and-clinical-standards.test.mjs",
@@ -2776,7 +3961,16 @@
         "tests/security-p0-rbac-and-telegram-queue-hardening.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "search_active_referral_agents",
@@ -2787,17 +3981,26 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts",
         "tests/integration/referral-database-live-verification.test.mjs",
         "tests/security/referral-rbac-and-isolation.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "search_referral_agents_for_billing",
@@ -2808,16 +4011,25 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts",
         "tests/integration/admission-referral-billing-flow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "seed_default_chart_of_accounts",
@@ -2829,7 +4041,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2837,7 +4049,16 @@
         "tests/phase57-strict-cumulative-3way-match.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "seed_organization_diagnostic_catalog",
@@ -2849,12 +4070,21 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "set_doctors_updated_at",
@@ -2870,8 +4100,17 @@
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "set_patient_code",
@@ -2887,8 +4126,17 @@
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "settle_referral_commissions_atomic",
@@ -2899,9 +4147,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/referrals/actions.ts",
@@ -2910,7 +4158,16 @@
         "scripts/verify-app-db-contracts.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "snapshot_opd_fee_before_visit",
@@ -2922,12 +4179,21 @@
       "authenticated_executable": false,
       "service_role_executable": false,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "submit_public_contact_inquiry",
@@ -2939,7 +4205,7 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -2949,7 +4215,16 @@
         "scripts/generate-rpc-registry.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "sync_doctor_fees",
@@ -2968,8 +4243,17 @@
         "tests/patient-intake-and-routing-scenarios.test.mjs",
         "tests/unified-patient-workflow.test.mjs"
       ],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "sync_patient_nid_columns",
@@ -2987,8 +4271,17 @@
       "caller_files": [
         "tests/patient-nid-and-critical-care-contract.test.mjs"
       ],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "transfer_bed_or_critical_care_atomic",
@@ -3000,7 +4293,7 @@
       "authenticated_executable": false,
       "service_role_executable": false,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -3009,7 +4302,16 @@
         "tests/regression-beds-and-critical-care.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "trg_fn_enforce_journal_entry_immutability",
@@ -3021,7 +4323,7 @@
       "authenticated_executable": false,
       "service_role_executable": false,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -3031,8 +4333,17 @@
         "tests/phase53-erp-true-accounting-and-runtime-integrity.test.mjs",
         "tests/phase54-accounting-runtime-simulation.test.mjs"
       ],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "trg_fn_enforce_journal_line_immutability",
@@ -3054,8 +4365,17 @@
         "tests/phase53-erp-true-accounting-and-runtime-integrity.test.mjs",
         "tests/phase54-accounting-runtime-simulation.test.mjs"
       ],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "trg_fn_sync_bed_occupancy_on_assignment_change",
@@ -3067,12 +4387,21 @@
       "authenticated_executable": false,
       "service_role_executable": false,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "trg_fn_sync_bed_occupancy_status",
@@ -3090,8 +4419,17 @@
       "caller_files": [
         "tests/bed-assignment-conflict-and-invoice-hard-purge.test.mjs"
       ],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "trg_patient_episodes_insert",
@@ -3103,12 +4441,21 @@
       "authenticated_executable": false,
       "service_role_executable": false,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "trg_patient_episodes_update",
@@ -3124,8 +4471,17 @@
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "trg_sync_episode_service_charges",
@@ -3143,8 +4499,17 @@
       "caller_files": [
         "tests/patient-intake-atomic-resilience.test.mjs"
       ],
-      "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "classification": "TRIGGER_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "update_bed_operational_status_atomic",
@@ -3164,7 +4529,16 @@
         "tests/regression-beds-and-critical-care.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "update_blood_transfusion_dossier_atomic",
@@ -3175,8 +4549,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -3185,7 +4559,16 @@
         "tests/migration-232-comprehensive-clinical-defects-remediation.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "update_hospital_master_profile",
@@ -3196,9 +4579,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": false,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/hospital/actions.ts",
@@ -3207,7 +4590,16 @@
         "tests/v1125-atomic-transaction-and-sitemap-freshness.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "update_invoice_atomic",
@@ -3219,16 +4611,25 @@
       "authenticated_executable": false,
       "service_role_executable": true,
       "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/security/bill-edit-rbac-restriction.test.mjs",
         "tests/security/invoice-edit-audit-and-clinical-standards.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "update_ipd_admission_atomic",
@@ -3239,10 +4640,10 @@
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/patient/actions.ts",
         "tests/catalog-driven-purge-invariants.test.mjs",
@@ -3250,8 +4651,17 @@
         "scripts/generate-rpc-registry.mjs",
         "scripts/verify-app-db-contracts.mjs"
       ],
-      "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "APPROVED"
+      "classification": "ADMIN_PRIVILEGED",
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "update_referral_agent_rate_atomic",
@@ -3262,15 +4672,24 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "update_waiting_queue_status_atomic",
@@ -3281,10 +4700,10 @@
       "anon_executable": false,
       "authenticated_executable": true,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/appointments/actions.ts",
         "tests/catalog-driven-purge-invariants.test.mjs",
@@ -3294,8 +4713,17 @@
         "scripts/generate-rpc-registry.mjs",
         "scripts/verify-app-db-contracts.mjs"
       ],
-      "classification": "AUTHENTICATED_OPERATIONAL",
-      "review_result": "APPROVED"
+      "classification": "ADMIN_PRIVILEGED",
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "vacate_or_discharge_bed_atomic",
@@ -3307,7 +4735,7 @@
       "authenticated_executable": false,
       "service_role_executable": false,
       "auth_uid_guard": false,
-      "tenant_guard": false,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -3316,7 +4744,16 @@
         "tests/regression-beds-and-critical-care.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "verify_and_record_online_payment",
@@ -3327,8 +4764,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -3344,7 +4781,16 @@
         "scripts/smoke_test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "verify_and_resolve_system_issue_atomic",
@@ -3355,8 +4801,8 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
       "permission_guard": false,
       "caller_files": [
@@ -3365,7 +4811,16 @@
         "tests/expenses-reversal-and-ledger-invariants.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "verify_diagnostic_order_atomic",
@@ -3376,9 +4831,9 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
       "permission_guard": false,
       "caller_files": [
         "lib/lab/actions.ts",
@@ -3387,7 +4842,16 @@
         "tests/security-definer-rpc-hardening-and-reports-triad.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "verify_system_incident_resolution",
@@ -3398,10 +4862,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/diagnostics/actions.ts",
         "tests/client-noise-and-bed-drift-repair.test.mjs",
@@ -3410,7 +4874,16 @@
         "tests/phase40-security-tester-v2-reproducer-and-flapping.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "APPROVED"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "void_hospital_expense_atomic",
@@ -3421,17 +4894,26 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
-      "permission_guard": false,
+      "permission_guard": true,
       "caller_files": [
         "lib/expenses/actions.ts",
         "tests/critical-hospital-workflow-e2e.test.mjs",
         "tests/features-billing-expenses-discharge-audit.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "void_invoice_and_reverse_gl_atomic",
@@ -3442,10 +4924,10 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
-      "role_guard": false,
-      "permission_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
+      "role_guard": true,
+      "permission_guard": true,
       "caller_files": [
         "lib/accounting/actions.ts",
         "lib/billing/actions.ts",
@@ -3458,7 +4940,16 @@
         "scripts/verify-fk-lifecycle-coverage.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": true,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     },
     {
       "name": "waive_episode_service_atomic",
@@ -3469,17 +4960,26 @@
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": false,
+      "auth_uid_guard": true,
+      "tenant_guard": true,
       "role_guard": false,
-      "permission_guard": false,
+      "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/billing-waiver-and-rpc-auth.test.mjs",
         "tests/phase35-settlement-security-and-concurrency.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
-      "review_result": "HARDENED_SAFE"
+      "authorization_evidence": {
+        "auth_uid_token_found": true,
+        "tenant_guard_token_found": true,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": true,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
     }
   ]
 }
