@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T07:15:38.640Z",
+  "generated_at": "2026-10-22T07:22:13.331Z",
   "source_scope": "REPOSITORY_MIGRATION_STATIC_SCAN_ONLY",
   "live_catalog_status": "NOT_QUERIED",
   "authorization_review_status": "NOT_CERTIFIED",
@@ -801,7 +801,7 @@
     {
       "name": "complete_episode_discharge_atomic",
       "signature": "uuid, uuid, varchar, text, text, text, text, uuid",
-      "arguments": "p_org_id UUID,\r\n    p_episode_id UUID,\r\n    p_discharge_type VARCHAR,\r\n    p_final_diagnosis TEXT,\r\n    p_hospital_course TEXT DEFAULT NULL,\r\n    p_discharge_advice TEXT DEFAULT NULL,\r\n    p_followup_instructions TEXT DEFAULT NULL,\r\n    p_actor UUID DEFAULT NULL",
+      "arguments": "p_org_id UUID,\n    p_episode_id UUID,\n    p_discharge_type VARCHAR,\n    p_final_diagnosis TEXT,\n    p_hospital_course TEXT DEFAULT NULL,\n    p_discharge_advice TEXT DEFAULT NULL,\n    p_followup_instructions TEXT DEFAULT NULL,\n    p_actor UUID DEFAULT NULL",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -830,7 +830,7 @@
     {
       "name": "complete_episode_discharge_atomic_v2",
       "signature": "uuid, uuid, varchar, text, text, text, text, uuid",
-      "arguments": "p_org_id UUID,\r\n    p_episode_id UUID,\r\n    p_discharge_type VARCHAR,\r\n    p_final_diagnosis TEXT,\r\n    p_hospital_course TEXT DEFAULT NULL,\r\n    p_discharge_advice TEXT DEFAULT NULL,\r\n    p_followup_instructions TEXT DEFAULT NULL,\r\n    p_actor UUID DEFAULT NULL",
+      "arguments": "p_org_id UUID,\n    p_episode_id UUID,\n    p_discharge_type VARCHAR,\n    p_final_diagnosis TEXT,\n    p_hospital_course TEXT DEFAULT NULL,\n    p_discharge_advice TEXT DEFAULT NULL,\n    p_followup_instructions TEXT DEFAULT NULL,\n    p_actor UUID DEFAULT NULL",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -986,7 +986,7 @@
     {
       "name": "create_episode_settlement_invoice_atomic",
       "signature": "uuid, uuid, uuid, uuid",
-      "arguments": "p_org_id UUID,\r\n    p_patient_id UUID,\r\n    p_episode_id UUID,\r\n    p_cashier_id UUID",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID,\n    p_cashier_id UUID",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -1015,7 +1015,7 @@
     {
       "name": "create_episode_settlement_invoice_atomic",
       "signature": "uuid, uuid, uuid, uuid, numeric, text, numeric, varchar, uuid, text",
-      "arguments": "p_org_id UUID,\r\n    p_patient_id UUID,\r\n    p_episode_id UUID,\r\n    p_cashier_id UUID,\r\n    p_discount_amount NUMERIC DEFAULT 0.00,\r\n    p_discount_reason TEXT DEFAULT NULL,\r\n    p_initial_payment_amount NUMERIC DEFAULT 0.00,\r\n    p_payment_method VARCHAR DEFAULT 'CASH',\r\n    p_referral_agent_id UUID DEFAULT NULL,\r\n    p_notes TEXT DEFAULT NULL",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID,\n    p_cashier_id UUID,\n    p_discount_amount NUMERIC DEFAULT 0.00,\n    p_discount_reason TEXT DEFAULT NULL,\n    p_initial_payment_amount NUMERIC DEFAULT 0.00,\n    p_payment_method VARCHAR DEFAULT 'CASH',\n    p_referral_agent_id UUID DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -1044,7 +1044,7 @@
     {
       "name": "create_episode_settlement_invoice_atomic_v2",
       "signature": "uuid, uuid, uuid, uuid",
-      "arguments": "p_org_id UUID,\r\n    p_patient_id UUID,\r\n    p_episode_id UUID,\r\n    p_cashier_id UUID",
+      "arguments": "p_org_id UUID,\n    p_patient_id UUID,\n    p_episode_id UUID,\n    p_cashier_id UUID",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -1477,7 +1477,7 @@
     {
       "name": "edit_episode_service_charge_atomic",
       "signature": "uuid, uuid, varchar, numeric, numeric, text",
-      "arguments": "p_org_id UUID,\r\n    p_charge_id UUID,\r\n    p_item_name VARCHAR,\r\n    p_quantity NUMERIC,\r\n    p_unit_price NUMERIC,\r\n    p_notes TEXT DEFAULT NULL",
+      "arguments": "p_org_id UUID,\n    p_charge_id UUID,\n    p_item_name VARCHAR,\n    p_quantity NUMERIC,\n    p_unit_price NUMERIC,\n    p_notes TEXT DEFAULT NULL",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -2061,7 +2061,7 @@
     {
       "name": "get_audit_trail_logs",
       "signature": "uuid, varchar, varchar, int, int",
-      "arguments": "p_org_id UUID,\r\n  p_module VARCHAR DEFAULT NULL,\r\n  p_action VARCHAR DEFAULT NULL,\r\n  p_limit INT DEFAULT 50,\r\n  p_offset INT DEFAULT 0",
+      "arguments": "p_org_id UUID,\n  p_module VARCHAR DEFAULT NULL,\n  p_action VARCHAR DEFAULT NULL,\n  p_limit INT DEFAULT 50,\n  p_offset INT DEFAULT 0",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -2606,7 +2606,7 @@
     {
       "name": "get_public_live_queue",
       "signature": "uuid, uuid, date",
-      "arguments": "p_org_id UUID,\r\n    p_doctor_id UUID,\r\n    p_date DATE DEFAULT NULL",
+      "arguments": "p_org_id UUID,\n    p_doctor_id UUID,\n    p_date DATE DEFAULT NULL",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -2638,7 +2638,7 @@
     {
       "name": "get_public_token_status",
       "signature": "uuid, text, date, text",
-      "arguments": "p_org_id UUID,\r\n    p_token_query TEXT DEFAULT NULL,\r\n    p_date DATE DEFAULT NULL,\r\n    p_token_number TEXT DEFAULT NULL",
+      "arguments": "p_org_id UUID,\n    p_token_query TEXT DEFAULT NULL,\n    p_date DATE DEFAULT NULL,\n    p_token_number TEXT DEFAULT NULL",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,

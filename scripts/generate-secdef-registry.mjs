@@ -85,7 +85,7 @@ async function generateSecDefRegistry() {
   const activeGrants = new Map();
 
   for (const file of migrationFiles) {
-    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8').replace(/\r\n/g, '\n');
 
     // Parse dollar-quoted PostgreSQL function bodies using the matching tag.
     // The previous single-character quote regex truncated bodies at the first '$',
