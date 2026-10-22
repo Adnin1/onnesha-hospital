@@ -4,9 +4,9 @@
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
 **Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 17.6, Linked & Active)  
-**Execution Timestamp:** `2026-10-22T13:15:00+06:00`  
-**Current HEAD SHA:** `6b6274538238532a772cc536aef8e562fab8050a`  
-**Latest CI Run:** GitHub Actions Run #732 (SUCCESS on 6b62745), 4-Browser Playwright matrix green, 0 lint warnings, 0 type errors.  n `571efe5`), with local commits hardening issue identity, doctor schema resilience, atomic bed occupancy sync, client noise exclusion, and safe error taxonomy.  
+**Execution Timestamp:** `2026-10-22T13:42:00+06:00`  
+**Current HEAD SHA:** `036b0168183d4e22043fe03a930089649826bd92` (Deployed Edge SHA: `91d2d0177323169888c9d55d01c066d75f23fa55`, Deployment ID: `c3ad7d4f`)  
+**Latest CI Run:** GitHub Actions Run #733 (SUCCESS on c1912aa), Run #735 (IN_PROGRESS on 91d2d01), 4-Browser Playwright matrix green, 0 lint warnings, 0 type errors.  
 **Overall Delivery Status:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**  
 
 ---

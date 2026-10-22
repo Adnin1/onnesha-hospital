@@ -3,9 +3,9 @@
 
 **Document Classification:** Authoritative Cross-Session Production Ledger  
 **Release Version:** `1.1.90`  
-**Anchor Commit HEAD:** `6b6274538238532a772cc536aef8e562fab8050a` (HEAD)  
+**Anchor Commit HEAD:** `036b0168183d4e22043fe03a930089649826bd92` (Deployed Edge SHA: `91d2d0177323169888c9d55d01c066d75f23fa55`, Deployment ID: `c3ad7d4f`)  
 **Mainline Provenance:** Verified fast-forward commit on `main` tracked by `ssh-origin/main`  
-**Last Verification Timestamp:** `2026-10-22T13:15:00+06:00`  
+**Last Verification Timestamp:** `2026-10-22T13:42:00+06:00`  
 **Authoritative Verdict:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**
 
 ---
