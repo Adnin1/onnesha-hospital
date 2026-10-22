@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-22T07:22:13.331Z",
+  "generated_at": "2026-10-22T09:01:01.192Z",
   "source_scope": "REPOSITORY_MIGRATION_STATIC_SCAN_ONLY",
   "live_catalog_status": "NOT_QUERIED",
   "authorization_review_status": "NOT_CERTIFIED",
-  "total_secdef_functions": 164,
+  "total_secdef_functions": 165,
   "anon_executable_count": null,
   "mutable_search_path_count": null,
   "migration_source_estimates": {
@@ -18,7 +18,7 @@
   ],
   "classifications": {
     "TRIGGER_ONLY": 15,
-    "INTERNAL_ONLY": 134,
+    "INTERNAL_ONLY": 135,
     "PUBLIC_SAFE": 0,
     "AUTHENTICATED_OPERATIONAL": 9,
     "ADMIN_PRIVILEGED": 6,
@@ -3989,6 +3989,7 @@
       "permission_guard": true,
       "caller_files": [
         "lib/referrals/actions.ts",
+        "tests/billing-edit-referral-agent-dynamic-commission.test.mjs",
         "tests/integration/admission-referral-billing-flow.test.mjs"
       ],
       "classification": "INTERNAL_ONLY",
@@ -4580,7 +4581,38 @@
       "signature": "uuid, uuid, uuid, jsonb, numeric, text, numeric",
       "arguments": "p_org_id UUID,\n  p_invoice_id UUID,\n  p_user_id UUID,\n  p_items JSONB,\n  p_discount_amount NUMERIC,\n  p_discount_reason TEXT,\n  p_tax_amount NUMERIC",
       "owner": "postgres",
-      "search_path": "public, pg_temp",
+      "search_path": "'' (EMPTY_SAFE)",
+      "anon_executable": false,
+      "authenticated_executable": false,
+      "service_role_executable": true,
+      "auth_uid_guard": false,
+      "tenant_guard": false,
+      "role_guard": false,
+      "permission_guard": false,
+      "caller_files": [
+        "lib/billing/actions.ts",
+        "tests/billing-edit-referral-agent-dynamic-commission.test.mjs",
+        "tests/security/bill-edit-rbac-restriction.test.mjs",
+        "tests/security/invoice-edit-audit-and-clinical-standards.test.mjs"
+      ],
+      "classification": "INTERNAL_ONLY",
+      "authorization_evidence": {
+        "auth_uid_token_found": false,
+        "tenant_guard_token_found": false,
+        "role_guard_token_found": false,
+        "permission_guard_token_found": false,
+        "note": "Lexical evidence only; token presence does not prove correct authorization."
+      },
+      "live_acl_status": "NOT_QUERIED",
+      "authorization_review_status": "NOT_CERTIFIED",
+      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
+    },
+    {
+      "name": "update_invoice_atomic",
+      "signature": "uuid, uuid, uuid, jsonb, numeric, text, numeric, uuid",
+      "arguments": "p_org_id UUID,\n  p_invoice_id UUID,\n  p_user_id UUID,\n  p_items JSONB,\n  p_discount_amount NUMERIC,\n  p_discount_reason TEXT,\n  p_tax_amount NUMERIC,\n  p_referral_agent_id UUID",
+      "owner": "postgres",
+      "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
       "authenticated_executable": false,
       "service_role_executable": true,
@@ -4590,6 +4622,7 @@
       "permission_guard": true,
       "caller_files": [
         "lib/billing/actions.ts",
+        "tests/billing-edit-referral-agent-dynamic-commission.test.mjs",
         "tests/security/bill-edit-rbac-restriction.test.mjs",
         "tests/security/invoice-edit-audit-and-clinical-standards.test.mjs"
       ],

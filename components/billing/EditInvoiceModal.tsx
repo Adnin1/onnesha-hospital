@@ -1,10 +1,34 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Plus, Trash2, Edit3, AlertCircle, Loader2, Save, Calculator } from "lucide-react";
+import {
+  X,
+  Plus,
+  Trash2,
+  Edit3,
+  AlertCircle,
+  Loader2,
+  Save,
+  Calculator,
+  Users,
+  Percent,
+  CheckCircle2,
+  UserX,
+} from "lucide-react";
 import { InvoiceRecord, InvoiceItemRecord } from "@/types/billing";
 import { editInvoiceAction } from "@/lib/billing/actions";
+import { searchReferralAgentsForBillingAction } from "@/lib/referrals/actions";
 import { formatCurrencyBDT } from "@/lib/utils";
+
+interface ReferralAgentOption {
+  id: string;
+  agent_code: string;
+  full_name: string;
+  agent_type: string;
+  phone?: string;
+  commission_rate_percent: number;
+  is_commission_eligible: boolean;
+}
 
 interface EditInvoiceModalProps {
   isOpen: boolean;
@@ -42,6 +66,11 @@ export function EditInvoiceModal({
   const [taxAmount, setTaxAmount] = useState<number>(0);
   const [editNotes, setEditNotes] = useState<string>("");
 
+  // Referral Agent Dynamic State
+  const [referralAgents, setReferralAgents] = useState<ReferralAgentOption[]>([]);
+  const [selectedReferralAgentId, setSelectedReferralAgentId] = useState<string>("00000000-0000-0000-0000-000000000000");
+  const [loadingAgents, setLoadingAgents] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -61,6 +90,33 @@ export function EditInvoiceModal({
     setTaxAmount(Number(invoice.tax_amount || 0));
     setEditNotes("");
     setErrorMsg(null);
+
+    // Initialize Referral Agent selection from invoice
+    const initialAgentId = invoice.referral_agent_id || "00000000-0000-0000-0000-000000000000";
+    setSelectedReferralAgentId(initialAgentId);
+
+    // Fetch active referral agents for dynamic attribution
+    let isMounted = true;
+    async function loadAgents() {
+      setLoadingAgents(true);
+      try {
+        const res = await searchReferralAgentsForBillingAction();
+        if (isMounted && res.success && res.data) {
+          setReferralAgents(res.data);
+        }
+      } catch (err) {
+        console.warn("Could not load referral agents for bill editing:", err);
+      } finally {
+        if (isMounted) {
+          setLoadingAgents(false);
+        }
+      }
+    }
+    loadAgents();
+
+    return () => {
+      isMounted = false;
+    };
   }, [invoice]);
 
   if (!isOpen || !invoice) return null;
@@ -70,6 +126,32 @@ export function EditInvoiceModal({
   const calculatedGrandTotal = Math.max(0, subtotal - discountAmount + taxAmount);
   const paidAmount = Number(invoice.paid_amount || 0);
   const calculatedDue = Math.max(0, calculatedGrandTotal - paidAmount);
+
+  // Referral Agent Commission Calculations
+  const isDirectPatient =
+    !selectedReferralAgentId ||
+    selectedReferralAgentId === "00000000-0000-0000-0000-000000000000" ||
+    selectedReferralAgentId.toLowerCase() === "none";
+
+  const selectedAgent = referralAgents.find((a) => a.id === selectedReferralAgentId) || (
+    invoice.referral_agent && invoice.referral_agent.id === selectedReferralAgentId ? {
+      id: invoice.referral_agent.id,
+      agent_code: invoice.referral_agent.agent_code,
+      full_name: invoice.referral_agent.full_name,
+      agent_type: invoice.referral_agent.agent_type || "OTHER",
+      phone: invoice.referral_agent.phone || "",
+      commission_rate_percent: Number(invoice.referral_agent.commission_rate_percent || 10),
+      is_commission_eligible: invoice.referral_agent.is_commission_eligible ?? true,
+    } : null
+  );
+
+  const initialAgentId = invoice.referral_agent_id || "00000000-0000-0000-0000-000000000000";
+  const agentHasChanged = selectedReferralAgentId !== initialAgentId;
+  const commissionRate = selectedAgent ? Number(selectedAgent.commission_rate_percent || 10) : 0;
+  const isCommissionEligible = selectedAgent ? (selectedAgent.is_commission_eligible !== false) : false;
+  const estimatedCommission = isCommissionEligible
+    ? Math.round((calculatedGrandTotal * commissionRate / 100) * 100) / 100
+    : 0;
 
   function handleAddItem(e: React.FormEvent) {
     e.preventDefault();
@@ -156,6 +238,7 @@ export function EditInvoiceModal({
         discountAmount,
         discountReason: discountReason.trim() || "Bill edited by authorized staff",
         taxAmount,
+        referralAgentId: selectedReferralAgentId,
         notes: editNotes.trim(),
       });
 
@@ -372,6 +455,123 @@ export function EditInvoiceModal({
             </div>
           </div>
 
+          {/* Referral Agent & Dynamic Commission Attribution */}
+          <div className="p-4 bg-gradient-to-br from-indigo-50/80 via-white to-blue-50/60 border border-indigo-200 rounded-2xl shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-indigo-600 text-white rounded-lg shadow-2xs">
+                  <Users className="h-4 w-4" />
+                </div>
+                <div>
+                  <span className="font-bold text-slate-900 text-xs block flex items-center gap-1.5">
+                    রেফারাল এজেন্ট / দালাল সমন্বয় (Referral Agent Attribution)
+                  </span>
+                  <span className="text-[10px] text-slate-500">
+                    বিল সংশোধনকালে রেফারাল এজেন্ট যুক্ত, পরিবর্তন বা বাদ দিলে কমিশন স্বয়ংক্রিয়ভাবে ডাটাবেজে আপডেট হবে
+                  </span>
+                </div>
+              </div>
+              {loadingAgents && (
+                <div className="flex items-center gap-1 text-[10px] text-indigo-600 font-medium bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>এজেন্ট তালিকা লোড হচ্ছে...</span>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-stretch">
+              <div className="sm:col-span-7 flex flex-col justify-between">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                    রেফারাল এজেন্ট নির্বাচন করুন (Select Referral Agent)
+                  </label>
+                  <select
+                    value={selectedReferralAgentId}
+                    onChange={(e) => setSelectedReferralAgentId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-hidden transition shadow-2xs"
+                  >
+                    <option value="00000000-0000-0000-0000-000000000000">
+                      -- সরাসরি রোগী / কোনো রেফারাল এজেন্ট নেই (Direct Patient) --
+                    </option>
+                    {selectedReferralAgentId !== "00000000-0000-0000-0000-000000000000" &&
+                      selectedReferralAgentId &&
+                      !referralAgents.some((a) => a.id === selectedReferralAgentId) && (
+                        <option value={selectedReferralAgentId}>
+                          [বর্তমান এজেন্ট] {invoice.referral_agent?.full_name || selectedReferralAgentId}
+                        </option>
+                      )}
+                    {referralAgents.map((ag) => (
+                      <option key={ag.id} value={ag.id}>
+                        [{ag.agent_code}] {ag.full_name} ({ag.agent_type}) — কমিশন {ag.commission_rate_percent}%
+                        {!ag.is_commission_eligible ? " (Non-commissionable)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2 mt-2">
+                  {!isDirectPatient && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedReferralAgentId("00000000-0000-0000-0000-000000000000")}
+                      className="text-[10px] text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+                    >
+                      <UserX className="h-3 w-3" /> রেফারাল এজেন্ট মুছে সরাসরি রোগী করুন
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="sm:col-span-5">
+                <div className="h-full p-3 bg-white border border-indigo-100 rounded-xl shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="text-[10px] text-slate-500 font-semibold flex items-center justify-between border-b border-slate-100 pb-1">
+                      <span>লাইভ কমিশন প্রাক্কলন:</span>
+                      <span className="font-mono text-indigo-600 font-bold flex items-center gap-0.5">
+                        <Percent className="h-3 w-3 inline" /> {commissionRate}%
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-baseline justify-between">
+                      <span className="text-sm font-black font-mono text-indigo-700">
+                        {formatCurrencyBDT(estimatedCommission)}
+                      </span>
+                      <span className="text-[9px] font-medium text-slate-400">
+                        (বিল: {formatCurrencyBDT(calculatedGrandTotal)})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 text-[10px]">
+                    {isDirectPatient ? (
+                      <span className="inline-flex items-center gap-1 text-slate-500 bg-slate-50 px-2 py-0.5 rounded font-medium">
+                        <CheckCircle2 className="h-3 w-3 text-slate-400" /> সরাসরি রোগী (কোনো কমিশন নেই)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-medium">
+                        <CheckCircle2 className="h-3 w-3 text-emerald-600" /> {selectedAgent?.full_name || "এজেন্ট"} কমিশন পাবেন
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Dynamic Status / Transition Warning */}
+            {agentHasChanged && (
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-[10px] flex items-start gap-2 animate-in fade-in">
+                <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-bold block">এজেন্ট পরিবর্তনের সতর্কতা (Audit Alert):</span>
+                  <span>
+                    {isDirectPatient
+                      ? "রেফারাল এজেন্ট মুছে ফেলা হচ্ছে। বিল সংরক্ষণ করলে পূর্বের কমিশন ডাটাবেজ থেকে বাদ যাবে এবং মোট অর্জিত ব্যালেন্স হ্রাস পাবে।"
+                      : `এজেন্ট পরিবর্তিত হয়েছে। বিল সংরক্ষণ করলে নতুন এজেন্ট (${selectedAgent?.full_name}) এর জন্য ${commissionRate}% হারে ৳${estimatedCommission} কমিশন যুক্ত হবে এবং পূর্বের হিসাব সমন্বয় হবে।`}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Financial Recalculation Summary */}
           <div className="p-4 bg-slate-900 text-white rounded-xl space-y-2">
             <div className="flex items-center gap-1.5 text-amber-400 font-bold uppercase tracking-wider text-[11px] mb-1">
@@ -412,7 +612,7 @@ export function EditInvoiceModal({
             </label>
             <input
               type="text"
-              placeholder="e.g. Item price adjustment / Added missing investigation"
+              placeholder="e.g. Item price adjustment / Added missing investigation / Referral agent updated"
               value={editNotes}
               onChange={(e) => setEditNotes(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs"

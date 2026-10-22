@@ -43,7 +43,8 @@ export async function getInvoicesAction(params?: {
         invoice_items (*),
         payments (*),
         refunds (*),
-        patients (id, patient_code, full_name, phone, gender, address, age, age_months, age_days, dob, blood_group)
+        patients (id, patient_code, full_name, phone, gender, address, age, age_months, age_days, dob, blood_group),
+        referral_agents (id, agent_code, full_name, agent_type, phone, commission_rate_percent, is_commission_eligible)
       `)
       .eq("organization_id", session.organizationId)
       .order("created_at", { ascending: false })
@@ -85,6 +86,16 @@ export async function getInvoicesAction(params?: {
       created_by?: string | null;
       created_at: string;
       updated_at: string;
+      referral_agent_id?: string | null;
+      referral_agents?: {
+        id: string;
+        agent_code: string;
+        full_name: string;
+        agent_type?: string;
+        phone?: string;
+        commission_rate_percent?: number;
+        is_commission_eligible?: boolean;
+      } | null;
       invoice_items?: InvoiceItemRecord[];
       payments?: PaymentRecord[];
       refunds?: RefundRecord[];
@@ -109,6 +120,8 @@ export async function getInvoicesAction(params?: {
       payments: r.payments || [],
       refunds: r.refunds || [],
       patient: r.patients || undefined,
+      referral_agent_id: r.referral_agent_id || null,
+      referral_agent: r.referral_agents || null,
     }));
 
     return { success: true, data: { invoices } };
@@ -1517,6 +1530,7 @@ export async function editInvoiceAction(params: {
   discountAmount?: number;
   discountReason?: string;
   taxAmount?: number;
+  referralAgentId?: string | null;
   notes?: string;
 }): Promise<ActionResult<{ success: boolean; subtotal: number; grandTotal: number; dueAmount: number }>> {
   const session = await getCurrentUserSession();
@@ -1579,6 +1593,19 @@ export async function editInvoiceAction(params: {
       total_price: Math.max(0, Math.round(it.unitPrice * it.quantity * 100) / 100),
     }));
 
+    let pReferralAgentId: string | null = null;
+    if (params.referralAgentId !== undefined) {
+      if (
+        !params.referralAgentId ||
+        params.referralAgentId === "00000000-0000-0000-0000-000000000000" ||
+        params.referralAgentId.toLowerCase() === "none"
+      ) {
+        pReferralAgentId = "00000000-0000-0000-0000-000000000000";
+      } else {
+        pReferralAgentId = params.referralAgentId;
+      }
+    }
+
     const { data: rpcRes, error: rpcErr } = await supabase.rpc("update_invoice_atomic", {
       p_org_id: session.organizationId,
       p_invoice_id: params.invoiceId,
@@ -1587,6 +1614,7 @@ export async function editInvoiceAction(params: {
       p_discount_amount: Math.max(0, params.discountAmount || 0),
       p_discount_reason: params.discountReason?.trim() || "Bill edited by authorized staff",
       p_tax_amount: Math.max(0, params.taxAmount || 0),
+      p_referral_agent_id: pReferralAgentId,
     });
 
     if (rpcErr) {
@@ -1615,6 +1643,7 @@ export async function editInvoiceAction(params: {
       newValues: {
         itemCount: params.items.length,
         discountAmount: params.discountAmount,
+        referralAgentId: params.referralAgentId,
         notes: params.notes,
       },
     });
@@ -1636,6 +1665,7 @@ export async function editInvoiceAction(params: {
           editedBy: session.userId,
           itemCount: params.items.length,
           discountAmount: params.discountAmount,
+          referralAgentId: params.referralAgentId,
           notes: params.notes,
         },
       });

@@ -57,6 +57,16 @@ export interface InvoiceRecord {
   created_by?: string | null;
   created_at: string;
   updated_at: string;
+  referral_agent_id?: string | null;
+  referral_agent?: {
+    id: string;
+    agent_code: string;
+    full_name: string;
+    agent_type?: string;
+    phone?: string;
+    commission_rate_percent?: number;
+    is_commission_eligible?: boolean;
+  } | null;
   items: InvoiceItemRecord[];
   payments: PaymentRecord[];
   refunds?: RefundRecord[];

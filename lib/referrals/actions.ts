@@ -1552,6 +1552,8 @@ export async function searchReferralAgentsForBillingAction(query?: string): Prom
       session.permissions.includes("referral.create") ||
       session.permissions.includes("referral.manage") ||
       session.permissions.includes("billing.create") ||
+      session.permissions.includes("billing.edit") ||
+      session.permissions.includes("billing.manage") ||
       session.permissions.includes("billing.view");
     if (!canAccess) {
       return { success: false, error: "403 Forbidden: Missing referral or billing permission." };
