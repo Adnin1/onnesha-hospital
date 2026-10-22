@@ -121,6 +121,7 @@ export async function getServerUserSession(): Promise<ServerUserSessionState> {
 
     // 4. Resolve permissions for active roles (DB permissions + fallback role permissions)
     const permissionSet = new Set<string>();
+    let authoritativePermissionsLoaded = false;
 
     // 4a. Authoritative in-database RPC check
     if (organizationId) {
@@ -130,7 +131,10 @@ export async function getServerUserSession(): Promise<ServerUserSessionState> {
         });
 
         if (!rpcError && rpcData && typeof rpcData === "object") {
-          const res = rpcData as { roles?: string[]; permissions?: string[]; is_super_admin?: boolean };
+          const res = rpcData as { success?: boolean; authoritative?: boolean; roles?: string[]; permissions?: string[]; is_super_admin?: boolean };
+          if (res.success === true && res.authoritative === true) {
+            authoritativePermissionsLoaded = true;
+          }
           if (Array.isArray(res.roles)) {
             for (const r of res.roles) {
               const norm = normalizeRole(r);
@@ -185,8 +189,9 @@ export async function getServerUserSession(): Promise<ServerUserSessionState> {
       }
     }
 
-    // 4b. Fallback to default role permissions ONLY if no permissions were defined in database
-    if (permissionSet.size === 0) {
+    // Legacy fallback is allowed only when authoritative permission resolution failed.
+    // A successful authoritative empty result is an intentional deny-all configuration.
+    if (permissionSet.size === 0 && !authoritativePermissionsLoaded) {
       for (const role of roles) {
         const rolePerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[role];
         if (rolePerms) {
