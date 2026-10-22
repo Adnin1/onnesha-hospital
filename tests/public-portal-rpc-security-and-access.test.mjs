@@ -102,8 +102,15 @@ test('8. Live database permission verification for anon role (if credentials ava
     if (m) env[m[1].trim()] = m[2].trim().replace(/^['"]|['"]$/g, '');
   });
 
-  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.log('Skipping live DB check: Supabase URL or ANON key missing');
+  if (
+    !env.NEXT_PUBLIC_SUPABASE_URL ||
+    !env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder') ||
+    env.NEXT_PUBLIC_SUPABASE_URL.includes('ci-hermetic') ||
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY.includes('placeholder') ||
+    !env.NEXT_PUBLIC_SUPABASE_URL.startsWith('https://')
+  ) {
+    console.log('Skipping live DB check: Hermetic CI environment or placeholder credentials detected');
     return;
   }
 
