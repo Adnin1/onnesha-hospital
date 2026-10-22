@@ -19,4 +19,7 @@ test("system health UI never converts unaudited state into a fake healthy score"
   assert.match(page, /লাইভ ডায়াগনস্টিক যাচাই সম্পন্ন হয়নি/);
   assert.equal(page.includes("isAnonymousSecurityShield"), false);
   assert.equal(page.includes("? 10 : (data ? data.passed_checks.length : 0)"), false);
+  assert.equal(page.includes("isAuditUnavailable ? true : Boolean(data?.passed_checks.includes(key))"), false);
+  assert.match(page, /healthy বা passed হিসেবে গণ্য করা হচ্ছে না/);
+  assert.match(page, /\{data\?\.passed_checks\.length \|\| 0\} \/ 10 উত্তীর্ণ/);
 });
