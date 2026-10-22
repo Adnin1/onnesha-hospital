@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const migrationPath =
-  "supabase/migrations/20261022160000_migration_253_harden_invoice_edit_identity_and_atomic_referral_guards.sql";
+  "supabase/migrations/20261022091853_migration_253_harden_invoice_edit_identity_and_atomic_referral_guards.sql";
 
 const sql = fs.readFileSync(migrationPath, "utf8");
 
