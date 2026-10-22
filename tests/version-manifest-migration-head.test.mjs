@@ -32,9 +32,9 @@ test("current repository migration head resolves to Migration 258 rather than ol
   assert.ok(numbered.length > 0);
   const head = numbered[numbered.length - 1];
 
-  assert.equal(head.ordinal, 259);
+  assert.equal(head.ordinal, 260);
   assert.equal(
     head.file,
-    "20261022210945_migration_259_fix_referral_payout_null_patient_record.sql"
+    "20261022211524_migration_260_cap_and_allocate_patient_referral_payouts.sql"
   );
 });
