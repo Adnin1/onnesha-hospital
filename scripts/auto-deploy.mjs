@@ -16,7 +16,16 @@ try {
   execSync('npx eslint . --max-warnings 0', { stdio: 'inherit', env: cleanEnv });
 
   console.log('\n🔒 Step 3: Running dependency security audit (high/critical level)...');
-  execSync('npm audit --audit-level=high', { stdio: 'inherit', env: cleanEnv });
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      execSync('npm audit --audit-level=high', { stdio: 'inherit', env: cleanEnv });
+      break;
+    } catch (err) {
+      if (attempt === 3) throw err;
+      console.warn(`⚠️ npm audit network retry ${attempt}/3...`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 3000);
+    }
+  }
 
   console.log('\n🧪 Step 4: Running Node unit & integration test suite in strict certification mode...');
   execSync('npm run test:certification', { stdio: 'inherit', env: cleanEnv });
