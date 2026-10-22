@@ -86,7 +86,18 @@ jobs:
         run: npx eslint . --max-warnings 0
 
       - name: Security audit for high/critical vulnerabilities
-        run: timeout 10m npm audit --audit-level=high
+        run: |
+          for i in 1 2 3; do
+            echo "Security audit attempt $i of 3..."
+            if timeout 3m npm audit --audit-level=high; then
+              echo "npm audit passed cleanly on attempt $i."
+              exit 0
+            fi
+            echo "npm audit attempt $i timed out or failed. Retrying in 10s..."
+            sleep 10
+          done
+          echo "npm audit failed after 3 attempts."
+          exit 1
 
       - name: Next.js static production export
         run: npm run build
