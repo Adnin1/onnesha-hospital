@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T09:01:01.192Z",
+  "generated_at": "2026-10-22T09:48:52.683Z",
   "source_scope": "REPOSITORY_MIGRATION_STATIC_SCAN_ONLY",
   "live_catalog_status": "NOT_QUERIED",
   "authorization_review_status": "NOT_CERTIFIED",
@@ -4592,6 +4592,7 @@
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/billing-edit-referral-agent-dynamic-commission.test.mjs",
+        "tests/billing-edit-referral-agent-security-hardening.test.mjs",
         "tests/security/bill-edit-rbac-restriction.test.mjs",
         "tests/security/invoice-edit-audit-and-clinical-standards.test.mjs"
       ],
@@ -4623,6 +4624,7 @@
       "caller_files": [
         "lib/billing/actions.ts",
         "tests/billing-edit-referral-agent-dynamic-commission.test.mjs",
+        "tests/billing-edit-referral-agent-security-hardening.test.mjs",
         "tests/security/bill-edit-rbac-restriction.test.mjs",
         "tests/security/invoice-edit-audit-and-clinical-standards.test.mjs"
       ],
