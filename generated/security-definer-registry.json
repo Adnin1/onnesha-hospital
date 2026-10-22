@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T01:50:24.515Z",
+  "generated_at": "2026-10-22T02:32:33.850Z",
   "source_scope": "REPOSITORY_MIGRATION_STATIC_SCAN_ONLY",
   "live_catalog_status": "NOT_QUERIED",
   "authorization_review_status": "NOT_CERTIFIED",
@@ -623,6 +623,7 @@
         "tests/critical-hospital-workflow-e2e.test.mjs",
         "tests/database-schema-contracts.test.mjs",
         "tests/expenses-reversal-and-ledger-invariants.test.mjs",
+        "tests/health-auth-race-no-false-green.test.mjs",
         "tests/hospital-expenses-deletion-and-diagnostics.test.mjs",
         "tests/hospital-transactional-workflow-e2e.test.mjs",
         "tests/migration-230-diagnostics-column-and-incident-resolution.test.mjs",
