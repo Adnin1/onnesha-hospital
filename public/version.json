@@ -1,10 +1,10 @@
 {
   "name": "onnesha-hospital",
   "version": "1.1.90",
-  "git_sha": "56b54220d7f30c6684d6fa77aac906f66d8f74f7",
-  "short_sha": "56b54220",
-  "build_id": "ohms-1.1.90-56b54220-1792653500426",
+  "git_sha": "91d2d0177323169888c9d55d01c066d75f23fa55",
+  "short_sha": "91d2d017",
+  "build_id": "ohms-1.1.90-91d2d017-1792654849194",
   "migration_count": 251,
   "migration_head_file": "20261022140000_migration_251_harden_public_booking_anti_abuse_and_rate_limits.sql",
-  "generated_at": "2026-10-22T07:18:20.426Z"
+  "generated_at": "2026-10-22T07:40:49.193Z"
 }
