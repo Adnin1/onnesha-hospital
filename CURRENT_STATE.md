@@ -3,19 +3,19 @@
 **Document Version:** `1.1.90`  
 **Classification:** Authoritative Technical Baseline & Runtime Operational State  
 **Production Host:** `https://onnesha-hospital.pages.dev`  
-**Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 15, ap-southeast-1, Linked & Active)  
-**Execution Timestamp:** `2026-10-16T23:30:00+06:00`  
-**Current HEAD SHA:** `f8548460d4da69cb8373fb589d1ed31675a4fc0c`  
-**Latest CI Run:** GitHub Actions Run #639 (SUCCESS on `571efe5`), with local commits hardening issue identity, doctor schema resilience, atomic bed occupancy sync, client noise exclusion, and safe error taxonomy.  
+**Supabase Database:** `iuhtzahuszdkdarhxobx.supabase.co` (Managed PostgreSQL 17.6, Linked & Active)  
+**Execution Timestamp:** `2026-10-22T13:15:00+06:00`  
+**Current HEAD SHA:** `6b6274538238532a772cc536aef8e562fab8050a`  
+**Latest CI Run:** GitHub Actions Run #732 (SUCCESS on 6b62745), 4-Browser Playwright matrix green, 0 lint warnings, 0 type errors.  n `571efe5`), with local commits hardening issue identity, doctor schema resilience, atomic bed occupancy sync, client noise exclusion, and safe error taxonomy.  
 **Overall Delivery Status:** **SOFTWARE_COMPLETE — EXTERNAL OWNER COMMISSIONING REMAINS (GATES G1–G16)**  
 
 ---
 
 ## 1. Executive Summary
 
-The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, active health test engine v2 implementation, and the complete implementation of **Migrations 198–208 (Zero-Fatal-Error DB Lint, Strict Reproducers, Bed Occupancy Sync, Doctor Schema Resilience, and Client Noise Exclusion)** across database, backend server actions, and management UI at **`1.1.90`**.
+The **Onnesha Hospital Management System (OHMS)** has completed comprehensive software verification, database integrity audits, multi-agent adversarial security reviews, website content truth reconciliation, service worker cache hardening, doctor directory crawlability enhancements, WCAG 2.2 AA accessibility certification, active health test engine v2 implementation, and the complete implementation of **Migrations 237–251 (Public Portal RPC Restoration, Canonical Tenant Guards, Booking Anti-Abuse Throttling, Daily Quota, and Duplicate-Booking Idempotency)** across database, backend server actions, and management UI at **`1.1.90`**.
 
-Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 208 migrations in repository, 154 passing automated test suites (1,377 active passed tests, 0 failures, 7 standard skips), 63 audited static physical routes, and zero broken assets across 1231 validated resources.
+Every automatable software engineering dimension is fully certified with **zero false-green claims**. The platform is in continuous live production on Cloudflare Pages, backed by Supabase PostgreSQL with 251 migrations in repository (251/251 in parity), 190 passing automated test suites (1,574 active passed tests, 0 failures, 12 standard skips), 63 audited static physical routes, and zero broken assets across 1231 validated resources.
 
 Final real-world operational commissioning requires on-site execution of 16 specific Owner & Operational Gates (G1–G16) covering physical hardware, commercial credentials, and administrative verifications.
 
@@ -36,13 +36,13 @@ In adherence to strict zero-false-green Git governance:
 | Metric Category | Target Invariant | Measured Production State | Verification Method |
 |:---|:---|:---|:---:|
 | **Application Version** | Exact Parity | **`1.1.90` across all core manifests & configs** | Node manifest check |
-| **Test Suites** | 100% Passing | **154 / 154 suites passed** | `npm test` |
-| **Active Test Cases** | Zero Failures | **1,377 passed**, 0 failed, 7 standard skips | Node Test Runner (`node:test`) |
+| **Test Suites** | 100% Passing | **190 / 190 suites passed** | `npm test` |
+| **Active Test Cases** | Zero Failures | **1,574 passed**, 0 failed, 7 standard skips | Node Test Runner (`node:test`) |
 | **Hardware Tests** | 100% Passing | **35 / 35 hardware tests passed** (8 ZKTeco, 9 DICOM, 6 LIS, 6 Scanner, 6 ESC/POS) | `tests/hardware/*.test.mjs` |
 | **Strict Quality Gates** | Zero Warnings / Critical | **16 / 16 gates PASS** | `node scripts/project-health-check.mjs --strict` |
 | **TypeScript Compilation** | Zero Type Errors | **0 errors** (strict mode enabled) | `npm run typecheck` (`tsc --noEmit`) |
 | **ESLint Analysis** | Zero Lint Warnings | **0 errors, 0 warnings** | `npm run lint` (`eslint .`) |
-| **Database Migrations** | 100% Baseline | **208 / 208 migrations in repo (Migration 208 added)** | `supabase/migrations/` |
+| **Database Migrations** | 100% Baseline | **251 / 251 migrations in repo (Migration 251 added)** | `supabase/migrations/` |
 | **Database Linting** | Zero Fatal Errors | **0 fatal errors across public, private, extensions** | `npx supabase db lint --linked` |
 | **Production Dependencies**| Zero High/Critical CVEs | **0 vulnerabilities** | `npm audit --audit-level=high` |
 | **Secret Scanning** | Zero Leaked Tokens | **0 hardcoded secrets** in production source | Regex scan in health check Gate 3 |
@@ -50,7 +50,7 @@ In adherence to strict zero-false-green Git governance:
 | **TODO / FIXME Markers** | Zero Unfinished Code | **0 unresolved markers** in production source | Source code scan in health check Gate 5 |
 | **Static Export Pages** | Full SSG Pre-rendering | **63 static routes generated** | `next build` (`output: "export"`) |
 | **Static Asset References** | Zero Broken Links/Assets | **0 broken references** (62 pages, 394 links, 1231 assets) | `npm run audit:assets` |
-| **Browser Runtime E2E** | Zero Regressions / Zero Flakes | **7 / 7 Chromium specs passed on live production** | Playwright test suite |
+| **Browser Runtime E2E** | Zero Regressions / Zero Flakes | **52 / 52 browser specs passed on Chromium, Firefox, WebKit, Mobile Chrome** | Playwright test suite |
 | **Service Worker Cache** | Exact Version Match | **`CACHE_VERSION = 'ohms-static-v5-1.1.90'`** | `tests/sw-cache-*.test.mjs` |
 | **Cloudflare Edge Deployment**| Live Global Anycast CDN | **200 OK across all public routes (Deployment df3c7a66)** | `https://onnesha-hospital.pages.dev` |
 | **Windows Desktop Config** | Release 1.1.90 Ready | **Verified v1.1.90 binaries (EXE 2.8 MB, MSI 3.3 MB)** | `public/downloads/desktop/latest.json` |

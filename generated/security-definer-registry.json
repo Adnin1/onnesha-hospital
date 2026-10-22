@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T05:45:31.892Z",
+  "generated_at": "2026-10-22T07:15:38.640Z",
   "source_scope": "REPOSITORY_MIGRATION_STATIC_SCAN_ONLY",
   "live_catalog_status": "NOT_QUERIED",
   "authorization_review_status": "NOT_CERTIFIED",
@@ -354,7 +354,7 @@
     {
       "name": "book_online_appointment",
       "signature": "uuid, uuid, uuid, date, text, text, int, text, text, text",
-      "arguments": "p_org_id            UUID,\r\n    p_doctor_id         UUID,\r\n    p_schedule_id       UUID,\r\n    p_appointment_date  DATE,\r\n    p_patient_name      TEXT,\r\n    p_patient_phone     TEXT,\r\n    p_patient_age       INT DEFAULT NULL,\r\n    p_patient_gender    TEXT DEFAULT 'OTHER',\r\n    p_patient_notes     TEXT DEFAULT NULL,\r\n    p_notes             TEXT DEFAULT NULL",
+      "arguments": "p_org_id            UUID,\n    p_doctor_id         UUID,\n    p_schedule_id       UUID,\n    p_appointment_date  DATE,\n    p_patient_name      TEXT,\n    p_patient_phone     TEXT,\n    p_patient_age       INT DEFAULT NULL,\n    p_patient_gender    TEXT DEFAULT 'OTHER',\n    p_patient_notes     TEXT DEFAULT NULL,\n    p_notes             TEXT DEFAULT NULL",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -372,6 +372,7 @@
         "tests/phase21-atomic-rpc-mfa.test.mjs",
         "tests/phase22-concurrency-rbac-slot.test.mjs",
         "tests/phase24-canonical-org-enforcement.test.mjs",
+        "tests/public-booking-rate-limiting-and-abuse-protection.test.mjs",
         "tests/public-portal-rpc-security-and-access.test.mjs",
         "tests/website-public-security-and-data-integrity.test.mjs",
         "scripts/generate-rpc-registry.mjs"
@@ -4169,7 +4170,7 @@
     {
       "name": "submit_public_contact_inquiry",
       "signature": "uuid, text, text, text, text, text",
-      "arguments": "p_org_id UUID,\r\n    p_name TEXT,\r\n    p_phone TEXT,\r\n    p_email TEXT DEFAULT NULL,\r\n    p_subject TEXT DEFAULT 'General Hospital Enquiry',\r\n    p_message TEXT DEFAULT ''",
+      "arguments": "p_org_id UUID,\n    p_name TEXT,\n    p_phone TEXT,\n    p_email TEXT DEFAULT NULL,\n    p_subject TEXT DEFAULT 'General Hospital Enquiry',\n    p_message TEXT DEFAULT ''",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -4182,6 +4183,7 @@
       "caller_files": [
         "lib/public/actions.ts",
         "tests/browser/fixtures.ts",
+        "tests/public-booking-rate-limiting-and-abuse-protection.test.mjs",
         "tests/public-portal-rpc-security-and-access.test.mjs",
         "tests/website-public-security-and-data-integrity.test.mjs",
         "scripts/generate-rpc-registry.mjs"
