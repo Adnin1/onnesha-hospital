@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-22T02:32:33.850Z",
+  "generated_at": "2026-10-22T05:45:31.892Z",
   "source_scope": "REPOSITORY_MIGRATION_STATIC_SCAN_ONLY",
   "live_catalog_status": "NOT_QUERIED",
   "authorization_review_status": "NOT_CERTIFIED",
-  "total_secdef_functions": 165,
+  "total_secdef_functions": 164,
   "anon_executable_count": null,
   "mutable_search_path_count": null,
   "migration_source_estimates": {
@@ -18,7 +18,7 @@
   ],
   "classifications": {
     "TRIGGER_ONLY": 15,
-    "INTERNAL_ONLY": 135,
+    "INTERNAL_ONLY": 134,
     "PUBLIC_SAFE": 0,
     "AUTHENTICATED_OPERATIONAL": 9,
     "ADMIN_PRIVILEGED": 6,
@@ -353,8 +353,8 @@
     },
     {
       "name": "book_online_appointment",
-      "signature": "uuid, uuid, date, varchar, varchar, varchar, uuid, int, text",
-      "arguments": "p_org_id UUID,\n    p_doctor_id UUID,\n    p_appointment_date DATE,\n    p_patient_name VARCHAR,\n    p_patient_phone VARCHAR,\n    p_patient_gender VARCHAR,\n    p_schedule_id UUID,\n    p_patient_age INT DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL",
+      "signature": "uuid, uuid, uuid, date, text, text, int, text, text, text",
+      "arguments": "p_org_id            UUID,\r\n    p_doctor_id         UUID,\r\n    p_schedule_id       UUID,\r\n    p_appointment_date  DATE,\r\n    p_patient_name      TEXT,\r\n    p_patient_phone     TEXT,\r\n    p_patient_age       INT DEFAULT NULL,\r\n    p_patient_gender    TEXT DEFAULT 'OTHER',\r\n    p_patient_notes     TEXT DEFAULT NULL,\r\n    p_notes             TEXT DEFAULT NULL",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -372,42 +372,7 @@
         "tests/phase21-atomic-rpc-mfa.test.mjs",
         "tests/phase22-concurrency-rbac-slot.test.mjs",
         "tests/phase24-canonical-org-enforcement.test.mjs",
-        "tests/website-public-security-and-data-integrity.test.mjs",
-        "scripts/generate-rpc-registry.mjs"
-      ],
-      "classification": "INTERNAL_ONLY",
-      "authorization_evidence": {
-        "auth_uid_token_found": false,
-        "tenant_guard_token_found": true,
-        "role_guard_token_found": false,
-        "permission_guard_token_found": false,
-        "note": "Lexical evidence only; token presence does not prove correct authorization."
-      },
-      "live_acl_status": "NOT_QUERIED",
-      "authorization_review_status": "NOT_CERTIFIED",
-      "review_result": "MANUAL_REVIEW_REQUIRED_STATIC_SCAN_NOT_AUTHORIZATION_PROOF"
-    },
-    {
-      "name": "book_online_appointment",
-      "signature": "uuid, uuid, uuid, date, text, text, int, text, text",
-      "arguments": "p_org_id            UUID,\n    p_doctor_id         UUID,\n    p_schedule_id       UUID,\n    p_appointment_date  DATE,\n    p_patient_name      TEXT,\n    p_patient_phone     TEXT,\n    p_patient_age       INT DEFAULT NULL,\n    p_patient_gender    TEXT DEFAULT 'OTHER',\n    p_patient_notes     TEXT DEFAULT NULL",
-      "owner": "postgres",
-      "search_path": "'' (EMPTY_SAFE)",
-      "anon_executable": false,
-      "authenticated_executable": false,
-      "service_role_executable": true,
-      "auth_uid_guard": false,
-      "tenant_guard": true,
-      "role_guard": false,
-      "permission_guard": false,
-      "caller_files": [
-        "lib/public/actions.ts",
-        "tests/browser/fixtures.ts",
-        "tests/browser/globalSetup.ts",
-        "tests/phase13-public-appointment-seo.test.mjs",
-        "tests/phase21-atomic-rpc-mfa.test.mjs",
-        "tests/phase22-concurrency-rbac-slot.test.mjs",
-        "tests/phase24-canonical-org-enforcement.test.mjs",
+        "tests/public-portal-rpc-security-and-access.test.mjs",
         "tests/website-public-security-and-data-integrity.test.mjs",
         "scripts/generate-rpc-registry.mjs"
       ],
@@ -2555,6 +2520,7 @@
         "tests/browser/fixtures.ts",
         "tests/phase41-v107-public-schedules-and-website-hardening.test.mjs",
         "tests/phase61-unify-public-directory-and-schedules.test.mjs",
+        "tests/public-portal-rpc-security-and-access.test.mjs",
         "scripts/generate-rpc-registry.mjs"
       ],
       "classification": "INTERNAL_ONLY",
@@ -2588,6 +2554,7 @@
         "tests/phase41-v107-public-schedules-and-website-hardening.test.mjs",
         "tests/phase59-public-data-shielding-and-db-integrity.test.mjs",
         "tests/phase61-unify-public-directory-and-schedules.test.mjs",
+        "tests/public-portal-rpc-security-and-access.test.mjs",
         "tests/website-public-security-and-data-integrity.test.mjs",
         "scripts/generate-rpc-registry.mjs"
       ],
@@ -2619,6 +2586,7 @@
       "caller_files": [
         "lib/public/actions.ts",
         "tests/browser/fixtures.ts",
+        "tests/public-portal-rpc-security-and-access.test.mjs",
         "tests/website-public-security-and-data-integrity.test.mjs",
         "scripts/generate-rpc-registry.mjs"
       ],
@@ -2637,7 +2605,7 @@
     {
       "name": "get_public_live_queue",
       "signature": "uuid, uuid, date",
-      "arguments": "p_org_id UUID,\n    p_doctor_id UUID,\n    p_date DATE DEFAULT NULL",
+      "arguments": "p_org_id UUID,\r\n    p_doctor_id UUID,\r\n    p_date DATE DEFAULT NULL",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -2650,6 +2618,7 @@
       "caller_files": [
         "lib/public/actions.ts",
         "tests/browser/fixtures.ts",
+        "tests/public-portal-rpc-security-and-access.test.mjs",
         "tests/website-public-security-and-data-integrity.test.mjs",
         "scripts/generate-rpc-registry.mjs"
       ],
@@ -2667,8 +2636,8 @@
     },
     {
       "name": "get_public_token_status",
-      "signature": "uuid, text, date",
-      "arguments": "p_org_id UUID,\n    p_token_query TEXT,\n    p_date DATE DEFAULT NULL",
+      "signature": "uuid, text, date, text",
+      "arguments": "p_org_id UUID,\r\n    p_token_query TEXT DEFAULT NULL,\r\n    p_date DATE DEFAULT NULL,\r\n    p_token_number TEXT DEFAULT NULL",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -2681,6 +2650,7 @@
       "caller_files": [
         "lib/public/actions.ts",
         "tests/browser/fixtures.ts",
+        "tests/public-portal-rpc-security-and-access.test.mjs",
         "tests/public-token-status.test.mjs",
         "scripts/generate-rpc-registry.mjs"
       ],
@@ -4199,7 +4169,7 @@
     {
       "name": "submit_public_contact_inquiry",
       "signature": "uuid, text, text, text, text, text",
-      "arguments": "p_org_id UUID,\n    p_name TEXT,\n    p_phone TEXT,\n    p_email TEXT DEFAULT NULL,\n    p_subject TEXT DEFAULT 'General Hospital Enquiry',\n    p_message TEXT DEFAULT ''",
+      "arguments": "p_org_id UUID,\r\n    p_name TEXT,\r\n    p_phone TEXT,\r\n    p_email TEXT DEFAULT NULL,\r\n    p_subject TEXT DEFAULT 'General Hospital Enquiry',\r\n    p_message TEXT DEFAULT ''",
       "owner": "postgres",
       "search_path": "'' (EMPTY_SAFE)",
       "anon_executable": false,
@@ -4212,6 +4182,7 @@
       "caller_files": [
         "lib/public/actions.ts",
         "tests/browser/fixtures.ts",
+        "tests/public-portal-rpc-security-and-access.test.mjs",
         "tests/website-public-security-and-data-integrity.test.mjs",
         "scripts/generate-rpc-registry.mjs"
       ],
@@ -4649,6 +4620,7 @@
         "lib/patient/actions.ts",
         "tests/catalog-driven-purge-invariants.test.mjs",
         "tests/database-schema-contracts.test.mjs",
+        "tests/public-portal-rpc-security-and-access.test.mjs",
         "scripts/generate-rpc-registry.mjs",
         "scripts/verify-app-db-contracts.mjs"
       ],
@@ -4711,6 +4683,7 @@
         "tests/database-schema-contracts.test.mjs",
         "tests/live/hospital-application-workflow.live.test.mjs",
         "tests/migration-232-comprehensive-clinical-defects-remediation.test.mjs",
+        "tests/public-portal-rpc-security-and-access.test.mjs",
         "scripts/generate-rpc-registry.mjs",
         "scripts/verify-app-db-contracts.mjs"
       ],

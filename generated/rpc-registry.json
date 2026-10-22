@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-21T22:07:39.316Z",
+  "generated_at": "2026-10-22T05:36:26.138Z",
   "source": "chronological_migration_analysis",
-  "migration_count": 249,
-  "migration_head": "20261022123000_migration_249_fix_referral_fixed_search_path_auth_schema.sql",
-  "total_functions": 183,
-  "security_definer_count": 165,
-  "anon_executable_count": 9,
+  "migration_count": 250,
+  "migration_head": "20261022130000_migration_250_restore_public_rpc_grants_and_tenant_guards.sql",
+  "total_functions": 182,
+  "security_definer_count": 164,
+  "anon_executable_count": 8,
   "critical_rpc_overload_count": 0,
   "security_findings": [],
   "overload_findings": [],
@@ -199,21 +199,8 @@
     },
     {
       "name": "book_online_appointment",
-      "signature": "uuid, uuid, date, varchar, varchar, varchar, uuid, int, text",
-      "arguments": "p_org_id UUID,\n    p_doctor_id UUID,\n    p_appointment_date DATE,\n    p_patient_name VARCHAR,\n    p_patient_phone VARCHAR,\n    p_patient_gender VARCHAR,\n    p_schedule_id UUID,\n    p_patient_age INT DEFAULT NULL,\n    p_notes TEXT DEFAULT NULL",
-      "security_mode": "SECURITY_DEFINER",
-      "granted_to": [
-        "anon",
-        "authenticated",
-        "service_role"
-      ],
-      "anon_executable": true,
-      "is_critical": false
-    },
-    {
-      "name": "book_online_appointment",
-      "signature": "uuid, uuid, uuid, date, text, text, int, text, text",
-      "arguments": "p_org_id            UUID,\n    p_doctor_id         UUID,\n    p_schedule_id       UUID,\n    p_appointment_date  DATE,\n    p_patient_name      TEXT,\n    p_patient_phone     TEXT,\n    p_patient_age       INT DEFAULT NULL,\n    p_patient_gender    TEXT DEFAULT 'OTHER',\n    p_patient_notes     TEXT DEFAULT NULL",
+      "signature": "uuid, uuid, uuid, date, text, text, int, text, text, text",
+      "arguments": "p_org_id            UUID,\n    p_doctor_id         UUID,\n    p_schedule_id       UUID,\n    p_appointment_date  DATE,\n    p_patient_name      TEXT,\n    p_patient_phone     TEXT,\n    p_patient_age       INT DEFAULT NULL,\n    p_patient_gender    TEXT DEFAULT 'OTHER',\n    p_patient_notes     TEXT DEFAULT NULL,\n    p_notes             TEXT DEFAULT NULL",
       "security_mode": "SECURITY_DEFINER",
       "granted_to": [
         "anon",
@@ -1235,8 +1222,8 @@
     },
     {
       "name": "get_public_token_status",
-      "signature": "uuid, text, date",
-      "arguments": "p_org_id UUID,\n    p_token_query TEXT,\n    p_date DATE DEFAULT NULL",
+      "signature": "uuid, text, date, text",
+      "arguments": "p_org_id UUID,\n    p_token_query TEXT DEFAULT NULL,\n    p_date DATE DEFAULT NULL,\n    p_token_number TEXT DEFAULT NULL",
       "security_mode": "SECURITY_DEFINER",
       "granted_to": [
         "anon",
