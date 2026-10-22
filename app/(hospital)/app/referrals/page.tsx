@@ -222,7 +222,12 @@ export default function ReferralManagementPage() {
       setIsSuperAdmin(superAdmin);
       setUserPermissions(perms);
 
-      const canView = superAdmin || perms.includes("referral.view") || perms.includes("referral.manage");
+      const canView =
+        superAdmin ||
+        perms.includes("referral.view") ||
+        perms.includes("referral.manage") ||
+        perms.includes("referral.create") ||
+        perms.includes("referral.assign");
       if (!canView) {
         setAccessDenied(true);
         setLoading(false);
@@ -541,7 +546,11 @@ export default function ReferralManagementPage() {
         agents.reduce((sum, a) => sum + Number(a.total_commission_settled || 0), 0)
       );
 
-  const canCreate = isSuperAdmin || userPermissions.includes("referral.create") || userPermissions.includes("referral.manage");
+  const canCreate =
+    isSuperAdmin ||
+    userPermissions.includes("referral.create") ||
+    userPermissions.includes("referral.manage") ||
+    userPermissions.includes("referral.assign");
   const canEdit = isSuperAdmin || userPermissions.includes("referral.edit") || userPermissions.includes("referral.manage");
   const canDelete = isSuperAdmin || userPermissions.includes("referral.delete") || userPermissions.includes("referral.manage");
   const canSettle = isSuperAdmin || userPermissions.includes("referral.commission.pay") || userPermissions.includes("referral.manage");

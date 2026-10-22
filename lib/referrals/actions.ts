@@ -197,7 +197,16 @@ export async function getReferralAgentsAction(): Promise<{
       return { success: false, error: "401 Unauthorized" };
     }
     const isSuperAdmin = session.roles.includes("super_admin");
-    const canView = isSuperAdmin || session.permissions.includes("referral.view") || session.permissions.includes("referral.manage");
+    const canView =
+      isSuperAdmin ||
+      session.roles.includes("receptionist") ||
+      session.roles.includes("accountant") ||
+      session.permissions.includes("referral.view") ||
+      session.permissions.includes("referral.manage") ||
+      session.permissions.includes("referral.create") ||
+      session.permissions.includes("referral.assign") ||
+      session.permissions.includes("billing.view") ||
+      session.permissions.includes("billing.create");
     if (!canView) {
       return { success: false, error: "403 Forbidden: Missing referral.view permission." };
     }
@@ -268,9 +277,18 @@ export async function getReferralAgentByIdAction(agentId: string): Promise<{
       return { success: false, error: "401 Unauthorized" };
     }
     const isSuperAdmin = session.roles.includes("super_admin");
-    const canEdit = isSuperAdmin || session.permissions.includes("referral.edit") || session.permissions.includes("referral.manage");
-    if (!canEdit) {
-      return { success: false, error: "403 Forbidden: Missing referral.edit permission." };
+    const canAccess =
+      isSuperAdmin ||
+      session.roles.includes("receptionist") ||
+      session.permissions.includes("referral.view") ||
+      session.permissions.includes("referral.manage") ||
+      session.permissions.includes("referral.edit") ||
+      session.permissions.includes("referral.assign") ||
+      session.permissions.includes("referral.create") ||
+      session.permissions.includes("billing.view") ||
+      session.permissions.includes("billing.create");
+    if (!canAccess) {
+      return { success: false, error: "403 Forbidden: Missing referral permissions." };
     }
 
     const supabase = createClient();
@@ -618,10 +636,13 @@ export async function createReferralAgentAction(params: {
     const isSuperAdmin = session.roles.includes("super_admin");
     const canCreate =
       isSuperAdmin ||
+      session.roles.includes("receptionist") ||
+      session.roles.includes("accountant") ||
       session.permissions.includes("referral.create") ||
       session.permissions.includes("referral.manage") ||
       session.permissions.includes("referral.assign") ||
-      session.permissions.includes("billing.create");
+      session.permissions.includes("billing.create") ||
+      session.permissions.includes("billing.edit");
     if (!canCreate) {
       return { success: false, error: "403 Forbidden: Missing referral.create permission." };
     }
@@ -669,24 +690,57 @@ export async function createReferralAgentAction(params: {
 
     // Persist BMDC ethics acknowledgment and compliance notes if provided
     if (params.bmdc_ethics_acknowledged !== undefined || params.compliance_notes !== undefined) {
-      await supabase
-        .from("referral_agents")
-        .update({
-          bmdc_ethics_acknowledged: params.bmdc_ethics_acknowledged ?? false,
-          compliance_notes: params.compliance_notes?.trim() || null,
-        })
-        .eq("id", resObj.agent_id);
+      try {
+        await supabase
+          .from("referral_agents")
+          .update({
+            bmdc_ethics_acknowledged: params.bmdc_ethics_acknowledged ?? false,
+            compliance_notes: params.compliance_notes?.trim() || null,
+          })
+          .eq("id", resObj.agent_id);
+      } catch (updErr) {
+        console.warn("[createReferralAgentAction] Compliance notes update notice:", updErr);
+      }
     }
 
-    // Fetch newly created agent
-    const { data: created, error: cErr } = await supabase
+    // Fetch newly created agent or return constructed payload
+    let agentData: ReferralAgent = {
+      id: resObj.agent_id,
+      organization_id: orgId,
+      agent_code: resObj.agent_code || "PC-NEW",
+      full_name: params.full_name.trim(),
+      agent_type: params.agent_type,
+      phone: params.phone.trim(),
+      email: params.email?.trim() || null,
+      address: params.address?.trim() || null,
+      professional_registration_no: params.professional_registration_no?.trim() || null,
+      commission_rate_percent: rate,
+      commission_rate_diag: rate,
+      commission_rate_opd: rate,
+      commission_rate_ipd: rate,
+      is_commission_eligible: params.is_commission_eligible ?? true,
+      bmdc_ethics_acknowledged: params.bmdc_ethics_acknowledged ?? false,
+      compliance_approved: params.agent_type !== "DOCTOR",
+      compliance_notes: params.compliance_notes?.trim() || null,
+      is_active: true,
+      total_commission_earned: 0,
+      total_commission_settled: 0,
+      notes: params.notes?.trim() || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: created } = await supabase
       .from("referral_agents")
       .select("*")
       .eq("id", resObj.agent_id)
-      .single();
+      .maybeSingle();
 
-    if (cErr) throw cErr;
-    return { success: true, data: created as ReferralAgent };
+    if (created) {
+      agentData = created as ReferralAgent;
+    }
+
+    return { success: true, data: agentData };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Failed to create referral agent";
     return { success: false, error: msg };

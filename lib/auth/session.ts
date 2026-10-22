@@ -176,6 +176,13 @@ export async function getCurrentUserSession(forceRefresh = false): Promise<UserS
 
     const normalizedRoles = new Set<RoleType>();
 
+    if (profile?.role) {
+      const normalized = normalizeRole(profile.role);
+      if (normalized) {
+        normalizedRoles.add(normalized as RoleType);
+      }
+    }
+
     for (const record of (userRoleRecords || []) as unknown as UserRoleRecord[]) {
       if (record.organization_id !== organizationId || !record.roles?.name) {
         continue;
@@ -187,8 +194,35 @@ export async function getCurrentUserSession(forceRefresh = false): Promise<UserS
       }
     }
 
-    const roles = Array.from(normalizedRoles);
     const permissions = new Set<string>();
+
+    // 1. Authoritative In-Database RPC: Fetch real-time roles and permissions directly
+    if (organizationId) {
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc("get_current_user_permissions", {
+          p_org_id: organizationId,
+        });
+
+        if (!rpcError && rpcData && typeof rpcData === "object") {
+          const res = rpcData as { roles?: string[]; permissions?: string[]; is_super_admin?: boolean };
+          if (Array.isArray(res.roles)) {
+            for (const r of res.roles) {
+              const norm = normalizeRole(r);
+              if (norm) normalizedRoles.add(norm as RoleType);
+            }
+          }
+          if (Array.isArray(res.permissions)) {
+            for (const p of res.permissions) {
+              if (p) permissions.add(p);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[session] get_current_user_permissions RPC notice:", e);
+      }
+    }
+
+    const roles = Array.from(normalizedRoles);
 
     const roleIds = (
       (userRoleRecords || []) as unknown as UserRoleRecord[]
@@ -228,6 +262,18 @@ export async function getCurrentUserSession(forceRefresh = false): Promise<UserS
         for (const record of permRecords as unknown as RolePermissionRecord[]) {
           if (record.permission_key) {
             permissions.add(record.permission_key);
+          }
+        }
+      }
+    }
+
+    // Fallback to DEFAULT_ROLE_PERMISSIONS ONLY if no permissions were defined in database
+    if (permissions.size === 0) {
+      for (const role of roles) {
+        const rolePerms = (DEFAULT_ROLE_PERMISSIONS as Record<string, string[]>)[role];
+        if (rolePerms) {
+          for (const p of rolePerms) {
+            permissions.add(p);
           }
         }
       }

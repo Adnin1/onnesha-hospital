@@ -122,7 +122,33 @@ export async function getServerUserSession(): Promise<ServerUserSessionState> {
     // 4. Resolve permissions for active roles (DB permissions + fallback role permissions)
     const permissionSet = new Set<string>();
 
-    // 4a. Database-defined permissions
+    // 4a. Authoritative in-database RPC check
+    if (organizationId) {
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc("get_current_user_permissions", {
+          p_org_id: organizationId,
+        });
+
+        if (!rpcError && rpcData && typeof rpcData === "object") {
+          const res = rpcData as { roles?: string[]; permissions?: string[]; is_super_admin?: boolean };
+          if (Array.isArray(res.roles)) {
+            for (const r of res.roles) {
+              const norm = normalizeRole(r);
+              if (norm && !roles.includes(norm as RoleType)) roles.push(norm as RoleType);
+            }
+          }
+          if (Array.isArray(res.permissions)) {
+            for (const p of res.permissions) {
+              if (p) permissionSet.add(p);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[server-session] get_current_user_permissions RPC notice:", e);
+      }
+    }
+
+    // 4b. Database-defined permissions via direct role_permissions query
     const targetRoleIds = new Set<string>(roleIds);
 
     // Also include role IDs for any matching normalized roles in the active organization

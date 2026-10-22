@@ -123,7 +123,11 @@ function ExpensesManagementContent() {
       setIsSuperAdmin(superAdmin);
       setUserPermissions(perms);
 
-      const canView = superAdmin || perms.includes("expenses.view") || perms.includes("expenses.manage");
+      const canView =
+        superAdmin ||
+        perms.includes("expenses.view") ||
+        perms.includes("expenses.manage") ||
+        perms.includes("expenses.create");
       if (!canView) {
         setAccessDenied(true);
         setLoading(false);

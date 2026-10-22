@@ -84,7 +84,13 @@ export async function getExpenseCategoriesAction(): Promise<
   }
 
   const isSuperAdmin = session.roles.includes("super_admin");
-  const canView = isSuperAdmin || session.permissions.includes("expenses.view") || session.permissions.includes("expenses.manage");
+  const canView =
+    isSuperAdmin ||
+    session.roles.includes("receptionist") ||
+    session.roles.includes("accountant") ||
+    session.permissions.includes("expenses.view") ||
+    session.permissions.includes("expenses.manage") ||
+    session.permissions.includes("expenses.create");
   if (!canView) {
     return { success: false, error: "403 Forbidden: Missing expenses.view permission." };
   }
@@ -195,7 +201,13 @@ export async function getExpensesAction(params?: {
   }
 
   const isSuperAdmin = session.roles.includes("super_admin");
-  const canView = isSuperAdmin || session.permissions.includes("expenses.view") || session.permissions.includes("expenses.manage");
+  const canView =
+    isSuperAdmin ||
+    session.roles.includes("receptionist") ||
+    session.roles.includes("accountant") ||
+    session.permissions.includes("expenses.view") ||
+    session.permissions.includes("expenses.manage") ||
+    session.permissions.includes("expenses.create");
   if (!canView) {
     return { success: false, error: "403 Forbidden: Missing expenses.view permission." };
   }
@@ -267,7 +279,12 @@ export async function createExpenseAction(params: {
   }
 
   const isSuperAdmin = session.roles.includes("super_admin");
-  const canCreate = isSuperAdmin || session.permissions.includes("expenses.create") || session.permissions.includes("expenses.manage");
+  const canCreate =
+    isSuperAdmin ||
+    session.roles.includes("receptionist") ||
+    session.roles.includes("accountant") ||
+    session.permissions.includes("expenses.create") ||
+    session.permissions.includes("expenses.manage");
   if (!canCreate) {
     return {
       success: false,
