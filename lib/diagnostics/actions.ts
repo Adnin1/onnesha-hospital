@@ -50,16 +50,71 @@ export async function getSystemHealthDiagnosticsAction(
   organizationId?: string
 ): Promise<SystemHealthDiagnosticResult> {
   try {
-    const supabase = createClient();
+    // Resolve authentication before creating the RPC client. Creating the client
+    // first can capture an anonymous auth state during hydration and cause a
+    // privileged RPC to be sent as anon even when getUser() succeeds moments later.
+    const session = await getCurrentUserSession();
+    const effectiveOrgId = organizationId || session.organizationId || null;
 
-    let effectiveOrgId = organizationId || null;
-    if (!effectiveOrgId) {
-      try {
-        const session = await getCurrentUserSession();
-        effectiveOrgId = session.organizationId || null;
-      } catch {}
+    if (!session.userId) {
+      return {
+        is_healthy: false,
+        health_score: 0,
+        critical_count: 0,
+        warning_count: 1,
+        info_count: 0,
+        total_issues: 1,
+        checked_at: new Date().toISOString(),
+        organization_id: effectiveOrgId,
+        issues: [
+          {
+            id: "DIAGNOSTIC_PRIVILEGE_REQUIRED",
+            severity: "WARNING",
+            module: "সিস্টেম ডায়াগনস্টিক কোর (Diagnostic Core)",
+            location: "lib/diagnostics/actions.ts",
+            title: "ডায়াগনস্টিক যাচাইয়ের জন্য লগইন প্রয়োজন",
+            reason: "অথেনটিকেটেড সেশন প্রস্তুত না হওয়ায় privileged diagnostic RPC ডেটাবেজে পাঠানো হয়নি।",
+            recommendation: "লগইন সেশন সক্রিয় হলে পুনরায় স্ক্যান চালান।",
+            timestamp: new Date().toISOString(),
+          },
+        ],
+        passed_checks: [],
+        status: "AUDIT_UNAUTHORIZED",
+        audit_scope: "NOT_EXECUTED",
+        error: "AUTHENTICATION_REQUIRED",
+      };
     }
 
+    if (!effectiveOrgId) {
+      return {
+        is_healthy: false,
+        health_score: 0,
+        critical_count: 0,
+        warning_count: 1,
+        info_count: 0,
+        total_issues: 1,
+        checked_at: new Date().toISOString(),
+        organization_id: null,
+        issues: [
+          {
+            id: "ORGANIZATION_CONTEXT_REQUIRED",
+            severity: "WARNING",
+            module: "সিস্টেম ডায়াগনস্টিক কোর (Diagnostic Core)",
+            location: "lib/diagnostics/actions.ts",
+            title: "ডায়াগনস্টিক যাচাইয়ের জন্য সংস্থা নির্বাচন প্রয়োজন",
+            reason: "অথেনটিকেটেড ব্যবহারকারীর সক্রিয় organization context পাওয়া যায়নি।",
+            recommendation: "সঠিক organization নির্বাচন করে পুনরায় স্ক্যান চালান।",
+            timestamp: new Date().toISOString(),
+          },
+        ],
+        passed_checks: [],
+        status: "ORGANIZATION_CONTEXT_REQUIRED",
+        audit_scope: "NOT_EXECUTED",
+        error: "ORGANIZATION_CONTEXT_REQUIRED",
+      };
+    }
+
+    const supabase = createClient();
     const { data, error } = await supabase.rpc("check_system_health_diagnostics", {
       p_org_id: effectiveOrgId,
     });
@@ -291,6 +346,10 @@ export async function acknowledgeSystemIncidentAction(payload: {
   notes?: string;
 }): Promise<{ success: boolean; incident_id?: string; lifecycle_status?: string; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId) {
+      return { success: false, error: "AUTHENTICATION_REQUIRED" };
+    }
     const supabase = createClient();
     const { data, error } = await supabase.rpc("acknowledge_system_incident", {
       p_incident_id: payload.incidentId,
@@ -317,6 +376,10 @@ export async function verifySystemIncidentResolutionAction(payload: {
   organizationId?: string;
 }): Promise<{ success: boolean; verified?: boolean; incident_id?: string; lifecycle_status?: string; error?: string }> {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId) {
+      return { success: false, verified: false, error: "AUTHENTICATION_REQUIRED" };
+    }
     const supabase = createClient();
     const { data, error } = await supabase.rpc("verify_system_incident_resolution", {
       p_incident_id: payload.incidentId,
@@ -338,9 +401,17 @@ export async function verifySystemIncidentResolutionAction(payload: {
  */
 export async function runAuthoritativeHealthCycleAction(organizationId?: string) {
   try {
+    const session = await getCurrentUserSession();
+    if (!session.userId) {
+      return { success: false, error: "AUTHENTICATION_REQUIRED" };
+    }
+    const effectiveOrgId = organizationId || session.organizationId;
+    if (!effectiveOrgId) {
+      return { success: false, error: "ORGANIZATION_CONTEXT_REQUIRED" };
+    }
     const supabase = createClient();
     const { data, error } = await supabase.rpc("run_authoritative_health_cycle", {
-      p_org_id: organizationId || "a0000000-0000-0000-0000-000000000001",
+      p_org_id: effectiveOrgId,
       p_source_sha: "ui-dashboard-action",
     });
     if (error) {
