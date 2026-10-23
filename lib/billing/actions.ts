@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { requirePermission, hasPermission, getCurrentUserSession } from "@/lib/auth/session";
 import { recordAuditLog } from "@/lib/audit/logger";
-import { getDhakaDateString } from "@/lib/datetime";
+import { getDhakaDateRange } from "@/lib/reports/financial";
 import { normalizeBDPhone } from "@/lib/patient/phone";
 import {
   reportSystemRuntimeIncident,
@@ -521,21 +521,36 @@ export async function getCashRegisterSummaryAction(): Promise<
 
   try {
     const supabase = await createClient();
-    const today = getDhakaDateString();
+    // The hospital reporting day is Asia/Dhaka, not UTC.
+    // Use an inclusive start and exclusive next-midnight bound so transactions
+    // from adjacent hospital days cannot leak into this cashier summary.
+    const { startIso: todayStartIso, endExclusiveIso: tomorrowStartIso } = getDhakaDateRange("today");
 
-    // Today's Payments
-    const { data: payments } = await supabase
-      .from("payments")
-      .select("amount, payment_method")
-      .eq("organization_id", session.organizationId)
-      .gte("payment_date", `${today}T00:00:00.000Z`);
+    const [
+      { data: payments, error: paymentsError },
+      { data: invoices, error: invoicesError },
+    ] = await Promise.all([
+      supabase
+        .from("payments")
+        .select("amount, payment_method")
+        .eq("organization_id", session.organizationId)
+        .gte("payment_date", todayStartIso)
+        .lt("payment_date", tomorrowStartIso),
+      supabase
+        .from("invoices")
+        .select("grand_total, is_voided")
+        .eq("organization_id", session.organizationId)
+        .gte("created_at", todayStartIso)
+        .lt("created_at", tomorrowStartIso),
+    ]);
 
-    // Today's Invoices
-    const { data: invoices } = await supabase
-      .from("invoices")
-      .select("grand_total, is_voided")
-      .eq("organization_id", session.organizationId)
-      .gte("created_at", `${today}T00:00:00.000Z`);
+    // Never turn a failed financial query into a successful-looking zero balance.
+    if (paymentsError) {
+      return { success: false, error: `Failed to load today's payments: ${paymentsError.message}` };
+    }
+    if (invoicesError) {
+      return { success: false, error: `Failed to load today's invoices: ${invoicesError.message}` };
+    }
 
     let todayCash = 0;
     let todayMfs = 0;
