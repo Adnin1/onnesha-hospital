@@ -135,7 +135,7 @@ function BillingManagementContent() {
   const [discountFixed, setDiscountFixed] = useState<number | "">("");
   const [discountReason, setDiscountReason] = useState("");
   const [initialPaymentAmount, setInitialPaymentAmount] = useState(0);
-  const [initialPaymentMode, setInitialPaymentMode] = useState<"DUE" | "FULL" | "CUSTOM">("DUE");
+  const [initialPaymentMode, setInitialPaymentMode] = useState<"DUE" | "FULL" | "CUSTOM">("FULL");
   const [paymentMethod, setPaymentMethod] = useState<PaymentRecord["payment_method"]>("CASH");
   const [formLoading, setFormLoading] = useState(false);
 
@@ -1067,7 +1067,7 @@ function BillingManagementContent() {
     setDiscountFixed("");
     setDiscountReason("");
     setInitialPaymentAmount(0);
-    setInitialPaymentMode("DUE");
+    setInitialPaymentMode("FULL");
     setPaymentMethod("CASH");
   };
 
