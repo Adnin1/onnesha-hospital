@@ -775,7 +775,7 @@ function BillingManagementContent() {
     if (type === "IPD") {
       const next = injectIpdAdmissionCharges(items);
       setItems(next);
-      
+
     }
   };
 
@@ -815,13 +815,13 @@ function BillingManagementContent() {
     }
 
     setItems(next);
-    
+
   };
 
   const removeItemRow = (idx: number) => {
     const next = items.filter((_, i) => i !== idx);
     setItems(next);
-    
+
   };
 
   const handleSavePatientDemographics = async () => {
@@ -2492,7 +2492,7 @@ function BillingManagementContent() {
                             next = injectIpdAdmissionCharges(next);
                           }
                           setItems(next);
-                          
+
                         }}
                         className="w-full px-2 py-1.5 border rounded-lg bg-white font-semibold text-[11px]"
                       >
@@ -2543,7 +2543,7 @@ function BillingManagementContent() {
                             }
                           }
                           setItems(next);
-                          
+
                         }}
                         className="w-full px-2.5 py-1.5 border rounded-lg bg-white font-semibold text-[11px]"
                       />
@@ -2561,7 +2561,7 @@ function BillingManagementContent() {
                           const rawVal = e.target.value;
                           next[idx].quantity = rawVal === "" ? 0 : Number(rawVal);
                           setItems(next);
-                          
+
                         }}
                         className="w-full px-2 py-1.5 border rounded-lg bg-white font-mono text-center text-[11px] font-bold text-sky-900"
                         title="পরিমাণ (Quantity) - পরিবর্তন করলে স্বয়ংক্রিয় গুণফল হিসাব হবে"
@@ -2580,7 +2580,7 @@ function BillingManagementContent() {
                           const rawVal = e.target.value;
                           next[idx].unitPrice = rawVal === "" ? 0 : Number(rawVal);
                           setItems(next);
-                          
+
                         }}
                         className="w-full px-2 py-1.5 border rounded-lg bg-white font-mono text-right text-[11px]"
                         title="প্রতি ইউনিটের মূল্য (Unit Price)"
@@ -2600,7 +2600,7 @@ function BillingManagementContent() {
                           const curQty = Number(next[idx].quantity) || 1;
                           next[idx].unitPrice = curQty > 0 ? Math.round((lineTotal / curQty) * 100) / 100 : lineTotal;
                           setItems(next);
-                          
+
                         }}
                         className="flex-1 min-w-0 px-2 py-1.5 border border-emerald-300 rounded-lg bg-emerald-50/70 font-mono text-right text-[11px] font-black text-emerald-800"
                         title="মোট মূল্য (Qty * Unit Rate) - সরাসরি টাইপ করেও পরিবর্তনযোগ্য"
