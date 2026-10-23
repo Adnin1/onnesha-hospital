@@ -15,7 +15,7 @@ test("version generator keeps timestamp filename ordering as a fallback", () => 
   assert.match(source, /let latestFile = files\[files\.length - 1\] \|\| null/);
 });
 
-test("current repository migration head resolves to Migration 258 rather than older migrations", () => {
+test("current repository migration head resolves to Migration 260 rather than older migrations", () => {
   const files = fs
     .readdirSync("supabase/migrations")
     .filter((file) => file.endsWith(".sql"))
@@ -37,4 +37,13 @@ test("current repository migration head resolves to Migration 258 rather than ol
     head.file,
     "20261022211524_migration_260_cap_and_allocate_patient_referral_payouts.sql"
   );
+});
+
+test("version manifest lifecycle is pure build-artifact and untracked (stops endless SHA loop)", () => {
+  const gitignore = fs.readFileSync(".gitignore", "utf8");
+  assert.match(gitignore, /\/public\/version\.json/, "public/version.json must be in .gitignore to prevent commit loop");
+
+  const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+  assert.equal(pkg.scripts.prebuild, "node scripts/generate-version.mjs", "prebuild must generate version.json");
+  assert.equal(pkg.scripts.predev, "node scripts/generate-version.mjs", "predev must generate version.json for local dev");
 });

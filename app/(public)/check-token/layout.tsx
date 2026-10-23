@@ -6,6 +6,11 @@ export const metadata: Metadata = {
     "Check your live OPD token status and doctor chamber queue at Onnesha Hospital. Enter your token number to see your waiting position in real time.",
   alternates: { canonical: "/check-token" },
   robots: { index: false, follow: false }, // Patient-specific lookup — noindex to avoid indexing transient queue states
+  openGraph: {
+    title: "Check Live OPD Token Status | Onnesha Hospital",
+    description: "Check your live OPD token status and doctor chamber queue at Onnesha Hospital in real time.",
+    url: "/check-token",
+  },
 };
 
 export default function CheckTokenLayout({ children }: { children: React.ReactNode }) {

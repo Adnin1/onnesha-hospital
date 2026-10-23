@@ -219,7 +219,17 @@ export async function getSystemHealthDiagnosticsAction(
       checked_at: typeof res.checked_at === "string" ? res.checked_at : new Date().toISOString(),
       organization_id: typeof res.organization_id === "string" ? res.organization_id : null,
       issues: mappedIssues,
-      passed_checks: Array.isArray(res.passed_checks) ? (res.passed_checks as string[]) : [],
+      passed_checks: Array.isArray(res.passed_checks)
+        ? res.passed_checks
+            .map((item: unknown) => {
+              if (typeof item === "string") return item;
+              if (item && typeof item === "object" && "check" in item && typeof (item as { check: unknown }).check === "string") {
+                return (item as { check: string }).check;
+              }
+              return String(item ?? "");
+            })
+            .filter(Boolean)
+        : [],
       status: typeof raw.status === "string" ? raw.status : (res.is_healthy ? "HEALTHY" : "DEGRADED"),
       audit_scope: typeof raw.audit_scope === "string" ? raw.audit_scope : "FULL_SYSTEM",
     };

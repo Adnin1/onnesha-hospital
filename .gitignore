@@ -22,6 +22,9 @@
 # production
 /build
 
+# build artifacts & generated release manifests
+/public/version.json
+
 # misc
 .DS_Store
 *.pem

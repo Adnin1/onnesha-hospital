@@ -469,7 +469,11 @@ export default function SystemHealthPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {Object.entries(verificationCheckLabels).map(([key, label]) => {
-            const isPassed = Boolean(data?.passed_checks.includes(key));
+            const isPassed = Boolean(
+              data?.passed_checks.some((item) =>
+                typeof item === "string" ? item === key : (typeof item === "object" && item !== null && "check" in item ? String((item as { check: unknown }).check) === key : false)
+              )
+            );
             return (
               <div
                 key={key}

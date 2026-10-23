@@ -547,15 +547,18 @@ export default function SystemHealthAlertBanner({
                       উত্তীর্ণ অডিটসমূহ (Passed Verification Checks):
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {(data?.passed_checks || []).map((check: string) => (
-                        <div
-                          key={check}
-                          className="flex items-center gap-2 p-2 rounded bg-slate-50 dark:bg-slate-800/40 text-xs text-slate-700 dark:text-slate-300"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                          <span className="font-mono text-[11px] truncate">{check}</span>
-                        </div>
-                      ))}
+                      {(data?.passed_checks || []).map((item: unknown, idx: number) => {
+                        const checkName = typeof item === "string" ? item : (item && typeof item === "object" && "check" in item ? String((item as { check: unknown }).check) : String(item));
+                        return (
+                          <div
+                            key={typeof item === "string" ? item : (item && typeof item === "object" && "check" in item ? String((item as { check: unknown }).check) : idx)}
+                            className="flex items-center gap-2 p-2 rounded bg-slate-50 dark:bg-slate-800/40 text-xs text-slate-700 dark:text-slate-300"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                            <span className="font-mono text-[11px] truncate">{checkName}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
