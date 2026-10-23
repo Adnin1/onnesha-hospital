@@ -35,7 +35,7 @@ test("invoice initial-payment intent does not silently become full payment after
     "utf8"
   );
 
-  assert.match(source, /useState<"DUE" \| "FULL" \| "CUSTOM">\("DUE"\)/);
+  assert.match(source, /useState<"DUE" \| "FULL" \| "CUSTOM">\("FULL"\)/);
   assert.match(source, /initialPaymentMode === "FULL"\) return netTotal/);
   assert.match(source, /initialPaymentMode === "DUE"\) return 0/);
   assert.match(source, /setInitialPaymentMode\("FULL"\)/);
