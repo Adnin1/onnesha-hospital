@@ -135,6 +135,7 @@ function BillingManagementContent() {
   const [discountFixed, setDiscountFixed] = useState<number | "">("");
   const [discountReason, setDiscountReason] = useState("");
   const [initialPaymentAmount, setInitialPaymentAmount] = useState(0);
+  const [initialPaymentMode, setInitialPaymentMode] = useState<"DUE" | "FULL" | "CUSTOM">("DUE");
   const [paymentMethod, setPaymentMethod] = useState<PaymentRecord["payment_method"]>("CASH");
   const [formLoading, setFormLoading] = useState(false);
 
@@ -731,13 +732,17 @@ function BillingManagementContent() {
   const netTotal = Math.max(0, subtotal - calculatedDiscountAmount);
   const dueAmount = Math.max(0, netTotal - initialPaymentAmount);
 
-  const recalcTotals = (updatedItems: typeof items) => {
-    const newSub = updatedItems.reduce((acc, it) => acc + (Number(it.unitPrice) || 0) * (Number(it.quantity) || 0), 0);
-    const newDisc = discountMode === "PERCENT"
-      ? (discountPercent !== "" && Number(discountPercent) > 0 && Number(discountPercent) <= 60 ? Math.round((newSub * Number(discountPercent)) / 100) : 0)
-      : (discountFixed !== "" && Number(discountFixed) > 0 ? Math.min(newSub, Number(discountFixed)) : 0);
-    setInitialPaymentAmount(Math.max(0, newSub - newDisc));
-  };
+  // Keep payment intent separate from invoice totals. Adding/removing an item or
+  // changing a discount must not silently convert a due/custom payment into FULL.
+  // Custom payments are clamped to the new net total to prevent stale overpayment.
+  useEffect(() => {
+    setInitialPaymentAmount((current) => {
+      if (initialPaymentMode === "FULL") return netTotal;
+      if (initialPaymentMode === "DUE") return 0;
+      const safeCurrent = Number.isFinite(current) ? current : 0;
+      return Math.min(Math.max(0, safeCurrent), netTotal);
+    });
+  }, [netTotal, initialPaymentMode]);
 
   const injectIpdAdmissionCharges = (currentItems: typeof items): typeof items => {
     const updated = [...currentItems];
@@ -770,7 +775,7 @@ function BillingManagementContent() {
     if (type === "IPD") {
       const next = injectIpdAdmissionCharges(items);
       setItems(next);
-      recalcTotals(next);
+      
     }
   };
 
@@ -810,13 +815,13 @@ function BillingManagementContent() {
     }
 
     setItems(next);
-    recalcTotals(next);
+    
   };
 
   const removeItemRow = (idx: number) => {
     const next = items.filter((_, i) => i !== idx);
     setItems(next);
-    recalcTotals(next);
+    
   };
 
   const handleSavePatientDemographics = async () => {
@@ -1062,6 +1067,7 @@ function BillingManagementContent() {
     setDiscountFixed("");
     setDiscountReason("");
     setInitialPaymentAmount(0);
+    setInitialPaymentMode("DUE");
     setPaymentMethod("CASH");
   };
 
@@ -1124,6 +1130,11 @@ function BillingManagementContent() {
 
     if (!items || items.length === 0) {
       setToast({ message: "কমপক্ষে একটি সার্ভিস বা টেস্ট আইটেম যোগ করুন।", type: "error" });
+      return;
+    }
+
+    if (!Number.isFinite(initialPaymentAmount) || initialPaymentAmount < 0 || initialPaymentAmount > netTotal) {
+      setToast({ message: "প্রাথমিক পেমেন্ট মোট বিলের মধ্যে হতে হবে (Initial payment must be between 0 and the grand total).", type: "error" });
       return;
     }
 
@@ -2481,7 +2492,7 @@ function BillingManagementContent() {
                             next = injectIpdAdmissionCharges(next);
                           }
                           setItems(next);
-                          recalcTotals(next);
+                          
                         }}
                         className="w-full px-2 py-1.5 border rounded-lg bg-white font-semibold text-[11px]"
                       >
@@ -2532,7 +2543,7 @@ function BillingManagementContent() {
                             }
                           }
                           setItems(next);
-                          recalcTotals(next);
+                          
                         }}
                         className="w-full px-2.5 py-1.5 border rounded-lg bg-white font-semibold text-[11px]"
                       />
@@ -2550,7 +2561,7 @@ function BillingManagementContent() {
                           const rawVal = e.target.value;
                           next[idx].quantity = rawVal === "" ? 0 : Number(rawVal);
                           setItems(next);
-                          recalcTotals(next);
+                          
                         }}
                         className="w-full px-2 py-1.5 border rounded-lg bg-white font-mono text-center text-[11px] font-bold text-sky-900"
                         title="পরিমাণ (Quantity) - পরিবর্তন করলে স্বয়ংক্রিয় গুণফল হিসাব হবে"
@@ -2569,7 +2580,7 @@ function BillingManagementContent() {
                           const rawVal = e.target.value;
                           next[idx].unitPrice = rawVal === "" ? 0 : Number(rawVal);
                           setItems(next);
-                          recalcTotals(next);
+                          
                         }}
                         className="w-full px-2 py-1.5 border rounded-lg bg-white font-mono text-right text-[11px]"
                         title="প্রতি ইউনিটের মূল্য (Unit Price)"
@@ -2589,7 +2600,7 @@ function BillingManagementContent() {
                           const curQty = Number(next[idx].quantity) || 1;
                           next[idx].unitPrice = curQty > 0 ? Math.round((lineTotal / curQty) * 100) / 100 : lineTotal;
                           setItems(next);
-                          recalcTotals(next);
+                          
                         }}
                         className="flex-1 min-w-0 px-2 py-1.5 border border-emerald-300 rounded-lg bg-emerald-50/70 font-mono text-right text-[11px] font-black text-emerald-800"
                         title="মোট মূল্য (Qty * Unit Rate) - সরাসরি টাইপ করেও পরিবর্তনযোগ্য"
@@ -2795,7 +2806,7 @@ function BillingManagementContent() {
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          onClick={() => setInitialPaymentAmount(netTotal)}
+                          onClick={() => { setInitialPaymentMode("FULL"); setInitialPaymentAmount(netTotal); }}
                           className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-1.5 py-0.5 rounded cursor-pointer transition"
                           title="সম্পূর্ণ টাকা পরিশোধ হিসেবে সেট করুন"
                         >
@@ -2803,7 +2814,7 @@ function BillingManagementContent() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setInitialPaymentAmount(0)}
+                          onClick={() => { setInitialPaymentMode("DUE"); setInitialPaymentAmount(0); }}
                           className="text-[10px] font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-1.5 py-0.5 rounded cursor-pointer transition"
                           title="বকেয়া হিসেবে শূন্য টাকা সেট করুন"
                         >
@@ -2814,8 +2825,10 @@ function BillingManagementContent() {
                     <input
                       type="number"
                       min="0"
+                      max={netTotal}
+                      step="0.01"
                       value={initialPaymentAmount}
-                      onChange={(e) => setInitialPaymentAmount(Number(e.target.value))}
+                      onChange={(e) => { setInitialPaymentMode("CUSTOM"); setInitialPaymentAmount(Number(e.target.value)); }}
                       className="w-full px-3 py-1.5 border rounded-xl bg-slate-50 font-mono"
                     />
                   </div>
